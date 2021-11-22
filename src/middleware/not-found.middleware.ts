@@ -1,9 +1,9 @@
-import Koa from 'koa';
+import Koa from "koa";
 
 export const notFoundHandler = async (ctx: Koa.Context) => {
-  if (ctx.path === '/alive') {
+  if (ctx.path === "/alive") {
     ctx.body = {
-      status: 'ok',
+      status: "ok",
       timestamp: Date.now(),
     };
     return;
@@ -12,7 +12,7 @@ export const notFoundHandler = async (ctx: Koa.Context) => {
   ctx.status = 404;
   ctx.body = {
     code: 404,
-    message: 'Requested path not found',
+    message: "Requested path not found",
     path: ctx.path,
     success: false,
   };

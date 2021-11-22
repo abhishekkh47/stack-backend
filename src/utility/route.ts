@@ -1,6 +1,6 @@
-import Koa from 'koa';
+import Koa from "koa";
 
-import { HttpMethod, IRouteParams } from '@app/types';
+import { HttpMethod, IRouteParams } from "@app/types";
 
 // Route decorator
 export function Route(
@@ -15,7 +15,7 @@ export function Route(
 
     let order: number;
 
-    if (typeof path === 'object') {
+    if (typeof path === "object") {
       method = path.method || HttpMethod.GET;
       middleware = path.middleware
         ? Array.isArray(path.middleware)

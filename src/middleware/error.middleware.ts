@@ -1,17 +1,18 @@
-import * as Koa from 'koa';
+import * as Koa from "koa";
 
-import { logger } from '@app/utility';
+import { logger } from "@app/utility";
 
 export const errorHandler = async (ctx: Koa.Context, next: Koa.Next) => {
   try {
     await next();
   } catch (e) {
     const status = e.status || 500;
-    const message = status === 500 ? 'Internal server error' : e.message || 'Unknown';
+    const message =
+      status === 500 ? "Internal server error" : e.message || "Unknown";
     const messages = e.messages || [];
 
     if (status === 500) {
-      logger.error('error', e.message);
+      logger.error("error", e);
     }
 
     ctx.status = status;

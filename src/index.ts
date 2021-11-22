@@ -12,7 +12,7 @@ import Config from "@app/config";
 import { logger } from "@app/utility";
 import { errorHandler, notFoundHandler } from "@app/middleware";
 import ApiV1 from "@app/api/v1";
-import { connectAgenda } from "@app/background";
+import { connectAgenda, startCron } from "@app/background";
 
 const server = (async () => {
   try {
@@ -33,6 +33,7 @@ const server = (async () => {
 
     // Background
     await connectAgenda();
+    startCron();
 
     app.use(Mount("/api/v1", ApiV1));
 

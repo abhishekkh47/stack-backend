@@ -2,17 +2,18 @@ import Compose from "koa-compose";
 import Router from "koa-router";
 
 import { HttpMethod, IController } from "@app/types";
-import { authMiddleware } from "@app/middleware";
 import {
   AliveController,
+  PaypalController,
   StripeController,
   GiftCardController,
+  DesignTemplateController,
+  CircleController,
+  WebhookController,
+  AuthController,
 } from "./controllers";
 
-const publicRouter = new Router();
-const privateRouter = new Router();
-
-privateRouter.use(authMiddleware);
+const router = new Router();
 
 const setControllerRoutes = (router: Router, controller: IController) => {
   controller.routes.sort((a, b) => {
@@ -71,13 +72,13 @@ const setControllerRoutes = (router: Router, controller: IController) => {
   });
 };
 
-setControllerRoutes(publicRouter, AliveController);
-setControllerRoutes(publicRouter, StripeController);
-setControllerRoutes(publicRouter, GiftCardController);
+setControllerRoutes(router, AliveController);
+setControllerRoutes(router, PaypalController);
+setControllerRoutes(router, StripeController);
+setControllerRoutes(router, GiftCardController);
+setControllerRoutes(router, DesignTemplateController);
+setControllerRoutes(router, CircleController);
+setControllerRoutes(router, WebhookController);
+setControllerRoutes(router, AuthController);
 
-export default Compose([
-  publicRouter.routes(),
-  publicRouter.allowedMethods(),
-  privateRouter.routes(),
-  privateRouter.allowedMethods(),
-]);
+export default Compose([router.routes(), router.allowedMethods()]);

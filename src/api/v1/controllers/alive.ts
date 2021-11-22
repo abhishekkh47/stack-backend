@@ -1,13 +1,13 @@
-import Koa from 'koa';
+import Koa from "koa";
 
-import { Route } from '@app/utility';
-import BaseController from './base';
+import { Route } from "@app/utility";
+import BaseController from "./base";
 
 class AliveController extends BaseController {
-  @Route('/alive')
+  @Route("/alive")
   public Alive(ctx: Koa.Context) {
     this.Ok(ctx, {
-      status: 'ok',
+      status: "ok",
       timestamp: Date.now(),
     });
   }

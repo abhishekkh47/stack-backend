@@ -1,4 +1,4 @@
-import * as Koa from 'koa';
+import * as Koa from "koa";
 
 export enum HttpMethod {
   HEAD = 1,

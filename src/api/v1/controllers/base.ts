@@ -1,6 +1,6 @@
-import * as Koa from 'koa';
+import * as Koa from "koa";
 
-import { IController, IControllerRoute } from '@app/types';
+import { IController, IControllerRoute } from "@app/types";
 
 class BaseController implements IController {
   public routes: IControllerRoute[] = [];
@@ -28,15 +28,15 @@ class BaseController implements IController {
   }
 
   protected NotFound(ctx: Koa.Context, message?: string) {
-    ctx.throw(404, message || 'Not found');
+    ctx.throw(404, message || "Not found");
   }
 
   protected BadRequest(ctx: Koa.Context, message?: string) {
-    ctx.throw(400, message || 'Bad request');
+    ctx.throw(400, message || "Bad request");
   }
 
   protected UnAuthorized(ctx: Koa.Context, message?: string) {
-    ctx.throw(401, message || 'Unauthorized');
+    ctx.throw(401, message || "Unauthorized");
   }
 }
 

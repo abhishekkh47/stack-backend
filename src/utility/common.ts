@@ -1,3 +1,4 @@
+import config from "@app/config";
 import crypto from "crypto";
 
 export const generateHash = (value: string) => {
@@ -5,5 +6,9 @@ export const generateHash = (value: string) => {
 };
 
 export const getSharableLink = (hash: string) => {
-  return `https://stack.com/redeem/${hash}`;
+  return `${config.WEB_URL}/receiver-email/${hash}`;
+};
+
+export const getReactivateLink = (hash: string) => {
+  return `${config.WEB_URL}/reactivate/${hash}`;
 };
