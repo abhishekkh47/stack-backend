@@ -15,7 +15,6 @@ export interface IQuizQuestion {
   text: string;
   question_type: EQuizQuestionType;
   answer_type: EQuizAnswerType;
-  date_of_answer: Date;
   answer_array: IAnswerArray[];
 }
 
@@ -26,8 +25,8 @@ export enum EQuizQuestionType {
 }
 
 export enum ECorrectAnswer {
-  TRUE = 0,
-  FALSE = 1,
+  TRUE = 1,
+  FALSE = 0,
 }
 
 export enum EQuizAnswerType {
@@ -38,4 +37,10 @@ export enum EQuizAnswerType {
 export interface IAnswerArray {
   name: string;
   correct_answer: ECorrectAnswer;
+}
+export interface IQuiz {
+  quizName: string;
+  topicId: mongoose.Schema.Types.ObjectId;
+  points: number;
+  videoUrl: string;
 }

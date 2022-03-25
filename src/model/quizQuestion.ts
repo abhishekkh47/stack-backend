@@ -27,10 +27,6 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
       type: mongoose.Schema.Types.Number,
       default: 1,
     },
-    date_of_answer: {
-      type: mongoose.Schema.Types.Date,
-      required: true,
-    },
     answer_array: [
       {
         name: {
@@ -41,7 +37,7 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
          * 1 - True and  0 - False
          */
         correct_answer: {
-          type: mongoose.Schema.Types.String,
+          type: mongoose.Schema.Types.Number,
           required: true,
         },
       },
@@ -50,7 +46,7 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
   { timestamps: true }
 );
 
-export const QuizTopicTable = mongoose.model<IQuizQuestionSchema>(
+export const QuizQuestionTable = mongoose.model<IQuizQuestionSchema>(
   "quizQuestion",
   schema
 );
