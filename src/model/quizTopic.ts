@@ -10,7 +10,7 @@ const schema = new mongoose.Schema<IQuizTopicSchema>(
     /**
      * 1 - Active and 0 - Inactive
      */
-    status: { type: mongoose.Schema.Types.Number, required: true, default: 1 },
+    status: { type: mongoose.Schema.Types.Number, default: 1 },
   },
   { timestamps: true }
 );
