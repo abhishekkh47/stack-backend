@@ -6,3 +6,4 @@ export { default as DesignTemplateController } from "./templates";
 export { default as CircleController } from "./transaction/circle";
 export { default as WebhookController } from "./webhook";
 export { default as AuthController } from "./auth";
+export { default as QuizController } from "./quiz";

@@ -11,6 +11,7 @@ import {
   CircleController,
   WebhookController,
   AuthController,
+  QuizController,
 } from "./controllers";
 
 const router = new Router();
@@ -80,5 +81,6 @@ setControllerRoutes(router, DesignTemplateController);
 setControllerRoutes(router, CircleController);
 setControllerRoutes(router, WebhookController);
 setControllerRoutes(router, AuthController);
+setControllerRoutes(router, QuizController);
 
 export default Compose([router.routes(), router.allowedMethods()]);
