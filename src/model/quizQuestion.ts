@@ -13,6 +13,10 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
       required: true,
       ref: "quiz",
     },
+    points: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+    },
     /**
      * 1 - BEST_ANSWER, 2 - FILL_IN_BLANKS , 3 - TRUE_FALSE,
      */

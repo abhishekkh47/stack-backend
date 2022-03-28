@@ -4,7 +4,7 @@ export const Auth = () => {
   return (_: Object, __?: string, descriptor?: PropertyDescriptor) => {
     const fn: Function = descriptor.value;
     descriptor.value = async function (ctx: any) {
-      console.log('temp',ctx);
+      // console.log('temp',ctx);
       const token =
         <string>ctx.request.headers["x-access-token"] ||
         (ctx.request.query.token as string);

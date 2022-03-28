@@ -15,6 +15,7 @@ export interface IQuizQuestion {
   text: string;
   question_type: EQuizQuestionType;
   answer_type: EQuizAnswerType;
+  points: number;
   answer_array: IAnswerArray[];
 }
 
@@ -41,7 +42,6 @@ export interface IAnswerArray {
 export interface IQuiz {
   quizName: string;
   topicId: mongoose.Schema.Types.ObjectId;
-  points: number;
   videoUrl: string;
 }
 

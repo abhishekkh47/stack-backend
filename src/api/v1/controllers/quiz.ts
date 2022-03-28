@@ -2,9 +2,17 @@ import Koa from "koa";
 import mongoose from "mongoose";
 import { Route } from "@app/utility";
 import BaseController from "./base";
+const mongodb = require("mongodb");
+const ObjectId = mongodb.ObjectId;
 import { Auth } from "@app/middleware";
-import { EQuizTopicStatus, HttpMethod } from "@app/types";
-import { QuizTopicTable, QuizTable, QuizQuestionTable } from "@app/model";
+import { ECorrectAnswer, EQuizTopicStatus, HttpMethod } from "@app/types";
+import {
+  QuizTopicTable,
+  QuizTable,
+  QuizQuestionTable,
+  QuizResult,
+  QuizQuestionResult,
+} from "@app/model";
 
 class QuizController extends BaseController {
   /**
@@ -119,6 +127,80 @@ class QuizController extends BaseController {
       .sort({ createdAt: 1 });
     return this.Ok(ctx, getQuiz);
   }
+
+  /**
+   * @description This method is used to get user's quiz data
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-data", method: HttpMethod.GET })
+  @Auth()
+  public async getQuizInformation(ctx: any) {
+    const user = ctx.request.user;
+    let checkQuizExists = await QuizResult.aggregate([
+      {
+        $match: {
+          userId: ObjectId(user._id),
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          sum: {
+            $sum: "$pointsEarned",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sum: 1,
+        },
+      },
+    ]).exec();
+    let dataToSent = {
+      lastQuizTime: null,
+      totalQuestionSolved: 0,
+      totalStackPointsEarned: 0,
+    };
+    /**
+     * Get Stack Point Earned
+     */
+    if (checkQuizExists.length > 0) {
+      dataToSent.totalStackPointsEarned = checkQuizExists[0].sum;
+    }
+    /**
+     * Get Quiz Question Count
+     */
+    let getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
+      user_id: user._id,
+      correct_answer: ECorrectAnswer.TRUE,
+    });
+    dataToSent.totalQuestionSolved = getQuizQuestionsCount;
+    /**
+     * Get Latest Quiz Time
+     */
+    let latestQuiz = await QuizResult.findOne({ userId: user._id }).sort({
+      createdAt: -1,
+    });
+    dataToSent.lastQuizTime = latestQuiz ? latestQuiz.createdAt : null;
+    return this.Ok(ctx, dataToSent);
+  }
+
+  // /**
+  //  * @description This method is used to post current quiz results
+  //  * @param ctx
+  //  * @return {*}
+  //  */
+  // @Route({ path: "/add-quiz-result", method: HttpMethod.POST })
+  // public async postCurrentQuizResult(ctx: any) {
+  //   const user = ctx.request.user;
+  //   if (!ctx.request.quizId) {
+  //     return this.BadRequest(ctx, "Quiz Detail Not Found");
+  //   }
+  //   if (ctx.request.solvedQuestionId) {
+  //   }
+  // }
 }
 
 export default new QuizController();
