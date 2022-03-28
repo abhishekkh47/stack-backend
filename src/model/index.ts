@@ -5,3 +5,5 @@ export * from "./user";
 export * from "./quizTopic";
 export * from "./quiz";
 export * from "./quizQuestion";
+export * from "./quizQuestionResult";
+export * from "./quizResult";

@@ -44,3 +44,15 @@ export interface IQuiz {
   points: number;
   videoUrl: string;
 }
+
+export interface IQuizResult {
+  topicId: mongoose.Schema.Types.ObjectId;
+  userId: mongoose.Schema.Types.ObjectId;
+  quizId: mongoose.Schema.Types.ObjectId;
+  pointsEarned: number;
+}
+
+export interface IQuizQuestionResult extends IQuizResult {
+  quizQuestionId: mongoose.Schema.Types.ObjectId;
+  correct_answer: ECorrectAnswer;
+}
