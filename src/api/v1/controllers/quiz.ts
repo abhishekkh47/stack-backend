@@ -2,10 +2,13 @@ import Koa from "koa";
 import mongoose from "mongoose";
 import { Route } from "@app/utility";
 import BaseController from "./base";
-// const mongodb = require("mongodb");
-// const ObjectId = mongodb.ObjectId;
 import { Auth } from "@app/middleware";
-import { ECorrectAnswer, EQuizTopicStatus, HttpMethod } from "@app/types";
+import {
+  EQuizTopicStatus,
+  everyCorrectAnswerPoints,
+  HttpMethod,
+  timeBetweenTwoQuiz,
+} from "@app/types";
 import {
   QuizTopicTable,
   QuizTable,
@@ -96,7 +99,6 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-question", method: HttpMethod.POST })
   @Auth()
   public async createQuizQuestion(ctx: Koa.Context) {
-    ctx.request.body.date_of_answer = new Date();
     await QuizQuestionTable.create(ctx.request.body);
 
     return this.Created(ctx, {
@@ -105,36 +107,11 @@ class QuizController extends BaseController {
   }
 
   /**
-   * @description This method is used to get question of any indivual quiz
-   * @param ctx
-   * @return {*}
-   */
-  @Route({ path: "/quiz-question/:quizId", method: HttpMethod.GET })
-  @Auth()
-  public async getQuizQuestions(ctx: Koa.Context) {
-    if (!ctx.params.quizId) {
-      return this.BadRequest(ctx, "Quiz Detail Not Found");
-    }
-
-    const checkQuizExists = await QuizTable.findOne({
-      _id: ctx.params.quizId,
-    });
-    if (!checkQuizExists) {
-      return this.BadRequest(ctx, "Quiz Not Found");
-    }
-    const getQuiz = await QuizQuestionTable.find({ quizId: ctx.params.quizId })
-      .select("_id text answer_array quizId")
-      .limit(5)
-      .sort({ createdAt: 1 });
-    return this.Ok(ctx, getQuiz);
-  }
-
-  /**
    * @description This method is used to get user's quiz data
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/quiz-data", method: HttpMethod.GET })
+  @Route({ path: "/quiz-result", method: HttpMethod.GET })
   @Auth()
   public async getQuizInformation(ctx: any) {
     const user = ctx.request.user;
@@ -216,14 +193,96 @@ class QuizController extends BaseController {
    * @param ctx
    * @return {*}
    */
-  // @Route({ path: "/add-quiz-result", method: HttpMethod.POST })
-  // public async postCurrentQuizResult(ctx: any) {
-  //   const reqParam = ctx.request.body;
-  //   validation.getUserQuizDataValidation(reqParam, ctx, (validate) => {
-  //     if (validate) {
-  //     }
-  //   });
-  // }
+  @Route({ path: "/add-quiz-result", method: HttpMethod.POST })
+  @Auth()
+  public async postCurrentQuizResult(ctx: any) {
+    const reqParam = ctx.request.body;
+    const user = ctx.request.user;
+    return validation.addQuizResultValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
+          if (!quizExists) {
+            return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
+          }
+          const quizResultExists = await QuizResult.findOne({
+            userId: user._id,
+            quizId: reqParam.quizId,
+          });
+          if (quizResultExists) {
+            return this.BadRequest(
+              ctx,
+              "You cannot submit the same quiz again"
+            );
+          }
+          const lastQuizPlayed = await QuizResult.findOne({
+            userId: user._id,
+          }).sort({ createdAt: -1 });
+          if (lastQuizPlayed) {
+            const timeDiff = await this.getTimeDifference(
+              lastQuizPlayed.createdAt
+            );
+            if (timeDiff <= timeBetweenTwoQuiz) {
+              return this.BadRequest(
+                ctx,
+                "Quiz is locked. Please wait for 72 hours to unlock this quiz"
+              );
+            }
+          }
+          /**
+           * Check question acutally exists in that quiz
+           */
+          const quizQuestions = [];
+          let queExistsFlag = true;
+          if (reqParam.solvedQuestions.length > 0) {
+            for (const solvedQue of reqParam.solvedQuestions) {
+              const queExists = await QuizQuestionTable.findOne({
+                _id: solvedQue,
+              });
+              if (!queExists) {
+                queExistsFlag = false;
+                break;
+              }
+              quizQuestions.push({
+                topicId: quizExists.topicId,
+                quizId: quizExists._id,
+                userId: user._id,
+                quizQuestionId: solvedQue,
+                pointsEarned: queExists.points,
+              });
+            }
+          }
+          if (queExistsFlag === false) {
+            return this.BadRequest(ctx, "Question Doesn't Exists in db");
+          }
+          /**
+           * Add Question Result and Quiz Result
+           */
+          await QuizQuestionResult.insertMany(quizQuestions);
+          const dataToCreate = {
+            topicId: quizExists.topicId,
+            quizId: quizExists._id,
+            userId: user._id,
+            pointsEarned:
+              everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+          };
+          await QuizResult.create(dataToCreate);
+          return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @param date
+   * @returns difference of date
+   */
+  public getTimeDifference(date) {
+    const diff = new Date().valueOf() - new Date(date).valueOf();
+    return diff / 1000 / 60 / 60;
+  }
 }
 
 export default new QuizController();
