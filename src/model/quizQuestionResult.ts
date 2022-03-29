@@ -31,13 +31,6 @@ const schema = new mongoose.Schema<IQuizQuestionResultSchema>(
       type: mongoose.Schema.Types.Number,
       default: 0,
     },
-    /**
-     * 1 - true and  0 - false
-     */
-    correct_answer: {
-      type: mongoose.Schema.Types.Number,
-      required: true,
-    },
   },
   { timestamps: true }
 );

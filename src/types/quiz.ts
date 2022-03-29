@@ -54,5 +54,4 @@ export interface IQuizResult {
 
 export interface IQuizQuestionResult extends IQuizResult {
   quizQuestionId: mongoose.Schema.Types.ObjectId;
-  correct_answer: ECorrectAnswer;
 }

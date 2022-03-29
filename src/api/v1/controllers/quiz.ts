@@ -2,8 +2,8 @@ import Koa from "koa";
 import mongoose from "mongoose";
 import { Route } from "@app/utility";
 import BaseController from "./base";
-const mongodb = require("mongodb");
-const ObjectId = mongodb.ObjectId;
+// const mongodb = require("mongodb");
+// const ObjectId = mongodb.ObjectId;
 import { Auth } from "@app/middleware";
 import { ECorrectAnswer, EQuizTopicStatus, HttpMethod } from "@app/types";
 import {
@@ -13,6 +13,7 @@ import {
   QuizResult,
   QuizQuestionResult,
 } from "@app/model";
+import { validation } from "../../../validations/apiValidation";
 
 class QuizController extends BaseController {
   /**
@@ -115,13 +116,13 @@ class QuizController extends BaseController {
       return this.BadRequest(ctx, "Quiz Detail Not Found");
     }
 
-    let checkQuizExists = await QuizTable.findOne({
+    const checkQuizExists = await QuizTable.findOne({
       _id: ctx.params.quizId,
     });
     if (!checkQuizExists) {
       return this.BadRequest(ctx, "Quiz Not Found");
     }
-    let getQuiz = await QuizQuestionTable.find({ quizId: ctx.params.quizId })
+    const getQuiz = await QuizQuestionTable.find({ quizId: ctx.params.quizId })
       .select("_id text answer_array quizId")
       .limit(5)
       .sort({ createdAt: 1 });
@@ -137,10 +138,10 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuizInformation(ctx: any) {
     const user = ctx.request.user;
-    let checkQuizExists = await QuizResult.aggregate([
+    const checkQuizExists = await QuizResult.aggregate([
       {
         $match: {
-          userId: ObjectId(user._id),
+          userId: new mongoose.Types.ObjectId(user._id),
         },
       },
       {
@@ -158,7 +159,7 @@ class QuizController extends BaseController {
         },
       },
     ]).exec();
-    let dataToSent = {
+    const dataToSent = {
       lastQuizTime: null,
       totalQuestionSolved: 0,
       totalStackPointsEarned: 0,
@@ -172,34 +173,56 @@ class QuizController extends BaseController {
     /**
      * Get Quiz Question Count
      */
-    let getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
+    const getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
       user_id: user._id,
-      correct_answer: ECorrectAnswer.TRUE,
     });
-    dataToSent.totalQuestionSolved = getQuizQuestionsCount;
+    dataToSent.totalQuestionSolved =
+      checkQuizExists.length > 0 ? getQuizQuestionsCount : 0;
     /**
      * Get Latest Quiz Time
      */
-    let latestQuiz = await QuizResult.findOne({ userId: user._id }).sort({
+    const latestQuiz = await QuizResult.findOne({ userId: user._id }).sort({
       createdAt: -1,
     });
     dataToSent.lastQuizTime = latestQuiz ? latestQuiz.createdAt : null;
     return this.Ok(ctx, dataToSent);
   }
 
-  // /**
-  //  * @description This method is used to post current quiz results
-  //  * @param ctx
-  //  * @return {*}
-  //  */
+  /**
+   * @description This method is used to give question list based on quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/question-list/:quizId", method: HttpMethod.GET })
+  @Auth()
+  public getQuestionList(ctx: any) {
+    const reqParam = ctx.params;
+    return validation.getUserQuizDataValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const quizQuestionList = await QuizQuestionTable.find({
+            quizId: reqParam.quizId,
+          }).select("_id quizId text answer_array");
+          this.Ok(ctx, { quizQuestionList, message: "Success" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to post current quiz results
+   * @param ctx
+   * @return {*}
+   */
   // @Route({ path: "/add-quiz-result", method: HttpMethod.POST })
   // public async postCurrentQuizResult(ctx: any) {
-  //   const user = ctx.request.user;
-  //   if (!ctx.request.quizId) {
-  //     return this.BadRequest(ctx, "Quiz Detail Not Found");
-  //   }
-  //   if (ctx.request.solvedQuestionId) {
-  //   }
+  //   const reqParam = ctx.request.body;
+  //   validation.getUserQuizDataValidation(reqParam, ctx, (validate) => {
+  //     if (validate) {
+  //     }
+  //   });
   // }
 }
 
