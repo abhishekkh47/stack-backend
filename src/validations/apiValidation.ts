@@ -15,4 +15,18 @@ export const validation = {
     }
     return callback(true);
   },
+  getQuizListValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      topicId: Joi.string()
+          .regex(/^[0-9a-fA-F]{24}$/)
+          .message("topicId is required.")
+          .required(),
+    });
+
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, error.details[0].message);
+    }
+    return callback(true);
+  },
 };

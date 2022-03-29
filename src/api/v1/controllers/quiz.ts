@@ -1,6 +1,6 @@
 import Koa from "koa";
 import mongoose from "mongoose";
-import { Route } from "@app/utility";
+import {get72HoursAhead, Route} from "@app/utility";
 import BaseController from "./base";
 // const mongodb = require("mongodb");
 // const ObjectId = mongodb.ObjectId;
@@ -224,6 +224,53 @@ class QuizController extends BaseController {
   //     }
   //   });
   // }
+
+  /**
+   * @description This method is used to give list of quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-list", method: HttpMethod.GET })
+   @Auth()
+  public getQuizList(ctx: any) {
+    const reqParam = ctx.query;
+    const User = ctx.request.user
+    return validation.getQuizListValidation(
+        reqParam,
+        ctx,
+        async (validate) => {
+          if (validate) {
+
+           const quizCheck: any = await QuizResult.findOne({
+             userId: User._id,
+             topicId: reqParam.topicId,
+           }).sort({ "createdAt": -1})
+           if(quizCheck !== null){
+              const Time = await get72HoursAhead(quizCheck.createdAt);
+              if(Time < 72){
+                return this.BadRequest(ctx, "You Cannot play quiz until next 72 hours from previous round.");
+              } else{
+                const quizCheckCompleted = await QuizResult.find({
+                  userId: User._id,
+                  topicId: reqParam.topicId,
+                }).select('quizId')
+                const QuizIds = [];
+                for(const quizId of quizCheckCompleted){
+                  QuizIds.push(quizId._id)
+                }
+                const Data = await QuizTable.find({
+                  topicId: reqParam.topicId,
+                  _id:{"$ne": QuizIds}
+                })
+                return this.Ok(ctx, {Data, message: "Success" });
+              }
+           }
+            this.Ok(ctx, { data: [], message: "Success" });
+          }
+        }
+    );
+  }
+
 }
 
 export default new QuizController();
