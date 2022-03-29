@@ -289,6 +289,7 @@ class QuizController extends BaseController {
           userId: user._id,
           topicId: reqParam.topicId,
         }).sort({ createdAt: -1 });
+        const QuizIds = [];
         if (quizCheck !== null) {
           const Time = await get72HoursAhead(quizCheck.createdAt);
           if (Time < timeBetweenTwoQuiz) {
@@ -307,18 +308,16 @@ class QuizController extends BaseController {
                 quizId: 1,
               }
             ).select("quizId");
-            const QuizIds = [];
             for (const quizId of quizCheckCompleted) {
               QuizIds.push(quizId.quizId);
             }
-            const Data = await QuizTable.find({
-              topicId: reqParam.topicId,
-              _id: { $nin: QuizIds },
-            });
-            return this.Ok(ctx, { Data, message: "Success" });
           }
         }
-        this.Ok(ctx, { data: [], message: "Success" });
+        const Data = await QuizTable.find({
+          topicId: reqParam.topicId,
+          _id: { $nin: QuizIds },
+        });
+        return this.Ok(ctx, { Data, message: "Success" });
       }
     });
   }
