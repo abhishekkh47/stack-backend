@@ -1,6 +1,6 @@
 import Koa from "koa";
 import mongoose from "mongoose";
-import { Route } from "@app/utility";
+import { get72HoursAhead, Route } from "@app/utility";
 import BaseController from "./base";
 import { Auth } from "@app/middleware";
 import {
@@ -221,9 +221,7 @@ class QuizController extends BaseController {
             userId: user._id,
           }).sort({ createdAt: -1 });
           if (lastQuizPlayed) {
-            const timeDiff = await this.getTimeDifference(
-              lastQuizPlayed.createdAt
-            );
+            const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
             if (timeDiff <= timeBetweenTwoQuiz) {
               return this.BadRequest(
                 ctx,
@@ -276,12 +274,53 @@ class QuizController extends BaseController {
   }
 
   /**
-   * @param date
-   * @returns difference of date
+   * @description This method is used to give list of quiz
+   * @param ctx
+   * @return {*}
    */
-  public getTimeDifference(date) {
-    const diff = new Date().valueOf() - new Date(date).valueOf();
-    return diff / 1000 / 60 / 60;
+  @Route({ path: "/quiz-list/:topicId", method: HttpMethod.GET })
+  @Auth()
+  public getQuizList(ctx: any) {
+    const reqParam = ctx.params;
+    const user = ctx.request.user;
+    return validation.getQuizListValidation(reqParam, ctx, async (validate) => {
+      if (validate) {
+        const quizCheck: any = await QuizResult.findOne({
+          userId: user._id,
+          topicId: reqParam.topicId,
+        }).sort({ createdAt: -1 });
+        if (quizCheck !== null) {
+          const Time = await get72HoursAhead(quizCheck.createdAt);
+          if (Time < timeBetweenTwoQuiz) {
+            return this.BadRequest(
+              ctx,
+              "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+            );
+          } else {
+            const quizCheckCompleted = await QuizResult.find(
+              {
+                userId: user._id,
+                topicId: reqParam.topicId,
+              },
+              {
+                _id: 0,
+                quizId: 1,
+              }
+            ).select("quizId");
+            const QuizIds = [];
+            for (const quizId of quizCheckCompleted) {
+              QuizIds.push(quizId.quizId);
+            }
+            const Data = await QuizTable.find({
+              topicId: reqParam.topicId,
+              _id: { $nin: QuizIds },
+            });
+            return this.Ok(ctx, { Data, message: "Success" });
+          }
+        }
+        this.Ok(ctx, { data: [], message: "Success" });
+      }
+    });
   }
 }
 

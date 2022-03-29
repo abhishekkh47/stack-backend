@@ -12,3 +12,8 @@ export const getSharableLink = (hash: string) => {
 export const getReactivateLink = (hash: string) => {
   return `${config.WEB_URL}/reactivate/${hash}`;
 };
+
+export const get72HoursAhead = (DateTime : any) => {
+  const diff = new Date().valueOf() - new Date(DateTime).valueOf();
+  return diff / 1000 / 60 / 60;
+}
