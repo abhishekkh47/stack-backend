@@ -6,7 +6,7 @@ export type IVideoSchema = MongooseModel<IVideo> & mongoose.Document;
 
 const schema = new mongoose.Schema<IVideoSchema>(
   {
-    videoTopic: { type: mongoose.Schema.Types.String, required: true },
+    videoCategory: { type: mongoose.Schema.Types.String, required: true },
     /**
      * 1 - Active , 0 - Inactive
      */

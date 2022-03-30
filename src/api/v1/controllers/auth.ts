@@ -65,9 +65,20 @@ class AliveController extends BaseController {
    */
   @Route({ path: "/change-password", method: HttpMethod.POST })
   @Auth()
-  public changePassword(ctx: any) {
+  public async changePassword(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!reqParam.old_password) {
+      return this.BadRequest(ctx, "Please enter old password");
+    }
+    const checkOldPassword = await AuthService.comparePassword(
+      reqParam.old_password,
+      userExists.password
+    );
+    if (checkOldPassword === false) {
+      return this.BadRequest(ctx, "Old Password is Incorrect");
+    }
     return validation.changePasswordValidation(
       reqParam,
       ctx,
@@ -82,13 +93,6 @@ class AliveController extends BaseController {
             async (userData: any) => {
               if (!userData) {
                 return this.NotFound(ctx, "User Not Found");
-              }
-              const checkOldPassword = await AuthService.comparePassword(
-                reqParam.old_password,
-                userData.password
-              );
-              if (checkOldPassword === false) {
-                return this.BadRequest(ctx, "Old Password is Incorrect");
               }
               const compareNewPasswordWithOld =
                 await AuthService.comparePassword(

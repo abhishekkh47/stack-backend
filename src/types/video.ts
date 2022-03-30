@@ -1,5 +1,5 @@
 export interface IVideo {
-  videoTopic: string;
+  videoCategory: string;
   status: number;
   videoList: IVideoList[];
 }

@@ -30,7 +30,7 @@ class VideoController extends BaseController {
     let videos: any = await VideosTable.find(
       {},
       {
-        videoTopic: 1,
+        videoCategory: 1,
         status: 1,
         videoList: 1,
       }
