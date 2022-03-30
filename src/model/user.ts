@@ -9,6 +9,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     email: { type: mongoose.Schema.Types.String, required: true },
     password: { type: mongoose.Schema.Types.String, required: true },
     username: { type: mongoose.Schema.Types.String, required: true },
+    address: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
 );

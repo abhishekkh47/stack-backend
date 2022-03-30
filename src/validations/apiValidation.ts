@@ -47,22 +47,48 @@ export const validation = {
   },
   changePasswordValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
-      old_password: Joi.string()
-        .message("Please enter valid old password")
-        .required(),
+      old_password: Joi.string().required(),
       new_password: Joi.string()
-        .min(6)
-        .message("Please enter valid new password with minimum length 6")
-        .regex(/^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*]{6,}$/)
-        .required(),
-      confirm_password: Joi.string()
-        .valid(Joi.ref("new_password"))
-        .message("New Password should be similiar to Confirm Password")
+        .min(8)
+        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z]).*$/)
         .required(),
     });
     const { error } = schema.validate(req);
     if (error) {
-      return res.throw(400, error.details[0].message);
+      return res.throw(400, res.__(validationMessageKey("changePwd", error)));
+    }
+    return callback(true);
+  },
+  changeAddressValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      address: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("changeAddr", error)));
+    }
+    return callback(true);
+  },
+  changeEmailValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      email: Joi.string().email().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("changeEmail", error)));
+    }
+    return callback(true);
+  },
+  checkUniqueUserNameValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      username: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("checkUserName", error))
+      );
     }
     return callback(true);
   },

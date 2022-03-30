@@ -58,6 +58,11 @@ class AliveController extends BaseController {
     return this.Ok(ctx, user);
   }
 
+  /**
+   * This method is used to change password of user
+   * @param ctx
+   * @returns {*}
+   */
   @Route({ path: "/change-password", method: HttpMethod.POST })
   @Auth()
   public changePassword(ctx: any) {
@@ -73,47 +78,119 @@ class AliveController extends BaseController {
            * 1) check old password is correct
            * 2) check old password not equal to new password
            */
-          UserTable.findOne({ _id: user._id }).then(async (userData: any) => {
-            if (!userData) {
-              return this.NotFound(ctx, "User Not Found");
-            }
-            const checkOldPassword = await AuthService.comparePassword(
-              reqParam.old_password,
-              userData.old_password
-            );
-            if (checkOldPassword === false) {
-              return this.BadRequest(ctx, "Old Password is Incorrect");
-            }
-            const compareNewPasswordWithOld = await AuthService.comparePassword(
-              reqParam.new_password,
-              reqParam.old_password
-            );
-            if (compareNewPasswordWithOld === false) {
-              return this.BadRequest(
-                ctx,
-                "New Password should not be similiar to Old Password"
-              );
-            }
-            if (reqParam.new_password !== reqParam.confirm_password) {
-              return this.BadRequest(
-                ctx,
-                "New Password and Confirm Password are not same"
-              );
-            }
-            const newPassword = await AuthService.encryptPassword(
-              reqParam.new_password
-            );
-            console.log(newPassword);
-            await UserTable.updateOne(
-              { _id: user._id },
-              {
-                $set: {
-                  password: newPassword,
-                },
+          return UserTable.findOne({ _id: user._id }).then(
+            async (userData: any) => {
+              if (!userData) {
+                return this.NotFound(ctx, "User Not Found");
               }
-            );
-            return this.Ok(ctx, { message: "Password Changed Successfully" });
+              const checkOldPassword = await AuthService.comparePassword(
+                reqParam.old_password,
+                userData.password
+              );
+              if (checkOldPassword === false) {
+                return this.BadRequest(ctx, "Old Password is Incorrect");
+              }
+              const compareNewPasswordWithOld =
+                await AuthService.comparePassword(
+                  reqParam.new_password,
+                  userData.password
+                );
+              if (compareNewPasswordWithOld === true) {
+                return this.BadRequest(
+                  ctx,
+                  "New Password should not be similiar to Old Password"
+                );
+              }
+              const newPassword = await AuthService.encryptPassword(
+                reqParam.new_password
+              );
+              await UserTable.updateOne(
+                { _id: user._id },
+                {
+                  $set: {
+                    password: newPassword,
+                  },
+                }
+              );
+              return this.Ok(ctx, { message: "Password Changed Successfully" });
+            }
+          );
+        }
+      }
+    );
+  }
+
+  /**
+   * This method is used to change address of user
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/change-address", method: HttpMethod.POST })
+  @Auth()
+  public changeAddress(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    return validation.changeAddressValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          await UserTable.updateOne(
+            { _id: user._id },
+            { $set: { address: reqParam.address } }
+          );
+          return this.Ok(ctx, { message: "Address Changed Successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * This method is used to change email of user
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/change-email", method: HttpMethod.POST })
+  @Auth()
+  public changeEmail(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    return validation.changeEmailValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          await UserTable.updateOne(
+            { _id: user._id },
+            { $set: { email: reqParam.email } }
+          );
+          return this.Ok(ctx, { message: "Email Changed Successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * This method is used to check unique email
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/check-username/:username", method: HttpMethod.GET })
+  @Auth()
+  public async checkUserNameExistsInDb(ctx: any) {
+    const reqParam = ctx.params;
+    return validation.checkUniqueUserNameValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const usernameExists = await UserTable.findOne({
+            username: reqParam.username,
           });
+          if (usernameExists) {
+            return this.BadRequest(ctx, "UserName already Exists");
+          }
+          return this.Ok(ctx, { message: "UserName is available" });
         }
       }
     );

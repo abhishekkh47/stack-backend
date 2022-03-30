@@ -17,6 +17,7 @@ import {
   QuizQuestionResult,
 } from "@app/model";
 import { validation } from "../../../validations/apiValidation";
+import moment from "moment";
 
 class QuizController extends BaseController {
   /**
@@ -161,7 +162,9 @@ class QuizController extends BaseController {
     const latestQuiz = await QuizResult.findOne({ userId: user._id }).sort({
       createdAt: -1,
     });
-    dataToSent.lastQuizTime = latestQuiz ? latestQuiz.createdAt : null;
+    dataToSent.lastQuizTime = latestQuiz
+      ? moment(latestQuiz.createdAt).unix()
+      : null;
     return this.Ok(ctx, dataToSent);
   }
 
@@ -181,7 +184,7 @@ class QuizController extends BaseController {
         if (validate) {
           const quizQuestionList = await QuizQuestionTable.find({
             quizId: reqParam.quizId,
-          }).select("_id quizId text answer_array");
+          }).select("_id quizId text answer_array points");
           this.Ok(ctx, { quizQuestionList, message: "Success" });
         }
       }
@@ -206,12 +209,6 @@ class QuizController extends BaseController {
           const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
           if (!quizExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
-          }
-          const quizQuestionsExists = await QuizQuestionTable.find({
-            quizId: reqParam.quizId,
-          });
-          if (quizQuestionsExists.length > 0) {
-            return this.BadRequest(ctx, "Question Details Doesn't Exists");
           }
           const quizResultExists = await QuizResult.findOne({
             userId: user._id,

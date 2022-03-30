@@ -5,5 +5,20 @@
 	"addQuizResultSolvedquestionsBase": "Solved Question Details Not Found",
 	"addQuizResultPattern": "Solved Question Details Not Found",
 	"addQuizResultSolvedquestionsRequired": "Solved Question Details Not Found",
-	"getQuizListTopicidPattern": "Please enter Topic Details"
+	"getQuizListTopicidPattern": "Topic Details Not Found",
+	"getUserQuizQuizidPattern": "Quiz Details Not Found",
+	"changePwdOldPasswordRequired": "Please enter valid old password",
+	"changePwdNewPasswordRequired": "Please enter new password",
+	"changePwdNewPasswordMin": "New Password should contain minimum 8 characters",
+	"changePwdConfirmPasswordRequired": "Please confirm your password",
+	"changePwdConfirmPasswordOnly": "Confirm password should be similar to new password",
+	"changePwdConfirmPasswordUnknown": "changePwdConfirmPasswordUnknown",
+	"changeAddrAddressRequired": "Please add address",
+	"changeAddrAddressEmpty": "Please add address",
+	"changeEmailAddressRequired": "Email is required",
+	"changeEmailEmailEmpty": "Email is required",
+	"changeEmailEmailEmail": "Please add valid email",
+	"changePwdOldPasswordEmpty": "Please enter old password",
+	"changePwdNewPasswordPattern": "Password must be at least 8 characters and contain a lower case letter, an upper case letter and a number.",
+	"checkUserNameUsernameRequired": "Username not found"
 }
