@@ -13,7 +13,7 @@ import { logger } from "@app/utility";
 import { errorHandler, notFoundHandler } from "@app/middleware";
 import ApiV1 from "@app/api/v1";
 import { connectAgenda, startCron } from "@app/background";
-
+import i18n from "../src/i18n/i18n";
 const server = (async () => {
   try {
     const app = new Koa();
@@ -22,7 +22,7 @@ const server = (async () => {
     app.use(cors());
 
     const appServer = http.createServer(app.callback());
-
+    app.use(i18n);
     app.use(bodyParser());
 
     // Handle exception

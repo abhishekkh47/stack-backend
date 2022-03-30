@@ -29,6 +29,7 @@
     "circle-sdk": "file:../circle-sdk",
     "dotenv": "^10.0.0",
     "husky": "^7.0.2",
+    "i18n": "^0.14.2",
     "joi": "^17.6.0",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.13.1",

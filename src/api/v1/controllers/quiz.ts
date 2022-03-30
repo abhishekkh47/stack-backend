@@ -195,7 +195,7 @@ class QuizController extends BaseController {
    */
   @Route({ path: "/add-quiz-result", method: HttpMethod.POST })
   @Auth()
-  public async postCurrentQuizResult(ctx: any) {
+  public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
     return validation.addQuizResultValidation(
@@ -206,6 +206,12 @@ class QuizController extends BaseController {
           const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
           if (!quizExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
+          }
+          const quizQuestionsExists = await QuizQuestionTable.find({
+            quizId: reqParam.quizId,
+          });
+          if (quizQuestionsExists.length > 0) {
+            return this.BadRequest(ctx, "Question Details Doesn't Exists");
           }
           const quizResultExists = await QuizResult.findOne({
             userId: user._id,

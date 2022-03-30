@@ -1,0 +1,9 @@
+{
+	"success": "Success",
+	"addQuizResultQuizidEmpty": "Quiz Details Not Found",
+	"addQuizResultQuizidPattern": "Quiz Details Not Found",
+	"addQuizResultSolvedquestionsBase": "Solved Question Details Not Found",
+	"addQuizResultPattern": "Solved Question Details Not Found",
+	"addQuizResultSolvedquestionsRequired": "Solved Question Details Not Found",
+	"getQuizListTopicidPattern": "Please enter Topic Details"
+}
