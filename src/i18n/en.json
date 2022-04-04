@@ -78,5 +78,13 @@
 	"loginPasswordEmpty": "Please enter password.",
 	"loginPasswordMin": "Password must be at least 8 characters and contain a lower case letter, an upper case letter and a number.",
 	"loginPasswordPattern": "Password must be at least 8 characters and contain a lower case letter, an upper case letter and a number.",
-	"checkUserNameUsernameEmpty": "Please enter username."
+	"checkUserNameUsernameEmpty": "Please enter username.",
+	"updateNewPasswordTemppasswordRequired": "Please enter temporary password.",
+	"updateNewPasswordTemppasswordEmpty": "Please enter temporary password.",
+	"updateNewPasswordNewPasswordRequired": "Please enter new password.",
+	"updateNewPasswordNewPasswordEmpty": "Please enter temporary password.",
+	"updateNewPasswordUsernameRequired": "Please enter username",
+	"updateNewPasswordUsernameEmpty": "Please enter username",
+	"updateNewPasswordUsernameMin": "Username should contain minimum 5 characters.",
+	"updateNewPasswordUsernamePattern": "Please enter valid username."
 }

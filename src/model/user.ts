@@ -34,6 +34,8 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: null,
       required: false,
     },
+    tempPassword: { type: mongoose.Schema.Types.String, default: null },
+    loginAttempts: { type: mongoose.Schema.Types.Number, default: 0 },
   },
   { timestamps: true }
 );

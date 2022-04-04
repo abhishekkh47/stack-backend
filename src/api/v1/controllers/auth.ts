@@ -12,6 +12,7 @@ import {
 } from "@app/utility";
 import BaseController from "./base";
 import {
+  ALLOWED_LOGIN_ATTEMPTS,
   EOTPTYPE,
   EOTPVERIFICATION,
   EUserType,
@@ -35,6 +36,7 @@ class AliveController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
+          const resetPasswordMessage = `For your protection, we have reset your password due to insufficient login attempts. Check your email/SMS for a temporary password.`;
           const userExists = await UserTable.findOne({
             username: reqParam.username,
           });
@@ -42,19 +44,47 @@ class AliveController extends BaseController {
             return this.BadRequest(ctx, "User Not Found");
           }
           /**
-           * Compare Password
+           * Less than 3 attempts
            */
-          if (
-            !AuthService.comparePassword(
-              ctx.request.body.password,
-              userExists.password
-            )
-          ) {
-            return this.UnAuthorized(ctx, "Invalid password");
+          if (userExists.loginAttempts < ALLOWED_LOGIN_ATTEMPTS - 1) {
+            /**
+             * Compare Password
+             */
+            if (
+              !AuthService.comparePassword(
+                ctx.request.body.password,
+                userExists.password
+              )
+            ) {
+              if (userExists.loginAttempts < ALLOWED_LOGIN_ATTEMPTS - 1) {
+                userExists.loginAttempts = userExists.loginAttempts + 1;
+                await userExists.save();
+              }
+              return this.UnAuthorized(ctx, "Invalid password");
+            }
+            await UserTable.updateOne(
+              { _id: userExists._id },
+              { $set: { loginAttempts: 0, tempPassword: null } }
+            );
+            const authInfo = AuthService.getJwtAuthInfo(userExists);
+            const token = getJwtToken(authInfo);
+            return this.Ok(ctx, { token });
+          } else {
+            /**
+             * RESET PASSWORD API CALL
+             */
+            userExists.loginAttempts = userExists.loginAttempts + 1;
+            await userExists.save();
+            const requestData = {
+              request: {
+                body: {
+                  username: userExists.username,
+                },
+              },
+            };
+            await this.resetPassword(requestData);
+            return this.BadRequest(ctx, resetPasswordMessage);
           }
-          const authInfo = AuthService.getJwtAuthInfo(userExists);
-          const token = getJwtToken(authInfo);
-          return this.Ok(ctx, { token });
         }
       }
     );
@@ -245,7 +275,7 @@ class AliveController extends BaseController {
     const reqParam = ctx.request.body;
     const userData = await UserTable.findOne({ email: reqParam.email });
     if (userData !== null) {
-      return this.BadRequest(ctx, "same email address");
+      return this.BadRequest(ctx, "You cannot add same email address");
     }
     return validation.changeEmailValidation(
       reqParam,
@@ -278,7 +308,7 @@ class AliveController extends BaseController {
             );
             return this.Ok(ctx, {
               message:
-                "a verification email has been sent to your email address. please verify to change email.",
+                "Verification email is sent to you. Please check the email.",
             });
           } catch (e) {
             throw new Error(e.message);
@@ -528,6 +558,10 @@ class AliveController extends BaseController {
           }
           const tempPassword = generateTempPassword(userExists.username);
           const message: string = `Your temporary password is ${tempPassword}. Please don't share it with anyone.`;
+          const data = {
+            message: tempPassword,
+            subject: "Reset Password",
+          };
           /**
            * send sms for temporary password
            */
@@ -547,8 +581,17 @@ class AliveController extends BaseController {
            * send email for temporary password
            */
           if (userExists.email) {
-            // console.log()
+            await sendEmail(
+              userExists.email,
+              CONSTANT.ResetPasswordTemplateId,
+              data
+            );
           }
+          const newPassword = await AuthService.encryptPassword(tempPassword);
+          await UserTable.updateOne(
+            { _id: userExists._id },
+            { $set: { tempPassword: newPassword } }
+          );
           return this.Ok(ctx, {
             message: "Please check your email/sms for temporary password.",
           });
@@ -582,7 +625,7 @@ class AliveController extends BaseController {
           if (
             !AuthService.comparePassword(
               reqParam.tempPassword,
-              userExists.password
+              userExists.tempPassword
             )
           ) {
             return this.BadRequest(ctx, "Incorrect Temporary Password");

@@ -14,7 +14,11 @@ export interface IAccount {
   type: EUserType;
   parentEmail: string;
   parentMobile: string;
+  tempPassword: string;
+  loginAttempts: number;
 }
+
+export const ALLOWED_LOGIN_ATTEMPTS = 3;
 
 export enum EUserType {
   TEEN = 1,

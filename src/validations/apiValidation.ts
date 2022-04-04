@@ -195,6 +195,10 @@ export const validation = {
   },
   updateNewPasswordValidation: (req, res, callback) => {
     const schema = Joi.object({
+      username: Joi.string()
+        .min(5)
+        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
+        .required(),
       tempPassword: Joi.string().required(),
       new_password: Joi.string()
         .min(8)
@@ -205,7 +209,10 @@ export const validation = {
 
     const { error } = schema.validate(req);
     if (error)
-      return res.throw(400, res.__(validationMessageKey("login", error)));
+      return res.throw(
+        400,
+        res.__(validationMessageKey("updateNewPassword", error))
+      );
     return callback(true);
   },
 };
