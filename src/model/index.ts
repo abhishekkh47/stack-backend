@@ -8,3 +8,4 @@ export * from "./quizQuestion";
 export * from "./quizQuestionResult";
 export * from "./quizResult";
 export * from "./videos";
+export * from "./otp";

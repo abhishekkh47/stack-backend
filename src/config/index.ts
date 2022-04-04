@@ -38,4 +38,13 @@ export default {
   get WEB_URL() {
     return process.env.WEB_URL;
   },
+  get TWILIO_ACCOUNT_SID() {
+    return process.env.TWILIO_ACCOUNT_SID;
+  },
+  get TWILIO_AUTH_TOKEN() {
+    return process.env.TWILIO_AUTH_TOKEN;
+  },
+  get TWILIO_PHONE_NUMBER() {
+    return process.env.TWILIO_PHONE_NUMBER;
+  },
 };

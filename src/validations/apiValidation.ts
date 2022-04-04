@@ -50,7 +50,7 @@ export const validation = {
       old_password: Joi.string().required(),
       new_password: Joi.string()
         .min(8)
-        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z]).*$/)
+        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
         .required(),
     });
     const { error } = schema.validate(req);
@@ -90,6 +90,122 @@ export const validation = {
         res.__(validationMessageKey("checkUserName", error))
       );
     }
+    return callback(true);
+  },
+  signupValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      type: Joi.number().valid(1, 2).required(),
+      username: Joi.string()
+        .min(5)
+        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
+        .required(),
+      password: Joi.string()
+        .min(8)
+        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
+        .required(),
+      mobile: Joi.string()
+        .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
+        .required(),
+      email: Joi.string().email().optional(),
+      firstName: Joi.string()
+        .min(2)
+        .regex(/^[A-za-z]*$/)
+        .required(),
+      lastName: Joi.string()
+        .min(2)
+        .regex(/^[A-za-z]*$/)
+        .required(),
+      parentMobile: Joi.when("type", {
+        is: 1,
+        then: Joi.string()
+          .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
+          .disallow(Joi.ref("mobile"))
+          .required(),
+      }),
+      parentEmail: Joi.when("type", {
+        is: 1,
+        then: Joi.string().email().disallow(Joi.ref("email")).required(),
+      }),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("signupValidation", error))
+      );
+    }
+    return callback(true);
+  },
+  changeMobileNumberValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      mobile: Joi.string()
+        .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("changeMobile", error))
+      );
+    }
+    return callback(true);
+  },
+  verifyOtpValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      mobile: Joi.string()
+        .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
+        .required(),
+      code: Joi.number().integer().min(100000).max(999999).required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("verifyOtp", error)));
+    }
+    return callback(true);
+  },
+  sendIssueInputValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      email: Joi.string().email(),
+      mobile: Joi.string().regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9})$/),
+      issue: Joi.string().required(),
+    });
+
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("sendIssue", error)));
+    return callback(true);
+  },
+  loginValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      username: Joi.string()
+        .min(5)
+        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
+        .required(),
+      password: Joi.string()
+        .min(8)
+        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
+        .required(),
+    });
+
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("login", error)));
+    return callback(true);
+  },
+  updateNewPasswordValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      tempPassword: Joi.string().required(),
+      new_password: Joi.string()
+        .min(8)
+        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
+        .disallow(Joi.ref("tempPassword"))
+        .required(),
+    });
+
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("login", error)));
     return callback(true);
   },
 };

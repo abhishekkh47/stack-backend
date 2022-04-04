@@ -1,44 +1,124 @@
 import Koa from "koa";
 
-import { getJwtToken, Route, verifyToken } from "@app/utility";
+import {
+  generateRandom6DigitCode,
+  getJwtToken,
+  Route,
+  getMinutesBetweenDates,
+  verifyToken,
+  generateTempPassword,
+} from "@app/utility";
 import BaseController from "./base";
-import { HttpMethod, IUser } from "@app/types";
+import {
+  EOTPTYPE,
+  EOTPVERIFICATION,
+  EUserType,
+  HttpMethod,
+  IUser,
+} from "@app/types";
 import { AuthService } from "@app/services";
 import { Auth } from "@app/middleware";
 import { validation } from "@app/validations/apiValidation";
-import { UserTable } from "@app/model";
+import { UserTable, OtpTable } from "@app/model";
+import { TwilioService } from "@app/services";
 
 class AliveController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
   public async handleLogin(ctx: Koa.Context) {
-    const user = await AuthService.findUserByEmail(ctx.request.body.email);
-    if (!user) {
-      return this.UnAuthorized(ctx, "User not found");
-    }
-    if (
-      !AuthService.comparePassword(ctx.request.body.password, user.password)
-    ) {
-      return this.UnAuthorized(ctx, "Invalid password");
-    }
-    const authInfo = AuthService.getJwtAuthInfo(user);
-    const token = getJwtToken(authInfo);
-    return this.Ok(ctx, { token });
+    const reqParam = ctx.request.body;
+    return validation.loginValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const userExists = await UserTable.findOne({
+            username: reqParam.username,
+          });
+          if (!userExists) {
+            return this.BadRequest(ctx, "User Not Found");
+          }
+          /**
+           * Compare Password
+           */
+          if (
+            !AuthService.comparePassword(
+              ctx.request.body.password,
+              userExists.password
+            )
+          ) {
+            return this.UnAuthorized(ctx, "Invalid password");
+          }
+          const authInfo = AuthService.getJwtAuthInfo(userExists);
+          const token = getJwtToken(authInfo);
+          return this.Ok(ctx, { token });
+        }
+      }
+    );
   }
 
   @Route({ path: "/signup", method: HttpMethod.POST })
   public async handleSignup(ctx: Koa.Context) {
-    const isUserExists = await AuthService.findUserByEmail(
-      ctx.request.body.email
+    const reqParam = ctx.request.body;
+    return validation.signupValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          reqParam.email = reqParam.email ? reqParam.email : null;
+          let user = await AuthService.findUserByEmail(reqParam.email);
+          if (user) {
+            return this.UnAuthorized(ctx, "Email Already Exists");
+          }
+          user = await UserTable.findOne({ mobile: reqParam.mobile });
+          if (user) {
+            return this.UnAuthorized(ctx, "Mobile Number already Exists");
+          }
+          /* tslint:disable-next-line */
+          if (reqParam.type == EUserType.TEEN) {
+            user = await UserTable.findOne({
+              email: reqParam.parentEmail,
+              type: EUserType.TEEN,
+            });
+            if (user) {
+              return this.UnAuthorized(ctx, "Email Already Exists");
+            }
+            user = await UserTable.findOne({
+              mobile: reqParam.parentMobile,
+              type: EUserType.TEEN,
+            });
+            if (user) {
+              return this.UnAuthorized(ctx, "Mobile Number Already Exists");
+            }
+          }
+          user = await UserTable.findOne({ username: reqParam.username });
+          if (user) {
+            return this.UnAuthorized(ctx, "Username already Exists");
+          }
+          reqParam.password = AuthService.encryptPassword(reqParam.password);
+          user = await UserTable.create({
+            username: reqParam.username,
+            password: reqParam.password,
+            email: reqParam.email ? reqParam.email : null,
+            type: reqParam.type,
+            firstName: reqParam.firstName,
+            lastName: reqParam.lastName,
+            mobile: reqParam.mobile,
+            parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
+            parentMobile: reqParam.parentMobile ? reqParam.parentMobile : null,
+          });
+          const authInfo = AuthService.getJwtAuthInfo(user);
+          const token = getJwtToken(authInfo);
+          return this.Ok(ctx, {
+            token,
+            message:
+              /* tslint:disable-next-line */
+              reqParam.type == EUserType.TEEN
+                ? `We have sent an email to your parent's email in order to activate the account.`
+                : `Your account is created successfully`,
+          });
+        }
+      }
     );
-    if (isUserExists) {
-      return this.UnAuthorized(ctx, "User already exists");
-    }
-    const user = await AuthService.signupUser(ctx.request.body);
-
-    const authInfo = AuthService.getJwtAuthInfo(user);
-    const token = getJwtToken(authInfo);
-
-    return this.Ok(ctx, { token });
   }
 
   @Route({ path: "/token-login", method: HttpMethod.POST })
@@ -175,12 +255,160 @@ class AliveController extends BaseController {
   }
 
   /**
-   * This method is used to check unique email
+   * @description This method is used to change mobile no of user
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/change-cell-no", method: HttpMethod.POST })
+  @Auth()
+  public changeMobile(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.changeMobileNumberValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const checkCellNumberExists = await UserTable.findOne({
+            mobile: reqParam.mobile,
+          });
+          if (checkCellNumberExists) {
+            return this.BadRequest(ctx, "Cell Number Already Exists.");
+          }
+          const code = generateRandom6DigitCode(true);
+          const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
+          /**
+           * Send Otp to User from registered mobile number
+           */
+          const twilioResponse: any = await TwilioService.sendSMS(
+            reqParam.mobile,
+            message
+          );
+          if (twilioResponse.code === 400) {
+            return this.BadRequest(ctx, "Error in sending OTP");
+          }
+          await OtpTable.create({
+            message,
+            code,
+            receiverMobile: reqParam.mobile,
+            type: EOTPTYPE.CHANGE_MOBILE,
+          });
+          return this.Ok(ctx, {
+            message:
+              "We have sent you code in order to proceed your request of changing cell number. Please check your phone.",
+          });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to verify otp.
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/verify-otp", method: HttpMethod.POST })
+  @Auth()
+  public verifyOtp(ctx: any) {
+    const reqParam = ctx.request.body;
+    const user = ctx.request.user;
+    return validation.verifyOtpValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const otpExists = await OtpTable.findOne({
+            receiverMobile: reqParam.mobile,
+          }).sort({ createdAt: -1 });
+          if (!otpExists) {
+            return this.BadRequest(ctx, "Mobile Number Not Found");
+          }
+          if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
+            return this.BadRequest(ctx, "Mobile Number Already Verified");
+          }
+          /**
+           * Check minutes less than 5 or not
+           */
+          const checkMinutes = await getMinutesBetweenDates(
+            new Date(otpExists.createdAt),
+            new Date()
+          );
+          if (checkMinutes > 5) {
+            return this.BadRequest(
+              ctx,
+              "Otp Time Limit Expired. Please resend otp and try to submit it within 5 minutes."
+            );
+          }
+          // console.log(typeof reqParam.code);
+          /* tslint:disable-next-line */
+          if (otpExists.code != reqParam.code) {
+            return this.BadRequest(ctx, "Code Doesn't Match");
+          }
+          /**
+           * All conditions valid
+           */
+          await UserTable.updateOne(
+            { _id: user._id },
+            { $set: { mobile: reqParam.mobile } }
+          );
+          await OtpTable.updateOne(
+            { _id: otpExists._id },
+            { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
+          );
+          return this.Ok(ctx, {
+            message: "Your mobile number is changed successfully",
+          });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to resend otp
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/resend-otp", method: HttpMethod.POST })
+  @Auth()
+  public resendOtp(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.changeMobileNumberValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const code = generateRandom6DigitCode(true);
+          const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
+          /**
+           * Send Otp to User from registered mobile number
+           */
+          const twilioResponse: any = await TwilioService.sendSMS(
+            reqParam.mobile,
+            message
+          );
+          if (twilioResponse.code === 400) {
+            return this.BadRequest(ctx, "Error in sending OTP");
+          }
+          await OtpTable.create({
+            message,
+            code,
+            receiverMobile: reqParam.mobile,
+            type: EOTPTYPE.CHANGE_MOBILE,
+          });
+          return this.Ok(ctx, {
+            message:
+              "We have sent you code in order to proceed your request of changing cell number. Please check your phone.",
+          });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to check unique email
    * @param ctx
    * @returns {*}
    */
   @Route({ path: "/check-username/:username", method: HttpMethod.GET })
-  @Auth()
   public async checkUserNameExistsInDb(ctx: any) {
     const reqParam = ctx.params;
     return validation.checkUniqueUserNameValidation(
@@ -195,6 +423,107 @@ class AliveController extends BaseController {
             return this.BadRequest(ctx, "UserName already Exists");
           }
           return this.Ok(ctx, { message: "UserName is available" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to send reset password request to email and sms
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/reset-password", method: HttpMethod.POST })
+  public async resetPassword(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.checkUniqueUserNameValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const userExists = await UserTable.findOne({
+            username: reqParam.username,
+          });
+          if (!userExists) {
+            return this.BadRequest(ctx, "User not found");
+          }
+          const tempPassword = generateTempPassword(userExists.username);
+          const message: string = `Your temporary password is ${tempPassword}. Please don't share it with anyone.`;
+          /**
+           * send sms for temporary password
+           */
+          if (userExists.mobile) {
+            const twilioResponse: any = await TwilioService.sendSMS(
+              userExists.mobile,
+              message
+            );
+            if (twilioResponse.code === 400) {
+              return this.BadRequest(
+                ctx,
+                "Error in sending temporary password"
+              );
+            }
+          }
+          /**
+           * send email for temporary password
+           */
+          if (userExists.email) {
+            // console.log()
+          }
+          return this.Ok(ctx, {
+            message: "Please check your email/sms for temporary password.",
+          });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to verify temporary password and update new password
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-new-password", method: HttpMethod.POST })
+  public async updateNewPassword(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.updateNewPasswordValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const userExists = await UserTable.findOne({
+            username: reqParam.username,
+          });
+          if (!userExists) {
+            return this.BadRequest(ctx, "User not found");
+          }
+          /**
+           * check temp password is correct or not
+           */
+          if (
+            !AuthService.comparePassword(
+              reqParam.tempPassword,
+              userExists.password
+            )
+          ) {
+            return this.BadRequest(ctx, "Incorrect Temporary Password");
+          }
+          /**
+           *  Update new password
+           */
+          const newPassword = await AuthService.encryptPassword(
+            reqParam.new_password
+          );
+          await UserTable.updateOne(
+            { _id: userExists._id },
+            {
+              $set: {
+                password: newPassword,
+                tempPassword: null,
+              },
+            }
+          );
+          return this.Ok(ctx, { message: "Password Changed Successfully." });
         }
       }
     );

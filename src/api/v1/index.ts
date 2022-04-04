@@ -13,6 +13,7 @@ import {
   AuthController,
   QuizController,
   VideoController,
+  HelpCenterController,
 } from "./controllers";
 
 const router = new Router();
@@ -84,5 +85,6 @@ setControllerRoutes(router, WebhookController);
 setControllerRoutes(router, AuthController);
 setControllerRoutes(router, QuizController);
 setControllerRoutes(router, VideoController);
+setControllerRoutes(router, HelpCenterController);
 
 export default Compose([router.routes(), router.allowedMethods()]);

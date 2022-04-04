@@ -35,6 +35,7 @@ class AuthService {
       issuedOn: Date.now(),
       expiredOn,
       email: user.email,
+      username: user.username,
     };
   }
 }

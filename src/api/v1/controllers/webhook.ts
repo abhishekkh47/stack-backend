@@ -7,7 +7,7 @@ import { HttpMethod } from "@app/types";
 class WebhookController extends BaseController {
   @Route("/webhook/circle", HttpMethod.GET)
   public CircleWebhookGet(ctx: Koa.Context) {
-    console.log(ctx);
+    // console.log(ctx);
     this.Ok(ctx, {
       status: "ok",
       timestamp: Date.now(),
@@ -16,7 +16,7 @@ class WebhookController extends BaseController {
 
   @Route("/webhook/circle", HttpMethod.POST)
   public CircleWebhookPost(ctx: Koa.Context) {
-    console.log(ctx.request.body);
+    // console.log(ctx.request.body);
     this.Ok(ctx, {
       status: "ok",
       timestamp: Date.now(),

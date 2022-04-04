@@ -8,3 +8,4 @@ export { default as WebhookController } from "./webhook";
 export { default as AuthController } from "./auth";
 export { default as QuizController } from "./quiz";
 export { default as VideoController } from "./video";
+export { default as HelpCenterController } from "./help-center";
