@@ -3,6 +3,8 @@ export interface IUser extends IAccount {
   password: string;
   username: string;
   mobile: string;
+  verificationEmailExpireAt: string;
+  verificationCode: string;
 }
 
 export interface IAccount {

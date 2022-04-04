@@ -6,6 +6,8 @@ import {
   Route,
   getMinutesBetweenDates,
   verifyToken,
+  sendEmail,
+  hashString,
   generateTempPassword,
 } from "@app/utility";
 import BaseController from "./base";
@@ -21,6 +23,8 @@ import { Auth } from "@app/middleware";
 import { validation } from "@app/validations/apiValidation";
 import { UserTable, OtpTable } from "@app/model";
 import { TwilioService } from "@app/services";
+import moment from "moment";
+import { CONSTANT } from "../../../utility/constants";
 
 class AliveController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -236,22 +240,97 @@ class AliveController extends BaseController {
    */
   @Route({ path: "/change-email", method: HttpMethod.POST })
   @Auth()
-  public changeEmail(ctx: any) {
+  public async changeEmail(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    const userData = await UserTable.findOne({ email: reqParam.email });
+    if (userData !== null) {
+      return this.BadRequest(ctx, "same email address");
+    }
     return validation.changeEmailValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          await UserTable.updateOne(
-            { _id: user._id },
-            { $set: { email: reqParam.email } }
-          );
-          return this.Ok(ctx, { message: "Email Changed Successfully" });
+          try {
+            const verificationCode = await hashString(10);
+
+            const expiryTime = moment().add(24, "hours").unix();
+
+            const data: any = {
+              subject: "Verify Email",
+              verificationCode,
+              link: `${process.env.URL}/api/v1/verify-email?verificationCode=${verificationCode}&email=${reqParam.email}`,
+            };
+            await sendEmail(
+              reqParam.email,
+              CONSTANT.VerifyEmailTemplateId,
+              data
+            );
+            await UserTable.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  verificationEmailExpireAt: expiryTime,
+                  verificationCode,
+                },
+              }
+            );
+            return this.Ok(ctx, {
+              message:
+                "a verification email has been sent to your email address. please verify to change email.",
+            });
+          } catch (e) {
+            throw new Error(e.message);
+          }
         }
       }
     );
+  }
+
+  /**
+   *
+   * This method is used to verify email of user
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/verify-email", method: HttpMethod.GET })
+  public async verifyEmail(ctx: any) {
+    const verificationCode: string = ctx.query.verificationCode;
+    try {
+      const userData = await UserTable.findOne({ verificationCode });
+      if (userData) {
+        if (userData.verificationEmailExpireAt > moment().unix().toString()) {
+          await UserTable.updateOne(
+            { _id: userData._id },
+            {
+              $set: {
+                verificationEmailExpireAt: null,
+                verificationCode: "",
+                email: ctx.query.email,
+              },
+            }
+          );
+
+          await ctx.render("message.pug", {
+            message: "Email has been verified successfully",
+            type: "Success",
+          });
+        } else {
+          await ctx.render("message.pug", {
+            message: "Token has Expired.",
+            type: "error",
+          });
+        }
+      } else {
+        await ctx.render("message.pug", {
+          message: "Token has Expired.",
+          type: "error",
+        });
+      }
+    } catch (e) {
+      throw new Error(e.message);
+    }
   }
 
   /**

@@ -14,10 +14,13 @@ import { errorHandler, notFoundHandler } from "@app/middleware";
 import ApiV1 from "@app/api/v1";
 import { connectAgenda, startCron } from "@app/background";
 import i18n from "../src/i18n/i18n";
+import views from "koa-views";
 const server = (async () => {
   try {
     const app = new Koa();
+    const render = views(__dirname + "/views", { extension: "pug" });
 
+    app.use(render);
     // Enable cors
     app.use(cors());
 
@@ -27,7 +30,6 @@ const server = (async () => {
 
     // Handle exception
     app.use(errorHandler);
-
     // Mongodb
     await mongoose.connect(Config.DB_PATH);
 
