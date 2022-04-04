@@ -36,7 +36,7 @@ class VideoController extends BaseController {
       }
     );
     if (videos.length === 0) {
-      return this.NotFound(ctx, "Not Found");
+      return this.Ok(ctx, { data: [], message: "Success" });
     }
     videos = videos.filter((x) => x.videoList.length !== 0);
     return this.Ok(ctx, { data: videos, message: "Success" });

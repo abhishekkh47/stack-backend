@@ -9,3 +9,4 @@ export * from "./quizQuestionResult";
 export * from "./quizResult";
 export * from "./videos";
 export * from "./otp";
+export * from "./admin";

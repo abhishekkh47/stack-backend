@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 import type { IUser, MongooseModel } from "@app/types";
 
-export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
+export type IAdminSchema = MongooseModel<IUser> & mongoose.Document;
 
-const schema = new mongoose.Schema<IUserSchema>(
+const schema = new mongoose.Schema<IAdminSchema>(
   {
     email: {
       type: mongoose.Schema.Types.String,
@@ -16,4 +16,8 @@ const schema = new mongoose.Schema<IUserSchema>(
   { timestamps: true }
 );
 
-export const AdminTable = mongoose.model<IUserSchema>("admin", schema, "admin");
+export const AdminTable = mongoose.model<IAdminSchema>(
+  "admin",
+  schema,
+  "admin"
+);

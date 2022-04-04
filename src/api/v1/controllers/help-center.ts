@@ -2,9 +2,10 @@ import Koa from "koa";
 import BaseController from "./base";
 import { Auth } from "@app/middleware";
 import { validation } from "../../../validations/apiValidation";
-import { Route } from "@app/utility";
+import { Route, sendEmail } from "@app/utility";
 import { HttpMethod } from "@app/types";
-import { AdminTable } from "@app/model/admin";
+import { AdminTable } from "@app/model";
+import { CONSTANT } from "@app/utility/constants";
 
 class HelpCenterController extends BaseController {
   @Route({ path: "/send-issue", method: HttpMethod.POST })
@@ -16,9 +17,20 @@ class HelpCenterController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const { email, mobile } = reqParam;
+          const { email, mobile, issue } = reqParam;
           if (!email && !mobile)
             return this.BadRequest(ctx, "Email or Contact number not found.");
+          /**
+           * Send email regarding the details to admin
+           */
+          const data = {
+            email: email ? email : "N/A",
+            mobile: mobile ? mobile : "N/A",
+            issue,
+            subject: "Help Center Request",
+          };
+          const admin = await AdminTable.findOne({});
+          await sendEmail(admin.email, CONSTANT.HelpCenterTemplateId, data);
           return this.Ok(ctx, {
             message: "Hang tight! We will reach out to you ASAP",
           });

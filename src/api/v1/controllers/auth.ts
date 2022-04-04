@@ -140,6 +140,17 @@ class AliveController extends BaseController {
             parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
             parentMobile: reqParam.parentMobile ? reqParam.parentMobile : null,
           });
+          /**
+           * Send sms as of now to parent for invting to stack
+           */
+          const message: string = `Hello Your teen ${reqParam.username} has invited you to join Stack. Please start the onboarding as soon as possible.`;
+          const twilioResponse: any = await TwilioService.sendSMS(
+            reqParam.parentMobile,
+            message
+          );
+          if (twilioResponse.code === 400) {
+            return this.BadRequest(ctx, "Error in sending OTP");
+          }
           const authInfo = AuthService.getJwtAuthInfo(user);
           const token = getJwtToken(authInfo);
           return this.Ok(ctx, {
@@ -348,14 +359,14 @@ class AliveController extends BaseController {
           });
         } else {
           await ctx.render("message.pug", {
-            message: "Token has Expired.",
-            type: "error",
+            message: "Link has Expired.",
+            type: "Error",
           });
         }
       } else {
         await ctx.render("message.pug", {
-          message: "Token has Expired.",
-          type: "error",
+          message: "Link has Expired.",
+          type: "Error",
         });
       }
     } catch (e) {
@@ -642,6 +653,7 @@ class AliveController extends BaseController {
               $set: {
                 password: newPassword,
                 tempPassword: null,
+                loginAttempts: 0,
               },
             }
           );
