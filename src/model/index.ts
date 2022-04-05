@@ -10,3 +10,5 @@ export * from "./quizResult";
 export * from "./videos";
 export * from "./otp";
 export * from "./admin";
+export * from "./useractivity";
+export * from "./crypto";

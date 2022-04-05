@@ -26,6 +26,7 @@ import { UserTable, OtpTable } from "@app/model";
 import { TwilioService } from "@app/services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
+import { UserBalanceTable } from "@app/model/userbalance";
 
 class AliveController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -139,6 +140,13 @@ class AliveController extends BaseController {
             mobile: reqParam.mobile,
             parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
             parentMobile: reqParam.parentMobile ? reqParam.parentMobile : null,
+          });
+          /**
+           * Create the balance table
+           */
+          await UserBalanceTable.create({
+            userId: user._id,
+            balance: 0,
           });
           /**
            * Send sms as of now to parent for invting to stack

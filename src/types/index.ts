@@ -10,3 +10,6 @@ export * from "./user";
 export * from "./quiz";
 export * from "./video";
 export * from "./otp";
+export * from "./useractivity";
+export * from "./userbalance";
+export * from "./crypto";

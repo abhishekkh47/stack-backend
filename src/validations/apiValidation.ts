@@ -215,4 +215,26 @@ export const validation = {
       );
     return callback(true);
   },
+  addDepositValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      amount: Joi.number().min(5).positive().precision(2).required(),
+    });
+
+    const { error } = schema.validate(req, { convert: false });
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("addDeposit", error)));
+    return callback(true);
+  },
+  addCryptoInputValidation: (req, res, callback) => {
+    const schema = Joi.array().items(
+      Joi.object({
+        name: Joi.string().required(),
+      }).required()
+    );
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("addCrypto", error)));
+    }
+    return callback(true);
+  },
 };

@@ -86,5 +86,9 @@
 	"updateNewPasswordUsernameRequired": "Please enter username",
 	"updateNewPasswordUsernameEmpty": "Please enter username",
 	"updateNewPasswordUsernameMin": "Username should contain minimum 5 characters.",
-	"updateNewPasswordUsernamePattern": "Please enter valid username."
+	"updateNewPasswordUsernamePattern": "Please enter valid username.",
+	"addDepositAmountRequired": "Please enter amount",
+	"addDepositAmountMin": "Amount to be deposited must be greater than 5 USD",
+	"addDepositAmountBase": "Please add valid amount",
+	"addDepositAmountPrecision": "Amount must contain only 2 decimal places"
 }
