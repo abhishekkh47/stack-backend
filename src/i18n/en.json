@@ -90,5 +90,8 @@
 	"addDepositAmountRequired": "Please enter amount",
 	"addDepositAmountMin": "Amount to be deposited must be greater than 5 USD",
 	"addDepositAmountBase": "Please add valid amount",
-	"addDepositAmountPrecision": "Amount must contain only 2 decimal places"
+	"addDepositAmountPrecision": "Amount must contain only 2 decimal places",
+	"cancelPendingIdRequired": "Please enter pending activity details.",
+	"cancelPendingIdEmpty": "Please enter pending activity details.",
+	"cancelPendingIdPattern": "Please enter pending activity details."
 }

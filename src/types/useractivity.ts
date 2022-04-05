@@ -19,9 +19,8 @@ export enum EAction {
 
 export enum EStatus {
   PENDING = 1,
-  APPROVED = 2,
-  PROCESSED = 3,
-  CANCELLED = 4,
+  PROCESSED = 2,
+  CANCELLED = 3,
 }
 
 export const messages = {
