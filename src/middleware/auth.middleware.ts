@@ -9,14 +9,14 @@ export const Auth = () => {
         <string>ctx.request.headers["x-access-token"] ||
         (ctx.request.query.token as string);
       if (!token) {
-        throw new Error("Invalid JWT token.");
+        return this.UnAuthorized(ctx, "Invalid JWT Token");
       }
 
       try {
         const response = await verifyToken(token);
         ctx.request.user = response;
       } catch (err) {
-        throw new Error("Invalid JWT token.");
+        return this.UnAuthorized(ctx, "Invalid JWT Token");
       }
       return await fn.apply(this, [ctx]);
     };

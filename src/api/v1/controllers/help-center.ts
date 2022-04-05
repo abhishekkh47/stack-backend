@@ -9,7 +9,6 @@ import { CONSTANT } from "@app/utility/constants";
 
 class HelpCenterController extends BaseController {
   @Route({ path: "/send-issue", method: HttpMethod.POST })
-  @Auth()
   public async sendIssue(ctx: Koa.Context) {
     const reqParam = ctx.request.body;
     return validation.sendIssueInputValidation(
