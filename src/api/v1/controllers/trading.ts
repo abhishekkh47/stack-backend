@@ -1,19 +1,10 @@
 import Koa from "koa";
-import mongoose from "mongoose";
-import { get72HoursAhead, Route } from "@app/utility";
+import { Route } from "@app/utility";
 import BaseController from "./base";
 import { Auth } from "@app/middleware";
-import {
-  EAction,
-  EQuizTopicStatus,
-  EStatus,
-  EUserType,
-  HttpMethod,
-  messages,
-} from "@app/types";
-import { QuizTopicTable, UserActivityTable, UserTable } from "@app/model";
+import { EAction, EStatus, EUserType, HttpMethod, messages } from "@app/types";
+import { UserActivityTable, UserTable } from "@app/model";
 import { validation } from "../../../validations/apiValidation";
-import moment from "moment";
 import { UserWalletTable } from "@app/model/userbalance";
 
 class TradingController extends BaseController {

@@ -43,7 +43,7 @@ const schema = new mongoose.Schema<IUserActivitySchema>(
     },
     currencyType: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "users",
+      ref: "crypto",
       default: null,
     },
   },
