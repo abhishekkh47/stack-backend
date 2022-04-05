@@ -217,7 +217,12 @@ export const validation = {
   },
   addDepositValidation: (req, res, callback) => {
     const schema = Joi.object({
-      amount: Joi.number().min(5).positive().precision(2).required(),
+      amount: Joi.number()
+        .min(5)
+        .max(10000000)
+        .positive()
+        .precision(2)
+        .required(),
     });
 
     const { error } = schema.validate(req, { convert: false });
@@ -248,6 +253,19 @@ export const validation = {
       return res.throw(
         400,
         res.__(validationMessageKey("cancelPending", error))
+      );
+    }
+    return callback(true);
+  },
+  withdrawMoneyValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      amount: Joi.number().min(1).positive().precision(2).required(),
+    });
+    const { error } = schema.validate(req, { convert: false });
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("withdrawMoney", error))
       );
     }
     return callback(true);

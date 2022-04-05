@@ -89,9 +89,15 @@
 	"updateNewPasswordUsernamePattern": "Please enter valid username.",
 	"addDepositAmountRequired": "Please enter amount",
 	"addDepositAmountMin": "Amount to be deposited must be greater than 5 USD",
+	"addDepositAmountMax": "Amount to be deposited must be less than 10000000 USD",
 	"addDepositAmountBase": "Please add valid amount",
 	"addDepositAmountPrecision": "Amount must contain only 2 decimal places",
 	"cancelPendingIdRequired": "Please enter pending activity details.",
 	"cancelPendingIdEmpty": "Please enter pending activity details.",
-	"cancelPendingIdPattern": "Please enter pending activity details."
+	"cancelPendingIdPattern": "Please enter pending activity details.",
+	"withdrawMoneyAmountRequired": "Please enter amount",
+	"withdrawMoneyAmountBase": "Please enter amount",
+	"withdrawMoneyAmountMin": "Amount to be deposited must be greater than or equal to 1 USD",
+	"withdrawMoneyAmountPrecision": "Amount must contain only 2 decimal places",
+	"sendIssueMobileEmpty": "Please enter mobile."
 }

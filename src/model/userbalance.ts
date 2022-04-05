@@ -20,8 +20,8 @@ const schema = new mongoose.Schema<IUserBalanceSchema>(
   { timestamps: true }
 );
 
-export const UserBalanceTable = mongoose.model<IUserBalanceSchema>(
+export const UserWalletTable = mongoose.model<IUserBalanceSchema>(
   "userbalance",
   schema,
-  "userbalance"
+  "userwallet"
 );

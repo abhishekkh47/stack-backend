@@ -26,7 +26,7 @@ import { UserTable, OtpTable } from "@app/model";
 import { TwilioService } from "@app/services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
-import { UserBalanceTable } from "@app/model/userbalance";
+import { UserWalletTable } from "@app/model/userbalance";
 
 class AliveController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -144,7 +144,7 @@ class AliveController extends BaseController {
           /**
            * Create the balance table
            */
-          await UserBalanceTable.create({
+          await UserWalletTable.create({
             userId: user._id,
             balance: 0,
           });
@@ -166,7 +166,7 @@ class AliveController extends BaseController {
             message:
               /* tslint:disable-next-line */
               reqParam.type == EUserType.TEEN
-                ? `We have sent an email to your parent's email in order to activate the account.`
+                ? `We have sent sms/email to your parent. Once he starts onboarding process you can have access to full features of this app.`
                 : `Your account is created successfully`,
           });
         }
