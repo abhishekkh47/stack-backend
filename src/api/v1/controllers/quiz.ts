@@ -316,11 +316,11 @@ class QuizController extends BaseController {
             }
           }
         }
-        const Data = await QuizTable.find({
+        const data = await QuizTable.find({
           topicId: reqParam.topicId,
           _id: { $nin: QuizIds },
         });
-        return this.Ok(ctx, { Data, message: "Success" });
+        return this.Ok(ctx, { data, message: "Success" });
       }
     });
   }

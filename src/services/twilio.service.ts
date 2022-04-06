@@ -28,7 +28,7 @@ class TwilioService {
         .catch((error) => {
           return reject({
             code: 400,
-            message: error,
+            message: "Twilio Error Invalid Number",
           });
         });
     });

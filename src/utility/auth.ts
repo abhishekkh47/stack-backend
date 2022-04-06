@@ -11,3 +11,9 @@ export const verifyToken = (token: string) => {
 
   return response;
 };
+
+export const getRefreshToken = (body: any) => {
+  return Jwt.sign(body, process.env.JWT_SECRET ?? "secret", {
+    expiresIn: "365d",
+  });
+};

@@ -130,6 +130,21 @@ class AliveController extends BaseController {
             return this.UnAuthorized(ctx, "Username already Exists");
           }
           reqParam.password = AuthService.encryptPassword(reqParam.password);
+          /**
+           * Send sms as of now to parent for invting to stack
+           */
+          const message: string = `Hello Your teen ${reqParam.username} has invited you to join Stack. Please start the onboarding as soon as possible.`;
+          try {
+            const twilioResponse: any = await TwilioService.sendSMS(
+              reqParam.parentMobile,
+              message
+            );
+            if (twilioResponse.code === 400) {
+              return this.BadRequest(ctx, "Error in sending OTP");
+            }
+          } catch (error) {
+            return this.BadRequest(ctx, error);
+          }
           user = await UserTable.create({
             username: reqParam.username,
             password: reqParam.password,
@@ -148,17 +163,7 @@ class AliveController extends BaseController {
             userId: user._id,
             balance: 0,
           });
-          /**
-           * Send sms as of now to parent for invting to stack
-           */
-          const message: string = `Hello Your teen ${reqParam.username} has invited you to join Stack. Please start the onboarding as soon as possible.`;
-          const twilioResponse: any = await TwilioService.sendSMS(
-            reqParam.parentMobile,
-            message
-          );
-          if (twilioResponse.code === 400) {
-            return this.BadRequest(ctx, "Error in sending OTP");
-          }
+
           const authInfo = AuthService.getJwtAuthInfo(user);
           const token = getJwtToken(authInfo);
           return this.Ok(ctx, {
@@ -296,6 +301,17 @@ class AliveController extends BaseController {
     if (userData !== null) {
       return this.BadRequest(ctx, "You cannot add same email address");
     }
+    if (userData.type === EUserType.TEEN) {
+      const parentEmailExists = await UserTable.findOne({
+        parentMobile: reqParam.email,
+      });
+      if (parentEmailExists) {
+        return this.BadRequest(
+          ctx,
+          "You cannot add same email address as in parent"
+        );
+      }
+    }
     return validation.changeEmailValidation(
       reqParam,
       ctx,
@@ -391,16 +407,32 @@ class AliveController extends BaseController {
   @Auth()
   public changeMobile(ctx: any) {
     const reqParam = ctx.request.body;
+    const user = ctx.request.user;
     return validation.changeMobileNumberValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
         if (validate) {
+          const userExists = await UserTable.findOne({ _id: user._id });
+          if (!userExists) {
+            return this.BadRequest(ctx, "User Not Found");
+          }
           const checkCellNumberExists = await UserTable.findOne({
             mobile: reqParam.mobile,
           });
           if (checkCellNumberExists) {
             return this.BadRequest(ctx, "Cell Number Already Exists.");
+          }
+          if (userExists.type === EUserType.TEEN) {
+            const parentMobileExists = await UserTable.findOne({
+              parentMobile: reqParam.mobile,
+            });
+            if (parentMobileExists) {
+              return this.BadRequest(
+                ctx,
+                "Cell Number Already Exists in Parent."
+              );
+            }
           }
           const code = generateRandom6DigitCode(true);
           const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
@@ -509,12 +541,16 @@ class AliveController extends BaseController {
           /**
            * Send Otp to User from registered mobile number
            */
-          const twilioResponse: any = await TwilioService.sendSMS(
-            reqParam.mobile,
-            message
-          );
-          if (twilioResponse.code === 400) {
-            return this.BadRequest(ctx, "Error in sending OTP");
+          try {
+            const twilioResponse: any = await TwilioService.sendSMS(
+              reqParam.mobile,
+              message
+            );
+            if (twilioResponse.code === 400) {
+              return this.BadRequest(ctx, "Error in sending OTP");
+            }
+          } catch (error) {
+            return this.BadRequest(ctx, error);
           }
           await OtpTable.create({
             message,

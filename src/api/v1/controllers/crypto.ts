@@ -33,7 +33,7 @@ class CryptocurrencyController extends BaseController {
   @Route({ path: "/get-crypto", method: HttpMethod.GET })
   @Auth()
   public async getCrypto(ctx: Koa.Context) {
-    const crypto = await CryptoTable.find({}, { name: 1 });
+    const crypto = await CryptoTable.find({}, { name: 1, image: 1 });
     this.Ok(ctx, { data: crypto, message: "Success" });
   }
 }

@@ -83,13 +83,7 @@ class TradingController extends BaseController {
           const userBalance = await UserWalletTable.findOne({
             userId: userExists._id,
           });
-          if (!userBalance) {
-            return this.BadRequest(
-              ctx,
-              "You dont have sufficient balance to withdraw money"
-            );
-          }
-          if (userBalance.balance < reqParam.amount) {
+          if (!userBalance || userBalance.balance < reqParam.amount) {
             return this.BadRequest(
               ctx,
               "You dont have sufficient balance to withdraw money"
