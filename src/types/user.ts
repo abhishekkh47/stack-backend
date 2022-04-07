@@ -5,10 +5,10 @@ export interface IUser extends IAccount {
   mobile: string;
   verificationEmailExpireAt: string;
   verificationCode: string;
+  refreshToken: string;
 }
 
 export interface IAccount {
-  address: string;
   firstName: string;
   lastName: string;
   type: EUserType;
@@ -16,6 +16,13 @@ export interface IAccount {
   parentMobile: string;
   tempPassword: string;
   loginAttempts: number;
+  country: string;
+  state: string;
+  city: string;
+  address: string;
+  postalCode: string;
+  unitApt: string;
+  liquidAsset: number;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;

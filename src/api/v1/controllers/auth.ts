@@ -9,6 +9,7 @@ import {
   sendEmail,
   hashString,
   generateTempPassword,
+  getRefreshToken,
 } from "@app/utility";
 import BaseController from "./base";
 import {
@@ -22,11 +23,12 @@ import {
 import { AuthService } from "@app/services";
 import { Auth } from "@app/middleware";
 import { validation } from "@app/validations/apiValidation";
-import { UserTable, OtpTable } from "@app/model";
+import { UserTable, OtpTable, ParentChildTable } from "@app/model";
 import { TwilioService } from "@app/services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
 import { UserWalletTable } from "@app/model/userbalance";
+import { ObjectId } from "mongodb";
 
 class AliveController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -37,12 +39,24 @@ class AliveController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
+          const { username, email } = reqParam;
+          if (!username && !email) {
+            return this.BadRequest(
+              ctx,
+              "Please enter either username or email"
+            );
+          }
           const resetPasswordMessage = `For your protection, we have reset your password due to insufficient login attempts. Check your email/SMS for a temporary password.`;
-          const userExists = await UserTable.findOne({
-            username: reqParam.username,
+          let userExists = await UserTable.findOne({
+            username,
           });
           if (!userExists) {
-            return this.BadRequest(ctx, "User Not Found");
+            userExists = await UserTable.findOne({
+              email,
+            });
+            if (!userExists) {
+              return this.BadRequest(ctx, "User Not Found");
+            }
           }
           /**
            * Less than 3 attempts
@@ -69,7 +83,10 @@ class AliveController extends BaseController {
             );
             const authInfo = AuthService.getJwtAuthInfo(userExists);
             const token = getJwtToken(authInfo);
-            return this.Ok(ctx, { token });
+            const refreshToken = getRefreshToken(authInfo);
+            userExists.refreshToken = refreshToken;
+            await userExists.save();
+            return this.Ok(ctx, { token, refreshToken });
           } else {
             /**
              * RESET PASSWORD API CALL
@@ -99,7 +116,8 @@ class AliveController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          reqParam.email = reqParam.email ? reqParam.email : null;
+          let childExists = null;
+          const childArray = [];
           let user = await AuthService.findUserByEmail(reqParam.email);
           if (user) {
             return this.UnAuthorized(ctx, "Email Already Exists");
@@ -124,27 +142,82 @@ class AliveController extends BaseController {
             if (user) {
               return this.UnAuthorized(ctx, "Mobile Number Already Exists");
             }
+            /**
+             * Send sms as of now to parent for invting to stack
+             */
+            const message: string = `Hello Your teen ${reqParam.username} has invited you to join Stack. Please start the onboarding as soon as possible.`;
+            try {
+              const twilioResponse: any = await TwilioService.sendSMS(
+                reqParam.parentMobile,
+                message
+              );
+              if (twilioResponse.code === 400) {
+                return this.BadRequest(ctx, "Error in sending OTP");
+              }
+            } catch (error) {
+              return this.BadRequest(ctx, error);
+            }
+          } else {
+            /**
+             * Parent flow
+             */
+            const parentEmailExistInChild = await UserTable.findOne({
+              parentEmail: reqParam.email,
+            });
+            const parentMobileExistInChild = await UserTable.findOne({
+              parentMobile: reqParam.mobile,
+            });
+            if (!parentEmailExistInChild || !parentMobileExistInChild) {
+              return this.BadRequest(
+                ctx,
+                "Sorry , We cannot find this email/mobile in teen."
+              );
+            }
+            childExists = await UserTable.findOne({
+              mobile: reqParam.childMobile,
+            });
+            if (!childExists) {
+              return this.BadRequest(ctx, "Teen Mobile Number Doesn't Exists");
+            }
+            if (
+              childExists.parentMobile !== reqParam.mobile ||
+              childExists.parentEmail !== reqParam.email
+            ) {
+              return this.BadRequest(
+                ctx,
+                "Sorry We cannot find your accounts. Unable to link them"
+              );
+            }
+            if (reqParam.fileTaxesInUS == 0 || reqParam.citizenOfUS == 0) {
+              return this.BadRequest(
+                ctx,
+                "Sorry We are only serving US Based Citizens right now but we do plan to expand. Stay Tuned!!"
+              );
+            }
+            const childDetails = await UserTable.find(
+              {
+                type: EUserType.TEEN,
+                parentEmail: reqParam.email,
+                parentMobile: reqParam.mobile,
+              },
+              {
+                _id: 1,
+              }
+            );
+            if (childDetails.length == 0) {
+              return this.BadRequest(ctx, "Teen Mobile Number Doesn't Exists");
+            }
+            for await (const child of childDetails) {
+              await childArray.push(child._id);
+            }
           }
-          user = await UserTable.findOne({ username: reqParam.username });
-          if (user) {
-            return this.UnAuthorized(ctx, "Username already Exists");
+          if (reqParam.username) {
+            user = await UserTable.findOne({ username: reqParam.username });
+            if (user) {
+              return this.UnAuthorized(ctx, "Username already Exists");
+            }
           }
           reqParam.password = AuthService.encryptPassword(reqParam.password);
-          /**
-           * Send sms as of now to parent for invting to stack
-           */
-          const message: string = `Hello Your teen ${reqParam.username} has invited you to join Stack. Please start the onboarding as soon as possible.`;
-          try {
-            const twilioResponse: any = await TwilioService.sendSMS(
-              reqParam.parentMobile,
-              message
-            );
-            if (twilioResponse.code === 400) {
-              return this.BadRequest(ctx, "Error in sending OTP");
-            }
-          } catch (error) {
-            return this.BadRequest(ctx, error);
-          }
           user = await UserTable.create({
             username: reqParam.username,
             password: reqParam.password,
@@ -163,16 +236,27 @@ class AliveController extends BaseController {
             userId: user._id,
             balance: 0,
           });
+          console.log(childArray, "childArraychildArray");
+          if (user.type === EUserType.PARENT) {
+            await ParentChildTable.create({
+              userId: user._id,
+              teens: childArray,
+            });
+          }
 
           const authInfo = AuthService.getJwtAuthInfo(user);
+          const refreshToken = getRefreshToken(authInfo);
+          user.refreshToken = refreshToken;
+          await user.save();
           const token = getJwtToken(authInfo);
           return this.Ok(ctx, {
             token,
+            refreshToken,
             message:
               /* tslint:disable-next-line */
               reqParam.type == EUserType.TEEN
                 ? `We have sent sms/email to your parent. Once he starts onboarding process you can have access to full features of this app.`
-                : `Your account is created successfully`,
+                : `Your account is created successfully. Please fill other profile details as well.`,
           });
         }
       }
@@ -705,6 +789,90 @@ class AliveController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to check whether parent and child exists.
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/check-account-ready-to-link", method: HttpMethod.GET })
+  public async checkAccountReadyToLink(ctx: any) {
+    const input = ctx.request.body;
+    return validation.checkAccountReadyToLinkValidation(
+      input,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const { mobile, parentMobile } = input;
+          let user = await UserTable.findOne({ mobile, parentMobile });
+          if (user) return this.Ok(ctx, { status: true });
+          this.BadRequest(ctx, "We cannot find your accounts");
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to store address and asset information
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/store-user-details", method: HttpMethod.POST })
+  @Auth()
+  public async storeUserDetails(ctx: any) {
+    const input = ctx.request.body;
+    return validation.storeUserDetailsValidation(
+      input,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          try {
+            await UserTable.findOneAndUpdate(
+              { username: ctx.request.user.username },
+              { $set: input }
+            );
+            return this.Created(ctx, {
+              message:
+                "Stored Address and Liquid Asset Information Successfully",
+            });
+          } catch (error) {
+            this.BadRequest(ctx, "Something went wrong. Please try again.");
+          }
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to create refresh token
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/refresh-token", method: HttpMethod.GET })
+  @Auth()
+  public async refreshToken(ctx: any) {
+    const input = ctx.request.body;
+    const { refreshToken } = input;
+    if (!refreshToken || refreshToken == "")
+      return this.BadRequest(ctx, "Refresh Token not found.");
+
+    let user: any;
+    try {
+      user = verifyToken(refreshToken);
+    } catch (error) {
+      return this.UnAuthorized(ctx, "Refresh Token Expired");
+    }
+
+    let actualRefreshToken = (
+      await UserTable.findOne({ username: user.username }, { refreshToken: 1 })
+    ).refreshToken;
+
+    if (refreshToken !== actualRefreshToken)
+      return this.BadRequest(ctx, "Invalid Refresh Token");
+
+    let token = getJwtToken(AuthService.getJwtAuthInfo(user));
+    this.Ok(ctx, { token });
   }
 }
 

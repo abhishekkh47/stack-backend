@@ -11,12 +11,28 @@ const schema = new mongoose.Schema<IUserSchema>(
       required: false,
       default: null,
     },
-    password: { type: mongoose.Schema.Types.String, required: true },
-    username: { type: mongoose.Schema.Types.String, required: true },
+    password: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    username: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
     mobile: { type: mongoose.Schema.Types.String, required: true },
     address: { type: mongoose.Schema.Types.String, default: null },
-    firstName: { type: mongoose.Schema.Types.String, required: true },
-    lastName: { type: mongoose.Schema.Types.String, required: true },
+    firstName: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    lastName: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
     /**
      * 1 - teenager and 2 - parent
      */
@@ -36,6 +52,13 @@ const schema = new mongoose.Schema<IUserSchema>(
     },
     tempPassword: { type: mongoose.Schema.Types.String, default: null },
     loginAttempts: { type: mongoose.Schema.Types.Number, default: 0 },
+    refreshToken: { type: mongoose.Schema.Types.String, default: null },
+    country: { type: mongoose.Schema.Types.String, default: null },
+    state: { type: mongoose.Schema.Types.String, default: null },
+    city: { type: mongoose.Schema.Types.String, default: null },
+    postalCode: { type: mongoose.Schema.Types.String, default: null },
+    unitApt: { type: mongoose.Schema.Types.String, default: null },
+    liquidAsset: { type: mongoose.Schema.Types.Number, default: null },
   },
   { timestamps: true }
 );

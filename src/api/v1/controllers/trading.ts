@@ -3,9 +3,10 @@ import { Route } from "@app/utility";
 import BaseController from "./base";
 import { Auth } from "@app/middleware";
 import { EAction, EStatus, EUserType, HttpMethod, messages } from "@app/types";
-import { UserActivityTable, UserTable } from "@app/model";
+import { CryptoTable, UserActivityTable, UserTable } from "@app/model";
 import { validation } from "../../../validations/apiValidation";
 import { UserWalletTable } from "@app/model/userbalance";
+import { ObjectId } from "mongodb";
 
 class TradingController extends BaseController {
   /**
@@ -245,6 +246,84 @@ class TradingController extends BaseController {
       { balance: 1 }
     );
     return this.Ok(ctx, { balance: userBalance.balance });
+  }
+
+  /**
+   * @description This method is used to buy crypto
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/buy-crypto", method: HttpMethod.POST })
+  @Auth()
+  public async buyCrypto(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    return validation.buyCryptoValidation(reqParam, ctx, async (validate) => {
+      const { amount, cryptoId } = reqParam;
+      const crypto = await CryptoTable.findById({ _id: cryptoId });
+      if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
+
+      const userBalance = (
+        await UserWalletTable.findOne({ userId: user._id }, { balance: 1 })
+      ).balance;
+      if (amount > userBalance)
+        return this.BadRequest(
+          ctx,
+          "You dont have sufficient balance to withdraw money"
+        );
+
+      const userType = (
+        await UserTable.findOne(
+          { username: user.username },
+          { type: 1, _id: -1 }
+        )
+      ).type;
+
+      if (userType === EUserType.TEEN) {
+        const pendingTransactions = await UserActivityTable.aggregate([
+          {
+            $match: {
+              userId: new ObjectId(user._id),
+              action: { $in: [EAction.WITHDRAW, EAction.BUY_CRYPTO] },
+              status: EStatus.PENDING,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$currencyValue" },
+            },
+          },
+        ]).exec();
+
+        if (
+          pendingTransactions.length > 0 &&
+          userBalance < pendingTransactions[0].total + amount
+        ) {
+          return this.BadRequest(
+            ctx,
+            "Please cancel your existing request in order to withdraw money from this request"
+          );
+        }
+      }
+
+      await UserActivityTable.create({
+        userId: user._id,
+        message: messages.BUY,
+        action: EAction.BUY_CRYPTO,
+        currencyValue: amount,
+        currencyType: cryptoId,
+        userType,
+        status:
+          userType === EUserType.TEEN ? EStatus.PENDING : EStatus.PROCESSED,
+      });
+      const message =
+        userType === EUserType.TEEN
+          ? `Your request for buy order of crypto of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
+          : `Buy order proccessed`;
+
+      return this.Ok(ctx, { message });
+    });
   }
 }
 

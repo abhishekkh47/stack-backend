@@ -99,14 +99,21 @@ export const validation = {
         .min(5)
         .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
         .required(),
+      mobile: Joi.string()
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+        .required(),
+      email: Joi.string().email().required(),
+      childMobile: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+          .disallow(Joi.ref("mobile"))
+          .required(),
+      }),
       password: Joi.string()
         .min(8)
         .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
         .required(),
-      mobile: Joi.string()
-        .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
-        .required(),
-      email: Joi.string().email().optional(),
       firstName: Joi.string()
         .min(2)
         .regex(/^[A-za-z]*$/)
@@ -118,13 +125,21 @@ export const validation = {
       parentMobile: Joi.when("type", {
         is: 1,
         then: Joi.string()
-          .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
+          .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
           .disallow(Joi.ref("mobile"))
           .required(),
       }),
       parentEmail: Joi.when("type", {
         is: 1,
         then: Joi.string().email().disallow(Joi.ref("email")).required(),
+      }),
+      fileTaxesInUS: Joi.when("type", {
+        is: 2,
+        then: Joi.number().valid(0, 1).required(),
+      }),
+      citizenOfUS: Joi.when("type", {
+        is: 2,
+        then: Joi.number().valid(0, 1).required(),
       }),
     });
     const { error } = schema.validate(req);
@@ -139,7 +154,7 @@ export const validation = {
   changeMobileNumberValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
       mobile: Joi.string()
-        .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
     });
     const { error } = schema.validate(req);
@@ -154,7 +169,7 @@ export const validation = {
   verifyOtpValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
       mobile: Joi.string()
-        .regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9,13})$/)
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
       code: Joi.number().integer().min(100000).max(999999).required(),
     });
@@ -167,7 +182,7 @@ export const validation = {
   sendIssueInputValidation: (req, res, callback) => {
     const schema = Joi.object({
       email: Joi.string().email(),
-      mobile: Joi.string().regex(/^([0|\+[0-9]{1,5})?([7-9][0-9]{9})$/),
+      mobile: Joi.string().regex(/^\+[1-9]{1}[0-9]{10,14}$/),
       issue: Joi.string().required(),
     });
 
@@ -178,10 +193,10 @@ export const validation = {
   },
   loginValidation: (req, res, callback) => {
     const schema = Joi.object({
+      email: Joi.string().email(),
       username: Joi.string()
         .min(5)
-        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
-        .required(),
+        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/),
       password: Joi.string()
         .min(8)
         .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
@@ -268,6 +283,73 @@ export const validation = {
         res.__(validationMessageKey("withdrawMoney", error))
       );
     }
+    return callback(true);
+  },
+  buyCryptoValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      amount: Joi.number().min(1).positive().precision(2).required(),
+      cryptoId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req, { convert: false });
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("buyCrypto", error)));
+    }
+    return callback(true);
+  },
+  checkAccountReadyToLinkValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      mobile: Joi.string()
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+        .required(),
+      parentMobile: Joi.string()
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+        .disallow(Joi.ref("mobile"))
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("checkAccountReadyToLink", error))
+      );
+    return callback(true);
+  },
+  storeUserDetailsValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      country: Joi.string()
+        .regex(/[A-Za-z]/)
+        .required(),
+      state: Joi.string()
+        .regex(/[A-Za-z]/)
+        .required(),
+      city: Joi.string()
+        .regex(/[A-Za-z]/)
+        .required(),
+      address: Joi.string()
+        .regex(/[A-Za-z]/)
+        .required(),
+      unitApt: Joi.string()
+        .regex(/[A-Za-z]/)
+        .required(),
+      postalCode: Joi.string()
+        .regex(/[A-Za-z0-9]/)
+        .min(4)
+        .required(),
+      liquidAsset: Joi.number()
+        .min(1)
+        .positive()
+        .precision(2)
+        .strict()
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("storeUserDetails", error))
+      );
     return callback(true);
   },
 };
