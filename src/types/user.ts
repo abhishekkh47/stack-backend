@@ -23,6 +23,8 @@ export interface IAccount {
   postalCode: string;
   unitApt: string;
   liquidAsset: number;
+  taxIdNo: string;
+  taxState: string;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;

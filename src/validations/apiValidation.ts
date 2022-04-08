@@ -133,6 +133,11 @@ export const validation = {
         is: 1,
         then: Joi.string().email().disallow(Joi.ref("email")).required(),
       }),
+      dob: Joi.date().iso().when("type", {
+        is: 2,
+        then: Joi.required(),
+        otherwise: Joi.forbidden(),
+      }),
       fileTaxesInUS: Joi.when("type", {
         is: 2,
         then: Joi.number().valid(0, 1).required(),
@@ -351,5 +356,24 @@ export const validation = {
         res.__(validationMessageKey("storeUserDetails", error))
       );
     return callback(true);
+  },
+  updateTaxInfoRequestBodyValidation: (req, res, callabck) => {
+    const schema = Joi.object({
+      taxIdNo: Joi.string()
+        .regex(/^[0-9]*$/)
+        .min(5)
+        .max(10)
+        .required(),
+      taxState: Joi.string()
+        .regex(/^[A-Za-z]*$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("updateTaxInfo", error))
+      );
+    return callabck(true);
   },
 };

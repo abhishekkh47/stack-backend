@@ -194,6 +194,15 @@ class AliveController extends BaseController {
                 "Sorry We are only serving US Based Citizens right now but we do plan to expand. Stay Tuned!!"
               );
             }
+            if (
+              reqParam.type == EUserType.PARENT &&
+              new Date(
+                Date.now() - new Date(reqParam.dob).getTime()
+              ).getFullYear() < 1988
+            ) {
+              return this.BadRequest(ctx, "Parent's age should be 18+");
+            }
+
             const childDetails = await UserTable.find(
               {
                 type: EUserType.TEEN,

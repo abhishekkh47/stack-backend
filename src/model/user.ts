@@ -59,6 +59,8 @@ const schema = new mongoose.Schema<IUserSchema>(
     postalCode: { type: mongoose.Schema.Types.String, default: null },
     unitApt: { type: mongoose.Schema.Types.String, default: null },
     liquidAsset: { type: mongoose.Schema.Types.Number, default: null },
+    taxIdNo: { type: mongoose.Schema.Types.String, default: null },
+    taxState: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
 );

@@ -142,5 +142,16 @@
 	"storeUserDetailsPostalcodeBase": "Please enter postal code.",
 	"storeUserDetailsLiquidassetPrecision": "Liquid asset should contain maximum 2 decimal places.",
 	"loginEmailEmpty": "Please enter email.",
-	"loginEmailEmail": "Please enter valid email."
+	"loginEmailEmail": "Please enter valid email.",
+	"signupValidationDobRequired": "Please enter date of birth in YYYY-MM-DD format.",
+	"signupValidationDobFormat": "Please enter date of birth in YYYY-MM-DD format.",
+	"signupValidationDobUnknown": "Date of birth not allowed in teen.",
+	"updateTaxInfoTaxidnoRequired": "Please enter tax id no.",
+	"updateTaxInfoTaxidnoPattern": "Please enter valid tax id no.",
+	"updateTaxInfoTaxidnoEmpty": "Please enter tax id no.",
+	"updateTaxInfoTaxidnoMax": "Tax id number should not be greater than 10 characters.",
+	"updateTaxInfoTaxstateRequired": "Please enter tax state.",
+	"updateTaxInfoTaxstateBase": "Please enter tax state.",
+	"updateTaxInfoTaxstatePattern": "Please enter valid tax state.",
+	"updateTaxInfoTaxstateEmpty": "Please enter tax state."
 }
