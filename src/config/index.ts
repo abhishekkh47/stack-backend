@@ -47,4 +47,7 @@ export default {
   get TWILIO_PHONE_NUMBER() {
     return process.env.TWILIO_PHONE_NUMBER;
   },
+  get PRIMETRUSTAPI_URL() {
+    return process.env.PRIMETRUSTAPI_URL;
+  },
 };

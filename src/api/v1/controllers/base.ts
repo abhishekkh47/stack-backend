@@ -31,7 +31,7 @@ class BaseController implements IController {
     ctx.throw(404, message || "Not found");
   }
 
-  protected BadRequest(ctx: Koa.Context, message?: string) {
+  protected BadRequest(ctx: Koa.Context, message?: any) {
     ctx.throw(400, message || "Bad request");
   }
 

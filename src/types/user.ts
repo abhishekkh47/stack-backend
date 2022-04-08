@@ -24,7 +24,12 @@ export interface IAccount {
   unitApt: string;
   liquidAsset: number;
   taxIdNo: string;
+  dob: string;
   taxState: string;
+}
+
+export interface IAdmin extends IUser {
+  jwtToken: string;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;

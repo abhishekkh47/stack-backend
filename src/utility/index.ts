@@ -4,3 +4,4 @@ export * from "./common";
 export * from "./notification";
 export * from "./auth";
 export * from "./emailSend";
+export * from "./prime-trust";

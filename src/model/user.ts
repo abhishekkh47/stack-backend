@@ -61,6 +61,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     liquidAsset: { type: mongoose.Schema.Types.Number, default: null },
     taxIdNo: { type: mongoose.Schema.Types.String, default: null },
     taxState: { type: mongoose.Schema.Types.String, default: null },
+    dob: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
 );

@@ -217,7 +217,7 @@ class AliveController extends BaseController {
               return this.BadRequest(ctx, "Teen Mobile Number Doesn't Exists");
             }
             for await (const child of childDetails) {
-              await childArray.push(child._id);
+              await childArray.push({ childId: child._id, accountId: null });
             }
           }
           if (reqParam.username) {
@@ -237,6 +237,7 @@ class AliveController extends BaseController {
             mobile: reqParam.mobile,
             parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
             parentMobile: reqParam.parentMobile ? reqParam.parentMobile : null,
+            dob: reqParam.dob ? reqParam.dob : null,
           });
           /**
            * Create the balance table
@@ -249,6 +250,8 @@ class AliveController extends BaseController {
           if (user.type === EUserType.PARENT) {
             await ParentChildTable.create({
               userId: user._id,
+              contactId: null,
+              firstChildId: childExists._id,
               teens: childArray,
             });
           }

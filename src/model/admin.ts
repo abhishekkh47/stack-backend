@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
-import type { IUser, MongooseModel } from "@app/types";
+import type { IAdmin, MongooseModel } from "@app/types";
 
-export type IAdminSchema = MongooseModel<IUser> & mongoose.Document;
+export type IAdminSchema = MongooseModel<IAdmin> & mongoose.Document;
 
 const schema = new mongoose.Schema<IAdminSchema>(
   {
@@ -12,6 +12,7 @@ const schema = new mongoose.Schema<IAdminSchema>(
       default: null,
     },
     username: { type: mongoose.Schema.Types.String, required: true },
+    jwtToken: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
 );

@@ -11,11 +11,26 @@ const schema = new mongoose.Schema<IParentChildType>(
       ref: "users",
       required: true,
     },
+    contactId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    firstChildId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      required: true,
+    },
     teens: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "users",
-        required: true,
+        childId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "users",
+          required: true,
+        },
+        accountId: {
+          type: mongoose.Schema.Types.String,
+          default: null,
+        },
       },
     ],
   },
