@@ -28,7 +28,7 @@ const server = (async () => {
     const appServer = http.createServer(app.callback());
     app.use(i18n);
     // app.use(koaBody({ multipart: true }));
-    app.use(bodyParser());
+    // app.use(bodyParser());
 
     // Handle exception
     app.use(errorHandler);

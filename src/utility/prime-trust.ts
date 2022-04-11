@@ -1,7 +1,7 @@
 import axios from "axios";
 import config from "../config/index";
+import request from "request";
 import { PRIMETRUSTAPIS, PRIMETRUSTCONSTANT } from "./constants";
-
 /**
  * @description This api is used by prime trust for getting jwt token to access all apis
  */
@@ -102,14 +102,13 @@ export const uploadFiles = async (token, data) => {
       { data: data },
       {
         headers: {
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
-          ...data.getHeaders(),
-
-          // "Content-Type": "multipart/form-data",
         },
       }
     )
     .then((res) => {
+      console.log(res, "resss");
       return {
         status: 200,
         data: res.data,
@@ -123,4 +122,31 @@ export const uploadFiles = async (token, data) => {
       };
     });
   return response;
+};
+
+export const uploadFilesFetch = async (token, data) => {
+  const options = {
+    method: "POST",
+    url: config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.uploadFiles,
+    headers: {
+      Authorization: "Bearer " + token,
+      "Content-Type": "multipart/form-data",
+    },
+    formData: data,
+  };
+  return new Promise((resolve, reject) => {
+    const response = request(options, function (err, res, body) {
+      console.log(res, "res");
+      if (err) {
+        return reject({
+          status: 400,
+          message: err,
+        });
+      }
+      return resolve({
+        status: 200,
+        message: res.body,
+      });
+    });
+  });
 };
