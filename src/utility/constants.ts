@@ -15,5 +15,6 @@ export const PRIMETRUSTBASEAPIURL = "";
 export const PRIMETRUSTAPIS = {
   jwt: "auth/jwts",
   getUser: "v2/users",
+  uploadFiles: "v2/uploaded-documents",
   accountCreate: "v2/accounts?include=contacts",
 };

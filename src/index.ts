@@ -15,6 +15,7 @@ import ApiV1 from "@app/api/v1";
 import { connectAgenda, startCron } from "@app/background";
 import i18n from "../src/i18n/i18n";
 import views from "koa-views";
+const koaBody = require("koa-body");
 const server = (async () => {
   try {
     const app = new Koa();
@@ -26,6 +27,7 @@ const server = (async () => {
 
     const appServer = http.createServer(app.callback());
     app.use(i18n);
+    // app.use(koaBody({ multipart: true }));
     app.use(bodyParser());
 
     // Handle exception

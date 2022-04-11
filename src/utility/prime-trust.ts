@@ -62,6 +62,8 @@ export const getUser = async (token) => {
 
 /**
  * @description This api is used by create parent child account in prime trust
+ * @param token
+ * @param data
  */
 export const createAccount = async (token, data) => {
   const response = await axios
@@ -70,6 +72,41 @@ export const createAccount = async (token, data) => {
       { data: data },
       {
         headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      console.log(error.response.data, "error");
+      return {
+        status: 400,
+        message: error.response.data,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to upload identity files for kyc related account.
+ * @param token
+ * @param data
+ */
+export const uploadFiles = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.uploadFiles,
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...data.getHeaders(),
+
+          // "Content-Type": "multipart/form-data",
+        },
       }
     )
     .then((res) => {

@@ -55,15 +55,25 @@ export const toUpperCase = (str) => {
     return str.charAt(0).toUpperCase() + newStr.slice(1);
   }
   return "";
-}
+};
 export const hashString = (length = 10) => {
-        let result = '';
-        const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
-        for (let i = 0; i < length; i += 1) {
-          result += characters.charAt(Math.floor(Math.random() * charactersLength));
-        }
-        result += bcrypt.hashSync(result, 10);
-        return result;
-      }
+  let result = "";
+  const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i += 1) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  result += bcrypt.hashSync(result, 10);
+  return result;
+};
 
+export const checkValidImageExtension = (file) => {
+  if (
+    file &&
+    ["image/jpeg", "image/png", "image/jpg"].includes(file.mimetype)
+  ) {
+    console.log(true, "file");
+    return true;
+  }
+  return false;
+};

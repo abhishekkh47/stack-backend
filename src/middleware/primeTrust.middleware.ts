@@ -7,7 +7,6 @@ export const PrimeTrustJWT = () => {
       const admin = await AdminTable.findOne({});
       const isJwtValid = await getUser(admin.jwtToken);
       let token: any = admin.jwtToken;
-      console.log(isJwtValid, "isJwtValid");
       if (isJwtValid.status != 200) {
         token = await getPrimeTrustJWTToken();
         await AdminTable.updateOne(
