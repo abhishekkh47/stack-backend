@@ -362,7 +362,7 @@ export const validation = {
       taxIdNo: Joi.string()
         .regex(/^[0-9]*$/)
         .min(5)
-        .max(10)
+        .max(15)
         .required(),
       taxState: Joi.string()
         .regex(/^[A-Za-z]*$/)

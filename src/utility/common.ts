@@ -70,7 +70,9 @@ export const hashString = (length = 10) => {
 export const checkValidImageExtension = (file) => {
   if (
     file &&
-    ["image/jpeg", "image/png", "image/jpg"].includes(file.mimetype)
+    ["image/jpeg", "image/png", "image/jpg", "application/pdf"].includes(
+      file.mimetype
+    )
   ) {
     console.log(true, "file");
     return true;

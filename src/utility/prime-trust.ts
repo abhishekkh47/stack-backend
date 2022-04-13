@@ -37,6 +37,7 @@ export const getPrimeTrustJWTToken = async () => {
 /**
  * @description This api is used to get user details from prime trust jwt token
  * @param token
+ * @returns {*}
  */
 export const getUser = async (token) => {
   const response = await axios
@@ -64,6 +65,7 @@ export const getUser = async (token) => {
  * @description This api is used by create parent child account in prime trust
  * @param token
  * @param data
+ * @returns {*}
  */
 export const createAccount = async (token, data) => {
   const response = await axios
@@ -94,6 +96,7 @@ export const createAccount = async (token, data) => {
  * @description This api is used to upload identity files for kyc related account.
  * @param token
  * @param data
+ * @returns {*}
  */
 export const uploadFiles = async (token, data) => {
   const response = await axios
@@ -124,6 +127,12 @@ export const uploadFiles = async (token, data) => {
   return response;
 };
 
+/**
+ * @description This api is used to upload files in request api for kyc related document.
+ * @param token
+ * @param data
+ * @returns {*}
+ */
 export const uploadFilesFetch = async (token, data) => {
   const options = {
     method: "POST",
@@ -145,8 +154,72 @@ export const uploadFilesFetch = async (token, data) => {
       }
       return resolve({
         status: 200,
-        message: res.body,
+        message: JSON.parse(res.body),
       });
     });
   });
+};
+
+/**
+ * @description This api is used to agreement preview signed
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const agreementPreviews = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.agreementPreviews,
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to do kyc document checks
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const kycDocumentChecks = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.kycDocumentChecks,
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data,
+      };
+    });
+  return response;
 };

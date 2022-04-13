@@ -15,6 +15,18 @@ const schema = new mongoose.Schema<IParentChildType>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    kycDocumentId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    frontDocumentId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    backDocumentId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     firstChildId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",

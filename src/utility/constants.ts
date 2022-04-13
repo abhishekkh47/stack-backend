@@ -17,4 +17,6 @@ export const PRIMETRUSTAPIS = {
   getUser: "v2/users",
   uploadFiles: "v2/uploaded-documents",
   accountCreate: "v2/accounts?include=contacts",
+  agreementPreviews: "v2/agreement-previews",
+  kycDocumentChecks: "v2/kyc-document-checks",
 };

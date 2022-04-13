@@ -14,12 +14,13 @@ class BaseController implements IController {
   }
 
   protected Ok<T>(ctx: Koa.Context, data: T) {
-    ctx.body = data;
+    ctx.status = 200;
+    ctx.body = { ...data, status: 200 };
   }
 
   protected Created<T>(ctx: Koa.Context, data: T) {
     ctx.status = 201;
-    ctx.body = data;
+    ctx.body = { ...data, status: 201 };
   }
 
   protected NoContent(ctx: Koa.Context) {
@@ -28,15 +29,15 @@ class BaseController implements IController {
   }
 
   protected NotFound(ctx: Koa.Context, message?: string) {
-    ctx.throw(404, message || "Not found");
+    ctx.throw(404, { status: 404, message: message || "Not found" });
   }
 
   protected BadRequest(ctx: Koa.Context, message?: any) {
-    ctx.throw(400, message || "Bad request");
+    ctx.throw(400, { status: 400, message: message || "Bad request" });
   }
 
   protected UnAuthorized(ctx: Koa.Context, message?: string) {
-    ctx.throw(401, message || "Unauthorized");
+    ctx.throw(401, { status: 401, message: message || "Unauthorized" });
   }
 }
 
