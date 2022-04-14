@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 export interface IUser extends IAccount {
   email: string;
   password: string;
@@ -17,7 +19,7 @@ export interface IAccount {
   tempPassword: string;
   loginAttempts: number;
   country: string;
-  state: string;
+  stateId: mongoose.Schema.Types.ObjectId;
   city: string;
   address: string;
   postalCode: string;

@@ -5,3 +5,4 @@ export * from "./notification";
 export * from "./auth";
 export * from "./emailSend";
 export * from "./prime-trust";
+export * from "./plaid";

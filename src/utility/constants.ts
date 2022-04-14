@@ -20,3 +20,7 @@ export const PRIMETRUSTAPIS = {
   agreementPreviews: "v2/agreement-previews",
   kycDocumentChecks: "v2/kyc-document-checks",
 };
+
+export const PLAIDAPIS = {
+  getLinkToken: "link/token/create",
+};

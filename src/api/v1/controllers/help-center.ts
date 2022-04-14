@@ -1,10 +1,9 @@
 import Koa from "koa";
 import BaseController from "./base";
-import { Auth } from "@app/middleware";
 import { validation } from "../../../validations/apiValidation";
 import { Route, sendEmail } from "@app/utility";
 import { HttpMethod } from "@app/types";
-import { AdminTable } from "@app/model";
+import { AdminTable, UserTable } from "@app/model";
 import { CONSTANT } from "@app/utility/constants";
 
 class HelpCenterController extends BaseController {
@@ -19,17 +18,28 @@ class HelpCenterController extends BaseController {
           const { email, mobile, issue } = reqParam;
           if (!email && !mobile)
             return this.BadRequest(ctx, "Email or Contact number not found.");
+
+          let userType: any;
+          if (email)
+            userType = await UserTable.findOne({ email }, { type: 1, _id: 0 });
+          else
+            userType = await UserTable.findOne({ mobile }, { type: 1, _id: 0 });
+
+          if (!userType)
+            return this.BadRequest(ctx, "Invalid Email or Moblie number");
+
           /**
            * Send email regarding the details to admin
            */
           const data = {
             email: email ? email : "N/A",
             mobile: mobile ? mobile : "N/A",
+            type: userType.type == 1 ? "TEEN" : "PARENT",
             issue,
             subject: "Help Center Request",
           };
           const admin = await AdminTable.findOne({});
-          await sendEmail(admin.email, CONSTANT.HelpCenterTemplateId, data);
+          sendEmail(admin.email, CONSTANT.HelpCenterTemplateId, data);
           return this.Ok(ctx, {
             message: "Hang tight! We will reach out to you ASAP",
           });

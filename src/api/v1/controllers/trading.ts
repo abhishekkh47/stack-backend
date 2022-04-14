@@ -3,7 +3,12 @@ import { Route } from "@app/utility";
 import BaseController from "./base";
 import { Auth } from "@app/middleware";
 import { EAction, EStatus, EUserType, HttpMethod, messages } from "@app/types";
-import { CryptoTable, UserActivityTable, UserTable } from "@app/model";
+import {
+  CryptoTable,
+  ParentChildTable,
+  UserActivityTable,
+  UserTable,
+} from "@app/model";
 import { validation } from "../../../validations/apiValidation";
 import { UserWalletTable } from "@app/model/userbalance";
 import { ObjectId } from "mongodb";
@@ -269,7 +274,7 @@ class TradingController extends BaseController {
       if (amount > userBalance)
         return this.BadRequest(
           ctx,
-          "You dont have sufficient balance to withdraw money"
+          "You dont have sufficient balance to buy cryptocurrenices"
         );
 
       const userType = (
@@ -324,6 +329,91 @@ class TradingController extends BaseController {
 
       return this.Ok(ctx, { message });
     });
+  }
+
+  /**
+   * @description This method is used to get child activities processed and pending
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-childs-activities/:childId", method: HttpMethod.GET })
+  @Auth()
+  public async getChildsActivities(ctx: any) {
+    const { childId } = ctx.request.params;
+    if (!/^[0-9a-fA-F]{24}$/.test(childId))
+      return this.BadRequest(ctx, "Enter Correct Child's ID");
+    const parent = await ParentChildTable.findOne({
+      userId: ctx.request.user._id,
+    });
+    if (!parent) return this.BadRequest(ctx, "Invalid Parent's ID");
+    let teen: any;
+    parent.teens.forEach((current: any) => {
+      if (current.childId.toString() === childId) teen = current;
+    });
+    if (!teen) this.BadRequest(ctx, "Invalid Child ID");
+
+    const teenActivities = await UserActivityTable.find(
+      {
+        userId: childId,
+        status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+      },
+      {
+        message: 1,
+        action: 1,
+        status: 1,
+        currencyValue: 1,
+      }
+    ).sort({ updatedAt: -1 });
+
+    const pendingActivity = [];
+    const processedActivity = [];
+    for (const activity of teenActivities) {
+      activity.status === EStatus.PENDING
+        ? pendingActivity.push(activity)
+        : processedActivity.push(activity);
+    }
+    return this.Ok(ctx, {
+      message: "Success",
+      data: { pending: pendingActivity, processed: processedActivity },
+    });
+  }
+
+  /**
+   * @description This method is used to reject child's activity
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/reject-childs-activity", method: HttpMethod.POST })
+  @Auth()
+  public async rejectChildsActivity(ctx: any) {
+    const { activityId } = ctx.request.body;
+    if (!/^[0-9a-fA-F]{24}$/.test(activityId))
+      return this.BadRequest(ctx, "Enter Correct Activity Details");
+    const parent = await ParentChildTable.findOne({
+      userId: ctx.request.user._id,
+    });
+    if (!parent) return this.BadRequest(ctx, "Invalid Parent's ID");
+
+    const activity = await UserActivityTable.findOne(
+      { _id: activityId, status: EStatus.PENDING },
+      { userId: 1 }
+    );
+    if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
+
+    let isValid = true;
+    for (let i = 0; i < parent.teens.length; i++) {
+      if (parent.teens[i]["childId"] === activity.userId) {
+        isValid = false;
+        break;
+      }
+    }
+    if (!isValid) return this.BadRequest(ctx, "Invalid Pending Activity ID");
+
+    await UserActivityTable.updateOne(
+      { _id: activityId },
+      { status: EStatus.CANCELLED }
+    );
+    this.Ok(ctx, { message: "Activity cancelled out successfully" });
   }
 }
 

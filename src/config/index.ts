@@ -50,4 +50,13 @@ export default {
   get PRIMETRUSTAPI_URL() {
     return process.env.PRIMETRUSTAPI_URL;
   },
+  get PLAID_CLIENT_ID() {
+    return process.env.PLAID_CLIENT_ID;
+  },
+  get PLAID_SECRET() {
+    return process.env.PLAID_SECRET;
+  },
+  get PLAID_ENV() {
+    return process.env.PLAID_ENV;
+  },
 };

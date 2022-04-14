@@ -6,6 +6,7 @@ export interface IVideo {
 
 export interface IVideoList {
   title: string;
+  thumbnail: string;
   url: string;
   position: number;
 }

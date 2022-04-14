@@ -23,7 +23,7 @@ import {
 import { AuthService } from "@app/services";
 import { Auth } from "@app/middleware";
 import { validation } from "@app/validations/apiValidation";
-import { UserTable, OtpTable, ParentChildTable } from "@app/model";
+import { UserTable, OtpTable, ParentChildTable, StateTable } from "@app/model";
 import { TwilioService } from "@app/services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
@@ -246,8 +246,8 @@ class AliveController extends BaseController {
             userId: user._id,
             balance: 0,
           });
-          console.log(childArray, "childArraychildArray");
           if (user.type === EUserType.PARENT) {
+            console.log("added");
             await ParentChildTable.create({
               userId: user._id,
               contactId: null,
@@ -594,7 +594,6 @@ class AliveController extends BaseController {
               "Otp Time Limit Expired. Please resend otp and try to submit it within 5 minutes."
             );
           }
-          // console.log(typeof reqParam.code);
           /* tslint:disable-next-line */
           if (otpExists.code != reqParam.code) {
             return this.BadRequest(ctx, "Code Doesn't Match");
@@ -826,6 +825,17 @@ class AliveController extends BaseController {
   }
 
   /**
+   * @description This method is used for provide states dropdown
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-states", method: HttpMethod.GET })
+  public async getStates(ctx: any) {
+    const states = await StateTable.find({});
+    this.Ok(ctx, { data: states });
+  }
+
+  /**
    * @description This method is used to store address and asset information
    * @param ctx
    * @returns
@@ -839,6 +849,8 @@ class AliveController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          const state = await StateTable.findOne({ _id: input.stateId });
+          if (!state) return this.BadRequest(ctx, "Invalid State ID.");
           try {
             await UserTable.findOneAndUpdate(
               { username: ctx.request.user.username },

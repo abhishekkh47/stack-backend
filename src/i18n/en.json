@@ -153,5 +153,10 @@
 	"updateTaxInfoTaxstateRequired": "Please enter tax state.",
 	"updateTaxInfoTaxstateBase": "Please enter tax state.",
 	"updateTaxInfoTaxstatePattern": "Please enter valid tax state.",
-	"updateTaxInfoTaxstateEmpty": "Please enter tax state."
+	"updateTaxInfoTaxstateEmpty": "Please enter tax state.",
+	"sendIssueNumberUnknown": "sendIssueNumberUnknown",
+	"sendIssueMobilePattern": "sendIssueMobilePattern",
+	"storeUserDetailsStateidPattern": "Please enter state details.",
+	"storeUserDetailsStateidRequired": "Please enter state details.",
+	"storeUserDetailsStateidEmpty": "Please enter state details."
 }

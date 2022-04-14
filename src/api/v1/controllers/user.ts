@@ -8,6 +8,7 @@ import {
   agreementPreviews,
   checkValidImageExtension,
   createAccount,
+  getLinkToken,
   kycDocumentChecks,
   Route,
   uploadFilesFetch,
@@ -15,6 +16,7 @@ import {
 import { HttpMethod } from "@app/types";
 import multer from "@koa/multer";
 import path from "path";
+import moment from "moment";
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, "../../../uploads"));
@@ -81,7 +83,10 @@ class UserController extends BaseController {
     /**
      * Validations to be done
      */
-    const userExists = await UserTable.findOne({ _id: user._id });
+    const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
+      "stateId",
+      ["name"]
+    );
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
@@ -96,7 +101,7 @@ class UserController extends BaseController {
           "contact-type": "natural_person",
           name: fullName,
           email: userExists.email,
-          "date-of-birth": userExists.dob,
+          "date-of-birth": moment(userExists.dob).format("MM/DD/YYYY"),
           "tax-id-number": userExists.taxIdNo,
           "tax-country": userExists.country,
           "ip-address": "127.0.0.2",
@@ -111,7 +116,7 @@ class UserController extends BaseController {
             "street-2": "",
             "postal-code": userExists.postalCode,
             city: userExists.city,
-            region: userExists.state,
+            region: userExists.stateId.name,
             country: userExists.country,
           },
         },
@@ -174,7 +179,10 @@ class UserController extends BaseController {
     /**
      * Validations to be done
      */
-    const userExists = await UserTable.findOne({ _id: user._id });
+    const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
+      "stateId",
+      ["name"]
+    );
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
@@ -207,10 +215,10 @@ class UserController extends BaseController {
           },
           "primary-address": {
             "street-1": userExists.address,
-            "street-2": "",
+            "street-2": userExists.unitApt,
             "postal-code": userExists.postalCode,
             city: userExists.city,
-            region: userExists.state,
+            region: userExists.stateId.name,
             country: userExists.country,
           },
         },
@@ -248,7 +256,6 @@ class UserController extends BaseController {
         ),
       };
       let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-      console.log(uploadFile, "uploadFile");
       if (uploadFile.status == 400) {
         uploadFileError = uploadFile.message;
         break;
@@ -317,6 +324,21 @@ class UserController extends BaseController {
       message:
         "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
     });
+  }
+
+  /**
+   *
+   */
+  @Route({ path: "/test-api", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT()
+  public async testApi(ctx: any) {
+    const user = await UserTable.findOne({});
+    const response: any = await getLinkToken(user);
+    if (response.status == 400) {
+      return this.BadRequest(ctx, response.message);
+    }
+    return this.Ok(ctx, response.data);
   }
 }
 

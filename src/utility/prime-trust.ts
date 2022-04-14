@@ -83,7 +83,6 @@ export const createAccount = async (token, data) => {
       };
     })
     .catch((error) => {
-      console.log(error.response.data, "error");
       return {
         status: 400,
         message: error.response.data,
@@ -111,14 +110,12 @@ export const uploadFiles = async (token, data) => {
       }
     )
     .then((res) => {
-      console.log(res, "resss");
       return {
         status: 200,
         data: res.data,
       };
     })
     .catch((error) => {
-      console.log(error.response.data, "error");
       return {
         status: 400,
         message: error.response.data,
@@ -145,7 +142,6 @@ export const uploadFilesFetch = async (token, data) => {
   };
   return new Promise((resolve, reject) => {
     const response = request(options, function (err, res, body) {
-      console.log(res, "res");
       if (err) {
         return reject({
           status: 400,

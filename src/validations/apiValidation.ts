@@ -326,8 +326,8 @@ export const validation = {
       country: Joi.string()
         .regex(/[A-Za-z]/)
         .required(),
-      state: Joi.string()
-        .regex(/[A-Za-z]/)
+      stateId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
       city: Joi.string()
         .regex(/[A-Za-z]/)

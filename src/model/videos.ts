@@ -17,6 +17,10 @@ const schema = new mongoose.Schema<IVideoSchema>(
           type: mongoose.Schema.Types.String,
           required: true,
         },
+        thumbnail: {
+          type: mongoose.Schema.Types.String,
+          default: null,
+        },
         position: {
           type: mongoose.Schema.Types.Number,
           required: true,
