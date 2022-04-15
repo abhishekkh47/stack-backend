@@ -13,9 +13,9 @@ class BaseController implements IController {
     }
   }
 
-  protected Ok<T>(ctx: Koa.Context, data: T) {
+  protected Ok<T>(ctx: Koa.Context, data: T, flag: boolean = null) {
     ctx.status = 200;
-    ctx.body = { ...data, status: 200 };
+    ctx.body = flag ? { data, status: 200 } : { ...data, status: 200 };
   }
 
   protected Created<T>(ctx: Koa.Context, data: T) {

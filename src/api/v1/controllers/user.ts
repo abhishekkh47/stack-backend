@@ -21,6 +21,7 @@ import { HttpMethod } from "@app/types";
 import multer from "@koa/multer";
 import path from "path";
 import moment from "moment";
+import { ObjectId } from "mongodb";
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, "../../../uploads"));
@@ -453,6 +454,67 @@ class UserController extends BaseController {
       return this.BadRequest(ctx, contributions);
     }
     return this.Ok(ctx, processToken.data);
+  }
+
+  /**
+   * @description This method is used to view profile for both parent and child
+   * @param ctx
+   */
+  @Route({ path: "/get-profile", method: HttpMethod.GET })
+  @Auth()
+  public async getProfile(ctx: any) {
+    let data = await UserTable.findOne(
+      { username: ctx.request.user.username },
+      {
+        password: 0,
+        verificationEmailExpireAt: 0,
+        verificationCode: 0,
+        refreshToken: 0,
+        tempPassword: 0,
+        loginAttempts: 0,
+        createdAt: 0,
+        updatedAt: 0,
+        __v: 0,
+      }
+    );
+    return this.Ok(ctx, { data });
+  }
+
+  /**
+   * @description This method is used to get child of parent
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/get-children", method: HttpMethod.GET })
+  @Auth()
+  public async getChildren(ctx: any) {
+    let teens = await ParentChildTable.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "teens.childId",
+          foreignField: "_id",
+          as: "teens",
+        },
+      },
+      {
+        $match: {
+          userId: new ObjectId(ctx.request.user._id),
+        },
+      },
+      {
+        $project: {
+          "teens.firstName": 1,
+          "teens.lastName": 1,
+          "teens.username": 1,
+          "teens._id": 1,
+          _id: 0,
+        },
+      },
+    ]).exec();
+    if (teens.length == 0) return this.BadRequest(ctx, "No child found");
+    teens = teens[0];
+    return this.Ok(ctx, teens);
   }
 }
 
