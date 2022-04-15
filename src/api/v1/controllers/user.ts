@@ -8,10 +8,14 @@ import {
   agreementPreviews,
   checkValidImageExtension,
   createAccount,
-  getLinkToken,
+  createProcessorToken,
+  getPublicTokenExchange,
+  createFundTransferMethod,
   kycDocumentChecks,
   Route,
   uploadFilesFetch,
+  createContributions,
+  getLinkToken,
 } from "@app/utility";
 import { HttpMethod } from "@app/types";
 import multer from "@koa/multer";
@@ -45,6 +49,11 @@ const upload = multer({
 });
 
 class UserController extends BaseController {
+  /**
+   * @description This method is for updating the tax information
+   * @param ctx
+   * @returns
+   */
   @Route({ path: "/update-tax-info", method: HttpMethod.POST })
   @Auth()
   public async updateTaxInfo(ctx: any) {
@@ -67,6 +76,25 @@ class UserController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is for getting the link token
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/get-link-token", method: HttpMethod.GET })
+  @Auth()
+  public async getLinkToken(ctx: any) {
+    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const linkToken: any = await getLinkToken(userExists);
+    if (linkToken.status == 400) {
+      return this.BadRequest(ctx, linkToken.message);
+    }
+    return this.Ok(ctx, { data: linkToken.data });
   }
 
   /**
@@ -333,12 +361,98 @@ class UserController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async testApi(ctx: any) {
-    const user = await UserTable.findOne({});
-    const response: any = await getLinkToken(user);
-    if (response.status == 400) {
-      return this.BadRequest(ctx, response.message);
+    const { publicToken, accountId } = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
+    // if (!publicToken || !accountId) {
+    //   return this.BadRequest(ctx, "Public Token or AccountId Doesn't Exists");
+    // }
+    const userExists = await UserTable.findOne(
+      { _id: ctx.request.user._id },
+      { _id: 1 }
+    );
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
     }
-    return this.Ok(ctx, response.data);
+    const parentDetails: any = await ParentChildTable.findOne(
+      {
+        userId: userExists._id,
+      },
+      {
+        _id: 1,
+        firstChildId: 1,
+        contactId: 1,
+        teens: 1,
+      }
+    );
+    if (!parentDetails) {
+      return this.BadRequest(ctx, "User Details Not Found");
+    }
+    const accountIdDetails = parentDetails.teens.find(
+      (x: any) => x.childId.toString() == parentDetails.firstChildId.toString()
+    );
+    console.log(
+      accountIdDetails,
+      "accountIdDetailsaccountIdDetailsaccountIdDetailsaccountIdDetails"
+    );
+    /**
+     * get public token exchange
+     */
+    const publicTokenExchange: any = await getPublicTokenExchange(publicToken);
+    if (publicTokenExchange.status == 400) {
+      return this.BadRequest(ctx, publicTokenExchange.message);
+    }
+    /**
+     * create processor token
+     */
+    const processToken: any = await createProcessorToken(
+      publicTokenExchange.data.access_token,
+      accountId
+    );
+    if (processToken.status == 400) {
+      return this.BadRequest(ctx, processToken.message);
+    }
+    /**
+     * call prime trust api for fund transfer
+     */
+    // let fundTransferRequest = {
+    //   type: "funds-transfer-method",
+    //   attributes: {
+    //     "funds-transfer-type": "ach",
+    //     "ach-check-type": "personal",
+    //     "contact-id": parentDetails.contactId,
+    //     "plaid-processor-token": processToken.processor_token,
+    //   },
+    // };
+    // const fundTransferMethod = await createFundTransferMethod(
+    //   jwtToken,
+    //   fundTransferRequest
+    // );
+    // if (fundTransferMethod.status == 400) {
+    //   return this.BadRequest(ctx, fundTransferMethod);
+    // }
+    /**
+     * create fund transfer with fund transfer id in response
+     */
+    let contributionRequest = {
+      type: "contributions",
+      "account-id": accountIdDetails,
+      "contact-id": parentDetails.contactId,
+      attributes: {
+        "ach-check-type": "personal",
+        "funds-transfer-type": "ach",
+        "contact-id": parentDetails.contactId,
+        "plaid-processor-token": processToken.processor_token,
+      },
+      amount: "50",
+    };
+    const contributions = await createContributions(
+      jwtToken,
+      contributionRequest
+    );
+    if (contributions.status == 400) {
+      return this.BadRequest(ctx, contributions);
+    }
+    return this.Ok(ctx, processToken.data);
   }
 }
 

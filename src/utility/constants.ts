@@ -19,8 +19,12 @@ export const PRIMETRUSTAPIS = {
   accountCreate: "v2/accounts?include=contacts",
   agreementPreviews: "v2/agreement-previews",
   kycDocumentChecks: "v2/kyc-document-checks",
+  createFundTransferMethod: "v2/funds-transfer-methods",
+  contributions: "v2/contributions",
 };
 
 export const PLAIDAPIS = {
   getLinkToken: "link/token/create",
+  publicTokenExchange: "item/public_token/exchange",
+  createProcessorToken: "processor/token/create",
 };

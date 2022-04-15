@@ -219,3 +219,67 @@ export const kycDocumentChecks = async (token, data) => {
     });
   return response;
 };
+
+/**
+ * @description This api is used to do create fund transfer method
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const createFundTransferMethod = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.createFundTransferMethod,
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to do contributions == deposits
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const createContributions = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.createFundTransferMethod,
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data,
+      };
+    });
+  return response;
+};
