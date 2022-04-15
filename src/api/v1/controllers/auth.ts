@@ -618,6 +618,57 @@ class AliveController extends BaseController {
   }
 
   /**
+   * @description This method is used to verify otp during sign up.
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/verify-otp-signup", method: HttpMethod.POST })
+  public verifyOtpSignUp(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.verifyOtpValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const otpExists = await OtpTable.findOne({
+            receiverMobile: reqParam.mobile,
+          }).sort({ createdAt: -1 });
+          if (!otpExists) {
+            return this.BadRequest(ctx, "Mobile Number Not Found");
+          }
+          if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
+            return this.BadRequest(ctx, "Mobile Number Already Verified");
+          }
+          /**
+           * Check minutes less than 5 or not
+           */
+          const checkMinutes = await getMinutesBetweenDates(
+            new Date(otpExists.createdAt),
+            new Date()
+          );
+          if (checkMinutes > 5) {
+            return this.BadRequest(
+              ctx,
+              "Otp Time Limit Expired. Please resend otp and try to submit it within 5 minutes."
+            );
+          }
+          /* tslint:disable-next-line */
+          if (otpExists.code != reqParam.code) {
+            return this.BadRequest(ctx, "Code Doesn't Match");
+          }
+          await OtpTable.updateOne(
+            { _id: otpExists._id },
+            { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
+          );
+          return this.Ok(ctx, {
+            message: "Your mobile number is verified successfully",
+          });
+        }
+      }
+    );
+  }
+
+  /**
    * @description This method is used to resend otp
    * @param ctx
    * @returns {*}
@@ -660,6 +711,45 @@ class AliveController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to confirm mobile number
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/confirm-mobile-number", method: HttpMethod.POST })
+  public async confirmMobileNumber(ctx) {
+    const reqParam = ctx.request.body;
+    if (!reqParam.mobile) {
+      return this.BadRequest(ctx, "Mobile Number Not Found");
+    }
+    /**
+     * Send sms for confirmation of otp
+     */
+    const code = generateRandom6DigitCode(true);
+    const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
+    try {
+      const twilioResponse: any = await TwilioService.sendSMS(
+        reqParam.mobile,
+        message
+      );
+      if (twilioResponse.code === 400) {
+        return this.BadRequest(ctx, "Error in sending OTP");
+      }
+      await OtpTable.create({
+        message,
+        code,
+        receiverMobile: reqParam.mobile,
+        type: EOTPTYPE.SIGN_UP,
+      });
+      return this.Ok(ctx, {
+        message:
+          "We have sent you code in order to proceed your request of confirming mobile number. Please check your phone.",
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error);
+    }
   }
 
   /**

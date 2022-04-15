@@ -178,7 +178,7 @@ export const validation = {
         .required(),
       code: Joi.number().integer().min(100000).max(999999).required(),
     });
-    const { error } = schema.validate(req);
+    const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {
       return res.throw(400, res.__(validationMessageKey("verifyOtp", error)));
     }
