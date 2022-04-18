@@ -261,7 +261,7 @@ export const createFundTransferMethod = async (token, data) => {
 export const createContributions = async (token, data) => {
   const response = await axios
     .post(
-      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.createFundTransferMethod,
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.contributions,
       { data: data },
       {
         headers: {

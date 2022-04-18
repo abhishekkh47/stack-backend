@@ -364,9 +364,9 @@ class UserController extends BaseController {
   public async testApi(ctx: any) {
     const { publicToken, accountId } = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
-    // if (!publicToken || !accountId) {
-    //   return this.BadRequest(ctx, "Public Token or AccountId Doesn't Exists");
-    // }
+    if (!publicToken || !accountId) {
+      return this.BadRequest(ctx, "Public Token or AccountId Doesn't Exists");
+    }
     const userExists = await UserTable.findOne(
       { _id: ctx.request.user._id },
       { _id: 1 }
@@ -376,7 +376,7 @@ class UserController extends BaseController {
     }
     const parentDetails: any = await ParentChildTable.findOne(
       {
-        userId: userExists._id,
+        userId: new ObjectId(userExists._id),
       },
       {
         _id: 1,
@@ -391,14 +391,14 @@ class UserController extends BaseController {
     const accountIdDetails = parentDetails.teens.find(
       (x: any) => x.childId.toString() == parentDetails.firstChildId.toString()
     );
-    console.log(
-      accountIdDetails,
-      "accountIdDetailsaccountIdDetailsaccountIdDetailsaccountIdDetails"
-    );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
     /**
      * get public token exchange
      */
     const publicTokenExchange: any = await getPublicTokenExchange(publicToken);
+    console.log(publicTokenExchange, "publicTokenExchange");
     if (publicTokenExchange.status == 400) {
       return this.BadRequest(ctx, publicTokenExchange.message);
     }
@@ -409,6 +409,7 @@ class UserController extends BaseController {
       publicTokenExchange.data.access_token,
       accountId
     );
+    console.log(processToken, "processToken");
     if (processToken.status == 400) {
       return this.BadRequest(ctx, processToken.message);
     }
@@ -436,24 +437,27 @@ class UserController extends BaseController {
      */
     let contributionRequest = {
       type: "contributions",
-      "account-id": accountIdDetails,
-      "contact-id": parentDetails.contactId,
       attributes: {
-        "ach-check-type": "personal",
-        "funds-transfer-type": "ach",
+        "account-id": accountIdDetails.accountId,
         "contact-id": parentDetails.contactId,
-        "plaid-processor-token": processToken.processor_token,
+        "funds-transfer-method": {
+          "funds-transfer-type": "ach",
+          "ach-check-type": "personal",
+          "contact-id": parentDetails.contactId,
+          "plaid-processor-token": processToken.data.processor_token,
+        },
+        amount: "50",
       },
-      amount: "50",
     };
-    const contributions = await createContributions(
+    console.log(contributionRequest, "contributionRequest");
+    const contributions: any = await createContributions(
       jwtToken,
       contributionRequest
     );
     if (contributions.status == 400) {
       return this.BadRequest(ctx, contributions);
     }
-    return this.Ok(ctx, processToken.data);
+    return this.Ok(ctx, contributions.data);
   }
 
   /**
