@@ -278,7 +278,71 @@ export const createContributions = async (token, data) => {
     .catch((error) => {
       return {
         status: 400,
-        message: error.response.data,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to create push transfer method
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const createPushTransferMethod = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.pushTransfer,
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to transfer wire inbound
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const wireInboundMethod = async (token, data, id) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.wireInbound(id),
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
       };
     });
   return response;

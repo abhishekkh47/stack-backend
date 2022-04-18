@@ -40,3 +40,8 @@ export enum EUserType {
   TEEN = 1,
   PARENT = 2,
 }
+
+export enum ETRANSFER {
+  ACH = 1,
+  WIRE = 2,
+}

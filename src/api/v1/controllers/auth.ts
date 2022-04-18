@@ -155,7 +155,7 @@ class AliveController extends BaseController {
                 return this.BadRequest(ctx, "Error in sending OTP");
               }
             } catch (error) {
-              return this.BadRequest(ctx, error);
+              return this.BadRequest(ctx, error.message);
             }
           } else {
             /**
@@ -720,36 +720,48 @@ class AliveController extends BaseController {
    */
   @Route({ path: "/confirm-mobile-number", method: HttpMethod.POST })
   public async confirmMobileNumber(ctx) {
-    const reqParam = ctx.request.body;
-    if (!reqParam.mobile) {
-      return this.BadRequest(ctx, "Mobile Number Not Found");
-    }
-    /**
-     * Send sms for confirmation of otp
-     */
-    const code = generateRandom6DigitCode(true);
-    const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
-    try {
-      const twilioResponse: any = await TwilioService.sendSMS(
-        reqParam.mobile,
-        message
-      );
-      if (twilioResponse.code === 400) {
-        return this.BadRequest(ctx, "Error in sending OTP");
+    const input = ctx.request.body;
+    return validation.confirmMobileNumberValidation(
+      input,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const { mobile, email } = input;
+          let user = await UserTable.findOne({ mobile });
+          if (user)
+            return this.BadRequest(ctx, "Mobile number already exists.");
+          user = await UserTable.findOne({ email });
+          if (user) return this.BadRequest(ctx, "Email-ID already exists.");
+
+          /**
+           * Send sms for confirmation of otp
+           */
+          const code = generateRandom6DigitCode(true);
+          const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
+          try {
+            const twilioResponse: any = await TwilioService.sendSMS(
+              mobile,
+              message
+            );
+            if (twilioResponse.code === 400) {
+              return this.BadRequest(ctx, "Error in sending OTP");
+            }
+            await OtpTable.create({
+              message,
+              code,
+              receiverMobile: mobile,
+              type: EOTPTYPE.SIGN_UP,
+            });
+            return this.Ok(ctx, {
+              message:
+                "We have sent you code in order to proceed your request of confirming mobile number. Please check your phone.",
+            });
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
+          }
+        }
       }
-      await OtpTable.create({
-        message,
-        code,
-        receiverMobile: reqParam.mobile,
-        type: EOTPTYPE.SIGN_UP,
-      });
-      return this.Ok(ctx, {
-        message:
-          "We have sent you code in order to proceed your request of confirming mobile number. Please check your phone.",
-      });
-    } catch (error) {
-      return this.BadRequest(ctx, error);
-    }
+    );
   }
 
   /**
@@ -905,10 +917,15 @@ class AliveController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const { mobile, parentMobile } = input;
-          let user = await UserTable.findOne({ mobile, parentMobile });
-          if (user) return this.Ok(ctx, { status: true });
-          this.BadRequest(ctx, "We cannot find your accounts");
+          const { mobile, childMobile, email, childEmail } = input;
+          let user = await UserTable.findOne({
+            mobile: childMobile,
+            parentMobile: mobile,
+            email: childEmail,
+            parentEmail: email,
+          });
+          if (user) return this.Ok(ctx, { message: "Success" });
+          return this.BadRequest(ctx, "We cannot find your accounts");
         }
       }
     );

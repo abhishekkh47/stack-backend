@@ -21,6 +21,9 @@ export const PRIMETRUSTAPIS = {
   kycDocumentChecks: "v2/kyc-document-checks",
   createFundTransferMethod: "v2/funds-transfer-methods",
   contributions: "v2/contributions?include=funds-transfer",
+  pushTransfer: "v2/push-transfer-methods",
+  wireInbound: (id) =>
+    `v2/push-transfer-methods/${id}/sandbox/inbound-wire?include=funds-transfers`,
 };
 
 export const PLAIDAPIS = {

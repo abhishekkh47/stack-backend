@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { validationMessageKey } from "@app/utility";
+import { EUserType } from "@app/types";
 export const validation = {
   getUserQuizDataValidation: (req, res, callback) => {
     const schema = Joi.object({
@@ -235,7 +236,7 @@ export const validation = {
       );
     return callback(true);
   },
-  addDepositValidation: (req, res, callback) => {
+  addDepositValidation: (req, res, type, callback) => {
     console.log(type, "type");
     const schema = Joi.object({
       amount: Joi.number()
@@ -244,6 +245,16 @@ export const validation = {
         .positive()
         .precision(2)
         .required(),
+      depositType:
+        type == EUserType.PARENT ? Joi.number().valid(1, 2).required() : null,
+      publicToken: Joi.when("depositType", {
+        is: 1,
+        then: Joi.string().required(),
+      }),
+      accountId: Joi.when("depositType", {
+        is: 1,
+        then: Joi.string().required(),
+      }),
     });
 
     const { error } = schema.validate(req, { convert: false });
@@ -309,10 +320,12 @@ export const validation = {
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
-      parentMobile: Joi.string()
+      childMobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .disallow(Joi.ref("mobile"))
         .required(),
+      email: Joi.string().email().required(),
+      childEmail: Joi.string().email().disallow(Joi.ref("email")).required(),
     });
     const { error } = schema.validate(req);
     if (error)
@@ -376,5 +389,20 @@ export const validation = {
         res.__(validationMessageKey("updateTaxInfo", error))
       );
     return callabck(true);
+  },
+  confirmMobileNumberValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      mobile: Joi.string()
+        .regex(/^+[1-9]{1}[0-9]{10,14}$/)
+        .required(),
+      email: Joi.string().email().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("confirmMobileNumber", error))
+      );
+    return callback(true);
   },
 };

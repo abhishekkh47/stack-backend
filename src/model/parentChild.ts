@@ -43,6 +43,16 @@ const schema = new mongoose.Schema<IParentChildType>(
           type: mongoose.Schema.Types.String,
           default: null,
         },
+        pushTransferId: {
+          type: mongoose.Schema.Types.String,
+          unique: true,
+          default: null,
+        },
+        accountNumber: {
+          type: mongoose.Schema.Types.String,
+          unique: true,
+          default: null,
+        },
       },
     ],
   },

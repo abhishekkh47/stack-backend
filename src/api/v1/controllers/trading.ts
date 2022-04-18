@@ -1,8 +1,22 @@
 import Koa from "koa";
-import { Route } from "@app/utility";
+import {
+  createContributions,
+  createProcessorToken,
+  createPushTransferMethod,
+  getPublicTokenExchange,
+  Route,
+  wireInboundMethod,
+} from "@app/utility";
 import BaseController from "./base";
-import { Auth } from "@app/middleware";
-import { EAction, EStatus, EUserType, HttpMethod, messages } from "@app/types";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  EAction,
+  EStatus,
+  ETRANSFER,
+  EUserType,
+  HttpMethod,
+  messages,
+} from "@app/types";
 import {
   CryptoTable,
   ParentChildTable,
@@ -20,10 +34,12 @@ class TradingController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-deposit", method: HttpMethod.POST })
+  @PrimeTrustJWT()
   @Auth()
   public async addDepositAction(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
@@ -35,35 +51,163 @@ class TradingController extends BaseController {
       async (validate) => {
         if (validate) {
           /**
-           * for teen it will be pending state and for parent it will be in approved
+           * For teen it will be pending state
            */
-          await UserActivityTable.create({
-            userId: userExists._id,
-            userType: userExists.type,
-            message: messages.DEPOSIT,
-            currencyType: null,
-            currencyValue: reqParam.amount,
-            action: EAction.DEPOSIT,
-            status:
-              userExists.type === EUserType.TEEN
-                ? EStatus.PENDING
-                : EStatus.PROCESSED,
-          });
-          /**
-           * For parent update the user balance directly
-           */
-          if (userExists.type === EUserType.PARENT) {
-            await UserWalletTable.updateOne(
-              { userId: user._id },
-              { $inc: { balance: reqParam.amount } }
-            );
+          if (userExists.type === EUserType.TEEN) {
+            await UserActivityTable.create({
+              userId: userExists._id,
+              userType: userExists.type,
+              message: messages.DEPOSIT,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.DEPOSIT,
+              status:
+                userExists.type === EUserType.TEEN
+                  ? EStatus.PENDING
+                  : EStatus.PROCESSED,
+            });
             return this.Created(ctx, {
-              message: "Amount Added Successfully to Bank",
+              message: `Your request for deposit of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
             });
           }
-          return this.Created(ctx, {
-            message: `Your request for deposit of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
-          });
+          /**
+           * For parent check which type of transfer is done
+           */
+          const parentDetails: any = await ParentChildTable.findOne(
+            {
+              userId: new ObjectId(userExists._id),
+            },
+            {
+              _id: 1,
+              firstChildId: 1,
+              contactId: 1,
+              teens: 1,
+            }
+          );
+          if (!parentDetails) {
+            return this.BadRequest(ctx, "User Details Not Found");
+          }
+          const accountIdDetails = await parentDetails.teens.find(
+            (x: any) =>
+              x.childId.toString() == parentDetails.firstChildId.toString()
+          );
+          if (!accountIdDetails) {
+            return this.BadRequest(ctx, "Account Details Not Found");
+          }
+          if (reqParam.depositType == ETRANSFER.ACH) {
+            /**
+             * get public token exchange
+             */
+            const publicTokenExchange: any = await getPublicTokenExchange(
+              reqParam.publicToken
+            );
+            if (publicTokenExchange.status == 400) {
+              return this.BadRequest(ctx, publicTokenExchange.message);
+            }
+            /**
+             * create processor token
+             */
+            const processToken: any = await createProcessorToken(
+              publicTokenExchange.data.access_token,
+              reqParam.accountId
+            );
+            if (processToken.status == 400) {
+              return this.BadRequest(ctx, processToken.message);
+            }
+            /**
+             * create fund transfer with fund transfer id in response
+             */
+            let contributionRequest = {
+              type: "contributions",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "contact-id": parentDetails.contactId,
+                "funds-transfer-method": {
+                  "funds-transfer-type": "ach",
+                  "ach-check-type": "personal",
+                  "contact-id": parentDetails.contactId,
+                  "plaid-processor-token": processToken.data.processor_token,
+                },
+                amount: reqParam.amount,
+              },
+            };
+            console.log(contributionRequest, "contributionRequest");
+            const contributions: any = await createContributions(
+              jwtToken,
+              contributionRequest
+            );
+            if (contributions.status == 400) {
+              return this.BadRequest(ctx, contributions.message);
+            }
+            return this.Ok(ctx, contributions.data);
+          } else if (reqParam.depositType == ETRANSFER.WIRE) {
+            /**
+             * Check if push transfer exists and move ahead else create
+             */
+            let pushTransferId = accountIdDetails.pushTransferId
+              ? accountIdDetails.pushTransferId
+              : null;
+            if (accountIdDetails.pushTransferId == null) {
+              const pushTransferRequest = {
+                type: "push-transfer-methods",
+                attributes: {
+                  "account-id": accountIdDetails.accountId,
+                  "contact-id": parentDetails.contactId,
+                },
+              };
+              const pushTransferResponse: any = await createPushTransferMethod(
+                jwtToken,
+                pushTransferRequest
+              );
+              if (pushTransferResponse.status == 400) {
+                return this.BadRequest(ctx, pushTransferResponse.message);
+              }
+              console.log(pushTransferResponse, "pushTransferResponse");
+              pushTransferId = pushTransferResponse.data.id;
+              await ParentChildTable.updateOne(
+                {
+                  userId: userExists._id,
+                  "teens.childId": parentDetails.firstChildId,
+                },
+                {
+                  $set: {
+                    "teens.$.pushTransferId": pushTransferId,
+                  },
+                }
+              );
+            }
+            /**
+             * Create a wire transfer method respectively
+             */
+            // const wireRequest = {
+            //   "push-transfer-method-id": pushTransferId,
+            //   data: {
+            //     type: "ach",
+            //     attributes: {
+            //       amount: reqParam.amount,
+            //       reference: reqParam.amount,
+            //     },
+            //   },
+            // };
+            // const wireResponse: any = await wireInboundMethod(
+            //   jwtToken,
+            //   wireRequest,
+            //   pushTransferId
+            // );
+            // if (wireResponse.status == 400) {
+            //   return this.BadRequest(ctx, wireResponse.message);
+            // }
+
+            /**
+             * For parent update the user balance directly
+             */
+            if (userExists.type === EUserType.PARENT) {
+              return this.Created(ctx, {
+                message:
+                  "We are looking into your request and will proceed surely in some amount of time.",
+              });
+            }
+          }
         }
       }
     );

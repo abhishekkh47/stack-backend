@@ -506,21 +506,45 @@ class UserController extends BaseController {
   @Route({ path: "/get-profile", method: HttpMethod.GET })
   @Auth()
   public async getProfile(ctx: any) {
-    let data = await UserTable.findOne(
-      { username: ctx.request.user.username },
-      {
-        password: 0,
-        verificationEmailExpireAt: 0,
-        verificationCode: 0,
-        refreshToken: 0,
-        tempPassword: 0,
-        loginAttempts: 0,
-        createdAt: 0,
-        updatedAt: 0,
-        __v: 0,
-      }
-    );
-    return this.Ok(ctx, { data });
+    let data = (
+      await UserTable.aggregate([
+        { $match: { _id: new ObjectId(ctx.request.user._id) } },
+        {
+          $lookup: {
+            from: "states",
+            localField: "stateId",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            _id: 1,
+            email: 1,
+            username: 1,
+            mobile: 1,
+            address: 1,
+            firstName: 1,
+            lastName: 1,
+            type: 1,
+            parentMobile: 1,
+            parentEmail: 1,
+            country: 1,
+            "state.name": 1,
+            "state._id": 1,
+            city: 1,
+            postalCode: 1,
+            unitApt: 1,
+            liquidAsset: 1,
+            taxIdNo: 1,
+            taxState: 1,
+            dob: 1,
+          },
+        },
+      ]).exec()
+    )[0];
+    return this.Ok(ctx, data, true);
   }
 
   /**
