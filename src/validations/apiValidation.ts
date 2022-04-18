@@ -236,6 +236,7 @@ export const validation = {
     return callback(true);
   },
   addDepositValidation: (req, res, callback) => {
+    console.log(type, "type");
     const schema = Joi.object({
       amount: Joi.number()
         .min(5)

@@ -20,7 +20,7 @@ export const PRIMETRUSTAPIS = {
   agreementPreviews: "v2/agreement-previews",
   kycDocumentChecks: "v2/kyc-document-checks",
   createFundTransferMethod: "v2/funds-transfer-methods",
-  contributions: "v2/contributions",
+  contributions: "v2/contributions?include=funds-transfer",
 };
 
 export const PLAIDAPIS = {

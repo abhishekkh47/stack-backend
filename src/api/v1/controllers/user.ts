@@ -356,7 +356,7 @@ class UserController extends BaseController {
   }
 
   /**
-   *
+   * checking ach transfer
    */
   @Route({ path: "/test-api", method: HttpMethod.POST })
   @Auth()
@@ -398,7 +398,6 @@ class UserController extends BaseController {
      * get public token exchange
      */
     const publicTokenExchange: any = await getPublicTokenExchange(publicToken);
-    console.log(publicTokenExchange, "publicTokenExchange");
     if (publicTokenExchange.status == 400) {
       return this.BadRequest(ctx, publicTokenExchange.message);
     }
@@ -409,29 +408,9 @@ class UserController extends BaseController {
       publicTokenExchange.data.access_token,
       accountId
     );
-    console.log(processToken, "processToken");
     if (processToken.status == 400) {
       return this.BadRequest(ctx, processToken.message);
     }
-    /**
-     * call prime trust api for fund transfer
-     */
-    // let fundTransferRequest = {
-    //   type: "funds-transfer-method",
-    //   attributes: {
-    //     "funds-transfer-type": "ach",
-    //     "ach-check-type": "personal",
-    //     "contact-id": parentDetails.contactId,
-    //     "plaid-processor-token": processToken.processor_token,
-    //   },
-    // };
-    // const fundTransferMethod = await createFundTransferMethod(
-    //   jwtToken,
-    //   fundTransferRequest
-    // );
-    // if (fundTransferMethod.status == 400) {
-    //   return this.BadRequest(ctx, fundTransferMethod);
-    // }
     /**
      * create fund transfer with fund transfer id in response
      */
@@ -446,6 +425,66 @@ class UserController extends BaseController {
           "contact-id": parentDetails.contactId,
           "plaid-processor-token": processToken.data.processor_token,
         },
+        amount: "50",
+      },
+    };
+    console.log(contributionRequest, "contributionRequest");
+    const contributions: any = await createContributions(
+      jwtToken,
+      contributionRequest
+    );
+    if (contributions.status == 400) {
+      return this.BadRequest(ctx, contributions);
+    }
+    return this.Ok(ctx, contributions.data);
+  }
+
+  /**
+   * checking wire transfer
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/test-api-wire", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT()
+  public async testApiForWire(ctx: any) {
+    const jwtToken = ctx.request.primeTrustToken;
+    const userExists = await UserTable.findOne(
+      { _id: ctx.request.user._id },
+      { _id: 1 }
+    );
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const parentDetails: any = await ParentChildTable.findOne(
+      {
+        userId: new ObjectId(userExists._id),
+      },
+      {
+        _id: 1,
+        firstChildId: 1,
+        contactId: 1,
+        teens: 1,
+      }
+    );
+    if (!parentDetails) {
+      return this.BadRequest(ctx, "User Details Not Found");
+    }
+    const accountIdDetails = parentDetails.teens.find(
+      (x: any) => x.childId.toString() == parentDetails.firstChildId.toString()
+    );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    /**
+     * create fund transfer with fund transfer id in response
+     */
+    let contributionRequest = {
+      type: "contributions",
+      attributes: {
+        "account-id": accountIdDetails.accountId,
+        "contact-id": parentDetails.contactId,
+        "funds-transfer-type": "wire",
         amount: "50",
       },
     };

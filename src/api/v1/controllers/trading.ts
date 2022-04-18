@@ -28,40 +28,45 @@ class TradingController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    return validation.addDepositValidation(reqParam, ctx, async (validate) => {
-      if (validate) {
-        /**
-         * for teen it will be pending state and for parent it will be in approved
-         */
-        await UserActivityTable.create({
-          userId: userExists._id,
-          userType: userExists.type,
-          message: messages.DEPOSIT,
-          currencyType: null,
-          currencyValue: reqParam.amount,
-          action: EAction.DEPOSIT,
-          status:
-            userExists.type === EUserType.TEEN
-              ? EStatus.PENDING
-              : EStatus.PROCESSED,
-        });
-        /**
-         * For parent update the user balance directly
-         */
-        if (userExists.type === EUserType.PARENT) {
-          await UserWalletTable.updateOne(
-            { userId: user._id },
-            { $inc: { balance: reqParam.amount } }
-          );
+    return validation.addDepositValidation(
+      reqParam,
+      ctx,
+      userExists.type,
+      async (validate) => {
+        if (validate) {
+          /**
+           * for teen it will be pending state and for parent it will be in approved
+           */
+          await UserActivityTable.create({
+            userId: userExists._id,
+            userType: userExists.type,
+            message: messages.DEPOSIT,
+            currencyType: null,
+            currencyValue: reqParam.amount,
+            action: EAction.DEPOSIT,
+            status:
+              userExists.type === EUserType.TEEN
+                ? EStatus.PENDING
+                : EStatus.PROCESSED,
+          });
+          /**
+           * For parent update the user balance directly
+           */
+          if (userExists.type === EUserType.PARENT) {
+            await UserWalletTable.updateOne(
+              { userId: user._id },
+              { $inc: { balance: reqParam.amount } }
+            );
+            return this.Created(ctx, {
+              message: "Amount Added Successfully to Bank",
+            });
+          }
           return this.Created(ctx, {
-            message: "Amount Added Successfully to Bank",
+            message: `Your request for deposit of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
           });
         }
-        return this.Created(ctx, {
-          message: `Your request for deposit of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
-        });
       }
-    });
+    );
   }
 
   /**
