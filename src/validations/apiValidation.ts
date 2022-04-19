@@ -82,7 +82,10 @@ export const validation = {
   },
   checkUniqueUserNameValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
-      username: Joi.string().required(),
+      username: Joi.string()
+        .min(5)
+        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
+        .required(),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -379,7 +382,7 @@ export const validation = {
         .max(15)
         .required(),
       taxState: Joi.string()
-        .regex(/^[A-Za-z]*$/)
+        .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
     });
     const { error } = schema.validate(req);
@@ -403,6 +406,33 @@ export const validation = {
         400,
         res.__(validationMessageKey("confirmMobileNumber", error))
       );
+    return callback(true);
+  },
+  getAssetValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      page: Joi.string()
+        .regex(/^[0-9]*$/)
+        .required(),
+      limit: Joi.string()
+        .regex(/^[0-9]*$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("getAsset", error)));
+    return callback(true);
+  },
+  checkUniqueEmailValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      email: Joi.string().email().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("checkUniqueEmail", error))
+      );
+    }
     return callback(true);
   },
 };

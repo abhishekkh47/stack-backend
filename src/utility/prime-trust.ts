@@ -347,3 +347,31 @@ export const wireInboundMethod = async (token, data, id) => {
     });
   return response;
 };
+
+/**
+ * @description This api is used to get assets with pagination
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const getAssets = async (token, page, number) => {
+  const response = await axios
+    .get(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.getAssets(page, number), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};

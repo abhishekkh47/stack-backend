@@ -6,6 +6,7 @@ export interface IUserActivity {
   message: string;
   action: EAction;
   status: EStatus;
+  resourceId: string;
   currencyValue: number;
   currencyType: mongoose.Schema.Types.ObjectId;
 }

@@ -16,6 +16,10 @@ const schema = new mongoose.Schema<IUserActivitySchema>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    resourceId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     /**
      * 1 - Teen and 2 - Parent
      */

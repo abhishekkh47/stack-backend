@@ -27,7 +27,7 @@ export interface IAccount {
   liquidAsset: number;
   taxIdNo: string;
   dob: string;
-  taxState: string;
+  taxState: mongoose.Schema.Types.ObjectId;
 }
 
 export interface IAdmin extends IUser {

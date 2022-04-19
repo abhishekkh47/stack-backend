@@ -17,6 +17,7 @@ import {
   TradingController,
   CryptoController,
   UserController,
+  CMSController,
 } from "./controllers";
 
 const router = new Router();
@@ -92,5 +93,6 @@ setControllerRoutes(router, HelpCenterController);
 setControllerRoutes(router, TradingController);
 setControllerRoutes(router, CryptoController);
 setControllerRoutes(router, UserController);
+setControllerRoutes(router, CMSController);
 
 export default Compose([router.routes(), router.allowedMethods()]);

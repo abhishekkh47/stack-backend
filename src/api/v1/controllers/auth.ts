@@ -29,6 +29,7 @@ import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
 import { UserWalletTable } from "@app/model/userbalance";
 import { ObjectId } from "mongodb";
+import { UserController } from ".";
 
 class AliveController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -86,7 +87,19 @@ class AliveController extends BaseController {
             const refreshToken = getRefreshToken(authInfo);
             userExists.refreshToken = refreshToken;
             await userExists.save();
-            return this.Ok(ctx, { token, refreshToken });
+
+            let getProfileInput: any = {
+              request: {
+                query: { token },
+                headers: {},
+              },
+            };
+            await UserController.getProfile(getProfileInput);
+            return this.Ok(ctx, {
+              token,
+              refreshToken,
+              profileData: getProfileInput.body.data,
+            });
           } else {
             /**
              * RESET PASSWORD API CALL
@@ -909,7 +922,7 @@ class AliveController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/check-account-ready-to-link", method: HttpMethod.GET })
+  @Route({ path: "/check-account-ready-to-link", method: HttpMethod.POST })
   public async checkAccountReadyToLink(ctx: any) {
     const input = ctx.request.body;
     return validation.checkAccountReadyToLinkValidation(
@@ -1004,6 +1017,25 @@ class AliveController extends BaseController {
 
     let token = getJwtToken(AuthService.getJwtAuthInfo(user));
     this.Ok(ctx, { token });
+  }
+
+  @Route({ path: "/check-email/:email", method: HttpMethod.GET })
+  public async checkEmailExistsInDB(ctx: any) {
+    const reqParam = ctx.params;
+    return validation.checkUniqueEmailValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const emailExists = await UserTable.findOne({
+            email: reqParam.email,
+          });
+          if (emailExists)
+            return this.BadRequest(ctx, "This email already exists");
+          return this.Ok(ctx, { message: "Email-ID is available" });
+        }
+      }
+    );
   }
 }
 

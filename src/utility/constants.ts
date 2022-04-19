@@ -24,10 +24,17 @@ export const PRIMETRUSTAPIS = {
   pushTransfer: "v2/push-transfer-methods",
   wireInbound: (id) =>
     `v2/push-transfer-methods/${id}/sandbox/inbound-wire?include=funds-transfers`,
+  getAssets: (page, limit) =>
+    `v2/assets?page[size]=${limit}&page[number]=${page}`,
 };
 
 export const PLAIDAPIS = {
   getLinkToken: "link/token/create",
   publicTokenExchange: "item/public_token/exchange",
   createProcessorToken: "processor/token/create",
+};
+
+export const DROPDOWNLIST = {
+  page: 1,
+  limit: 10,
 };

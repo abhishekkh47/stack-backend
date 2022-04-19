@@ -7,6 +7,7 @@ export type IStateSchema = MongooseModel<IState> & mongoose.Document;
 const schema = new mongoose.Schema<IStateSchema>(
   {
     name: { type: mongoose.Schema.Types.String },
+    shortName: { type: mongoose.Schema.Types.String },
   },
   { timestamps: true }
 );

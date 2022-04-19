@@ -1,10 +1,10 @@
 import Koa from "koa";
 import BaseController from "./base";
 import { validation } from "../../../validations/apiValidation";
-import { Route } from "@app/utility";
+import { getAssets, Route } from "@app/utility";
 import { HttpMethod } from "@app/types";
 import { CryptoTable } from "@app/model";
-import { Auth } from "@app/middleware";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
@@ -31,10 +31,24 @@ class CryptocurrencyController extends BaseController {
   }
 
   @Route({ path: "/get-crypto", method: HttpMethod.GET })
+  @PrimeTrustJWT()
   @Auth()
-  public async getCrypto(ctx: Koa.Context) {
-    const crypto = await CryptoTable.find({}, { name: 1, image: 1 });
-    this.Ok(ctx, { data: crypto, message: "Success" });
+  public async getCrypto(ctx: any) {
+    const { page, limit } = ctx.request.query;
+    const jwtToken = ctx.request.primeTrustToken;
+    return validation.getAssetValidation(
+      ctx.request.query,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const getCryptoData: any = await getAssets(jwtToken, page, limit);
+          if (getCryptoData.status == 400) {
+            return this.BadRequest(ctx, "Asset Not Found");
+          }
+          return this.Ok(ctx, { message: "Success", data: getCryptoData.data });
+        }
+      }
+    );
   }
 }
 

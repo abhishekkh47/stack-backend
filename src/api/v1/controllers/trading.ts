@@ -139,75 +139,89 @@ class TradingController extends BaseController {
             if (contributions.status == 400) {
               return this.BadRequest(ctx, contributions.message);
             }
-            return this.Ok(ctx, contributions.data);
-          } else if (reqParam.depositType == ETRANSFER.WIRE) {
-            /**
-             * Check if push transfer exists and move ahead else create
-             */
-            let pushTransferId = accountIdDetails.pushTransferId
-              ? accountIdDetails.pushTransferId
-              : null;
-            if (accountIdDetails.pushTransferId == null) {
-              const pushTransferRequest = {
-                type: "push-transfer-methods",
-                attributes: {
-                  "account-id": accountIdDetails.accountId,
-                  "contact-id": parentDetails.contactId,
-                },
-              };
-              const pushTransferResponse: any = await createPushTransferMethod(
-                jwtToken,
-                pushTransferRequest
-              );
-              if (pushTransferResponse.status == 400) {
-                return this.BadRequest(ctx, pushTransferResponse.message);
-              }
-              console.log(pushTransferResponse, "pushTransferResponse");
-              pushTransferId = pushTransferResponse.data.id;
-              await ParentChildTable.updateOne(
-                {
-                  userId: userExists._id,
-                  "teens.childId": parentDetails.firstChildId,
-                },
-                {
-                  $set: {
-                    "teens.$.pushTransferId": pushTransferId,
-                  },
-                }
-              );
-            }
-            /**
-             * Create a wire transfer method respectively
-             */
-            // const wireRequest = {
-            //   "push-transfer-method-id": pushTransferId,
-            //   data: {
-            //     type: "ach",
-            //     attributes: {
-            //       amount: reqParam.amount,
-            //       reference: reqParam.amount,
-            //     },
-            //   },
-            // };
-            // const wireResponse: any = await wireInboundMethod(
-            //   jwtToken,
-            //   wireRequest,
-            //   pushTransferId
-            // );
-            // if (wireResponse.status == 400) {
-            //   return this.BadRequest(ctx, wireResponse.message);
-            // }
-
-            /**
-             * For parent update the user balance directly
-             */
-            if (userExists.type === EUserType.PARENT) {
-              return this.Created(ctx, {
-                message:
-                  "We are looking into your request and will proceed surely in some amount of time.",
-              });
-            }
+            await UserActivityTable.create({
+              userId: userExists._id,
+              userType: userExists.type,
+              message: messages.DEPOSIT,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PENDING,
+            });
+            return this.Created(ctx, {
+              message: `We are looking into your request and will proceed surely in some amount of time.`,
+              data: contributions.data,
+            });
           }
+          // else if (reqParam.depositType == ETRANSFER.WIRE) {
+          //   /**
+          //    * Check if push transfer exists and move ahead else create
+          //    */
+          //   let pushTransferId = accountIdDetails.pushTransferId
+          //     ? accountIdDetails.pushTransferId
+          //     : null;
+          //   if (accountIdDetails.pushTransferId == null) {
+          //     const pushTransferRequest = {
+          //       type: "push-transfer-methods",
+          //       attributes: {
+          //         "account-id": accountIdDetails.accountId,
+          //         "contact-id": parentDetails.contactId,
+          //       },
+          //     };
+          //     const pushTransferResponse: any = await createPushTransferMethod(
+          //       jwtToken,
+          //       pushTransferRequest
+          //     );
+          //     if (pushTransferResponse.status == 400) {
+          //       return this.BadRequest(ctx, pushTransferResponse.message);
+          //     }
+          //     console.log(pushTransferResponse, "pushTransferResponse");
+          //     pushTransferId = pushTransferResponse.data.id;
+          //     await ParentChildTable.updateOne(
+          //       {
+          //         userId: userExists._id,
+          //         "teens.childId": parentDetails.firstChildId,
+          //       },
+          //       {
+          //         $set: {
+          //           "teens.$.pushTransferId": pushTransferId,
+          //         },
+          //       }
+          //     );
+          //   }
+          //   /**
+          //    * Create a wire transfer method respectively
+          //    */
+          //   // const wireRequest = {
+          //   //   "push-transfer-method-id": pushTransferId,
+          //   //   data: {
+          //   //     type: "ach",
+          //   //     attributes: {
+          //   //       amount: reqParam.amount,
+          //   //       reference: reqParam.amount,
+          //   //     },
+          //   //   },
+          //   // };
+          //   // const wireResponse: any = await wireInboundMethod(
+          //   //   jwtToken,
+          //   //   wireRequest,
+          //   //   pushTransferId
+          //   // );
+          //   // if (wireResponse.status == 400) {
+          //   //   return this.BadRequest(ctx, wireResponse.message);
+          //   // }
+
+          //   /**
+          //    * For parent update the user balance directly
+          //    */
+          //   if (userExists.type === EUserType.PARENT) {
+          //     return this.Created(ctx, {
+          //       message:
+          //         "We are looking into your request and will proceed surely in some amount of time.",
+          //     });
+          //   }
+          // }
         }
       }
     );

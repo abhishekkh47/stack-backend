@@ -175,5 +175,12 @@
 	"checkAccountReadyToLinkMobileEmpty": "Please enter mobile.",
 	"checkAccountReadyToLinkChildmobileRequired": "Please enter child mobile.",
 	"checkAccountReadyToLinkChildmobileEmpty": "Please enter child mobile.",
-	"checkAccountReadyToLinkChildmobileInvalid": "Mobile and Child's Mobile should not be same."
+	"confirmMobileNumberPageRequired": "confirmMobileNumberPageRequired",
+	"getAssetPageRequired": "getAssetPageRequired",
+	"checkAccountReadyToLinkChildmobileInvalid": "Mobile and Child's Mobile should not be same.",
+    "checkUserNameUsernameMin": "Username should contain minium 5 characters.",
+    "storeUserDetailsLiquidassetMin": "storeUserDetailsLiquidassetMin",
+    "checkUniqueEmailEmailEmail": "Enter proper Email-ID."
+
+
 }
