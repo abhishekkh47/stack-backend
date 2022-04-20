@@ -406,11 +406,15 @@ class AliveController extends BaseController {
   public async changeEmail(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    const userExists = await UserTable.findOne({ id: user.id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User not found");
+    }
     const userData = await UserTable.findOne({ email: reqParam.email });
     if (userData !== null) {
       return this.BadRequest(ctx, "You cannot add same email address");
     }
-    if (userData.type === EUserType.TEEN) {
+    if (userExists.type === EUserType.TEEN) {
       const parentEmailExists = await UserTable.findOne({
         parentMobile: reqParam.email,
       });
