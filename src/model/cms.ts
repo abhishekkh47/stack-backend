@@ -9,6 +9,7 @@ const schema = new mongoose.Schema<ICMSType>({
     type: mongoose.Schema.Types.String,
     required: true,
   },
+  
   text: {
     type: mongoose.Schema.Types.String,
     required: true,
