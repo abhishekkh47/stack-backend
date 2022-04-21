@@ -1,6 +1,7 @@
 import Koa from "koa";
 import {
   createContributions,
+  createDisbursements,
   createProcessorToken,
   createPushTransferMethod,
   getPublicTokenExchange,
@@ -233,10 +234,12 @@ class TradingController extends BaseController {
    * @returns
    */
   @Route({ path: "/withdraw-money", method: HttpMethod.POST })
+  @PrimeTrustJWT()
   @Auth()
   public async withdrawMoney(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
@@ -244,6 +247,7 @@ class TradingController extends BaseController {
     return validation.withdrawMoneyValidation(
       reqParam,
       ctx,
+      userExists.type,
       async (validate) => {
         if (validate) {
           /**
@@ -290,33 +294,100 @@ class TradingController extends BaseController {
           /**
            * for teen it will be pending state and for parent it will be in approved
            */
-          await UserActivityTable.create({
-            userId: userExists._id,
-            userType: userExists.type,
-            message: messages.WITHDRAW,
-            currencyType: null,
-            currencyValue: reqParam.amount,
-            action: EAction.WITHDRAW,
-            status:
-              userExists.type === EUserType.TEEN
-                ? EStatus.PENDING
-                : EStatus.PROCESSED,
-          });
-          /**
-           * For parent update the user balance directly
-           */
-          if (userExists.type === EUserType.PARENT) {
-            await UserWalletTable.updateOne(
-              { userId: user._id },
-              { $inc: { balance: -reqParam.amount } }
-            );
+          if (userExists.type == EUserType.TEEN) {
+            await UserActivityTable.create({
+              userId: userExists._id,
+              userType: userExists.type,
+              message: messages.WITHDRAW,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.WITHDRAW,
+              status:
+                userExists.type === EUserType.TEEN
+                  ? EStatus.PENDING
+                  : EStatus.PROCESSED,
+            });
             return this.Created(ctx, {
-              message: "Amount Withdrawal Successfully to Bank",
+              message: `Your request for withdrawal of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
             });
           }
-          return this.Created(ctx, {
-            message: `Your request for withdrawal of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
-          });
+          if (reqParam.withdrawType != ETRANSFER.ACH) {
+            return this.BadRequest(ctx, "Please select ach as transfer method");
+          }
+          /**
+           * For parent create disbursement code of prime trust with plaid processor token
+           */
+          if (userExists.type === EUserType.PARENT) {
+            const parentDetails: any = await ParentChildTable.findOne(
+              {
+                userId: new ObjectId(userExists._id),
+              },
+              {
+                _id: 1,
+                firstChildId: 1,
+                contactId: 1,
+                teens: 1,
+              }
+            );
+            if (!parentDetails) {
+              return this.BadRequest(ctx, "User Details Not Found");
+            }
+            const accountIdDetails = await parentDetails.teens.find(
+              (x: any) =>
+                x.childId.toString() == parentDetails.firstChildId.toString()
+            );
+            if (!accountIdDetails) {
+              return this.BadRequest(ctx, "Account Details Not Found");
+            }
+            /**
+             * get public token exchange
+             */
+            const publicTokenExchange: any = await getPublicTokenExchange(
+              reqParam.publicToken
+            );
+            if (publicTokenExchange.status == 400) {
+              return this.BadRequest(ctx, publicTokenExchange.message);
+            }
+            /**
+             * create processor token
+             */
+            const processToken: any = await createProcessorToken(
+              publicTokenExchange.data.access_token,
+              reqParam.accountId
+            );
+            if (processToken.status == 400) {
+              return this.BadRequest(ctx, processToken.message);
+            }
+            /**
+             * create fund transfer with fund transfer id in response
+             */
+            let disbursementRequest = {
+              type: "disbursements",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "contact-id": parentDetails.contactId,
+                "funds-transfer-method": {
+                  "funds-transfer-type": "ach",
+                  "ach-check-type": "personal",
+                  "contact-id": parentDetails.contactId,
+                  "plaid-processor-token": processToken.data.processor_token,
+                },
+                amount: reqParam.amount,
+              },
+            };
+            console.log(disbursementRequest, "disbursementRequest");
+            const disbursement: any = await createDisbursements(
+              jwtToken,
+              disbursementRequest
+            );
+            if (disbursement.status == 400) {
+              return this.BadRequest(ctx, disbursement.message);
+            }
+            return this.Created(ctx, {
+              message: "Amount Withdrawal Successfully to Bank",
+              data: disbursement.data,
+            });
+          }
         }
       }
     );

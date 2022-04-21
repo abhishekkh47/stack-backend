@@ -4,11 +4,11 @@ import { v4 as uuid } from "uuid";
 import { HttpMethod, ICreateGiftBody } from "@app/types";
 import { generateHash, getSharableLink, Route } from "@app/utility";
 import BaseTransactionController from "./base";
-import { CircleService } from "@app/services";
+// import { CircleService } from "@app/services";
 import { GiftsTable } from "@app/model";
 import { Auth } from "@app/middleware";
 
-const circle = new CircleService();
+const circle = null;
 
 // Sample Payload For Sending Gift Card
 // const payload = {

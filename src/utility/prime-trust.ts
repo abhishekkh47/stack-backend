@@ -285,6 +285,38 @@ export const createContributions = async (token, data) => {
 };
 
 /**
+ * @description This api is used to do disbursements == withdraws
+ * @param token
+ * @param data
+ * @returns {*}
+ */
+export const createDisbursements = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.disbursements,
+      { data: data },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
  * @description This api is used to create push transfer method
  * @param token
  * @param data

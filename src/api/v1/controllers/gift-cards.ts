@@ -11,10 +11,10 @@ import {
   ICreateQrCodePayload,
 } from "@app/types";
 import { GiftsTable, QrCodeTable } from "@app/model";
-import { CircleService, NotificationService } from "@app/services";
+import { NotificationService } from "@app/services";
 import { Auth } from "@app/middleware";
 
-const circle = new CircleService();
+const circle = null;
 
 class GiftCardController extends BaseController {
   @Route({ path: "/gift-card", method: HttpMethod.GET })
@@ -36,7 +36,7 @@ class GiftCardController extends BaseController {
   public async getGiftCardStatus(ctx: any) {
     // TODO : Add validation for only allowed to see status of own gift cards only
     const paymentId = ctx.request.query.paymentId as string;
-    const response = await circle.getPayment(paymentId);
+    const response = (await circle.getPayment(paymentId)) || null;
 
     return this.Ok(ctx, {
       status: response?.data?.status,

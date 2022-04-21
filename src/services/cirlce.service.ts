@@ -1,4 +1,4 @@
-import Circle, { ICircleCreateCardPayload } from "circle-sdk";
+import Circle, { ICircleCreateCardPayload } from "circle-sdk/src";
 import * as openpgp from "openpgp";
 import atob from "atob";
 import btoa from "btoa";

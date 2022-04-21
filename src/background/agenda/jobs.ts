@@ -7,43 +7,43 @@ import {
   ISendMoneyUsingQrJobArg,
   NotificationJobArgs,
 } from "@app/types";
-import { CircleService, NotificationService } from "@app/services";
+import { NotificationService } from "@app/services";
 import { getReactivateLink, getSharableLink } from "@app/utility";
 import { GiftsTable, QrCodeTable } from "@app/model";
 import config from "@app/config";
 
 export const Jobs: AgendaJobs[] = [
-  {
-    name: EJOBS.SEND_MONEY_USING_QR,
-    processor: async (job: Job<ISendMoneyUsingQrJobArg>) => {
-      const { qrId } = job.attrs.data;
-      const gift = await GiftsTable.findOne({ qrId });
-      if (!gift) {
-        throw new Error("No gift card exists");
-      }
-      if (gift.transferId) {
-        throw new Error("Payment already initiated.");
-      }
-      const circle = new CircleService();
-      const qrData = await QrCodeTable.findOne({ hash: qrId });
-      if (!qrData) {
-        throw new Error("Qr Code data not found");
-      }
-      const transferId = await circle.sendMoney({
-        destination: {
-          type: "blockchain",
-          address: qrData.address,
-          chain: qrData.chain,
-        },
-        amount: {
-          amount: gift.amount,
-          currency: "USD",
-        },
-      });
-      await gift.updateOne({ transferId });
-    },
-    options: { priority: 0 },
-  },
+  // {
+  //   name: EJOBS.SEND_MONEY_USING_QR,
+  //   processor: async (job: Job<ISendMoneyUsingQrJobArg>) => {
+  //     const { qrId } = job.attrs.data;
+  //     const gift = await GiftsTable.findOne({ qrId });
+  //     if (!gift) {
+  //       throw new Error("No gift card exists");
+  //     }
+  //     if (gift.transferId) {
+  //       throw new Error("Payment already initiated.");
+  //     }
+  //     const circle = new ();
+  //     const qrData = await QrCodeTable.findOne({ hash: qrId });
+  //     if (!qrData) {
+  //       throw new Error("Qr Code data not found");
+  //     }
+  //     const transferId = await circle.sendMoney({
+  //       destination: {
+  //         type: "blockchain",
+  //         address: qrData.address,
+  //         chain: qrData.chain,
+  //       },
+  //       amount: {
+  //         amount: gift.amount,
+  //         currency: "USD",
+  //       },
+  //     });
+  //     await gift.updateOne({ transferId });
+  //   },
+  //   options: { priority: 0 },
+  // },
   {
     name: EJOBS.PAYMENT_INITIATED_MAIL,
     processor: async (job: Job<IPaymentInitiatedJobArg>) => {
@@ -145,17 +145,14 @@ export const Jobs: AgendaJobs[] = [
       //     },
       //   },
       // ]);
-
       // await GiftCardTable.updateMany(
       //   {
       //     _id: { $in: expiredGiftCards.map((x) => x._id) },
       //   },
       //   { $set: { redeemed: "EXPIRED" } }
       // );
-
       // expiredGiftCards.forEach((card) => {
       //   const notificationClient = new NotificationService();
-
       //   notificationClient.sendEmail(card.senderEmail, {
       //     subject: "Gift Card Expired",
       //     text: `Your Gift Card worth $${card.amount} has been expired due to not redeemed within ${config.GIFT_CARD_EXPIRED_IN_DAYS} days of delivery date by ${card.receiver}. Still you can re-activate Gift Card by clicking below link.`,

@@ -292,9 +292,19 @@ export const validation = {
     }
     return callback(true);
   },
-  withdrawMoneyValidation: (req, res, callback) => {
+  withdrawMoneyValidation: (req, res, type, callback) => {
     const schema = Joi.object({
       amount: Joi.number().min(1).positive().precision(2).required(),
+      withdrawType:
+        type == EUserType.PARENT ? Joi.number().valid(1).required() : null,
+      publicToken: Joi.when("withdrawType", {
+        is: 1,
+        then: Joi.string().required(),
+      }),
+      accountId: Joi.when("withdrawType", {
+        is: 1,
+        then: Joi.string().required(),
+      }),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {

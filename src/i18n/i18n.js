@@ -8,7 +8,7 @@ i18n.configure({
   cookie: "lang",
 });
 
-// module.exports = i18n;
+module.exports = i18n;
 
 module.exports = async (ctx, next) => {
   i18n.init(ctx.request, ctx.response);
