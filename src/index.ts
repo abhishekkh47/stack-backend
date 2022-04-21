@@ -20,7 +20,8 @@ import { connectAgenda, startCron } from "@app/background";
 import {I18n} from "i18n";
 import i18n2 from "./i18n/en.json";
 
-const i18nD = require("./i18n/i18n");
+const i18nD = require("@app/i18n/i18n");
+import i18n from "i18n";
 // console.log(i18nSet, "i18nD");
 // console.log("i18n2", i18n2);
 import views from "koa-views";

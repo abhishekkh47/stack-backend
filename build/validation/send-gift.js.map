@@ -1,1 +1,0 @@
-{"version":3,"file":"send-gift.js","sourceRoot":"./src/","sources":["validation/send-gift.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;AAAA,yCAA2B;AAEd,QAAA,sBAAsB,GAAG,GAAG,CAAC,MAAM,EAAE,CAAC,KAAK,CAAC;IACvD,MAAM,EAAE,GAAG,CAAC,MAAM,EAAE,CAAC,QAAQ,CAAC,qBAAqB,CAAC;IACpD,GAAG,EAAE,GAAG,CAAC,MAAM,EAAE,CAAC,QAAQ,CAAC,iBAAiB,CAAC;CAC9C,CAAC,CAAC"}
