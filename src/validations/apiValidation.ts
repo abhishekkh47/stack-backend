@@ -1,6 +1,6 @@
 import Joi from "joi";
-import { validationMessageKey } from "@app/utility";
-import { EUserType } from "@app/types";
+import { validationMessageKey } from "../utility";
+import { EUserType } from "../types";
 export const validation = {
   getUserQuizDataValidation: (req, res, callback) => {
     const schema = Joi.object({

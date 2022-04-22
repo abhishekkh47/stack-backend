@@ -1,5 +1,5 @@
-import { UserTable, IUserSchema } from "@app/model";
-import { IUser } from "@app/types";
+import { UserTable, IUserSchema } from "../model";
+import { IUser } from "../types";
 import bcrypt from "bcrypt";
 
 class AuthService {

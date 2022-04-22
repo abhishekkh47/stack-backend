@@ -1,6 +1,6 @@
 import Koa from "koa";
 
-import { HttpMethod, IRouteParams } from "@app/types";
+import { HttpMethod, IRouteParams } from "../types";
 
 // Route decorator
 export function Route(

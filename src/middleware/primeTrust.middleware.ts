@@ -1,5 +1,5 @@
-import { AdminTable } from "@app/model";
-import { getPrimeTrustJWTToken, getUser, verifyToken } from "@app/utility";
+import { AdminTable } from "../model";
+import { getPrimeTrustJWTToken, getUser, verifyToken } from "../utility";
 export const PrimeTrustJWT = () => {
   return (_: Object, __?: string, descriptor?: PropertyDescriptor) => {
     const fn: Function = descriptor.value;

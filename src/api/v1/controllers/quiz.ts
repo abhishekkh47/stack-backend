@@ -1,21 +1,21 @@
 import Koa from "koa";
 import mongoose from "mongoose";
-import { get72HoursAhead, Route } from "@app/utility";
+import { get72HoursAhead, Route } from "../../../utility";
 import BaseController from "./base";
-import { Auth } from "@app/middleware";
+import { Auth } from "../../../middleware";
 import {
   EQuizTopicStatus,
   everyCorrectAnswerPoints,
   HttpMethod,
   timeBetweenTwoQuiz,
-} from "@app/types";
+} from "../../../types";
 import {
   QuizTopicTable,
   QuizTable,
   QuizQuestionTable,
   QuizResult,
   QuizQuestionResult,
-} from "@app/model";
+} from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import moment from "moment";
 

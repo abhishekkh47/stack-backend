@@ -1,4 +1,4 @@
-import { verifyToken } from "@app/utility";
+import { verifyToken } from "../utility";
 
 export const Auth = () => {
   return (_: Object, __?: string, descriptor?: PropertyDescriptor) => {

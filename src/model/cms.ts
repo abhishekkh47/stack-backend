@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { ICMS, MongooseModel } from "@app/types";
+import type { ICMS, MongooseModel } from "../types";
 
 export type ICMSType = MongooseModel<ICMS> & mongoose.Document;
 
@@ -9,7 +9,7 @@ const schema = new mongoose.Schema<ICMSType>({
     type: mongoose.Schema.Types.String,
     required: true,
   },
-  
+
   text: {
     type: mongoose.Schema.Types.String,
     required: true,

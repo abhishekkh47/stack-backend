@@ -1,4 +1,4 @@
-import config from "@app/config";
+import config from "../config";
 import axios from "axios";
 import { PLAIDAPIS } from "./constants";
 

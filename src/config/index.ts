@@ -26,15 +26,6 @@ export default {
   get GIFT_CARD_EXPIRED_IN_DAYS() {
     return 5;
   },
-  get CIRCLE_BASE_URL() {
-    return process.env.CIRCLE_BASE_URL || "https://api-sandbox.circle.com";
-  },
-  get CIRCLE_API_KEY() {
-    return process.env.CIRCLE_API_KEY;
-  },
-  get CIRCLE_WEBHOOK_URL() {
-    return process.env.CIRCLE_WEBHOOK_URL;
-  },
   get WEB_URL() {
     return process.env.WEB_URL;
   },

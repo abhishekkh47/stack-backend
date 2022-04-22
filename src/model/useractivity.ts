@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IUserActivity, MongooseModel } from "@app/types";
+import type { IUserActivity, MongooseModel } from "../types";
 
 export type IUserActivitySchema = MongooseModel<IUserActivity> &
   mongoose.Document;

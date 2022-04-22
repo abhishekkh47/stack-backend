@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
-import config from "@app/config";
-import { logger } from "@app/utility";
+import config from "../config";
+import { logger } from "../utility";
 
 export interface ChargeWithPaymentIntentArgs {
   id: string;

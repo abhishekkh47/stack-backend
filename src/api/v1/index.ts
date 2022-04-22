@@ -1,15 +1,8 @@
 import Compose from "koa-compose";
 import Router from "koa-router";
 
-import { HttpMethod, IController } from "@app/types";
+import { HttpMethod, IController } from "../../types/index";
 import {
-  AliveController,
-  PaypalController,
-  StripeController,
-  GiftCardController,
-  DesignTemplateController,
-  CircleController,
-  WebhookController,
   AuthController,
   QuizController,
   VideoController,
@@ -78,14 +71,6 @@ const setControllerRoutes = (router: Router, controller: IController) => {
     }
   });
 };
-
-setControllerRoutes(router, AliveController);
-setControllerRoutes(router, PaypalController);
-setControllerRoutes(router, StripeController);
-setControllerRoutes(router, GiftCardController);
-setControllerRoutes(router, DesignTemplateController);
-setControllerRoutes(router, CircleController);
-setControllerRoutes(router, WebhookController);
 setControllerRoutes(router, AuthController);
 setControllerRoutes(router, QuizController);
 setControllerRoutes(router, VideoController);

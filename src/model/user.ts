@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IUser, MongooseModel } from "@app/types";
+import type { IUser, MongooseModel } from "../types";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 

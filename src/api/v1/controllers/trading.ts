@@ -7,9 +7,9 @@ import {
   getPublicTokenExchange,
   Route,
   wireInboundMethod,
-} from "@app/utility";
+} from "../../../utility";
 import BaseController from "./base";
-import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   EAction,
   EStatus,
@@ -17,15 +17,15 @@ import {
   EUserType,
   HttpMethod,
   messages,
-} from "@app/types";
+} from "../../../types";
 import {
   CryptoTable,
   ParentChildTable,
   UserActivityTable,
   UserTable,
-} from "@app/model";
+} from "../../../model";
 import { validation } from "../../../validations/apiValidation";
-import { UserWalletTable } from "@app/model/userbalance";
+import { UserWalletTable } from "../../../model/userbalance";
 import { ObjectId } from "mongodb";
 
 class TradingController extends BaseController {

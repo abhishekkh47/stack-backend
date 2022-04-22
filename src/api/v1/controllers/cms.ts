@@ -1,7 +1,7 @@
-import { Auth } from "@app/middleware";
-import { CMSTable } from "@app/model";
-import { HttpMethod } from "@app/types";
-import { Route } from "@app/utility";
+import { Auth } from "../../../middleware";
+import { CMSTable } from "../../../model";
+import { HttpMethod } from "../../../types";
+import { Route } from "../../../utility";
 import BaseController from "./base";
 
 class CMSController extends BaseController {

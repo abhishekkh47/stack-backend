@@ -1,10 +1,10 @@
 import Koa from "koa";
 import BaseController from "./base";
 import { validation } from "../../../validations/apiValidation";
-import { getAssets, Route } from "@app/utility";
-import { HttpMethod } from "@app/types";
-import { CryptoTable } from "@app/model";
-import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { getAssets, Route } from "../../../utility";
+import { HttpMethod } from "../../../types";
+import { CryptoTable } from "../../../model";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })

@@ -10,7 +10,7 @@ import {
   hashString,
   generateTempPassword,
   getRefreshToken,
-} from "@app/utility";
+} from "../../../utility";
 import BaseController from "./base";
 import {
   ALLOWED_LOGIN_ATTEMPTS,
@@ -19,15 +19,20 @@ import {
   EUserType,
   HttpMethod,
   IUser,
-} from "@app/types";
-import { AuthService } from "@app/services";
-import { Auth } from "@app/middleware";
-import { validation } from "@app/validations/apiValidation";
-import { UserTable, OtpTable, ParentChildTable, StateTable } from "@app/model";
-import { TwilioService } from "@app/services";
+} from "../../../types";
+import { AuthService } from "../../../services";
+import { Auth } from "../../../middleware";
+import { validation } from "../../../validations/apiValidation";
+import {
+  UserTable,
+  OtpTable,
+  ParentChildTable,
+  StateTable,
+} from "../../../model";
+import { TwilioService } from "../../../services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
-import { UserWalletTable } from "@app/model/userbalance";
+import { UserWalletTable } from "../../../model/userbalance";
 import { ObjectId } from "mongodb";
 import { UserController } from ".";
 
@@ -997,7 +1002,7 @@ class AliveController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/refresh-token", method: HttpMethod.GET })
+  @Route({ path: "/refresh-token", method: HttpMethod.POST })
   @Auth()
   public async refreshToken(ctx: any) {
     const input = ctx.request.body;

@@ -1,10 +1,10 @@
 import Koa from "koa";
 import BaseController from "./base";
 import { validation } from "../../../validations/apiValidation";
-import { Route, sendEmail } from "@app/utility";
-import { HttpMethod } from "@app/types";
-import { AdminTable, UserTable } from "@app/model";
-import { CONSTANT } from "@app/utility/constants";
+import { Route, sendEmail } from "../../../utility";
+import { HttpMethod } from "../../../types";
+import { AdminTable, UserTable } from "../../../model";
+import { CONSTANT } from "../../../utility/constants";
 
 class HelpCenterController extends BaseController {
   @Route({ path: "/send-issue", method: HttpMethod.POST })

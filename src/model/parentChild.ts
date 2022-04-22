@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IParentChild, MongooseModel } from "@app/types";
+import type { IParentChild, MongooseModel } from "../types";
 
 export type IParentChildType = MongooseModel<IParentChild> & mongoose.Document;
 

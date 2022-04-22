@@ -1,8 +1,8 @@
 import Koa from "koa";
 import BaseController from "./base";
-import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { validation } from "@app/validations/apiValidation";
-import { ParentChildTable, UserTable } from "@app/model";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
+import { validation } from "../../../validations/apiValidation";
+import { ParentChildTable, UserTable } from "../../../model";
 import fs from "fs";
 import {
   agreementPreviews,
@@ -16,8 +16,8 @@ import {
   uploadFilesFetch,
   createContributions,
   getLinkToken,
-} from "@app/utility";
-import { HttpMethod } from "@app/types";
+} from "../../../utility";
+import { HttpMethod } from "../../../types";
 import multer from "@koa/multer";
 import path from "path";
 import moment from "moment";

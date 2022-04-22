@@ -1,10 +1,10 @@
 import Koa from "koa";
 import mongoose from "mongoose";
-import { Route } from "@app/utility";
+import { Route } from "../../../utility";
 import BaseController from "./base";
-import { Auth } from "@app/middleware";
-import { HttpMethod } from "@app/types";
-import { VideosTable } from "@app/model/videos";
+import { Auth } from "../../../middleware";
+import { HttpMethod } from "../../../types";
+import { VideosTable } from "../../../model/videos";
 
 class VideoController extends BaseController {
   /**
