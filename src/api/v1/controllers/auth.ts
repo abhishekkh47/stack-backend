@@ -1046,6 +1046,27 @@ class AliveController extends BaseController {
       }
     );
   }
+
+  /**
+   * @description This api is used for remding their parent for sending email for sign up to stack
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/remind-parent", method: HttpMethod.POST })
+  @Auth()
+  public async remindParent(ctx: any) {
+    const userId = ctx.request.user._id;
+    const user = await UserTable.findOne({ _id: userId });
+    if (user.type !== EUserType.TEEN)
+      return this.BadRequest(ctx, "Logged in user is already parent.");
+    const parent = await UserTable.findOne({ email: user.parentEmail });
+    if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
+    sendEmail(user.parentEmail, CONSTANT.RemindParentTemplateId, {
+      subject: "Remind to Signup",
+      name: `${user.firstName} ${user.lastName}`,
+    });
+    return this.Ok(ctx, { message: "Reminder Email is sent to your parent. " });
+  }
 }
 
 export default new AliveController();

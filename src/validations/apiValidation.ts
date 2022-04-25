@@ -406,7 +406,7 @@ export const validation = {
   confirmMobileNumberValidation: (req, res, callback) => {
     const schema = Joi.object({
       mobile: Joi.string()
-        .regex(/^+[1-9]{1}[0-9]{10,14}$/)
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
       email: Joi.string().email().required(),
     });

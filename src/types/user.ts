@@ -7,6 +7,8 @@ export interface IUser extends IAccount {
   mobile: string;
   verificationEmailExpireAt: string;
   verificationCode: string;
+  status: EUSERSTATUS;
+  kycMessages: string[];
   refreshToken: string;
 }
 
@@ -44,4 +46,10 @@ export enum EUserType {
 export enum ETRANSFER {
   ACH = 1,
   WIRE = 2,
+}
+
+export enum EUSERSTATUS {
+  KYC_DOCUMENT_UPLOAD = 1,
+  KYC_DOCUMENT_VERIFIED = 2,
+  KYC_DOCUMENT_UPLOAD_FAILED = 3,
 }

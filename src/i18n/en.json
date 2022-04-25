@@ -178,9 +178,8 @@
 	"confirmMobileNumberPageRequired": "confirmMobileNumberPageRequired",
 	"getAssetPageRequired": "getAssetPageRequired",
 	"checkAccountReadyToLinkChildmobileInvalid": "Mobile and Child's Mobile should not be same.",
-    "checkUserNameUsernameMin": "Username should contain minium 5 characters.",
-    "storeUserDetailsLiquidassetMin": "storeUserDetailsLiquidassetMin",
-    "checkUniqueEmailEmailEmail": "Enter proper Email-ID."
-
-
+	"checkUserNameUsernameMin": "Username should contain minium 5 characters.",
+	"storeUserDetailsLiquidassetMin": "storeUserDetailsLiquidassetMin",
+	"checkUniqueEmailEmailEmail": "Enter proper Email-ID.",
+	"withdrawMoneyWithdrawtypeRequired": "withdrawMoneyWithdrawtypeRequired"
 }

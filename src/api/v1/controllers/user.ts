@@ -17,7 +17,7 @@ import {
   createContributions,
   getLinkToken,
 } from "../../../utility";
-import { HttpMethod } from "../../../types";
+import { EUSERSTATUS, HttpMethod } from "../../../types";
 import multer from "@koa/multer";
 import path from "path";
 import moment from "moment";
@@ -114,7 +114,7 @@ class UserController extends BaseController {
      */
     const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
       "stateId",
-      ["name"]
+      ["name", "shortName"]
     );
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
@@ -145,12 +145,13 @@ class UserController extends BaseController {
             "street-2": "",
             "postal-code": userExists.postalCode,
             city: userExists.city,
-            region: userExists.stateId.name,
+            region: userExists.stateId.shortName,
             country: userExists.country,
           },
         },
       },
     };
+    console.log(data.attributes.owner["primary-address"], "data");
     /**
      * Send Agreement Previews
      */
@@ -210,7 +211,7 @@ class UserController extends BaseController {
      */
     const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
       "stateId",
-      ["name"]
+      ["name", "shortName"]
     );
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
@@ -226,7 +227,7 @@ class UserController extends BaseController {
         name: fullName + " child-1",
         "authorized-signature": fullName,
         "webhook-config": {
-          url: "https://eoo8gzhyo65jjji.m.pipedream.net",
+          url: "http://34.216.120.156:3500/api/v1/webhook-response",
         },
         owner: {
           "contact-type": "natural_person",
@@ -247,7 +248,7 @@ class UserController extends BaseController {
             "street-2": userExists.unitApt,
             "postal-code": userExists.postalCode,
             city: userExists.city,
-            region: userExists.stateId.name,
+            region: userExists.stateId.shortName,
             country: userExists.country,
           },
         },
@@ -333,6 +334,20 @@ class UserController extends BaseController {
     if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
       return this.BadRequest(ctx, kycResponse);
     }
+    const messages = [
+      "Your documents are uploaded. Please wait for some time till we verify and get back to you.",
+    ];
+    await UserTable.updateOne(
+      {
+        _id: userExists._id,
+      },
+      {
+        $set: {
+          status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
+          kycMessages: messages,
+        },
+      }
+    );
     /**
      * Updating the info in parent child table
      */
@@ -411,6 +426,14 @@ class UserController extends BaseController {
     if (processToken.status == 400) {
       return this.BadRequest(ctx, processToken.message);
     }
+    await ParentChildTable.updateOne(
+      { _id: parentDetails._id },
+      {
+        $set: {
+          processorToken: processToken.data.processor_token,
+        },
+      }
+    );
     /**
      * create fund transfer with fund transfer id in response
      */
@@ -540,6 +563,8 @@ class UserController extends BaseController {
             liquidAsset: 1,
             taxIdNo: 1,
             taxState: 1,
+            status: 1,
+            kycMessages: 1,
             dob: 1,
           },
         },
@@ -583,6 +608,213 @@ class UserController extends BaseController {
     if (teens.length == 0) return this.BadRequest(ctx, "No child found");
     teens = teens[0];
     return this.Ok(ctx, teens);
+  }
+
+  /**
+   * @description This method is used to upload files
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/upload-proof-of-address",
+    method: HttpMethod.POST,
+    middleware: [
+      upload.single([
+        {
+          name: "proof_of_address",
+          maxCount: 1,
+        },
+      ]),
+    ],
+  })
+  @Auth()
+  @PrimeTrustJWT()
+  public async uploadProofOfAddress(ctx: any) {
+    const files = ctx.request.files;
+    const user = ctx.request.user;
+    const jwtToken = ctx.request.primeTrustToken;
+    if (files.length == 0) {
+      return this.BadRequest(
+        ctx,
+        "Please upload identification files in order to complete KYC"
+      );
+    }
+    let newArrayFiles = [];
+    if (!files.front_side || !files.back_side) {
+      return this.BadRequest(
+        ctx,
+        "You need to upload front and back side of driver's license"
+      );
+    }
+    newArrayFiles = [...files.front_side, ...files.back_side];
+    if (newArrayFiles.length != 2) {
+      return this.BadRequest(
+        ctx,
+        "You need to upload front and back side of driver's license"
+      );
+    }
+    /**
+     * Validations to be done
+     */
+    const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
+      "stateId",
+      ["name", "shortName"]
+    );
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const parentChildExists = await ParentChildTable.findOne({
+      userId: user._id,
+    });
+    const fullName = userExists.firstName + " " + userExists.lastName;
+    const data = {
+      type: "account",
+      attributes: {
+        "account-type": "custodial",
+        name: fullName + " child-1",
+        "authorized-signature": fullName,
+        "webhook-config": {
+          url: "http://34.216.120.156:3500/api/v1/webhook-response",
+        },
+        owner: {
+          "contact-type": "natural_person",
+          name: fullName,
+          email: userExists.email,
+          "date-of-birth": userExists.dob,
+          "tax-id-number": userExists.taxIdNo,
+          "tax-country": userExists.country,
+          "ip-address": "127.0.0.2",
+          geolocation: "",
+          "primary-phone-number": {
+            country: "CA",
+            number: userExists.mobile,
+            sms: false,
+          },
+          "primary-address": {
+            "street-1": userExists.address,
+            "street-2": userExists.unitApt,
+            "postal-code": userExists.postalCode,
+            city: userExists.city,
+            region: userExists.stateId.shortName,
+            country: userExists.country,
+          },
+        },
+      },
+    };
+    const createAccountData: any = await createAccount(jwtToken, data);
+    const errorResponse = {
+      message: "Error in creating account in prime trust",
+      data: createAccountData,
+    };
+    if (createAccountData.status == 400) {
+      return this.BadRequest(ctx, errorResponse);
+    }
+
+    /**
+     * Upload both file
+     */
+    let frontDocumentId = null;
+    let backDocumentId = null;
+    let uploadFileError = null;
+    for await (let identificationFile of newArrayFiles) {
+      let uploadData = {
+        "contact-id": createAccountData.data.included[0].id,
+        description:
+          identificationFile.fieldname == "front_side"
+            ? "Front Side Driving License"
+            : "Back Side Driving License",
+        label:
+          identificationFile.fieldname == "front_side"
+            ? "Front Side Driving License"
+            : "Back Side Driving License",
+        public: "true",
+        file: fs.createReadStream(
+          path.join(__dirname, "../../../uploads", identificationFile.filename)
+        ),
+      };
+      let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
+      if (uploadFile.status == 400) {
+        uploadFileError = uploadFile.message;
+        break;
+      }
+      if (uploadFile.status == 200 && uploadFile.message.errors != undefined) {
+        uploadFileError = uploadFile.message;
+        break;
+      }
+      identificationFile.fieldname == "front_side"
+        ? (frontDocumentId = uploadFile.message.data.id)
+        : (backDocumentId = uploadFile.message.data.id);
+      /**
+       * Delete image from our server
+       */
+      try {
+        fs.unlinkSync(
+          path.join(__dirname, "../../../uploads", identificationFile.filename)
+        );
+      } catch (err) {
+        console.log("Error in removing image");
+      }
+    }
+    if (uploadFileError) {
+      return this.BadRequest(ctx, uploadFileError);
+    }
+    /**
+     * Checking the kyc document checks
+     */
+    const kycData = {
+      type: "kyc-document-checks",
+      attributes: {
+        "contact-id": createAccountData.data.included[0].id,
+        "uploaded-document-id": frontDocumentId,
+        "backside-document-id": backDocumentId,
+        "kyc-document-type": "drivers_license",
+        identity: true,
+        "identity-photo": true,
+        "proof-of-address": true,
+        "kyc-document-country": "US",
+      },
+    };
+    let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
+    if (kycResponse.status == 400) {
+      return this.BadRequest(ctx, kycResponse);
+    }
+    if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
+      return this.BadRequest(ctx, kycResponse);
+    }
+    const messages = [
+      "Your documents are uploaded. Please wait for some time till we verify and get back to you.",
+    ];
+    await UserTable.updateOne(
+      {
+        _id: userExists._id,
+      },
+      {
+        $set: {
+          status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
+          kycMessages: messages,
+        },
+      }
+    );
+    /**
+     * Updating the info in parent child table
+     */
+    await ParentChildTable.updateOne(
+      { userId: user._id, "teens.childId": parentChildExists.firstChildId },
+      {
+        $set: {
+          contactId: createAccountData.data.included[0].id,
+          "teens.$.accountId": createAccountData.data.data.id,
+          frontDocumentId: frontDocumentId,
+          backDocumentId: backDocumentId,
+          kycDocumentId: kycResponse.data.data.id,
+        },
+      }
+    );
+    return this.Ok(ctx, {
+      data: kycResponse,
+      message:
+        "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
+    });
   }
 }
 

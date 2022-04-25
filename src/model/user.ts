@@ -37,8 +37,16 @@ const schema = new mongoose.Schema<IUserSchema>(
      * 1 - teenager and 2 - parent
      */
     type: { type: mongoose.Schema.Types.Number, required: true },
+    /**
+     * 1 - Kyc document upload , 2 - Kyc approved , 3 - Kyc failed and reupload document
+     */
+    status: { type: mongoose.Schema.Types.Number, default: 0 },
     parentEmail: { type: mongoose.Schema.Types.String, default: null },
     parentMobile: { type: mongoose.Schema.Types.String, default: null },
+    kycMessages: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     verificationEmailExpireAt: {
       type: mongoose.Schema.Types.String,
       description: "verification email expiry time",

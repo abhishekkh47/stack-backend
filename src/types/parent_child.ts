@@ -5,6 +5,7 @@ export interface IParentChild {
   contactId: string;
   frontDocumentId: string;
   backDocumentId: string;
+  processorToken: string;
   kycDocumentId: string;
   firstChildId: mongoose.Schema.Types.ObjectId;
   teens: [];

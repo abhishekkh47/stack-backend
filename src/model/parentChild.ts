@@ -19,6 +19,10 @@ const schema = new mongoose.Schema<IParentChildType>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    processorToken: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     frontDocumentId: {
       type: mongoose.Schema.Types.String,
       default: null,
@@ -45,12 +49,10 @@ const schema = new mongoose.Schema<IParentChildType>(
         },
         pushTransferId: {
           type: mongoose.Schema.Types.String,
-          unique: true,
           default: null,
         },
         accountNumber: {
           type: mongoose.Schema.Types.String,
-          unique: true,
           default: null,
         },
       },
