@@ -62,7 +62,16 @@ export const validation = {
   },
   changeAddressValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
-      address: Joi.string().required(),
+      address: Joi.string()
+        .regex(/[A-Za-z]/)
+        .required(),
+      unitApt: Joi.string()
+        .regex(/[A-Za-z]/)
+        .required(),
+      postalCode: Joi.string()
+        .regex(/[A-Za-z0-9]/)
+        .min(4)
+        .required(),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -443,6 +452,18 @@ export const validation = {
         res.__(validationMessageKey("checkUniqueEmail", error))
       );
     }
+    return callback(true);
+  },
+  updateDobValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      dob: Joi.date()
+        .iso()
+        .max(Date.now() + 60 * 60 * 1000)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("updateDOB", error)));
     return callback(true);
   },
 };

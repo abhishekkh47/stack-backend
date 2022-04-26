@@ -30,6 +30,7 @@ export interface IAccount {
   taxIdNo: string;
   dob: string;
   taxState: mongoose.Schema.Types.ObjectId;
+  profilePicture: string;
 }
 
 export interface IAdmin extends IUser {

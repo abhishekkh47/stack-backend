@@ -67,11 +67,12 @@ export const hashString = (length = 10) => {
   return result;
 };
 
-export const checkValidImageExtension = (file) => {
-  if (
-    file &&
-    ["image/jpeg", "image/jpg", "application/pdf"].includes(file.mimetype)
-  ) {
+export const checkValidImageExtension = (file, type = null) => {
+  let fileArray = ["image/jpeg", "image/jpg", "application/pdf"];
+  if (type == "profile") {
+    fileArray = ["image/jpeg", "image/jpg", "image/png"];
+  }
+  if (file && fileArray.includes(file.mimetype)) {
     return true;
   }
   return false;

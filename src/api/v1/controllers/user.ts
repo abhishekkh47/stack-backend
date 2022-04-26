@@ -16,6 +16,7 @@ import {
   uploadFilesFetch,
   createContributions,
   getLinkToken,
+  verifyToken,
 } from "../../../utility";
 import { EUSERSTATUS, HttpMethod } from "../../../types";
 import multer from "@koa/multer";
@@ -39,6 +40,35 @@ const upload = multer({
   },
   fileFilter(req, file, cb) {
     if (!checkValidImageExtension(file)) {
+      return cb(
+        new Error(
+          "Please upload a Image of valid extension of jpg or pdf format only."
+        )
+      );
+    }
+    cb(null, true);
+  },
+});
+
+const uploadProfilePicture = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, path.join(__dirname, "../../../public"));
+    },
+    filename: async function (req, file, cb) {
+      cb(
+        null,
+        `${(await verifyToken(req.rawHeaders[1]))._id}.${
+          file.originalname.split(".")[1]
+        }`
+      );
+    },
+  }),
+  limit: {
+    fileSize: 5000000,
+  },
+  fileFilter(req, file, cb) {
+    if (!checkValidImageExtension(file, "profile")) {
       return cb(
         new Error(
           "Please upload a Image of valid extension of jpg or pdf format only."
@@ -526,12 +556,15 @@ class UserController extends BaseController {
    * @description This method is used to view profile for both parent and child
    * @param ctx
    */
-  @Route({ path: "/get-profile", method: HttpMethod.GET })
+  @Route({ path: "/get-profile/:id", method: HttpMethod.GET })
   @Auth()
   public async getProfile(ctx: any) {
+    const { id } = ctx.request.params;
+    if (!/^[0-9a-fA-F]{24}$/.test(id))
+      return this.BadRequest(ctx, "Enter valid ID.");
     let data = (
       await UserTable.aggregate([
-        { $match: { _id: new ObjectId(ctx.request.user._id) } },
+        { $match: { _id: new ObjectId(id) } },
         {
           $lookup: {
             from: "states",
@@ -563,14 +596,71 @@ class UserController extends BaseController {
             liquidAsset: 1,
             taxIdNo: 1,
             taxState: 1,
-            status: 1,
-            kycMessages: 1,
             dob: 1,
+            profilePicture: 1,
           },
         },
       ]).exec()
     )[0];
+    if (!data) return this.BadRequest(ctx, "Invalid user ID entered.");
     return this.Ok(ctx, data, true);
+  }
+
+  /**
+   * @description This method is used to update user's date of birth (DOB)
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/update-dob", method: HttpMethod.POST })
+  @Auth()
+  public async updateDob(ctx: any) {
+    const input = ctx.request.body;
+    return validation.updateDobValidation(input, ctx, async (validate) => {
+      if (validate) {
+        if (
+          (
+            await UserTable.findOne(
+              { _id: ctx.request.user._id },
+              { type: 1, _id: 0 }
+            )
+          ).type === 2 &&
+          new Date(Date.now() - new Date(input.dob).getTime()).getFullYear() <
+            1988
+        )
+          return this.BadRequest(ctx, "Parent's age should be 18+");
+
+        await UserTable.updateOne(
+          { _id: ctx.request.user._id },
+          { $set: { dob: input.dob } }
+        );
+        return this.Ok(ctx, {
+          message: "Your Date of Birth updated successfully.",
+        });
+      }
+    });
+  }
+
+  /**
+   * @description This method is for update user's profile picture
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/update-profile-picture",
+    method: HttpMethod.POST,
+    middleware: [uploadProfilePicture.single("picture")],
+  })
+  @Auth()
+  public async updateProfilePicture(ctx: any) {
+    if (!ctx.request.file || !ctx.request.file.filename)
+      return this.BadRequest(ctx, "Image is not selected.");
+    await UserTable.updateOne(
+      { _id: ctx.request.user._id },
+      {
+        $set: { profilePicture: ctx.request.file.filename },
+      }
+    );
+    return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
 
   /**

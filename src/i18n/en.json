@@ -181,5 +181,14 @@
 	"checkUserNameUsernameMin": "Username should contain minium 5 characters.",
 	"storeUserDetailsLiquidassetMin": "storeUserDetailsLiquidassetMin",
 	"checkUniqueEmailEmailEmail": "Enter proper Email-ID.",
-	"withdrawMoneyWithdrawtypeRequired": "withdrawMoneyWithdrawtypeRequired"
+	"withdrawMoneyWithdrawtypeRequired": "withdrawMoneyWithdrawtypeRequired",
+	"updateDOBDobRequired": "Please enter date of birth in YYYY-MM-DD format.",
+	"updateDOBDobFormat": "Please enter date of birth in YYYY-MM-DD format.",
+	"updateDOBDobMax": "Date out of bound",
+	"changeAddrUnitaptRequired": "Unit/apt not entered.",
+	"changeAddrUnitaptEmpty": "Unit/apt not entered.",
+	"changeAddrPostalcodeRequired": "Postal Code not entered.",
+	"changeAddrPostalcodeEmpty": "Postal Code not entered.",
+	"changeAddrPostalcodeMin": "Please enter valid postal code.",
+	"changeAddrPostalcodePattern": "Please enter valid postal code."
 }

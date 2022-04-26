@@ -97,6 +97,7 @@ class AliveController extends BaseController {
               request: {
                 query: { token },
                 headers: {},
+                params: { id: userExists._id },
               },
             };
             await UserController.getProfile(getProfileInput);
@@ -393,7 +394,13 @@ class AliveController extends BaseController {
         if (validate) {
           await UserTable.updateOne(
             { _id: user._id },
-            { $set: { address: reqParam.address } }
+            {
+              $set: {
+                address: reqParam.address,
+                unitApt: reqParam.unitApt,
+                postalCode: reqParam.postalCode,
+              },
+            }
           );
           return this.Ok(ctx, { message: "Address Changed Successfully" });
         }

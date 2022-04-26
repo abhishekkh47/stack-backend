@@ -78,6 +78,7 @@ const schema = new mongoose.Schema<IUserSchema>(
       ref: "state",
     },
     dob: { type: mongoose.Schema.Types.String, default: null },
+    profilePicture: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
 );
