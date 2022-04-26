@@ -31,24 +31,14 @@ class CryptocurrencyController extends BaseController {
   }
 
   @Route({ path: "/get-crypto", method: HttpMethod.GET })
-  @PrimeTrustJWT()
   @Auth()
   public async getCrypto(ctx: any) {
-    const { page, limit } = ctx.request.query;
-    const jwtToken = ctx.request.primeTrustToken;
-    return validation.getAssetValidation(
-      ctx.request.query,
-      ctx,
-      async (validate: boolean) => {
-        if (validate) {
-          const getCryptoData: any = await getAssets(jwtToken, page, limit);
-          if (getCryptoData.status == 400) {
-            return this.BadRequest(ctx, "Asset Not Found");
-          }
-          return this.Ok(ctx, { message: "Success", data: getCryptoData.data });
-        }
-      }
-    );
+    return this.Ok(ctx, {
+      data: await CryptoTable.find(
+        {},
+        { name: 1, symbol: 1, assetId: 1, image: 1 }
+      ),
+    });
   }
 }
 

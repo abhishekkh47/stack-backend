@@ -16,6 +16,14 @@ const schema = new mongoose.Schema<ICryptoCurrency>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    symbol: {
+      type: mongoose.Schema.Types.String,
+      unique: true,
+    },
+    assetId: {
+      type: mongoose.Schema.Types.String,
+      unique: true,
+    },
   },
   { timestamps: true }
 );

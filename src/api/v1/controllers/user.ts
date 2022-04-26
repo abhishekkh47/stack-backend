@@ -18,7 +18,7 @@ import {
   getLinkToken,
   verifyToken,
 } from "../../../utility";
-import { EUSERSTATUS, HttpMethod } from "../../../types";
+import { EUSERSTATUS, EUserType, HttpMethod } from "../../../types";
 import multer from "@koa/multer";
 import path from "path";
 import moment from "moment";
@@ -187,7 +187,7 @@ class UserController extends BaseController {
      */
     const sendAgreementPreview: any = await agreementPreviews(jwtToken, data);
     if (sendAgreementPreview.status == 400) {
-      return this.BadRequest(ctx, sendAgreementPreview);
+      return this.BadRequest(ctx, sendAgreementPreview.message);
     }
     return this.Ok(ctx, { data: sendAgreementPreview.data.data });
   }
@@ -359,7 +359,7 @@ class UserController extends BaseController {
     };
     let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
     if (kycResponse.status == 400) {
-      return this.BadRequest(ctx, kycResponse);
+      return this.BadRequest(ctx, kycResponse.message);
     }
     if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
       return this.BadRequest(ctx, kycResponse);
@@ -708,39 +708,18 @@ class UserController extends BaseController {
   @Route({
     path: "/upload-proof-of-address",
     method: HttpMethod.POST,
-    middleware: [
-      upload.single([
-        {
-          name: "proof_of_address",
-          maxCount: 1,
-        },
-      ]),
-    ],
+    middleware: [upload.single("proof_of_address")],
   })
   @Auth()
   @PrimeTrustJWT()
   public async uploadProofOfAddress(ctx: any) {
-    const files = ctx.request.files;
+    const files = ctx.request.file;
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
-    if (files.length == 0) {
+    if (!files) {
       return this.BadRequest(
         ctx,
-        "Please upload identification files in order to complete KYC"
-      );
-    }
-    let newArrayFiles = [];
-    if (!files.front_side || !files.back_side) {
-      return this.BadRequest(
-        ctx,
-        "You need to upload front and back side of driver's license"
-      );
-    }
-    newArrayFiles = [...files.front_side, ...files.back_side];
-    if (newArrayFiles.length != 2) {
-      return this.BadRequest(
-        ctx,
-        "You need to upload front and back side of driver's license"
+        "Please upload proof of address in order to complete KYC"
       );
     }
     /**
@@ -750,114 +729,66 @@ class UserController extends BaseController {
       "stateId",
       ["name", "shortName"]
     );
-    if (!userExists) {
+    if (!userExists || userExists.type == EUserType.TEEN) {
       return this.BadRequest(ctx, "User Not Found");
     }
     const parentChildExists = await ParentChildTable.findOne({
       userId: user._id,
     });
-    const fullName = userExists.firstName + " " + userExists.lastName;
-    const data = {
-      type: "account",
-      attributes: {
-        "account-type": "custodial",
-        name: fullName + " child-1",
-        "authorized-signature": fullName,
-        "webhook-config": {
-          url: "http://34.216.120.156:3500/api/v1/webhook-response",
-        },
-        owner: {
-          "contact-type": "natural_person",
-          name: fullName,
-          email: userExists.email,
-          "date-of-birth": userExists.dob,
-          "tax-id-number": userExists.taxIdNo,
-          "tax-country": userExists.country,
-          "ip-address": "127.0.0.2",
-          geolocation: "",
-          "primary-phone-number": {
-            country: "CA",
-            number: userExists.mobile,
-            sms: false,
-          },
-          "primary-address": {
-            "street-1": userExists.address,
-            "street-2": userExists.unitApt,
-            "postal-code": userExists.postalCode,
-            city: userExists.city,
-            region: userExists.stateId.shortName,
-            country: userExists.country,
-          },
-        },
-      },
-    };
-    const createAccountData: any = await createAccount(jwtToken, data);
-    const errorResponse = {
-      message: "Error in creating account in prime trust",
-      data: createAccountData,
-    };
-    if (createAccountData.status == 400) {
-      return this.BadRequest(ctx, errorResponse);
+    if (!parentChildExists) {
+      return this.BadRequest(ctx, "User Not Found");
     }
+    const accountIdDetails: any = await parentChildExists.teens.find(
+      (x: any) =>
+        x.childId.toString() == parentChildExists.firstChildId.toString()
+    );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    const fullName = userExists.firstName + " " + userExists.lastName;
 
     /**
      * Upload both file
      */
-    let frontDocumentId = null;
-    let backDocumentId = null;
+    let addressDocumentId = null;
     let uploadFileError = null;
-    for await (let identificationFile of newArrayFiles) {
-      let uploadData = {
-        "contact-id": createAccountData.data.included[0].id,
-        description:
-          identificationFile.fieldname == "front_side"
-            ? "Front Side Driving License"
-            : "Back Side Driving License",
-        label:
-          identificationFile.fieldname == "front_side"
-            ? "Front Side Driving License"
-            : "Back Side Driving License",
-        public: "true",
-        file: fs.createReadStream(
-          path.join(__dirname, "../../../uploads", identificationFile.filename)
-        ),
-      };
-      let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-      if (uploadFile.status == 400) {
-        uploadFileError = uploadFile.message;
-        break;
-      }
-      if (uploadFile.status == 200 && uploadFile.message.errors != undefined) {
-        uploadFileError = uploadFile.message;
-        break;
-      }
-      identificationFile.fieldname == "front_side"
-        ? (frontDocumentId = uploadFile.message.data.id)
-        : (backDocumentId = uploadFile.message.data.id);
+    let uploadData = {
+      "contact-id": parentChildExists.contactId,
+      description: "Proof of Address",
+      label: "Proof of Address",
+      public: "true",
+      file: fs.createReadStream(
+        path.join(__dirname, "../../../uploads", files.filename)
+      ),
+    };
+    let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
+    if (uploadFile.status == 400) {
+      uploadFileError = uploadFile.message;
+    }
+    if (uploadFile.status == 200 && uploadFile.message.errors != undefined) {
+      uploadFileError = uploadFile.message;
+    }
+    if (uploadFileError) {
       /**
        * Delete image from our server
        */
       try {
-        fs.unlinkSync(
-          path.join(__dirname, "../../../uploads", identificationFile.filename)
-        );
+        fs.unlinkSync(path.join(__dirname, "../../../uploads", files.filename));
       } catch (err) {
         console.log("Error in removing image");
       }
-    }
-    if (uploadFileError) {
       return this.BadRequest(ctx, uploadFileError);
     }
+    addressDocumentId = uploadFile.message.data.id;
     /**
      * Checking the kyc document checks
      */
     const kycData = {
       type: "kyc-document-checks",
       attributes: {
-        "contact-id": createAccountData.data.included[0].id,
-        "uploaded-document-id": frontDocumentId,
-        "backside-document-id": backDocumentId,
-        "kyc-document-type": "drivers_license",
+        "contact-id": parentChildExists.contactId,
+        "uploaded-document-id": addressDocumentId,
+        "kyc-document-type": "residence_permit",
         identity: true,
         "identity-photo": true,
         "proof-of-address": true,
@@ -866,10 +797,10 @@ class UserController extends BaseController {
     };
     let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
     if (kycResponse.status == 400) {
-      return this.BadRequest(ctx, kycResponse);
+      return this.BadRequest(ctx, kycResponse.message);
     }
     if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
-      return this.BadRequest(ctx, kycResponse);
+      return this.BadRequest(ctx, kycResponse.message);
     }
     const messages = [
       "Your documents are uploaded. Please wait for some time till we verify and get back to you.",
@@ -892,16 +823,15 @@ class UserController extends BaseController {
       { userId: user._id, "teens.childId": parentChildExists.firstChildId },
       {
         $set: {
-          contactId: createAccountData.data.included[0].id,
-          "teens.$.accountId": createAccountData.data.data.id,
-          frontDocumentId: frontDocumentId,
-          backDocumentId: backDocumentId,
+          contactId: parentChildExists.contactId,
+          "teens.$.accountId": accountIdDetails.accountId,
+          proofOfAddressId: addressDocumentId,
           kycDocumentId: kycResponse.data.data.id,
         },
       }
     );
     return this.Ok(ctx, {
-      data: kycResponse,
+      data: kycResponse.data,
       message:
         "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
     });

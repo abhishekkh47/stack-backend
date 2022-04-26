@@ -182,7 +182,7 @@ export const agreementPreviews = async (token, data) => {
     .catch((error) => {
       return {
         status: 400,
-        message: error.response.data,
+        message: error.response.data.errors[0].detail,
       };
     });
   return response;
@@ -214,7 +214,7 @@ export const kycDocumentChecks = async (token, data) => {
     .catch((error) => {
       return {
         status: 400,
-        message: error.response.data,
+        message: error.response.data.errors[0].detail,
       };
     });
   return response;

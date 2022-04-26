@@ -44,7 +44,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     parentEmail: { type: mongoose.Schema.Types.String, default: null },
     parentMobile: { type: mongoose.Schema.Types.String, default: null },
     kycMessages: {
-      type: mongoose.Schema.Types.Mixed,
+      type: mongoose.Schema.Types.Array,
       default: null,
     },
     verificationEmailExpireAt: {

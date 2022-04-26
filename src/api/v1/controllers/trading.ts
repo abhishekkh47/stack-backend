@@ -402,22 +402,46 @@ class TradingController extends BaseController {
   @Auth()
   public async seePendingActivity(ctx: any) {
     const user = ctx.request.user;
+    console.log(user, "user");
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User not Found");
     }
-    const activities = await UserActivityTable.find(
+
+    let activities = await UserActivityTable.aggregate([
       {
-        userId: user._id,
-        status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+        $match: {
+          userId: new ObjectId(user._id),
+          status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+        },
       },
       {
-        message: 1,
-        action: 1,
-        status: 1,
-        currencyValue: 1,
-      }
-    ).sort({ updatedAt: -1 });
+        $lookup: {
+          from: "cryptos",
+          localField: "cryptoId",
+          foreignField: "_id",
+          as: "crypto",
+        },
+      },
+      {
+        $unwind: {
+          path: "$crypto",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          message: 1,
+          userType: 1,
+          action: 1,
+          status: 1,
+          currencyValue: 1,
+          cryptoId: 1,
+          crypto: "$crypto",
+        },
+      },
+    ]).exec();
+
     if (activities.length === 0) {
       return this.BadRequest(ctx, "No Activity Found");
     }
@@ -552,6 +576,7 @@ class TradingController extends BaseController {
         action: EAction.BUY_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
+        cryptoId: cryptoId,
         userType,
         status:
           userType === EUserType.TEEN ? EStatus.PENDING : EStatus.PROCESSED,

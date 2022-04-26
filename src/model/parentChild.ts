@@ -27,6 +27,10 @@ const schema = new mongoose.Schema<IParentChildType>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    proofOfAddressId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     backDocumentId: {
       type: mongoose.Schema.Types.String,
       default: null,

@@ -50,6 +50,11 @@ const schema = new mongoose.Schema<IUserActivitySchema>(
       ref: "crypto",
       default: null,
     },
+    cryptoId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "crypto",
+      default: null,
+    },
   },
   { timestamps: true }
 );

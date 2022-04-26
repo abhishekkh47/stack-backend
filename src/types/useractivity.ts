@@ -9,6 +9,7 @@ export interface IUserActivity {
   resourceId: string;
   currencyValue: number;
   currencyType: mongoose.Schema.Types.ObjectId;
+  cryptoId: mongoose.Schema.Types.ObjectId;
 }
 
 export enum EAction {
