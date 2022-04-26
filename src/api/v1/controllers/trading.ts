@@ -5,6 +5,7 @@ import {
   createProcessorToken,
   createPushTransferMethod,
   getPublicTokenExchange,
+  getBalance,
   Route,
   wireInboundMethod,
 } from "../../../utility";
@@ -402,7 +403,6 @@ class TradingController extends BaseController {
   @Auth()
   public async seePendingActivity(ctx: any) {
     const user = ctx.request.user;
-    console.log(user, "user");
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User not Found");
@@ -424,10 +424,7 @@ class TradingController extends BaseController {
         },
       },
       {
-        $unwind: {
-          path: "$crypto",
-          preserveNullAndEmptyArrays: true,
-        },
+        $unwind: { path: "$crypto", preserveNullAndEmptyArrays: true },
       },
       {
         $project: {
@@ -437,8 +434,16 @@ class TradingController extends BaseController {
           status: 1,
           currencyValue: 1,
           cryptoId: 1,
-          crypto: "$crypto",
+          "crypto._id": 1,
+          "crypto.name": 1,
+          "crypto.symbol": 1,
+          "crypto.assetId": 1,
+          createdAt: 1,
+          updatedAt: 1,
         },
+      },
+      {
+        $sort: { updatedAt: -1 },
       },
     ]).exec();
 
@@ -501,6 +506,7 @@ class TradingController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/check-balance", method: HttpMethod.GET })
+  @PrimeTrustJWT()
   @Auth()
   public async checkBalance(ctx: any) {
     const user = ctx.request.user;
@@ -611,18 +617,44 @@ class TradingController extends BaseController {
     });
     if (!teen) this.BadRequest(ctx, "Invalid Child ID");
 
-    const teenActivities = await UserActivityTable.find(
+    const teenActivities = await UserActivityTable.aggregate([
       {
-        userId: childId,
-        status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+        $match: {
+          userId: new ObjectId(childId),
+          status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+        },
       },
       {
-        message: 1,
-        action: 1,
-        status: 1,
-        currencyValue: 1,
-      }
-    ).sort({ updatedAt: -1 });
+        $lookup: {
+          from: "cryptos",
+          localField: "cryptoId",
+          foreignField: "_id",
+          as: "crypto",
+        },
+      },
+      {
+        $unwind: { path: "$crypto", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $project: {
+          message: 1,
+          userType: 1,
+          action: 1,
+          status: 1,
+          currencyValue: 1,
+          cryptoId: 1,
+          "crypto._id": 1,
+          "crypto.name": 1,
+          "crypto.symbol": 1,
+          "crypto.assetId": 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+      {
+        $sort: { updatedAt: -1 },
+      },
+    ]).exec();
 
     const pendingActivity = [];
     const processedActivity = [];
@@ -646,6 +678,9 @@ class TradingController extends BaseController {
   @Auth()
   public async rejectChildsActivity(ctx: any) {
     const { activityId } = ctx.request.body;
+    if (!activityId) {
+      return this.BadRequest(ctx, "Activity Id not found");
+    }
     if (!/^[0-9a-fA-F]{24}$/.test(activityId))
       return this.BadRequest(ctx, "Enter Correct Activity Details");
     const parent = await ParentChildTable.findOne({
@@ -659,20 +694,102 @@ class TradingController extends BaseController {
     );
     if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
 
-    let isValid = true;
-    for (let i = 0; i < parent.teens.length; i++) {
-      if (parent.teens[i]["childId"] === activity.userId) {
-        isValid = false;
-        break;
-      }
-    }
-    if (!isValid) return this.BadRequest(ctx, "Invalid Pending Activity ID");
+    // let isValid = true;
+    // for (let i = 0; i < parent.teens.length; i++) {
+    //   if (parent.teens[i]["childId"] === activity.userId) {
+    //     isValid = false;
+    //     break;
+    //   }
+    // }
+    // if (!isValid) return this.BadRequest(ctx, "Invalid Pending Activity ID");
 
     await UserActivityTable.updateOne(
       { _id: activityId },
       { status: EStatus.CANCELLED }
     );
-    this.Ok(ctx, { message: "Activity cancelled out successfully" });
+    return this.Ok(ctx, { message: "Activity cancelled out successfully" });
+  }
+
+  /**
+   * @description This method is used to approve child activities
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/approve-childs-activity", method: HttpMethod.POST })
+  @PrimeTrustJWT()
+  @Auth()
+  public async approveChildActivity(ctx: any) {
+    const { activityId } = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
+    if (!activityId) {
+      return this.BadRequest(ctx, "Activity Id not found");
+    }
+    if (!/^[0-9a-fA-F]{24}$/.test(activityId))
+      return this.BadRequest(ctx, "Enter Correct Activity Details");
+
+    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    let parent: any = await ParentChildTable.findOne({
+      userId: ctx.request.user._id,
+    });
+    if (!parent) return this.BadRequest(ctx, "Invalid Parent's ID");
+
+    const activity: any = await UserActivityTable.findOne({
+      _id: activityId,
+      status: EStatus.PENDING,
+    });
+    console.log(activity, "activity");
+    if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
+    const accountIdDetails = await parent.teens.find(
+      (x: any) => x.childId.toString() == activity.userId.toString()
+    );
+    console.log(accountIdDetails, "accountIdDetails");
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    const fetchBalance: any = await getBalance(
+      jwtToken,
+      accountIdDetails.accountId
+    );
+    if (fetchBalance.status == 400) {
+      return this.BadRequest(ctx, fetchBalance.message);
+    }
+    const balance = fetchBalance.data.data[0].attributes.disbursable;
+    if (balance < activity.currencyValue) {
+      return this.BadRequest(
+        ctx,
+        "You dont have sufficient balance to perform the operarion"
+      );
+    }
+    switch (activity.action) {
+      case 1:
+        /**
+         * Deposit
+         */
+        break;
+      case 2:
+        /**
+         * Withdraw
+         */
+        break;
+      case 3:
+        /**
+         * Buy Crypto
+         */
+        if (!activity.assetId) {
+          return this.BadRequest(ctx, "Asset Id Not Found");
+        }
+
+        return this.Ok(ctx, {
+          message: "Success",
+          data: balance,
+        });
+        break;
+      default:
+        return this.BadRequest(ctx, "Something went wrong");
+    }
   }
 }
 

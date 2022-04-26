@@ -1,4 +1,3 @@
-import Koa from "koa";
 import BaseController from "./base";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { validation } from "../../../validations/apiValidation";
@@ -6,78 +5,21 @@ import { ParentChildTable, UserTable } from "../../../model";
 import fs from "fs";
 import {
   agreementPreviews,
-  checkValidImageExtension,
   createAccount,
   createProcessorToken,
   getPublicTokenExchange,
-  createFundTransferMethod,
   kycDocumentChecks,
   Route,
   uploadFilesFetch,
   createContributions,
   getLinkToken,
-  verifyToken,
+  uploadIdProof,
+  uploadProfilePicture,
 } from "../../../utility";
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../../types";
-import multer from "@koa/multer";
 import path from "path";
 import moment from "moment";
 import { ObjectId } from "mongodb";
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../../../uploads"));
-  },
-  filename: function (req, file, cb) {
-    let type = file.originalname.split(".")[1];
-    cb(null, `${file.fieldname}-${Date.now().toString(16)}.${type}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 5000000, // 1000000 Bytes = 1 MB
-  },
-  fileFilter(req, file, cb) {
-    if (!checkValidImageExtension(file)) {
-      return cb(
-        new Error(
-          "Please upload a Image of valid extension of jpg or pdf format only."
-        )
-      );
-    }
-    cb(null, true);
-  },
-});
-
-const uploadProfilePicture = multer({
-  storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, path.join(__dirname, "../../../public"));
-    },
-    filename: async function (req, file, cb) {
-      cb(
-        null,
-        `${(await verifyToken(req.rawHeaders[1]))._id}.${
-          file.originalname.split(".")[1]
-        }`
-      );
-    },
-  }),
-  limit: {
-    fileSize: 5000000,
-  },
-  fileFilter(req, file, cb) {
-    if (!checkValidImageExtension(file, "profile")) {
-      return cb(
-        new Error(
-          "Please upload a Image of valid extension of jpg or pdf format only."
-        )
-      );
-    }
-    cb(null, true);
-  },
-});
 
 class UserController extends BaseController {
   /**
@@ -201,7 +143,7 @@ class UserController extends BaseController {
     path: "/upload-id-proof",
     method: HttpMethod.POST,
     middleware: [
-      upload.fields([
+      uploadIdProof.fields([
         {
           name: "front_side",
           maxCount: 1,
@@ -708,7 +650,7 @@ class UserController extends BaseController {
   @Route({
     path: "/upload-proof-of-address",
     method: HttpMethod.POST,
-    middleware: [upload.single("proof_of_address")],
+    middleware: [uploadIdProof.single("proof_of_address")],
   })
   @Auth()
   @PrimeTrustJWT()

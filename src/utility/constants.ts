@@ -24,6 +24,8 @@ export const PRIMETRUSTAPIS = {
   contributions: "v2/contributions?include=funds-transfer",
   disbursements: "v2/disbursements?include=funds-transfer",
   pushTransfer: "v2/push-transfer-methods",
+  getBalance: (id) => `v2/account-cash-totals?account.id=${id}`,
+  generateQuote: () => `v2/quotes?include=asset`,
   wireInbound: (id) =>
     `v2/push-transfer-methods/${id}/sandbox/inbound-wire?include=funds-transfers`,
   getAssets: (page, limit) =>

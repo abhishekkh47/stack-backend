@@ -407,3 +407,55 @@ export const getAssets = async (token, page, number) => {
     });
   return response;
 };
+
+/**
+ * @description This api is used to get the balance
+ * @returns {*}
+ */
+export const getBalance = async (token, id) => {
+  const response = await axios
+    .get(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.getBalance(id), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to generate a quote
+ * @return {*}
+ */
+export const generateQuote = async (token, data) => {
+  const response = await axios
+    .post(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.generateQuote(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
