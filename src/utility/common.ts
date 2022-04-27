@@ -66,14 +66,10 @@ export const hashString = (length = 10) => {
   result += bcrypt.hashSync(result, 10);
   return result;
 };
-
-export const checkValidImageExtension = (file, type = null) => {
+export const checkValidImageExtension = (file) => {
   let fileArray = ["image/jpeg", "image/jpg", "application/pdf"];
-  if (type == "profile") {
+  if (file.fieldname === "profile_picture")
     fileArray = ["image/jpeg", "image/jpg", "image/png"];
-  }
-  if (file && fileArray.includes(file.mimetype)) {
-    return true;
-  }
+  if (file && fileArray.includes(file.mimetype)) return true;
   return false;
 };
