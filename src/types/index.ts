@@ -11,3 +11,4 @@ export * from "./parent_child";
 export * from "./state";
 export * from "./cms";
 export * from "./webhook";
+export * from "./transaction";

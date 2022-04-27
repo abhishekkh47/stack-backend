@@ -13,8 +13,9 @@ import {
   uploadFilesFetch,
   createContributions,
   getLinkToken,
-  uploadIdProof,
-  uploadProfilePicture,
+  uploadFileS3,
+  // uploadIdProof,
+  // uploadProfilePicture,
 } from "../../../utility";
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../../types";
 import path from "path";
@@ -143,12 +144,9 @@ class UserController extends BaseController {
     path: "/upload-id-proof",
     method: HttpMethod.POST,
     middleware: [
-      uploadIdProof.fields([
-        {
-          name: "front_side",
-          maxCount: 1,
-        },
-        { name: "back_side", maxCount: 1 },
+      uploadFileS3.fields([
+        { name: "id_proof_front", maxCount: 1 },
+        { name: "id_proof_back", maxCount: 1 },
       ]),
     ],
   })
@@ -590,16 +588,16 @@ class UserController extends BaseController {
   @Route({
     path: "/update-profile-picture",
     method: HttpMethod.POST,
-    middleware: [uploadProfilePicture.single("picture")],
+    middleware: [uploadFileS3.single("profile_picture")],
   })
   @Auth()
   public async updateProfilePicture(ctx: any) {
-    if (!ctx.request.file || !ctx.request.file.filename)
+    if (!ctx.request.file || !ctx.request.file.key)
       return this.BadRequest(ctx, "Image is not selected.");
     await UserTable.updateOne(
       { _id: ctx.request.user._id },
       {
-        $set: { profilePicture: ctx.request.file.filename },
+        $set: { profilePicture: ctx.request.file.key },
       }
     );
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
@@ -650,7 +648,7 @@ class UserController extends BaseController {
   @Route({
     path: "/upload-proof-of-address",
     method: HttpMethod.POST,
-    middleware: [uploadIdProof.single("proof_of_address")],
+    middleware: [uploadFileS3.single("address_proof_front")],
   })
   @Auth()
   @PrimeTrustJWT()

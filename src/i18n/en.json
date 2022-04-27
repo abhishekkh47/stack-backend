@@ -190,5 +190,10 @@
 	"changeAddrPostalcodeRequired": "Postal Code not entered.",
 	"changeAddrPostalcodeEmpty": "Postal Code not entered.",
 	"changeAddrPostalcodeMin": "Please enter valid postal code.",
-	"changeAddrPostalcodePattern": "Please enter valid postal code."
+	"changeAddrPostalcodePattern": "Please enter valid postal code.",
+	"sellCryptoAmountRequired": "Please enter crypto amount.",
+	"sellCryptoAmountBase": "Please enter crypto amount.",
+	"sellCryptoCryptoidRequired": "Please enter crypto details.",
+	"sellCryptoCryptoidEmpty": "Please enter crypto details.",
+	"sellCryptoCryptoidPattern": "Please enter crypto details."
 }

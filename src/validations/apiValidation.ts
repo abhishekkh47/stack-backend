@@ -337,6 +337,19 @@ export const validation = {
     }
     return callback(true);
   },
+  sellCryptoValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      amount: Joi.number().min(1).positive().precision(2).required(),
+      cryptoId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req, { convert: false });
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("sellCrypto", error)));
+    }
+    return callback(true);
+  },
   checkAccountReadyToLinkValidation: (req, res, callback) => {
     const schema = Joi.object({
       mobile: Joi.string()

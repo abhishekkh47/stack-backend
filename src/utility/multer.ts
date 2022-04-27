@@ -1,57 +1,35 @@
 import multer from "@koa/multer";
-import path from "path";
+import multerS3 from "multer-s3";
+import aws from "aws-sdk";
 import { verifyToken, checkValidImageExtension } from ".";
 
-export const uploadIdProof = multer({
-  storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, path.join(__dirname, "../uploads"));
-    },
-    filename: function (req, file, cb) {
-      let type = file.originalname.split(".")[1];
-      cb(null, `${file.fieldname}-${Date.now().toString(16)}.${type}`);
-    },
-  }),
-  limits: {
-    fileSize: 5000000, // 1000000 Bytes = 1 MB
-  },
-  fileFilter(req, file, cb) {
-    if (!checkValidImageExtension(file)) {
-      return cb(
-        new Error(
-          "Please upload a Image of valid extension of jpg or pdf format only."
-        )
-      );
-    }
-    cb(null, true);
-  },
+const s3 = new aws.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_KEY,
+  region: "us-west-2",
 });
 
-export const uploadProfilePicture = multer({
-  storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, path.join(__dirname, "../public"));
-    },
-    filename: async function (req, file, cb) {
+export const uploadFileS3 = multer({
+  storage: multerS3({
+    s3,
+    bucket: "stack-users",
+    key: async (req, file, cb) => {
       cb(
         null,
-        `${(await verifyToken(req.rawHeaders[1]))._id}.${
-          file.originalname.split(".")[1]
-        }`
+        `${(await verifyToken(req.rawHeaders[1]))._id}/${
+          file.fieldname
+        }_${Date.now().toString()}.${file.originalname.split(".")[1]}`
       );
     },
   }),
-  limit: {
-    fileSize: 5000000,
-  },
+  limit: { fileSize: 5000000 },
   fileFilter(req, file, cb) {
-    if (!checkValidImageExtension(file, "profile")) {
+    if (!checkValidImageExtension(file))
       return cb(
         new Error(
           "Please upload a Image of valid extension of jpg or pdf format only."
         )
       );
-    }
     cb(null, true);
   },
 });

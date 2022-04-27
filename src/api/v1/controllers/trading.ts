@@ -8,12 +8,15 @@ import {
   getBalance,
   Route,
   wireInboundMethod,
+  generateQuote,
+  executeQuote,
 } from "../../../utility";
 import BaseController from "./base";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   EAction,
   EStatus,
+  ETransactionType,
   ETRANSFER,
   EUserType,
   HttpMethod,
@@ -22,12 +25,14 @@ import {
 import {
   CryptoTable,
   ParentChildTable,
+  TransactionTable,
   UserActivityTable,
   UserTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { UserWalletTable } from "../../../model/userbalance";
 import { ObjectId } from "mongodb";
+import moment from "moment";
 
 class TradingController extends BaseController {
   /**
@@ -36,8 +41,8 @@ class TradingController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-deposit", method: HttpMethod.POST })
-  @PrimeTrustJWT()
   @Auth()
+  @PrimeTrustJWT()
   public async addDepositAction(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
@@ -116,6 +121,17 @@ class TradingController extends BaseController {
             if (processToken.status == 400) {
               return this.BadRequest(ctx, processToken.message);
             }
+            await ParentChildTable.updateOne(
+              {
+                _id: parentDetails._id,
+              },
+              {
+                $set: {
+                  processorToken: processToken.data.processor_token,
+                  accessToken: publicTokenExchange.data.access_token,
+                },
+              }
+            );
             /**
              * create fund transfer with fund transfer id in response
              */
@@ -235,8 +251,8 @@ class TradingController extends BaseController {
    * @returns
    */
   @Route({ path: "/withdraw-money", method: HttpMethod.POST })
-  @PrimeTrustJWT()
   @Auth()
+  @PrimeTrustJWT()
   public async withdrawMoney(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
@@ -412,7 +428,7 @@ class TradingController extends BaseController {
       {
         $match: {
           userId: new ObjectId(user._id),
-          status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+          // status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
         },
       },
       {
@@ -506,8 +522,8 @@ class TradingController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/check-balance", method: HttpMethod.GET })
-  @PrimeTrustJWT()
   @Auth()
+  @PrimeTrustJWT()
   public async checkBalance(ctx: any) {
     const user = ctx.request.user;
     const userBalance = await UserWalletTable.findOne(
@@ -597,6 +613,49 @@ class TradingController extends BaseController {
   }
 
   /**
+   * @description This method is used to buy crypto
+   * @param ctx
+   * @returns
+   * TODO REMAINING:- CHECK WHTHER THAT STOCK ACTUALLY EXISTS IN OUR PORTFOLIO OR NOT
+   */
+  @Route({ path: "/sell-crypto", method: HttpMethod.POST })
+  @Auth()
+  public async sellCrypto(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    return validation.sellCryptoValidation(reqParam, ctx, async (validate) => {
+      const { amount, cryptoId } = reqParam;
+      const crypto = await CryptoTable.findById({ _id: cryptoId });
+      if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
+
+      const userType = (
+        await UserTable.findOne(
+          { username: user.username },
+          { type: 1, _id: -1 }
+        )
+      ).type;
+
+      await UserActivityTable.create({
+        userId: user._id,
+        message: messages.SELL,
+        action: EAction.SELL_CRYPTO,
+        currencyValue: amount,
+        currencyType: cryptoId,
+        cryptoId: cryptoId,
+        userType,
+        status:
+          userType === EUserType.TEEN ? EStatus.PENDING : EStatus.PROCESSED,
+      });
+      const message =
+        userType === EUserType.TEEN
+          ? `Your request for sell order of crypto of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
+          : `Sell order proccessed`;
+
+      return this.Ok(ctx, { message });
+    });
+  }
+
+  /**
    * @description This method is used to get child activities processed and pending
    * @param ctx
    * @returns {*}
@@ -621,7 +680,7 @@ class TradingController extends BaseController {
       {
         $match: {
           userId: new ObjectId(childId),
-          status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+          // status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
         },
       },
       {
@@ -711,13 +770,23 @@ class TradingController extends BaseController {
   }
 
   /**
+   * @description This method is used to get portfolio for child account
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-portfolio", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT()
+  public async getPortfolio(ctx: any) {}
+
+  /**
    * @description This method is used to approve child activities
    * @param ctx
    * @returns {*}
    */
   @Route({ path: "/approve-childs-activity", method: HttpMethod.POST })
-  @PrimeTrustJWT()
   @Auth()
+  @PrimeTrustJWT()
   public async approveChildActivity(ctx: any) {
     const { activityId } = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
@@ -740,7 +809,6 @@ class TradingController extends BaseController {
       _id: activityId,
       status: EStatus.PENDING,
     });
-    console.log(activity, "activity");
     if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
     const accountIdDetails = await parent.teens.find(
       (x: any) => x.childId.toString() == activity.userId.toString()
@@ -768,25 +836,224 @@ class TradingController extends BaseController {
         /**
          * Deposit
          */
+        if (!parent.processorToken) {
+          return this.BadRequest(ctx, {
+            message: "Processor Token Doesn't Exists",
+          });
+        }
+        /**
+         * create fund transfer with fund transfer id in response
+         */
+        let contributionRequest = {
+          type: "contributions",
+          attributes: {
+            "account-id": accountIdDetails.accountId,
+            "contact-id": parent.contactId,
+            "funds-transfer-method": {
+              "funds-transfer-type": "ach",
+              "ach-check-type": "personal",
+              "contact-id": parent.contactId,
+              "plaid-processor-token": parent.processorToken,
+            },
+            amount: activity.currencyValue,
+          },
+        };
+        console.log(contributionRequest, "contributionRequest");
+        const contributions: any = await createContributions(
+          jwtToken,
+          contributionRequest
+        );
+        if (contributions.status == 400) {
+          return this.BadRequest(ctx, contributions.message);
+        }
+        return this.Ok(ctx, {
+          data: contributions.data,
+          message:
+            "You have approved teen's request of deposit. Please wait while it take place accordingly.",
+        });
         break;
       case 2:
         /**
          * Withdraw
          */
+        if (!parent.processorToken) {
+          return this.BadRequest(ctx, {
+            message: "Processor Token Doesn't Exists",
+          });
+        }
+        let disbursementRequest = {
+          type: "disbursements",
+          attributes: {
+            "account-id": accountIdDetails.accountId,
+            "contact-id": parent.contactId,
+            "funds-transfer-method": {
+              "funds-transfer-type": "ach",
+              "ach-check-type": "personal",
+              "contact-id": parent.contactId,
+              "plaid-processor-token": parent.processorToken,
+            },
+            amount: activity.currencyValue,
+          },
+        };
+        console.log(disbursementRequest, "disbursementRequest");
+        const disbursementResponse: any = await createDisbursements(
+          jwtToken,
+          disbursementRequest
+        );
+        if (disbursementResponse.status == 400) {
+          return this.BadRequest(ctx, disbursementResponse.message);
+        }
+        return this.Ok(ctx, {
+          data: disbursementResponse.data,
+          message:
+            "You have approved teen's request of withdrawal. Please wait while it take place accordingly.",
+        });
         break;
       case 3:
         /**
          * Buy Crypto
          */
-        if (!activity.assetId) {
+        if (!activity.cryptoId) {
           return this.BadRequest(ctx, "Asset Id Not Found");
         }
-
+        const cryptoData = await CryptoTable.findOne({
+          _id: activity.cryptoId,
+        });
+        /**
+         * Generate a quote
+         */
+        const requestQuoteDay: any = {
+          data: {
+            type: "quotes",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "asset-id": cryptoData.assetId,
+              hot: false,
+              "transaction-type": "buy",
+              total_amount: activity.currencyValue,
+            },
+          },
+        };
+        const generateQuoteResponse: any = await generateQuote(
+          jwtToken,
+          requestQuoteDay
+        );
+        if (generateQuoteResponse.status == 400) {
+          return this.BadRequest(ctx, generateQuoteResponse.message);
+        }
+        /**
+         * Execute a quote
+         */
+        const requestExecuteQuote: any = {
+          data: {
+            type: "quotes",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "asset-id": cryptoData.assetId,
+            },
+          },
+        };
+        const executeQuoteResponse: any = await executeQuote(
+          jwtToken,
+          generateQuoteResponse.data.data.id,
+          requestExecuteQuote
+        );
+        if (executeQuoteResponse.status == 400) {
+          return this.BadRequest(ctx, executeQuoteResponse.message);
+        }
+        await TransactionTable.create({
+          assetId: cryptoData.assetId,
+          cryptoId: cryptoData._id,
+          accountId: accountIdDetails.accountId,
+          type: ETransactionType.BUY,
+          settledTime: moment().unix(),
+          amount: activity.currencyValue,
+          userId: accountIdDetails.childId,
+          parentId: userExists._id,
+          unitCount: executeQuoteResponse.data.data.attributes["unit-count"],
+        });
+        await UserActivityTable.updateOne(
+          { _id: activityId },
+          { status: EStatus.PROCESSED }
+        );
         return this.Ok(ctx, {
           message: "Success",
-          data: balance,
+          data: "You have approved teen's request of buying crypto. Please wait while it settles in the portfolio respectively.",
         });
-        break;
+      case 4:
+        /**
+         * Sell Crypto
+         */
+        if (!activity.cryptoId) {
+          return this.BadRequest(ctx, "Asset Id Not Found");
+        }
+        const sellCryptoData = await CryptoTable.findOne({
+          _id: activity.cryptoId,
+        });
+        /**
+         * Generate a quote
+         */
+        const requestSellQuoteDay: any = {
+          data: {
+            type: "quotes",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "asset-id": sellCryptoData.assetId,
+              hot: false,
+              "transaction-type": "sell",
+              total_amount: activity.currencyValue,
+            },
+          },
+        };
+        console.log(requestSellQuoteDay, "gjkhjkhjkhjk");
+        const generateSellQuoteResponse: any = await generateQuote(
+          jwtToken,
+          requestSellQuoteDay
+        );
+        if (generateSellQuoteResponse.status == 400) {
+          return this.BadRequest(ctx, generateSellQuoteResponse.message);
+        }
+        /**
+         * Execute a quote
+         */
+        const requestSellExecuteQuote: any = {
+          data: {
+            type: "quotes",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "asset-id": sellCryptoData.assetId,
+            },
+          },
+        };
+        const executeSellQuoteResponse: any = await executeQuote(
+          jwtToken,
+          generateSellQuoteResponse.data.data.id,
+          requestSellExecuteQuote
+        );
+        if (executeSellQuoteResponse.status == 400) {
+          return this.BadRequest(ctx, executeSellQuoteResponse.message);
+        }
+        await TransactionTable.create({
+          assetId: sellCryptoData.assetId,
+          cryptoId: sellCryptoData._id,
+          accountId: accountIdDetails.accountId,
+          type: ETransactionType.SELL,
+          settledTime: moment().unix(),
+          amount: activity.currencyValue,
+          userId: accountIdDetails.childId,
+          parentId: userExists._id,
+          unitCount:
+            executeSellQuoteResponse.data.data.attributes["unit-count"],
+        });
+        await UserActivityTable.updateOne(
+          { _id: activityId },
+          { status: EStatus.PROCESSED }
+        );
+        return this.Ok(ctx, {
+          message: "Success",
+          data: "You have approved teen's request of selling crypto. Please wait while it settles in the portfolio respectively.",
+        });
+
       default:
         return this.BadRequest(ctx, "Something went wrong");
     }

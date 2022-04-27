@@ -440,7 +440,7 @@ export const getBalance = async (token, id) => {
  */
 export const generateQuote = async (token, data) => {
   const response = await axios
-    .post(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.generateQuote(), {
+    .post(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.generateQuote(), data, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -455,6 +455,34 @@ export const generateQuote = async (token, data) => {
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to execute a quote
+ * @return {*}
+ */
+export const executeQuote = async (token, id, data) => {
+  const response = await axios
+    .post(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.executeQuote(id), data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => {
+      console.log(res.data, "res");
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      console.log(error, "error");
+      return {
+        status: 400,
+        message: error.response.data,
       };
     });
   return response;

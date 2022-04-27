@@ -23,6 +23,10 @@ const schema = new mongoose.Schema<IParentChildType>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    accessToken: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     frontDocumentId: {
       type: mongoose.Schema.Types.String,
       default: null,
