@@ -249,7 +249,6 @@ export const validation = {
     return callback(true);
   },
   addDepositValidation: (req, res, type, callback) => {
-    console.log(type, "type");
     const schema = Joi.object({
       amount: Joi.number()
         .min(5)
@@ -486,6 +485,29 @@ export const validation = {
     const { error } = schema.validate(req);
     if (error)
       return res.throw(400, res.__(validationMessageKey("notifyUser", error)));
+    return callback(true);
+  },
+  changePrimeTrustValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      firstName: Joi.string()
+        .min(2)
+        .regex(/^[A-za-z]*$/),
+      lastName: Joi.string()
+        .min(2)
+        .regex(/^[A-za-z]*$/),
+      dob: Joi.date().iso(),
+      taxIdNo: Joi.string()
+        .regex(/^[0-9]*$/)
+        .min(5)
+        .max(15),
+      taxState: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("changePrimeTrust", error))
+      );
     return callback(true);
   },
 };

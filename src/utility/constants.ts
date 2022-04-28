@@ -31,6 +31,8 @@ export const PRIMETRUSTAPIS = {
     `v2/push-transfer-methods/${id}/sandbox/inbound-wire?include=funds-transfers`,
   getAssets: (page, limit) =>
     `v2/assets?page[size]=${limit}&page[number]=${page}`,
+  getPushTransfer: (accountId) =>
+    `v2/push-transfer-methods?account.id=${accountId}`,
 };
 
 export const PLAIDAPIS = {

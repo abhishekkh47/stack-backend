@@ -124,7 +124,6 @@ class UserController extends BaseController {
         },
       },
     };
-    console.log(data.attributes.owner["primary-address"], "data");
     /**
      * Send Agreement Previews
      */
@@ -421,7 +420,6 @@ class UserController extends BaseController {
         amount: "50",
       },
     };
-    console.log(contributionRequest, "contributionRequest");
     const contributions: any = await createContributions(
       jwtToken,
       contributionRequest
@@ -481,7 +479,6 @@ class UserController extends BaseController {
         amount: "50",
       },
     };
-    console.log(contributionRequest, "contributionRequest");
     const contributions: any = await createContributions(
       jwtToken,
       contributionRequest
@@ -518,6 +515,7 @@ class UserController extends BaseController {
           $project: {
             _id: 1,
             email: 1,
+            kycMessages: 1,
             username: 1,
             mobile: 1,
             address: 1,
@@ -648,7 +646,7 @@ class UserController extends BaseController {
   @Route({
     path: "/upload-proof-of-address",
     method: HttpMethod.POST,
-    middleware: [uploadFileS3.single("address_proof_front")],
+    middleware: [uploadIdProof.single("address_proof_front")],
   })
   @Auth()
   @PrimeTrustJWT()

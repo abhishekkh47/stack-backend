@@ -4,6 +4,8 @@ import { Route, wireInboundMethod } from "../../../utility";
 import BaseController from "./base";
 import { EUSERSTATUS, HttpMethod } from "../../../types";
 import { ParentChildTable, UserTable, WebhookTable } from "../../../model";
+import { validation } from "../../../validations/apiValidation";
+import { PrimeTrustJWT, Auth } from "../../../middleware";
 
 class WebHookController extends BaseController {
   /**
@@ -22,20 +24,17 @@ class WebHookController extends BaseController {
     /**
      * For kyc success or failure
      */
-    console.log(body.resource_type, "body.resource_type");
     switch (body.resource_type) {
       case "contact":
         const checkAccountIdExists = await ParentChildTable.findOne({
           "teens.accountId": body.account_id,
         });
-        console.log(checkAccountIdExists, "checkAccountIdExists");
         if (!checkAccountIdExists) {
           return this.BadRequest(ctx, "Account Id Doesn't Exists");
         }
         const userExists = await UserTable.findOne({
           _id: checkAccountIdExists.userId,
         });
-        console.log(userExists, "userExists");
         if (!userExists) {
           return this.BadRequest(ctx, "User Not Found");
         }
@@ -54,7 +53,7 @@ class WebHookController extends BaseController {
             { _id: userExists._id },
             {
               $set: {
-                kycMessages: Object.values(body.data["kyc_required_actions"]),
+                kycMessages: body.data["kyc_required_actions"],
                 status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD_FAILED,
               },
             }
@@ -89,6 +88,27 @@ class WebHookController extends BaseController {
     }
     console.log(`++++++END WEBHOOK DATA+++++++++`);
     return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is update the error related information in prime trust as well as our database
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-primetrust-data", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT()
+  public async changeDataIntoPrimeTrust(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    return validation.changePrimeTrustValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+        }
+      }
+    );
   }
 }
 

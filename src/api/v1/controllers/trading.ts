@@ -10,6 +10,8 @@ import {
   wireInboundMethod,
   generateQuote,
   executeQuote,
+  getAccountId,
+  getWireTransfer,
 } from "../../../utility";
 import BaseController from "./base";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
@@ -149,7 +151,6 @@ class TradingController extends BaseController {
                 amount: reqParam.amount,
               },
             };
-            console.log(contributionRequest, "contributionRequest");
             const contributions: any = await createContributions(
               jwtToken,
               contributionRequest
@@ -283,8 +284,6 @@ class TradingController extends BaseController {
           const accountIdDetails = await parent.teens.find(
             (x: any) => x.childId.toString() == parent.firstChildId.toString()
           );
-          console.log(ctx.request.user._id, "accountIdDetails");
-          console.log(parent.teens, "accountIdDetails");
           if (!accountIdDetails) {
             return this.BadRequest(ctx, "Account Details Not Found");
           }
@@ -418,7 +417,6 @@ class TradingController extends BaseController {
                 amount: reqParam.amount,
               },
             };
-            console.log(disbursementRequest, "disbursementRequest");
             const disbursement: any = await createDisbursements(
               jwtToken,
               disbursementRequest
@@ -570,8 +568,6 @@ class TradingController extends BaseController {
     const accountIdDetails = await parent.teens.find(
       (x: any) => x.childId.toString() == parent.firstChildId.toString()
     );
-    console.log(ctx.request.user._id, "accountIdDetails");
-    console.log(parent.teens, "accountIdDetails");
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
@@ -622,8 +618,6 @@ class TradingController extends BaseController {
       const accountIdDetails = await parent.teens.find(
         (x: any) => x.childId.toString() == parent.firstChildId.toString()
       );
-      console.log(ctx.request.user._id, "accountIdDetails");
-      console.log(parent.teens, "accountIdDetails");
       if (!accountIdDetails) {
         return this.BadRequest(ctx, "Account Details Not Found");
       }
@@ -840,15 +834,6 @@ class TradingController extends BaseController {
     );
     if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
 
-    // let isValid = true;
-    // for (let i = 0; i < parent.teens.length; i++) {
-    //   if (parent.teens[i]["childId"] === activity.userId) {
-    //     isValid = false;
-    //     break;
-    //   }
-    // }
-    // if (!isValid) return this.BadRequest(ctx, "Invalid Pending Activity ID");
-
     await UserActivityTable.updateOne(
       { _id: activityId },
       { status: EStatus.CANCELLED }
@@ -900,7 +885,6 @@ class TradingController extends BaseController {
     const accountIdDetails = await parent.teens.find(
       (x: any) => x.childId.toString() == activity.userId.toString()
     );
-    console.log(accountIdDetails, "accountIdDetails");
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
@@ -924,9 +908,7 @@ class TradingController extends BaseController {
          * Deposit
          */
         if (!parent.processorToken) {
-          return this.BadRequest(ctx, {
-            message: "Processor Token Doesn't Exists",
-          });
+          return this.BadRequest(ctx, "Processor Token Doesn't Exists");
         }
         /**
          * create fund transfer with fund transfer id in response
@@ -945,7 +927,6 @@ class TradingController extends BaseController {
             amount: activity.currencyValue,
           },
         };
-        console.log(contributionRequest, "contributionRequest");
         const contributions: any = await createContributions(
           jwtToken,
           contributionRequest
@@ -986,7 +967,6 @@ class TradingController extends BaseController {
             amount: activity.currencyValue,
           },
         };
-        console.log(disbursementRequest, "disbursementRequest");
         const disbursementResponse: any = await createDisbursements(
           jwtToken,
           disbursementRequest
@@ -1100,7 +1080,6 @@ class TradingController extends BaseController {
             },
           },
         };
-        console.log(requestSellQuoteDay, "gjkhjkhjkhjk");
         const generateSellQuoteResponse: any = await generateQuote(
           jwtToken,
           requestSellQuoteDay
@@ -1152,6 +1131,24 @@ class TradingController extends BaseController {
       default:
         return this.BadRequest(ctx, "Something went wrong");
     }
+  }
+
+  /**
+   * @description This method is
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-wire-transfer", method: HttpMethod.GET })
+  @Auth()
+  @PrimeTrustJWT()
+  public async getWireTransfer(ctx: any) {
+    let accountId: any = await getAccountId(ctx.request.user._id);
+    if (!accountId) return this.BadRequest(ctx, "AccountId not found.");
+    let response = await getWireTransfer(
+      ctx.request.primeTrustToken,
+      accountId
+    );
+    return this.Ok(ctx, { data: response });
   }
 }
 

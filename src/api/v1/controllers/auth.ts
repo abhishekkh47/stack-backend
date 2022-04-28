@@ -266,7 +266,6 @@ class AliveController extends BaseController {
             balance: 0,
           });
           if (user.type === EUserType.PARENT) {
-            console.log("added");
             await ParentChildTable.create({
               userId: user._id,
               contactId: null,

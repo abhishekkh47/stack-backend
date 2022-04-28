@@ -142,7 +142,6 @@ export const uploadFilesFetch = async (token, data) => {
   };
   return new Promise((resolve, reject) => {
     const response = request(options, function (err, res, body) {
-      console.log(err, "error");
       if (err) {
         return reject({
           status: 400,
@@ -473,18 +472,35 @@ export const executeQuote = async (token, id, data) => {
       },
     })
     .then((res) => {
-      console.log(res.data, "res");
       return {
         status: 200,
         data: res.data,
       };
     })
     .catch((error) => {
-      console.log(error, "error");
       return {
         status: 400,
         message: error.response.data,
       };
+    });
+  return response;
+};
+
+/**
+ * @description This api is for wire transfer
+ * @param token
+ * @param accountId
+ * @returns
+ */
+export const getWireTransfer = async (token, accountId) => {
+  const response = await axios
+    .get(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.getPushTransfer(accountId), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => res.data)
+    .catch((error) => {
+      console.log(error, "error");
+      return { status: 400, message: error.response.data };
     });
   return response;
 };
