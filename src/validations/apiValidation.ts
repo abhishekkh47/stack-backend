@@ -479,4 +479,13 @@ export const validation = {
       return res.throw(400, res.__(validationMessageKey("updateDOB", error)));
     return callback(true);
   },
+  notifyUserInputValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      email: Joi.string().email().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("notifyUser", error)));
+    return callback(true);
+  },
 };

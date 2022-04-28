@@ -270,10 +270,36 @@ class TradingController extends BaseController {
           /**
            * Check current balance is greather than withdrawable amount
            */
+          const query =
+            userExists.type == EUserType.PARENT
+              ? { userId: ctx.request.user._id }
+              : { "teens.childId": ctx.request.user._id };
+          let parent: any = await ParentChildTable.findOne(query);
+          if (!parent) return this.BadRequest(ctx, "Invalid User");
+          // const userBalance = await UserWalletTable.findOne(
+          //   { userId: user._id },
+          //   { balance: 1 }
+          // );
+          const accountIdDetails = await parent.teens.find(
+            (x: any) => x.childId.toString() == parent.firstChildId.toString()
+          );
+          console.log(ctx.request.user._id, "accountIdDetails");
+          console.log(parent.teens, "accountIdDetails");
+          if (!accountIdDetails) {
+            return this.BadRequest(ctx, "Account Details Not Found");
+          }
+          const fetchBalance: any = await getBalance(
+            jwtToken,
+            parent.teens[0].accountId
+          );
+          if (fetchBalance.status == 400) {
+            return this.BadRequest(ctx, fetchBalance.message);
+          }
+          const balance = fetchBalance.data.data[0].attributes.disbursable;
           const userBalance = await UserWalletTable.findOne({
             userId: userExists._id,
           });
-          if (!userBalance || userBalance.balance < reqParam.amount) {
+          if (!userBalance || balance < reqParam.amount) {
             return this.BadRequest(
               ctx,
               "You dont have sufficient balance to withdraw money"
@@ -299,7 +325,7 @@ class TradingController extends BaseController {
             ]).exec();
           if (checkUserActivityForWithdraw.length > 0) {
             if (
-              userBalance.balance <
+              balance <
               checkUserActivityForWithdraw[0].total + reqParam.amount
             ) {
               return this.BadRequest(
@@ -526,11 +552,41 @@ class TradingController extends BaseController {
   @PrimeTrustJWT()
   public async checkBalance(ctx: any) {
     const user = ctx.request.user;
-    const userBalance = await UserWalletTable.findOne(
-      { userId: user._id },
-      { balance: 1 }
+    const jwtToken = ctx.request.primeTrustToken;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const query =
+      userExists.type == EUserType.PARENT
+        ? { userId: ctx.request.user._id }
+        : { "teens.childId": ctx.request.user._id };
+    let parent: any = await ParentChildTable.findOne(query);
+    if (!parent) return this.BadRequest(ctx, "Invalid User");
+    // const userBalance = await UserWalletTable.findOne(
+    //   { userId: user._id },
+    //   { balance: 1 }
+    // );
+    const accountIdDetails = await parent.teens.find(
+      (x: any) => x.childId.toString() == parent.firstChildId.toString()
     );
-    return this.Ok(ctx, { balance: userBalance.balance });
+    console.log(ctx.request.user._id, "accountIdDetails");
+    console.log(parent.teens, "accountIdDetails");
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    const fetchBalance: any = await getBalance(
+      jwtToken,
+      parent.teens[0].accountId
+    );
+    if (fetchBalance.status == 400) {
+      return this.BadRequest(ctx, fetchBalance.message);
+    }
+    const balance = fetchBalance.data.data[0].attributes.disbursable;
+    if (fetchBalance.status == 400) {
+      return this.BadRequest(ctx, fetchBalance.message);
+    }
+    return this.Ok(ctx, { balance: balance });
   }
 
   /**
@@ -540,18 +596,49 @@ class TradingController extends BaseController {
    */
   @Route({ path: "/buy-crypto", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT()
   public async buyCrypto(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
     return validation.buyCryptoValidation(reqParam, ctx, async (validate) => {
       const { amount, cryptoId } = reqParam;
       const crypto = await CryptoTable.findById({ _id: cryptoId });
       if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
-
-      const userBalance = (
-        await UserWalletTable.findOne({ userId: user._id }, { balance: 1 })
-      ).balance;
-      if (amount > userBalance)
+      let userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      const query =
+        userExists.type == EUserType.PARENT
+          ? { userId: ctx.request.user._id }
+          : { "teens.childId": ctx.request.user._id };
+      let parent: any = await ParentChildTable.findOne(query);
+      if (!parent) return this.BadRequest(ctx, "Invalid User");
+      // const userBalance = await UserWalletTable.findOne(
+      //   { userId: user._id },
+      //   { balance: 1 }
+      // );
+      const accountIdDetails = await parent.teens.find(
+        (x: any) => x.childId.toString() == parent.firstChildId.toString()
+      );
+      console.log(ctx.request.user._id, "accountIdDetails");
+      console.log(parent.teens, "accountIdDetails");
+      if (!accountIdDetails) {
+        return this.BadRequest(ctx, "Account Details Not Found");
+      }
+      const fetchBalance: any = await getBalance(
+        jwtToken,
+        parent.teens[0].accountId
+      );
+      if (fetchBalance.status == 400) {
+        return this.BadRequest(ctx, fetchBalance.message);
+      }
+      const balance = fetchBalance.data.data[0].attributes.disbursable;
+      // const userBalance = (
+      //   await UserWalletTable.findOne({ userId: user._id }, { balance: 1 })
+      // ).balance;
+      if (amount > balance)
         return this.BadRequest(
           ctx,
           "You dont have sufficient balance to buy cryptocurrenices"
@@ -583,7 +670,7 @@ class TradingController extends BaseController {
 
         if (
           pendingTransactions.length > 0 &&
-          userBalance < pendingTransactions[0].total + amount
+          balance < pendingTransactions[0].total + amount
         ) {
           return this.BadRequest(
             ctx,
@@ -866,10 +953,14 @@ class TradingController extends BaseController {
         if (contributions.status == 400) {
           return this.BadRequest(ctx, contributions.message);
         }
+        await UserActivityTable.updateOne(
+          { _id: activityId },
+          { status: EStatus.PROCESSED }
+        );
         return this.Ok(ctx, {
-          data: contributions.data,
           message:
             "You have approved teen's request of deposit. Please wait while it take place accordingly.",
+          data: contributions.data,
         });
         break;
       case 2:
@@ -903,6 +994,10 @@ class TradingController extends BaseController {
         if (disbursementResponse.status == 400) {
           return this.BadRequest(ctx, disbursementResponse.message);
         }
+        await UserActivityTable.updateOne(
+          { _id: activityId },
+          { status: EStatus.PROCESSED }
+        );
         return this.Ok(ctx, {
           data: disbursementResponse.data,
           message:

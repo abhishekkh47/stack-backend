@@ -1010,7 +1010,6 @@ class AliveController extends BaseController {
    * @returns
    */
   @Route({ path: "/refresh-token", method: HttpMethod.POST })
-  @Auth()
   public async refreshToken(ctx: any) {
     const input = ctx.request.body;
     const { refreshToken } = input;

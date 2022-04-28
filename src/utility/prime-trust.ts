@@ -142,6 +142,7 @@ export const uploadFilesFetch = async (token, data) => {
   };
   return new Promise((resolve, reject) => {
     const response = request(options, function (err, res, body) {
+      console.log(err, "error");
       if (err) {
         return reject({
           status: 400,

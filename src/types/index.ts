@@ -12,3 +12,4 @@ export * from "./state";
 export * from "./cms";
 export * from "./webhook";
 export * from "./transaction";
+export * from "./notifyUser";

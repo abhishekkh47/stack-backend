@@ -195,5 +195,8 @@
 	"sellCryptoAmountBase": "Please enter crypto amount.",
 	"sellCryptoCryptoidRequired": "Please enter crypto details.",
 	"sellCryptoCryptoidEmpty": "Please enter crypto details.",
-	"sellCryptoCryptoidPattern": "Please enter crypto details."
+	"sellCryptoCryptoidPattern": "Please enter crypto details.",
+	"notifyUserEmailRequired": "notifyUserEmailRequired",
+	"notifyUserEmailEmpty": "notifyUserEmailEmpty",
+	"notifyUserEmailEmail": "notifyUserEmailEmail"
 }

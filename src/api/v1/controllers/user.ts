@@ -1,7 +1,7 @@
 import BaseController from "./base";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { validation } from "../../../validations/apiValidation";
-import { ParentChildTable, UserTable } from "../../../model";
+import { ParentChildTable, UserTable, NotifyUserTable } from "../../../model";
 import fs from "fs";
 import {
   agreementPreviews,
@@ -14,7 +14,7 @@ import {
   createContributions,
   getLinkToken,
   uploadFileS3,
-  // uploadIdProof,
+  uploadIdProof,
   // uploadProfilePicture,
 } from "../../../utility";
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../../types";
@@ -144,7 +144,7 @@ class UserController extends BaseController {
     path: "/upload-id-proof",
     method: HttpMethod.POST,
     middleware: [
-      uploadFileS3.fields([
+      uploadIdProof.fields([
         { name: "id_proof_front", maxCount: 1 },
         { name: "id_proof_back", maxCount: 1 },
       ]),
@@ -163,13 +163,13 @@ class UserController extends BaseController {
       );
     }
     let newArrayFiles = [];
-    if (!files.front_side || !files.back_side) {
+    if (!files.id_proof_front || !files.id_proof_back) {
       return this.BadRequest(
         ctx,
         "You need to upload front and back side of driver's license"
       );
     }
-    newArrayFiles = [...files.front_side, ...files.back_side];
+    newArrayFiles = [...files.id_proof_front, ...files.id_proof_back];
     if (newArrayFiles.length != 2) {
       return this.BadRequest(
         ctx,
@@ -243,11 +243,11 @@ class UserController extends BaseController {
       let uploadData = {
         "contact-id": createAccountData.data.included[0].id,
         description:
-          identificationFile.fieldname == "front_side"
+          identificationFile.fieldname == "id_proof_front"
             ? "Front Side Driving License"
             : "Back Side Driving License",
         label:
-          identificationFile.fieldname == "front_side"
+          identificationFile.fieldname == "id_proof_back"
             ? "Front Side Driving License"
             : "Back Side Driving License",
         public: "true",
@@ -264,7 +264,7 @@ class UserController extends BaseController {
         uploadFileError = uploadFile.message;
         break;
       }
-      identificationFile.fieldname == "front_side"
+      identificationFile.fieldname == "id_proof_front"
         ? (frontDocumentId = uploadFile.message.data.id)
         : (backDocumentId = uploadFile.message.data.id);
       /**
@@ -775,6 +775,26 @@ class UserController extends BaseController {
       message:
         "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
     });
+  }
+
+  /**
+   * @description This method is used to notify user.
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/notify-user", method: HttpMethod.POST })
+  public async notifyUsers(ctx: any) {
+    const input = ctx.request.body;
+    return validation.notifyUserInputValidation(
+      input,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await NotifyUserTable.create(input);
+          return this.Ok(ctx, { message: "Notified successfully." });
+        }
+      }
+    );
   }
 }
 
