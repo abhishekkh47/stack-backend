@@ -211,7 +211,6 @@ export const validation = {
   },
   loginValidation: (req, res, callback) => {
     const schema = Joi.object({
-      email: Joi.string().email(),
       username: Joi.string()
         .min(5)
         .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/),

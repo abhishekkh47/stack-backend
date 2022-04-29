@@ -45,8 +45,8 @@ class AliveController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          const { username, email } = reqParam;
-          if (!username && !email) {
+          const { username } = reqParam;
+          if (!username) {
             return this.BadRequest(
               ctx,
               "Please enter either username or email"
@@ -58,7 +58,7 @@ class AliveController extends BaseController {
           });
           if (!userExists) {
             userExists = await UserTable.findOne({
-              email,
+              email: username,
             });
             if (!userExists) {
               return this.BadRequest(ctx, "User Not Found");
@@ -141,6 +141,13 @@ class AliveController extends BaseController {
           if (user) {
             return this.UnAuthorized(ctx, "Email Already Exists");
           }
+          user = await UserTable.findOne({ username: reqParam.email });
+          if (user) {
+            return this.UnAuthorized(
+              ctx,
+              "This email is used by some other user as username"
+            );
+          }
           user = await UserTable.findOne({ mobile: reqParam.mobile });
           if (user) {
             return this.UnAuthorized(ctx, "Mobile Number already Exists");
@@ -160,6 +167,20 @@ class AliveController extends BaseController {
             });
             if (user) {
               return this.UnAuthorized(ctx, "Mobile Number Already Exists");
+            }
+            user = await UserTable.findOne({ parentEmail: reqParam.username });
+            if (user) {
+              return this.UnAuthorized(
+                ctx,
+                "This username is used by some other user as parent's email"
+              );
+            }
+            user = await UserTable.findOne({ username: reqParam.parentEmail });
+            if (user) {
+              return this.UnAuthorized(
+                ctx,
+                "This parent email is used by some other user as username"
+              );
             }
             /**
              * Send sms as of now to parent for invting to stack
@@ -243,6 +264,13 @@ class AliveController extends BaseController {
             user = await UserTable.findOne({ username: reqParam.username });
             if (user) {
               return this.UnAuthorized(ctx, "Username already Exists");
+            }
+            user = await UserTable.findOne({ email: reqParam.username });
+            if (user) {
+              return this.UnAuthorized(
+                ctx,
+                "This username is used by some other user as email"
+              );
             }
           }
           reqParam.password = AuthService.encryptPassword(reqParam.password);

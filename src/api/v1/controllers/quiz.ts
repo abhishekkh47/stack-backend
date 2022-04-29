@@ -207,8 +207,12 @@ class QuizController extends BaseController {
               quizId: 1,
             }
           ).select("quizId");
-          for (const quizId of quizCheckCompleted) {
-            quizIds.push(quizId.quizId);
+          if (quizCheckCompleted.length == 0) {
+          } else {
+            console.log(quizCheckCompleted, "quizCheckCompleted");
+            for (const quizId of quizCheckCompleted) {
+              quizIds.push(quizId.quizId);
+            }
           }
           const data = await QuizTable.findOne({
             topicId: reqParam.topicId,

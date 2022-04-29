@@ -26,7 +26,7 @@ class HelpCenterController extends BaseController {
             userType = await UserTable.findOne({ mobile }, { type: 1, _id: 0 });
 
           if (!userType)
-            return this.BadRequest(ctx, "Invalid Email or Moblie number");
+            return this.BadRequest(ctx, "User with such details not found");
 
           /**
            * Send email regarding the details to admin

@@ -251,7 +251,11 @@ class UserController extends BaseController {
             : "Back Side Driving License",
         public: "true",
         file: fs.createReadStream(
-          path.join(__dirname, "../../../uploads", identificationFile.filename)
+          path.join(
+            __dirname,
+            "../../../../uploads",
+            identificationFile.filename
+          )
         ),
       };
       let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
@@ -271,7 +275,11 @@ class UserController extends BaseController {
        */
       try {
         fs.unlinkSync(
-          path.join(__dirname, "../../../uploads", identificationFile.filename)
+          path.join(
+            __dirname,
+            "../../../../uploads",
+            identificationFile.filename
+          )
         );
       } catch (err) {
         console.log("Error in removing image");
@@ -590,6 +598,7 @@ class UserController extends BaseController {
   })
   @Auth()
   public async updateProfilePicture(ctx: any) {
+    console.log(ctx.request, "ctx.request");
     if (!ctx.request.file || !ctx.request.file.key)
       return this.BadRequest(ctx, "Image is not selected.");
     await UserTable.updateOne(
@@ -696,7 +705,7 @@ class UserController extends BaseController {
       label: "Proof of Address",
       public: "true",
       file: fs.createReadStream(
-        path.join(__dirname, "../../../uploads", files.filename)
+        path.join(__dirname, "../../../../uploads", files.filename)
       ),
     };
     let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
@@ -711,7 +720,9 @@ class UserController extends BaseController {
        * Delete image from our server
        */
       try {
-        fs.unlinkSync(path.join(__dirname, "../../../uploads", files.filename));
+        fs.unlinkSync(
+          path.join(__dirname, "../../../../uploads", files.filename)
+        );
       } catch (err) {
         console.log("Error in removing image");
       }
