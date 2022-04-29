@@ -198,5 +198,6 @@
 	"sellCryptoCryptoidPattern": "Please enter crypto details.",
 	"notifyUserEmailRequired": "notifyUserEmailRequired",
 	"notifyUserEmailEmpty": "notifyUserEmailEmpty",
-	"notifyUserEmailEmail": "notifyUserEmailEmail"
+	"notifyUserEmailEmail": "notifyUserEmailEmail",
+	"getUserQuizQuizidRequired": "getUserQuizQuizidRequired"
 }

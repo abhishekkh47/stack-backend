@@ -4,7 +4,7 @@ import { EUserType } from "../types";
 export const validation = {
   getUserQuizDataValidation: (req, res, callback) => {
     const schema = Joi.object({
-      quizId: Joi.string()
+      topicId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
     });

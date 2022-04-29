@@ -1030,7 +1030,7 @@ class AliveController extends BaseController {
       return this.BadRequest(ctx, "Invalid Refresh Token");
 
     let token = getJwtToken(AuthService.getJwtAuthInfo(user));
-    this.Ok(ctx, { token });
+    return this.Ok(ctx, { token });
   }
 
   @Route({ path: "/check-email/:email", method: HttpMethod.GET })

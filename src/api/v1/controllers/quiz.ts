@@ -173,20 +173,57 @@ class QuizController extends BaseController {
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/question-list/:quizId", method: HttpMethod.GET })
+  @Route({ path: "/question-list/:topicId", method: HttpMethod.GET })
   @Auth()
   public getQuestionList(ctx: any) {
     const reqParam = ctx.params;
+    const user = ctx.request.user;
     return validation.getUserQuizDataValidation(
       reqParam,
       ctx,
       async (validate) => {
         if (validate) {
+          const quizCheck: any = await QuizResult.findOne({
+            userId: user._id,
+            topicId: reqParam.topicId,
+          }).sort({ createdAt: -1 });
+          const quizIds: any = [];
+          // if (quizCheck !== null) {
+          //   const Time = await get72HoursAhead(quizCheck.createdAt);
+          //   if (Time < timeBetweenTwoQuiz) {
+          //     return this.BadRequest(
+          //       ctx,
+          //       "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+          //     );
+          //   }
+          // } else {
+          const quizCheckCompleted = await QuizResult.find(
+            {
+              userId: user._id,
+              topicId: reqParam.topicId,
+            },
+            {
+              _id: 0,
+              quizId: 1,
+            }
+          ).select("quizId");
+          for (const quizId of quizCheckCompleted) {
+            quizIds.push(quizId.quizId);
+          }
+          const data = await QuizTable.findOne({
+            topicId: reqParam.topicId,
+            _id: { $nin: quizIds },
+          }).sort({ createdAt: 1 });
+          console.log(data, "data");
+          if (!data) {
+            return this.BadRequest(ctx, "Quiz Not Found");
+          }
           const quizQuestionList = await QuizQuestionTable.find({
-            quizId: reqParam.quizId,
+            quizId: data._id,
           }).select("_id quizId text answer_array points");
-          this.Ok(ctx, { quizQuestionList, message: "Success" });
+          return this.Ok(ctx, { quizQuestionList, message: "Success" });
         }
+        // }
       }
     );
   }
