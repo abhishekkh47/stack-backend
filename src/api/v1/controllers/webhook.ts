@@ -1,9 +1,14 @@
 import Koa from "koa";
 import crypto from "crypto";
-import { Route, wireInboundMethod } from "../../../utility";
+import { Route, updateContacts, wireInboundMethod } from "../../../utility";
 import BaseController from "./base";
 import { EUSERSTATUS, HttpMethod } from "../../../types";
-import { ParentChildTable, UserTable, WebhookTable } from "../../../model";
+import {
+  ParentChildTable,
+  StateTable,
+  UserTable,
+  WebhookTable,
+} from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
 
@@ -100,12 +105,72 @@ class WebHookController extends BaseController {
   @PrimeTrustJWT()
   public async changeDataIntoPrimeTrust(ctx: any) {
     const user = ctx.request.user;
+    const jwtToken = ctx.request.primeTrustToken;
+    const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
+      "stateId",
+      ["name", "shortName"]
+    );
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     const reqParam = ctx.request.body;
+    let state = null;
+    if (reqParam.state) {
+      state = await (
+        await StateTable.findOne({ _id: reqParam.state })
+      ).shortName;
+      if (!state) {
+        return this.BadRequest(ctx, "State Not Found");
+      }
+    }
     return validation.changePrimeTrustValidation(
       reqParam,
       ctx,
       async (validate) => {
         if (validate) {
+          if (!reqParam) {
+            return this.BadRequest(ctx, "No Data to update in prime trust");
+          }
+          let parentExists = await ParentChildTable.findOne({
+            userId: user._id,
+          });
+          const updateContactRequest = {
+            data: {
+              type: "contacts",
+              attributes: {
+                "contact-type": "natural_person",
+                "date-of-birth": reqParam.dob ? reqParam.dob : userExists.dob,
+                name: reqParam.firstName
+                  ? reqParam.firstName + " " + reqParam.lastName
+                  : userExists.firstName + " " + userExists.lastName,
+                "tax-id-number": reqParam.taxIdNo
+                  ? reqParam.taxIdNo
+                  : userExists.taxIdNo,
+                "primary-address": {
+                  "street-1": reqParam.address
+                    ? reqParam.address
+                    : userExists.address,
+                  "street-2": reqParam.unitApt
+                    ? reqParam.unitApt
+                    : userExists.unitApt,
+                  "postal-code": userExists.postalCode
+                    ? reqParam.postalCode
+                    : userExists.postalCode,
+                  city: reqParam.city ? reqParam.city : userExists.city,
+                  region: reqParam.state ? state : userExists.stateId.shortName,
+                  country: reqParam.country
+                    ? reqParam.country
+                    : userExists.country,
+                },
+              },
+            },
+          };
+          // const updateResponse = await updateContacts(
+          //   jwtToken,
+          //   parentExists.contactId,
+          //   updateContactRequest
+          // );
+          return this.Ok(ctx, { message: "Finally Done", data: reqParam });
         }
       }
     );

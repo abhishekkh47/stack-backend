@@ -30,4 +30,12 @@ export const messages = {
   WITHDRAW: "Requested one time withdrawal",
   BUY: "Requested to buy crypto",
   SELL: "Requested to sell crypto",
+  REJECT_DEPOSIT: "Rejected one time deposit request",
+  REJECT_WITHDRAW: "Rejected one time withdrawal request",
+  REJECT_BUY: "Rejected to buy crypto request",
+  REJECT_SELL: "Rejected to sell crypto request",
+  APPROVE_DEPOSIT: "Approved one time deposit request",
+  APPROVE_WITHDRAW: "Approved one time withdrawal request",
+  APPROVE_BUY: "Approved to buy crypto request",
+  APPROVE_SELL: "Approved to sell crypto request",
 };

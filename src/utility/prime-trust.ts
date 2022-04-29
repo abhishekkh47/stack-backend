@@ -410,6 +410,8 @@ export const getAssets = async (token, page, number) => {
 
 /**
  * @description This api is used to get the balance
+ * @param token
+ * @param id
  * @returns {*}
  */
 export const getBalance = async (token, id) => {
@@ -436,6 +438,8 @@ export const getBalance = async (token, id) => {
 
 /**
  * @description This api is used to generate a quote
+ * @param token
+ * @param data
  * @return {*}
  */
 export const generateQuote = async (token, data) => {
@@ -462,6 +466,9 @@ export const generateQuote = async (token, data) => {
 
 /**
  * @description This api is used to execute a quote
+ * @param token
+ * @param data
+ * @param id
  * @return {*}
  */
 export const executeQuote = async (token, id, data) => {
@@ -490,7 +497,7 @@ export const executeQuote = async (token, id, data) => {
  * @description This api is for wire transfer
  * @param token
  * @param accountId
- * @returns
+ * @returns {*}
  */
 export const getWireTransfer = async (token, accountId) => {
   const response = await axios
@@ -500,6 +507,28 @@ export const getWireTransfer = async (token, accountId) => {
     .then((res) => res.data)
     .catch((error) => {
       console.log(error, "error");
+      return { status: 400, message: error.response.data };
+    });
+  return response;
+};
+
+/**
+ * @description This api is to update prime trust data
+ * @param token
+ * @param accountId
+ * @returns {*}
+ */
+export const updateContacts = async (token, contactId, data) => {
+  const response = await axios
+    .patch(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.updateContacts(contactId),
+      data,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+    .then((res) => res.data)
+    .catch((error) => {
       return { status: 400, message: error.response.data };
     });
   return response;

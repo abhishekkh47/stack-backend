@@ -836,8 +836,19 @@ class TradingController extends BaseController {
 
     await UserActivityTable.updateOne(
       { _id: activityId },
-      { status: EStatus.CANCELLED }
+      {
+        status: EStatus.CANCELLED,
+        message:
+          activity.action == EAction.DEPOSIT
+            ? messages.REJECT_DEPOSIT
+            : activity.action == EAction.WITHDRAW
+            ? messages.REJECT_WITHDRAW
+            : activity.action == EAction.BUY_CRYPTO
+            ? messages.REJECT_BUY
+            : messages.REJECT_SELL,
+      }
     );
+
     return this.Ok(ctx, { message: "Activity cancelled out successfully" });
   }
 
@@ -936,7 +947,7 @@ class TradingController extends BaseController {
         }
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED }
+          { status: EStatus.PROCESSED, message: messages.APPROVE_DEPOSIT }
         );
         return this.Ok(ctx, {
           message:
@@ -976,7 +987,7 @@ class TradingController extends BaseController {
         }
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED }
+          { status: EStatus.PROCESSED, message: messages.APPROVE_WITHDRAW }
         );
         return this.Ok(ctx, {
           data: disbursementResponse.data,
@@ -1049,7 +1060,7 @@ class TradingController extends BaseController {
         });
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED }
+          { status: EStatus.PROCESSED, message: messages.APPROVE_BUY }
         );
         return this.Ok(ctx, {
           message: "Success",
@@ -1121,7 +1132,7 @@ class TradingController extends BaseController {
         });
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED }
+          { status: EStatus.PROCESSED, message: messages.APPROVE_SELL }
         );
         return this.Ok(ctx, {
           message: "Success",

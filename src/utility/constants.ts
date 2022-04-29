@@ -33,6 +33,7 @@ export const PRIMETRUSTAPIS = {
     `v2/assets?page[size]=${limit}&page[number]=${page}`,
   getPushTransfer: (accountId) =>
     `v2/push-transfer-methods?account.id=${accountId}`,
+  updateContacts: (contactId) => `v2/contacts/${contactId}`,
 };
 
 export const PLAIDAPIS = {
