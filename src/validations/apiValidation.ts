@@ -65,15 +65,16 @@ export const validation = {
       address: Joi.string()
         .regex(/[A-Za-z]/)
         .required(),
-      unitApt: Joi.string()
-        .regex(/[A-Za-z]/)
-        .required(),
+      unitApt: Joi.string().regex(/[A-Za-z]/),
       postalCode: Joi.string()
         .regex(/[A-Za-z0-9]/)
         .min(4)
         .required(),
       stateId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      city: Joi.string()
+        .regex(/[A-Za-z]/)
         .required(),
     });
     const { error } = schema.validate(req);
@@ -491,24 +492,54 @@ export const validation = {
   },
   changePrimeTrustValidation: (req, res, callback) => {
     const schema = Joi.object({
-      firstName: Joi.string()
+      "first-name": Joi.string()
         .min(2)
         .regex(/^[A-za-z]*$/),
-      lastName: Joi.string()
+      "last-name": Joi.string()
         .min(2)
         .regex(/^[A-za-z]*$/),
-      dob: Joi.date().iso(),
-      taxIdNo: Joi.string()
+      "date-of-birth": Joi.date().iso(),
+      "tax-id-number": Joi.string()
         .regex(/^[0-9]*$/)
         .min(5)
         .max(15),
-      taxState: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+      "tax-state": Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+      "primary-address": Joi.object({
+        city: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+        country: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+        "postal-code": Joi.string()
+          .regex(/[A-Za-z0-9]/)
+          .min(4)
+          .required(),
+        region: Joi.string()
+          .regex(/^[0-9a-fA-F]{24}$/)
+          .required(),
+        "street-1": Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
     });
     const { error } = schema.validate(req);
     if (error)
       return res.throw(
         400,
         res.__(validationMessageKey("changePrimeTrust", error))
+      );
+    return callback(true);
+  },
+  getPortFolioValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      childId: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("getPortFolio", error))
       );
     return callback(true);
   },

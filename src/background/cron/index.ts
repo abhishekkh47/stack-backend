@@ -26,7 +26,11 @@ export const startCron = () => {
           updateOne: {
             filter: { symbol: latestValues.symbol },
             update: {
-              $set: { currentPrice: latestValues.quote["USD"].price },
+              $set: {
+                currentPrice: parseFloat(
+                  parseFloat(latestValues.quote["USD"].price).toFixed(2)
+                ),
+              },
             },
           },
         };
@@ -66,10 +70,26 @@ export const startCron = () => {
           cryptoId: cryptos.find((x) => x.symbol == historicalValues.symbol)
             ? cryptos.find((x) => x.symbol == historicalValues.symbol)._id
             : null,
-          high365D: historicalValues.periods["365d"].quote["USD"].high,
-          low365D: historicalValues.periods["365d"].quote["USD"].low,
-          high90D: historicalValues.periods["90d"].quote["USD"].high,
-          low90D: historicalValues.periods["90d"].quote["USD"].low,
+          high365D: parseFloat(
+            parseFloat(
+              historicalValues.periods["365d"].quote["USD"].high
+            ).toFixed(2)
+          ),
+          low365D: parseFloat(
+            parseFloat(
+              historicalValues.periods["365d"].quote["USD"].low
+            ).toFixed(2)
+          ),
+          high90D: parseFloat(
+            parseFloat(
+              historicalValues.periods["90d"].quote["USD"].high
+            ).toFixed(2)
+          ),
+          low90D: parseFloat(
+            parseFloat(
+              historicalValues.periods["90d"].quote["USD"].low
+            ).toFixed(2)
+          ),
           currencyType: "USD",
           currentPrice: null,
         };

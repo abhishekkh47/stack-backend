@@ -426,9 +426,10 @@ class AliveController extends BaseController {
             {
               $set: {
                 address: reqParam.address,
-                unitApt: reqParam.unitApt,
+                unitApt: reqParam.unitApt ? reqParam.unitApt : null,
                 postalCode: reqParam.postalCode,
                 stateId: reqParam.stateId,
+                city: reqParam.city,
               },
             }
           );

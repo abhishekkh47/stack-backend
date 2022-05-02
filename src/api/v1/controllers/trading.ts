@@ -857,10 +857,109 @@ class TradingController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/get-portfolio", method: HttpMethod.POST })
+  @Route({ path: "/get-portfolio/:childId", method: HttpMethod.GET })
   @Auth()
   @PrimeTrustJWT()
-  public async getPortfolio(ctx: any) {}
+  public async getPortfolio(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.params;
+    return validation.getPortFolioValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const childExists = await UserTable.findOne({
+            _id: reqParam.childId,
+          });
+          if (!childExists) {
+            return this.BadRequest(ctx, "User Not Found");
+          }
+          const portFolio = await TransactionTable.aggregate([
+            {
+              $match: {
+                userId: new ObjectId(childExists._id),
+              },
+            },
+            {
+              $group: {
+                _id: "$cryptoId",
+                cryptoId: {
+                  $first: "$cryptoId",
+                },
+                totalSum: {
+                  $sum: "$unitCount",
+                },
+                totalAmount: {
+                  $sum: "$amount",
+                },
+              },
+            },
+            {
+              $redact: {
+                $cond: {
+                  if: {
+                    $gt: ["$totalSum", 0],
+                  },
+                  then: "$$KEEP",
+                  else: "$$PRUNE",
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: "cryptos",
+                localField: "cryptoId",
+                foreignField: "_id",
+                as: "cryptoData",
+              },
+            },
+            {
+              $unwind: {
+                path: "$cryptoData",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $lookup: {
+                from: "cryptoprices",
+                localField: "cryptoId",
+                foreignField: "cryptoId",
+                as: "currentPriceDetails",
+              },
+            },
+            {
+              $unwind: {
+                path: "$currentPriceDetails",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                cryptoId: 1,
+                totalSum: 1,
+                totalAmount: 1,
+                cryptoData: 1,
+                currentPrice: "$currentPriceDetails.currentPrice",
+                value: {
+                  $multiply: ["$currentPriceDetails.currentPrice", "$totalSum"],
+                },
+              },
+            },
+          ]).exec();
+          if (portFolio.length == 0) {
+            return this.BadRequest(ctx, "No Crypto Found");
+          }
+          let totalStackValue = await portFolio.map((x) => x.value);
+          totalStackValue = totalStackValue.reduce(
+            (partialSum, a) => partialSum + a,
+            0
+          );
+          return this.Ok(ctx, { data: { portFolio, totalStackValue } });
+        }
+      }
+    );
+  }
 
   /**
    * @description This method is used to approve child activities
@@ -1128,7 +1227,7 @@ class TradingController extends BaseController {
           userId: accountIdDetails.childId,
           parentId: userExists._id,
           unitCount:
-            executeSellQuoteResponse.data.data.attributes["unit-count"],
+            -executeSellQuoteResponse.data.data.attributes["unit-count"],
         });
         await UserActivityTable.updateOne(
           { _id: activityId },

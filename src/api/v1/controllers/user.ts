@@ -214,7 +214,7 @@ class UserController extends BaseController {
           },
           "primary-address": {
             "street-1": userExists.address,
-            "street-2": userExists.unitApt,
+            "street-2": userExists.unitApt ? userExists.unitApt : "",
             "postal-code": userExists.postalCode,
             city: userExists.city,
             region: userExists.stateId.shortName,
@@ -598,13 +598,12 @@ class UserController extends BaseController {
   })
   @Auth()
   public async updateProfilePicture(ctx: any) {
-    console.log(ctx.request, "ctx.request");
     if (!ctx.request.file || !ctx.request.file.key)
       return this.BadRequest(ctx, "Image is not selected.");
     await UserTable.updateOne(
       { _id: ctx.request.user._id },
       {
-        $set: { profilePicture: ctx.request.file.key },
+        $set: { profilePicture: ctx.request.file.key.split("/")[1] },
       }
     );
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });

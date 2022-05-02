@@ -199,5 +199,14 @@
 	"notifyUserEmailRequired": "notifyUserEmailRequired",
 	"notifyUserEmailEmpty": "notifyUserEmailEmpty",
 	"notifyUserEmailEmail": "notifyUserEmailEmail",
-	"getUserQuizQuizidRequired": "getUserQuizQuizidRequired"
+	"getUserQuizQuizidRequired": "getUserQuizQuizidRequired",
+	"changeAddrStateidRequired": "Please enter state id",
+	"changeAddrStateidEmpty": "Please enter state id",
+	"changePrimeTrustFirst-nameEmpty": "Please enter first name",
+	"changePrimeTrustLast-nameEmpty": "Please enter last name",
+	"changePrimeTrustDate-of-birthFormat": "Please enter date of birth",
+	"changePrimeTrustTax-id-numberEmpty": "Please enter tax id number",
+	"changePrimeTrustTax-stateEmpty": "Please enter tax state",
+	"changePrimeTrustTax-statePattern": "Please enter valid tax state.",
+	"changePrimeTrustPrimary-addressBase": "Please enter address"
 }

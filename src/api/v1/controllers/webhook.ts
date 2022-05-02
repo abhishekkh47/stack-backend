@@ -100,10 +100,10 @@ class WebHookController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/update-primetrust-data", method: HttpMethod.POST })
+  @Route({ path: "/update-primetrust-data-test", method: HttpMethod.POST })
   @Auth()
   @PrimeTrustJWT()
-  public async changeDataIntoPrimeTrust(ctx: any) {
+  public async changeDataIntoPrimeTrustDemo(ctx: any) {
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
     const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
@@ -171,6 +171,110 @@ class WebHookController extends BaseController {
           //   updateContactRequest
           // );
           return this.Ok(ctx, { message: "Finally Done", data: reqParam });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is update the error related information in prime trust as well as our database
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-primetrust-data", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT()
+  public async changeDataIntoPrimeTrust(ctx: any) {
+    const input = ctx.request.body;
+    return validation.changePrimeTrustValidation(
+      input,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          let existingStatus = (
+            await UserTable.findOne(
+              { _id: ctx.request.user._id },
+              { status: 1, _id: 0 }
+            )
+          ).status;
+          if (
+            existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
+            existingStatus === EUSERSTATUS.KYC_DOCUMENT_UPLOAD
+          )
+            return this.BadRequest(
+              ctx,
+              existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                ? "User already verified."
+                : "User's data already uploaded."
+            );
+
+          let contactId = (
+            await ParentChildTable.findOne(
+              { userId: ctx.request.user._id },
+              { contactId: 1, _id: 0 }
+            )
+          ).contactId;
+          if (!contactId) return this.BadRequest(ctx, "Contact ID not found");
+
+          const updates: any = {};
+          if (input["first-name"]) updates.firstName = input["first-name"];
+          if (input["last-name"]) updates.lastName = input["last-name"];
+          if (input["date-of-birth"]) updates.dob = input["date-of-birth"];
+          if (input["tax-id-number"]) updates.taxIdNo = input["tax-id-number"];
+          if (input["tax-state"]) updates.taxState = input["tax-state"];
+          if (input["primary-address"]) {
+            updates.city = input["primary-address"]["city"];
+            updates.country = input["primary-address"]["country"];
+            updates.postalCode = input["primary-address"]["postal-code"];
+            updates.stateId = input["primary-address"]["region"];
+            updates.address = input["primary-address"]["street-1"];
+          }
+
+          if (input["tax-state"]) {
+            let taxState = await StateTable.findOne(
+              { _id: input["tax-state"] },
+              { shortName: 1, _id: 0 }
+            );
+            if (!taxState)
+              return this.BadRequest(ctx, "Invalid Tax-State-ID entered");
+            input["tax-state"] = taxState.shortName;
+          }
+
+          if (input["primary-address"]) {
+            let state = await StateTable.findOne({
+              _id: input["primary-address"].region,
+            });
+            if (!state) return this.BadRequest(ctx, "Invalid State-ID entered");
+            input["primary-address"].region = state.shortName;
+          }
+
+          let response = await updateContacts(
+            ctx.request.primeTrustToken,
+            contactId,
+            {
+              type: "contacts",
+              attributes: {
+                "contact-type": "natural_person",
+                ...input,
+              },
+            }
+          );
+          if (response.status === 400)
+            return this.BadRequest(ctx, {
+              message: "Something went wrong. Please try again.",
+              response,
+            });
+
+          await UserTable.updateOne(
+            { _id: ctx.request.user._id },
+            {
+              $set: {
+                status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
+                ...updates,
+              },
+            }
+          );
+          return this.Ok(ctx, { message: "Info updated successfully." });
         }
       }
     );
