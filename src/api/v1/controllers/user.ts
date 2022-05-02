@@ -637,6 +637,7 @@ class UserController extends BaseController {
           "teens.lastName": 1,
           "teens.username": 1,
           "teens._id": 1,
+          "teens.profilePicture": 1,
           _id: 0,
         },
       },
