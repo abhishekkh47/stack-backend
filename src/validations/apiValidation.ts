@@ -72,6 +72,9 @@ export const validation = {
         .regex(/[A-Za-z0-9]/)
         .min(4)
         .required(),
+      stateId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
     const { error } = schema.validate(req);
     if (error) {

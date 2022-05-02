@@ -1,6 +1,11 @@
 import Koa from "koa";
 import mongoose from "mongoose";
-import { get72HoursAhead, Route } from "../../../utility";
+import {
+  get72HoursAhead,
+  Route,
+  getHistoricalDataOfCoins,
+  getLatestPrice,
+} from "../../../utility";
 import BaseController from "./base";
 import { Auth } from "../../../middleware";
 import {
@@ -14,7 +19,9 @@ import {
   QuizTable,
   QuizQuestionTable,
   QuizResult,
+  CryptoTable,
   QuizQuestionResult,
+  CryptoPriceTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import moment from "moment";
@@ -35,7 +42,6 @@ class QuizController extends BaseController {
         createdAt: -1,
       })
       .select("_id topic status");
-
     return this.Ok(ctx, {
       data: quizTopics,
       count: quizTopics.length,
@@ -226,8 +232,8 @@ class QuizController extends BaseController {
             quizId: data._id,
           }).select("_id quizId text answer_array points");
           return this.Ok(ctx, { quizQuestionList, message: "Success" });
+          // }
         }
-        // }
       }
     );
   }
@@ -264,15 +270,15 @@ class QuizController extends BaseController {
           const lastQuizPlayed = await QuizResult.findOne({
             userId: user._id,
           }).sort({ createdAt: -1 });
-          if (lastQuizPlayed) {
-            const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            if (timeDiff <= timeBetweenTwoQuiz) {
-              return this.BadRequest(
-                ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz"
-              );
-            }
-          }
+          // if (lastQuizPlayed) {
+          //   const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
+          //   if (timeDiff <= timeBetweenTwoQuiz) {
+          //     return this.BadRequest(
+          //       ctx,
+          //       "Quiz is locked. Please wait for 72 hours to unlock this quiz"
+          //     );
+          //   }
+          // }
           /**
            * Check question acutally exists in that quiz
            */

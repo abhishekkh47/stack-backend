@@ -16,3 +16,4 @@ export * from "./cms";
 export * from "./webhook";
 export * from "./transactions";
 export * from "./notifyUser";
+export * from "./cryptoPrice";

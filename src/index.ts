@@ -15,6 +15,7 @@ import ApiV1 from "./api/v1";
 import i18nTs from "./i18n/i18n";
 import en from "./i18n/en.json";
 import views from "koa-views";
+import { startCron } from "./background";
 const koaBody = require("koa-body");
 const server = (async () => {
   try {
@@ -33,6 +34,9 @@ const server = (async () => {
     app.use(errorHandler);
     // Mongodb
     await mongoose.connect(Config.DB_PATH);
+
+    //Background
+    startCron();
 
     app.use(Mount("/api/v1", ApiV1));
 

@@ -8,3 +8,4 @@ export * from "./prime-trust";
 export * from "./plaid";
 export * from "./multer";
 export * from "./user";
+export * from "./coin-market-cap";

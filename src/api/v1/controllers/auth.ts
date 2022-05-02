@@ -419,6 +419,8 @@ class AliveController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
+          let state = await StateTable.findOne({ _id: reqParam.stateId });
+          if (!state) return this.BadRequest(ctx, "Invalid State-ID entered.");
           await UserTable.updateOne(
             { _id: user._id },
             {
@@ -426,6 +428,7 @@ class AliveController extends BaseController {
                 address: reqParam.address,
                 unitApt: reqParam.unitApt,
                 postalCode: reqParam.postalCode,
+                stateId: reqParam.stateId,
               },
             }
           );
@@ -1049,14 +1052,6 @@ class AliveController extends BaseController {
     } catch (error) {
       return this.UnAuthorized(ctx, "Refresh Token Expired");
     }
-
-    let actualRefreshToken = (
-      await UserTable.findOne({ username: user.username }, { refreshToken: 1 })
-    ).refreshToken;
-
-    if (refreshToken !== actualRefreshToken)
-      return this.BadRequest(ctx, "Invalid Refresh Token");
-
     let token = getJwtToken(AuthService.getJwtAuthInfo(user));
     return this.Ok(ctx, { token });
   }
