@@ -669,6 +669,28 @@ class UserController extends BaseController {
         "Please upload proof of address in order to complete KYC"
       );
     }
+    let existingStatus = (
+      await UserTable.findOne(
+        { _id: ctx.request.user._id },
+        { status: 1, _id: 0 }
+      )
+    ).status;
+    if (
+      existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
+      existingStatus === EUSERSTATUS.KYC_DOCUMENT_UPLOAD
+    ) {
+      try {
+        fs.unlinkSync(
+          path.join(__dirname, "../../../../uploads", files.filename)
+        );
+      } catch (err) {}
+      return this.BadRequest(
+        ctx,
+        existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+          ? "User already verified."
+          : "User's data already uploaded."
+      );
+    }
     /**
      * Validations to be done
      */
