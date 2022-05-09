@@ -230,6 +230,7 @@ export const validation = {
         .min(8)
         .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
         .required(),
+      deviceToken: Joi.string(),
     });
 
     const { error } = schema.validate(req);

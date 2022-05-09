@@ -29,6 +29,7 @@ import {
   OtpTable,
   ParentChildTable,
   StateTable,
+  DeviceToken,
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
@@ -102,6 +103,32 @@ class AuthController extends BaseController {
               },
             };
             await UserController.getProfile(getProfileInput);
+            if (reqParam.deviceToken) {
+              const checkDeviceTokenExists = await DeviceToken.findOne({
+                userId: userExists._id,
+              });
+              if (!checkDeviceTokenExists) {
+                await DeviceToken.create({
+                  userId: userExists._id,
+                  "deviceToken.0": reqParam.deviceToken,
+                });
+              } else {
+                if (
+                  !checkDeviceTokenExists.deviceToken.includes(
+                    reqParam.deviceToken
+                  )
+                ) {
+                  await DeviceToken.updateOne(
+                    { _id: checkDeviceTokenExists._id },
+                    {
+                      $push: {
+                        deviceToken: reqParam.deviceToken,
+                      },
+                    }
+                  );
+                }
+              }
+            }
             return this.Ok(ctx, {
               token,
               refreshToken,
@@ -284,7 +311,7 @@ class AuthController extends BaseController {
             lastName: reqParam.lastName,
             mobile: reqParam.mobile,
             screenStatus:
-              user.type === EUserType.PARENT
+              reqParam.type === EUserType.PARENT
                 ? ESCREENSTATUS.CHANGE_ADDRESS
                 : ESCREENSTATUS.SIGN_UP,
             parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,

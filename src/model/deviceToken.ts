@@ -11,7 +11,7 @@ const schema = new mongoose.Schema<IDeviceTokenSchema>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",
     },
-    deviceToken: { type: mongoose.Schema.Types.String, required: true },
+    deviceToken: { type: mongoose.Schema.Types.Array, required: true },
   },
   { timestamps: true }
 );
