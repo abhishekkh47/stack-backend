@@ -38,9 +38,13 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     type: { type: mongoose.Schema.Types.Number, required: true },
     /**
-     * 1 - Kyc document upload , 2 - Kyc approved , 3 - Kyc failed and reupload document
+     * 1 - Kyc document upload , 2 - Kyc failed and reupload document , 3 - Kyc approved
      */
     status: { type: mongoose.Schema.Types.Number, default: 0 },
+    /**
+     * 0 - Sign up , 1 - change address , 2 - upload document field , 3 - acknowledge screen , 4 - add bank account
+     */
+    screenStatus: { type: mongoose.Schema.Types.Number, default: 0 },
     parentEmail: { type: mongoose.Schema.Types.String, default: null },
     parentMobile: { type: mongoose.Schema.Types.String, default: null },
     kycMessages: {
@@ -79,6 +83,10 @@ const schema = new mongoose.Schema<IUserSchema>(
     },
     dob: { type: mongoose.Schema.Types.String, default: null },
     profilePicture: { type: mongoose.Schema.Types.String, default: null },
+    /**
+     * 0 - no and 1 - yes
+     */
+    isAcknowledged: { type: mongoose.Schema.Types.Number, default: null },
   },
   { timestamps: true }
 );

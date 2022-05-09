@@ -65,7 +65,7 @@ export const validation = {
       address: Joi.string()
         .regex(/[A-Za-z]/)
         .required(),
-      unitApt: Joi.string().regex(/[A-Za-z]/),
+      unitApt: Joi.string().allow(null).allow(""),
       postalCode: Joi.string()
         .regex(/[A-Za-z0-9]/)
         .min(4)
@@ -162,6 +162,14 @@ export const validation = {
       citizenOfUS: Joi.when("type", {
         is: 2,
         then: Joi.number().valid(0, 1).required(),
+      }),
+      taxIdNo: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/^[0-9]*$/)
+          .min(5)
+          .max(15)
+          .required(),
       }),
     });
     const { error } = schema.validate(req);
@@ -386,9 +394,7 @@ export const validation = {
       address: Joi.string()
         .regex(/[A-Za-z]/)
         .required(),
-      unitApt: Joi.string()
-        .regex(/[A-Za-z]/)
-        .required(),
+      unitApt: Joi.string().allow(null).allow(""),
       postalCode: Joi.string()
         .regex(/[A-Za-z0-9]/)
         .min(4)

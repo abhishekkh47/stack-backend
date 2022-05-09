@@ -12,12 +12,16 @@ import {
   executeQuote,
   getAccountId,
   getWireTransfer,
+  getContactId,
+  wireTransfer,
 } from "../../../utility";
 import BaseController from "./base";
+import mongoose from "mongoose";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   EAction,
   EStatus,
+  ETransactionStatus,
   ETransactionType,
   ETRANSFER,
   EUserType,
@@ -30,6 +34,7 @@ import {
   TransactionTable,
   UserActivityTable,
   UserTable,
+  QuizResult,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { UserWalletTable } from "../../../model/userbalance";
@@ -66,7 +71,7 @@ class TradingController extends BaseController {
             await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
-              message: messages.DEPOSIT,
+              message: `${messages.DEPOSIT} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.DEPOSIT,
@@ -76,7 +81,7 @@ class TradingController extends BaseController {
                   : EStatus.PROCESSED,
             });
             return this.Created(ctx, {
-              message: `Your request for deposit of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
+              message: `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
             });
           }
           /**
@@ -161,7 +166,7 @@ class TradingController extends BaseController {
             await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
-              message: messages.DEPOSIT,
+              message: `${messages.DEPOSIT} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.DEPOSIT,
@@ -195,7 +200,6 @@ class TradingController extends BaseController {
           //     if (pushTransferResponse.status == 400) {
           //       return this.BadRequest(ctx, pushTransferResponse.message);
           //     }
-          //     console.log(pushTransferResponse, "pushTransferResponse");
           //     pushTransferId = pushTransferResponse.data.id;
           //     await ParentChildTable.updateOne(
           //       {
@@ -282,23 +286,20 @@ class TradingController extends BaseController {
           //   { balance: 1 }
           // );
           const accountIdDetails = await parent.teens.find(
-            (x: any) => x.childId.toString() == parent.firstChildId.toString()
+            (x: any) => x.childId.toString() == ctx.request.user._id.toString()
           );
           if (!accountIdDetails) {
             return this.BadRequest(ctx, "Account Details Not Found");
           }
           const fetchBalance: any = await getBalance(
             jwtToken,
-            parent.teens[0].accountId
+            accountIdDetails.accountId
           );
           if (fetchBalance.status == 400) {
             return this.BadRequest(ctx, fetchBalance.message);
           }
           const balance = fetchBalance.data.data[0].attributes.disbursable;
-          const userBalance = await UserWalletTable.findOne({
-            userId: userExists._id,
-          });
-          if (!userBalance || balance < reqParam.amount) {
+          if (balance < reqParam.amount) {
             return this.BadRequest(
               ctx,
               "You dont have sufficient balance to withdraw money"
@@ -340,7 +341,7 @@ class TradingController extends BaseController {
             await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
-              message: messages.WITHDRAW,
+              message: `${messages.WITHDRAW} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.WITHDRAW,
@@ -350,7 +351,7 @@ class TradingController extends BaseController {
                   : EStatus.PROCESSED,
             });
             return this.Created(ctx, {
-              message: `Your request for withdrawal of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
+              message: `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
             });
           }
           if (reqParam.withdrawType != ETRANSFER.ACH) {
@@ -475,6 +476,7 @@ class TradingController extends BaseController {
           currencyValue: 1,
           cryptoId: 1,
           "crypto._id": 1,
+          "crypto.image": 1,
           "crypto.name": 1,
           "crypto.symbol": 1,
           "crypto.assetId": 1,
@@ -561,19 +563,17 @@ class TradingController extends BaseController {
         : { "teens.childId": ctx.request.user._id };
     let parent: any = await ParentChildTable.findOne(query);
     if (!parent) return this.BadRequest(ctx, "Invalid User");
-    // const userBalance = await UserWalletTable.findOne(
-    //   { userId: user._id },
-    //   { balance: 1 }
-    // );
-    const accountIdDetails = await parent.teens.find(
-      (x: any) => x.childId.toString() == parent.firstChildId.toString()
+    const accountIdDetails = await parent.teens.find((x: any) =>
+      userExists.type == EUserType.PARENT
+        ? parent.firstChildId.toString()
+        : x.childId.toString() == ctx.request.user._id.toString()
     );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
     const fetchBalance: any = await getBalance(
       jwtToken,
-      parent.teens[0].accountId
+      accountIdDetails.accountId
     );
     if (fetchBalance.status == 400) {
       return this.BadRequest(ctx, fetchBalance.message);
@@ -616,14 +616,14 @@ class TradingController extends BaseController {
       //   { balance: 1 }
       // );
       const accountIdDetails = await parent.teens.find(
-        (x: any) => x.childId.toString() == parent.firstChildId.toString()
+        (x: any) => x.childId.toString() == ctx.request.user._id.toString()
       );
       if (!accountIdDetails) {
         return this.BadRequest(ctx, "Account Details Not Found");
       }
       const fetchBalance: any = await getBalance(
         jwtToken,
-        parent.teens[0].accountId
+        accountIdDetails.accountId
       );
       if (fetchBalance.status == 400) {
         return this.BadRequest(ctx, fetchBalance.message);
@@ -675,7 +675,7 @@ class TradingController extends BaseController {
 
       await UserActivityTable.create({
         userId: user._id,
-        message: messages.BUY,
+        message: `${messages.BUY} $${amount} in ${crypto.name}`,
         action: EAction.BUY_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
@@ -686,7 +686,7 @@ class TradingController extends BaseController {
       });
       const message =
         userType === EUserType.TEEN
-          ? `Your request for buy order of crypto of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
+          ? `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
           : `Buy order proccessed`;
 
       return this.Ok(ctx, { message });
@@ -718,7 +718,7 @@ class TradingController extends BaseController {
 
       await UserActivityTable.create({
         userId: user._id,
-        message: messages.SELL,
+        message: `${messages.SELL} $${amount} in ${crypto.name}`,
         action: EAction.SELL_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
@@ -729,7 +729,7 @@ class TradingController extends BaseController {
       });
       const message =
         userType === EUserType.TEEN
-          ? `Your request for sell order of crypto of ${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
+          ? `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
           : `Sell order proccessed`;
 
       return this.Ok(ctx, { message });
@@ -784,6 +784,7 @@ class TradingController extends BaseController {
           currencyValue: 1,
           cryptoId: 1,
           "crypto._id": 1,
+          "crypto.image": 1,
           "crypto.name": 1,
           "crypto.symbol": 1,
           "crypto.assetId": 1,
@@ -830,22 +831,25 @@ class TradingController extends BaseController {
 
     const activity = await UserActivityTable.findOne(
       { _id: activityId, status: EStatus.PENDING },
-      { userId: 1 }
+      { userId: 1, cryptoId: 1 }
     );
     if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
-
+    let crypto = null;
+    if (activity.cryptoId) {
+      crypto = await CryptoTable.findOne({ _id: activity.cryptoId });
+    }
     await UserActivityTable.updateOne(
       { _id: activityId },
       {
         status: EStatus.CANCELLED,
         message:
           activity.action == EAction.DEPOSIT
-            ? messages.REJECT_DEPOSIT
+            ? `${messages.REJECT_DEPOSIT} of ${activity.currencyValue}`
             : activity.action == EAction.WITHDRAW
-            ? messages.REJECT_WITHDRAW
+            ? `${messages.REJECT_WITHDRAW} of ${activity.currencyValue}`
             : activity.action == EAction.BUY_CRYPTO
-            ? messages.REJECT_BUY
-            : messages.REJECT_SELL,
+            ? `${messages.REJECT_BUY} of ${crypto.name} of ${activity.currencyValue}$`
+            : `${messages.REJECT_SELL} of ${crypto.name} of ${activity.currencyValue}$`,
       }
     );
 
@@ -862,6 +866,7 @@ class TradingController extends BaseController {
   @PrimeTrustJWT()
   public async getPortfolio(ctx: any) {
     const user = ctx.request.user;
+    const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
     return validation.getPortFolioValidation(
       reqParam,
@@ -878,6 +883,8 @@ class TradingController extends BaseController {
             {
               $match: {
                 userId: new ObjectId(childExists._id),
+                type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+                // status:ETransactionStatus.SETTLED
               },
             },
             {
@@ -886,11 +893,17 @@ class TradingController extends BaseController {
                 cryptoId: {
                   $first: "$cryptoId",
                 },
+                type: {
+                  $first: "$type",
+                },
                 totalSum: {
                   $sum: "$unitCount",
                 },
                 totalAmount: {
                   $sum: "$amount",
+                },
+                totalAmountMod: {
+                  $sum: "$amountMod",
                 },
               },
             },
@@ -934,28 +947,105 @@ class TradingController extends BaseController {
               },
             },
             {
-              $project: {
-                _id: 1,
-                cryptoId: 1,
-                totalSum: 1,
-                totalAmount: 1,
-                cryptoData: 1,
-                currentPrice: "$currentPriceDetails.currentPrice",
+              $addFields: {
                 value: {
                   $multiply: ["$currentPriceDetails.currentPrice", "$totalSum"],
                 },
               },
             },
+            {
+              $addFields: {
+                totalGainLoss: {
+                  $add: ["$value", "$totalAmountMod"],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                cryptoId: 1,
+                totalSum: 1,
+                type: 1,
+                totalAmount: 1,
+                totalAmountMod: 1,
+                cryptoData: 1,
+                currentPrice: "$currentPriceDetails.currentPrice",
+                value: 1,
+                totalGainLoss: { $round: ["$totalGainLoss", 2] },
+              },
+            },
           ]).exec();
-          if (portFolio.length == 0) {
-            return this.BadRequest(ctx, "No Crypto Found");
+          let totalStackValue: any = 0;
+          let totalGainLoss: any = 0;
+          if (portFolio.length > 0) {
+            await portFolio.map((data) => {
+              totalStackValue = parseFloat(
+                parseFloat(totalStackValue + data.value).toFixed(2)
+              );
+              totalGainLoss = parseFloat(
+                parseFloat(totalGainLoss + data.totalGainLoss).toFixed(2)
+              );
+            });
           }
-          let totalStackValue = await portFolio.map((x) => x.value);
-          totalStackValue = totalStackValue.reduce(
-            (partialSum, a) => partialSum + a,
-            0
+          /**
+           * Get Quiz Stack Coins
+           */
+          const checkQuizExists = await QuizResult.aggregate([
+            {
+              $match: {
+                userId: new mongoose.Types.ObjectId(childExists._id),
+              },
+            },
+            {
+              $group: {
+                _id: 0,
+                sum: {
+                  $sum: "$pointsEarned",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                sum: 1,
+              },
+            },
+          ]).exec();
+          let stackCoins = 0;
+          if (checkQuizExists.length > 0) {
+            stackCoins = checkQuizExists[0].sum;
+          }
+          let parent: any = await ParentChildTable.findOne({
+            "teens.childId": childExists._id,
+          });
+          if (!parent) return this.BadRequest(ctx, "Invalid User");
+          const accountIdDetails = await parent.teens.find(
+            (x: any) => x.childId.toString() == childExists._id.toString()
           );
-          return this.Ok(ctx, { data: { portFolio, totalStackValue } });
+          if (!accountIdDetails) {
+            return this.BadRequest(ctx, "Account Details Not Found");
+          }
+          /**
+           * Fetch Balance
+           */
+          const fetchBalance: any = await getBalance(
+            jwtToken,
+            accountIdDetails.accountId
+          );
+          if (fetchBalance.status == 400) {
+            return this.BadRequest(ctx, fetchBalance.message);
+          }
+          const balance = fetchBalance.data.data[0].attributes.disbursable;
+          totalStackValue = totalStackValue + balance;
+          return this.Ok(ctx, {
+            data: {
+              portFolio,
+              totalStackValue,
+              stackCoins,
+              totalGainLoss,
+              balance,
+            },
+          });
         }
       }
     );
@@ -1046,8 +1136,25 @@ class TradingController extends BaseController {
         }
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED, message: messages.APPROVE_DEPOSIT }
+          {
+            status: EStatus.PROCESSED,
+            message: `${messages.APPROVE_WITHDRAW} of ${activity.currencyValue}$`,
+          }
         );
+        await TransactionTable.create({
+          assetId: null,
+          cryptoId: null,
+          accountId: accountIdDetails.accountId,
+          type: ETransactionType.DEPOSIT,
+          settledTime: moment().unix(),
+          amount: activity.currencyValue,
+          amountMod: null,
+          userId: accountIdDetails.childId,
+          parentId: userExists._id,
+          status: ETransactionStatus.PENDING,
+          executedQuoteId: contributions.data.included[0].id,
+          unitCount: null,
+        });
         return this.Ok(ctx, {
           message:
             "You have approved teen's request of deposit. Please wait while it take place accordingly.",
@@ -1086,8 +1193,25 @@ class TradingController extends BaseController {
         }
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED, message: messages.APPROVE_WITHDRAW }
+          {
+            status: EStatus.PROCESSED,
+            message: `${messages.APPROVE_WITHDRAW} of ${activity.currencyValue}$`,
+          }
         );
+        await TransactionTable.create({
+          assetId: null,
+          cryptoId: null,
+          accountId: accountIdDetails.accountId,
+          type: ETransactionType.WITHDRAW,
+          settledTime: moment().unix(),
+          amount: activity.currencyValue,
+          amountMod: null,
+          userId: accountIdDetails.childId,
+          parentId: userExists._id,
+          status: ETransactionStatus.PENDING,
+          executedQuoteId: disbursementResponse.data.included[0].id,
+          unitCount: null,
+        });
         return this.Ok(ctx, {
           data: disbursementResponse.data,
           message:
@@ -1113,7 +1237,7 @@ class TradingController extends BaseController {
             attributes: {
               "account-id": accountIdDetails.accountId,
               "asset-id": cryptoData.assetId,
-              hot: false,
+              hot: true,
               "transaction-type": "buy",
               total_amount: activity.currencyValue,
             },
@@ -1153,17 +1277,24 @@ class TradingController extends BaseController {
           type: ETransactionType.BUY,
           settledTime: moment().unix(),
           amount: activity.currencyValue,
+          amountMod: -activity.currencyValue,
           userId: accountIdDetails.childId,
           parentId: userExists._id,
+          status: ETransactionStatus.PENDING,
+          executedQuoteId: executeQuoteResponse.data.data.id,
           unitCount: executeQuoteResponse.data.data.attributes["unit-count"],
         });
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED, message: messages.APPROVE_BUY }
+          {
+            status: EStatus.PROCESSED,
+            message: `${messages.APPROVE_BUY} ${cryptoData.name} of ${activity.currencyValue}$`,
+          }
         );
         return this.Ok(ctx, {
           message: "Success",
           data: "You have approved teen's request of buying crypto. Please wait while it settles in the portfolio respectively.",
+          dataValue: { generateQuoteResponse, executeQuoteResponse },
         });
       case 4:
         /**
@@ -1184,7 +1315,7 @@ class TradingController extends BaseController {
             attributes: {
               "account-id": accountIdDetails.accountId,
               "asset-id": sellCryptoData.assetId,
-              hot: false,
+              hot: true,
               "transaction-type": "sell",
               total_amount: activity.currencyValue,
             },
@@ -1224,14 +1355,20 @@ class TradingController extends BaseController {
           type: ETransactionType.SELL,
           settledTime: moment().unix(),
           amount: activity.currencyValue,
+          amountMod: activity.currencyValue,
           userId: accountIdDetails.childId,
           parentId: userExists._id,
+          status: ETransactionStatus.PENDING,
+          executedQuoteId: executeSellQuoteResponse.data.data.id,
           unitCount:
             -executeSellQuoteResponse.data.data.attributes["unit-count"],
         });
         await UserActivityTable.updateOne(
           { _id: activityId },
-          { status: EStatus.PROCESSED, message: messages.APPROVE_SELL }
+          {
+            status: EStatus.PROCESSED,
+            message: `${messages.APPROVE_SELL} ${cryptoData.name} of ${activity.currencyValue}$`,
+          }
         );
         return this.Ok(ctx, {
           message: "Success",
@@ -1258,6 +1395,29 @@ class TradingController extends BaseController {
       ctx.request.primeTrustToken,
       accountId
     );
+    return this.Ok(ctx, { data: response });
+  }
+
+  /**
+   * @description This method is used for wire transfer for push instructions
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/wire-transfer", method: HttpMethod.GET })
+  @Auth()
+  @PrimeTrustJWT()
+  public async wireTransfer(ctx: any) {
+    let accountId = await getAccountId(ctx.request.user._id);
+    if (!accountId) return this.BadRequest(ctx, "AccountId not found");
+    let contactId = await getContactId(ctx.request.user._id);
+    if (!contactId) return this.BadRequest(ctx, "ContactId not found");
+    let response = await wireTransfer(ctx.request.primeTrustToken, {
+      type: "push-transfer-methods",
+      attributes: {
+        "account-id": accountId,
+        "contact-id": contactId,
+      },
+    });
     return this.Ok(ctx, { data: response });
   }
 }

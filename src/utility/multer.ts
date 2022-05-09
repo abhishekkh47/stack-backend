@@ -15,7 +15,7 @@ export const uploadFileS3 = multer({
     s3,
     bucket: "stack-users",
     key: async (req, file, cb) => {
-      cb(
+      return cb(
         null,
         `${(await verifyToken(req.rawHeaders[1]))._id}/${
           file.fieldname
@@ -31,7 +31,7 @@ export const uploadFileS3 = multer({
           "Please upload a Image of valid extension of jpg or pdf format only."
         )
       );
-    cb(null, true);
+    return cb(null, true);
   },
 });
 export const uploadIdProof = multer({

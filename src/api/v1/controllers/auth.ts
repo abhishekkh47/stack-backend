@@ -16,6 +16,7 @@ import {
   ALLOWED_LOGIN_ATTEMPTS,
   EOTPTYPE,
   EOTPVERIFICATION,
+  ESCREENSTATUS,
   EUserType,
   HttpMethod,
   IUser,
@@ -34,9 +35,9 @@ import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
 import { UserWalletTable } from "../../../model/userbalance";
 import { ObjectId } from "mongodb";
-import { UserController } from ".";
+import UserController from "./user";
 
-class AliveController extends BaseController {
+class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
   public async handleLogin(ctx: Koa.Context) {
     const reqParam = ctx.request.body;
@@ -81,7 +82,7 @@ class AliveController extends BaseController {
                 userExists.loginAttempts = userExists.loginAttempts + 1;
                 await userExists.save();
               }
-              return this.UnAuthorized(ctx, "Invalid password");
+              return this.BadRequest(ctx, "Invalid password");
             }
             await UserTable.updateOne(
               { _id: userExists._id },
@@ -119,7 +120,7 @@ class AliveController extends BaseController {
                 },
               },
             };
-            await this.resetPassword(requestData);
+            // await this.resetPassword(requestData);
             return this.BadRequest(ctx, resetPasswordMessage);
           }
         }
@@ -139,18 +140,18 @@ class AliveController extends BaseController {
           const childArray = [];
           let user = await AuthService.findUserByEmail(reqParam.email);
           if (user) {
-            return this.UnAuthorized(ctx, "Email Already Exists");
+            return this.BadRequest(ctx, "Email Already Exists");
           }
           user = await UserTable.findOne({ username: reqParam.email });
           if (user) {
-            return this.UnAuthorized(
+            return this.BadRequest(
               ctx,
               "This email is used by some other user as username"
             );
           }
           user = await UserTable.findOne({ mobile: reqParam.mobile });
           if (user) {
-            return this.UnAuthorized(ctx, "Mobile Number already Exists");
+            return this.BadRequest(ctx, "Mobile Number already Exists");
           }
           /* tslint:disable-next-line */
           if (reqParam.type == EUserType.TEEN) {
@@ -159,25 +160,25 @@ class AliveController extends BaseController {
               type: EUserType.TEEN,
             });
             if (user) {
-              return this.UnAuthorized(ctx, "Email Already Exists");
+              return this.BadRequest(ctx, "Email Already Exists");
             }
             user = await UserTable.findOne({
               mobile: reqParam.parentMobile,
               type: EUserType.TEEN,
             });
             if (user) {
-              return this.UnAuthorized(ctx, "Mobile Number Already Exists");
+              return this.BadRequest(ctx, "Mobile Number Already Exists");
             }
             user = await UserTable.findOne({ parentEmail: reqParam.username });
             if (user) {
-              return this.UnAuthorized(
+              return this.BadRequest(
                 ctx,
                 "This username is used by some other user as parent's email"
               );
             }
             user = await UserTable.findOne({ username: reqParam.parentEmail });
             if (user) {
-              return this.UnAuthorized(
+              return this.BadRequest(
                 ctx,
                 "This parent email is used by some other user as username"
               );
@@ -263,11 +264,11 @@ class AliveController extends BaseController {
           if (reqParam.username) {
             user = await UserTable.findOne({ username: reqParam.username });
             if (user) {
-              return this.UnAuthorized(ctx, "Username already Exists");
+              return this.BadRequest(ctx, "Username already Exists");
             }
             user = await UserTable.findOne({ email: reqParam.username });
             if (user) {
-              return this.UnAuthorized(
+              return this.BadRequest(
                 ctx,
                 "This username is used by some other user as email"
               );
@@ -282,16 +283,14 @@ class AliveController extends BaseController {
             firstName: reqParam.firstName,
             lastName: reqParam.lastName,
             mobile: reqParam.mobile,
+            screenStatus:
+              user.type === EUserType.PARENT
+                ? ESCREENSTATUS.CHANGE_ADDRESS
+                : ESCREENSTATUS.SIGN_UP,
             parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
             parentMobile: reqParam.parentMobile ? reqParam.parentMobile : null,
             dob: reqParam.dob ? reqParam.dob : null,
-          });
-          /**
-           * Create the balance table
-           */
-          await UserWalletTable.create({
-            userId: user._id,
-            balance: 0,
+            taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
           });
           if (user.type === EUserType.PARENT) {
             await ParentChildTable.create({
@@ -332,7 +331,7 @@ class AliveController extends BaseController {
 
     const user = await AuthService.findUserByEmail(authInfo.email);
     if (!user) {
-      return this.UnAuthorized(ctx, "User not found");
+      return this.BadRequest(ctx, "User not found");
     }
 
     return this.Ok(ctx, user);
@@ -429,7 +428,13 @@ class AliveController extends BaseController {
                 unitApt: reqParam.unitApt ? reqParam.unitApt : null,
                 postalCode: reqParam.postalCode,
                 stateId: reqParam.stateId,
+                taxState: reqParam.stateId,
+                tax: reqParam.stateId,
                 city: reqParam.city,
+                screenStatus:
+                  user.type === EUserType.PARENT
+                    ? ESCREENSTATUS.UPLOAD_DOCUMENTS
+                    : ESCREENSTATUS.SIGN_UP,
               },
             }
           );
@@ -1098,4 +1103,4 @@ class AliveController extends BaseController {
   }
 }
 
-export default new AliveController();
+export default new AuthController();

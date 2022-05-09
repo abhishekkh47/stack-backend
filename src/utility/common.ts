@@ -73,3 +73,11 @@ export const checkValidImageExtension = (file) => {
   if (file && fileArray.includes(file.mimetype)) return true;
   return false;
 };
+
+export const checkValidBase64String = (text) => {
+  let match = text.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if (!match || match.length !== 3) {
+    return false;
+  }
+  return true;
+};

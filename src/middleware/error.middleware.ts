@@ -39,5 +39,6 @@ export const errorHandler = async (ctx: Koa.Context, next: Koa.Next) => {
       messages,
       path: ctx.path,
     };
+    return ctx;
   }
 };

@@ -8,6 +8,7 @@ export interface IUser extends IAccount {
   verificationEmailExpireAt: string;
   verificationCode: string;
   status: EUSERSTATUS;
+  screenStatus: ESCREENSTATUS;
   kycMessages: string[];
   refreshToken: string;
 }
@@ -31,6 +32,7 @@ export interface IAccount {
   dob: string;
   taxState: mongoose.Schema.Types.ObjectId;
   profilePicture: string;
+  isAcknowledged: number;
 }
 
 export interface IAdmin extends IUser {
@@ -51,6 +53,12 @@ export enum ETRANSFER {
 
 export enum EUSERSTATUS {
   KYC_DOCUMENT_UPLOAD = 1,
-  KYC_DOCUMENT_VERIFIED = 2,
-  KYC_DOCUMENT_UPLOAD_FAILED = 3,
+  KYC_DOCUMENT_VERIFIED = 3,
+  KYC_DOCUMENT_UPLOAD_FAILED = 2,
+}
+export enum ESCREENSTATUS {
+  SIGN_UP = 0,
+  CHANGE_ADDRESS = 1,
+  UPLOAD_DOCUMENTS = 2,
+  ADD_BANK_ACCOUNT = 3,
 }

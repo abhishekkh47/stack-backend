@@ -12,6 +12,7 @@ export enum EQuizTopicStatus {
 
 export interface IQuizQuestion {
   quizId: mongoose.Schema.Types.ObjectId;
+  question_image: string;
   text: string;
   question_type: EQuizQuestionType;
   answer_type: EQuizAnswerType;
@@ -41,6 +42,7 @@ export const timeBetweenTwoQuiz = 72.0;
 
 export interface IAnswerArray {
   name: string;
+  image: string;
   correct_answer: ECorrectAnswer;
 }
 export interface IQuiz {

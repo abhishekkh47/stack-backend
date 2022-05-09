@@ -208,5 +208,12 @@
 	"changePrimeTrustTax-id-numberEmpty": "Please enter tax id number",
 	"changePrimeTrustTax-stateEmpty": "Please enter tax state",
 	"changePrimeTrustTax-statePattern": "Please enter valid tax state.",
-	"changePrimeTrustPrimary-addressBase": "Please enter address"
+	"changePrimeTrustPrimary-addressBase": "Please enter address",
+	"changePrimeTrustFirst-nameMin": "changePrimeTrustFirst-nameMin",
+	"changePrimeTrustFirstNameUnknown": "changePrimeTrustFirstNameUnknown",
+	"changePrimeTrustFirst-namePattern": "changePrimeTrustFirst-namePattern",
+	"changePrimeTrustCityRequired": "changePrimeTrustCityRequired",
+	"changePrimeTrustAddressProof_frontUnknown": "changePrimeTrustAddressProof_frontUnknown",
+	"signupValidationTaxidnoRequired": "Please enter tax id number.",
+	"signupValidationTaxidnoEmpty": "Please enter tax id number."
 }

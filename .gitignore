@@ -6,4 +6,6 @@
 .vscode
 .idea
 /build
+/uploads
 *.zip
+yarn.lock

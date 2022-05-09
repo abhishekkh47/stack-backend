@@ -28,7 +28,17 @@ const server = (async () => {
 
     const appServer = http.createServer(app.callback());
     app.use(i18nTs);
-    app.use(bodyParser());
+    // app.use(bodyParser());
+    app.use(async (ctx, next) => {
+      if (ctx.path === "/api/v1/upload-id-proof") ctx.disableBodyParser = true;
+      await next();
+    });
+    // app.use(bodyparser());
+    app.use(
+      bodyParser({
+        jsonLimit: "50mb",
+      })
+    );
 
     // Handle exception
     app.use(errorHandler);

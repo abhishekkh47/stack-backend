@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { ITransaction, MongooseModel } from "../types";
+import { ETransactionStatus, ITransaction, MongooseModel } from "../types";
 
 export type ITransactionSchema = MongooseModel<ITransaction> &
   mongoose.Document;
@@ -20,18 +20,33 @@ const schema = new mongoose.Schema<ITransactionSchema>(
     cryptoId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "crypto",
-      required: true,
+      default: null,
+    },
+    /**
+     * 1 - pending and 2 - settled
+     */
+    status: {
+      type: mongoose.Schema.Types.Number,
+      isIn: [ETransactionStatus.PENDING, ETransactionStatus.SETTLED],
+      default: 1,
+    },
+    /**
+     * for buy and sell - it would be quote id and for deposit and withdraw it would be fund transfer id
+     */
+    executedQuoteId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
     },
     assetId: {
       type: mongoose.Schema.Types.String,
-      required: true,
+      default: null,
     },
     settledTime: {
       type: mongoose.Schema.Types.String,
       required: true,
     },
     /**
-     * 1 - buy and 2 - sell
+     * 1 - buy , 2 - sell , 3 - deposit and 4 - withdraw
      */
     type: {
       type: mongoose.Schema.Types.Number,
@@ -41,9 +56,16 @@ const schema = new mongoose.Schema<ITransactionSchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
+    /**
+     * for every buy - and for every sell +
+     */
+    amountMod: {
+      type: mongoose.Schema.Types.Number,
+      default: null,
+    },
     unitCount: {
       type: mongoose.Schema.Types.Number,
-      required: true,
+      default: null,
     },
   },
   { timestamps: true }

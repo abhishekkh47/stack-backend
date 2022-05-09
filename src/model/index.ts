@@ -17,3 +17,4 @@ export * from "./webhook";
 export * from "./transactions";
 export * from "./notifyUser";
 export * from "./cryptoPrice";
+export * from "./deviceToken";

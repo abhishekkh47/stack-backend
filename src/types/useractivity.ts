@@ -28,8 +28,8 @@ export enum EStatus {
 export const messages = {
   DEPOSIT: "Requested one time deposit",
   WITHDRAW: "Requested one time withdrawal",
-  BUY: "Requested to buy crypto",
-  SELL: "Requested to sell crypto",
+  BUY: "Requested to buy",
+  SELL: "Requested to sell",
   REJECT_DEPOSIT: "Rejected one time deposit request",
   REJECT_WITHDRAW: "Rejected one time withdrawal request",
   REJECT_BUY: "Rejected to buy crypto request",

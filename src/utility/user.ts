@@ -38,3 +38,16 @@ export const getAccountId = async (userId: any) => {
   accountId = accountId[0].accountId;
   return accountId;
 };
+
+export const getContactId = async (userId: any) => {
+  let contactId: any = await ParentChildTable.findOne(
+    { userId },
+    { contactId: 1, _id: 0 }
+  );
+  if (contactId) return contactId.contactId;
+  contactId = await ParentChildTable.findOne(
+    { "teens.childId": userId },
+    { contactId: 1, _id: 0 }
+  );
+  return contactId ? contactId.contactId : null;
+};

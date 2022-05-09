@@ -487,7 +487,7 @@ export const executeQuote = async (token, id, data) => {
     .catch((error) => {
       return {
         status: 400,
-        message: error.response.data,
+        message: error.response.data.errors[0].detail,
       };
     });
   return response;
@@ -506,7 +506,6 @@ export const getWireTransfer = async (token, accountId) => {
     })
     .then((res) => res.data)
     .catch((error) => {
-      console.log(error, "error");
       return { status: 400, message: error.response.data };
     });
   return response;
@@ -522,10 +521,64 @@ export const updateContacts = async (token, contactId, data) => {
   const response = await axios
     .patch(
       config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.updateContacts(contactId),
-      data,
+      { data },
       {
         headers: { Authorization: `Bearer ${token}` },
       }
+    )
+    .then((res) => res.data)
+    .catch((error) => {
+      return { status: 400, message: error.response.data };
+    });
+  return response;
+};
+
+/**
+ * @description This method is used to run script for adding temporary funds
+ * @param token
+ * @param accountId
+ * @param data
+ * @returns
+ */
+export const tempContribution = async (token, accountId, data) => {
+  const response = await axios
+    .post(
+      `https://sandbox.primetrust.com/v2/accounts/${accountId}/sandbox/fund`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+        error,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description
+ * @param token
+ * @param data
+ * @returns
+ */
+export const wireTransfer = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.pushTransferMethod,
+      { data },
+      { headers: { Authorization: `Bearer ${token}` } }
     )
     .then((res) => res.data)
     .catch((error) => {

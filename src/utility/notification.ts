@@ -11,9 +11,6 @@ export const saveOtp = async (
     validTill,
     value: otp,
   };
-
-  console.log(`Otp for id ${id} is ${otp}`);
-
   return {
     success: true,
   };

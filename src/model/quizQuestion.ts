@@ -8,6 +8,10 @@ export type IQuizQuestionSchema = MongooseModel<IQuizQuestion> &
 const schema = new mongoose.Schema<IQuizQuestionSchema>(
   {
     text: { type: mongoose.Schema.Types.String, required: true },
+    question_image: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     quizId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -36,6 +40,10 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
         name: {
           type: mongoose.Schema.Types.String,
           required: true,
+        },
+        image: {
+          type: mongoose.Schema.Types.String,
+          default: null,
         },
         /**
          * 1 - True and  0 - False

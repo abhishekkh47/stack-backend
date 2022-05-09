@@ -6,12 +6,21 @@ export interface ITransaction {
   accountId: string;
   assetId: string;
   settledTime: string;
+  status: ETransactionStatus;
   amount: number;
+  amountMod: number;
   type: ETransactionType;
+  executedQuoteId: string;
   unitCount: number;
 }
 
 export enum ETransactionType {
   BUY = 1,
   SELL = 2,
+  DEPOSIT = 3,
+  WITHDRAW = 4,
+}
+export enum ETransactionStatus {
+  PENDING = 1,
+  SETTLED = 2,
 }
