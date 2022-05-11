@@ -14,12 +14,14 @@ import {
   getWireTransfer,
   getContactId,
   wireTransfer,
+  sendNotification,
 } from "../../../utility";
 import BaseController from "./base";
 import mongoose from "mongoose";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   EAction,
+  ERead,
   EStatus,
   ETransactionStatus,
   ETransactionType,
@@ -35,11 +37,13 @@ import {
   UserActivityTable,
   UserTable,
   QuizResult,
+  Notification,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { UserWalletTable } from "../../../model/userbalance";
 import { ObjectId } from "mongodb";
 import moment from "moment";
+import { NOTIFICATION } from "../../../utility/constants";
 
 class TradingController extends BaseController {
   /**
@@ -58,6 +62,12 @@ class TradingController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    const query =
+      userExists.type == EUserType.PARENT
+        ? { userId: ctx.request.user._id }
+        : { "teens.childId": ctx.request.user._id };
+    let parent: any = await ParentChildTable.findOne(query);
+    if (!parent) return this.BadRequest(ctx, "Invalid User");
     return validation.addDepositValidation(
       reqParam,
       ctx,
@@ -68,7 +78,7 @@ class TradingController extends BaseController {
            * For teen it will be pending state
            */
           if (userExists.type === EUserType.TEEN) {
-            await UserActivityTable.create({
+            const activity = await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
               message: `${messages.DEPOSIT} of $${reqParam.amount}`,
@@ -79,6 +89,29 @@ class TradingController extends BaseController {
                 userExists.type === EUserType.TEEN
                   ? EStatus.PENDING
                   : EStatus.PROCESSED,
+            });
+            /**
+             * Notification
+             */
+            let notificationRequest = {
+              title: NOTIFICATION.TEEN_REQUEST_MADE,
+              message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT.replace(
+                "@yourteen",
+                userExists.username
+              ),
+              activityId: activity._id,
+            };
+            await sendNotification(
+              "",
+              notificationRequest.title,
+              notificationRequest
+            );
+            await Notification.create({
+              title: notificationRequest.title,
+              userId: parent.userId,
+              message: notificationRequest.message,
+              isRead: ERead.UNREAD,
+              data: JSON.stringify(notificationRequest),
             });
             return this.Created(ctx, {
               message: `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
@@ -338,7 +371,7 @@ class TradingController extends BaseController {
            * for teen it will be pending state and for parent it will be in approved
            */
           if (userExists.type == EUserType.TEEN) {
-            await UserActivityTable.create({
+            const activity = await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
               message: `${messages.WITHDRAW} of $${reqParam.amount}`,
@@ -349,6 +382,29 @@ class TradingController extends BaseController {
                 userExists.type === EUserType.TEEN
                   ? EStatus.PENDING
                   : EStatus.PROCESSED,
+            });
+            /**
+             * Notification
+             */
+            let notificationRequest = {
+              title: NOTIFICATION.TEEN_REQUEST_MADE,
+              message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW.replace(
+                "@yourteen",
+                userExists.username
+              ),
+              activityId: activity._id,
+            };
+            await sendNotification(
+              "",
+              notificationRequest.title,
+              notificationRequest
+            );
+            await Notification.create({
+              title: notificationRequest.title,
+              userId: parent.userId,
+              message: notificationRequest.message,
+              isRead: ERead.UNREAD,
+              data: JSON.stringify(notificationRequest),
             });
             return this.Created(ctx, {
               message: `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
@@ -453,7 +509,7 @@ class TradingController extends BaseController {
       {
         $match: {
           userId: new ObjectId(user._id),
-          // status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+          status: { $ne: EStatus.CANCELLED_SELF },
         },
       },
       {
@@ -534,7 +590,7 @@ class TradingController extends BaseController {
           }
           await UserActivityTable.updateOne(
             { _id: reqParam.id },
-            { $set: { status: EStatus.CANCELLED } }
+            { $set: { status: EStatus.CANCELLED_SELF } }
           );
           return this.Ok(ctx, { message: "Activity Cancelled Successfully" });
         }
@@ -673,7 +729,7 @@ class TradingController extends BaseController {
         }
       }
 
-      await UserActivityTable.create({
+      const activity = await UserActivityTable.create({
         userId: user._id,
         message: `${messages.BUY} $${amount} in ${crypto.name}`,
         action: EAction.BUY_CRYPTO,
@@ -689,6 +745,31 @@ class TradingController extends BaseController {
           ? `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
           : `Buy order proccessed`;
 
+      if (userType === EUserType.TEEN) {
+        /**
+         * Notification
+         */
+        let notificationRequest = {
+          title: NOTIFICATION.TEEN_REQUEST_MADE,
+          message: NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO.replace(
+            "@yourteen",
+            userExists.username
+          ).replace("@crypto", crypto.name),
+          activityId: activity._id,
+        };
+        await sendNotification(
+          "",
+          notificationRequest.title,
+          notificationRequest
+        );
+        await Notification.create({
+          title: notificationRequest.title,
+          userId: parent.userId,
+          message: notificationRequest.message,
+          isRead: ERead.UNREAD,
+          data: JSON.stringify(notificationRequest),
+        });
+      }
       return this.Ok(ctx, { message });
     });
   }
@@ -704,34 +785,73 @@ class TradingController extends BaseController {
   public async sellCrypto(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    let userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     return validation.sellCryptoValidation(reqParam, ctx, async (validate) => {
       const { amount, cryptoId } = reqParam;
       const crypto = await CryptoTable.findById({ _id: cryptoId });
       if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
-
-      const userType = (
-        await UserTable.findOne(
-          { username: user.username },
-          { type: 1, _id: -1 }
-        )
-      ).type;
-
-      await UserActivityTable.create({
+      let transactionExists = await TransactionTable.findOne({
+        type: ETransactionType.BUY,
+        cryptoId: crypto._id,
+        userId: user._id,
+      });
+      if (!transactionExists) {
+        return this.BadRequest(
+          ctx,
+          `${crypto.name} doesn't exists in your portfolio.`
+        );
+      }
+      const query =
+        userExists.type == EUserType.PARENT
+          ? { userId: ctx.request.user._id }
+          : { "teens.childId": ctx.request.user._id };
+      let parent: any = await ParentChildTable.findOne(query);
+      if (!parent) return this.BadRequest(ctx, "Invalid User");
+      const activity = await UserActivityTable.create({
         userId: user._id,
         message: `${messages.SELL} $${amount} in ${crypto.name}`,
         action: EAction.SELL_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
         cryptoId: cryptoId,
-        userType,
+        userType: userExists.type,
         status:
-          userType === EUserType.TEEN ? EStatus.PENDING : EStatus.PROCESSED,
+          userExists.type === EUserType.TEEN
+            ? EStatus.PENDING
+            : EStatus.PROCESSED,
       });
       const message =
-        userType === EUserType.TEEN
-          ? `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
+        userExists.type === EUserType.TEEN
+          ? `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`
           : `Sell order proccessed`;
-
+      if (userExists.type === EUserType.TEEN) {
+        /**
+         * Notification
+         */
+        let notificationRequest = {
+          title: NOTIFICATION.TEEN_REQUEST_MADE,
+          message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
+            "@yourteen",
+            userExists.username
+          ).replace("@crypto", crypto.name),
+          activityId: activity._id,
+        };
+        await sendNotification(
+          "",
+          notificationRequest.title,
+          notificationRequest
+        );
+        await Notification.create({
+          title: notificationRequest.title,
+          userId: parent.userId,
+          message: notificationRequest.message,
+          isRead: ERead.UNREAD,
+          data: JSON.stringify(notificationRequest),
+        });
+      }
       return this.Ok(ctx, { message });
     });
   }
@@ -761,7 +881,7 @@ class TradingController extends BaseController {
       {
         $match: {
           userId: new ObjectId(childId),
-          // status: { $in: [EStatus.PENDING, EStatus.PROCESSED] },
+          status: { $ne: EStatus.CANCELLED_SELF },
         },
       },
       {
@@ -822,6 +942,10 @@ class TradingController extends BaseController {
     if (!activityId) {
       return this.BadRequest(ctx, "Activity Id not found");
     }
+    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     if (!/^[0-9a-fA-F]{24}$/.test(activityId))
       return this.BadRequest(ctx, "Enter Correct Activity Details");
     const parent = await ParentChildTable.findOne({
@@ -831,7 +955,7 @@ class TradingController extends BaseController {
 
     const activity = await UserActivityTable.findOne(
       { _id: activityId, status: EStatus.PENDING },
-      { userId: 1, cryptoId: 1 }
+      { userId: 1, cryptoId: 1, action: 1, currencyValue: 1 }
     );
     if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
     let crypto = null;
@@ -841,17 +965,33 @@ class TradingController extends BaseController {
     await UserActivityTable.updateOne(
       { _id: activityId },
       {
-        status: EStatus.CANCELLED,
+        status: EStatus.REJECTED,
         message:
           activity.action == EAction.DEPOSIT
             ? `${messages.REJECT_DEPOSIT} of ${activity.currencyValue}`
             : activity.action == EAction.WITHDRAW
             ? `${messages.REJECT_WITHDRAW} of ${activity.currencyValue}`
             : activity.action == EAction.BUY_CRYPTO
-            ? `${messages.REJECT_BUY} of ${crypto.name} of ${activity.currencyValue}$`
-            : `${messages.REJECT_SELL} of ${crypto.name} of ${activity.currencyValue}$`,
+            ? `${messages.REJECT_BUY} of ${crypto.name} of $${activity.currencyValue}`
+            : `${messages.REJECT_SELL} of ${crypto.name} of $${activity.currencyValue}`,
       }
     );
+    /**
+     * Notification
+     */
+    let notificationRequest = {
+      title: NOTIFICATION.TEEN_REQUEST_DENIED,
+      message: NOTIFICATION.TEEN_REQUEST_DENIED_DESCRIPTION,
+      activityId: activity._id,
+    };
+    await sendNotification("", notificationRequest.title, notificationRequest);
+    await Notification.create({
+      title: notificationRequest.title,
+      userId: activity.userId,
+      message: notificationRequest.message,
+      isRead: ERead.UNREAD,
+      data: JSON.stringify(notificationRequest),
+    });
 
     return this.Ok(ctx, { message: "Activity cancelled out successfully" });
   }

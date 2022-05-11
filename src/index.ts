@@ -30,7 +30,11 @@ const server = (async () => {
     app.use(i18nTs);
     // app.use(bodyParser());
     app.use(async (ctx, next) => {
-      if (ctx.path === "/api/v1/upload-id-proof") ctx.disableBodyParser = true;
+      if (
+        ctx.path === "/api/v1/upload-id-proof" ||
+        ctx.path === "/api/v1/update-primetrust-data"
+      )
+        ctx.disableBodyParser = true;
       await next();
     });
     // app.use(bodyparser());

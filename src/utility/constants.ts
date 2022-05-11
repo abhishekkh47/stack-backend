@@ -67,3 +67,19 @@ export const FIREBASE_CREDENCIALS = {
   client_x509_cert_url:
     "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-tp43e%40stack-995ed.iam.gserviceaccount.com",
 };
+
+export const NOTIFICATION = {
+  TEEN_REQUEST_MADE: "A new request has been made 😃",
+  TEEN_REQUEST_DENIED: "Request Rejected ❌",
+  TEEN_REQUEST_APPROVED: "Request approved! 🎉",
+  TEEN_REQUEST_BUY_CRYPTO:
+    "@yourteen has requested to buy @crypto 🚀  Head to the app to approve or deny the request.",
+  TEEN_REQUEST_SELL_CRYPTO:
+    "@yourteen has requested to sell their holdings in @crypto 🚀  Head to the app to approve or deny the request.",
+  TEEN_REQUEST_ADD_DEPOSIT:
+    "@yourteen has requested a one-time deposit 💰 Head to the app to approve or deny the request.",
+  TEEN_REQUEST_ADD_WITHDRAW:
+    "@yourteen has requested a one-time withdrawal 💵 Head to the app to approve or deny the request.",
+  TEEN_REQUEST_DENIED_DESCRIPTION:
+    "Your request has been denied by parent. Better luck next time 🎩",
+};

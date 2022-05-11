@@ -7,11 +7,13 @@ export interface IDeviceToken {
 
 export interface INotification {
   userId: mongoose.Schema.Types.ObjectId;
+  title: string;
   message: string;
+  data: string;
   isRead: ERead;
 }
 
 export enum ERead {
-  READ = 1,
-  UNREAD = 2,
+  READ = 2,
+  UNREAD = 1,
 }

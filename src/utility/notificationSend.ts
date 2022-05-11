@@ -3,7 +3,7 @@
 import { FIREBASE_CREDENCIALS } from "./constants";
 const serviceAccount = FIREBASE_CREDENCIALS;
 // const fcm = new FCM(serviceAccount);
-export const sendNotification = (to, body, data, action) => {
+export const sendNotification = (to, body, data, action = null) => {
   if (to != null) {
     const message = {
       registration_ids: to,
@@ -13,7 +13,7 @@ export const sendNotification = (to, body, data, action) => {
         sound: "default",
         icon: "ic_launcher_notification",
         color: "#ffffff",
-        click_action: action,
+        // click_action: action,
         data: JSON.stringify(data),
       },
       data: data,

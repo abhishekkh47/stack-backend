@@ -7,7 +7,10 @@ import {
   wireInboundMethod,
   kycDocumentChecks,
   uploadFilesFetch,
+  checkValidBase64String,
+  getContactId,
 } from "../../../utility";
+import { json, form } from "co-body";
 import BaseController from "./base";
 import {
   ETransactionStatus,
@@ -26,6 +29,7 @@ import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
 import fs from "fs";
 import path from "path";
+import moment from "moment";
 
 class WebHookController extends BaseController {
   /**
@@ -156,18 +160,19 @@ class WebHookController extends BaseController {
   @Route({
     path: "/update-primetrust-data",
     method: HttpMethod.POST,
-    middleware: [uploadIdProof.single("address_proof_front")],
   })
   @Auth()
   @PrimeTrustJWT()
   public async changeDataIntoPrimeTrust(ctx: any) {
-    const files = ctx.request.file;
-    const input = ctx.request.body;
+    const body = await json(ctx, { limit: "150mb" });
+    if (!Object.keys(body).length)
+      return this.BadRequest(ctx, "Invalid Request.");
 
-    if (!files && !input) return this.BadRequest(ctx, "Invalid Request.");
+    const input = body;
 
     if (input["primary-address"])
       input["primary-address"] = JSON.parse(input["primary-address"]);
+
     return validation.changePrimeTrustValidation(
       input,
       ctx,
@@ -182,106 +187,49 @@ class WebHookController extends BaseController {
           if (
             existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
             existingStatus === EUSERSTATUS.KYC_DOCUMENT_UPLOAD
-          ) {
-            try {
-              fs.unlinkSync(
-                path.join(__dirname, "../../../../uploads", files.filename)
-              );
-            } catch (err) {}
+          )
             return this.BadRequest(
               ctx,
               existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
                 ? "User already verified."
                 : "User's data already uploaded."
             );
-          }
 
-          if (Object.keys(ctx.request.body).length) {
-            let contactId = (
-              await ParentChildTable.findOne(
-                { userId: ctx.request.user._id },
-                { contactId: 1, _id: 0 }
-              )
-            ).contactId;
-            if (!contactId) return this.BadRequest(ctx, "Contact ID not found");
-            const updates: any = {};
-            if (input["first-name"]) updates.firstName = input["first-name"];
-            if (input["last-name"]) updates.lastName = input["last-name"];
-            if (input["date-of-birth"]) updates.dob = input["date-of-birth"];
-            if (input["tax-id-number"])
-              updates.taxIdNo = input["tax-id-number"];
-            if (input["tax-state"]) updates.taxState = input["tax-state"];
-            if (input["primary-address"]) {
-              updates.city = input["primary-address"]["city"];
-              updates.country = input["primary-address"]["country"];
-              updates.postalCode = input["primary-address"]["postal-code"];
-              updates.stateId = input["primary-address"]["region"];
-              updates.address = input["primary-address"]["street-1"];
-            }
+          let successResponse: any = {};
 
-            if (input["tax-state"]) {
-              let taxState = await StateTable.findOne(
-                { _id: input["tax-state"] },
-                { shortName: 1, _id: 0 }
-              );
-              if (!taxState)
-                return this.BadRequest(ctx, "Invalid Tax-State-ID entered");
-              input["tax-state"] = taxState.shortName;
-            }
+          // in case of proof of address file upload
+          if (input.media) {
+            let validBase64 = checkValidBase64String(input.media);
+            if (!validBase64)
+              return this.BadRequest(ctx, "Please enter valid image");
+            const extension =
+              input.media && input.media !== ""
+                ? input.media.split(";")[0].split("/")[1]
+                : "";
+            const imageName =
+              input.media && input.media !== ""
+                ? `address_proof_front_${moment().unix()}.${extension}`
+                : "";
+            const imageExtArr = ["jpg", "jpeg", "png"];
+            if (imageName && !imageExtArr.includes(extension))
+              return this.BadRequest(ctx, "Please add valid extension");
 
-            if (input["primary-address"]) {
-              let state = await StateTable.findOne({
-                _id: input["primary-address"].region,
-              });
-              if (!state)
-                return this.BadRequest(ctx, "Invalid State-ID entered");
-              input["primary-address"].region = state.shortName;
-            }
-
-            let response = await updateContacts(
-              ctx.request.primeTrustToken,
-              contactId,
-              {
-                type: "contacts",
-                attributes: {
-                  "contact-type": "natural_person",
-                  ...input,
-                },
-              }
+            const decodedImage = Buffer.from(
+              input.media.replace(/^data:image\/\w+;base64,/, ""),
+              "base64"
             );
-            if (response.status === 400)
-              return this.BadRequest(ctx, {
-                message: "Something went wrong. Please try again.",
-                response,
-              });
 
-            await UserTable.updateOne(
-              { _id: ctx.request.user._id },
-              {
-                $set: {
-                  status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
-                  ...updates,
-                },
-              }
+            if (!fs.existsSync(path.join(__dirname, "../../../../uploads")))
+              fs.mkdirSync(path.join(__dirname, "../../../../uploads"));
+            fs.writeFileSync(
+              path.join(__dirname, "../../../../uploads", imageName),
+              decodedImage,
+              "base64"
             );
-          }
 
-          // in case of address proof error only ############################
-          if (ctx.request.file) {
             const user = ctx.request.user;
             const jwtToken = ctx.request.primeTrustToken;
-            if (!files)
-              return this.BadRequest(
-                ctx,
-                "Please upload proof of address in order to complete KYC"
-              );
 
-            let existingStatus = (
-              await UserTable.findOne(
-                { _id: ctx.request.user._id },
-                { status: 1, _id: 0 }
-              )
-            ).status;
             /**
              * Validations to be done
              */
@@ -307,9 +255,6 @@ class WebHookController extends BaseController {
             }
             const fullName = userExists.firstName + " " + userExists.lastName;
 
-            /**
-             * Upload both file
-             */
             let addressDocumentId = null;
             let uploadFileError = null;
             let uploadData = {
@@ -318,32 +263,18 @@ class WebHookController extends BaseController {
               label: "Proof of Address",
               public: "true",
               file: fs.createReadStream(
-                path.join(__dirname, "../../../../uploads", files.filename)
+                path.join(__dirname, "../../../../uploads", imageName)
               ),
             };
             let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-            if (uploadFile.status == 400) {
-              uploadFileError = uploadFile.message;
-            }
+            if (uploadFile.status == 400) uploadFileError = uploadFile.message;
             if (
               uploadFile.status == 200 &&
               uploadFile.message.errors != undefined
-            ) {
+            )
               uploadFileError = uploadFile.message;
-            }
-            if (uploadFileError) {
-              /**
-               * Delete image from our server
-               */
-              try {
-                fs.unlinkSync(
-                  path.join(__dirname, "../../../../uploads", files.filename)
-                );
-              } catch (err) {
-                console.log("Error in removing image");
-              }
-              return this.BadRequest(ctx, uploadFileError);
-            }
+            if (uploadFileError) return this.BadRequest(ctx, uploadFileError);
+
             addressDocumentId = uploadFile.message.data.id;
             /**
              * Checking the kyc document checks
@@ -361,29 +292,13 @@ class WebHookController extends BaseController {
               },
             };
             let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
-            if (kycResponse.status == 400) {
+            if (kycResponse.status == 400)
               return this.BadRequest(ctx, kycResponse.message);
-            }
             if (
               kycResponse.status == 200 &&
               kycResponse.data.errors != undefined
-            ) {
+            )
               return this.BadRequest(ctx, kycResponse.message);
-            }
-            const messages = [
-              "Your documents are uploaded. Please wait for some time till we verify and get back to you.",
-            ];
-            await UserTable.updateOne(
-              {
-                _id: userExists._id,
-              },
-              {
-                $set: {
-                  status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
-                  kycMessages: messages,
-                },
-              }
-            );
             /**
              * Updating the info in parent child table
              */
@@ -394,19 +309,88 @@ class WebHookController extends BaseController {
               },
               {
                 $set: {
-                  contactId: parentChildExists.contactId,
-                  "teens.$.accountId": accountIdDetails.accountId,
                   proofOfAddressId: addressDocumentId,
                   kycDocumentId: kycResponse.data.data.id,
                 },
               }
             );
-            return this.Ok(ctx, {
+            successResponse.uploadAddressProofReponse = {
               data: kycResponse.data,
               message:
                 "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
-            });
+            };
+
+            // Delete image from our server
+            try {
+              fs.unlinkSync(
+                path.join(__dirname, "../../../../uploads", imageName)
+              );
+            } catch (err) {}
           }
+
+          const updates: any = {};
+          if (input["first-name"]) updates.firstName = input["first-name"];
+          if (input["last-name"]) updates.lastName = input["last-name"];
+          if (input["date-of-birth"]) updates.dob = input["date-of-birth"];
+          if (input["tax-id-number"]) updates.taxIdNo = input["tax-id-number"];
+          if (input["tax-state"]) updates.taxState = input["tax-state"];
+          if (input["primary-address"]) {
+            updates.city = input["primary-address"]["city"];
+            updates.country = input["primary-address"]["country"];
+            updates.postalCode = input["primary-address"]["postal-code"];
+            updates.stateId = input["primary-address"]["region"];
+            updates.address = input["primary-address"]["street-1"];
+          }
+
+          if (!Object.keys(updates).length)
+            return this.Ok(ctx, {
+              message: "Address Proof uploaded to prime trust successfully.",
+            });
+
+          let contactId = await getContactId(ctx.request.user._id);
+          if (!contactId) return this.BadRequest(ctx, "Contact ID not found");
+
+          if (input["tax-state"]) {
+            let taxState = await StateTable.findOne(
+              { _id: input["tax-state"] },
+              { shortName: 1, _id: 0 }
+            );
+            if (!taxState)
+              return this.BadRequest(ctx, "Invalid Tax-State-ID entered");
+            input["tax-state"] = taxState.shortName;
+          }
+
+          if (input["primary-address"]) {
+            let state = await StateTable.findOne({
+              _id: input["primary-address"].region,
+            });
+            if (!state) return this.BadRequest(ctx, "Invalid State-ID entered");
+            input["primary-address"].region = state.shortName;
+          }
+
+          let response = await updateContacts(
+            ctx.request.primeTrustToken,
+            contactId,
+            {
+              type: "contacts",
+              attributes: {
+                "contact-type": "natural_person",
+                ...input,
+              },
+            }
+          );
+          if (response.status === 400)
+            return this.BadRequest(ctx, response.message);
+
+          await UserTable.updateOne(
+            { _id: ctx.request.user._id },
+            {
+              $set: {
+                status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
+                ...updates,
+              },
+            }
+          );
 
           return this.Ok(ctx, { message: "Info updated successfully." });
         }

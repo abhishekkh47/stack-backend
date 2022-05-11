@@ -3,7 +3,7 @@ import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { validation } from "../../../validations/apiValidation";
 import { ParentChildTable, UserTable, NotifyUserTable } from "../../../model";
 import fs from "fs";
-import { json } from "co-body";
+import { json, form } from "co-body";
 import {
   agreementPreviews,
   createAccount,
@@ -379,9 +379,6 @@ class UserController extends BaseController {
     if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
       return this.BadRequest(ctx, kycResponse);
     }
-    const messages = [
-      "Your documents are uploaded. Please wait for some time till we verify and get back to you.",
-    ];
     await UserTable.updateOne(
       {
         _id: userExists._id,
@@ -390,7 +387,6 @@ class UserController extends BaseController {
         $set: {
           status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
           screenStatus: ESCREENSTATUS.ACKNOWLEDGE_SCREEN,
-          kycMessages: messages,
         },
       }
     );
@@ -471,6 +467,7 @@ class UserController extends BaseController {
             liquidAsset: 1,
             taxIdNo: 1,
             taxState: 1,
+            status: 1,
             dob: 1,
             profilePicture: 1,
           },
@@ -487,7 +484,6 @@ class UserController extends BaseController {
         (checkParentExists &&
           checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
       ) {
-        console.log("coming?");
         data.isParentApproved = 0;
       } else {
         data.isParentApproved = 1;
@@ -748,9 +744,6 @@ class UserController extends BaseController {
     if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
       return this.BadRequest(ctx, kycResponse.message);
     }
-    const messages = [
-      "Your documents are uploaded. Please wait for some time till we verify and get back to you.",
-    ];
     await UserTable.updateOne(
       {
         _id: userExists._id,
@@ -758,7 +751,6 @@ class UserController extends BaseController {
       {
         $set: {
           status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
-          kycMessages: messages,
         },
       }
     );
@@ -847,29 +839,279 @@ class UserController extends BaseController {
     const parent = await UserTable.findOne({ _id: parentChild.userId });
     if (!parent) return this.BadRequest(ctx, "Account not found");
 
-    const doc = new GoogleSpreadsheet(
-      "1Rrp1gXP6DMiWkuZ49xe0BjXNPE0ZMygjV62OQtb_09U"
-    );
-    await doc.useServiceAccountAuth(FIREBASE_CREDENCIALS);
-    await doc.loadInfo();
-    const sheet = doc.sheetsByIndex[0];
-    const rows = await sheet.getRows();
-    const emails = rows.map((item) => item._rawData[0]);
+    // const doc = new GoogleSpreadsheet(
+    //   "1RXMtUAo1d0_xzv4H-E-4sY_sDNeF2QdVBHFaX3AqT3w"
+    // );
+    // await doc.useServiceAccountAuth(FIREBASE_CREDENCIALS);
+    // await doc.loadInfo();
+    // const sheet = doc.sheetsByIndex[0];
+    // const rows = await sheet.getRows();
+    const emails = [
+      "callum@iunitemedia.co.uk",
+      "leehill2591@gmail.com",
+      "ree2mazz@gmail.com",
+      "rushw2@yahoo.com",
+      "customerservice@trystack.io",
+      "wrush08@gmail.com",
+      "cdkiesau@gmail.com",
+      "janessabricker14@gmail.com",
+      "jafrican1business@gmail.com",
+      "sawyer.h701@gmail.com",
+      "16018183093@tmomail.net",
+      "12015623241@tmomail.net",
+      "ktong0422@yahoo.com",
+      "rogernguyen040907@gmail.com",
+      "bennettjude6@gmail.com",
+      "thechris2nerdy@gmail.com",
+      "jamessadler33@gmail.com",
+      "shanefrench@gmail.com",
+      "thoedemaker1@gmail.com",
+      "schmitt.robb@gmail.com",
+      "burns.nelson@gmail.com",
+      "robert@justmystic.com",
+      "djemurphy4@gmail.com",
+      "hoedyb@msn.com",
+      "bmahoney1105@gmail.com",
+      "17783008960@tmomail.net",
+      "mhaze70@gmail.com",
+      "kassibrownlow15@gmail.com",
+      "16103044635@tmomail.net",
+      "josef.leventon@gmail.com",
+      "14258907790@vzwpix.com",
+      "17325899570@vzwpix.com",
+      "harrison@joinbumper.com",
+      "will@trystack.io",
+      "ken@packvc.com",
+      "reetumaz@hotmail.com",
+      "alistachan05@gmail.com",
+      "eoin1589@gmail.com",
+      "16056912569@tmomail.net",
+      "omar@techranchaustin.com",
+      "12513914633@tmomail.net",
+      "acogotovac@gmail.com",
+      "cg632093@gmail.com",
+      "luckjess97@gmail.com",
+      "cammomac05@gmail.com",
+      "16478613571@vzwpix.com",
+      "savsani.preet1510@gmail.com",
+      "jasmeensagotra@gmail.com",
+      "17788610023@tmomail.net",
+      "deep.deepikarani@gmail.com",
+      "shaken.bala@gmail.com",
+      "15194760831@tmomail.net",
+      "harmanpreetsinghmukar@gmail.com",
+      "15145861886@tmomail.net",
+      "19493397564@vzwpix.com",
+      "15145819623@tmomail.net",
+      "masumpatel22599@gmail.com",
+      "14698059468@tmomail.net",
+      "14385004984@vzwpix.com",
+      "12268994889@vzwpix.com",
+      "16479159745@tmomail.net",
+      "18189707563@tmomail.net",
+      "renjuskoshy@gmail.com",
+      "16608511188@tmomail.net",
+      "deepshikha73@gmail.com",
+      "spiderpig391@gmail.com",
+      "amnaraza2340@gmail.com",
+      "harany.sivarasa@gmail.com",
+      "annedemiberg@gmail.com",
+      "viviththashrirajh@gmail.com",
+      "15088461482@tmomail.net",
+      "andreeacioc2@gmail.com",
+      "samclifford05@gmail.com",
+      "erocks2004@gmail.com",
+      "12095501250@tmomail.net",
+      "kevincraiu138@gmail.com",
+      "karmacard@icloud.com",
+      "hclarkehawkins@outlook.com",
+      "sidra.m55@icloud.com",
+      "adrianszymanski05@gmail.com",
+      "13129720191@tmomail.net",
+      "jamiahwashington515@gmail.com",
+      "grace.littlewoodd@gmail.com",
+      "harveybanks8@gmail.com",
+      "byrne.estelle@gmail.com",
+      "brxxkew2203@gmail.com",
+      "adamrogers090905@yahoo.com",
+      "adrian.jurys2007@gmail.com",
+      "bprecaj@gmail.com",
+      "hibahk17569@gmail.com",
+      "adelhaj1516@gmail.com",
+      "kballer665@gmail.com",
+      "16107621501@vzwpix.com",
+      "18322505667@vzwpix.com",
+      "jenicha.kunalan@yahoo.com",
+      "epybabasa@gmail.com",
+      "18102620235@vzwpix.com",
+      "dubeyapeksha3@gmail.com",
+      "velascoaxel131@gmail.com",
+      "rushanw12@gmail.com",
+      "iiamfadils@gmail.com",
+      "danielehimhen@gmail.com",
+      "s.goraya@gmail.com",
+      "ross.crawford777@gmail.com",
+      "ryanpattisontest@gmail.com",
+      "16475332446@tmomail.net",
+      "basketballtom1@gmail.com",
+      "15167764080@tmomail.net",
+      "15149831166@vzwpix.com",
+      "ryewylie2@icloud.com",
+      "xdjakezz@yahoo.com",
+      "13szirakimarci@gmail.com",
+      "marcus.nilsson0601@gmail.com",
+      "kiaracrhindluke@gmail.com",
+      "ibraheemkantharia16@gmail.com",
+      "mikey210605@gmail.com",
+      "kian.heneghan@gmail.com",
+      "isa.jimenezt159@gmail.com",
+      "rubadub0809@gmail.com",
+      "elanriza20@gmail.com",
+      "esapesa83@gmail.com",
+      "louiemagri@icloud.com",
+      "afifsipad@gmail.com",
+      "silkpuffgirl@gmail.com",
+      "14255919064@vzwpix.com",
+      "tinishacromwell@gmail.com",
+      "annieonceu18@gmail.com",
+      "14692613034@tmomail.net",
+      "werokrol12@gmail.com",
+      "sebastianru8@gmail.com",
+      "sebastianbuiss@gmail.com",
+      "17174042597@tmomail.net",
+      "samsyl123@icloud.com",
+      "caryscook0204@icloud.com",
+      "sabontih23@gmail.com",
+      "belltom14@gmail.com",
+      "boltukassuniukas@gmail.com",
+      "ollysanday@gmail.com",
+      "b3llacho@gmail.com",
+      "jackmnorris@icloud.com",
+      "gracehillery45@gmail.com",
+      "gml7011@icloud.com",
+      "omar.v.chavez@icloud.com",
+      "alexhopwood9876@gmail.com",
+      "rogtwist1@gmail.com",
+      "slea10@icloud.com",
+      "15597795637@tmomail.net",
+      "michaelsutcliffe73@yahoo.com",
+      "ameliaeviereilly@icloud.com",
+      "legendbeastgamer9@gmail.com",
+      "shanehersey2007@gmail.com",
+      "aaronjames@me.com",
+      "jasonkgrube@gmail.com",
+      "yakshatp06@gmail.com",
+      "srsrush@aol.com",
+      "llawa@bgsapps.co.uk",
+      "maya.breeze05@gmail.com",
+      "14036010607@tmomail.net",
+      "laurenjdaniel@gmail.com",
+      "19565215078@tmomail.net",
+      "dejerseyjacob@gmail.com",
+      "frankielvenditto@gmail.com",
+      "ytcentral2016@gmail.com",
+      "elimar2073@icloud.com",
+      "am33rah.kamran@gmail.com",
+      "omolemo135@gmail.com",
+      "12265075458@vzwpix.com",
+      "lara8rose@icloud.com",
+      "harryamoss@icloud.com",
+      "kmussington05@gmail.com",
+      "brian.crouch@becu.org",
+      "joshuatitus69420@gmail.com",
+      "jcrisser1@gmail.com",
+      "rifalalnajdy75@gmail.com",
+      "samsonsalaam@outlook.com",
+      "15625079266@tmomail.net",
+      "19512362531@tmomail.net",
+      "diggypiggy81@gmail.com",
+      "cwatkins081@gmail.com",
+      "harridurks@icloud.com",
+      "13124784834@vzwpix.com",
+      "joelmarshking1900@gmail.com",
+      "18168839035@tmomail.net",
+      "harps_sidhu@yahoo.co.uk",
+      "17327621499@tmomail.net",
+      "14782994377@vzwpix.com",
+      "17jcuthbert@wardenparkradio.net",
+      "lucaszaniecki@gmail.com",
+      "17067686360@vzwpix.com",
+      "15157325174@vzwpix.com",
+      "zazalicksdoodoo@gmail.com",
+      "oli.j.roberts@icloud.com",
+      "18123503877@tmomail.net",
+      "16026019822@vzwpix.com",
+      "17607825761@vzwpix.com",
+      "kala41150@gmail.com",
+      "lucashorswell12102007@gmail.com",
+      "t13g0436@hotmail.com",
+      "15303120723@vzwpix.com",
+      "oliverblundell@yahoo.com",
+      "14383784440@vzwpix.com",
+      "br16n.t88@gmail.com",
+      "sclarke4732@gmail.com",
+      "harisdukic8@gmail.com",
+      "kobach@uw.edu",
+      "12292203778@vzwpix.com",
+      "17802570658@vzwpix.com",
+      "14169910179@tmomail.net",
+      "malachymcintyre@gmail.com",
+      "joshua2005houston@gmail.com",
+      "sadiqosman48@hotmail.com",
+      "ta248874@gmail.com",
+      "chrisg107103@gmail.com",
+      "19728987413@tmomail.net",
+      "12676259307@tmomail.net",
+      "domcheath@gmail.com",
+      "mubarak.abroaf@gmail.com",
+      "ashercryptos@gmail.com",
+      "deathlock1274@gmail.com",
+      "13476148450@vzwpix.com",
+      "knmasama0@gmail.com",
+      "luciawright2@icloud.com",
+      "renpoppitt@gmail.com",
+      "15179905063@vzwpix.com",
+      "nsalma08@outlook.com",
+      "16106807183@tmomail.net",
+      "jenkinsjoshua963@gmail.com",
+      "mick32snow@gmail.com",
+      "rodneytamnguyen@gmail.com",
+      "daniyal160616@icloud.com",
+      "davidresendiz248@gmail.com",
+      "wrush08@yahoo.com",
+      "bennettjude5@gmail.com",
+      "19842259965@vzwpix.com",
+      "ahmed.mohamed.albashir@gmail.com",
+      "rcg8@outlook.com",
+      "17729259580@vzwpix.com",
+      "edgarthompson710@gmail.com",
+      "mlennox228@gmail.com",
+      "benjamind2412@gmail.com",
+      "18456489211@tmomail.net",
+      "13065908846@tmomail.net",
+      "mcguffogelliot22@gmail.com",
+      "jaynicholls789@icloud.com",
+      "family9865@gmail.com",
+      "aedawson23@gmail.com",
+      "17734261128@mms.uscc.net",
+      "13238728062@tmomail.net",
+      "12092718290@tmomail.net",
+      "12054542523@tmomail.net",
+    ];
 
     let children = [];
     let toBePushedInTeens = [];
-
     for (let i = 0; i < emails.length; i++) {
       children.push({
         email: `${emails[i]}`,
-        username: `${parent.username}#teen-${parentChild.teens.length + 1 + i}`,
+        username: `StackUser${parentChild.teens.length + 1 + i}`,
         mobile: `${getMobileNubmer(
           mobileNubmerTemp,
           parentChild.teens.length + 1 + i
         )}`,
-        firstName: `${parent.firstName}${parentChild.teens.length + 1 + i}`,
-        lastName: `${parent.lastName}${parentChild.teens.length + 1 + i}`,
-        password: AuthService.encryptPassword("TempTemp1"),
+        firstName: "Stack",
+        lastName: `User${parentChild.teens.length + 1 + i}`,
+        password: AuthService.encryptPassword("Stack123!"),
         type: 1,
         parentEmail: parent.email,
         parentMobile: parent.mobile,
@@ -878,15 +1120,17 @@ class UserController extends BaseController {
       let response: any = await createAccount(jwtToken, {
         type: "accounts",
         attributes: {
-          name: `${parent.firstName} ${parent.lastName} CHILD-${
-            parentChild.teens.length + 1 + i
-          }`,
+          name: `StackUser${parentChild.teens.length + 1 + i}`,
           "authorized-signature": `${parent.firstName} ${parent.lastName}`,
           "account-type": "custodial",
           "contact-id": contactId,
         },
       });
-      if (response.status === 400) return this.BadRequest(ctx, response);
+      if (response.status === 400)
+        return this.Ok(ctx, {
+          response,
+          message: `Stopped from creating acc ${i}`,
+        });
 
       let contributionResponse = await tempContribution(
         jwtToken,
@@ -899,7 +1143,10 @@ class UserController extends BaseController {
         }
       );
       if (contributionResponse.status === 400)
-        return this.BadRequest(ctx, contributionResponse);
+        return this.Ok(ctx, {
+          contributionResponse,
+          message: `Stopped from contribution ${i}`,
+        });
 
       // const currentChild = await UserTable.create(children[i]);
 
@@ -925,7 +1172,7 @@ class UserController extends BaseController {
       );
     }
 
-    return this.Ok(ctx, {});
+    return this.Ok(ctx, { message: "success" });
   }
 
   /**

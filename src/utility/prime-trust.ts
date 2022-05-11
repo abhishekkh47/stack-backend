@@ -85,7 +85,7 @@ export const createAccount = async (token, data) => {
     .catch((error) => {
       return {
         status: 400,
-        message: error.response.data,
+        message: error.response.data.errors[0].detail,
       };
     });
   return response;
@@ -118,7 +118,7 @@ export const uploadFiles = async (token, data) => {
     .catch((error) => {
       return {
         status: 400,
-        message: error.response.data,
+        message: error.response.data.errors[0].detail,
       };
     });
   return response;
@@ -246,7 +246,7 @@ export const createFundTransferMethod = async (token, data) => {
     .catch((error) => {
       return {
         status: 400,
-        message: error.response.data,
+        message: error.response.data.errors[0].detail,
       };
     });
   return response;
@@ -528,7 +528,7 @@ export const updateContacts = async (token, contactId, data) => {
     )
     .then((res) => res.data)
     .catch((error) => {
-      return { status: 400, message: error.response.data };
+      return { status: 400, message: error.response.data.errors[0].detail };
     });
   return response;
 };

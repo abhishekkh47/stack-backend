@@ -202,37 +202,36 @@ class QuizController extends BaseController {
                 "Quiz is locked. Please wait for 72 hours to unlock this quiz."
               );
             }
-          } else {
-            const quizCheckCompleted = await QuizResult.find(
-              {
-                userId: user._id,
-                topicId: reqParam.topicId,
-              },
-              {
-                _id: 0,
-                quizId: 1,
-              }
-            ).select("quizId");
-            if (quizCheckCompleted.length == 0) {
-            } else {
-              for (const quizId of quizCheckCompleted) {
-                quizIds.push(quizId.quizId);
-              }
-            }
-            const data = await QuizTable.findOne({
-              topicId: reqParam.topicId,
-              _id: { $nin: quizIds },
-            }).sort({ createdAt: 1 });
-            if (!data) {
-              return this.BadRequest(ctx, "Quiz Not Found");
-            }
-            const quizQuestionList = await QuizQuestionTable.find({
-              quizId: data._id,
-            }).select(
-              "_id quizId text answer_array points question_image question_type answer_type"
-            );
-            return this.Ok(ctx, { quizQuestionList, message: "Success" });
           }
+          const quizCheckCompleted = await QuizResult.find(
+            {
+              userId: user._id,
+              topicId: reqParam.topicId,
+            },
+            {
+              _id: 0,
+              quizId: 1,
+            }
+          ).select("quizId");
+          if (quizCheckCompleted.length == 0) {
+          } else {
+            for (const quizId of quizCheckCompleted) {
+              quizIds.push(quizId.quizId);
+            }
+          }
+          const data = await QuizTable.findOne({
+            topicId: reqParam.topicId,
+            _id: { $nin: quizIds },
+          }).sort({ createdAt: 1 });
+          if (!data) {
+            return this.BadRequest(ctx, "Quiz Not Found");
+          }
+          const quizQuestionList = await QuizQuestionTable.find({
+            quizId: data._id,
+          }).select(
+            "_id quizId text answer_array points question_image question_type answer_type"
+          );
+          return this.Ok(ctx, { quizQuestionList, message: "Success" });
         }
       }
     );

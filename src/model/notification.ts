@@ -9,14 +9,23 @@ const schema = new mongoose.Schema<INotificationSchema>(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
+      required: true,
       ref: "user",
+    },
+    title: {
+      type: mongoose.Schema.Types.String,
+      required: true,
     },
     message: {
       type: mongoose.Schema.Types.String,
       required: true,
     },
+    data: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
     /**
-     * 1 - read and 2 - unread
+     * 1 - unread and 2 - read
      */
     isRead: {
       type: mongoose.Schema.Types.Number,

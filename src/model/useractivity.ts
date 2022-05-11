@@ -35,7 +35,7 @@ const schema = new mongoose.Schema<IUserActivitySchema>(
       required: true,
     },
     /**
-     * 1 - Pending , 2 - Processed and 3 - Cancelled
+     * 1 - Pending , 2 - Processed , 3 - Rejected and 4 - Cancelled
      */
     status: {
       type: mongoose.Schema.Types.Number,

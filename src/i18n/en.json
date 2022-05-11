@@ -215,5 +215,7 @@
 	"changePrimeTrustCityRequired": "changePrimeTrustCityRequired",
 	"changePrimeTrustAddressProof_frontUnknown": "changePrimeTrustAddressProof_frontUnknown",
 	"signupValidationTaxidnoRequired": "Please enter tax id number.",
-	"signupValidationTaxidnoEmpty": "Please enter tax id number."
+	"signupValidationTaxidnoEmpty": "Please enter tax id number.",
+	"updateNewPasswordNewPasswordPattern": "updateNewPasswordNewPasswordPattern",
+	"changePrimeTrustMediaEmpty": "Please enter valid proof of address"
 }

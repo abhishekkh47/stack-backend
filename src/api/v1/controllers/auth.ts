@@ -458,10 +458,6 @@ class AuthController extends BaseController {
                 taxState: reqParam.stateId,
                 tax: reqParam.stateId,
                 city: reqParam.city,
-                screenStatus:
-                  user.type === EUserType.PARENT
-                    ? ESCREENSTATUS.UPLOAD_DOCUMENTS
-                    : ESCREENSTATUS.SIGN_UP,
               },
             }
           );
@@ -1042,7 +1038,11 @@ class AuthController extends BaseController {
   @Route({ path: "/store-user-details", method: HttpMethod.POST })
   @Auth()
   public async storeUserDetails(ctx: any) {
-    const input = ctx.request.body;
+    let input: any = ctx.request.body;
+    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     return validation.storeUserDetailsValidation(
       input,
       ctx,
@@ -1051,6 +1051,10 @@ class AuthController extends BaseController {
           const state = await StateTable.findOne({ _id: input.stateId });
           if (!state) return this.BadRequest(ctx, "Invalid State ID.");
           try {
+            input.screenStatus =
+              userExists.type === EUserType.PARENT
+                ? ESCREENSTATUS.UPLOAD_DOCUMENTS
+                : ESCREENSTATUS.SIGN_UP;
             await UserTable.findOneAndUpdate(
               { username: ctx.request.user.username },
               { $set: input }

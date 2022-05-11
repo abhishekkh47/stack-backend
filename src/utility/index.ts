@@ -10,3 +10,4 @@ export * from "./multer";
 export * from "./user";
 export * from "./coin-market-cap";
 export * from "./uploadImage";
+export * from "./notificationSend";
