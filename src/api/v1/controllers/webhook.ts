@@ -341,6 +341,9 @@ class WebHookController extends BaseController {
             updates.stateId = input["primary-address"]["region"];
             updates.address = input["primary-address"]["street-1"];
           }
+          input["date-of-birth"] = moment(input["date-of-birth"]).format(
+            "MM/DD/YYYY"
+          );
 
           if (!Object.keys(updates).length)
             return this.Ok(ctx, {

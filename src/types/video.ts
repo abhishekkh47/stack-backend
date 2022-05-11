@@ -1,12 +1,10 @@
 export interface IVideo {
   videoCategory: string;
   status: number;
-  videoList: IVideoList[];
+  data: IVideoList[];
 }
 
 export interface IVideoList {
-  title: string;
-  thumbnail: string;
-  url: string;
-  position: number;
+  coverImage: string;
+  images: string[];
 }

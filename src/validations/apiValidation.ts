@@ -157,11 +157,11 @@ export const validation = {
       }),
       fileTaxesInUS: Joi.when("type", {
         is: 2,
-        then: Joi.number().valid(0, 1).required(),
+        then: Joi.number().valid(0, 1),
       }),
       citizenOfUS: Joi.when("type", {
         is: 2,
-        then: Joi.number().valid(0, 1).required(),
+        then: Joi.number().valid(0, 1),
       }),
       taxIdNo: Joi.when("type", {
         is: 2,
@@ -400,12 +400,8 @@ export const validation = {
         .regex(/[A-Za-z0-9]/)
         .min(4)
         .required(),
-      liquidAsset: Joi.number()
-        .min(1)
-        .positive()
-        .precision(2)
-        .strict()
-        .required(),
+      liquidAsset: Joi.number().min(1).positive().precision(2).strict(),
+      // .required(),
     });
     const { error } = schema.validate(req);
     if (error)

@@ -15,7 +15,7 @@ class VideoController extends BaseController {
   @Route({ path: "/add-video", method: HttpMethod.POST })
   @Auth()
   public async addVideos(ctx: Koa.Context) {
-    await VideosTable.insertMany(ctx.request.body.videoArray);
+    await VideosTable.insertMany(ctx.request.body);
     return this.Ok(ctx, { message: "Success" });
   }
 
@@ -24,7 +24,7 @@ class VideoController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/videos", method: HttpMethod.GET })
+  @Route({ path: "/generic-reels", method: HttpMethod.GET })
   @Auth()
   public async getVideos(ctx: Koa.Context) {
     let videos: any = await VideosTable.find(
@@ -32,13 +32,12 @@ class VideoController extends BaseController {
       {
         videoCategory: 1,
         status: 1,
-        videoList: 1,
+        data: 1,
       }
     );
     if (videos.length === 0) {
       return this.Ok(ctx, { data: [], message: "Success" });
     }
-    videos = videos.filter((x) => x.videoList.length !== 0);
     return this.Ok(ctx, { data: videos, message: "Success" });
   }
 }

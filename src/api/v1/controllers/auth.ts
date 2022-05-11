@@ -256,12 +256,12 @@ class AuthController extends BaseController {
                 "Sorry We cannot find your accounts. Unable to link them"
               );
             }
-            if (reqParam.fileTaxesInUS == 0 || reqParam.citizenOfUS == 0) {
-              return this.BadRequest(
-                ctx,
-                "Sorry We are only serving US Based Citizens right now but we do plan to expand. Stay Tuned!!"
-              );
-            }
+            // if (reqParam.fileTaxesInUS == 0 || reqParam.citizenOfUS == 0) {
+            //   return this.BadRequest(
+            //     ctx,
+            //     "Sorry We are only serving US Based Citizens right now but we do plan to expand. Stay Tuned!!"
+            //   );
+            // }
             if (
               reqParam.type == EUserType.PARENT &&
               new Date(
@@ -333,9 +333,18 @@ class AuthController extends BaseController {
           user.refreshToken = refreshToken;
           await user.save();
           const token = getJwtToken(authInfo);
+          let getProfileInput: any = {
+            request: {
+              query: { token },
+              headers: {},
+              params: { id: user._id },
+            },
+          };
+          await UserController.getProfile(getProfileInput);
           return this.Ok(ctx, {
             token,
             refreshToken,
+            profileData: getProfileInput.body.data,
             message:
               /* tslint:disable-next-line */
               reqParam.type == EUserType.TEEN

@@ -11,23 +11,15 @@ const schema = new mongoose.Schema<IVideoSchema>(
      * 1 - Active , 0 - Inactive
      */
     status: { type: mongoose.Schema.Types.Number, default: 1 },
-    videoList: [
+    data: [
       {
-        title: {
-          type: mongoose.Schema.Types.String,
-          required: true,
-        },
-        thumbnail: {
+        coverImage: {
           type: mongoose.Schema.Types.String,
           default: null,
         },
-        position: {
-          type: mongoose.Schema.Types.Number,
-          required: true,
-        },
-        url: {
-          type: mongoose.Schema.Types.String,
-          required: true,
+        images: {
+          type: mongoose.Schema.Types.Array,
+          default: null,
         },
       },
     ],

@@ -7,19 +7,14 @@ import { json, form } from "co-body";
 import {
   agreementPreviews,
   createAccount,
-  createProcessorToken,
-  getPublicTokenExchange,
   kycDocumentChecks,
   Route,
   uploadFilesFetch,
-  createContributions,
   getLinkToken,
-  uploadFileS3,
   uploadIdProof,
   tempContribution,
   uploadImage,
   checkValidBase64String,
-  // uploadProfilePicture,
 } from "../../../utility";
 import {
   EUSERSTATUS,
@@ -278,7 +273,7 @@ class UserController extends BaseController {
           "contact-type": "natural_person",
           name: fullName,
           email: userExists.email,
-          "date-of-birth": userExists.dob,
+          "date-of-birth": moment(userExists.dob).format("MM/DD/YYYY"),
           "tax-id-number": userExists.taxIdNo,
           "tax-country": userExists.country,
           "ip-address": "127.0.0.2",
@@ -305,7 +300,7 @@ class UserController extends BaseController {
       data: createAccountData,
     };
     if (createAccountData.status == 400) {
-      return this.BadRequest(ctx, errorResponse);
+      return this.BadRequest(ctx, errorResponse.message);
     }
 
     /**
