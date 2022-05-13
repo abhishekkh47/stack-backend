@@ -180,9 +180,10 @@ export const agreementPreviews = async (token, data) => {
       };
     })
     .catch((error) => {
+      console.log(error.response.data);
       return {
         status: 400,
-        message: error.response.data.errors[0].detail,
+        message: error.response.data,
       };
     });
   return response;
@@ -437,6 +438,37 @@ export const getBalance = async (token, id) => {
 };
 
 /**
+ * @description This api is used to get the portfolio
+ * @param token
+ * @param id
+ * @returns {*}
+ */
+export const getAssetTotals = async (token, accountId) => {
+  const response = await axios
+    .get(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.accountAssetTotals(accountId),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
  * @description This api is used to generate a quote
  * @param token
  * @param data
@@ -518,6 +550,7 @@ export const getWireTransfer = async (token, accountId) => {
  * @returns {*}
  */
 export const updateContacts = async (token, contactId, data) => {
+  console.log(data, "data");
   const response = await axios
     .patch(
       config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.updateContacts(contactId),

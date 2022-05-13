@@ -109,36 +109,20 @@ class UserController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    const parentExists = await ParentChildTable.findOne({
+      userId: userExists._id,
+    });
+    if (!parentExists) {
+      return this.BadRequest(ctx, "User Details Not Found");
+    }
     const fullName = userExists.firstName + " " + userExists.lastName;
     const data = {
-      type: "account",
+      type: "agreement-previews",
       attributes: {
         "account-type": "custodial",
         name: fullName + " child-1",
         "authorized-signature": " ",
-        owner: {
-          "contact-type": "natural_person",
-          name: fullName,
-          email: userExists.email,
-          "date-of-birth": moment(userExists.dob).format("MM/DD/YYYY"),
-          "tax-id-number": userExists.taxIdNo,
-          "tax-country": userExists.country,
-          "ip-address": "127.0.0.2",
-          geolocation: "",
-          "primary-phone-number": {
-            country: "CA",
-            number: userExists.mobile,
-            sms: false,
-          },
-          "primary-address": {
-            "street-1": userExists.address,
-            "street-2": "",
-            "postal-code": userExists.postalCode,
-            city: userExists.city,
-            region: userExists.stateId.shortName,
-            country: userExists.country,
-          },
-        },
+        "contact-id": parentExists.contactId,
       },
     };
     /**
@@ -201,6 +185,9 @@ class UserController extends BaseController {
         message: "You have already uploaded driving license",
       });
     }
+    let firstChildExists = await UserTable.findOne({
+      _id: parentChildExists.firstChildId,
+    });
     let files = [
       { id_proof_front: requestParams.id_proof_front },
       { id_proof_back: requestParams.id_proof_back },
@@ -260,11 +247,13 @@ class UserController extends BaseController {
       return this.BadRequest(ctx, "Please add valid extension");
     }
     const fullName = userExists.firstName + " " + userExists.lastName;
+    const childName =
+      firstChildExists.firstName + " " + firstChildExists.lastName;
     const data = {
       type: "account",
       attributes: {
         "account-type": "custodial",
-        name: fullName + " child-1",
+        name: fullName + " " + childName,
         "authorized-signature": fullName,
         "webhook-config": {
           url: "http://34.216.120.156:3500/api/v1/webhook-response",
@@ -273,7 +262,7 @@ class UserController extends BaseController {
           "contact-type": "natural_person",
           name: fullName,
           email: userExists.email,
-          "date-of-birth": moment(userExists.dob).format("MM/DD/YYYY"),
+          "date-of-birth": userExists.dob,
           "tax-id-number": userExists.taxIdNo,
           "tax-country": userExists.country,
           "ip-address": "127.0.0.2",
@@ -295,12 +284,9 @@ class UserController extends BaseController {
       },
     };
     const createAccountData: any = await createAccount(jwtToken, data);
-    const errorResponse = {
-      message: "Error in creating account in prime trust",
-      data: createAccountData,
-    };
+    console.log(createAccountData, "createAccountData");
     if (createAccountData.status == 400) {
-      return this.BadRequest(ctx, errorResponse.message);
+      return this.BadRequest(ctx, createAccountData.message);
     }
 
     /**

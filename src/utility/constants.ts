@@ -35,6 +35,8 @@ export const PRIMETRUSTAPIS = {
     `v2/push-transfer-methods?account.id=${accountId}`,
   updateContacts: (contactId) => `v2/contacts/${contactId}`,
   pushTransferMethod: `v2/push-transfer-methods`,
+  accountAssetTotals: (accountId) =>
+    `v2/account-asset-totals?account.id=${accountId}`,
 };
 export const COINMARKETCAPAPIS = {
   historicalPrice: (crypto) =>
@@ -46,6 +48,7 @@ export const PLAIDAPIS = {
   getLinkToken: "link/token/create",
   publicTokenExchange: "item/public_token/exchange",
   createProcessorToken: "processor/token/create",
+  getAccounts: "accounts/get",
 };
 
 export const DROPDOWNLIST = {

@@ -13,7 +13,7 @@ class VideoController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-video", method: HttpMethod.POST })
-  @Auth()
+  // @Auth()
   public async addVideos(ctx: Koa.Context) {
     await VideosTable.insertMany(ctx.request.body);
     return this.Ok(ctx, { message: "Success" });

@@ -33,6 +33,20 @@ export const validation = {
     }
     return callback(true);
   },
+  addBankDetailsValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      publicToken: Joi.string().required(),
+      accountId: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("addBankDetails", error))
+      );
+    }
+    return callback(true);
+  },
   getQuizListValidation: (req, res, callback) => {
     const schema = Joi.object({
       topicId: Joi.string()
@@ -67,7 +81,7 @@ export const validation = {
         .required(),
       unitApt: Joi.string().allow(null).allow(""),
       postalCode: Joi.string()
-        .regex(/[A-Za-z0-9]/)
+        .regex(/^[0-9]{5}(-[0-9]{4})?$/)
         .min(4)
         .required(),
       stateId: Joi.string()
@@ -166,9 +180,7 @@ export const validation = {
       taxIdNo: Joi.when("type", {
         is: 2,
         then: Joi.string()
-          .regex(/^[0-9]*$/)
-          .min(5)
-          .max(15)
+          .regex(/^\d{9}$/)
           .required(),
       }),
     });
@@ -268,16 +280,6 @@ export const validation = {
         .positive()
         .precision(2)
         .required(),
-      depositType:
-        type == EUserType.PARENT ? Joi.number().valid(1, 2).required() : null,
-      publicToken: Joi.when("depositType", {
-        is: 1,
-        then: Joi.string().required(),
-      }),
-      accountId: Joi.when("depositType", {
-        is: 1,
-        then: Joi.string().required(),
-      }),
     });
 
     const { error } = schema.validate(req, { convert: false });
@@ -315,16 +317,6 @@ export const validation = {
   withdrawMoneyValidation: (req, res, type, callback) => {
     const schema = Joi.object({
       amount: Joi.number().min(1).positive().precision(2).required(),
-      withdrawType:
-        type == EUserType.PARENT ? Joi.number().valid(1).required() : null,
-      publicToken: Joi.when("withdrawType", {
-        is: 1,
-        then: Joi.string().required(),
-      }),
-      accountId: Joi.when("withdrawType", {
-        is: 1,
-        then: Joi.string().required(),
-      }),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -400,10 +392,8 @@ export const validation = {
         .regex(/[A-Za-z0-9]/)
         .min(4)
         .required(),
-      liquidAsset: Joi.number().min(1).positive().precision(2).strict(),
-      // .required(),
     });
-    const { error } = schema.validate(req);
+    const { error } = schema.validate(req, { allowUnknown: true });
     if (error)
       return res.throw(
         400,
@@ -414,7 +404,7 @@ export const validation = {
   updateTaxInfoRequestBodyValidation: (req, res, callabck) => {
     const schema = Joi.object({
       taxIdNo: Joi.string()
-        .regex(/^[0-9]*$/)
+        .regex(/^\d{9}$/)
         .min(5)
         .max(15)
         .required(),
@@ -496,38 +486,33 @@ export const validation = {
   changePrimeTrustValidation: (req, res, callback) => {
     const schema = Joi.object({
       "first-name": Joi.string()
+        .allow("")
         .min(2)
         .regex(/^[A-za-z]*$/),
       "last-name": Joi.string()
+        .allow("")
         .min(2)
         .regex(/^[A-za-z]*$/),
-      "date-of-birth": Joi.date().iso(),
+      "date-of-birth": Joi.alternatives([
+        Joi.date().iso(),
+        Joi.string().allow(""),
+      ]),
       "tax-id-number": Joi.string()
+        .allow("")
         .regex(/^[0-9]*$/)
         .min(5)
         .max(15),
-      "tax-state": Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+      "tax-state": Joi.string().allow(""),
       "primary-address": Joi.object({
-        city: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-        country: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-        "postal-code": Joi.string()
-          .regex(/[A-Za-z0-9]/)
-          .min(4)
-          .required(),
-        region: Joi.string()
-          .regex(/^[0-9a-fA-F]{24}$/)
-          .required(),
-        "street-1": Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      media: Joi.string(),
+        city: Joi.string().allow(""),
+        country: Joi.string().allow(""),
+        "postal-code": Joi.string().allow("").min(4),
+        region: Joi.string().allow(""),
+        "street-1": Joi.string().allow(""),
+      }).default({}),
+      media: Joi.string().allow(""),
     });
-    const { error } = schema.validate(req);
+    const { error } = schema.validate(req, { allowUnknown: true });
     if (error)
       return res.throw(
         400,

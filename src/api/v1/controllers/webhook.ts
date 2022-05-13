@@ -170,8 +170,11 @@ class WebHookController extends BaseController {
 
     const input = body;
 
-    if (input["primary-address"])
+    if (input["primary-address"]) {
       input["primary-address"] = JSON.parse(input["primary-address"]);
+    } else {
+      input["primary-address"] = {};
+    }
 
     return validation.changePrimeTrustValidation(
       input,
@@ -199,6 +202,7 @@ class WebHookController extends BaseController {
 
           // in case of proof of address file upload
           if (input.media) {
+            console.log(input.media, "input.media");
             let validBase64 = checkValidBase64String(input.media);
             if (!validBase64)
               return this.BadRequest(ctx, "Please enter valid image");
@@ -267,6 +271,7 @@ class WebHookController extends BaseController {
               ),
             };
             let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
+            console.log(uploadFile, "uploadFile");
             if (uploadFile.status == 400) uploadFileError = uploadFile.message;
             if (
               uploadFile.status == 200 &&
@@ -292,6 +297,7 @@ class WebHookController extends BaseController {
               },
             };
             let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
+            console.log(kycResponse, "kycResponse");
             if (kycResponse.status == 400)
               return this.BadRequest(ctx, kycResponse.message);
             if (
@@ -321,30 +327,57 @@ class WebHookController extends BaseController {
             };
 
             // Delete image from our server
-            try {
-              fs.unlinkSync(
-                path.join(__dirname, "../../../../uploads", imageName)
-              );
-            } catch (err) {}
+            // try {
+            //   fs.unlinkSync(
+            //     path.join(__dirname, "../../../../uploads", imageName)
+            //   );
+            // } catch (err) {}
           }
 
           const updates: any = {};
-          if (input["first-name"]) updates.firstName = input["first-name"];
-          if (input["last-name"]) updates.lastName = input["last-name"];
-          if (input["date-of-birth"]) updates.dob = input["date-of-birth"];
-          if (input["tax-id-number"]) updates.taxIdNo = input["tax-id-number"];
-          if (input["tax-state"]) updates.taxState = input["tax-state"];
-          if (input["primary-address"]) {
-            updates.city = input["primary-address"]["city"];
-            updates.country = input["primary-address"]["country"];
-            updates.postalCode = input["primary-address"]["postal-code"];
-            updates.stateId = input["primary-address"]["region"];
-            updates.address = input["primary-address"]["street-1"];
+          const requestPrimeTrust = {};
+          if (input["first-name"]) {
+            updates.firstName = input["first-name"];
+            requestPrimeTrust["first-name"] = input["first-name"];
           }
-          input["date-of-birth"] = moment(input["date-of-birth"]).format(
-            "MM/DD/YYYY"
-          );
-
+          if (input["last-name"]) {
+            updates.lastName = input["last-name"];
+            requestPrimeTrust["last-name"] = input["last-name"];
+          }
+          if (input["date-of-birth"]) {
+            updates.dob = input["date-of-birth"];
+            requestPrimeTrust["date-of-birth"] = input["date-of-birth"];
+          }
+          if (input["tax-id-number"]) {
+            updates.taxIdNo = input["tax-id-number"];
+            requestPrimeTrust["tax-id-number"] = input["tax-id-number"];
+          }
+          if (input["tax-state"]) {
+            updates.taxState = input["tax-state"];
+            requestPrimeTrust["tax-state"] = input["tax-state"];
+          }
+          if (
+            input["primary-address"] &&
+            Object.keys(input["primary-address"]).length > 0
+          ) {
+            requestPrimeTrust["primary-address"] = {};
+            updates.city = input["primary-address"]["city"];
+            requestPrimeTrust["primary-address"]["city"] =
+              input["primary-address"]["city"];
+            updates.country = input["primary-address"]["country"];
+            requestPrimeTrust["primary-address"]["country"] =
+              input["primary-address"]["country"];
+            updates.postalCode = input["primary-address"]["postal-code"];
+            requestPrimeTrust["primary-address"]["postal-code"] =
+              input["primary-address"]["postal-code"];
+            updates.stateId = input["primary-address"]["region"];
+            requestPrimeTrust["primary-address"]["region"] =
+              input["primary-address"]["region"];
+            updates.address = input["primary-address"]["street-1"];
+            requestPrimeTrust["primary-address"]["street-1"] =
+              input["primary-address"]["street-1"];
+          }
+          console.log(requestPrimeTrust, "requestPrimeTrust");
           if (!Object.keys(updates).length)
             return this.Ok(ctx, {
               message: "Address Proof uploaded to prime trust successfully.",
@@ -361,16 +394,19 @@ class WebHookController extends BaseController {
             if (!taxState)
               return this.BadRequest(ctx, "Invalid Tax-State-ID entered");
             input["tax-state"] = taxState.shortName;
+            requestPrimeTrust["tax-state"] = taxState.shortName;
           }
-
-          if (input["primary-address"]) {
+          if (
+            input["primary-address"] &&
+            Object.keys(input["primary-address"]).length > 0
+          ) {
             let state = await StateTable.findOne({
               _id: input["primary-address"].region,
             });
             if (!state) return this.BadRequest(ctx, "Invalid State-ID entered");
             input["primary-address"].region = state.shortName;
+            requestPrimeTrust["primary-address"].region = state.shortName;
           }
-
           let response = await updateContacts(
             ctx.request.primeTrustToken,
             contactId,
@@ -378,13 +414,12 @@ class WebHookController extends BaseController {
               type: "contacts",
               attributes: {
                 "contact-type": "natural_person",
-                ...input,
+                ...requestPrimeTrust,
               },
             }
           );
           if (response.status === 400)
             return this.BadRequest(ctx, response.message);
-
           await UserTable.updateOne(
             { _id: ctx.request.user._id },
             {

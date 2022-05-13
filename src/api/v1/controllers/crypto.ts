@@ -1,10 +1,16 @@
 import Koa from "koa";
 import BaseController from "./base";
 import { validation } from "../../../validations/apiValidation";
-import { getAssets, Route } from "../../../utility";
-import { HttpMethod } from "../../../types";
-import { CryptoPriceTable, CryptoTable } from "../../../model";
+import { getAssetTotals, Route } from "../../../utility";
+import { ETransactionType, HttpMethod } from "../../../types";
+import {
+  CryptoPriceTable,
+  CryptoTable,
+  ParentChildTable,
+  TransactionTable,
+} from "../../../model";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
+import { ObjectId } from "mongodb";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
@@ -33,11 +39,110 @@ class CryptocurrencyController extends BaseController {
   @Route({ path: "/get-crypto", method: HttpMethod.GET })
   @Auth()
   public async getCrypto(ctx: any) {
+    let query = {};
+    if (ctx.request.query.sell && ctx.request.query.sell == "true") {
+      let portFolio = await TransactionTable.aggregate([
+        {
+          $match: {
+            userId: new ObjectId(ctx.request.user._id),
+            type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+          },
+        },
+        {
+          $group: {
+            _id: "$cryptoId",
+            cryptoId: {
+              $first: "$cryptoId",
+            },
+            type: {
+              $first: "$type",
+            },
+            totalSum: {
+              $sum: "$unitCount",
+            },
+            totalAmount: {
+              $sum: "$amount",
+            },
+            totalAmountMod: {
+              $sum: "$amountMod",
+            },
+          },
+        },
+        {
+          $redact: {
+            $cond: {
+              if: {
+                $gt: ["$totalSum", 0],
+              },
+              then: "$$KEEP",
+              else: "$$PRUNE",
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "cryptos",
+            localField: "cryptoId",
+            foreignField: "_id",
+            as: "cryptoData",
+          },
+        },
+        {
+          $unwind: {
+            path: "$cryptoData",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "cryptoprices",
+            localField: "cryptoId",
+            foreignField: "cryptoId",
+            as: "currentPriceDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$currentPriceDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            value: {
+              $multiply: ["$currentPriceDetails.currentPrice", "$totalSum"],
+            },
+          },
+        },
+        {
+          $addFields: {
+            totalGainLoss: {
+              $add: ["$value", "$totalAmountMod"],
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            cryptoId: 1,
+          },
+        },
+      ]).exec();
+      console.log(portFolio, "portFolio.length");
+      if (portFolio.length > 0) {
+        portFolio = await portFolio.map((x) => x.cryptoId);
+        console.log(portFolio, "portFolio");
+        query = { _id: { $in: portFolio } };
+      }
+    }
     return this.Ok(ctx, {
-      data: await CryptoTable.find(
-        {},
-        { name: 1, symbol: 1, assetId: 1, image: 1 }
-      ),
+      data: await CryptoTable.find(query, {
+        _id: 1,
+        name: 1,
+        symbol: 1,
+        assetId: 1,
+        image: 1,
+      }),
     });
   }
 

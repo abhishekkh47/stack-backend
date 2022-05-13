@@ -217,5 +217,10 @@
 	"signupValidationTaxidnoRequired": "Please enter tax id number.",
 	"signupValidationTaxidnoEmpty": "Please enter tax id number.",
 	"updateNewPasswordNewPasswordPattern": "updateNewPasswordNewPasswordPattern",
-	"changePrimeTrustMediaEmpty": "Please enter valid proof of address"
+	"changePrimeTrustMediaEmpty": "Please enter valid proof of address",
+	"changePrimeTrustLast-namePattern": "changePrimeTrustLast-namePattern",
+	"addBankDetailsPublictokenRequired": "Please enter public token.",
+	"addBankDetailsPublictokenEmpty": "Please enter public token.",
+	"addBankDetailsAccountidRequired": "Please enter account id.",
+	"addBankDetailsAccountidEmpty": "Please enter account id."
 }

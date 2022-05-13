@@ -108,3 +108,34 @@ export const createProcessorToken = async (
     });
   return response;
 };
+
+/**
+ * @description This api is used to get account by plaid
+ * @param accessToken
+ * @param accountId
+ * @returns {*}
+ */
+export const getAccounts = async (accessToken: string) => {
+  const request = {
+    client_id: config.PLAID_CLIENT_ID,
+    secret: config.PLAID_SECRET,
+    access_token: accessToken,
+  };
+  const response = await axios
+    .post(config.PLAID_ENV + PLAIDAPIS.getAccounts, request)
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      if (error) {
+        return {
+          status: error.response.status,
+          message: error.response.data.error_message,
+        };
+      }
+    });
+  return response;
+};
