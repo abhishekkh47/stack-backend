@@ -781,7 +781,7 @@ class UserController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/temp", method: HttpMethod.POST })
+  @Route({ path: "/user-waitlist", method: HttpMethod.POST })
   @PrimeTrustJWT()
   public async temp(ctx: any) {
     const getMobileNubmer = (template, number) => {
