@@ -41,7 +41,6 @@ import {
   Notification,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
-import { UserWalletTable } from "../../../model/userbalance";
 import { ObjectId } from "mongodb";
 import moment from "moment";
 import { NOTIFICATION } from "../../../utility/constants";

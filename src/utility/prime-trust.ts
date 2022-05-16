@@ -615,7 +615,7 @@ export const wireTransfer = async (token, data) => {
     )
     .then((res) => res.data)
     .catch((error) => {
-      return { status: 400, message: error.response.data };
+      return { status: 400, message: error.response.data.errors[0].detail };
     });
   return response;
 };

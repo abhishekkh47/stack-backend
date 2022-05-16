@@ -253,7 +253,7 @@ class UserController extends BaseController {
       type: "account",
       attributes: {
         "account-type": "custodial",
-        name: fullName + " " + childName,
+        name: childName + " " + fullName,
         "authorized-signature": fullName,
         "webhook-config": {
           url: "http://34.216.120.156:3500/api/v1/webhook-response",

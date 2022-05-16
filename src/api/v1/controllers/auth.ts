@@ -10,6 +10,7 @@ import {
   hashString,
   generateTempPassword,
   getRefreshToken,
+  createAccount,
 } from "../../../utility";
 import BaseController from "./base";
 import {
@@ -17,12 +18,13 @@ import {
   EOTPTYPE,
   EOTPVERIFICATION,
   ESCREENSTATUS,
+  EUSERSTATUS,
   EUserType,
   HttpMethod,
   IUser,
 } from "../../../types";
 import { AuthService } from "../../../services";
-import { Auth } from "../../../middleware";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { validation } from "../../../validations/apiValidation";
 import {
   UserTable,
@@ -156,7 +158,8 @@ class AuthController extends BaseController {
   }
 
   @Route({ path: "/signup", method: HttpMethod.POST })
-  public async handleSignup(ctx: Koa.Context) {
+  @PrimeTrustJWT()
+  public async handleSignup(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.signupValidation(
       reqParam,
@@ -164,6 +167,9 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           let childExists = null;
+          let accountId = null;
+          let parentId = null;
+          let accountNumber = null;
           const childArray = [];
           let user = await AuthService.findUserByEmail(reqParam.email);
           if (user) {
@@ -209,6 +215,60 @@ class AuthController extends BaseController {
                 ctx,
                 "This parent email is used by some other user as username"
               );
+            }
+            let checkParentExists = await UserTable.findOne({
+              email: reqParam.parentEmail,
+              type: EUserType.PARENT,
+            });
+            if (
+              checkParentExists &&
+              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              let parentTable = await ParentChildTable.findOne({
+                userId: checkParentExists._id,
+              });
+              if (!parentTable) {
+                return this.BadRequest(ctx, "Account Details Not Found");
+              }
+              parentId = parentTable._id;
+              /**
+               * Create Prime Trust Account for other child as well
+               * TODO
+               */
+              const data = {
+                type: "account",
+                attributes: {
+                  "account-type": "custodial",
+                  name:
+                    reqParam.firstName +
+                    " " +
+                    reqParam.lastName +
+                    "-" +
+                    checkParentExists.firstName +
+                    " " +
+                    checkParentExists.lastName +
+                    "-" +
+                    parentTable.contactId,
+                  "authorized-signature":
+                    checkParentExists.firstName +
+                    " " +
+                    checkParentExists.lastName,
+                  "webhook-config": {
+                    url: "http://34.216.120.156:3500/api/v1/webhook-response",
+                  },
+                  "contact-id": parentTable.contactId,
+                },
+              };
+              const createAccountData: any = await createAccount(
+                ctx.request.primeTrustToken,
+                data
+              );
+              console.log(createAccountData, "createAccountData");
+              if (createAccountData.status == 400) {
+                return this.BadRequest(ctx, createAccountData.message);
+              }
+              accountNumber = createAccountData.data.data.attributes.number;
+              accountId = createAccountData.data.data.id;
             }
             /**
              * Send sms as of now to parent for invting to stack
@@ -326,6 +386,26 @@ class AuthController extends BaseController {
               firstChildId: childExists._id,
               teens: childArray,
             });
+          } else {
+            if (accountId && accountNumber) {
+              /**
+               * TODO
+               */
+              await ParentChildTable.updateOne(
+                {
+                  _id: parentId,
+                },
+                {
+                  $push: {
+                    teens: {
+                      childId: user._id,
+                      accountId: accountId,
+                      accountNumber: accountNumber,
+                    },
+                  },
+                }
+              );
+            }
           }
 
           const authInfo = AuthService.getJwtAuthInfo(user);
