@@ -8,6 +8,7 @@ export interface IParentChild {
   processorToken: string;
   accessToken: string;
   proofOfAddressId: string;
+  pushTransferId: string;
   kycDocumentId: string;
   firstChildId: mongoose.Schema.Types.ObjectId;
   teens: [];

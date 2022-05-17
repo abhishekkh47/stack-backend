@@ -243,15 +243,15 @@ class AuthController extends BaseController {
                     reqParam.firstName +
                     " " +
                     reqParam.lastName +
-                    "-" +
+                    " - " +
                     checkParentExists.firstName +
                     " " +
                     checkParentExists.lastName +
-                    "-" +
+                    " - " +
                     parentTable.contactId,
                   "authorized-signature":
                     checkParentExists.firstName +
-                    " " +
+                    " - " +
                     checkParentExists.lastName,
                   "webhook-config": {
                     url: "http://34.216.120.156:3500/api/v1/webhook-response",
@@ -1142,7 +1142,7 @@ class AuthController extends BaseController {
           try {
             input.screenStatus =
               userExists.type === EUserType.PARENT
-                ? ESCREENSTATUS.UPLOAD_DOCUMENTS
+                ? ESCREENSTATUS.ACKNOWLEDGE_SCREEN
                 : ESCREENSTATUS.SIGN_UP;
             await UserTable.findOneAndUpdate(
               { username: ctx.request.user.username },

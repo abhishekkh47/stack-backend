@@ -12,6 +12,7 @@ import {
   getWireTransfer,
   getContactId,
   wireTransfer,
+  getPushTransferMethods,
   sendNotification,
   getAccounts,
 } from "../../../utility";
@@ -1397,7 +1398,10 @@ class TradingController extends BaseController {
       return this.BadRequest(ctx, fetchBalance.message);
     }
     const balance = fetchBalance.data.data[0].attributes.disbursable;
-    if (balance < activity.currencyValue) {
+    if (
+      activity.action != EAction.DEPOSIT &&
+      balance < activity.currencyValue
+    ) {
       return this.BadRequest(
         ctx,
         "You dont have sufficient balance to perform the operarion"
@@ -1439,7 +1443,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_WITHDRAW} of ${activity.currencyValue}$`,
+            message: `${messages.APPROVE_DEPOSIT} of ${activity.currencyValue}$`,
           }
         );
         await TransactionTable.create({
@@ -1708,18 +1712,45 @@ class TradingController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async wireTransfer(ctx: any) {
+    const parentChildExists = await ParentChildTable.findOne({
+      userId: ctx.request.user._id,
+    });
+    if (!parentChildExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (parentChildExists.pushTransferId) {
+      const getPushInstruction: any = await getPushTransferMethods(
+        ctx.request.primeTrustToken,
+        parentChildExists.pushTransferId
+      );
+      return this.Ok(ctx, {
+        data: getPushInstruction.data.data.attributes["push-instructions"],
+      });
+    }
     let accountId = await getAccountId(ctx.request.user._id);
     if (!accountId) return this.BadRequest(ctx, "AccountId not found");
     let contactId = await getContactId(ctx.request.user._id);
     if (!contactId) return this.BadRequest(ctx, "ContactId not found");
-    let response = await wireTransfer(ctx.request.primeTrustToken, {
+    let response: any = await wireTransfer(ctx.request.primeTrustToken, {
       type: "push-transfer-methods",
       attributes: {
-        "account-id": accountId,
-        "contact-id": contactId,
+        "account-id": "3e28b8fe-0601-4c2f-be08-de07e6e1112e",
+        "contact-id": "108de7d2-ff7a-4e7d-aa18-b1020fcde27e",
       },
     });
-    return this.Ok(ctx, { data: response });
+    if (response.status == 400) {
+      return this.BadRequest(ctx, response.message);
+    }
+    console.log(response);
+    await ParentChildTable.updateOne(
+      { userId: ctx.request.user._id },
+      {
+        $set: { pushTransferId: response.data.data.id },
+      }
+    );
+    return this.Ok(ctx, {
+      data: response.data.data.attributes["push-instructions"],
+    });
   }
 }
 

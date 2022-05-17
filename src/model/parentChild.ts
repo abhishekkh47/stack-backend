@@ -39,6 +39,10 @@ const schema = new mongoose.Schema<IParentChildType>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    pushTransferId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     firstChildId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",

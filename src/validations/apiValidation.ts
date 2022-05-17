@@ -111,7 +111,7 @@ export const validation = {
     const schema = Joi.object().keys({
       username: Joi.string()
         .min(5)
-        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
+        .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/)
         .required(),
     });
     const { error } = schema.validate(req);
@@ -254,7 +254,7 @@ export const validation = {
     const schema = Joi.object({
       username: Joi.string()
         .min(5)
-        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
+        .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/)
         .required(),
       tempPassword: Joi.string().required(),
       new_password: Joi.string()

@@ -37,6 +37,7 @@ export const PRIMETRUSTAPIS = {
   pushTransferMethod: `v2/push-transfer-methods`,
   accountAssetTotals: (accountId) =>
     `v2/account-asset-totals?account.id=${accountId}`,
+  pushTransferMethodGet: (id) => `v2/push-transfer-methods/${id}`,
 };
 export const COINMARKETCAPAPIS = {
   historicalPrice: (crypto) =>

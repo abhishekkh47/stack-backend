@@ -613,7 +613,32 @@ export const wireTransfer = async (token, data) => {
       { data },
       { headers: { Authorization: `Bearer ${token}` } }
     )
-    .then((res) => res.data)
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return { status: 400, message: error.response.data.errors[0].detail };
+    });
+  return response;
+};
+
+/**
+ * @description
+ * @param token
+ * @param data
+ * @returns
+ */
+export const getPushTransferMethods = async (token, id) => {
+  const response = await axios
+    .get(config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.pushTransferMethodGet(id), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => {
+      return { status: 200, data: res.data };
+    })
     .catch((error) => {
       return { status: 400, message: error.response.data.errors[0].detail };
     });
