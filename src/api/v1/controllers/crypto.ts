@@ -41,10 +41,13 @@ class CryptocurrencyController extends BaseController {
   public async getCrypto(ctx: any) {
     let query = {};
     if (ctx.request.query.sell && ctx.request.query.sell == "true") {
+      if (!ctx.request.query.childId) {
+        return this.BadRequest(ctx, "Child Id Details Doesn't Exists");
+      }
       let portFolio = await TransactionTable.aggregate([
         {
           $match: {
-            userId: new ObjectId(ctx.request.user._id),
+            userId: new ObjectId(ctx.request.query.childId),
             type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
           },
         },

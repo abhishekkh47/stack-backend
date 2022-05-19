@@ -143,8 +143,11 @@ class TradingController extends BaseController {
     }
     const query =
       userExists.type == EUserType.PARENT
-        ? { userId: ctx.request.user._id }
+        ? reqParam.childId
+          ? { "teens.childId": reqParam.childId }
+          : { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
+    console.log(query, "query");
     let parentDetails: any = await ParentChildTable.findOne(query);
     if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
     return validation.addDepositValidation(
@@ -196,9 +199,10 @@ class TradingController extends BaseController {
               message: `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
             });
           }
-          const accountIdDetails = await parentDetails.teens.find(
-            (x: any) =>
-              x.childId.toString() == parentDetails.firstChildId.toString()
+          const accountIdDetails = await parentDetails.teens.find((x: any) =>
+            reqParam.childId
+              ? x.childId.toString() == reqParam.childId.toString()
+              : x.childId.toString() == parentDetails.firstChildId.toString()
           );
           if (!accountIdDetails) {
             return this.BadRequest(ctx, "Account Details Not Found");
@@ -228,9 +232,9 @@ class TradingController extends BaseController {
             return this.BadRequest(ctx, contributions.message);
           }
           await UserActivityTable.create({
-            userId: userExists._id,
-            userType: userExists.type,
-            message: `${messages.DEPOSIT} of $${reqParam.amount}`,
+            userId: reqParam.childId ? reqParam.childId : userExists._id,
+            userType: reqParam.childId ? EUserType.TEEN : userExists.type,
+            message: `${messages.APPROVE_DEPOSIT} of $${reqParam.amount}`,
             currencyType: null,
             currencyValue: reqParam.amount,
             action: EAction.DEPOSIT,
@@ -355,13 +359,17 @@ class TradingController extends BaseController {
            */
           const query =
             userExists.type == EUserType.PARENT
-              ? { userId: ctx.request.user._id }
+              ? reqParam.childId
+                ? { "teens.childId": reqParam.childId }
+                : { userId: ctx.request.user._id }
               : { "teens.childId": ctx.request.user._id };
           let parentDetails: any = await ParentChildTable.findOne(query);
           if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
           const accountIdDetails = await parentDetails.teens.find((x: any) =>
             userExists.type == EUserType.PARENT
-              ? x.childId.toString() == parentDetails.firstChildId.toString()
+              ? reqParam.childId
+                ? x.childId.toString() == reqParam.childId.toString()
+                : x.childId.toString() == parentDetails.firstChildId.toString()
               : x.childId.toString() == ctx.request.user._id.toString()
           );
           if (!accountIdDetails) {
@@ -482,9 +490,9 @@ class TradingController extends BaseController {
               return this.BadRequest(ctx, disbursement.message);
             }
             await UserActivityTable.create({
-              userId: userExists._id,
-              userType: userExists.type,
-              message: `${messages.WITHDRAW} of $${reqParam.amount}`,
+              userId: reqParam.childId ? reqParam.childId : userExists._id,
+              userType: reqParam.childId ? EUserType.TEEN : userExists.type,
+              message: `${messages.APPROVE_WITHDRAW} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.WITHDRAW,
@@ -632,21 +640,29 @@ class TradingController extends BaseController {
   @PrimeTrustJWT()
   public async checkBalance(ctx: any) {
     const user = ctx.request.user;
+    const childId = ctx.request.query.childId;
+    if (!childId) {
+      return this.BadRequest(ctx, "Child Details Doesn't Exists");
+    }
     const jwtToken = ctx.request.primeTrustToken;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const query =
-      userExists.type == EUserType.PARENT
-        ? { userId: ctx.request.user._id }
-        : { "teens.childId": ctx.request.user._id };
+    // const query =
+    //   userExists.type == EUserType.PARENT
+    //     ? { userId: ctx.request.user._id }
+    //     : { "teens.childId": ctx.request.user._id };
+    const query = { "teens.childId": childId };
     let parent: any = await ParentChildTable.findOne(query);
     if (!parent) return this.BadRequest(ctx, "Invalid User");
-    const accountIdDetails = await parent.teens.find((x: any) =>
-      userExists.type == EUserType.PARENT
-        ? parent.firstChildId.toString()
-        : x.childId.toString() == ctx.request.user._id.toString()
+    // const accountIdDetails = await parent.teens.find((x: any) =>
+    //   userExists.type == EUserType.PARENT
+    //     ? parent.firstChildId.toString()
+    //     : x.childId.toString() == ctx.request.user._id.toString()
+    // );
+    const accountIdDetails = await parent.teens.find(
+      (x: any) => x.childId.toString() == childId.toString()
     );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
@@ -687,13 +703,17 @@ class TradingController extends BaseController {
       }
       const query =
         userExists.type == EUserType.PARENT
-          ? { userId: ctx.request.user._id }
+          ? reqParam.childId
+            ? { "teens.childId": reqParam.childId }
+            : { userId: ctx.request.user._id }
           : { "teens.childId": ctx.request.user._id };
       let parent: any = await ParentChildTable.findOne(query);
       if (!parent) return this.BadRequest(ctx, "Invalid User");
       const accountIdDetails = await parent.teens.find((x: any) =>
         userExists.type == EUserType.PARENT
-          ? x.childId.toString() == parent.firstChildId.toString()
+          ? reqParam.childId
+            ? x.childId.toString() == reqParam.childId.toString()
+            : x.childId.toString() == parent.firstChildId.toString()
           : x.childId.toString() == ctx.request.user._id.toString()
       );
       if (!accountIdDetails) {
@@ -801,8 +821,11 @@ class TradingController extends BaseController {
       }
 
       const activity = await UserActivityTable.create({
-        userId: user._id,
-        message: `${messages.BUY} $${amount} in ${crypto.name}`,
+        userId: reqParam.childId ? reqParam.childId : user._id,
+        message:
+          userType == EUserType.PARENT
+            ? `${messages.APPROVE_BUY} $${amount} in ${crypto.name}`
+            : `${messages.BUY} $${amount} in ${crypto.name}`,
         action: EAction.BUY_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
@@ -864,7 +887,9 @@ class TradingController extends BaseController {
     }
     const query =
       userExists.type == EUserType.PARENT
-        ? { userId: ctx.request.user._id }
+        ? reqParam.childId
+          ? { "teens.childId": reqParam.childId }
+          : { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
     let parent: any = await ParentChildTable.findOne(query);
     if (!parent) return this.BadRequest(ctx, "Invalid User");
@@ -876,7 +901,11 @@ class TradingController extends BaseController {
         type: ETransactionType.BUY,
         cryptoId: crypto._id,
         userId:
-          userExists.type == EUserType.PARENT ? parent.firstChildId : user._id,
+          userExists.type == EUserType.PARENT
+            ? reqParam.childId
+              ? reqParam.childId
+              : parent.firstChildId
+            : user._id,
       });
       if (!transactionExists) {
         return this.BadRequest(
@@ -886,7 +915,10 @@ class TradingController extends BaseController {
       }
       const activity = await UserActivityTable.create({
         userId: user._id,
-        message: `${messages.SELL} $${amount} in ${crypto.name}`,
+        message:
+          userExists.type === EUserType.TEEN
+            ? `${messages.SELL} $${amount} in ${crypto.name}`
+            : `${messages.APPROVE_SELL} $${amount} in ${crypto.name}`,
         action: EAction.SELL_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
@@ -898,8 +930,10 @@ class TradingController extends BaseController {
             : EStatus.PROCESSED,
       });
       if (userExists.type === EUserType.PARENT) {
-        const accountIdDetails = await parent.teens.find(
-          (x: any) => x.childId.toString() == parent.firstChildId.toString()
+        const accountIdDetails = await parent.teens.find((x: any) =>
+          reqParam.childId
+            ? x.childId.toString() == reqParam.childId.toString()
+            : x.childId.toString() == parent.firstChildId.toString()
         );
         if (!accountIdDetails) {
           return this.BadRequest(ctx, "Account Details Not Found");
@@ -1734,8 +1768,8 @@ class TradingController extends BaseController {
     let response: any = await wireTransfer(ctx.request.primeTrustToken, {
       type: "push-transfer-methods",
       attributes: {
-        "account-id": "3e28b8fe-0601-4c2f-be08-de07e6e1112e",
-        "contact-id": "108de7d2-ff7a-4e7d-aa18-b1020fcde27e",
+        "account-id": accountId,
+        "contact-id": contactId,
       },
     });
     if (response.status == 400) {

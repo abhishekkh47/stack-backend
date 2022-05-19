@@ -280,6 +280,7 @@ export const validation = {
         .positive()
         .precision(2)
         .required(),
+      childId: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
     });
 
     const { error } = schema.validate(req, { convert: false });
@@ -317,6 +318,9 @@ export const validation = {
   withdrawMoneyValidation: (req, res, type, callback) => {
     const schema = Joi.object({
       amount: Joi.number().min(1).positive().precision(2).required(),
+      childId: Joi.string()
+        .allow("")
+        .regex(/^[0-9a-fA-F]{24}$/),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -333,6 +337,9 @@ export const validation = {
       cryptoId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
+      childId: Joi.string()
+        .allow("")
+        .regex(/^[0-9a-fA-F]{24}$/),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -346,6 +353,9 @@ export const validation = {
       cryptoId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
+      childId: Joi.string()
+        .allow("")
+        .regex(/^[0-9a-fA-F]{24}$/),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -428,6 +438,7 @@ export const validation = {
       email: Joi.string().email().required(),
     });
     const { error } = schema.validate(req);
+
     if (error)
       return res.throw(
         400,
@@ -511,6 +522,8 @@ export const validation = {
         "street-1": Joi.string().allow(""),
       }).default({}),
       media: Joi.string().allow(""),
+      id_proof_front: Joi.string().allow(""),
+      id_proof_back: Joi.string().allow(""),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error)

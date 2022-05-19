@@ -164,7 +164,7 @@ class WebHookController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async changeDataIntoPrimeTrust(ctx: any) {
-    const body = await json(ctx, { limit: "150mb" });
+    const body = await form(ctx, { limit: "150mb" });
     if (!Object.keys(body).length)
       return this.BadRequest(ctx, "Invalid Request.");
 
@@ -181,6 +181,24 @@ class WebHookController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          const jwtToken = ctx.request.primeTrustToken;
+          const user = ctx.request.user;
+
+          /**
+           * Validations to be done
+           */
+          const userExists: any = await UserTable.findOne({
+            _id: user._id,
+          }).populate("stateId", ["name", "shortName"]);
+          if (!userExists || userExists.type == EUserType.TEEN) {
+            return this.BadRequest(ctx, "User Not Found");
+          }
+          const parentChildExists = await ParentChildTable.findOne({
+            userId: user._id,
+          });
+          if (!parentChildExists) {
+            return this.BadRequest(ctx, "User Not Found");
+          }
           let existingStatus = (
             await UserTable.findOne(
               { _id: ctx.request.user._id },
@@ -202,7 +220,6 @@ class WebHookController extends BaseController {
 
           // in case of proof of address file upload
           if (input.media) {
-            console.log(input.media, "input.media");
             let validBase64 = checkValidBase64String(input.media);
             if (!validBase64)
               return this.BadRequest(ctx, "Please enter valid image");
@@ -230,25 +247,6 @@ class WebHookController extends BaseController {
               decodedImage,
               "base64"
             );
-
-            const user = ctx.request.user;
-            const jwtToken = ctx.request.primeTrustToken;
-
-            /**
-             * Validations to be done
-             */
-            const userExists: any = await UserTable.findOne({
-              _id: user._id,
-            }).populate("stateId", ["name", "shortName"]);
-            if (!userExists || userExists.type == EUserType.TEEN) {
-              return this.BadRequest(ctx, "User Not Found");
-            }
-            const parentChildExists = await ParentChildTable.findOne({
-              userId: user._id,
-            });
-            if (!parentChildExists) {
-              return this.BadRequest(ctx, "User Not Found");
-            }
             const accountIdDetails: any = await parentChildExists.teens.find(
               (x: any) =>
                 x.childId.toString() ==
@@ -271,7 +269,6 @@ class WebHookController extends BaseController {
               ),
             };
             let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-            console.log(uploadFile, "uploadFile");
             if (uploadFile.status == 400) uploadFileError = uploadFile.message;
             if (
               uploadFile.status == 200 &&
@@ -281,30 +278,6 @@ class WebHookController extends BaseController {
             if (uploadFileError) return this.BadRequest(ctx, uploadFileError);
 
             addressDocumentId = uploadFile.message.data.id;
-            /**
-             * Checking the kyc document checks
-             */
-            const kycData = {
-              type: "kyc-document-checks",
-              attributes: {
-                "contact-id": parentChildExists.contactId,
-                "uploaded-document-id": addressDocumentId,
-                "kyc-document-type": "residence_permit",
-                identity: true,
-                "identity-photo": true,
-                "proof-of-address": true,
-                "kyc-document-country": "US",
-              },
-            };
-            let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
-            console.log(kycResponse, "kycResponse");
-            if (kycResponse.status == 400)
-              return this.BadRequest(ctx, kycResponse.message);
-            if (
-              kycResponse.status == 200 &&
-              kycResponse.data.errors != undefined
-            )
-              return this.BadRequest(ctx, kycResponse.message);
             /**
              * Updating the info in parent child table
              */
@@ -316,22 +289,175 @@ class WebHookController extends BaseController {
               {
                 $set: {
                   proofOfAddressId: addressDocumentId,
-                  kycDocumentId: kycResponse.data.data.id,
                 },
               }
             );
             successResponse.uploadAddressProofReponse = {
-              data: kycResponse.data,
               message:
                 "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
             };
+          }
 
-            // Delete image from our server
-            // try {
-            //   fs.unlinkSync(
-            //     path.join(__dirname, "../../../../uploads", imageName)
-            //   );
-            // } catch (err) {}
+          // in case of driving license file upload
+          if (input.id_proof_front && input.id_proof_back) {
+            let validBase64Front = await checkValidBase64String(
+              input.id_proof_front
+            );
+            if (!validBase64Front) {
+              return this.BadRequest(ctx, "Please enter valid front image");
+            }
+            let validBase64Back = await checkValidBase64String(
+              input.id_proof_back
+            );
+            if (!validBase64Back) {
+              return this.BadRequest(ctx, "Please enter valid back image");
+            }
+            let files = [
+              { id_proof_front: input.id_proof_front },
+              { id_proof_back: input.id_proof_back },
+            ];
+            /**
+             * Upload image front and back accordingly
+             */
+            let validExtensionExists = false;
+            let newArrayFiles = [];
+            for await (let identificationFile of files) {
+              const extension =
+                identificationFile.id_proof_front &&
+                identificationFile.id_proof_front !== ""
+                  ? identificationFile.id_proof_front
+                      .split(";")[0]
+                      .split("/")[1]
+                  : identificationFile.id_proof_back &&
+                    identificationFile.id_proof_back !== ""
+                  ? identificationFile.id_proof_back.split(";")[0].split("/")[1]
+                  : "";
+              const imageName =
+                identificationFile.id_proof_front &&
+                identificationFile.id_proof_front !== ""
+                  ? `id_proof_front_${moment().unix()}.${extension}`
+                  : `id_proof_back_${moment().unix()}.${extension}`;
+              const imageExtArr = ["jpg", "jpeg", "png"];
+              if (imageName && !imageExtArr.includes(extension)) {
+                validExtensionExists = true;
+                break;
+              }
+              const decodedImage = Buffer.from(
+                identificationFile.id_proof_front
+                  ? identificationFile.id_proof_front.replace(
+                      /^data:image\/\w+;base64,/,
+                      ""
+                    )
+                  : identificationFile.id_proof_back.replace(
+                      /^data:image\/\w+;base64,/,
+                      ""
+                    ),
+                "base64"
+              );
+              if (!fs.existsSync(path.join(__dirname, "../../../../uploads"))) {
+                fs.mkdirSync(path.join(__dirname, "../../../../uploads"));
+              }
+              fs.writeFileSync(
+                path.join(__dirname, "../../../../uploads", imageName),
+                decodedImage,
+                "base64"
+              );
+              newArrayFiles.push({
+                fieldname: identificationFile.id_proof_front
+                  ? "id_proof_front"
+                  : "id_proof_back",
+                filename: imageName,
+              });
+            }
+            if (validExtensionExists) {
+              return this.BadRequest(ctx, "Please add valid extension");
+            }
+            /**
+             * Upload both file
+             */
+            let frontDocumentId = null;
+            let backDocumentId = null;
+            let uploadFileError = null;
+            for await (let fileData of newArrayFiles) {
+              let uploadData = {
+                "contact-id": parentChildExists.contactId,
+                description:
+                  fileData.fieldname == "id_proof_front"
+                    ? "Front Side Driving License"
+                    : "Back Side Driving License",
+                label:
+                  fileData.fieldname == "id_proof_back"
+                    ? "Front Side Driving License"
+                    : "Back Side Driving License",
+                public: "true",
+                file: fs.createReadStream(
+                  path.join(__dirname, "../../../../uploads", fileData.filename)
+                ),
+              };
+              let uploadFile: any = await uploadFilesFetch(
+                jwtToken,
+                uploadData
+              );
+              if (uploadFile.status == 400) {
+                uploadFileError = uploadFile.message;
+                break;
+              }
+              if (
+                uploadFile.status == 200 &&
+                uploadFile.message.errors != undefined
+              ) {
+                uploadFileError = uploadFile.message;
+                break;
+              }
+              fileData.fieldname == "id_proof_front"
+                ? (frontDocumentId = uploadFile.message.data.id)
+                : (backDocumentId = uploadFile.message.data.id);
+            }
+            if (uploadFileError) {
+              return this.BadRequest(ctx, uploadFileError);
+            }
+            /**
+             * Checking the kyc document checks
+             */
+            const kycData = {
+              type: "kyc-document-checks",
+              attributes: {
+                "contact-id": parentChildExists.contactId,
+                "uploaded-document-id": frontDocumentId,
+                "backside-document-id": backDocumentId,
+                "kyc-document-type": "drivers_license",
+                identity: true,
+                "identity-photo": true,
+                "proof-of-address": true,
+                "kyc-document-country": "US",
+              },
+            };
+            let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
+            if (kycResponse.status == 400) {
+              return this.BadRequest(ctx, kycResponse.message);
+            }
+            if (
+              kycResponse.status == 200 &&
+              kycResponse.data.errors != undefined
+            ) {
+              return this.BadRequest(ctx, kycResponse);
+            }
+            /**
+             * Updating the info in parent child table
+             */
+            await ParentChildTable.updateOne(
+              {
+                userId: user._id,
+                "teens.childId": parentChildExists.firstChildId,
+              },
+              {
+                $set: {
+                  frontDocumentId: frontDocumentId,
+                  backDocumentId: backDocumentId,
+                  kycDocumentId: kycResponse.data.data.id,
+                },
+              }
+            );
           }
 
           const updates: any = {};
@@ -377,11 +503,6 @@ class WebHookController extends BaseController {
             requestPrimeTrust["primary-address"]["street-1"] =
               input["primary-address"]["street-1"];
           }
-          console.log(requestPrimeTrust, "requestPrimeTrust");
-          if (!Object.keys(updates).length)
-            return this.Ok(ctx, {
-              message: "Address Proof uploaded to prime trust successfully.",
-            });
 
           let contactId = await getContactId(ctx.request.user._id);
           if (!contactId) return this.BadRequest(ctx, "Contact ID not found");

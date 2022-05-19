@@ -194,7 +194,7 @@ class UserController extends BaseController {
       return this.BadRequest(ctx, "Please enter valid image");
     }
     let validBase64Back = await checkValidBase64String(
-      requestParams.id_proof_front
+      requestParams.id_proof_back
     );
     if (!validBase64Back) {
       return this.BadRequest(ctx, "Please enter valid image");
