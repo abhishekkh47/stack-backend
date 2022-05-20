@@ -164,11 +164,12 @@ class WebHookController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async changeDataIntoPrimeTrust(ctx: any) {
-    const body = await form(ctx, { limit: "150mb" });
+    const body = await json(ctx, { limit: "150mb" });
     if (!Object.keys(body).length)
       return this.BadRequest(ctx, "Invalid Request.");
 
     const input = body;
+    console.log(input, "input");
 
     if (input["primary-address"]) {
       input["primary-address"] = JSON.parse(input["primary-address"]);
