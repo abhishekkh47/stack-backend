@@ -914,7 +914,7 @@ class TradingController extends BaseController {
         );
       }
       const activity = await UserActivityTable.create({
-        userId: user._id,
+        userId: reqParam.childId ? reqParam.childId : user._id,
         message:
           userExists.type === EUserType.TEEN
             ? `${messages.SELL} $${amount} in ${crypto.name}`

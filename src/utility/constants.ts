@@ -50,6 +50,7 @@ export const PLAIDAPIS = {
   publicTokenExchange: "item/public_token/exchange",
   createProcessorToken: "processor/token/create",
   getAccounts: "accounts/get",
+  getInstitutionById: "institutions/get_by_id",
 };
 
 export const DROPDOWNLIST = {

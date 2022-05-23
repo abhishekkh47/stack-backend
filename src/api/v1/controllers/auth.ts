@@ -58,11 +58,11 @@ class AuthController extends BaseController {
           }
           const resetPasswordMessage = `For your protection, we have reset your password due to insufficient login attempts. Check your email/SMS for a temporary password.`;
           let userExists = await UserTable.findOne({
-            username,
+            username: { $regex: `${username}`, $options: "i" },
           });
           if (!userExists) {
             userExists = await UserTable.findOne({
-              email: username,
+              email: { $regex: `${username}`, $options: "i" },
             });
             if (!userExists) {
               return this.BadRequest(ctx, "User Not Found");
@@ -907,7 +907,9 @@ class AuthController extends BaseController {
           let user = await UserTable.findOne({ mobile });
           if (user)
             return this.BadRequest(ctx, "Mobile number already exists.");
-          user = await UserTable.findOne({ email });
+          user = await UserTable.findOne({
+            email: { $regex: `${email}$`, $options: "i" },
+          });
           if (user) return this.BadRequest(ctx, "Email-ID already exists.");
 
           /**
@@ -955,7 +957,7 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           const usernameExists = await UserTable.findOne({
-            username: reqParam.username,
+            username: { $regex: `${reqParam.username}$`, $options: "i" },
           });
           if (usernameExists) {
             return this.BadRequest(ctx, "UserName already Exists");
@@ -980,7 +982,7 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const userExists = await UserTable.findOne({
-            username: reqParam.username,
+            username: { $regex: `${reqParam.username}$`, $options: "i" },
           });
           if (!userExists) {
             return this.BadRequest(ctx, "User not found");
@@ -1043,7 +1045,7 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const userExists = await UserTable.findOne({
-            username: reqParam.username,
+            username: { $regex: reqParam.username, $options: "i" },
           });
           if (!userExists) {
             return this.BadRequest(ctx, "User not found");
@@ -1098,8 +1100,8 @@ class AuthController extends BaseController {
           let user = await UserTable.findOne({
             mobile: childMobile,
             parentMobile: mobile,
-            email: childEmail,
-            parentEmail: email,
+            email: { $regex: `${childEmail}$`, $options: "i" },
+            parentEmail: { $regex: `${email}$`, $options: "i" },
           });
           if (user) return this.Ok(ctx, { message: "Success" });
           return this.BadRequest(ctx, "We cannot find your accounts");
@@ -1191,7 +1193,7 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           const emailExists = await UserTable.findOne({
-            email: reqParam.email,
+            email: { $regex: `${reqParam.email}$`, $options: "i" },
           });
           if (emailExists)
             return this.BadRequest(ctx, "This email already exists");

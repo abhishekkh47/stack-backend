@@ -139,3 +139,38 @@ export const getAccounts = async (accessToken: string) => {
     });
   return response;
 };
+
+/**
+ * @description This api is used to get instituion by id
+ * @param accessToken
+ * @param accountId
+ * @returns {*}
+ */
+export const getInstitutionById = async (insId: string) => {
+  const request = {
+    client_id: config.PLAID_CLIENT_ID,
+    secret: config.PLAID_SECRET,
+    institution_id: insId,
+    options: {
+      include_optional_metadata: true,
+    },
+    country_codes: ["US"],
+  };
+  const response = await axios
+    .post(config.PLAID_ENV + PLAIDAPIS.getInstitutionById, request)
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      if (error) {
+        return {
+          status: error.response.status,
+          message: error.response.data.error_message,
+        };
+      }
+    });
+  return response;
+};

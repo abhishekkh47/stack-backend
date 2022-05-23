@@ -158,7 +158,7 @@ class QuizController extends BaseController {
      * Get Quiz Question Count
      */
     const getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
-      user_id: user._id,
+      userId: user._id,
     });
     dataToSent.totalQuestionSolved =
       checkQuizExists.length > 0 ? getQuizQuestionsCount : 0;

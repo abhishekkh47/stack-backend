@@ -33,8 +33,9 @@ class VideoController extends BaseController {
         videoCategory: 1,
         status: 1,
         data: 1,
+        createdAt: 1,
       }
-    );
+    ).sort({ createdAt: 1 });
     if (videos.length === 0) {
       return this.Ok(ctx, { data: [], message: "Success" });
     }
