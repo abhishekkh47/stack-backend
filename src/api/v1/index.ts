@@ -13,6 +13,7 @@ import {
   CMSController,
   WebHookController,
 } from "./controllers";
+
 const router = new Router();
 
 const setControllerRoutes = (router: Router, controller: IController) => {
