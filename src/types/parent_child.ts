@@ -10,6 +10,7 @@ export interface IParentChild {
   proofOfAddressId: string;
   pushTransferId: string;
   kycDocumentId: string;
+  institutionId: string;
   firstChildId: mongoose.Schema.Types.ObjectId;
   teens: [];
 }

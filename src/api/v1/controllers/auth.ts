@@ -175,7 +175,9 @@ class AuthController extends BaseController {
           if (user) {
             return this.BadRequest(ctx, "Email Already Exists");
           }
-          user = await UserTable.findOne({ username: reqParam.email });
+          user = await UserTable.findOne({
+            username: { $regex: `${reqParam.email}$`, $options: "i" },
+          });
           if (user) {
             return this.BadRequest(
               ctx,

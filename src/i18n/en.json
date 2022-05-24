@@ -222,5 +222,6 @@
 	"addBankDetailsPublictokenRequired": "Please enter public token.",
 	"addBankDetailsPublictokenEmpty": "Please enter public token.",
 	"addBankDetailsAccountidRequired": "Please enter account id.",
-	"addBankDetailsAccountidEmpty": "Please enter account id."
+	"addBankDetailsAccountidEmpty": "Please enter account id.",
+	"checkUserNameUsernamePattern":"Please enter valid username."
 }

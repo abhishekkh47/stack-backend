@@ -51,6 +51,7 @@ export const PLAIDAPIS = {
   createProcessorToken: "processor/token/create",
   getAccounts: "accounts/get",
   getInstitutionById: "institutions/get_by_id",
+  institutionsGetById: "institutions/get_by_id",
 };
 
 export const DROPDOWNLIST = {

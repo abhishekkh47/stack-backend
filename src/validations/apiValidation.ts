@@ -37,6 +37,7 @@ export const validation = {
     const schema = Joi.object({
       publicToken: Joi.string().required(),
       accountId: Joi.string().required(),
+      institutionId: Joi.string().required(),
     });
     const { error } = schema.validate(req);
     if (error) {

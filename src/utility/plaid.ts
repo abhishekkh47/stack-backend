@@ -146,18 +146,16 @@ export const getAccounts = async (accessToken: string) => {
  * @param accountId
  * @returns {*}
  */
-export const getInstitutionById = async (insId: string) => {
+export const institutionsGetByIdRequest = async (institutionId: string) => {
   const request = {
     client_id: config.PLAID_CLIENT_ID,
     secret: config.PLAID_SECRET,
-    institution_id: insId,
-    options: {
-      include_optional_metadata: true,
-    },
+    institution_id: institutionId,
+    options: { include_optional_metadata: true },
     country_codes: ["US"],
   };
   const response = await axios
-    .post(config.PLAID_ENV + PLAIDAPIS.getInstitutionById, request)
+    .post(config.PLAID_ENV + PLAIDAPIS.institutionsGetById, request)
     .then((res) => {
       return {
         status: 200,

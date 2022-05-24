@@ -15,6 +15,7 @@ import {
   getPushTransferMethods,
   sendNotification,
   getAccounts,
+  institutionsGetByIdRequest,
 } from "../../../utility";
 import BaseController from "./base";
 import mongoose from "mongoose";
@@ -106,6 +107,7 @@ class TradingController extends BaseController {
               $set: {
                 processorToken: processToken.data.processor_token,
                 accessToken: publicTokenExchange.data.access_token,
+                institutionId: reqParam.institutionId,
               },
             }
           );
@@ -1380,6 +1382,16 @@ class TradingController extends BaseController {
     const getAccountDetails: any = await getAccounts(parentExists.accessToken);
     if (getAccountDetails.status == 400) {
       return this.BadRequest(ctx, getAccountDetails.message);
+    }
+    if (parentExists.institutionId) {
+      const logo: any = await institutionsGetByIdRequest(
+        parentExists.institutionId
+      );
+      if (logo.status === 200) {
+        getAccountDetails.data.accounts.forEach((current) => {
+          current.logo = logo.data.institution.logo;
+        });
+      }
     }
     return this.Ok(ctx, {
       data: getAccountDetails.data.accounts,
