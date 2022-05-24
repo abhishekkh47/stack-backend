@@ -9,3 +9,4 @@
 /uploads
 *.zip
 yarn.lock
+.DS_Store
