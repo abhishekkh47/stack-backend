@@ -1,7 +1,13 @@
 import BaseController from "./base";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { validation } from "../../../validations/apiValidation";
-import { ParentChildTable, UserTable, NotifyUserTable } from "../../../model";
+import {
+  ParentChildTable,
+  UserTable,
+  NotifyUserTable,
+  DeviceToken,
+  Notification,
+} from "../../../model";
 import fs from "fs";
 import { json, form } from "co-body";
 import {
@@ -15,18 +21,24 @@ import {
   tempContribution,
   uploadImage,
   checkValidBase64String,
+  sendNotification,
 } from "../../../utility";
 import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
   ESCREENSTATUS,
+  ERead,
 } from "../../../types";
 import path from "path";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import { AuthService } from "../../../services";
-import { FIREBASE_CREDENCIALS } from "../../../utility/constants";
+import {
+  FIREBASE_CREDENCIALS,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "../../../utility/constants";
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
 class UserController extends BaseController {
@@ -411,6 +423,31 @@ class UserController extends BaseController {
         },
       }
     );
+    /**
+     * Kyc pending mode call
+     */
+    let deviceTokenData = await DeviceToken.findOne({
+      userId: userExists._id,
+    }).select("deviceToken");
+    if (deviceTokenData) {
+      let notificationRequest = {
+        key: NOTIFICATION_KEYS.KYC_PENDING,
+        title: NOTIFICATION.KYC_PENDING_TITLE,
+        message: NOTIFICATION.KYC_PENDING_DESCRIPTION,
+      };
+      await sendNotification(
+        deviceTokenData.deviceToken,
+        notificationRequest.title,
+        notificationRequest
+      );
+      await Notification.create({
+        title: notificationRequest.title,
+        userId: userExists._id,
+        message: notificationRequest.message,
+        isRead: ERead.UNREAD,
+        data: JSON.stringify(notificationRequest),
+      });
+    }
     return this.Ok(ctx, {
       data: kycResponse.data,
       message:
@@ -959,6 +996,29 @@ class UserController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Acknowledged" });
+  }
+
+  /**
+   * @description This method is used for test notification
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/test-notification", method: HttpMethod.POST })
+  @Auth()
+  public async testNotification(ctx: any) {
+    let notificationRequest = {
+      title: "Test Notification Title",
+      message: "Test Notification Description",
+      userId: ctx.request.user._id,
+    };
+    await sendNotification(
+      [
+        "cMXtJHYqVEdguRyRzFwYrq:APA91bH7pCMwmWAEJQFnA2WmQ7JbO_hx6JtxgQG35kziM8QXEc0Z7_foH5HOlaGmf4zLPfMAk-Nmt4MZW8Ec8rYjcccLIJVg-TeS4L03LM-V2AzkLFu2kvnN3-wxuMbJSkyTnuIb7zRt",
+      ],
+      notificationRequest.title,
+      notificationRequest
+    );
+    return this.Ok(ctx, { message: "Notification Sent" });
   }
 }
 
