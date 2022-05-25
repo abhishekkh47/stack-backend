@@ -56,4 +56,7 @@ export default {
   get PLAID_ENV() {
     return process.env.PLAID_ENV;
   },
+  get FIREBASE_SERVER_KEY() {
+    return process.env.FIREBASE_SERVER_KEY;
+  },
 };

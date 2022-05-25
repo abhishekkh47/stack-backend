@@ -61,17 +61,18 @@ export const DROPDOWNLIST = {
 
 export const FIREBASE_CREDENCIALS = {
   type: "service_account",
-  project_id: "stack-995ed",
-  private_key_id: "393a402f6630823c778e76deb92074e9c7c30366",
+  project_id: "temp-demo-push-notification",
+  private_key_id: "a4b2e11cfdbed032856e4564909a75bb1a5ebc46",
   private_key:
-    "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7WaGovxzBp7zB\n1VrDgB80TwqtBQfIAZj2/NDqYsmGA4rdvVxUKlVNdoXogPQn0hE6TPNhk7wHcjQY\ni4gQkPppwcHrkG2MBUOvx09FhrUxZKuZO9j9egjGKR5H32X16bhzq8C2LZNqxv7j\n0h8yyfSe9TD8e9bF54J/H0R1ljjD7wGp8Ml1dsGcVvr4vUBZaDJtlb+tQtDkZhRi\nAscYRwMCXHIiAe5Nuhu3rh1BH9MsvQqdDTQFCcmA6K9If8nzDwc1tDutf9/iXBdV\nVUZ1hPDM9oCFwGU/Qyq+If3aIjWmMfk9lATv461K0BhOpLHxU4F0ypblEPZXh/Lp\nAQlP+tuLAgMBAAECggEAO65Q1h2TPol9ks2xbSfKSPKI9xbsJKWFoeBleNThV4SX\nXw2sdM9LfzKrc6ZooKrFfCn5OfNC6ahSuiLwxD461ye266CFlR40MrGuKfrAi6yD\nEXxEInMWinGcyM58f3rlnEtxR1d7Z39ewRo1gAtflqeK5FNa1o5qPq6qMz8YdCmI\n0c43Nw2XU1Y4pODGrPB0kMCFde/nLxbvgeq47ch2BO1sxMKQ81X9HH+fT52eUDHO\n5montTKSKx+0lYYN3pbSpZsPuzLsPVmPXNWG+GlUDk6PSUO+nlVtRdAXOlxJXv0S\nD9XMpRPjjcwSHTzvfEMjPlSq3+CZ/xUr2Fk80B/xyQKBgQD/cExGUagExtRLydUE\nHGz0rq5Usw+hlDQdGyt4mWKdcRGPBNQPTTMvOojaHoHV/Lt70L39iJCYjiMyPVn8\nqfEbWtfFnSkxejjnw81t4Wduinv9b3mDrVPCprhNDKAaCevJ27ZPbaW/lj/+Ae0/\nTzeRvCnk+6MAgvM6YGDtt+MA5wKBgQC7wwdrciEWKm61khd8xzZzG9OclcFHYl3O\n/zOuLzggSwYsR+Wc6NMkB/VB96aigpdXMrYRRzC3bsTz1n9vOdRegI2MliMDzE+E\nfgjyJW6eQkyhq91BUCjfYEulwtu2NcrvpN5zfXP8OkzVNckVmMUWr17q4DPThjws\n+Fig/cAnvQKBgFJ9RWSAAi5oty4yY6QMOfNaZdncaXPYlGvB1mv/vKTzWqRA/upi\nF+Fsmb02lN8x2qnFY1V4wJlDbYJP5bt+depLj9q1QhREUBQoWzLc07YS6q+RTECF\nvMLjbCkVpq5B/e8WEO3djuUr9EZnAOKtBlj91tmnmaAUqc90SFj8RUaJAoGAYZhp\nNec33X6m1wgd30TpP4HaR4zrzwAJRLwQD90JbnewuLmSVzIJ9bORPv3MBrKcmb2J\nN4fqgZ45D4mR6a2Efq6RZN7xSlsbhgHBAqSEUAykKnDb68QPyrQR/hJABAEH//KR\nkjRGYnenUjfH0sr6vuTfEHUDW1Jt2u4nm17qT30CgYEA6lUFlVuP7f9wPxEKkeP/\n0l4Lm88WS3s430bZwNC6VdpvxZ+m7osaKjfEBPxjLj/q368pvKNnBCnpYkiqN2kV\nWux22uz1QVSdUelXduYRm2bmcLGa3ZE9suTVGaeDHWIBVXc9OMY8BlCdbUwHEDBW\n378JF3JO/IFgv9wmkSuEeCo=\n-----END PRIVATE KEY-----\n",
-  client_email: "firebase-adminsdk-tp43e@stack-995ed.iam.gserviceaccount.com",
-  client_id: "111578768458458128917",
+    "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCijuOdZJk4EBhU\nRW6ifhEM3kbBZ2DlGieSzKeBIysqWx7CSUzJJGPsgDR6nNIIvY4ZdpdoL9RAx/ic\nfHVfgzRfVcs+G7/2XQFALoM4r7oRy1Nb6sDdgeHCkyXy2k3gXuj9zRcjlD/EJBL6\nRzg5dlqk4SlCuHSMdFYrvBkQcBa4dKyD+jtwuF+6Q5V0sKn4HqD6tTCpW2UENlVN\nLNICIw+Ef62gBnx5ox/+y9Fg9C+rWn7ZgnKFASpNKebQBN/KpEr67ct9fNOwTJc+\nLwbQIQNgyfnwX2JofrrjIeNviZq4ahgMPgVR90NeW0jkh+9mtSOySGhoh/9bnhj/\nVGH15mndAgMBAAECggEACJca9aQNib4l/vwNUOZvEbpETG+hWfIEIdiRSHx6iTo3\n+aXkeiOjaSnMPCeB3ObhdbyD20Rdx8+ZdnGIRVQaZihTPXS7c/ItwP3EPvBgWZTg\nUpTo/LuimcTrZjY9k8wILXNTU/S/WubaHuI5GSZFO33Pj6BOPmbeb+C4hVsbBEPG\ngTsc+w3hzSPTy/dzEH3Gf5LKKTaU77+GyPR0a9oCrUyyfsCSJLuJtvsS79jheCpW\n9LgY33+g1QCkgf8jLafFb5Apx5eaCMKQnD7OAnNiDqIwC72PaR4QmoLTytfyrTbL\nMHNJYSKnwVu2d0nTsslC4MkaWux+C68zMXZxYgCW8QKBgQDdU+YQ92DJowbrfB8c\ngSBmFzKcbj57iAcCXbaDSDF1+Tb/fnQlayHBHsgdQG7McBtz80I/ZgOxOZLJkGfu\nS+TtRmZq7Hbp4Hxa7QkwUT5Y1zsByFhsf/n9DpXw7J7nJgiv2xQnGhxpK/xwAzxr\nR01z/1PH4mzP+5btMjqvYafujQKBgQC8Bho/o7B8DRm97QTdLB/+SUsyRQAJHdR5\nnWmtMM+Apbzb7X2mhAEy7cdtwxBecReGHjjWgw7RycP7ecbONs9Ae4LvaiHKOLvv\nmmOrtvFDu7aAtWOzBFUVmn0Hu2RCgC4dRovg9X3VVejPwEABEwuIvYJITK6xVIP0\nlxLyBix8kQKBgQC1cZV3rUXUp+kBXnUm6hkEeNoN8jcZEJAmeWspvyKFQ7S5yhIv\npt86MiD+EheDVBi9etyBmwFF5hwXUGJTsjZP6toFqCtoWpe39wEEcmY5cOE3+eW7\ntULdGXsE0wcGGmEeweyIjdhixCOkNJLwo7i0cspdYJux+eBmPjpsExQX9QKBgQCy\nMpZt+hUpfMEI37ncZBVuSsiZvAtsmHjnSej922TN6EY1qb+MMU9xlSmNPXImD8jb\ns4jqxQsmiLLVg3SHvCpwUp6liVC890gmrYwJEjlWmHE/SqpS36hD8UbOLSu4WwNZ\ne6LWcdPwfJtJSkteuU4VKoZvPz3Rkuf8x7GM74z6AQKBgQChvJAMeleb1mMODeBO\nthG7jaYT32rxUWl03vmwpSSneNn2fJ3WeKXYwGNtkvXJahDtIaPU6RYeTq6QcJOJ\nGKMk91A3CPwAvGHFkc4Jww1HeQ5mAHLRE4Xr1g15s81TXBRdHnaXS6YTFrKnQPLQ\nueZaxGasbXY5H33y4uPG7GCFHw==\n-----END PRIVATE KEY-----\n",
+  client_email:
+    "firebase-adminsdk-zfogf@temp-demo-push-notification.iam.gserviceaccount.com",
+  client_id: "115157352245474769299",
   auth_uri: "https://accounts.google.com/o/oauth2/auth",
   token_uri: "https://oauth2.googleapis.com/token",
   auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
   client_x509_cert_url:
-    "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-tp43e%40stack-995ed.iam.gserviceaccount.com",
+    "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-zfogf%40temp-demo-push-notification.iam.gserviceaccount.com",
 };
 
 export const NOTIFICATION = {
@@ -88,4 +89,26 @@ export const NOTIFICATION = {
     "@yourteen has requested a one-time withdrawal 💵 Head to the app to approve or deny the request.",
   TEEN_REQUEST_DENIED_DESCRIPTION:
     "Your request has been denied by parent. Better luck next time 🎩",
+  TEEN_REQUEST_ADD_DEPOSIT_APPROVED:
+    "Your request for one time deposit has been approved 🎩",
+  TEEN_REQUEST_ADD_WITHDRAW_APPROVED:
+    "Your request for one time withdrawal has been approved 🎩",
+  TEEN_REQUEST_BUY_CRYPTO_APPROVED:
+    "Your request for buy @crypto 🚀 has been approved",
+  TEEN_REQUEST_SELL_CRYPTO_APPROVED:
+    "Your request for sell @crypto 🚀 has been approved",
+  KYC_PENDING_TITLE: "Your Kyc request has been pending.",
+  KYC_PENDING_DESCRIPTION:
+    "Please wait for 24 hours till we get back to you ⏱.",
+  KYC_APPROVED_TITLE: "Your Kyc has been approved",
+  KYC_APPROVED_DESCRIPTION: "Explore our app for more features 🤩",
+  KYC_REJECTED_TITLE:
+    "Your kyc has been failed ❌. Please resubmit your kyc accordingly",
+};
+
+export const NOTIFICATION_KEYS = {
+  TRADING: "trading",
+  KYC_SUCCESS: "kyc_success",
+  KYC_FAILURE: "kyc_failure",
+  KYC_PENDING: "kyc_pending",
 };

@@ -9,7 +9,9 @@ import {
   uploadFilesFetch,
   checkValidBase64String,
   getContactId,
+  sendNotification,
 } from "../../../utility";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { json, form } from "co-body";
 import BaseController from "./base";
 import {
@@ -24,6 +26,7 @@ import {
   UserTable,
   TransactionTable,
   WebhookTable,
+  DeviceToken,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
@@ -66,6 +69,12 @@ class WebHookController extends BaseController {
           return this.BadRequest(ctx, "User KYC Document Verified");
         }
         /**
+         * Notification Send for kyc fail or success
+         */
+        let deviceTokenData = await DeviceToken.findOne({
+          userId: userExists._id,
+        }).select("deviceToken");
+        /**
          * Failure phases
          */
         if (
@@ -82,6 +91,19 @@ class WebHookController extends BaseController {
               },
             }
           );
+          if (deviceTokenData) {
+            let notificationRequest = {
+              key: NOTIFICATION_KEYS.KYC_FAILURE,
+              title: NOTIFICATION.KYC_REJECTED_TITLE,
+              message: body.data["kyc_required_actions"],
+              userId: userExists._id,
+            };
+            await sendNotification(
+              deviceTokenData.deviceToken,
+              notificationRequest.title,
+              notificationRequest
+            );
+          }
           return this.Ok(ctx, { message: "User Kyc Failed" });
         }
         /**
@@ -104,6 +126,19 @@ class WebHookController extends BaseController {
               },
             }
           );
+          if (deviceTokenData) {
+            let notificationRequest = {
+              key: NOTIFICATION_KEYS.KYC_SUCCESS,
+              title: NOTIFICATION.KYC_APPROVED_TITLE,
+              message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
+              userId: userExists._id,
+            };
+            await sendNotification(
+              deviceTokenData.deviceToken,
+              notificationRequest.title,
+              notificationRequest
+            );
+          }
           return this.Ok(ctx, { message: "User Kyc Success" });
         }
         break;
