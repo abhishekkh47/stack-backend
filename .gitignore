@@ -1,6 +1,7 @@
 # dependencies
 /node_modules
 .env
+.production_env
 .DS_STORE
 /src/uploads
 .vscode

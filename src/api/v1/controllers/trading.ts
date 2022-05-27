@@ -845,6 +845,7 @@ class TradingController extends BaseController {
         let deviceTokenData = await DeviceToken.findOne({
           userId: parent.userId,
         });
+        console.log(deviceTokenData.deviceToken, "deviceTokenData");
         if (deviceTokenData) {
           let notificationRequest = {
             key: NOTIFICATION_KEYS.TRADING,
