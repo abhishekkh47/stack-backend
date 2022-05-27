@@ -8,21 +8,23 @@ export const sendNotification = async (to, body, data, action = null) => {
       registration_ids: to,
       notification: {
         title: body,
-        body: data,
+        body: data.message,
         key: data.key,
         sound: "default",
         icon: "ic_launcher_notification",
         color: "#ffffff",
-        // click_action: action,
+        priority: "high",
+        "content-available": true,
         data: JSON.stringify(data),
       },
+      priority: "high",
+      "content-available": true,
       data: data,
     };
     await fcm.send(message, function (err, resp) {
       console.log(err, "errorororor");
-      console.log(resp, "resp");
       if (err) {
-        console.log("Something has gone wrong!", err);
+        console.log("Something has gone wrong!", err.results);
       } else {
         console.log("Notification Successfully sent", resp);
       }

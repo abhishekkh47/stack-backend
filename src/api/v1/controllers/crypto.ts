@@ -14,7 +14,6 @@ import { ObjectId } from "mongodb";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
-  @Auth()
   public async addCrypto(ctx: Koa.Context) {
     const input = ctx.request.body;
     return validation.addCryptoInputValidation(

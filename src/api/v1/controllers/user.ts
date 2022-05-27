@@ -1011,14 +1011,19 @@ class UserController extends BaseController {
       message: "Test Notification Description",
       userId: ctx.request.user._id,
     };
-    await sendNotification(
-      [
-        "cMXtJHYqVEdguRyRzFwYrq:APA91bH7pCMwmWAEJQFnA2WmQ7JbO_hx6JtxgQG35kziM8QXEc0Z7_foH5HOlaGmf4zLPfMAk-Nmt4MZW8Ec8rYjcccLIJVg-TeS4L03LM-V2AzkLFu2kvnN3-wxuMbJSkyTnuIb7zRt",
-      ],
-      notificationRequest.title,
-      notificationRequest
-    );
-    return this.Ok(ctx, { message: "Notification Sent" });
+    const deviceTokenData = await DeviceToken.findOne({
+      userId: ctx.request.user._id,
+    });
+    if (deviceTokenData) {
+      await sendNotification(
+        deviceTokenData.deviceToken,
+        notificationRequest.title,
+        notificationRequest
+      );
+      return this.Ok(ctx, { message: "Notification Sent" });
+    } else {
+      return this.Ok(ctx, { message: "No device token" });
+    }
   }
 }
 
