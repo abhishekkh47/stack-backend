@@ -138,7 +138,7 @@ class UserController extends BaseController {
         // "contact-id": parentExists.contactId,
         owner: {
           "contact-type": "natural_person",
-          name: "Rohan Patel",
+          name: fullName,
           email: "rohan@email.in",
           "tax-id-number": "123123123456",
           "tax-country": "IN",
