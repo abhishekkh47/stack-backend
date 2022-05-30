@@ -40,6 +40,7 @@ import {
   NOTIFICATION_KEYS,
 } from "../../../utility/constants";
 const { GoogleSpreadsheet } = require("google-spreadsheet");
+import envData from "../../../config/index";
 
 class UserController extends BaseController {
   /**
@@ -290,7 +291,7 @@ class UserController extends BaseController {
         name: childName + " - " + fullName,
         "authorized-signature": fullName,
         "webhook-config": {
-          url: "http://34.216.120.156:3500/api/v1/webhook-response",
+          url: envData.WEBHOOK_URL,
         },
         owner: {
           "contact-type": "natural_person",

@@ -180,7 +180,6 @@ export const agreementPreviews = async (token, data) => {
       };
     })
     .catch((error) => {
-      console.log(error.response.data);
       return {
         status: 400,
         message: error.response.data,

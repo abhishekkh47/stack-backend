@@ -265,7 +265,6 @@ class AuthController extends BaseController {
                 ctx.request.primeTrustToken,
                 data
               );
-              console.log(createAccountData, "createAccountData");
               if (createAccountData.status == 400) {
                 return this.BadRequest(ctx, createAccountData.message);
               }
@@ -422,6 +421,32 @@ class AuthController extends BaseController {
               params: { id: user._id },
             },
           };
+          if (reqParam.deviceToken) {
+            const checkDeviceTokenExists = await DeviceToken.findOne({
+              userId: user._id,
+            });
+            if (!checkDeviceTokenExists) {
+              await DeviceToken.create({
+                userId: user._id,
+                "deviceToken.0": reqParam.deviceToken,
+              });
+            } else {
+              if (
+                !checkDeviceTokenExists.deviceToken.includes(
+                  reqParam.deviceToken
+                )
+              ) {
+                await DeviceToken.updateOne(
+                  { _id: checkDeviceTokenExists._id },
+                  {
+                    $push: {
+                      deviceToken: reqParam.deviceToken,
+                    },
+                  }
+                );
+              }
+            }
+          }
           await UserController.getProfile(getProfileInput);
           return this.Ok(ctx, {
             token,

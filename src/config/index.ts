@@ -59,4 +59,7 @@ export default {
   get FIREBASE_SERVER_KEY() {
     return process.env.FIREBASE_SERVER_KEY;
   },
+  get WEBHOOK_URL() {
+    return process.env.WEBHOOK_URL;
+  },
 };

@@ -845,7 +845,6 @@ class TradingController extends BaseController {
         let deviceTokenData = await DeviceToken.findOne({
           userId: parent.userId,
         });
-        console.log(deviceTokenData.deviceToken, "deviceTokenData");
         if (deviceTokenData) {
           let notificationRequest = {
             key: NOTIFICATION_KEYS.TRADING,
@@ -1508,9 +1507,10 @@ class TradingController extends BaseController {
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
+    console.log(accountIdDetails.childId, "accountIdDetails.childId");
     let deviceTokenData = await DeviceToken.findOne({
       userId: accountIdDetails.childId,
-    });
+    }).select("deviceToken");
     const fetchBalance: any = await getBalance(
       jwtToken,
       accountIdDetails.accountId
@@ -1948,7 +1948,6 @@ class TradingController extends BaseController {
     if (response.status == 400) {
       return this.BadRequest(ctx, response.message);
     }
-    console.log(response);
     await ParentChildTable.updateOne(
       { userId: ctx.request.user._id },
       {
