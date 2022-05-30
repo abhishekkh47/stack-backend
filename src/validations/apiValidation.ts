@@ -185,7 +185,7 @@ export const validation = {
           .required(),
       }),
     });
-    const { error } = schema.validate(req);
+    const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {
       return res.throw(
         400,

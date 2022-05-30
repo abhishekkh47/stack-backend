@@ -130,10 +130,8 @@ class CryptocurrencyController extends BaseController {
           },
         },
       ]).exec();
-      console.log(portFolio, "portFolio.length");
       if (portFolio.length > 0) {
         portFolio = await portFolio.map((x) => x.cryptoId);
-        console.log(portFolio, "portFolio");
         query = { _id: { $in: portFolio } };
       } else {
         query = { _id: { $eq: null } };
