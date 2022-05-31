@@ -6,11 +6,6 @@ export const CONSTANT = Object.freeze({
   RemindParentTemplateId: "d-29e6c014f3604c04b7c7c2d354bda66e",
 });
 
-export const PRIMETRUSTCONSTANT = Object.freeze({
-  email: "natalie@trystack.io",
-  password: "Password123!",
-});
-
 export const PRIMETRUSTBASEAPIURL = "";
 
 export const PRIMETRUSTAPIS = {
@@ -52,6 +47,11 @@ export const PLAIDAPIS = {
   getAccounts: "accounts/get",
   getInstitutionById: "institutions/get_by_id",
   institutionsGetById: "institutions/get_by_id",
+};
+
+export const ZOHOAPIS = {
+  getAccessToken: "oauth/v2/token",
+  accountUpsert: "crm/v2/Accounts/upsert",
 };
 
 export const DROPDOWNLIST = {

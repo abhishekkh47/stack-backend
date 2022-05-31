@@ -10,6 +10,8 @@ import {
   checkValidBase64String,
   getContactId,
   sendNotification,
+  getPrimeTrustJWTToken,
+  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { json, form } from "co-body";
@@ -27,12 +29,14 @@ import {
   TransactionTable,
   WebhookTable,
   DeviceToken,
+  AdminTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
 import fs from "fs";
 import path from "path";
 import moment from "moment";
+import { getAccessToken } from "../../../utility/zoho-crm";
 
 class WebHookController extends BaseController {
   /**
@@ -41,6 +45,7 @@ class WebHookController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/webhook-response", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public async getWebhookData(ctx: any) {
     console.log(`++++++START WEBHOOK DATA+++++++++`);
     let body: any = ctx.request.body;
@@ -91,6 +96,20 @@ class WebHookController extends BaseController {
               },
             }
           );
+          /**
+           * Update the status to zoho crm
+           */
+          let dataSentInCrm: any = {
+            Account_Name: userExists._id,
+            Account_Status: "2",
+          };
+          let mainData = {
+            data: [dataSentInCrm],
+          };
+          const dataAddInZoho = await addAccountInfoInZohoCrm(
+            ctx.request.zohoAccessToken,
+            mainData
+          );
           if (deviceTokenData) {
             let notificationRequest = {
               key: NOTIFICATION_KEYS.KYC_FAILURE,
@@ -125,6 +144,20 @@ class WebHookController extends BaseController {
                 status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
               },
             }
+          );
+          /**
+           * Update the status to zoho crm
+           */
+          let dataSentInCrm: any = {
+            Account_Name: userExists._id,
+            Account_Status: "3",
+          };
+          let mainData = {
+            data: [dataSentInCrm],
+          };
+          const dataAddInZoho = await addAccountInfoInZohoCrm(
+            ctx.request.zohoAccessToken,
+            mainData
           );
           if (deviceTokenData) {
             let notificationRequest = {
@@ -591,6 +624,21 @@ class WebHookController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used for zoho crm added data in crm platform
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/test-zoho",
+    method: HttpMethod.POST,
+  })
+  @PrimeTrustJWT(true)
+  public async testZoho(ctx: any) {
+    let accessToken = ctx.request.zohoAccessToken;
+    return this.Ok(ctx, { data: accessToken });
   }
 }
 

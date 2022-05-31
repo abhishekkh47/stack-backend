@@ -13,6 +13,9 @@ const schema = new mongoose.Schema<IAdminSchema>(
     },
     username: { type: mongoose.Schema.Types.String, required: true },
     jwtToken: { type: mongoose.Schema.Types.String, default: null },
+    zohoRefreshToken: { type: mongoose.Schema.Types.String, default: null },
+    zohoAccessToken: { type: mongoose.Schema.Types.String, default: null },
+    zohoExpiryTime: { type: mongoose.Schema.Types.Number, default: null },
   },
   { timestamps: true }
 );

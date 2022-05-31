@@ -22,6 +22,7 @@ import {
   uploadImage,
   checkValidBase64String,
   sendNotification,
+  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import {
   EUSERSTATUS,
@@ -180,7 +181,7 @@ class UserController extends BaseController {
     method: HttpMethod.POST,
   })
   @Auth()
-  @PrimeTrustJWT()
+  @PrimeTrustJWT(true)
   public async uploadFilesData(ctx: any) {
     const body = await json(ctx, { limit: "150mb" });
     const jwtToken = ctx.request.primeTrustToken;
@@ -423,6 +424,20 @@ class UserController extends BaseController {
           kycDocumentId: kycResponse.data.data.id,
         },
       }
+    );
+    /**
+     * Update the status to zoho crm
+     */
+    let dataSentInCrm: any = {
+      Account_Name: userExists._id,
+      Account_Status: "1",
+    };
+    let mainData = {
+      data: [dataSentInCrm],
+    };
+    const dataAddInZoho = await addAccountInfoInZohoCrm(
+      ctx.request.zohoAccessToken,
+      mainData
     );
     /**
      * Kyc pending mode call

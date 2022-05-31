@@ -37,6 +37,9 @@ export interface IAccount {
 
 export interface IAdmin extends IUser {
   jwtToken: string;
+  zohoRefreshToken: string;
+  zohoExpiryTime: string;
+  zohoAccessToken: string;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
