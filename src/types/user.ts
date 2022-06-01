@@ -33,6 +33,9 @@ export interface IAccount {
   taxState: mongoose.Schema.Types.ObjectId;
   profilePicture: string;
   isAcknowledged: number;
+  cipCleared: boolean;
+  amlCleared: boolean;
+  identityConfirmed: boolean;
 }
 
 export interface IAdmin extends IUser {

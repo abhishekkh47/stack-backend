@@ -429,7 +429,7 @@ class UserController extends BaseController {
      * Update the status to zoho crm
      */
     let dataSentInCrm: any = {
-      Account_Name: userExists._id,
+      Account_Name: userExists.firstName + "-" + userExists.lastName,
       Account_Status: "1",
     };
     let mainData = {

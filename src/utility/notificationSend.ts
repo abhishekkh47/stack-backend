@@ -22,7 +22,7 @@ export const sendNotification = async (to, body, data, action = null) => {
       data: data,
     };
     await fcm.send(message, function (err, resp) {
-      console.log(err, "errorororor");
+      console.log(JSON.stringify(err), "errorororor");
       if (err) {
         console.log("Something has gone wrong!", err.results);
       } else {

@@ -92,9 +92,9 @@ class AuthController extends BaseController {
               { _id: userExists._id },
               { $set: { loginAttempts: 0, tempPassword: null } }
             );
-            const authInfo = AuthService.getJwtAuthInfo(userExists);
-            const token = getJwtToken(authInfo);
-            const refreshToken = getRefreshToken(authInfo);
+            const authInfo = await AuthService.getJwtAuthInfo(userExists);
+            const token = await getJwtToken(authInfo);
+            const refreshToken = await getRefreshToken(authInfo);
             userExists.refreshToken = refreshToken;
             await userExists.save();
 
@@ -452,12 +452,13 @@ class AuthController extends BaseController {
            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
            */
           let dataSentInCrm: any = {
-            Account_Name: user._id,
+            Account_Name: user.firstName + "-" + user.lastName,
             First_Name: user.firstName,
             Last_Name: user.lastName,
             Email: user.email,
             Mobile: user.mobile,
             Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
+            Account_Number: user._id,
           };
           let mainData = {
             data: [dataSentInCrm],
@@ -470,9 +471,10 @@ class AuthController extends BaseController {
             let dataSentAgain = {
               data: [
                 {
-                  Account_Name: childExists._id,
+                  Account_Name:
+                    childExists.firstName + "-" + childExists.lastName,
                   Parent_Account: {
-                    name: user._id,
+                    name: user.firstName + "-" + user.lastName,
                   },
                 },
               ],

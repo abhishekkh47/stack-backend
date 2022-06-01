@@ -58,6 +58,7 @@ class WebHookController extends BaseController {
        * For kyc success or failure
        */
       case "contact":
+      case "contacts":
         const checkAccountIdExists = await ParentChildTable.findOne({
           "teens.accountId": body.account_id,
         });
@@ -100,7 +101,7 @@ class WebHookController extends BaseController {
            * Update the status to zoho crm
            */
           let dataSentInCrm: any = {
-            Account_Name: userExists._id,
+            Account_Name: userExists.firstName + "-" + userExists.lastName,
             Account_Status: "2",
           };
           let mainData = {
@@ -132,47 +133,74 @@ class WebHookController extends BaseController {
           body.data &&
           body.data["changes"] &&
           body.data["changes"].length > 0 &&
-          body.data["changes"].includes("cip-cleared") &&
-          body.data["changes"].includes("aml-cleared") &&
-          body.data["changes"].includes("identity-confirmed")
+          (body.data["changes"].includes("cip-cleared") ||
+            body.data["changes"].includes("aml-cleared") ||
+            body.data["changes"].includes("identity-confirmed"))
         ) {
+          console.log(body.data["changes"], "CHANGE ARRAY INCLUDE");
+          let updateData = {};
+          if (body.data["changes"].includes("aml-cleared")) {
+            updateData = { ...updateData, amlCleared: true };
+          }
+          if (body.data["changes"].includes("cip-cleared")) {
+            updateData = { ...updateData, cipCleared: true };
+          }
+          if (body.data["changes"].includes("identity-confirmed")) {
+            updateData = { ...updateData, identityConfirmed: true };
+          }
+          console.log(updateData, "updateDATA");
           await UserTable.updateOne(
             { _id: userExists._id },
             {
-              $set: {
-                kycMessages: null,
-                status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
-              },
+              $set: updateData,
             }
           );
-          /**
-           * Update the status to zoho crm
-           */
-          let dataSentInCrm: any = {
-            Account_Name: userExists._id,
-            Account_Status: "3",
-          };
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          const dataAddInZoho = await addAccountInfoInZohoCrm(
-            ctx.request.zohoAccessToken,
-            mainData
-          );
-          if (deviceTokenData) {
-            let notificationRequest = {
-              key: NOTIFICATION_KEYS.KYC_SUCCESS,
-              title: NOTIFICATION.KYC_APPROVED_TITLE,
-              message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
-              userId: userExists._id,
-            };
-            await sendNotification(
-              deviceTokenData.deviceToken,
-              notificationRequest.title,
-              notificationRequest
+          let checkUserAgain = await UserTable.findOne({ _id: userExists._id });
+          if (
+            checkUserAgain.cipCleared &&
+            checkUserAgain.amlCleared &&
+            checkUserAgain.identityConfirmed &&
+            checkUserAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+          ) {
+            console.log(`Coming inside true`);
+            await UserTable.updateOne(
+              { _id: userExists._id },
+              {
+                $set: {
+                  kycMessages: null,
+                  status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
+                },
+              }
             );
+            /**
+             * Update the status to zoho crm
+             */
+            let dataSentInCrm: any = {
+              Account_Name: userExists.firstName + "-" + userExists.lastName,
+              Account_Status: "3",
+            };
+            let mainData = {
+              data: [dataSentInCrm],
+            };
+            const dataAddInZoho = await addAccountInfoInZohoCrm(
+              ctx.request.zohoAccessToken,
+              mainData
+            );
+            if (deviceTokenData) {
+              let notificationRequest = {
+                key: NOTIFICATION_KEYS.KYC_SUCCESS,
+                title: NOTIFICATION.KYC_APPROVED_TITLE,
+                message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
+                userId: userExists._id,
+              };
+              await sendNotification(
+                deviceTokenData.deviceToken,
+                notificationRequest.title,
+                notificationRequest
+              );
+            }
+            return this.Ok(ctx, { message: "User Kyc Success" });
           }
-          return this.Ok(ctx, { message: "User Kyc Success" });
         }
         break;
       /**
