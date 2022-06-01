@@ -183,7 +183,7 @@ class UserController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async uploadFilesData(ctx: any) {
-    const body = await json(ctx, { limit: "150mb" });
+    const body = await form(ctx, { limit: "150mb" });
     const jwtToken = ctx.request.primeTrustToken;
     const userExists: any = await UserTable.findOne({
       _id: ctx.request.user._id,

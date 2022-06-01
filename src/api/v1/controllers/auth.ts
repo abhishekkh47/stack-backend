@@ -458,7 +458,6 @@ class AuthController extends BaseController {
             Email: user.email,
             Mobile: user.mobile,
             Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
-            Account_Number: user._id,
           };
           let mainData = {
             data: [dataSentInCrm],

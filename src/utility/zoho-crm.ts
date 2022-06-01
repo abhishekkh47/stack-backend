@@ -49,6 +49,7 @@ export const addAccountInfoInZohoCrm = async (accessToken, data) => {
       },
     })
     .then((res) => {
+      console.log(res.data.data[0].details, "res");
       return {
         status: 200,
         data: res.data,
