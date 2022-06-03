@@ -101,7 +101,7 @@ class WebHookController extends BaseController {
            * Update the status to zoho crm
            */
           let dataSentInCrm: any = {
-            Account_Name: userExists.firstName + "" + userExists.lastName,
+            Account_Name: userExists.firstName + " " + userExists.lastName,
             Account_Status: "2",
           };
           let mainData = {
@@ -176,7 +176,7 @@ class WebHookController extends BaseController {
              * Update the status to zoho crm
              */
             let dataSentInCrm: any = {
-              Account_Name: userExists.firstName + "" + userExists.lastName,
+              Account_Name: userExists.firstName + " " + userExists.lastName,
               Account_Status: "3",
             };
             let mainData = {
