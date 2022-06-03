@@ -69,6 +69,9 @@ const schema = new mongoose.Schema<IUserSchema>(
     city: { type: mongoose.Schema.Types.String, default: null },
     postalCode: { type: mongoose.Schema.Types.String, default: null },
     unitApt: { type: mongoose.Schema.Types.String, default: null },
+    cipCleared: { type: mongoose.Schema.Types.Boolean, default: false },
+    amlCleared: { type: mongoose.Schema.Types.Boolean, default: false },
+    identityConfirmed: { type: mongoose.Schema.Types.Boolean, default: false },
     stateId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,

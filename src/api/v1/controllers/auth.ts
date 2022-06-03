@@ -11,6 +11,7 @@ import {
   generateTempPassword,
   getRefreshToken,
   createAccount,
+  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import BaseController from "./base";
 import {
@@ -91,9 +92,9 @@ class AuthController extends BaseController {
               { _id: userExists._id },
               { $set: { loginAttempts: 0, tempPassword: null } }
             );
-            const authInfo = AuthService.getJwtAuthInfo(userExists);
-            const token = getJwtToken(authInfo);
-            const refreshToken = getRefreshToken(authInfo);
+            const authInfo = await AuthService.getJwtAuthInfo(userExists);
+            const token = await getJwtToken(authInfo);
+            const refreshToken = await getRefreshToken(authInfo);
             userExists.refreshToken = refreshToken;
             await userExists.save();
 
@@ -158,7 +159,7 @@ class AuthController extends BaseController {
   }
 
   @Route({ path: "/signup", method: HttpMethod.POST })
-  @PrimeTrustJWT()
+  @PrimeTrustJWT(true)
   public async handleSignup(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.signupValidation(
@@ -409,11 +410,11 @@ class AuthController extends BaseController {
             }
           }
 
-          const authInfo = AuthService.getJwtAuthInfo(user);
-          const refreshToken = getRefreshToken(authInfo);
+          const authInfo = await AuthService.getJwtAuthInfo(user);
+          const refreshToken = await getRefreshToken(authInfo);
           user.refreshToken = refreshToken;
           await user.save();
-          const token = getJwtToken(authInfo);
+          const token = await getJwtToken(authInfo);
           let getProfileInput: any = {
             request: {
               query: { token },
@@ -447,6 +448,43 @@ class AuthController extends BaseController {
               }
             }
           }
+          /**
+           * TODO:- ZOHO CRM ADD ACCOUNTS DATA
+           */
+          let dataSentInCrm: any = {
+            Account_Name: user.firstName + "" + user.lastName,
+            First_Name: user.firstName,
+            Last_Name: user.lastName,
+            Email: user.email,
+            Mobile: user.mobile,
+            Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
+            User_ID: user._id,
+          };
+          let mainData = {
+            data: [dataSentInCrm],
+          };
+          const dataAddInZoho = await addAccountInfoInZohoCrm(
+            ctx.request.zohoAccessToken,
+            mainData
+          );
+          if (user.type == EUserType.PARENT) {
+            let dataSentAgain = {
+              data: [
+                {
+                  Account_Name:
+                    childExists.firstName + "" + childExists.lastName,
+                  Parent_Account: {
+                    name: user.firstName + "" + user.lastName,
+                  },
+                },
+              ],
+            };
+            const dataAddInZoho = await addAccountInfoInZohoCrm(
+              ctx.request.zohoAccessToken,
+              dataSentAgain
+            );
+          }
+          console.log(dataAddInZoho, "dataAddInZoho");
           await UserController.getProfile(getProfileInput);
           return this.Ok(ctx, {
             token,
@@ -1155,6 +1193,7 @@ class AuthController extends BaseController {
    */
   @Route({ path: "/store-user-details", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async storeUserDetails(ctx: any) {
     let input: any = ctx.request.body;
     const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
@@ -1177,6 +1216,45 @@ class AuthController extends BaseController {
               { username: ctx.request.user.username },
               { $set: input }
             );
+            /**
+             * TODO:- ZOHO CRM ADD ACCOUNTS DATA
+             */
+            let dataSentInCrm: any = {
+              Account_Name: userExists.firstName + "" + userExists.lastName,
+              Billing_Country: "US",
+            };
+            if (input.postalCode) {
+              dataSentInCrm = {
+                ...dataSentInCrm,
+                Billing_Code: input.postalCode,
+              };
+            }
+            if (input.stateId) {
+              dataSentInCrm = {
+                ...dataSentInCrm,
+                Billing_State: state.name,
+              };
+            }
+            if (input.address) {
+              dataSentInCrm = {
+                ...dataSentInCrm,
+                Billing_Street: input.address,
+              };
+            }
+            if (input.city) {
+              dataSentInCrm = {
+                ...dataSentInCrm,
+                Billing_City: input.city,
+              };
+            }
+            let mainData = {
+              data: [dataSentInCrm],
+            };
+            const dataAddInZoho = await addAccountInfoInZohoCrm(
+              ctx.request.zohoAccessToken,
+              mainData
+            );
+            console.log(dataAddInZoho, "dataAddInZoho");
             return this.Created(ctx, {
               message:
                 "Stored Address and Liquid Asset Information Successfully",

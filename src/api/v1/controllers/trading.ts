@@ -181,10 +181,7 @@ class TradingController extends BaseController {
               let notificationRequest = {
                 key: NOTIFICATION_KEYS.TRADING,
                 title: NOTIFICATION.TEEN_REQUEST_MADE,
-                message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT.replace(
-                  "@yourteen",
-                  userExists.username
-                ),
+                message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
                 activityId: activity._id,
               };
               await sendNotification(
@@ -449,10 +446,7 @@ class TradingController extends BaseController {
               let notificationRequest = {
                 key: NOTIFICATION_KEYS.TRADING,
                 title: NOTIFICATION.TEEN_REQUEST_MADE,
-                message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW.replace(
-                  "@yourteen",
-                  userExists.username
-                ),
+                message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
                 activityId: activity._id,
               };
               await sendNotification(
@@ -850,9 +844,9 @@ class TradingController extends BaseController {
             key: NOTIFICATION_KEYS.TRADING,
             title: NOTIFICATION.TEEN_REQUEST_MADE,
             message: NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO.replace(
-              "@yourteen",
-              userExists.username
-            ).replace("@cryto", crypto.name),
+              "@cryto",
+              crypto.name
+            ),
             activityId: activity._id,
           };
           await sendNotification(
@@ -973,9 +967,9 @@ class TradingController extends BaseController {
             key: NOTIFICATION_KEYS.TRADING,
             title: NOTIFICATION.TEEN_REQUEST_MADE,
             message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
-              "@yourteen",
-              userExists.username
-            ).replace("@cryto", crypto.name),
+              "@cryto",
+              crypto.name
+            ),
             activityId: activity._id,
           };
           await sendNotification(

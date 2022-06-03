@@ -33,10 +33,16 @@ export interface IAccount {
   taxState: mongoose.Schema.Types.ObjectId;
   profilePicture: string;
   isAcknowledged: number;
+  cipCleared: boolean;
+  amlCleared: boolean;
+  identityConfirmed: boolean;
 }
 
 export interface IAdmin extends IUser {
   jwtToken: string;
+  zohoRefreshToken: string;
+  zohoExpiryTime: string;
+  zohoAccessToken: string;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;

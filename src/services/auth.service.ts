@@ -27,7 +27,7 @@ class AuthService {
     });
   }
 
-  public getJwtAuthInfo(user: IUserSchema) {
+  public async getJwtAuthInfo(user: IUserSchema) {
     const expiredOn = Date.now() + 36000;
 
     return {

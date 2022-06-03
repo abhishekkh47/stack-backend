@@ -62,4 +62,22 @@ export default {
   get WEBHOOK_URL() {
     return process.env.WEBHOOK_URL;
   },
+  get PT_USERNAME() {
+    return process.env.PT_USERNAME;
+  },
+  get PT_PASSWORD() {
+    return process.env.PT_PASSWORD;
+  },
+  get ZOHO_CLIENTID() {
+    return process.env.ZOHO_CLIENTID;
+  },
+  get ZOHO_SECRETID() {
+    return process.env.ZOHO_SECRETID;
+  },
+  get ZOHO_ACCOUNTURL() {
+    return process.env.ZOHO_ACCOUNTURL;
+  },
+  get ZOHO_DOMAIN() {
+    return process.env.ZOHO_DOMAIN;
+  },
 };

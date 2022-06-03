@@ -10,6 +10,8 @@ import {
   checkValidBase64String,
   getContactId,
   sendNotification,
+  getPrimeTrustJWTToken,
+  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { json, form } from "co-body";
@@ -27,12 +29,14 @@ import {
   TransactionTable,
   WebhookTable,
   DeviceToken,
+  AdminTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
 import fs from "fs";
 import path from "path";
 import moment from "moment";
+import { getAccessToken } from "../../../utility/zoho-crm";
 
 class WebHookController extends BaseController {
   /**
@@ -41,6 +45,7 @@ class WebHookController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/webhook-response", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public async getWebhookData(ctx: any) {
     console.log(`++++++START WEBHOOK DATA+++++++++`);
     let body: any = ctx.request.body;
@@ -53,6 +58,7 @@ class WebHookController extends BaseController {
        * For kyc success or failure
        */
       case "contact":
+      case "contacts":
         const checkAccountIdExists = await ParentChildTable.findOne({
           "teens.accountId": body.account_id,
         });
@@ -91,11 +97,25 @@ class WebHookController extends BaseController {
               },
             }
           );
+          /**
+           * Update the status to zoho crm
+           */
+          let dataSentInCrm: any = {
+            Account_Name: userExists.firstName + "" + userExists.lastName,
+            Account_Status: "2",
+          };
+          let mainData = {
+            data: [dataSentInCrm],
+          };
+          const dataAddInZoho = await addAccountInfoInZohoCrm(
+            ctx.request.zohoAccessToken,
+            mainData
+          );
           if (deviceTokenData) {
             let notificationRequest = {
               key: NOTIFICATION_KEYS.KYC_FAILURE,
               title: NOTIFICATION.KYC_REJECTED_TITLE,
-              message: body.data["kyc_required_actions"],
+              message: null,
               userId: userExists._id,
             };
             await sendNotification(
@@ -113,33 +133,74 @@ class WebHookController extends BaseController {
           body.data &&
           body.data["changes"] &&
           body.data["changes"].length > 0 &&
-          body.data["changes"].includes("cip-cleared") &&
-          body.data["changes"].includes("aml-cleared") &&
-          body.data["changes"].includes("identity-confirmed")
+          (body.data["changes"].includes("cip-cleared") ||
+            body.data["changes"].includes("aml-cleared") ||
+            body.data["changes"].includes("identity-confirmed"))
         ) {
+          console.log(body.data["changes"], "CHANGE ARRAY INCLUDE");
+          let updateData = {};
+          if (body.data["changes"].includes("aml-cleared")) {
+            updateData = { ...updateData, amlCleared: true };
+          }
+          if (body.data["changes"].includes("cip-cleared")) {
+            updateData = { ...updateData, cipCleared: true };
+          }
+          if (body.data["changes"].includes("identity-confirmed")) {
+            updateData = { ...updateData, identityConfirmed: true };
+          }
+          console.log(updateData, "updateDATA");
           await UserTable.updateOne(
             { _id: userExists._id },
             {
-              $set: {
-                kycMessages: null,
-                status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
-              },
+              $set: updateData,
             }
           );
-          if (deviceTokenData) {
-            let notificationRequest = {
-              key: NOTIFICATION_KEYS.KYC_SUCCESS,
-              title: NOTIFICATION.KYC_APPROVED_TITLE,
-              message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
-              userId: userExists._id,
-            };
-            await sendNotification(
-              deviceTokenData.deviceToken,
-              notificationRequest.title,
-              notificationRequest
+          let checkUserAgain = await UserTable.findOne({ _id: userExists._id });
+          if (
+            checkUserAgain.cipCleared &&
+            checkUserAgain.amlCleared &&
+            checkUserAgain.identityConfirmed &&
+            checkUserAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+          ) {
+            console.log(`Coming inside true`);
+            await UserTable.updateOne(
+              { _id: userExists._id },
+              {
+                $set: {
+                  kycMessages: null,
+                  status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
+                },
+              }
             );
+            /**
+             * Update the status to zoho crm
+             */
+            let dataSentInCrm: any = {
+              Account_Name: userExists.firstName + "" + userExists.lastName,
+              Account_Status: "3",
+            };
+            let mainData = {
+              data: [dataSentInCrm],
+            };
+            const dataAddInZoho = await addAccountInfoInZohoCrm(
+              ctx.request.zohoAccessToken,
+              mainData
+            );
+            if (deviceTokenData) {
+              let notificationRequest = {
+                key: NOTIFICATION_KEYS.KYC_SUCCESS,
+                title: NOTIFICATION.KYC_APPROVED_TITLE,
+                message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
+                userId: userExists._id,
+              };
+              await sendNotification(
+                deviceTokenData.deviceToken,
+                notificationRequest.title,
+                notificationRequest
+              );
+            }
+            return this.Ok(ctx, { message: "User Kyc Success" });
           }
-          return this.Ok(ctx, { message: "User Kyc Success" });
         }
         break;
       /**
@@ -575,8 +636,9 @@ class WebHookController extends BaseController {
               },
             }
           );
-          if (response.status === 400)
+          if (response.status === 400) {
             return this.BadRequest(ctx, response.message);
+          }
           await UserTable.updateOne(
             { _id: ctx.request.user._id },
             {
@@ -591,6 +653,21 @@ class WebHookController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used for zoho crm added data in crm platform
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/test-zoho",
+    method: HttpMethod.POST,
+  })
+  @PrimeTrustJWT(true)
+  public async testZoho(ctx: any) {
+    let accessToken = ctx.request.zohoAccessToken;
+    return this.Ok(ctx, { data: accessToken });
   }
 }
 

@@ -22,6 +22,7 @@ import {
   uploadImage,
   checkValidBase64String,
   sendNotification,
+  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import {
   EUSERSTATUS,
@@ -169,7 +170,6 @@ class UserController extends BaseController {
     }
     return this.Ok(ctx, { data: sendAgreementPreview.data.data });
   }
-
   /**
    * @description This method is used to upload files
    * @param ctx
@@ -180,7 +180,7 @@ class UserController extends BaseController {
     method: HttpMethod.POST,
   })
   @Auth()
-  @PrimeTrustJWT()
+  @PrimeTrustJWT(true)
   public async uploadFilesData(ctx: any) {
     const body = await json(ctx, { limit: "150mb" });
     const jwtToken = ctx.request.primeTrustToken;
@@ -339,8 +339,8 @@ class UserController extends BaseController {
             : "Back Side Driving License",
         label:
           fileData.fieldname == "id_proof_back"
-            ? "Front Side Driving License"
-            : "Back Side Driving License",
+            ? "Back Side Driving License"
+            : "Front Side Driving License",
         public: "true",
         file: fs.createReadStream(
           path.join(__dirname, "../../../../uploads", fileData.filename)
@@ -423,6 +423,20 @@ class UserController extends BaseController {
           kycDocumentId: kycResponse.data.data.id,
         },
       }
+    );
+    /**
+     * Update the status to zoho crm
+     */
+    let dataSentInCrm: any = {
+      Account_Name: userExists.firstName + "" + userExists.lastName,
+      Account_Status: "1",
+    };
+    let mainData = {
+      data: [dataSentInCrm],
+    };
+    const dataAddInZoho = await addAccountInfoInZohoCrm(
+      ctx.request.zohoAccessToken,
+      mainData
     );
     /**
      * Kyc pending mode call
