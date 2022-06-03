@@ -170,7 +170,6 @@ class UserController extends BaseController {
     }
     return this.Ok(ctx, { data: sendAgreementPreview.data.data });
   }
-
   /**
    * @description This method is used to upload files
    * @param ctx
@@ -183,7 +182,7 @@ class UserController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async uploadFilesData(ctx: any) {
-    const body = await form(ctx, { limit: "150mb" });
+    const body = await json(ctx, { limit: "150mb" });
     const jwtToken = ctx.request.primeTrustToken;
     const userExists: any = await UserTable.findOne({
       _id: ctx.request.user._id,
@@ -340,8 +339,8 @@ class UserController extends BaseController {
             : "Back Side Driving License",
         label:
           fileData.fieldname == "id_proof_back"
-            ? "Front Side Driving License"
-            : "Back Side Driving License",
+            ? "Back Side Driving License"
+            : "Front Side Driving License",
         public: "true",
         file: fs.createReadStream(
           path.join(__dirname, "../../../../uploads", fileData.filename)
