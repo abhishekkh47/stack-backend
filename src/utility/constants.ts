@@ -77,33 +77,30 @@ export const FIREBASE_CREDENCIALS = {
 
 export const NOTIFICATION = {
   TEEN_REQUEST_MADE: "A new request has been made 😃",
-  TEEN_REQUEST_DENIED: "Request Rejected ❌",
-  TEEN_REQUEST_APPROVED: "Request approved! 🎉",
+  TEEN_REQUEST_DENIED: "Your request is updated! ⭐",
+  TEEN_REQUEST_APPROVED: "Your request is approved! 🎉",
   TEEN_REQUEST_BUY_CRYPTO:
-    "@yourteen has requested to buy @crypto 🚀  Head to the app to approve or deny the request.",
+    "Your child has requested to buy @crypto 🚀  Head to the app to review the request.",
   TEEN_REQUEST_SELL_CRYPTO:
-    "@yourteen has requested to sell their holdings in @crypto 🚀  Head to the app to approve or deny the request.",
+    "Your child has requested to sell their holdings in @crypto 🚀  Head to the app to review the request.",
   TEEN_REQUEST_ADD_DEPOSIT:
-    "@yourteen has requested a one-time deposit 💰 Head to the app to approve or deny the request.",
+    "Your child has requested a one-time deposit 💰 Head to the app to review the request.",
   TEEN_REQUEST_ADD_WITHDRAW:
-    "@yourteen has requested a one-time withdrawal 💵 Head to the app to approve or deny the request.",
-  TEEN_REQUEST_DENIED_DESCRIPTION:
-    "Your request has been denied by parent. Better luck next time 🎩",
+    "Your child has requested a one-time withdrawal 💵 Head to the app to review the request.",
+  TEEN_REQUEST_DENIED_DESCRIPTION: "Your request is updated! ⭐",
   TEEN_REQUEST_ADD_DEPOSIT_APPROVED:
-    "Your request for one time deposit has been approved 🎩",
+    "Your request to deposit funds into your account was approved. What will you invest in next? 🚀 ",
   TEEN_REQUEST_ADD_WITHDRAW_APPROVED:
-    "Your request for one time withdrawal has been approved 🎩",
+    "Your request to withdraw funds has been approved 🎩",
   TEEN_REQUEST_BUY_CRYPTO_APPROVED:
-    "Your request for buy @crypto 🚀 has been approved",
+    "Your request to buy @crypto 🚀 has been approved!",
   TEEN_REQUEST_SELL_CRYPTO_APPROVED:
-    "Your request for sell @crypto 🚀 has been approved",
-  KYC_PENDING_TITLE: "Your Kyc request has been pending.",
-  KYC_PENDING_DESCRIPTION:
-    "Please wait for 24 hours till we get back to you ⏱.",
-  KYC_APPROVED_TITLE: "Your Kyc has been approved",
+    "Your request to sell @crypto 🚀 has been approved!",
+  KYC_PENDING_TITLE: "We are verifying your information.",
+  KYC_PENDING_DESCRIPTION: "You'll be able to access your account soon ⏱",
+  KYC_APPROVED_TITLE: "Your account has been approved 🥳",
   KYC_APPROVED_DESCRIPTION: "Explore our app for more features 🤩",
-  KYC_REJECTED_TITLE:
-    "Your kyc has been failed ❌. Please resubmit your kyc accordingly",
+  KYC_REJECTED_TITLE: "Looks like we need additional information from you 👀",
 };
 
 export const NOTIFICATION_KEYS = {
