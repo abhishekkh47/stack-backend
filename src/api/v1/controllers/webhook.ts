@@ -101,7 +101,7 @@ class WebHookController extends BaseController {
            * Update the status to zoho crm
            */
           let dataSentInCrm: any = {
-            Account_Name: userExists.firstName + "-" + userExists.lastName,
+            Account_Name: userExists.firstName + "" + userExists.lastName,
             Account_Status: "2",
           };
           let mainData = {
@@ -115,7 +115,7 @@ class WebHookController extends BaseController {
             let notificationRequest = {
               key: NOTIFICATION_KEYS.KYC_FAILURE,
               title: NOTIFICATION.KYC_REJECTED_TITLE,
-              message: body.data["kyc_required_actions"],
+              message: null,
               userId: userExists._id,
             };
             await sendNotification(
@@ -176,7 +176,7 @@ class WebHookController extends BaseController {
              * Update the status to zoho crm
              */
             let dataSentInCrm: any = {
-              Account_Name: userExists.firstName + "-" + userExists.lastName,
+              Account_Name: userExists.firstName + "" + userExists.lastName,
               Account_Status: "3",
             };
             let mainData = {
@@ -636,8 +636,9 @@ class WebHookController extends BaseController {
               },
             }
           );
-          if (response.status === 400)
+          if (response.status === 400) {
             return this.BadRequest(ctx, response.message);
+          }
           await UserTable.updateOne(
             { _id: ctx.request.user._id },
             {

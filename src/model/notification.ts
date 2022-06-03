@@ -18,7 +18,8 @@ const schema = new mongoose.Schema<INotificationSchema>(
     },
     message: {
       type: mongoose.Schema.Types.String,
-      required: true,
+      required: false,
+      default: null,
     },
     data: {
       type: mongoose.Schema.Types.String,

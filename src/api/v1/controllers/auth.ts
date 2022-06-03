@@ -452,12 +452,13 @@ class AuthController extends BaseController {
            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
            */
           let dataSentInCrm: any = {
-            Account_Name: user.firstName + "-" + user.lastName,
+            Account_Name: user.firstName + "" + user.lastName,
             First_Name: user.firstName,
             Last_Name: user.lastName,
             Email: user.email,
             Mobile: user.mobile,
             Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
+            User_ID: user._id,
           };
           let mainData = {
             data: [dataSentInCrm],
@@ -471,9 +472,9 @@ class AuthController extends BaseController {
               data: [
                 {
                   Account_Name:
-                    childExists.firstName + "-" + childExists.lastName,
+                    childExists.firstName + "" + childExists.lastName,
                   Parent_Account: {
-                    name: user.firstName + "-" + user.lastName,
+                    name: user.firstName + "" + user.lastName,
                   },
                 },
               ],
@@ -1219,7 +1220,7 @@ class AuthController extends BaseController {
              * TODO:- ZOHO CRM ADD ACCOUNTS DATA
              */
             let dataSentInCrm: any = {
-              Account_Name: userExists._id,
+              Account_Name: userExists.firstName + "" + userExists.lastName,
               Billing_Country: "US",
             };
             if (input.postalCode) {
