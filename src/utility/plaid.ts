@@ -19,7 +19,7 @@ export const getLinkToken = async (userData) => {
       // This should correspond to a unique id for the current user.
       client_user_id: clientUserId,
     },
-    client_name: userData.firstName + " " + userData.lastName,
+    client_name: "Stack",
     products: ["auth"],
     language: "en",
     country_codes: ["US"],

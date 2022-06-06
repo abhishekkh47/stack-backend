@@ -58,15 +58,18 @@ class AuthController extends BaseController {
             );
           }
           const resetPasswordMessage = `For your protection, we have reset your password due to insufficient login attempts. Check your email/SMS for a temporary password.`;
-          let userExists = await UserTable.findOne({
-            username: { $regex: `${username}`, $options: "i" },
-          });
+          let userExists = await UserTable.findOne({ username: username });
           if (!userExists) {
             userExists = await UserTable.findOne({
-              email: { $regex: `${username}`, $options: "i" },
+              username: { $regex: `${username}`, $options: "i" },
             });
             if (!userExists) {
-              return this.BadRequest(ctx, "User Not Found");
+              userExists = await UserTable.findOne({
+                email: { $regex: `${username}`, $options: "i" },
+              });
+              if (!userExists) {
+                return this.BadRequest(ctx, "User Not Found");
+              }
             }
           }
           /**

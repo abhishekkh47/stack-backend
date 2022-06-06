@@ -22,6 +22,7 @@ import {
   HttpMethod,
   EUserType,
 } from "../../../types";
+import envData from "../../../config/index";
 import {
   ParentChildTable,
   StateTable,
@@ -59,7 +60,7 @@ class WebHookController extends BaseController {
        */
       case "contact":
       case "contacts":
-        const checkAccountIdExists = await ParentChildTable.findOne({
+        const checkAccountIdExists: any = await ParentChildTable.findOne({
           "teens.accountId": body.account_id,
         });
         if (!checkAccountIdExists) {
@@ -118,11 +119,12 @@ class WebHookController extends BaseController {
               message: null,
               userId: userExists._id,
             };
-            await sendNotification(
+            const notificationCreated = await sendNotification(
               deviceTokenData.deviceToken,
               notificationRequest.title,
               notificationRequest
             );
+            console.log(notificationRequest, "notificationRequest");
           }
           return this.Ok(ctx, { message: "User Kyc Failed" });
         }
@@ -163,6 +165,9 @@ class WebHookController extends BaseController {
             checkUserAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
           ) {
             console.log(`Coming inside true`);
+            // let sayWaitlist = ["testChild@yopmail.com"];
+            // let allTeens = checkAccountIdExists.teens.map((x) => x.childId);
+            // console.log(allTeens);
             await UserTable.updateOne(
               { _id: userExists._id },
               {
@@ -587,6 +592,14 @@ class WebHookController extends BaseController {
             updates.city = input["primary-address"]["city"];
             requestPrimeTrust["primary-address"]["city"] =
               input["primary-address"]["city"];
+            updates.unitApt = input["primary-address"]["unitApt"]
+              ? input["primary-address"]["unitApt"]
+              : userExists.unitApt;
+            requestPrimeTrust["primary-address"]["street-2"] = input[
+              "primary-address"
+            ]["unitApt"]
+              ? input["primary-address"]["unitApt"]
+              : userExists.unitApt;
             updates.country = input["primary-address"]["country"];
             requestPrimeTrust["primary-address"]["country"] =
               input["primary-address"]["country"];
@@ -664,10 +677,24 @@ class WebHookController extends BaseController {
     path: "/test-zoho",
     method: HttpMethod.POST,
   })
-  @PrimeTrustJWT(true)
   public async testZoho(ctx: any) {
-    let accessToken = ctx.request.zohoAccessToken;
-    return this.Ok(ctx, { data: accessToken });
+    let parentChild: any = await ParentChildTable.findOne({
+      userId: "62726e59e68ae364f3a510e7",
+    }).populate("teens.childId", ["email"]);
+    let waitlistUser = ["sachinChild@yopmail.com", "sachinChild2@gmail.com"];
+    let teenEmailArray = parentChild.teens.map((x) => x.childId.email);
+    const intersection = waitlistUser.filter((element) =>
+      teenEmailArray.includes(element)
+    );
+    let preLoadedCoinsUser = await UserTable.find({
+      type: EUserType.TEEN,
+      preLoadedCoins: { $gt: 0 },
+    });
+    let user = await UserTable.findOne({
+      email: "sachinChild2@gmail.com",
+    }).explain("executionStats");
+
+    return this.Ok(ctx, { data: intersection });
   }
 }
 
