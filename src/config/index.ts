@@ -80,4 +80,7 @@ export default {
   get ZOHO_DOMAIN() {
     return process.env.ZOHO_DOMAIN;
   },
+  get TOP_WAITLIST_USER() {
+    return process.env.TOP_WAITLIST_USER;
+  },
 };

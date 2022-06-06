@@ -16,6 +16,7 @@ export interface IUser extends IAccount {
 export interface IAccount {
   firstName: string;
   lastName: string;
+  preLoadedCoins: number; // 0 by default
   type: EUserType;
   parentEmail: string;
   parentMobile: string;

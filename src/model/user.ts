@@ -90,6 +90,10 @@ const schema = new mongoose.Schema<IUserSchema>(
      * 0 - no and 1 - yes
      */
     isAcknowledged: { type: mongoose.Schema.Types.Number, default: null },
+    /**
+     * 0 coins by default and if top waitlist user, you will get 250 coins.
+     */
+    preLoadedCoins: { type: mongoose.Schema.Types.Number, default: 0 },
   },
   { timestamps: true }
 );
