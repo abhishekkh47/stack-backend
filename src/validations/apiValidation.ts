@@ -375,6 +375,14 @@ export const validation = {
         .required(),
       email: Joi.string().email().required(),
       childEmail: Joi.string().email().disallow(Joi.ref("email")).required(),
+      childFirstName: Joi.string()
+        .min(2)
+        .regex(/^[A-za-z]*$/)
+        .required(),
+      childLastName: Joi.string()
+        .min(2)
+        .regex(/^[A-za-z]*$/)
+        .required(),
     });
     const { error } = schema.validate(req);
     if (error)

@@ -175,25 +175,15 @@ class AuthController extends BaseController {
           let parentId = null;
           let accountNumber = null;
           const childArray = [];
-          let user = await AuthService.findUserByEmail(reqParam.email);
-          if (user) {
-            return this.BadRequest(ctx, "Email Already Exists");
-          }
-          user = await UserTable.findOne({
-            username: { $regex: `${reqParam.email}$`, $options: "i" },
-          });
-          if (user) {
-            return this.BadRequest(
-              ctx,
-              "This email is used by some other user as username"
-            );
-          }
-          user = await UserTable.findOne({ mobile: reqParam.mobile });
-          if (user) {
-            return this.BadRequest(ctx, "Mobile Number already Exists");
-          }
+          let user = null;
           /* tslint:disable-next-line */
           if (reqParam.type == EUserType.TEEN) {
+            /**
+             * TODO ADD CHILD ID
+             */
+            childExists = await UserTable.findOne({
+              mobile: reqParam.mobile,
+            });
             user = await UserTable.findOne({
               email: reqParam.parentEmail,
               type: EUserType.TEEN,
@@ -294,6 +284,23 @@ class AuthController extends BaseController {
             /**
              * Parent flow
              */
+            user = await AuthService.findUserByEmail(reqParam.email);
+            if (user) {
+              return this.BadRequest(ctx, "Email Already Exists");
+            }
+            user = await UserTable.findOne({
+              username: { $regex: `${reqParam.email}$`, $options: "i" },
+            });
+            if (user) {
+              return this.BadRequest(
+                ctx,
+                "This email is used by some other user as username"
+              );
+            }
+            user = await UserTable.findOne({ mobile: reqParam.mobile });
+            if (user) {
+              return this.BadRequest(ctx, "Mobile Number already Exists");
+            }
             const parentEmailExistInChild = await UserTable.findOne({
               parentEmail: reqParam.email,
             });
@@ -367,24 +374,44 @@ class AuthController extends BaseController {
             }
           }
           reqParam.password = AuthService.encryptPassword(reqParam.password);
-          user = await UserTable.create({
-            username: reqParam.username,
-            password: reqParam.password,
-            email: reqParam.email ? reqParam.email : null,
-            type: reqParam.type,
-            firstName: reqParam.firstName,
-            lastName: reqParam.lastName,
-            mobile: reqParam.mobile,
-            screenStatus:
-              reqParam.type === EUserType.PARENT
-                ? ESCREENSTATUS.CHANGE_ADDRESS
-                : ESCREENSTATUS.SIGN_UP,
-            parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
-            parentMobile: reqParam.parentMobile ? reqParam.parentMobile : null,
-            dob: reqParam.dob ? reqParam.dob : null,
-            taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
-          });
-          if (user.type === EUserType.PARENT) {
+          if (reqParam.type == EUserType.TEEN && childExists) {
+            user = await UserTable.findByIdAndUpdate(
+              { _id: childExists._id },
+              {
+                $set: {
+                  username: reqParam.username,
+                  firstName: reqParam.firstName,
+                  lastName: reqParam.lastName,
+                  password: reqParam.password,
+                  screenStatus: ESCREENSTATUS.SIGN_UP,
+                  dob: reqParam.dob ? reqParam.dob : null,
+                  taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
+                },
+              },
+              { new: true }
+            );
+          } else {
+            user = await UserTable.create({
+              username: reqParam.username ? reqParam.username : null,
+              password: reqParam.password ? reqParam.password : null,
+              email: reqParam.email ? reqParam.email : null,
+              type: reqParam.type,
+              firstName: reqParam.firstName,
+              lastName: reqParam.lastName,
+              mobile: reqParam.mobile,
+              screenStatus:
+                reqParam.type === EUserType.PARENT
+                  ? ESCREENSTATUS.CHANGE_ADDRESS
+                  : ESCREENSTATUS.SIGN_UP,
+              parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
+              parentMobile: reqParam.parentMobile
+                ? reqParam.parentMobile
+                : null,
+              dob: reqParam.dob ? reqParam.dob : null,
+              taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
+            });
+          }
+          if (reqParam.type == EUserType.PARENT) {
             await ParentChildTable.create({
               userId: user._id,
               contactId: null,
@@ -1164,7 +1191,14 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const { mobile, childMobile, email, childEmail } = input;
+          const {
+            mobile,
+            childMobile,
+            email,
+            childEmail,
+            childFirstName,
+            childLastName,
+          } = input;
           let user = await UserTable.findOne({
             mobile: childMobile,
             parentMobile: mobile,
@@ -1172,7 +1206,37 @@ class AuthController extends BaseController {
             parentEmail: { $regex: `${email}$`, $options: "i" },
           });
           if (user) return this.Ok(ctx, { message: "Success" });
-          return this.BadRequest(ctx, "We cannot find your accounts");
+          /**
+           * send twilio message to the teen in order to signup.
+           */
+          const message: string = `Hello Your Parent has invited you to join Stack. Please start the onboarding as soon as possible in order to explore new features and invest in cryptos.`;
+          try {
+            const twilioResponse: any = await TwilioService.sendSMS(
+              childMobile,
+              message
+            );
+            if (twilioResponse.code === 400) {
+              return this.BadRequest(ctx, "Error in sending OTP");
+            }
+            console.log(twilioResponse, "twilioResponse");
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
+          }
+          /**
+           * Create child account based on parent's input
+           */
+          await UserTable.create({
+            firstName: childFirstName,
+            lastName: childLastName,
+            mobile: childMobile,
+            email: childEmail,
+            parentEmail: email,
+            parentMobile: mobile,
+            type: EUserType.TEEN,
+          });
+          return this.Ok(ctx, {
+            message: "We've sent them an invite to create their username!",
+          });
         }
       }
     );
