@@ -218,7 +218,8 @@ class AuthController extends BaseController {
             });
             if (
               checkParentExists &&
-              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+              !childExists
             ) {
               let parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
@@ -999,13 +1000,13 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, email } = input;
-          let user = await UserTable.findOne({ mobile });
-          if (user)
-            return this.BadRequest(ctx, "Mobile number already exists.");
-          user = await UserTable.findOne({
-            email: { $regex: `${email}$`, $options: "i" },
-          });
-          if (user) return this.BadRequest(ctx, "Email-ID already exists.");
+          // let user = await UserTable.findOne({ mobile });
+          // if (user)
+          //   return this.BadRequest(ctx, "Mobile number already exists.");
+          // user = await UserTable.findOne({
+          //   email: { $regex: `${email}$`, $options: "i" },
+          // });
+          // if (user) return this.BadRequest(ctx, "Email-ID already exists.");
 
           /**
            * Send sms for confirmation of otp
@@ -1205,7 +1206,26 @@ class AuthController extends BaseController {
             email: { $regex: `${childEmail}$`, $options: "i" },
             parentEmail: { $regex: `${email}$`, $options: "i" },
           });
-          if (user) return this.Ok(ctx, { message: "Success" });
+          if (user)
+            return this.Ok(ctx, {
+              message: "We found their application and linked your accounts!",
+              isAccountFound: true,
+            });
+          /**
+           * This validation is there to keep if any child sign up with parent email or mobile
+           */
+          let checkEmailExists = await UserTable.findOne({
+            email: childEmail,
+          });
+          if (checkEmailExists) {
+            return this.BadRequest(ctx, "Child Email Already Exists");
+          }
+          let checkMobileExists = await UserTable.findOne({
+            mobile: childMobile,
+          });
+          if (checkMobileExists) {
+            return this.BadRequest(ctx, "Child Mobile Already Exists");
+          }
           /**
            * send twilio message to the teen in order to signup.
            */
@@ -1236,6 +1256,7 @@ class AuthController extends BaseController {
           });
           return this.Ok(ctx, {
             message: "We've sent them an invite to create their username!",
+            isAccountFound: false,
           });
         }
       }
