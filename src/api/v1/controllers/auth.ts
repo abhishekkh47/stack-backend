@@ -184,12 +184,23 @@ class AuthController extends BaseController {
             childExists = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
-            user = await UserTable.findOne({
-              email: reqParam.parentEmail,
-              type: EUserType.TEEN,
-            });
-            if (user) {
-              return this.BadRequest(ctx, "Email Already Exists");
+            if (reqParam.parentEmail) {
+              user = await UserTable.findOne({
+                email: reqParam.parentEmail,
+                type: EUserType.TEEN,
+              });
+              if (user) {
+                return this.BadRequest(ctx, "Email Already Exists");
+              }
+              user = await UserTable.findOne({
+                username: reqParam.parentEmail,
+              });
+              if (user) {
+                return this.BadRequest(
+                  ctx,
+                  "This parent email is used by some other user as username"
+                );
+              }
             }
             user = await UserTable.findOne({
               mobile: reqParam.parentMobile,
@@ -205,15 +216,9 @@ class AuthController extends BaseController {
                 "This username is used by some other user as parent's email"
               );
             }
-            user = await UserTable.findOne({ username: reqParam.parentEmail });
-            if (user) {
-              return this.BadRequest(
-                ctx,
-                "This parent email is used by some other user as username"
-              );
-            }
+
             let checkParentExists = await UserTable.findOne({
-              email: reqParam.parentEmail,
+              mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
             if (
@@ -1200,12 +1205,18 @@ class AuthController extends BaseController {
             childFirstName,
             childLastName,
           } = input;
-          let user = await UserTable.findOne({
+          let query: any = {
             mobile: childMobile,
             parentMobile: mobile,
-            email: { $regex: `${childEmail}$`, $options: "i" },
             parentEmail: { $regex: `${email}$`, $options: "i" },
-          });
+          };
+          if (childEmail) {
+            query = {
+              ...query,
+              email: { $regex: `${childEmail}$`, $options: "i" },
+            };
+          }
+          let user = await UserTable.findOne(query);
           if (user)
             return this.Ok(ctx, {
               message: "We found their application and linked your accounts!",
@@ -1249,7 +1260,7 @@ class AuthController extends BaseController {
             firstName: childFirstName,
             lastName: childLastName,
             mobile: childMobile,
-            email: childEmail,
+            email: childEmail ? childEmail : null,
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,

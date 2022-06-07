@@ -1395,6 +1395,7 @@ class TradingController extends BaseController {
           if (checkQuizExists.length > 0) {
             stackCoins = checkQuizExists[0].sum;
           }
+          stackCoins = stackCoins + childExists.preLoadedCoins;
           let parent: any = await ParentChildTable.findOne({
             "teens.childId": childExists._id,
           });

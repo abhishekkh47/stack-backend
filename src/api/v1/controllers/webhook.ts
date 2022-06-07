@@ -21,6 +21,7 @@ import {
   EUSERSTATUS,
   HttpMethod,
   EUserType,
+  EGIFTSTACKCOINSSETTING,
 } from "../../../types";
 import envData from "../../../config/index";
 import {
@@ -50,6 +51,7 @@ class WebHookController extends BaseController {
   public async getWebhookData(ctx: any) {
     console.log(`++++++START WEBHOOK DATA+++++++++`);
     let body: any = ctx.request.body;
+    let admin = await AdminTable.findOne({});
     await WebhookTable.create({
       title: body.resource_type,
       data: body,
@@ -62,7 +64,7 @@ class WebHookController extends BaseController {
       case "contacts":
         const checkAccountIdExists: any = await ParentChildTable.findOne({
           "teens.accountId": body.account_id,
-        });
+        }).populate("teens.childId", ["email", "isGifted"]);
         if (!checkAccountIdExists) {
           return this.BadRequest(ctx, "Account Id Doesn't Exists");
         }
@@ -165,9 +167,6 @@ class WebHookController extends BaseController {
             checkUserAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
           ) {
             console.log(`Coming inside true`);
-            // let sayWaitlist = ["testChild@yopmail.com"];
-            // let allTeens = checkAccountIdExists.teens.map((x) => x.childId);
-            // console.log(allTeens);
             await UserTable.updateOne(
               { _id: userExists._id },
               {
@@ -202,6 +201,32 @@ class WebHookController extends BaseController {
                 deviceTokenData.deviceToken,
                 notificationRequest.title,
                 notificationRequest
+              );
+            }
+            /**
+             * Gift stack coins to all teens whose parent's kyc is approved
+             */
+            if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
+              let allTeens = await checkAccountIdExists.teens.filter(
+                (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
+              );
+              let userIdsToBeGifted = [];
+              if (allTeens.length > 0) {
+                for (let allTeen of allTeens) {
+                  await userIdsToBeGifted.push(allTeen.childId._id);
+                }
+              }
+              console.log(userIdsToBeGifted, "userIdsToBeGifted");
+              await UserTable.updateMany(
+                {
+                  _id: { $in: userIdsToBeGifted },
+                },
+                {
+                  $set: {
+                    isGifted: EGIFTSTACKCOINSSETTING.ON,
+                    preLoadedCoins: admin.stackCoins,
+                  },
+                }
               );
             }
             return this.Ok(ctx, { message: "User Kyc Success" });
@@ -680,21 +705,32 @@ class WebHookController extends BaseController {
   public async testZoho(ctx: any) {
     let parentChild: any = await ParentChildTable.findOne({
       userId: "62726e59e68ae364f3a510e7",
-    }).populate("teens.childId", ["email"]);
-    let waitlistUser = ["sachinChild@yopmail.com", "sachinChild2@gmail.com"];
-    let teenEmailArray = parentChild.teens.map((x) => x.childId.email);
-    const intersection = waitlistUser.filter((element) =>
-      teenEmailArray.includes(element)
+    }).populate("teens.childId", ["email", "isGifted"]);
+    /**
+     * Gift stack coins to all teens whose parent's kyc is approved
+     */
+    // if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
+    let allTeens = await parentChild.teens.filter(
+      (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
     );
-    let preLoadedCoinsUser = await UserTable.find({
-      type: EUserType.TEEN,
-      preLoadedCoins: { $gt: 0 },
-    });
-    let user = await UserTable.findOne({
-      email: "sachinChild2@gmail.com",
-    }).explain("executionStats");
-
-    return this.Ok(ctx, { data: intersection });
+    let userIdsToBeGifted = [];
+    if (allTeens.length > 0) {
+      for (let allTeen of allTeens) {
+        await userIdsToBeGifted.push(allTeen.childId._id);
+      }
+    }
+    await UserTable.updateMany(
+      {
+        _id: { $in: userIdsToBeGifted },
+      },
+      {
+        $set: {
+          isGifted: EGIFTSTACKCOINSSETTING.ON,
+          preLoadedCoins: 1000,
+        },
+      }
+    );
+    return this.Ok(ctx, { data: parentChild });
   }
 }
 

@@ -22,6 +22,7 @@ import {
   CryptoTable,
   QuizQuestionResult,
   CryptoPriceTable,
+  UserTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import moment from "moment";
@@ -122,6 +123,7 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuizInformation(ctx: any) {
     const user = ctx.request.user;
+    let childExists = await UserTable.findOne({ _id: user._id });
     const checkQuizExists = await QuizResult.aggregate([
       {
         $match: {
@@ -146,14 +148,15 @@ class QuizController extends BaseController {
     const dataToSent = {
       lastQuizTime: null,
       totalQuestionSolved: 0,
-      totalStackPointsEarned: 0,
+      totalStackPointsEarned: childExists.preLoadedCoins,
     };
     /**
      * Get Stack Point Earned
      */
     if (checkQuizExists.length > 0) {
-      dataToSent.totalStackPointsEarned = checkQuizExists[0].sum;
+      dataToSent.totalStackPointsEarned += checkQuizExists[0].sum;
     }
+
     /**
      * Get Quiz Question Count
      */
