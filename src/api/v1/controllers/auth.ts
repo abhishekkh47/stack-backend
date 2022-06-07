@@ -14,6 +14,7 @@ import {
   addAccountInfoInZohoCrm,
 } from "../../../utility";
 import BaseController from "./base";
+import envData from "../../../config/index";
 import {
   ALLOWED_LOGIN_ATTEMPTS,
   EOTPTYPE,
@@ -40,7 +41,14 @@ import { CONSTANT } from "../../../utility/constants";
 import { UserWalletTable } from "../../../model/userbalance";
 import { ObjectId } from "mongodb";
 import UserController from "./user";
-
+// const { OAuth2Client } = require("google-auth-library");
+import { OAuth2Client } from "google-auth-library";
+import { AppleSignIn } from "apple-sign-in-rest";
+const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
+// const apple_client: any = new AppleSignIn({
+//   clientId: "envData.GOOGLE_CLIENT_ID",
+//   teamId: "envData.GOOGLE_CLIENT_ID",
+// });
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
   public async handleLogin(ctx: Koa.Context) {
@@ -50,112 +58,106 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          const { username } = reqParam;
-          if (!username) {
-            return this.BadRequest(
-              ctx,
-              "Please enter either username or email"
-            );
+          const { email, type } = reqParam;
+          if (!email) {
+            return this.BadRequest(ctx, "Please enter email");
           }
-          const resetPasswordMessage = `For your protection, we have reset your password due to insufficient login attempts. Check your email/SMS for a temporary password.`;
-          let userExists = await UserTable.findOne({ username: username });
+          let userExists = await UserTable.findOne({ email: email });
           if (!userExists) {
             userExists = await UserTable.findOne({
-              username: { $regex: `${username}`, $options: "i" },
+              email: { $regex: `${email}`, $options: "i" },
             });
             if (!userExists) {
-              userExists = await UserTable.findOne({
-                email: { $regex: `${username}`, $options: "i" },
-              });
-              if (!userExists) {
-                return this.BadRequest(ctx, "User Not Found");
-              }
+              return this.BadRequest(ctx, "User Not Found");
             }
           }
           /**
-           * Less than 3 attempts
+           * Sign in type 1 - google and 2 - apple
            */
-          if (userExists.loginAttempts < ALLOWED_LOGIN_ATTEMPTS - 1) {
-            /**
-             * Compare Password
-             */
-            if (
-              !AuthService.comparePassword(
-                ctx.request.body.password,
-                userExists.password
-              )
-            ) {
-              if (userExists.loginAttempts < ALLOWED_LOGIN_ATTEMPTS - 1) {
-                userExists.loginAttempts = userExists.loginAttempts + 1;
-                await userExists.save();
-              }
-              return this.BadRequest(ctx, "Invalid password");
-            }
-            await UserTable.updateOne(
-              { _id: userExists._id },
-              { $set: { loginAttempts: 0, tempPassword: null } }
-            );
-            const authInfo = await AuthService.getJwtAuthInfo(userExists);
-            const token = await getJwtToken(authInfo);
-            const refreshToken = await getRefreshToken(authInfo);
-            userExists.refreshToken = refreshToken;
-            await userExists.save();
-
-            let getProfileInput: any = {
-              request: {
-                query: { token },
-                headers: {},
-                params: { id: userExists._id },
-              },
-            };
-            await UserController.getProfile(getProfileInput);
-            if (reqParam.deviceToken) {
-              const checkDeviceTokenExists = await DeviceToken.findOne({
-                userId: userExists._id,
-              });
-              if (!checkDeviceTokenExists) {
-                await DeviceToken.create({
-                  userId: userExists._id,
-                  "deviceToken.0": reqParam.deviceToken,
+          const socialLoginToken = reqParam.socialLoginToken;
+          switch (type) {
+            case "1":
+              console.log(envData.GOOGLE_CLIENT_ID, "envData.GOOGLE_CLIENT_ID");
+              const googleTicket: any = await google_client
+                .verifyIdToken({
+                  idToken: socialLoginToken,
+                  audience: envData.GOOGLE_CLIENT_ID,
+                })
+                .catch((error) => {
+                  console.log(error, "error");
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-              } else {
-                if (
-                  !checkDeviceTokenExists.deviceToken.includes(
-                    reqParam.deviceToken
-                  )
-                ) {
-                  await DeviceToken.updateOne(
-                    { _id: checkDeviceTokenExists._id },
-                    {
-                      $push: {
-                        deviceToken: reqParam.deviceToken,
-                      },
-                    }
-                  );
-                }
+              console.log(googleTicket, `--ticket--`);
+              const googlePayload = googleTicket.getPayload();
+              if (!googlePayload) {
+                return this.BadRequest(ctx, "Error while logging in");
+              }
+              if (googlePayload.email != email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
+              break;
+            case "2":
+              // const appleTicket: any = await google_client
+              //   .verifyIdToken(socialLoginToken, {})
+              //   .catch(() => {
+              //     return this.BadRequest(ctx, "Error Invalid Token Id");
+              //   });
+              // console.log(appleTicket, `--ticket--`);
+              // const applePayload = appleTicket.getPayload();
+              // if (!applePayload) {
+              //   return this.BadRequest(ctx, "Error while logging in");
+              // }
+              // if (applePayload.email != email) {
+              //   return this.BadRequest(ctx, "Email Doesn't Match");
+              // }
+              break;
+          }
+          // return this.Ok(ctx, { message: "success" });
+          const authInfo = await AuthService.getJwtAuthInfo(userExists);
+          const token = await getJwtToken(authInfo);
+          const refreshToken = await getRefreshToken(authInfo);
+          userExists.refreshToken = refreshToken;
+          await userExists.save();
+
+          let getProfileInput: any = {
+            request: {
+              query: { token },
+              headers: {},
+              params: { id: userExists._id },
+            },
+          };
+          await UserController.getProfile(getProfileInput);
+          if (reqParam.deviceToken) {
+            const checkDeviceTokenExists = await DeviceToken.findOne({
+              userId: userExists._id,
+            });
+            if (!checkDeviceTokenExists) {
+              await DeviceToken.create({
+                userId: userExists._id,
+                "deviceToken.0": reqParam.deviceToken,
+              });
+            } else {
+              if (
+                !checkDeviceTokenExists.deviceToken.includes(
+                  reqParam.deviceToken
+                )
+              ) {
+                await DeviceToken.updateOne(
+                  { _id: checkDeviceTokenExists._id },
+                  {
+                    $push: {
+                      deviceToken: reqParam.deviceToken,
+                    },
+                  }
+                );
               }
             }
-            return this.Ok(ctx, {
-              token,
-              refreshToken,
-              profileData: getProfileInput.body.data,
-            });
-          } else {
-            /**
-             * RESET PASSWORD API CALL
-             */
-            userExists.loginAttempts = userExists.loginAttempts + 1;
-            await userExists.save();
-            const requestData = {
-              request: {
-                body: {
-                  username: userExists.username,
-                },
-              },
-            };
-            // await this.resetPassword(requestData);
-            return this.BadRequest(ctx, resetPasswordMessage);
           }
+          return this.Ok(ctx, {
+            token,
+            refreshToken,
+            profileData: getProfileInput.body.data,
+          });
         }
       }
     );

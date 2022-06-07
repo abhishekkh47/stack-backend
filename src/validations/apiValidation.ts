@@ -236,14 +236,17 @@ export const validation = {
   },
   loginValidation: (req, res, callback) => {
     const schema = Joi.object({
-      username: Joi.string()
-        .min(5)
-        .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/),
-      password: Joi.string()
-        .min(8)
-        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
-        .required(),
+      // username: Joi.string()
+      //   .min(5)
+      //   .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/),
+      // password: Joi.string()
+      //   .min(8)
+      //   .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
+      //   .required(),
+      type: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
+      email: Joi.string().email().required(),
       deviceToken: Joi.string(),
+      socialLoginToken: Joi.string().required(),
     });
 
     const { error } = schema.validate(req);

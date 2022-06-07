@@ -83,4 +83,10 @@ export default {
   get TOP_WAITLIST_USER() {
     return process.env.TOP_WAITLIST_USER;
   },
+  get GOOGLE_CLIENT_ID() {
+    return process.env.GOOGLE_CLIENT_ID;
+  },
+  get APPLE_CLIENT_ID() {
+    return process.env.APPLE_CLIENT_ID;
+  },
 };
