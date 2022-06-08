@@ -38,6 +38,7 @@ export const validation = {
       publicToken: Joi.string().required(),
       accountId: Joi.string().required(),
       institutionId: Joi.string().required(),
+      depositAmount: Joi.number().required(),
     });
     const { error } = schema.validate(req);
     if (error) {
