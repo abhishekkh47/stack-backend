@@ -64,7 +64,12 @@ class WebHookController extends BaseController {
       case "contacts":
         const checkAccountIdExists: any = await ParentChildTable.findOne({
           "teens.accountId": body.account_id,
-        }).populate("teens.childId", ["email", "isGifted"]);
+        }).populate("teens.childId", [
+          "email",
+          "isGifted",
+          "firstName",
+          "lastName",
+        ]);
         if (!checkAccountIdExists) {
           return this.BadRequest(ctx, "Account Id Doesn't Exists");
         }
@@ -212,8 +217,26 @@ class WebHookController extends BaseController {
               );
               let userIdsToBeGifted = [];
               if (allTeens.length > 0) {
-                for (let allTeen of allTeens) {
+                for await (let allTeen of allTeens) {
                   await userIdsToBeGifted.push(allTeen.childId._id);
+                  /**
+                   * Added in zoho
+                   */
+                  let dataSentInCrm: any = {
+                    Account_Name:
+                      allTeen.childId.firstName +
+                      " " +
+                      allTeen.childId.lastName,
+                    Stack_Coins: admin.stackCoins,
+                  };
+                  let mainData = {
+                    data: [dataSentInCrm],
+                  };
+                  const dataAddInZoho = await addAccountInfoInZohoCrm(
+                    ctx.request.zohoAccessToken,
+                    mainData
+                  );
+                  console.log(dataAddInZoho, "dataAddInZoho");
                 }
               }
               console.log(userIdsToBeGifted, "userIdsToBeGifted");
