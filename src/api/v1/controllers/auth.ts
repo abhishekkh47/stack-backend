@@ -72,7 +72,7 @@ class AuthController extends BaseController {
               email: { $regex: `${email}`, $options: "i" },
             });
             if (!userExists) {
-              return this.BadRequest(ctx, "User Not Found");
+              return this.Ok(ctx, { message: "User Not Found", isFor: 1 });
             }
           }
           /**
@@ -162,6 +162,7 @@ class AuthController extends BaseController {
             token,
             refreshToken,
             profileData: getProfileInput.body.data,
+            isFor: 2,
           });
         }
       }
