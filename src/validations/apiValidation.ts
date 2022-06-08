@@ -163,7 +163,11 @@ export const validation = {
       }),
       parentEmail: Joi.when("type", {
         is: 1,
-        then: Joi.string().email().disallow(Joi.ref("email")).required(),
+        then: Joi.string()
+          .email()
+          .allow("")
+          .disallow(Joi.ref("email"))
+          .required(),
       }),
       dob: Joi.date().iso().when("type", {
         is: 2,

@@ -8,7 +8,7 @@ import request from "request";
  * @expiry 1hour expiry time
  */
 export const getAccessToken = async (refreshToken) => {
-  console.log(config.ZOHO_ACCOUNTURL + ZOHOAPIS.getAccessToken, "url");
+  console.log(config.ZOHO_CLIENTID, "url");
 
   const response = await axios
     .post(
