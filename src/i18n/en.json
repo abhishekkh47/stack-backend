@@ -231,5 +231,6 @@
 	"checkAccountReadyToLinkChildlastnameEmpty": "Please enter last Name",
 	"checkAccountReadyToLinkChildlastnameRequired": "Please enter last Name",
 	"checkAccountReadyToLinkChildlastnameMin": "Last name must be at least 2 characters long and only contain alphabets.",
-	"checkAccountReadyToLinkChildlastnamePattern": "Please enter valid last Name."
+	"checkAccountReadyToLinkChildlastnamePattern": "Please enter valid last Name.",
+	"loginEmailUnknown": "loginEmailUnknown"
 }

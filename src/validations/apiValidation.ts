@@ -33,6 +33,16 @@ export const validation = {
     }
     return callback(true);
   },
+  logoutValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      deviceToken: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("logout", error)));
+    }
+    return callback(true);
+  },
   addBankDetailsValidation: (req, res, callback) => {
     const schema = Joi.object({
       publicToken: Joi.string().required(),

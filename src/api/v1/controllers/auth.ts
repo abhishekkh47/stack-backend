@@ -1410,7 +1410,7 @@ class AuthController extends BaseController {
   /**
    * @description This api is used for remding their parent for sending email for sign up to stack
    * @param ctx
-   * @returns
+   * @returns {*}
    */
   @Route({ path: "/remind-parent", method: HttpMethod.POST })
   @Auth()
@@ -1426,6 +1426,43 @@ class AuthController extends BaseController {
       name: `${user.firstName} ${user.lastName}`,
     });
     return this.Ok(ctx, { message: "Reminder Email is sent to your parent. " });
+  }
+
+  /**
+   * @description This api is used for logout
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/logout", method: HttpMethod.POST })
+  @Auth()
+  public async logout(ctx: any) {
+    const reqParam = ctx.request.body;
+    const user = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!user) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const deviceTokens = await DeviceToken.findOne({ userId: user._id });
+    return validation.logoutValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          if (deviceTokens.deviceToken.includes(reqParam.deviceToken)) {
+            await DeviceToken.updateOne(
+              { userId: user._id },
+              {
+                $pull: {
+                  deviceToken: reqParam.deviceToken,
+                },
+              }
+            );
+            return this.Ok(ctx, { message: "Logout Successfully" });
+          } else {
+            return this.BadRequest(ctx, "Device Token Doesn't Match");
+          }
+        }
+      }
+    );
   }
 }
 
