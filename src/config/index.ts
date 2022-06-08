@@ -89,4 +89,13 @@ export default {
   get APPLE_CLIENT_ID() {
     return process.env.APPLE_CLIENT_ID;
   },
+  get APPLE_TEAM_ID() {
+    return process.env.APPLE_TEAM_ID;
+  },
+  get APPLE_KEY_IDENTIFIER() {
+    return process.env.APPLE_KEY_IDENTIFIER;
+  },
+  get APPLE_PRIVATE_KEY() {
+    return process.env.APPLE_PRIVATE_KEY;
+  },
 };

@@ -39,19 +39,16 @@ import { TwilioService } from "../../../services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
 import { UserWalletTable } from "../../../model/userbalance";
-import { ObjectId } from "mongodb";
 import UserController from "./user";
 // const { OAuth2Client } = require("google-auth-library");
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
 const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
 const apple_client: any = new AppleSignIn({
-  clientId: "com.my-company.my-app",
-  teamId: "5B645323E8",
-  keyIdentifier: "U3B842SVGC",
-  privateKey: "-----BEGIN PRIVATE KEY-----\nMIGTAgEHIHMJKJyqGSM32AgEGC...",
-  // or instead of privateKey use privateKeyPath to read key from file
-  privateKeyPath: "/Users/arnold/my-project/credentials/AuthKey.p8",
+  clientId: envData.APPLE_CLIENT_ID,
+  teamId: envData.APPLE_TEAM_ID,
+  keyIdentifier: envData.APPLE_KEY_IDENTIFIER,
+  privateKey: envData.APPLE_PRIVATE_KEY,
 });
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -91,7 +88,7 @@ class AuthController extends BaseController {
                   console.log(error, "error");
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-              console.log(googleTicket, `--ticket--`);
+              console.log(googleTicket, `google ticket`);
               const googlePayload = googleTicket.getPayload();
               if (!googlePayload) {
                 return this.BadRequest(ctx, "Error while logging in");
@@ -104,20 +101,15 @@ class AuthController extends BaseController {
               const appleTicket: any = await apple_client
                 .verifyIdToken(socialLoginToken)
                 .catch((err) => {
+                  console.log(err, "err");
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-
-              console.log(appleTicket, `--ticket--`);
-              const applePayload = appleTicket.getPayload();
-              if (!applePayload) {
-                return this.BadRequest(ctx, "Error while logging in");
-              }
-              if (applePayload.email != email) {
+              console.log(appleTicket, `apple ticket`);
+              if (appleTicket.email != email) {
                 return this.BadRequest(ctx, "Email Doesn't Match");
               }
               break;
           }
-          // return this.Ok(ctx, { message: "success" });
           const authInfo = await AuthService.getJwtAuthInfo(userExists);
           const token = await getJwtToken(authInfo);
           const refreshToken = await getRefreshToken(authInfo);
@@ -424,13 +416,7 @@ class AuthController extends BaseController {
                 .catch((err) => {
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-
-              console.log(appleTicket, `--ticket--`);
-              const applePayload = appleTicket.getPayload();
-              if (!applePayload) {
-                return this.BadRequest(ctx, "Error while logging in");
-              }
-              if (applePayload.email != reqParam.email) {
+              if (appleTicket.email != reqParam.email) {
                 return this.BadRequest(ctx, "Email Doesn't Match");
               }
               break;
