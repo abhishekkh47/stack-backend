@@ -135,6 +135,8 @@ export const validation = {
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
       email: Joi.string().email().required(),
+      loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
+      socialLoginToken: Joi.string().required(),
       childMobile: Joi.when("type", {
         is: 2,
         then: Joi.string()
@@ -142,10 +144,6 @@ export const validation = {
           .disallow(Joi.ref("mobile"))
           .required(),
       }),
-      password: Joi.string()
-        .min(8)
-        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
-        .required(),
       firstName: Joi.string()
         .min(2)
         .regex(/^[A-za-z]*$/)
@@ -243,7 +241,7 @@ export const validation = {
       //   .min(8)
       //   .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
       //   .required(),
-      type: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
+      loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       email: Joi.string().email().required(),
       deviceToken: Joi.string(),
       socialLoginToken: Joi.string().required(),

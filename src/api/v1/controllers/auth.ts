@@ -45,10 +45,14 @@ import UserController from "./user";
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
 const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
-// const apple_client: any = new AppleSignIn({
-//   clientId: "envData.GOOGLE_CLIENT_ID",
-//   teamId: "envData.GOOGLE_CLIENT_ID",
-// });
+const apple_client: any = new AppleSignIn({
+  clientId: "com.my-company.my-app",
+  teamId: "5B645323E8",
+  keyIdentifier: "U3B842SVGC",
+  privateKey: "-----BEGIN PRIVATE KEY-----\nMIGTAgEHIHMJKJyqGSM32AgEGC...",
+  // or instead of privateKey use privateKeyPath to read key from file
+  privateKeyPath: "/Users/arnold/my-project/credentials/AuthKey.p8",
+});
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
   public async handleLogin(ctx: Koa.Context) {
@@ -58,7 +62,7 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          const { email, type } = reqParam;
+          const { email, loginType } = reqParam;
           if (!email) {
             return this.BadRequest(ctx, "Please enter email");
           }
@@ -75,7 +79,7 @@ class AuthController extends BaseController {
            * Sign in type 1 - google and 2 - apple
            */
           const socialLoginToken = reqParam.socialLoginToken;
-          switch (type) {
+          switch (loginType) {
             case "1":
               console.log(envData.GOOGLE_CLIENT_ID, "envData.GOOGLE_CLIENT_ID");
               const googleTicket: any = await google_client
@@ -97,19 +101,20 @@ class AuthController extends BaseController {
               }
               break;
             case "2":
-              // const appleTicket: any = await google_client
-              //   .verifyIdToken(socialLoginToken, {})
-              //   .catch(() => {
-              //     return this.BadRequest(ctx, "Error Invalid Token Id");
-              //   });
-              // console.log(appleTicket, `--ticket--`);
-              // const applePayload = appleTicket.getPayload();
-              // if (!applePayload) {
-              //   return this.BadRequest(ctx, "Error while logging in");
-              // }
-              // if (applePayload.email != email) {
-              //   return this.BadRequest(ctx, "Email Doesn't Match");
-              // }
+              const appleTicket: any = await apple_client
+                .verifyIdToken(socialLoginToken)
+                .catch((err) => {
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
+                });
+
+              console.log(appleTicket, `--ticket--`);
+              const applePayload = appleTicket.getPayload();
+              if (!applePayload) {
+                return this.BadRequest(ctx, "Error while logging in");
+              }
+              if (applePayload.email != email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
               break;
           }
           // return this.Ok(ctx, { message: "success" });
@@ -381,7 +386,54 @@ class AuthController extends BaseController {
               );
             }
           }
-          reqParam.password = AuthService.encryptPassword(reqParam.password);
+          reqParam.password = reqParam.password
+            ? AuthService.encryptPassword(reqParam.password)
+            : null;
+          /**
+           * Verify Social Login Token now
+           */
+          /**
+           * Sign in type 1 - google and 2 - apple
+           */
+          const socialLoginToken = reqParam.socialLoginToken;
+          switch (reqParam.loginType) {
+            case "1":
+              console.log(envData.GOOGLE_CLIENT_ID, "envData.GOOGLE_CLIENT_ID");
+              const googleTicket: any = await google_client
+                .verifyIdToken({
+                  idToken: socialLoginToken,
+                  audience: envData.GOOGLE_CLIENT_ID,
+                })
+                .catch((error) => {
+                  console.log(error, "error");
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
+                });
+              console.log(googleTicket, `--ticket--`);
+              const googlePayload = googleTicket.getPayload();
+              if (!googlePayload) {
+                return this.BadRequest(ctx, "Error while logging in");
+              }
+              if (googlePayload.email != reqParam.email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
+              break;
+            case "2":
+              const appleTicket: any = await apple_client
+                .verifyIdToken(socialLoginToken)
+                .catch((err) => {
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
+                });
+
+              console.log(appleTicket, `--ticket--`);
+              const applePayload = appleTicket.getPayload();
+              if (!applePayload) {
+                return this.BadRequest(ctx, "Error while logging in");
+              }
+              if (applePayload.email != reqParam.email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
+              break;
+          }
           if (reqParam.type == EUserType.TEEN && childExists) {
             user = await UserTable.findByIdAndUpdate(
               { _id: childExists._id },
