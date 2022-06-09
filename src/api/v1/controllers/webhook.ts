@@ -224,6 +224,8 @@ class WebHookController extends BaseController {
                 {
                   $set: {
                     isGifted: EGIFTSTACKCOINSSETTING.ON,
+                  },
+                  $inc: {
                     preLoadedCoins: admin.stackCoins,
                   },
                 }
