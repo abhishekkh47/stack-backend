@@ -100,7 +100,7 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
-          await ParentChildTable.updateOne(
+          const parentDetails: any = await ParentChildTable.updateOne(
             {
               _id: parent._id,
             },
@@ -110,7 +110,8 @@ class TradingController extends BaseController {
                 accessToken: publicTokenExchange.data.access_token,
                 institutionId: reqParam.institutionId,
               },
-            }
+            },
+            { new: true }
           );
           await UserTable.updateOne(
             {
@@ -122,6 +123,67 @@ class TradingController extends BaseController {
               },
             }
           );
+          /**
+           * if deposit amount is greater than 0
+           */
+          if (reqParam.depositAmount && reqParam.depositAmount > 0) {
+            const accountIdDetails = await parentDetails.teens.find(
+              (x: any) =>
+                x.childId.toString() == parentDetails.firstChildId.toString()
+            );
+            /**
+             * create fund transfer with fund transfer id in response
+             */
+            let contributionRequest = {
+              type: "contributions",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "contact-id": parentDetails.contactId,
+                "funds-transfer-method": {
+                  "funds-transfer-type": "ach",
+                  "ach-check-type": "personal",
+                  "contact-id": parentDetails.contactId,
+                  "plaid-processor-token": parentDetails.processorToken,
+                },
+                amount: reqParam.depositAmount,
+              },
+            };
+            const contributions: any = await createContributions(
+              jwtToken,
+              contributionRequest
+            );
+            if (contributions.status == 400) {
+              return this.BadRequest(ctx, contributions.message);
+            }
+            const activity = await UserActivityTable.create({
+              userId: accountIdDetails.firstChildId,
+              userType: accountIdDetails.firstChildId,
+              message: `${messages.APPROVE_DEPOSIT} of $${reqParam.depositAmount}`,
+              currencyType: null,
+              currencyValue: reqParam.depositAmount,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            });
+            await TransactionTable.create({
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              settledTime: moment().unix(),
+              amount: reqParam.amount,
+              amountMod: null,
+              userId: accountIdDetails.childId,
+              parentId: userExists._id,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            });
+            return this.Ok(ctx, {
+              message:
+                "We will proceed your request surely in some amount of time.",
+            });
+          }
           return this.Ok(ctx, { message: "Bank account linked successfully" });
         }
       }
