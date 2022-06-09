@@ -126,7 +126,7 @@ class TradingController extends BaseController {
           /**
            * if deposit amount is greater than 0
            */
-          if (reqParam.depositAmount > 0) {
+          if (reqParam.depositAmount && reqParam.depositAmount > 0) {
             const accountIdDetails = await parentDetails.teens.find(
               (x: any) =>
                 x.childId.toString() == parentDetails.firstChildId.toString()
