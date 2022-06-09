@@ -5,9 +5,10 @@ import {
   Route,
   getHistoricalDataOfCoins,
   getLatestPrice,
+  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import BaseController from "./base";
-import { Auth } from "../../../middleware";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   EQuizTopicStatus,
   everyCorrectAnswerPoints,
@@ -247,6 +248,7 @@ class QuizController extends BaseController {
    */
   @Route({ path: "/add-quiz-result", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
@@ -255,6 +257,7 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          const userExists = await UserTable.findOne({ _id: user._id });
           const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
           if (!quizExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
@@ -319,6 +322,23 @@ class QuizController extends BaseController {
               everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
           };
           await QuizResult.create(dataToCreate);
+          /**
+           * Added Quiz information to zoho crm
+           */
+          let dataSentInCrm: any = {
+            Account_Name: userExists.firstName + " " + userExists.lastName,
+            Quiz_Information: [
+              {
+                Quiz_Number: parseInt(quizExists.quizName.split(" ")[1]),
+                Points:
+                  everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+              },
+            ],
+          };
+          let mainData = {
+            data: [dataSentInCrm],
+          };
+          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
           return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });
         }
       }
