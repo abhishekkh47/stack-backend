@@ -12,18 +12,17 @@ import {
   getRefreshToken,
   createAccount,
   addAccountInfoInZohoCrm,
+  makeUniqueReferalCode,
 } from "../../../utility";
 import BaseController from "./base";
 import envData from "../../../config/index";
 import {
-  ALLOWED_LOGIN_ATTEMPTS,
   EOTPTYPE,
   EOTPVERIFICATION,
   ESCREENSTATUS,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-  IUser,
 } from "../../../types";
 import { AuthService } from "../../../services";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
@@ -34,13 +33,12 @@ import {
   ParentChildTable,
   StateTable,
   DeviceToken,
+  AdminTable,
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
-import { UserWalletTable } from "../../../model/userbalance";
 import UserController from "./user";
-// const { OAuth2Client } = require("google-auth-library");
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
 const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
@@ -421,6 +419,60 @@ class AuthController extends BaseController {
               }
               break;
           }
+          /**
+           * Refferal code present and check whole logic for the
+           */
+          let isGiftedStackCoins = 0;
+          if (reqParam.refferalCode) {
+            const refferalCodeExists = await UserTable.findOne({
+              referralCode: reqParam.refferalCode,
+            });
+            if (!refferalCodeExists) {
+              return this.BadRequest(ctx, "Refferal Code Not Found");
+            }
+            let admin = await AdminTable.findOne({});
+            if (
+              refferalCodeExists.type == EUserType.PARENT &&
+              refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              isGiftedStackCoins = admin.stackCoins;
+            } else if (refferalCodeExists.type == EUserType.TEEN) {
+              let checkTeenParent = await UserTable.findOne({
+                mobile: refferalCodeExists.parentMobile,
+              });
+              if (
+                checkTeenParent &&
+                checkTeenParent.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+              ) {
+                isGiftedStackCoins = admin.stackCoins;
+              }
+            }
+            if (isGiftedStackCoins > 0) {
+              await UserTable.updateOne(
+                { _id: refferalCodeExists._id },
+                {
+                  $set: {
+                    preLoadedCoins: { $inc: { isGiftedStackCoins } },
+                  },
+                }
+              );
+              /**
+               * TODO:- ZOHO CRM ADD ACCOUNTS DATA
+               */
+              let dataSentInCrm: any = {
+                Account_Name: user.firstName + " " + user.lastName,
+                Stack_Coins:
+                  refferalCodeExists.preLoadedCoins + isGiftedStackCoins,
+              };
+              let mainData = {
+                data: [dataSentInCrm],
+              };
+              const dataAddInZoho = await addAccountInfoInZohoCrm(
+                ctx.request.zohoAccessToken,
+                mainData
+              );
+            }
+          }
           if (reqParam.type == EUserType.TEEN && childExists) {
             user = await UserTable.findByIdAndUpdate(
               { _id: childExists._id },
@@ -438,6 +490,10 @@ class AuthController extends BaseController {
               { new: true }
             );
           } else {
+            /**
+             * Generate referal code when user sign's up.
+             */
+            const uniqueReferralCode = await makeUniqueReferalCode();
             user = await UserTable.create({
               username: reqParam.username ? reqParam.username : null,
               password: reqParam.password ? reqParam.password : null,
@@ -456,6 +512,8 @@ class AuthController extends BaseController {
                 : null,
               dob: reqParam.dob ? reqParam.dob : null,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
+              referralCode: uniqueReferralCode,
+              preLoadedCoins: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
             });
           }
           if (reqParam.type == EUserType.PARENT) {
@@ -486,7 +544,6 @@ class AuthController extends BaseController {
               );
             }
           }
-
           const authInfo = await AuthService.getJwtAuthInfo(user);
           const refreshToken = await getRefreshToken(authInfo);
           user.refreshToken = refreshToken;
@@ -1086,6 +1143,26 @@ class AuthController extends BaseController {
   }
 
   /**
+   * @description This method is used to check refferal code
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/check-refferalcode/:code", method: HttpMethod.GET })
+  public async checkRefferalCodeInDb(ctx: any) {
+    const reqParam = ctx.params;
+    if (!reqParam.code) {
+      return this.BadRequest(ctx, "Please enter refferal code");
+    }
+    const refferalCodeExists = await UserTable.findOne({
+      refferalCode: reqParam.code,
+    });
+    if (refferalCodeExists) {
+      return this.Ok(ctx, { message: "Success" });
+    }
+    return this.BadRequest(ctx, "Refferal Code Doesnt Exists");
+  }
+
+  /**
    * @description This method is used to check unique email
    * @param ctx
    * @returns {*}
@@ -1297,6 +1374,10 @@ class AuthController extends BaseController {
           /**
            * Create child account based on parent's input
            */
+          /**
+           * Generate referal code when user sign's up.
+           */
+          const uniqueReferralCode = await makeUniqueReferalCode();
           await UserTable.create({
             firstName: childFirstName,
             lastName: childLastName,
@@ -1305,6 +1386,7 @@ class AuthController extends BaseController {
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
+            referralCode: uniqueReferralCode,
           });
           return this.Ok(ctx, {
             message: "We've sent them an invite to create their username!",

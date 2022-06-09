@@ -98,6 +98,7 @@ const schema = new mongoose.Schema<IUserSchema>(
      * 0 - not gifted and 1 - gifted
      */
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
+    referralCode: { type: mongoose.Schema.Types.String, required: true },
   },
   { timestamps: true }
 );

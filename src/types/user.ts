@@ -38,6 +38,7 @@ export interface IAccount {
   cipCleared: boolean;
   amlCleared: boolean;
   identityConfirmed: boolean;
+  referralCode: string;
 }
 
 export interface IAdmin extends IUser {

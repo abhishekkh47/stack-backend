@@ -135,6 +135,7 @@ export const validation = {
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
       email: Joi.string().email().required(),
+      refferalCode: Joi.string().optional(),
       loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       socialLoginToken: Joi.string().required(),
       childMobile: Joi.when("type", {
