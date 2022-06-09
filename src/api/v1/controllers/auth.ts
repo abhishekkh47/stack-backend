@@ -34,6 +34,7 @@ import {
   StateTable,
   DeviceToken,
   AdminTable,
+  QuizResult,
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
@@ -41,6 +42,7 @@ import { CONSTANT } from "../../../utility/constants";
 import UserController from "./user";
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
+import mongoose from "mongoose";
 const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
 const apple_client: any = new AppleSignIn({
   clientId: envData.APPLE_CLIENT_ID,
@@ -171,6 +173,7 @@ class AuthController extends BaseController {
           let childExists = null;
           let accountId = null;
           let parentId = null;
+          let isGiftedStackCoins = 0;
           let accountNumber = null;
           const childArray = [];
           let user = null;
@@ -428,7 +431,7 @@ class AuthController extends BaseController {
           /**
            * Refferal code present and check whole logic for the
            */
-          let isGiftedStackCoins = 0;
+
           if (reqParam.refferalCode) {
             const refferalCodeExists = await UserTable.findOne({
               referralCode: reqParam.refferalCode,
@@ -457,23 +460,50 @@ class AuthController extends BaseController {
               await UserTable.updateOne(
                 { _id: refferalCodeExists._id },
                 {
-                  $set: {
-                    preLoadedCoins: { $inc: { isGiftedStackCoins } },
-                  },
+                  $inc: { preLoadedCoins: isGiftedStackCoins },
                 }
               );
               /**
-               * TODO:- ZOHO CRM ADD ACCOUNTS DATA
+               * Get Quiz Stack Coins
                */
+              const checkQuizExists = await QuizResult.aggregate([
+                {
+                  $match: {
+                    userId: new mongoose.Types.ObjectId(refferalCodeExists._id),
+                  },
+                },
+                {
+                  $group: {
+                    _id: 0,
+                    sum: {
+                      $sum: "$pointsEarned",
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    sum: 1,
+                  },
+                },
+              ]).exec();
+              let stackCoins = 0;
+              console.log(checkQuizExists, "checkQuizExists");
+              if (checkQuizExists.length > 0) {
+                stackCoins = checkQuizExists[0].sum;
+              }
+              stackCoins = stackCoins + isGiftedStackCoins;
               let dataSentInCrm: any = {
-                Account_Name: user.firstName + " " + user.lastName,
-                Stack_Coins:
-                  refferalCodeExists.preLoadedCoins + isGiftedStackCoins,
+                Account_Name:
+                  refferalCodeExists.firstName +
+                  " " +
+                  refferalCodeExists.lastName,
+                Stack_Coins: stackCoins,
               };
               let mainData = {
                 data: [dataSentInCrm],
               };
-              const dataAddInZoho = await addAccountInfoInZohoCrm(
+              await addAccountInfoInZohoCrm(
                 ctx.request.zohoAccessToken,
                 mainData
               );
@@ -605,7 +635,10 @@ class AuthController extends BaseController {
             User_ID: user._id,
           };
           if (isGiftedStackCoins > 0) {
-            dataSentInCrm = { ...dataSentInCrm, Stack_Coins: user.stackCoins };
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Stack_Coins: isGiftedStackCoins,
+            };
           }
           let mainData = {
             data: [dataSentInCrm],
