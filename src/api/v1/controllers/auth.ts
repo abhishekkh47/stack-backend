@@ -182,7 +182,7 @@ class AuthController extends BaseController {
             childExists = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
-            if (childExists.isParentFirst == false) {
+            if (childExists && childExists.isParentFirst == false) {
               return this.BadRequest(
                 ctx,
                 "Your account is already created. Please log in"
