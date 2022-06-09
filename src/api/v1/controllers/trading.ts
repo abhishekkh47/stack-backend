@@ -675,11 +675,16 @@ class TradingController extends BaseController {
     if (fetchBalance.status == 400) {
       return this.BadRequest(ctx, fetchBalance.message);
     }
+    console.log(
+      fetchBalance.data.data[0].attributes,
+      "fetchBalance.data.data[0].attributes"
+    );
     const balance = fetchBalance.data.data[0].attributes.disbursable;
+    const pending = fetchBalance.data.data[0].attributes["pending-transfer"];
     if (fetchBalance.status == 400) {
       return this.BadRequest(ctx, fetchBalance.message);
     }
-    return this.Ok(ctx, { balance: balance });
+    return this.Ok(ctx, { balance: balance, pendingBalance: pending });
   }
 
   /**
