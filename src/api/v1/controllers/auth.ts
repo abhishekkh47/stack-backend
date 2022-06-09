@@ -182,6 +182,12 @@ class AuthController extends BaseController {
             childExists = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
+            if (childExists.isParentFirst == false) {
+              return this.BadRequest(
+                ctx,
+                "Your account is already created. Please log in"
+              );
+            }
             if (reqParam.parentEmail) {
               user = await UserTable.findOne({
                 email: reqParam.parentEmail,
@@ -485,6 +491,10 @@ class AuthController extends BaseController {
                   screenStatus: ESCREENSTATUS.SIGN_UP,
                   dob: reqParam.dob ? reqParam.dob : null,
                   taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
+                  isParentFirst: false,
+                  preLoadedCoins: {
+                    $inc: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+                  },
                 },
               },
               { new: true }
@@ -594,6 +604,9 @@ class AuthController extends BaseController {
             Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
             User_ID: user._id,
           };
+          if (isGiftedStackCoins > 0) {
+            dataSentInCrm = { ...dataSentInCrm, Stack_Coins: user.stackCoins };
+          }
           let mainData = {
             data: [dataSentInCrm],
           };
@@ -1154,7 +1167,7 @@ class AuthController extends BaseController {
       return this.BadRequest(ctx, "Please enter refferal code");
     }
     const refferalCodeExists = await UserTable.findOne({
-      refferalCode: reqParam.code,
+      referralCode: { $exists: true, $eq: reqParam.code },
     });
     if (refferalCodeExists) {
       return this.Ok(ctx, { message: "Success" });
@@ -1387,6 +1400,7 @@ class AuthController extends BaseController {
             parentMobile: mobile,
             type: EUserType.TEEN,
             referralCode: uniqueReferralCode,
+            isParentFirst: true,
           });
           return this.Ok(ctx, {
             message: "We've sent them an invite to create their username!",

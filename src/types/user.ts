@@ -11,6 +11,7 @@ export interface IUser extends IAccount {
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
   refreshToken: string;
+  isParentFirst: boolean;
 }
 
 export interface IAccount {
