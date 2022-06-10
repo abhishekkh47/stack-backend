@@ -233,5 +233,8 @@
 	"checkAccountReadyToLinkChildlastnameMin": "Last name must be at least 2 characters long and only contain alphabets.",
 	"checkAccountReadyToLinkChildlastnamePattern": "Please enter valid last Name.",
 	"loginEmailUnknown": "loginEmailUnknown",
-	"addBankDetailsInstitutionidRequired": "addBankDetailsInstitutionidRequired"
+	"addBankDetailsInstitutionidRequired": "addBankDetailsInstitutionidRequired",
+	"loginEmailRequired": "loginEmailRequired",
+	"loginLogintypeRequired": "loginLogintypeRequired",
+	"loginSociallogintokenRequired": "loginSociallogintokenRequired"
 }

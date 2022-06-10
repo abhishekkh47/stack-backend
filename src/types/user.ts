@@ -11,6 +11,7 @@ export interface IUser extends IAccount {
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
   refreshToken: string;
+  isParentFirst: boolean;
 }
 
 export interface IAccount {
@@ -38,6 +39,7 @@ export interface IAccount {
   cipCleared: boolean;
   amlCleared: boolean;
   identityConfirmed: boolean;
+  referralCode: string;
 }
 
 export interface IAdmin extends IUser {

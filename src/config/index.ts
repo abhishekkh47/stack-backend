@@ -83,4 +83,19 @@ export default {
   get TOP_WAITLIST_USER() {
     return process.env.TOP_WAITLIST_USER;
   },
+  get GOOGLE_CLIENT_ID() {
+    return process.env.GOOGLE_CLIENT_ID;
+  },
+  get APPLE_CLIENT_ID() {
+    return process.env.APPLE_CLIENT_ID;
+  },
+  get APPLE_TEAM_ID() {
+    return process.env.APPLE_TEAM_ID;
+  },
+  get APPLE_KEY_IDENTIFIER() {
+    return process.env.APPLE_KEY_IDENTIFIER;
+  },
+  get APPLE_PRIVATE_KEY() {
+    return process.env.APPLE_PRIVATE_KEY;
+  },
 };

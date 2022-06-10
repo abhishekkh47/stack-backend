@@ -146,6 +146,9 @@ export const validation = {
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
       email: Joi.string().email().required(),
+      refferalCode: Joi.string().optional(),
+      loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
+      socialLoginToken: Joi.string().required(),
       childMobile: Joi.when("type", {
         is: 2,
         then: Joi.string()
@@ -153,10 +156,6 @@ export const validation = {
           .disallow(Joi.ref("mobile"))
           .required(),
       }),
-      password: Joi.string()
-        .min(8)
-        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
-        .required(),
       firstName: Joi.string()
         .min(2)
         .regex(/^[A-za-z]*$/)
@@ -251,14 +250,17 @@ export const validation = {
   },
   loginValidation: (req, res, callback) => {
     const schema = Joi.object({
-      username: Joi.string()
-        .min(5)
-        .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/),
-      password: Joi.string()
-        .min(8)
-        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
-        .required(),
+      // username: Joi.string()
+      //   .min(5)
+      //   .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/),
+      // password: Joi.string()
+      //   .min(8)
+      //   .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
+      //   .required(),
+      loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
+      email: Joi.string().email().required(),
       deviceToken: Joi.string(),
+      socialLoginToken: Joi.string().required(),
     });
 
     const { error } = schema.validate(req);
