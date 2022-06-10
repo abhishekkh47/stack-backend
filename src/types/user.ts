@@ -11,12 +11,14 @@ export interface IUser extends IAccount {
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
   refreshToken: string;
+  isParentFirst: boolean;
 }
 
 export interface IAccount {
   firstName: string;
   lastName: string;
   preLoadedCoins: number; // 0 by default
+  isGifted: number;
   type: EUserType;
   parentEmail: string;
   parentMobile: string;
@@ -37,6 +39,7 @@ export interface IAccount {
   cipCleared: boolean;
   amlCleared: boolean;
   identityConfirmed: boolean;
+  referralCode: string;
 }
 
 export interface IAdmin extends IUser {
@@ -44,6 +47,8 @@ export interface IAdmin extends IUser {
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;
+  giftStackCoinsSetting: EGIFTSTACKCOINSSETTING;
+  stackCoins: number;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
@@ -51,6 +56,11 @@ export const ALLOWED_LOGIN_ATTEMPTS = 3;
 export enum EUserType {
   TEEN = 1,
   PARENT = 2,
+}
+
+export enum EGIFTSTACKCOINSSETTING {
+  ON = 1,
+  OFF = 0,
 }
 
 export enum ETRANSFER {

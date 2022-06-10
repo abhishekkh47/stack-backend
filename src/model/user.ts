@@ -94,6 +94,12 @@ const schema = new mongoose.Schema<IUserSchema>(
      * 0 coins by default and if top waitlist user, you will get 250 coins.
      */
     preLoadedCoins: { type: mongoose.Schema.Types.Number, default: 0 },
+    /**
+     * 0 - not gifted and 1 - gifted
+     */
+    isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
+    referralCode: { type: mongoose.Schema.Types.String, default: null },
+    isParentFirst: { type: mongoose.Schema.Types.Boolean, default: false },
   },
   { timestamps: true }
 );

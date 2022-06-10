@@ -223,5 +223,18 @@
 	"addBankDetailsPublictokenEmpty": "Please enter public token.",
 	"addBankDetailsAccountidRequired": "Please enter account id.",
 	"addBankDetailsAccountidEmpty": "Please enter account id.",
-	"checkUserNameUsernamePattern":"Please enter valid username."
+	"checkUserNameUsernamePattern": "Please enter valid username.",
+	"checkAccountReadyToLinkChildfirstnameRequired": "Please enter first Name.",
+	"checkAccountReadyToLinkChildfirstnameEmpty": "Please enter first Name.",
+	"checkAccountReadyToLinkChildfirstnameMin": "First name must be at least 2 characters long and only contain alphabets.",
+	"checkAccountReadyToLinkChildfirstnamePattern": "Please enter valid first Name.",
+	"checkAccountReadyToLinkChildlastnameEmpty": "Please enter last Name",
+	"checkAccountReadyToLinkChildlastnameRequired": "Please enter last Name",
+	"checkAccountReadyToLinkChildlastnameMin": "Last name must be at least 2 characters long and only contain alphabets.",
+	"checkAccountReadyToLinkChildlastnamePattern": "Please enter valid last Name.",
+	"loginEmailUnknown": "loginEmailUnknown",
+	"addBankDetailsInstitutionidRequired": "addBankDetailsInstitutionidRequired",
+	"loginEmailRequired": "loginEmailRequired",
+	"loginLogintypeRequired": "loginLogintypeRequired",
+	"loginSociallogintokenRequired": "loginSociallogintokenRequired"
 }

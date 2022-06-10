@@ -16,6 +16,15 @@ const schema = new mongoose.Schema<IAdminSchema>(
     zohoRefreshToken: { type: mongoose.Schema.Types.String, default: null },
     zohoAccessToken: { type: mongoose.Schema.Types.String, default: null },
     zohoExpiryTime: { type: mongoose.Schema.Types.Number, default: null },
+    stackCoins: { type: mongoose.Schema.Types.Number, default: null },
+    /**
+     * 1 - ON AND 0 -OFF
+     */
+    giftStackCoinsSetting: {
+      type: mongoose.Schema.Types.Number,
+      isIn: [0, 1],
+      default: 0,
+    },
   },
   { timestamps: true }
 );

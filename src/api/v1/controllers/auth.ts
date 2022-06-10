@@ -12,17 +12,17 @@ import {
   getRefreshToken,
   createAccount,
   addAccountInfoInZohoCrm,
+  makeUniqueReferalCode,
 } from "../../../utility";
 import BaseController from "./base";
+import envData from "../../../config/index";
 import {
-  ALLOWED_LOGIN_ATTEMPTS,
   EOTPTYPE,
   EOTPVERIFICATION,
   ESCREENSTATUS,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-  IUser,
 } from "../../../types";
 import { AuthService } from "../../../services";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
@@ -33,14 +33,23 @@ import {
   ParentChildTable,
   StateTable,
   DeviceToken,
+  AdminTable,
+  QuizResult,
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
 import { CONSTANT } from "../../../utility/constants";
-import { UserWalletTable } from "../../../model/userbalance";
-import { ObjectId } from "mongodb";
 import UserController from "./user";
-
+import { OAuth2Client } from "google-auth-library";
+import { AppleSignIn } from "apple-sign-in-rest";
+import mongoose from "mongoose";
+const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
+const apple_client: any = new AppleSignIn({
+  clientId: envData.APPLE_CLIENT_ID,
+  teamId: envData.APPLE_TEAM_ID,
+  keyIdentifier: envData.APPLE_KEY_IDENTIFIER,
+  privateKey: envData.APPLE_PRIVATE_KEY,
+});
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
   public async handleLogin(ctx: Koa.Context) {
@@ -50,112 +59,103 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          const { username } = reqParam;
-          if (!username) {
-            return this.BadRequest(
-              ctx,
-              "Please enter either username or email"
-            );
+          const { email, loginType } = reqParam;
+          if (!email) {
+            return this.BadRequest(ctx, "Please enter email");
           }
-          const resetPasswordMessage = `For your protection, we have reset your password due to insufficient login attempts. Check your email/SMS for a temporary password.`;
-          let userExists = await UserTable.findOne({ username: username });
+          let userExists = await UserTable.findOne({ email: email });
           if (!userExists) {
             userExists = await UserTable.findOne({
-              username: { $regex: `${username}`, $options: "i" },
+              email: { $regex: `${email}`, $options: "i" },
             });
             if (!userExists) {
-              userExists = await UserTable.findOne({
-                email: { $regex: `${username}`, $options: "i" },
-              });
-              if (!userExists) {
-                return this.BadRequest(ctx, "User Not Found");
-              }
+              return this.BadRequest(ctx, "User Not Found");
             }
           }
           /**
-           * Less than 3 attempts
+           * Sign in type 1 - google and 2 - apple
            */
-          if (userExists.loginAttempts < ALLOWED_LOGIN_ATTEMPTS - 1) {
-            /**
-             * Compare Password
-             */
-            if (
-              !AuthService.comparePassword(
-                ctx.request.body.password,
-                userExists.password
-              )
-            ) {
-              if (userExists.loginAttempts < ALLOWED_LOGIN_ATTEMPTS - 1) {
-                userExists.loginAttempts = userExists.loginAttempts + 1;
-                await userExists.save();
-              }
-              return this.BadRequest(ctx, "Invalid password");
-            }
-            await UserTable.updateOne(
-              { _id: userExists._id },
-              { $set: { loginAttempts: 0, tempPassword: null } }
-            );
-            const authInfo = await AuthService.getJwtAuthInfo(userExists);
-            const token = await getJwtToken(authInfo);
-            const refreshToken = await getRefreshToken(authInfo);
-            userExists.refreshToken = refreshToken;
-            await userExists.save();
-
-            let getProfileInput: any = {
-              request: {
-                query: { token },
-                headers: {},
-                params: { id: userExists._id },
-              },
-            };
-            await UserController.getProfile(getProfileInput);
-            if (reqParam.deviceToken) {
-              const checkDeviceTokenExists = await DeviceToken.findOne({
-                userId: userExists._id,
-              });
-              if (!checkDeviceTokenExists) {
-                await DeviceToken.create({
-                  userId: userExists._id,
-                  "deviceToken.0": reqParam.deviceToken,
+          const socialLoginToken = reqParam.socialLoginToken;
+          switch (loginType) {
+            case "1":
+              console.log(envData.GOOGLE_CLIENT_ID, "envData.GOOGLE_CLIENT_ID");
+              const googleTicket: any = await google_client
+                .verifyIdToken({
+                  idToken: socialLoginToken,
+                  audience: envData.GOOGLE_CLIENT_ID,
+                })
+                .catch((error) => {
+                  console.log(error, "error");
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-              } else {
-                if (
-                  !checkDeviceTokenExists.deviceToken.includes(
-                    reqParam.deviceToken
-                  )
-                ) {
-                  await DeviceToken.updateOne(
-                    { _id: checkDeviceTokenExists._id },
-                    {
-                      $push: {
-                        deviceToken: reqParam.deviceToken,
-                      },
-                    }
-                  );
-                }
+              console.log(googleTicket, `google ticket`);
+              const googlePayload = googleTicket.getPayload();
+              if (!googlePayload) {
+                return this.BadRequest(ctx, "Error while logging in");
+              }
+              if (googlePayload.email != email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
+              break;
+            case "2":
+              const appleTicket: any = await apple_client
+                .verifyIdToken(socialLoginToken)
+                .catch((err) => {
+                  console.log(err, "err");
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
+                });
+              console.log(appleTicket, `apple ticket`);
+              if (appleTicket.email != email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
+              break;
+          }
+          const authInfo = await AuthService.getJwtAuthInfo(userExists);
+          const token = await getJwtToken(authInfo);
+          const refreshToken = await getRefreshToken(authInfo);
+          userExists.refreshToken = refreshToken;
+          await userExists.save();
+
+          let getProfileInput: any = {
+            request: {
+              query: { token },
+              headers: {},
+              params: { id: userExists._id },
+            },
+          };
+          await UserController.getProfile(getProfileInput);
+          if (reqParam.deviceToken) {
+            const checkDeviceTokenExists = await DeviceToken.findOne({
+              userId: userExists._id,
+            });
+            if (!checkDeviceTokenExists) {
+              await DeviceToken.create({
+                userId: userExists._id,
+                "deviceToken.0": reqParam.deviceToken,
+              });
+            } else {
+              if (
+                !checkDeviceTokenExists.deviceToken.includes(
+                  reqParam.deviceToken
+                )
+              ) {
+                await DeviceToken.updateOne(
+                  { _id: checkDeviceTokenExists._id },
+                  {
+                    $push: {
+                      deviceToken: reqParam.deviceToken,
+                    },
+                  }
+                );
               }
             }
-            return this.Ok(ctx, {
-              token,
-              refreshToken,
-              profileData: getProfileInput.body.data,
-            });
-          } else {
-            /**
-             * RESET PASSWORD API CALL
-             */
-            userExists.loginAttempts = userExists.loginAttempts + 1;
-            await userExists.save();
-            const requestData = {
-              request: {
-                body: {
-                  username: userExists.username,
-                },
-              },
-            };
-            // await this.resetPassword(requestData);
-            return this.BadRequest(ctx, resetPasswordMessage);
           }
+          return this.Ok(ctx, {
+            token,
+            refreshToken,
+            profileData: getProfileInput.body.data,
+            isFor: 2,
+          });
         }
       }
     );
@@ -173,33 +173,41 @@ class AuthController extends BaseController {
           let childExists = null;
           let accountId = null;
           let parentId = null;
+          let isGiftedStackCoins = 0;
           let accountNumber = null;
           const childArray = [];
-          let user = await AuthService.findUserByEmail(reqParam.email);
-          if (user) {
-            return this.BadRequest(ctx, "Email Already Exists");
-          }
-          user = await UserTable.findOne({
-            username: { $regex: `${reqParam.email}$`, $options: "i" },
-          });
-          if (user) {
-            return this.BadRequest(
-              ctx,
-              "This email is used by some other user as username"
-            );
-          }
-          user = await UserTable.findOne({ mobile: reqParam.mobile });
-          if (user) {
-            return this.BadRequest(ctx, "Mobile Number already Exists");
-          }
+          let user = null;
           /* tslint:disable-next-line */
           if (reqParam.type == EUserType.TEEN) {
-            user = await UserTable.findOne({
-              email: reqParam.parentEmail,
-              type: EUserType.TEEN,
+            /**
+             * TODO ADD CHILD ID
+             */
+            childExists = await UserTable.findOne({
+              mobile: reqParam.mobile,
             });
-            if (user) {
-              return this.BadRequest(ctx, "Email Already Exists");
+            if (childExists && childExists.isParentFirst == false) {
+              return this.BadRequest(
+                ctx,
+                "Your account is already created. Please log in"
+              );
+            }
+            if (reqParam.parentEmail) {
+              user = await UserTable.findOne({
+                email: reqParam.parentEmail,
+                type: EUserType.TEEN,
+              });
+              if (user) {
+                return this.BadRequest(ctx, "Email Already Exists");
+              }
+              user = await UserTable.findOne({
+                username: reqParam.parentEmail,
+              });
+              if (user) {
+                return this.BadRequest(
+                  ctx,
+                  "This parent email is used by some other user as username"
+                );
+              }
             }
             user = await UserTable.findOne({
               mobile: reqParam.parentMobile,
@@ -215,20 +223,15 @@ class AuthController extends BaseController {
                 "This username is used by some other user as parent's email"
               );
             }
-            user = await UserTable.findOne({ username: reqParam.parentEmail });
-            if (user) {
-              return this.BadRequest(
-                ctx,
-                "This parent email is used by some other user as username"
-              );
-            }
+
             let checkParentExists = await UserTable.findOne({
-              email: reqParam.parentEmail,
+              mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
             if (
               checkParentExists &&
-              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+              !childExists
             ) {
               let parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
@@ -294,6 +297,23 @@ class AuthController extends BaseController {
             /**
              * Parent flow
              */
+            user = await AuthService.findUserByEmail(reqParam.email);
+            if (user) {
+              return this.BadRequest(ctx, "Email Already Exists");
+            }
+            user = await UserTable.findOne({
+              username: { $regex: `${reqParam.email}$`, $options: "i" },
+            });
+            if (user) {
+              return this.BadRequest(
+                ctx,
+                "This email is used by some other user as username"
+              );
+            }
+            user = await UserTable.findOne({ mobile: reqParam.mobile });
+            if (user) {
+              return this.BadRequest(ctx, "Mobile Number already Exists");
+            }
             const parentEmailExistInChild = await UserTable.findOne({
               parentEmail: reqParam.email,
             });
@@ -366,25 +386,177 @@ class AuthController extends BaseController {
               );
             }
           }
-          reqParam.password = AuthService.encryptPassword(reqParam.password);
-          user = await UserTable.create({
-            username: reqParam.username,
-            password: reqParam.password,
-            email: reqParam.email ? reqParam.email : null,
-            type: reqParam.type,
-            firstName: reqParam.firstName,
-            lastName: reqParam.lastName,
-            mobile: reqParam.mobile,
-            screenStatus:
-              reqParam.type === EUserType.PARENT
-                ? ESCREENSTATUS.CHANGE_ADDRESS
-                : ESCREENSTATUS.SIGN_UP,
-            parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
-            parentMobile: reqParam.parentMobile ? reqParam.parentMobile : null,
-            dob: reqParam.dob ? reqParam.dob : null,
-            taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
-          });
-          if (user.type === EUserType.PARENT) {
+          reqParam.password = reqParam.password
+            ? AuthService.encryptPassword(reqParam.password)
+            : null;
+          /**
+           * Verify Social Login Token now
+           */
+          /**
+           * Sign in type 1 - google and 2 - apple
+           */
+          const socialLoginToken = reqParam.socialLoginToken;
+          switch (reqParam.loginType) {
+            case "1":
+              console.log(envData.GOOGLE_CLIENT_ID, "envData.GOOGLE_CLIENT_ID");
+              const googleTicket: any = await google_client
+                .verifyIdToken({
+                  idToken: socialLoginToken,
+                  audience: envData.GOOGLE_CLIENT_ID,
+                })
+                .catch((error) => {
+                  console.log(error, "error");
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
+                });
+              console.log(googleTicket, `--ticket--`);
+              const googlePayload = googleTicket.getPayload();
+              if (!googlePayload) {
+                return this.BadRequest(ctx, "Error while logging in");
+              }
+              if (googlePayload.email != reqParam.email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
+              break;
+            case "2":
+              const appleTicket: any = await apple_client
+                .verifyIdToken(socialLoginToken)
+                .catch((err) => {
+                  return this.BadRequest(ctx, "Error Invalid Token Id");
+                });
+              if (appleTicket.email != reqParam.email) {
+                return this.BadRequest(ctx, "Email Doesn't Match");
+              }
+              break;
+          }
+          /**
+           * Refferal code present and check whole logic for the
+           */
+
+          if (reqParam.refferalCode) {
+            const refferalCodeExists = await UserTable.findOne({
+              referralCode: reqParam.refferalCode,
+            });
+            if (!refferalCodeExists) {
+              return this.BadRequest(ctx, "Refferal Code Not Found");
+            }
+            let admin = await AdminTable.findOne({});
+            if (
+              refferalCodeExists.type == EUserType.PARENT &&
+              refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              isGiftedStackCoins = admin.stackCoins;
+            } else if (refferalCodeExists.type == EUserType.TEEN) {
+              let checkTeenParent = await UserTable.findOne({
+                mobile: refferalCodeExists.parentMobile,
+              });
+              if (
+                checkTeenParent &&
+                checkTeenParent.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+              ) {
+                isGiftedStackCoins = admin.stackCoins;
+              }
+            }
+            if (isGiftedStackCoins > 0) {
+              await UserTable.updateOne(
+                { _id: refferalCodeExists._id },
+                {
+                  $inc: { preLoadedCoins: isGiftedStackCoins },
+                }
+              );
+              /**
+               * Get Quiz Stack Coins
+               */
+              const checkQuizExists = await QuizResult.aggregate([
+                {
+                  $match: {
+                    userId: new mongoose.Types.ObjectId(refferalCodeExists._id),
+                  },
+                },
+                {
+                  $group: {
+                    _id: 0,
+                    sum: {
+                      $sum: "$pointsEarned",
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 0,
+                    sum: 1,
+                  },
+                },
+              ]).exec();
+              let stackCoins = 0;
+              console.log(checkQuizExists, "checkQuizExists");
+              if (checkQuizExists.length > 0) {
+                stackCoins = checkQuizExists[0].sum;
+              }
+              stackCoins = stackCoins + isGiftedStackCoins;
+              let dataSentInCrm: any = {
+                Account_Name:
+                  refferalCodeExists.firstName +
+                  " " +
+                  refferalCodeExists.lastName,
+                Stack_Coins: stackCoins,
+              };
+              let mainData = {
+                data: [dataSentInCrm],
+              };
+              await addAccountInfoInZohoCrm(
+                ctx.request.zohoAccessToken,
+                mainData
+              );
+            }
+          }
+          if (reqParam.type == EUserType.TEEN && childExists) {
+            user = await UserTable.findByIdAndUpdate(
+              { _id: childExists._id },
+              {
+                $set: {
+                  username: reqParam.username,
+                  firstName: reqParam.firstName,
+                  lastName: reqParam.lastName,
+                  password: reqParam.password,
+                  screenStatus: ESCREENSTATUS.SIGN_UP,
+                  dob: reqParam.dob ? reqParam.dob : null,
+                  taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
+                  isParentFirst: false,
+                  preLoadedCoins: {
+                    $inc: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+                  },
+                },
+              },
+              { new: true }
+            );
+          } else {
+            /**
+             * Generate referal code when user sign's up.
+             */
+            const uniqueReferralCode = await makeUniqueReferalCode();
+            user = await UserTable.create({
+              username: reqParam.username ? reqParam.username : null,
+              password: reqParam.password ? reqParam.password : null,
+              email: reqParam.email ? reqParam.email : null,
+              type: reqParam.type,
+              firstName: reqParam.firstName,
+              lastName: reqParam.lastName,
+              mobile: reqParam.mobile,
+              screenStatus:
+                reqParam.type === EUserType.PARENT
+                  ? ESCREENSTATUS.CHANGE_ADDRESS
+                  : ESCREENSTATUS.SIGN_UP,
+              parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
+              parentMobile: reqParam.parentMobile
+                ? reqParam.parentMobile
+                : null,
+              dob: reqParam.dob ? reqParam.dob : null,
+              taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
+              referralCode: uniqueReferralCode,
+              preLoadedCoins: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+            });
+          }
+          if (reqParam.type == EUserType.PARENT) {
             await ParentChildTable.create({
               userId: user._id,
               contactId: null,
@@ -412,7 +584,6 @@ class AuthController extends BaseController {
               );
             }
           }
-
           const authInfo = await AuthService.getJwtAuthInfo(user);
           const refreshToken = await getRefreshToken(authInfo);
           user.refreshToken = refreshToken;
@@ -463,6 +634,12 @@ class AuthController extends BaseController {
             Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
             User_ID: user._id,
           };
+          if (isGiftedStackCoins > 0) {
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Stack_Coins: isGiftedStackCoins,
+            };
+          }
           let mainData = {
             data: [dataSentInCrm],
           };
@@ -972,13 +1149,13 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, email } = input;
-          let user = await UserTable.findOne({ mobile });
-          if (user)
-            return this.BadRequest(ctx, "Mobile number already exists.");
-          user = await UserTable.findOne({
-            email: { $regex: `${email}$`, $options: "i" },
-          });
-          if (user) return this.BadRequest(ctx, "Email-ID already exists.");
+          // let user = await UserTable.findOne({ mobile });
+          // if (user)
+          //   return this.BadRequest(ctx, "Mobile number already exists.");
+          // user = await UserTable.findOne({
+          //   email: { $regex: `${email}$`, $options: "i" },
+          // });
+          // if (user) return this.BadRequest(ctx, "Email-ID already exists.");
 
           /**
            * Send sms for confirmation of otp
@@ -1009,6 +1186,26 @@ class AuthController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to check refferal code
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/check-refferalcode/:code", method: HttpMethod.GET })
+  public async checkRefferalCodeInDb(ctx: any) {
+    const reqParam = ctx.params;
+    if (!reqParam.code) {
+      return this.BadRequest(ctx, "Please enter refferal code");
+    }
+    const refferalCodeExists = await UserTable.findOne({
+      referralCode: { $exists: true, $eq: reqParam.code },
+    });
+    if (refferalCodeExists) {
+      return this.Ok(ctx, { message: "Success" });
+    }
+    return this.BadRequest(ctx, "Refferal Code Doesnt Exists");
   }
 
   /**
@@ -1164,15 +1361,84 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const { mobile, childMobile, email, childEmail } = input;
-          let user = await UserTable.findOne({
+          const {
+            mobile,
+            childMobile,
+            email,
+            childEmail,
+            childFirstName,
+            childLastName,
+          } = input;
+          let query: any = {
             mobile: childMobile,
             parentMobile: mobile,
-            email: { $regex: `${childEmail}$`, $options: "i" },
             parentEmail: { $regex: `${email}$`, $options: "i" },
+          };
+          if (childEmail) {
+            query = {
+              ...query,
+              email: { $regex: `${childEmail}$`, $options: "i" },
+            };
+          }
+          let user = await UserTable.findOne(query);
+          if (user)
+            return this.Ok(ctx, {
+              message: "We found their application and linked your accounts!",
+              isAccountFound: true,
+            });
+          /**
+           * This validation is there to keep if any child sign up with parent email or mobile
+           */
+          let checkEmailExists = await UserTable.findOne({
+            email: childEmail,
           });
-          if (user) return this.Ok(ctx, { message: "Success" });
-          return this.BadRequest(ctx, "We cannot find your accounts");
+          if (checkEmailExists) {
+            return this.BadRequest(ctx, "Child Email Already Exists");
+          }
+          let checkMobileExists = await UserTable.findOne({
+            mobile: childMobile,
+          });
+          if (checkMobileExists) {
+            return this.BadRequest(ctx, "Child Mobile Already Exists");
+          }
+          /**
+           * send twilio message to the teen in order to signup.
+           */
+          const message: string = `Hello Your Parent has invited you to join Stack. Please start the onboarding as soon as possible in order to explore new features and invest in cryptos.`;
+          try {
+            const twilioResponse: any = await TwilioService.sendSMS(
+              childMobile,
+              message
+            );
+            if (twilioResponse.code === 400) {
+              return this.BadRequest(ctx, "Error in sending OTP");
+            }
+            console.log(twilioResponse, "twilioResponse");
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
+          }
+          /**
+           * Create child account based on parent's input
+           */
+          /**
+           * Generate referal code when user sign's up.
+           */
+          const uniqueReferralCode = await makeUniqueReferalCode();
+          await UserTable.create({
+            firstName: childFirstName,
+            lastName: childLastName,
+            mobile: childMobile,
+            email: childEmail ? childEmail : null,
+            parentEmail: email,
+            parentMobile: mobile,
+            type: EUserType.TEEN,
+            referralCode: uniqueReferralCode,
+            isParentFirst: true,
+          });
+          return this.Ok(ctx, {
+            message: "We've sent them an invite to create their username!",
+            isAccountFound: false,
+          });
         }
       }
     );
@@ -1314,7 +1580,7 @@ class AuthController extends BaseController {
   /**
    * @description This api is used for remding their parent for sending email for sign up to stack
    * @param ctx
-   * @returns
+   * @returns {*}
    */
   @Route({ path: "/remind-parent", method: HttpMethod.POST })
   @Auth()
@@ -1330,6 +1596,43 @@ class AuthController extends BaseController {
       name: `${user.firstName} ${user.lastName}`,
     });
     return this.Ok(ctx, { message: "Reminder Email is sent to your parent. " });
+  }
+
+  /**
+   * @description This api is used for logout
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/logout", method: HttpMethod.POST })
+  @Auth()
+  public async logout(ctx: any) {
+    const reqParam = ctx.request.body;
+    const user = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!user) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const deviceTokens = await DeviceToken.findOne({ userId: user._id });
+    return validation.logoutValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          if (deviceTokens.deviceToken.includes(reqParam.deviceToken)) {
+            await DeviceToken.updateOne(
+              { userId: user._id },
+              {
+                $pull: {
+                  deviceToken: reqParam.deviceToken,
+                },
+              }
+            );
+            return this.Ok(ctx, { message: "Logout Successfully" });
+          } else {
+            return this.BadRequest(ctx, "Device Token Doesn't Match");
+          }
+        }
+      }
+    );
   }
 }
 
