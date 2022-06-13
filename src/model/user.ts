@@ -100,6 +100,14 @@ const schema = new mongoose.Schema<IUserSchema>(
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
     referralCode: { type: mongoose.Schema.Types.String, default: null },
     isParentFirst: { type: mongoose.Schema.Types.Boolean, default: false },
+    /**
+     * 1 - on and 2 - off
+     */
+    isAutoApproval: {
+      type: mongoose.Schema.Types.Number,
+      default: 1,
+      isIn: [1, 2],
+    },
   },
   { timestamps: true }
 );

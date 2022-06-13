@@ -32,6 +32,7 @@ import {
   WebhookTable,
   DeviceToken,
   AdminTable,
+  Notification,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
@@ -728,34 +729,48 @@ class WebHookController extends BaseController {
     method: HttpMethod.POST,
   })
   public async testZoho(ctx: any) {
+    let deviceTokenArray = [];
     let parentChild: any = await ParentChildTable.findOne({
       userId: "62726e59e68ae364f3a510e7",
-    }).populate("teens.childId", ["email", "isGifted"]);
+    })
+      .populate("teens.childId", ["email", "isGifted"])
+      .then(async (data: any) => {
+        console.log(data, "data");
+        for await (let singleData of data.teens) {
+          let deviceTokenExists = await DeviceToken.findOne({
+            userId: singleData.childId._id,
+          });
+          if (deviceTokenExists) {
+            await deviceTokenArray.push(deviceTokenExists._id);
+          }
+        }
+        return data;
+      });
     /**
      * Gift stack coins to all teens whose parent's kyc is approved
      */
     // if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
-    let allTeens = await parentChild.teens.filter(
-      (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
-    );
-    let userIdsToBeGifted = [];
-    if (allTeens.length > 0) {
-      for (let allTeen of allTeens) {
-        await userIdsToBeGifted.push(allTeen.childId._id);
-      }
-    }
-    await UserTable.updateMany(
-      {
-        _id: { $in: userIdsToBeGifted },
-      },
-      {
-        $set: {
-          isGifted: EGIFTSTACKCOINSSETTING.ON,
-          preLoadedCoins: 1000,
-        },
-      }
-    );
-    return this.Ok(ctx, { data: parentChild });
+    // let allTeens = await parentChild.teens.filter(
+    //   (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
+    // );
+    // let userIdsToBeGifted = [];
+    // if (allTeens.length > 0) {
+    //   for (let allTeen of allTeens) {
+    //     await userIdsToBeGifted.push(allTeen.childId._id);
+    //   }
+    // }
+    // await UserTable.updateMany(
+    //   {
+    //     _id: { $in: userIdsToBeGifted },
+    //   },
+    //   {
+    //     $set: {
+    //       isGifted: EGIFTSTACKCOINSSETTING.ON,
+    //       preLoadedCoins: 1000,
+    //     },
+    //   }
+    // );
+    return this.Ok(ctx, { data: deviceTokenArray });
   }
 }
 

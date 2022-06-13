@@ -1,52 +1,51 @@
-import Koa from "koa";
-import {
-  createContributions,
-  createDisbursements,
-  createProcessorToken,
-  getPublicTokenExchange,
-  getBalance,
-  Route,
-  generateQuote,
-  executeQuote,
-  getAccountId,
-  getWireTransfer,
-  getContactId,
-  wireTransfer,
-  getPushTransferMethods,
-  sendNotification,
-  getAccounts,
-  institutionsGetByIdRequest,
-} from "../../../utility";
-import BaseController from "./base";
+import moment from "moment";
+import { ObjectId } from "mongodb";
 import mongoose from "mongoose";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
+  CryptoTable,
+  DeviceToken,
+  Notification,
+  ParentChildTable,
+  QuizResult,
+  TransactionTable,
+  UserActivityTable,
+  UserTable,
+} from "../../../model";
+import {
   EAction,
+  EAUTOAPPROVAL,
   ERead,
   ESCREENSTATUS,
   EStatus,
   ETransactionStatus,
   ETransactionType,
-  ETRANSFER,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
   messages,
 } from "../../../types";
 import {
-  CryptoTable,
-  ParentChildTable,
-  TransactionTable,
-  UserActivityTable,
-  UserTable,
-  QuizResult,
-  Notification,
-  DeviceToken,
-} from "../../../model";
-import { validation } from "../../../validations/apiValidation";
-import { ObjectId } from "mongodb";
-import moment from "moment";
+  createContributions,
+  createDisbursements,
+  createProcessorToken,
+  executeQuote,
+  generateQuote,
+  getAccountId,
+  getAccounts,
+  getBalance,
+  getContactId,
+  getPublicTokenExchange,
+  getPushTransferMethods,
+  getWireTransfer,
+  institutionsGetByIdRequest,
+  Route,
+  sendNotification,
+  wireTransfer,
+} from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
+import { validation } from "../../../validations/apiValidation";
+import BaseController from "./base";
 
 class TradingController extends BaseController {
   /**
@@ -55,6 +54,7 @@ class TradingController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-bank", method: HttpMethod.POST })
+  @PrimeTrustJWT()
   @Auth()
   public async addBankDetails(ctx: any) {
     const user = ctx.request.user;
@@ -71,7 +71,9 @@ class TradingController extends BaseController {
       userExists.type == EUserType.PARENT
         ? { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
+    console.log(query, "query");
     let parent: any = await ParentChildTable.findOne(query);
+    console.log(parent, "parent");
     if (!parent) return this.BadRequest(ctx, "Invalid User");
     if (parent.accessToken || parent.processorToken) {
       return this.BadRequest(ctx, "Bank Details Already Updated");
@@ -100,7 +102,7 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
-          const parentDetails: any = await ParentChildTable.updateOne(
+          const parentDetails: any = await ParentChildTable.findByIdAndUpdate(
             {
               _id: parent._id,
             },
@@ -113,6 +115,7 @@ class TradingController extends BaseController {
             },
             { new: true }
           );
+          console.log(parentDetails, "192.168.1.215");
           await UserTable.updateOne(
             {
               _id: userExists._id,
@@ -156,8 +159,8 @@ class TradingController extends BaseController {
               return this.BadRequest(ctx, contributions.message);
             }
             const activity = await UserActivityTable.create({
-              userId: accountIdDetails.firstChildId,
-              userType: accountIdDetails.firstChildId,
+              userId: accountIdDetails.childId,
+              userType: 1,
               message: `${messages.APPROVE_DEPOSIT} of $${reqParam.depositAmount}`,
               currencyType: null,
               currencyValue: reqParam.depositAmount,
@@ -214,12 +217,54 @@ class TradingController extends BaseController {
         : { "teens.childId": ctx.request.user._id };
     let parentDetails: any = await ParentChildTable.findOne(query);
     if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
+    const accountIdDetails = await parentDetails.teens.find((x: any) =>
+      reqParam.childId
+        ? x.childId.toString() == reqParam.childId.toString()
+        : userExists.type == EUserType.TEEN &&
+          userExists.isAutoApproval == EAUTOAPPROVAL.ON
+        ? x.childId.toString() == userExists._id.toString()
+        : x.childId.toString() == parentDetails.firstChildId.toString()
+    );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
     return validation.addDepositValidation(
       reqParam,
       ctx,
       userExists.type,
       async (validate) => {
         if (validate) {
+          let contributions: any = null;
+          if (
+            userExists.type == EUserType.PARENT ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+          ) {
+            /**
+             * create fund transfer with fund transfer id in response
+             */
+            let contributionRequest = {
+              type: "contributions",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "contact-id": parentDetails.contactId,
+                "funds-transfer-method": {
+                  "funds-transfer-type": "ach",
+                  "ach-check-type": "personal",
+                  "contact-id": parentDetails.contactId,
+                  "plaid-processor-token": parentDetails.processorToken,
+                },
+                amount: reqParam.amount,
+              },
+            };
+            contributions = await createContributions(
+              jwtToken,
+              contributionRequest
+            );
+            if (contributions.status == 400) {
+              return this.BadRequest(ctx, contributions.message);
+            }
+          }
           /**
            * For teen it will be pending state
            */
@@ -227,75 +272,67 @@ class TradingController extends BaseController {
             const activity = await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
-              message: `${messages.DEPOSIT} of $${reqParam.amount}`,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `${messages.APPROVE_DEPOSIT} of $${reqParam.amount}`
+                  : `${messages.DEPOSIT} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.DEPOSIT,
               status:
-                userExists.type === EUserType.TEEN
+                userExists.type === EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.OFF
                   ? EStatus.PENDING
                   : EStatus.PROCESSED,
             });
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: parentDetails.userId,
-            }).select("deviceToken");
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.TRADING,
-                title: NOTIFICATION.TEEN_REQUEST_MADE,
-                message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
-                activityId: activity._id,
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-              await Notification.create({
-                title: notificationRequest.title,
-                userId: parentDetails.userId,
-                message: notificationRequest.message,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
+            if (userExists.isAutoApproval == EAUTOAPPROVAL.ON) {
+              await TransactionTable.create({
+                assetId: null,
+                cryptoId: null,
+                accountId: accountIdDetails.accountId,
+                type: ETransactionType.DEPOSIT,
+                settledTime: moment().unix(),
+                amount: reqParam.amount,
+                amountMod: null,
+                userId: accountIdDetails.childId,
+                parentId: parentDetails.userId,
+                status: ETransactionStatus.PENDING,
+                executedQuoteId: contributions.data.included[0].id,
+                unitCount: null,
               });
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: parentDetails.userId,
+              }).select("deviceToken");
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.TRADING,
+                  title: NOTIFICATION.TEEN_REQUEST_MADE,
+                  message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
+                  activityId: activity._id,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: parentDetails.userId,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
             }
             return this.Created(ctx, {
-              message: `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `We are looking into your request and will proceed surely in some amount of time.`
+                  : `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
             });
           }
-          const accountIdDetails = await parentDetails.teens.find((x: any) =>
-            reqParam.childId
-              ? x.childId.toString() == reqParam.childId.toString()
-              : x.childId.toString() == parentDetails.firstChildId.toString()
-          );
-          if (!accountIdDetails) {
-            return this.BadRequest(ctx, "Account Details Not Found");
-          }
-          /**
-           * create fund transfer with fund transfer id in response
-           */
-          let contributionRequest = {
-            type: "contributions",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "contact-id": parentDetails.contactId,
-              "funds-transfer-method": {
-                "funds-transfer-type": "ach",
-                "ach-check-type": "personal",
-                "contact-id": parentDetails.contactId,
-                "plaid-processor-token": parentDetails.processorToken,
-              },
-              amount: reqParam.amount,
-            },
-          };
-          const contributions: any = await createContributions(
-            jwtToken,
-            contributionRequest
-          );
-          if (contributions.status == 400) {
-            return this.BadRequest(ctx, contributions.message);
-          }
-          const activity = await UserActivityTable.create({
+
+          await UserActivityTable.create({
             userId: reqParam.childId ? reqParam.childId : userExists._id,
             userType: reqParam.childId ? EUserType.TEEN : userExists.type,
             message: `${messages.APPROVE_DEPOSIT} of $${reqParam.amount}`,
@@ -482,56 +519,12 @@ class TradingController extends BaseController {
               );
             }
           }
-          /**
-           * for teen it will be pending state and for parent it will be in approved
-           */
-          if (userExists.type == EUserType.TEEN) {
-            const activity = await UserActivityTable.create({
-              userId: userExists._id,
-              userType: userExists.type,
-              message: `${messages.WITHDRAW} of $${reqParam.amount}`,
-              currencyType: null,
-              currencyValue: reqParam.amount,
-              action: EAction.WITHDRAW,
-              status:
-                userExists.type === EUserType.TEEN
-                  ? EStatus.PENDING
-                  : EStatus.PROCESSED,
-            });
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: parentDetails.userId,
-            }).select("deviceToken");
-            /**
-             * Notification
-             */
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.TRADING,
-                title: NOTIFICATION.TEEN_REQUEST_MADE,
-                message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
-                activityId: activity._id,
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-              await Notification.create({
-                title: notificationRequest.title,
-                userId: parentDetails.userId,
-                message: notificationRequest.message,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
-              });
-            }
-            return this.Created(ctx, {
-              message: `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
-            });
-          }
-          /**
-           * For parent create disbursement code of prime trust with plaid processor token
-           */
-          if (userExists.type === EUserType.PARENT) {
+          let disbursement: any = null;
+          if (
+            userExists.type == EUserType.PARENT ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+          ) {
             /**
              * create fund transfer with fund transfer id in response
              */
@@ -549,13 +542,87 @@ class TradingController extends BaseController {
                 amount: reqParam.amount,
               },
             };
-            const disbursement: any = await createDisbursements(
+            disbursement = await createDisbursements(
               jwtToken,
               disbursementRequest
             );
             if (disbursement.status == 400) {
               return this.BadRequest(ctx, disbursement.message);
             }
+          }
+          /**
+           * for teen it will be pending state and for parent it will be in approved
+           */
+          if (userExists.type == EUserType.TEEN) {
+            const activity = await UserActivityTable.create({
+              userId: userExists._id,
+              userType: userExists.type,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `${messages.APPROVE_WITHDRAW} of $${reqParam.amount}`
+                  : `${messages.WITHDRAW} of $${reqParam.amount}`,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.WITHDRAW,
+              status:
+                userExists.type === EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+                  ? EStatus.PENDING
+                  : EStatus.PROCESSED,
+            });
+            await TransactionTable.create({
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.WITHDRAW,
+              settledTime: moment().unix(),
+              amount: reqParam.amount,
+              amountMod: null,
+              userId: accountIdDetails.childId,
+              parentId: parentDetails.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: disbursement.data.included[0].id,
+              unitCount: null,
+            });
+            if (userExists.isAutoApproval == EAUTOAPPROVAL.ON) {
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: parentDetails.userId,
+              }).select("deviceToken");
+              /**
+               * Notification
+               */
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.TRADING,
+                  title: NOTIFICATION.TEEN_REQUEST_MADE,
+                  message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
+                  activityId: activity._id,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: parentDetails.userId,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
+            }
+            return this.Created(ctx, {
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `"We are looking into your request and will proceed surely in some amount of time."`
+                  : `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
+            });
+          }
+          /**
+           * For parent create disbursement code of prime trust with plaid processor token
+           */
+          if (userExists.type === EUserType.PARENT) {
             await UserActivityTable.create({
               userId: reqParam.childId ? reqParam.childId : userExists._id,
               userType: reqParam.childId ? EUserType.TEEN : userExists.type,

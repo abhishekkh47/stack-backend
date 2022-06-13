@@ -101,6 +101,12 @@ export const NOTIFICATION = {
   KYC_APPROVED_TITLE: "Your account has been approved 🥳",
   KYC_APPROVED_DESCRIPTION: "Explore our app for more features 🤩",
   KYC_REJECTED_TITLE: "Looks like we need additional information from you 👀",
+  SUCCESS_REFER_MESSAGE:
+    "You have earned 1000 Stack coins from referring a friend! 🥳",
+  SUCCESS_REFER_CODE_USE_MESSAGE:
+    "You have been gifted 1000 Stack coins by using correct referral code 🥳",
+  EARN_STACK_COINS_AFTER_SUCCESSFUL_KYC:
+    "You have been gifted 1000 Stack coins as your parent's kyc got approved 🥳",
 };
 
 export const NOTIFICATION_KEYS = {
@@ -108,4 +114,6 @@ export const NOTIFICATION_KEYS = {
   KYC_SUCCESS: "kyc_success",
   KYC_FAILURE: "kyc_failure",
   KYC_PENDING: "kyc_pending",
+  FREIND_REFER: "refer_freind",
+  EARN_STACK_COINS_AFTER_KYC_APPROVED: "earn_stack_coins_after_kyc_approved",
 };
