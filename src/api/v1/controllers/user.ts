@@ -532,7 +532,7 @@ class UserController extends BaseController {
     if (!data) return this.BadRequest(ctx, "Invalid user ID entered.");
     if (data.type == EUserType.TEEN) {
       const checkParentExists = await UserTable.findOne({
-        email: data.parentEmail,
+        mobile: data.mobile,
       });
       if (
         !checkParentExists ||
