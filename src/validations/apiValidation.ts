@@ -59,6 +59,19 @@ export const validation = {
     }
     return callback(true);
   },
+  updateAutoApprovalValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      isAutoApproval: Joi.number().valid(0, 1).required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("updateAutoApproval", error))
+      );
+    }
+    return callback(true);
+  },
   getQuizListValidation: (req, res, callback) => {
     const schema = Joi.object({
       topicId: Joi.string()
