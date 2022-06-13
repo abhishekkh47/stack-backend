@@ -320,7 +320,7 @@ class AuthController extends BaseController {
             const parentMobileExistInChild = await UserTable.findOne({
               parentMobile: reqParam.mobile,
             });
-            if (!parentEmailExistInChild || !parentMobileExistInChild) {
+            if (!parentMobileExistInChild) {
               return this.BadRequest(
                 ctx,
                 "Sorry , We cannot find this email/mobile in teen."
@@ -332,10 +332,7 @@ class AuthController extends BaseController {
             if (!childExists) {
               return this.BadRequest(ctx, "Teen Mobile Number Doesn't Exists");
             }
-            if (
-              childExists.parentMobile !== reqParam.mobile ||
-              childExists.parentEmail !== reqParam.email
-            ) {
+            if (childExists.parentMobile !== reqParam.mobile) {
               return this.BadRequest(
                 ctx,
                 "Sorry We cannot find your accounts. Unable to link them"
@@ -359,7 +356,6 @@ class AuthController extends BaseController {
             const childDetails = await UserTable.find(
               {
                 type: EUserType.TEEN,
-                parentEmail: reqParam.email,
                 parentMobile: reqParam.mobile,
               },
               {
@@ -1372,11 +1368,11 @@ class AuthController extends BaseController {
           let query: any = {
             mobile: childMobile,
             parentMobile: mobile,
-            parentEmail: { $regex: `${email}$`, $options: "i" },
           };
           if (childEmail) {
             query = {
               ...query,
+              parentEmail: { $regex: `${email}$`, $options: "i" },
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
@@ -1389,11 +1385,13 @@ class AuthController extends BaseController {
           /**
            * This validation is there to keep if any child sign up with parent email or mobile
            */
-          let checkEmailExists = await UserTable.findOne({
-            email: childEmail,
-          });
-          if (checkEmailExists) {
-            return this.BadRequest(ctx, "Child Email Already Exists");
+          if (childEmail) {
+            let checkEmailExists = await UserTable.findOne({
+              email: childEmail,
+            });
+            if (checkEmailExists) {
+              return this.BadRequest(ctx, "Child Email Already Exists");
+            }
           }
           let checkMobileExists = await UserTable.findOne({
             mobile: childMobile,

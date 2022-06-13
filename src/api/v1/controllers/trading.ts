@@ -56,6 +56,7 @@ class TradingController extends BaseController {
    */
   @Route({ path: "/add-bank", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT()
   public async addBankDetails(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
@@ -100,7 +101,7 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
-          const parentDetails: any = await ParentChildTable.updateOne(
+          const parentDetails: any = await ParentChildTable.findOneAndUpdate(
             {
               _id: parent._id,
             },
@@ -155,9 +156,9 @@ class TradingController extends BaseController {
             if (contributions.status == 400) {
               return this.BadRequest(ctx, contributions.message);
             }
-            const activity = await UserActivityTable.create({
-              userId: accountIdDetails.firstChildId,
-              userType: accountIdDetails.firstChildId,
+            await UserActivityTable.create({
+              userId: userExists._id,
+              userType: 2,
               message: `${messages.APPROVE_DEPOSIT} of $${reqParam.depositAmount}`,
               currencyType: null,
               currencyValue: reqParam.depositAmount,
@@ -173,7 +174,7 @@ class TradingController extends BaseController {
               settledTime: moment().unix(),
               amount: reqParam.amount,
               amountMod: null,
-              userId: accountIdDetails.childId,
+              userId: userExists._id,
               parentId: userExists._id,
               status: ETransactionStatus.PENDING,
               executedQuoteId: contributions.data.included[0].id,
@@ -1626,7 +1627,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_DEPOSIT} of ${activity.currencyValue}$`,
+            message: `${messages.APPROVE_DEPOSIT} of $${activity.currencyValue}`,
           }
         );
         await TransactionTable.create({
@@ -1703,7 +1704,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_WITHDRAW} of ${activity.currencyValue}$`,
+            message: `${messages.APPROVE_WITHDRAW} of $${activity.currencyValue}`,
           }
         );
         await TransactionTable.create({
@@ -1816,7 +1817,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_BUY} ${cryptoData.name} of ${activity.currencyValue}$`,
+            message: `${messages.APPROVE_BUY} ${cryptoData.name} of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {
@@ -1918,7 +1919,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_SELL} ${sellCryptoData.name} of ${activity.currencyValue}$`,
+            message: `${messages.APPROVE_SELL} ${sellCryptoData.name} of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {
