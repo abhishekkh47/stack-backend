@@ -172,7 +172,7 @@ class TradingController extends BaseController {
               accountId: accountIdDetails.accountId,
               type: ETransactionType.DEPOSIT,
               settledTime: moment().unix(),
-              amount: reqParam.amount,
+              amount: reqParam.depositAmount,
               amountMod: null,
               userId: userExists._id,
               parentId: userExists._id,
@@ -1485,6 +1485,8 @@ class TradingController extends BaseController {
             return this.BadRequest(ctx, fetchBalance.message);
           }
           const balance = fetchBalance.data.data[0].attributes.disbursable;
+          const pending =
+            fetchBalance.data.data[0].attributes["pending-transfer"];
           totalStackValue = totalStackValue + balance;
           return this.Ok(ctx, {
             data: {
@@ -1493,6 +1495,7 @@ class TradingController extends BaseController {
               stackCoins,
               totalGainLoss,
               balance,
+              pendingBalance: pending,
             },
           });
         }
