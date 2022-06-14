@@ -545,6 +545,28 @@ export const getWireTransfer = async (token, accountId) => {
 };
 
 /**
+ * @description This api is for getting account status data
+ * @param token
+ * @param accountId
+ * @returns {*}
+ */
+export const getAccountStatusByAccountId = async (token, accountId) => {
+  const response = await axios
+    .get(
+      config.PRIMETRUSTAPI_URL +
+        PRIMETRUSTAPIS.getAccountByAccountId(accountId),
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+    .then((res) => res.data)
+    .catch((error) => {
+      return { status: 400, message: error.response.data };
+    });
+  return response;
+};
+
+/**
  * @description This api is to update prime trust data
  * @param token
  * @param accountId

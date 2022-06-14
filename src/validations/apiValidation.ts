@@ -394,10 +394,12 @@ export const validation = {
       childEmail: Joi.string().email().allow("").disallow(Joi.ref("email")),
       childFirstName: Joi.string()
         .min(2)
+        .allow("")
         .regex(/^[A-za-z]*$/)
         .required(),
       childLastName: Joi.string()
         .min(2)
+        .allow("")
         .regex(/^[A-za-z]*$/)
         .required(),
     });

@@ -314,9 +314,6 @@ class AuthController extends BaseController {
             if (user) {
               return this.BadRequest(ctx, "Mobile Number already Exists");
             }
-            const parentEmailExistInChild = await UserTable.findOne({
-              parentEmail: reqParam.email,
-            });
             const parentMobileExistInChild = await UserTable.findOne({
               parentMobile: reqParam.mobile,
             });
@@ -1414,6 +1411,11 @@ class AuthController extends BaseController {
             console.log(twilioResponse, "twilioResponse");
           } catch (error) {
             return this.BadRequest(ctx, error.message);
+          }
+          if (!childFirstName || !childLastName) {
+            return this.Ok(ctx, {
+              message: "You are inviting your teen in stack",
+            });
           }
           /**
            * Create child account based on parent's input
