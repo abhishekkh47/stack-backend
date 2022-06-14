@@ -1488,6 +1488,14 @@ class TradingController extends BaseController {
           const pending =
             fetchBalance.data.data[0].attributes["pending-transfer"];
           totalStackValue = totalStackValue + balance;
+          let intialBalance = 0;
+          let transactionData = await TransactionTable.findOne({
+            userId: parent.userId,
+            type: ETransactionType.DEPOSIT,
+          }).sort({ createdAt: 1 });
+          if (transactionData) {
+            intialBalance = transactionData.amount;
+          }
           return this.Ok(ctx, {
             data: {
               portFolio,
@@ -1496,6 +1504,7 @@ class TradingController extends BaseController {
               totalGainLoss,
               balance,
               pendingBalance: pending,
+              intialBalance: intialBalance,
             },
           });
         }
