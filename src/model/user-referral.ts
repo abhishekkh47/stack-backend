@@ -1,0 +1,47 @@
+import mongoose from "mongoose";
+
+import type { IUserReferral, MongooseModel } from "../types";
+
+export type IUserReferralSchema = MongooseModel<IUserReferral> &
+  mongoose.Document;
+
+const schema = new mongoose.Schema<IUserReferralSchema>(
+  {
+    userId: {
+      type: mongoose.Schema.Types.String,
+      ref: "users",
+      required: true,
+    },
+    referralCount: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+    },
+    referralArray: [
+      {
+        referredId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "users",
+          required: true,
+        },
+        /**
+         * 1 - sms and 2 - qr code
+         */
+        type: {
+          type: mongoose.Schema.Types.String,
+          default: 1,
+          required: true,
+        },
+        coinsGifted: {
+          type: mongoose.Schema.Types.Number,
+          required: true,
+        },
+      },
+    ],
+  },
+  { timestamps: true }
+);
+
+export const UserReffaralTable = mongoose.model<IUserReferralSchema>(
+  "user-refferal",
+  schema
+);

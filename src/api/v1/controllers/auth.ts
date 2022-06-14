@@ -35,6 +35,7 @@ import {
   DeviceToken,
   AdminTable,
   QuizResult,
+  UserReffaralTable,
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
@@ -177,6 +178,7 @@ class AuthController extends BaseController {
           let accountNumber = null;
           const childArray = [];
           let user = null;
+          let refferalCodeExists = null;
           /* tslint:disable-next-line */
           if (reqParam.type == EUserType.TEEN) {
             /**
@@ -314,9 +316,6 @@ class AuthController extends BaseController {
             if (user) {
               return this.BadRequest(ctx, "Mobile Number already Exists");
             }
-            const parentEmailExistInChild = await UserTable.findOne({
-              parentEmail: reqParam.email,
-            });
             const parentMobileExistInChild = await UserTable.findOne({
               parentMobile: reqParam.mobile,
             });
@@ -429,7 +428,7 @@ class AuthController extends BaseController {
            */
 
           if (reqParam.refferalCode) {
-            const refferalCodeExists = await UserTable.findOne({
+            refferalCodeExists = await UserTable.findOne({
               referralCode: reqParam.refferalCode,
             });
             if (!refferalCodeExists) {
@@ -574,6 +573,45 @@ class AuthController extends BaseController {
                       childId: user._id,
                       accountId: accountId,
                       accountNumber: accountNumber,
+                    },
+                  },
+                }
+              );
+            }
+          }
+          /**
+           * add referral code number as well
+           */
+          if (refferalCodeExists && isGiftedStackCoins > 0) {
+            let dataExists = await UserReffaralTable.findOne({
+              userId: refferalCodeExists._id,
+            });
+            if (!dataExists) {
+              await UserReffaralTable.create({
+                userId: refferalCodeExists._id,
+                referralCount: 1,
+                referralArray: [
+                  {
+                    userId: user._id,
+                    type: 1,
+                    coinsGifted: isGiftedStackCoins,
+                  },
+                ],
+              });
+            } else {
+              await UserReffaralTable.updateOne(
+                {
+                  userId: refferalCodeExists._id,
+                },
+                {
+                  $set: {
+                    referralCount: dataExists.referralCount + 1,
+                  },
+                  $push: {
+                    referralArray: {
+                      userId: user._id,
+                      type: 1,
+                      coinsGifted: isGiftedStackCoins,
                     },
                   },
                 }
@@ -1399,6 +1437,12 @@ class AuthController extends BaseController {
           if (checkMobileExists) {
             return this.BadRequest(ctx, "Child Mobile Already Exists");
           }
+          // let checkParentMobileExists = await UserTable.findOne({
+          //   mobile: childMobile,
+          // });
+          // if (checkParentMobileExists) {
+          //   return this.BadRequest(ctx, "Parent Mobile Already Exists");
+          // }
           /**
            * send twilio message to the teen in order to signup.
            */
@@ -1414,6 +1458,11 @@ class AuthController extends BaseController {
             console.log(twilioResponse, "twilioResponse");
           } catch (error) {
             return this.BadRequest(ctx, error.message);
+          }
+          if (!childFirstName || !childLastName) {
+            return this.Ok(ctx, {
+              message: "You are inviting your teen in stack",
+            });
           }
           /**
            * Create child account based on parent's input
@@ -1556,7 +1605,7 @@ class AuthController extends BaseController {
     return this.Ok(ctx, { token });
   }
 
-  @Route({ path: "/check-email/:email", method: HttpMethod.GET })
+  @Route({ path: "/check-email/:mobile", method: HttpMethod.GET })
   public async checkEmailExistsInDB(ctx: any) {
     const reqParam = ctx.params;
     return validation.checkUniqueEmailValidation(
@@ -1564,12 +1613,12 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          const emailExists = await UserTable.findOne({
-            email: { $regex: `${reqParam.email}$`, $options: "i" },
+          const mobileExists = await UserTable.findOne({
+            mobile: reqParam.mobile,
           });
-          if (emailExists)
-            return this.BadRequest(ctx, "This email already exists");
-          return this.Ok(ctx, { message: "Email-ID is available" });
+          if (mobileExists)
+            return this.BadRequest(ctx, "This mobile already exists");
+          return this.Ok(ctx, { message: "Mobile is available" });
         }
       }
     );

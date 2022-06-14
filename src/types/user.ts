@@ -39,6 +39,7 @@ export interface IAccount {
   cipCleared: boolean;
   amlCleared: boolean;
   identityConfirmed: boolean;
+  accountStatus: string;
   referralCode: string;
 }
 

@@ -100,6 +100,10 @@ const schema = new mongoose.Schema<IUserSchema>(
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
     referralCode: { type: mongoose.Schema.Types.String, default: null },
     isParentFirst: { type: mongoose.Schema.Types.Boolean, default: false },
+    /**
+     * accountStatus:- pending , opened and closed
+     */
+    accountStatus: { type: mongoose.Schema.Types.String, default: "pending" },
   },
   { timestamps: true }
 );
