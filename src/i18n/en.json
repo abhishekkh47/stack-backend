@@ -236,5 +236,6 @@
 	"addBankDetailsInstitutionidRequired": "addBankDetailsInstitutionidRequired",
 	"loginEmailRequired": "loginEmailRequired",
 	"loginLogintypeRequired": "loginLogintypeRequired",
-	"loginSociallogintokenRequired": "loginSociallogintokenRequired"
+	"loginSociallogintokenRequired": "loginSociallogintokenRequired",
+	"checkAccountReadyToLinkChildmobilePattern": "checkAccountReadyToLinkChildmobilePattern"
 }
