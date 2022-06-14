@@ -240,5 +240,6 @@
 	"loginUsernameUnknown": "loginUsernameUnknown",
 	"buyCryptoAmountRequired": "buyCryptoAmountRequired",
 	"updateAutoApprovalIsautoapprovalRequired": "The flag must contain 0 and 1 values only",
-	"updateAutoApprovalIsautoapprovalOnly": "The flag must contain 0 and 1 values only"
+	"updateAutoApprovalIsautoapprovalOnly": "The flag must contain 0 and 1 values only",
+	"checkAccountReadyToLinkChildmobilePattern": "checkAccountReadyToLinkChildmobilePattern"
 }

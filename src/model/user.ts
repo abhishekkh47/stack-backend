@@ -108,6 +108,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: 1,
       isIn: [1, 2],
     },
+    /*
+     * accountStatus:- pending , opened and closed
+     */
+    accountStatus: { type: mongoose.Schema.Types.String, default: "pending" },
   },
   { timestamps: true }
 );

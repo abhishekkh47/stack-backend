@@ -407,10 +407,12 @@ export const validation = {
       childEmail: Joi.string().email().allow("").disallow(Joi.ref("email")),
       childFirstName: Joi.string()
         .min(2)
+        .allow("")
         .regex(/^[A-za-z]*$/)
         .required(),
       childLastName: Joi.string()
         .min(2)
+        .allow("")
         .regex(/^[A-za-z]*$/)
         .required(),
     });
@@ -501,7 +503,7 @@ export const validation = {
   },
   checkUniqueEmailValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
-      email: Joi.string().email().required(),
+      mobile: Joi.string().required(),
     });
     const { error } = schema.validate(req);
     if (error) {

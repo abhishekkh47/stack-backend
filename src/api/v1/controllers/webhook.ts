@@ -12,6 +12,7 @@ import {
   sendNotification,
   getPrimeTrustJWTToken,
   addAccountInfoInZohoCrm,
+  getAccountStatusByAccountId,
 } from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { json, form } from "co-body";
@@ -57,38 +58,38 @@ class WebHookController extends BaseController {
       title: body.resource_type,
       data: body,
     });
+    const checkAccountIdExists: any = await ParentChildTable.findOne({
+      "teens.accountId": body.account_id,
+    }).populate("teens.childId", [
+      "email",
+      "isGifted",
+      "firstName",
+      "lastName",
+    ]);
+    if (!checkAccountIdExists) {
+      return this.BadRequest(ctx, "Account Id Doesn't Exists");
+    }
+    const userExists = await UserTable.findOne({
+      _id: checkAccountIdExists.userId,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    /**
+     * Notification Send for kyc fail or success
+     */
+    let deviceTokenData = await DeviceToken.findOne({
+      userId: userExists._id,
+    }).select("deviceToken");
     switch (body.resource_type) {
       /**
        * For kyc success or failure
        */
       case "contact":
       case "contacts":
-        const checkAccountIdExists: any = await ParentChildTable.findOne({
-          "teens.accountId": body.account_id,
-        }).populate("teens.childId", [
-          "email",
-          "isGifted",
-          "firstName",
-          "lastName",
-        ]);
-        if (!checkAccountIdExists) {
-          return this.BadRequest(ctx, "Account Id Doesn't Exists");
-        }
-        const userExists = await UserTable.findOne({
-          _id: checkAccountIdExists.userId,
-        });
-        if (!userExists) {
-          return this.BadRequest(ctx, "User Not Found");
-        }
         if (userExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
           return this.BadRequest(ctx, "User KYC Document Verified");
         }
-        /**
-         * Notification Send for kyc fail or success
-         */
-        let deviceTokenData = await DeviceToken.findOne({
-          userId: userExists._id,
-        }).select("deviceToken");
         /**
          * Failure phases
          */
@@ -170,9 +171,10 @@ class WebHookController extends BaseController {
             checkUserAgain.cipCleared &&
             checkUserAgain.amlCleared &&
             checkUserAgain.identityConfirmed &&
+            checkUserAgain.accountStatus == "opened" &&
             checkUserAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
           ) {
-            console.log(`Coming inside true`);
+            console.log(`Coming inside true contacts`);
             await UserTable.updateOne(
               { _id: userExists._id },
               {
@@ -259,6 +261,130 @@ class WebHookController extends BaseController {
           }
         }
         break;
+      case "accounts":
+        if (userExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
+          return this.BadRequest(ctx, "User KYC Document Verified");
+        }
+        if (
+          body.data &&
+          body.data["changes"] &&
+          body.data["changes"].length > 0 &&
+          body.data["changes"].includes("status") &&
+          userExists.accountStatus != "opened"
+        ) {
+          /**
+           * Call account api by account id
+           */
+          let accountStatus = await getAccountStatusByAccountId(
+            ctx.request.primeTrustToken,
+            body.account_id
+          );
+          if (
+            accountStatus &&
+            accountStatus.data &&
+            accountStatus.data.attributes
+          ) {
+            const getUserDataAgain = await UserTable.findOneAndUpdate(
+              { _id: userExists._id },
+              {
+                $set: {
+                  accountStatus: accountStatus.data.attributes["status"],
+                },
+              }
+            );
+            if (
+              accountStatus.data.attributes["status"] == "opened" &&
+              getUserDataAgain.cipCleared &&
+              getUserDataAgain.amlCleared &&
+              getUserDataAgain.identityConfirmed &&
+              getUserDataAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              console.log(`Coming inside true accounts`);
+              await UserTable.updateOne(
+                { _id: userExists._id },
+                {
+                  $set: {
+                    kycMessages: null,
+                    status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
+                  },
+                }
+              );
+              /**
+               * Update the status to zoho crm
+               */
+              let dataSentInCrm: any = {
+                Account_Name: userExists.firstName + " " + userExists.lastName,
+                Account_Status: "3",
+              };
+              let mainData = {
+                data: [dataSentInCrm],
+              };
+              const dataAddInZoho = await addAccountInfoInZohoCrm(
+                ctx.request.zohoAccessToken,
+                mainData
+              );
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.KYC_SUCCESS,
+                  title: NOTIFICATION.KYC_APPROVED_TITLE,
+                  message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
+                  userId: userExists._id,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+              }
+              /**
+               * Gift stack coins to all teens whose parent's kyc is approved
+               */
+              if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
+                let allTeens = await checkAccountIdExists.teens.filter(
+                  (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
+                );
+                let userIdsToBeGifted = [];
+                if (allTeens.length > 0) {
+                  for await (let allTeen of allTeens) {
+                    await userIdsToBeGifted.push(allTeen.childId._id);
+                    /**
+                     * Added in zoho
+                     */
+                    let dataSentInCrm: any = {
+                      Account_Name:
+                        allTeen.childId.firstName +
+                        " " +
+                        allTeen.childId.lastName,
+                      Stack_Coins: admin.stackCoins,
+                    };
+                    let mainData = {
+                      data: [dataSentInCrm],
+                    };
+                    const dataAddInZoho = await addAccountInfoInZohoCrm(
+                      ctx.request.zohoAccessToken,
+                      mainData
+                    );
+                    console.log(dataAddInZoho, "dataAddInZoho");
+                  }
+                }
+                console.log(userIdsToBeGifted, "userIdsToBeGifted");
+                await UserTable.updateMany(
+                  {
+                    _id: { $in: userIdsToBeGifted },
+                  },
+                  {
+                    $set: {
+                      isGifted: EGIFTSTACKCOINSSETTING.ON,
+                    },
+                    $inc: {
+                      preLoadedCoins: admin.stackCoins,
+                    },
+                  }
+                );
+              }
+            }
+          }
+        }
       /**
        * For buy and sell crypto
        */
@@ -728,12 +854,13 @@ class WebHookController extends BaseController {
     path: "/test-zoho",
     method: HttpMethod.POST,
   })
+  @PrimeTrustJWT()
   public async testZoho(ctx: any) {
-    let deviceToken = await DeviceToken.find({}).populate("userId");
-    deviceToken = deviceToken.filter((x) => x.userId == null);
-    deviceToken = deviceToken.map((x) => x._id);
-    await DeviceToken.deleteMany({ _id: { $in: deviceToken } });
-    return this.Ok(ctx, { data: deviceToken, count: deviceToken.length });
+    let accountStatus = await getAccountStatusByAccountId(
+      ctx.request.primeTrustToken,
+      "de72ad0e-fe25-46bc-91bb-61ecf12f1f87"
+    );
+    return this.Ok(ctx, { data: accountStatus.data.attributes["status"] });
   }
 }
 
