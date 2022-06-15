@@ -492,14 +492,14 @@ class UserController extends BaseController {
           },
         },
         { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
-        // {
-        //   $lookup: {
-        //     from: "user-refferals",
-        //     localField: "_id",
-        //     foreignField: "userId",
-        //     as: "lifeTimeReferral",
-        //   },
-        // },
+        {
+          $lookup: {
+            from: "user-refferals",
+            localField: "_id",
+            foreignField: "userId",
+            as: "lifeTimeReferral",
+          },
+        },
         {
           $unwind: {
             path: "$lifeTimeReferral",
@@ -529,7 +529,7 @@ class UserController extends BaseController {
             "state._id": 1,
             "state.name": 1,
             "state.shortName": 1,
-            // lifeTimeReferralCount: "$lifeTimeReferralCount.referralCount",
+            lifeTimeReferralCount: "$lifeTimeReferral.referralCount",
             screenStatus: 1,
             city: 1,
             postalCode: 1,
