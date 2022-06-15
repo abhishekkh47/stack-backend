@@ -57,7 +57,7 @@ export const ALLOWED_LOGIN_ATTEMPTS = 3;
 
 export enum EAUTOAPPROVAL {
   ON = 1,
-  OFF = 2,
+  OFF = 0,
 }
 
 export enum EUserType {
