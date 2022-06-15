@@ -505,22 +505,29 @@ class AuthController extends BaseController {
             }
           }
           if (reqParam.type == EUserType.TEEN && childExists) {
+            let updateQuery: any = {
+              username: reqParam.username,
+              firstName: reqParam.firstName,
+              email: reqParam.email ? reqParam.email : childExists.email,
+              lastName: reqParam.lastName,
+              password: reqParam.password,
+              screenStatus: ESCREENSTATUS.SIGN_UP,
+              dob: reqParam.dob ? reqParam.dob : null,
+              taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
+              isParentFirst: false,
+            };
+            if (reqParam.refferalCode) {
+              updateQuery = {
+                ...updateQuery,
+                preLoadedCoins: {
+                  $inc: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+                },
+              };
+            }
             user = await UserTable.findByIdAndUpdate(
               { _id: childExists._id },
               {
-                $set: {
-                  username: reqParam.username,
-                  firstName: reqParam.firstName,
-                  lastName: reqParam.lastName,
-                  password: reqParam.password,
-                  screenStatus: ESCREENSTATUS.SIGN_UP,
-                  dob: reqParam.dob ? reqParam.dob : null,
-                  taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
-                  isParentFirst: false,
-                  preLoadedCoins: {
-                    $inc: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
-                  },
-                },
+                $set: updateQuery,
               },
               { new: true }
             );
