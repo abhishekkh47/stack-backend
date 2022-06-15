@@ -105,6 +105,7 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     isAutoApproval: {
       type: mongoose.Schema.Types.Number,
+      required: true,
       default: 1,
       isIn: [1, 2],
     },

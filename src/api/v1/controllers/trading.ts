@@ -1212,13 +1212,16 @@ class TradingController extends BaseController {
     const { childId } = ctx.request.params;
     if (!/^[0-9a-fA-F]{24}$/.test(childId))
       return this.BadRequest(ctx, "Enter Correct Child's ID");
-    const parent = await ParentChildTable.findOne({
+    const parent: any = await ParentChildTable.findOne({
       userId: ctx.request.user._id,
     });
+    let userExists: any = await UserTable.findOne({ _id: childId });
     if (!parent) return this.BadRequest(ctx, "Invalid Parent's ID");
     let teen: any;
     parent.teens.forEach((current: any) => {
-      if (current.childId.toString() === childId) teen = current;
+      if (current.childId._id.toString() === childId) {
+        teen = current;
+      }
     });
     if (!teen) this.BadRequest(ctx, "Invalid Child ID");
 
@@ -1271,7 +1274,11 @@ class TradingController extends BaseController {
     }
     return this.Ok(ctx, {
       message: "Success",
-      data: { pending: pendingActivity, processed: processedActivity },
+      data: {
+        pending: pendingActivity,
+        processed: processedActivity,
+        isAutoApproval: userExists.isAutoApproval,
+      },
     });
   }
 
@@ -1535,6 +1542,14 @@ class TradingController extends BaseController {
           const pending =
             fetchBalance.data.data[0].attributes["pending-transfer"];
           totalStackValue = totalStackValue + balance;
+          let intialBalance = 0;
+          let transactionData = await TransactionTable.findOne({
+            userId: parent.userId,
+            type: ETransactionType.DEPOSIT,
+          }).sort({ createdAt: 1 });
+          if (transactionData) {
+            intialBalance = transactionData.amount;
+          }
           return this.Ok(ctx, {
             data: {
               portFolio,
@@ -1543,6 +1558,7 @@ class TradingController extends BaseController {
               totalGainLoss,
               balance,
               pendingBalance: pending,
+              intialBalance: intialBalance,
             },
           });
         }

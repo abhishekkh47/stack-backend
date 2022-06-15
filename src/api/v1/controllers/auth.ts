@@ -18,6 +18,7 @@ import {
 import BaseController from "./base";
 import envData from "../../../config/index";
 import {
+  EAUTOAPPROVAL,
   EOTPTYPE,
   EOTPVERIFICATION,
   ERead,
@@ -591,6 +592,7 @@ class AuthController extends BaseController {
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               referralCode: uniqueReferralCode,
               preLoadedCoins: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+              isAutoApproval: EAUTOAPPROVAL.ON,
             });
           }
           if (reqParam.type == EUserType.PARENT) {
@@ -634,7 +636,7 @@ class AuthController extends BaseController {
                 referralCount: 1,
                 referralArray: [
                   {
-                    userId: user._id,
+                    referredId: user._id,
                     type: 1,
                     coinsGifted: isGiftedStackCoins,
                   },
@@ -651,7 +653,7 @@ class AuthController extends BaseController {
                   },
                   $push: {
                     referralArray: {
-                      userId: user._id,
+                      referredId: user._id,
                       type: 1,
                       coinsGifted: isGiftedStackCoins,
                     },
@@ -1543,6 +1545,7 @@ class AuthController extends BaseController {
             type: EUserType.TEEN,
             referralCode: uniqueReferralCode,
             isParentFirst: true,
+            isAutoApproval: EAUTOAPPROVAL.ON,
           });
           return this.Ok(ctx, {
             message: "We've sent them an invite to create their username!",
