@@ -299,7 +299,7 @@ class TradingController extends BaseController {
           const activity = await UserActivityTable.create({
             userId: reqParam.childId ? reqParam.childId : userExists._id,
             userType: reqParam.childId ? EUserType.TEEN : userExists.type,
-            message: `${messages.APPROVE_DEPOSIT} of $${reqParam.amount}`,
+            message: `${messages.APPROVE_DEPOSIT} $${reqParam.amount}`,
             currencyType: null,
             currencyValue: reqParam.amount,
             action: EAction.DEPOSIT,
@@ -490,7 +490,7 @@ class TradingController extends BaseController {
             const activity = await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
-              message: `${messages.WITHDRAW} of $${reqParam.amount}`,
+              message: `${messages.WITHDRAW} $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.WITHDRAW,
@@ -893,7 +893,7 @@ class TradingController extends BaseController {
         userId: reqParam.childId ? reqParam.childId : user._id,
         message:
           userType == EUserType.PARENT
-            ? `${messages.APPROVE_BUY} $${amount} in ${crypto.name}`
+            ? `${messages.APPROVE_BUY} ${crypto.name} buy request of $${amount}`
             : `${messages.BUY} $${amount} in ${crypto.name}`,
         action: EAction.BUY_CRYPTO,
         currencyValue: amount,
@@ -1015,7 +1015,7 @@ class TradingController extends BaseController {
         message:
           userExists.type === EUserType.TEEN
             ? `${messages.SELL} $${amount} in ${crypto.name}`
-            : `${messages.APPROVE_SELL} $${amount} in ${crypto.name}`,
+            : `${messages.APPROVE_SELL} ${crypto.name} sell request of $${amount}`,
         action: EAction.SELL_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
@@ -1266,12 +1266,12 @@ class TradingController extends BaseController {
         status: EStatus.REJECTED,
         message:
           activity.action == EAction.DEPOSIT
-            ? `${messages.REJECT_DEPOSIT} of ${activity.currencyValue}`
+            ? `${messages.REJECT_DEPOSIT} $${activity.currencyValue}`
             : activity.action == EAction.WITHDRAW
-            ? `${messages.REJECT_WITHDRAW} of ${activity.currencyValue}`
+            ? `${messages.REJECT_WITHDRAW} $${activity.currencyValue}`
             : activity.action == EAction.BUY_CRYPTO
-            ? `${messages.REJECT_BUY} of ${crypto.name} of $${activity.currencyValue}`
-            : `${messages.REJECT_SELL} of ${crypto.name} of $${activity.currencyValue}`,
+            ? `${messages.REJECT_BUY} ${crypto.name} buy request of $${activity.currencyValue}`
+            : `${messages.REJECT_SELL} ${crypto.name} sell request of $${activity.currencyValue}`,
       }
     );
     /**
@@ -1639,7 +1639,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_DEPOSIT} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_DEPOSIT} $${activity.currencyValue}`,
           }
         );
         await TransactionTable.create({
@@ -1716,7 +1716,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_WITHDRAW} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_WITHDRAW} $${activity.currencyValue}`,
           }
         );
         await TransactionTable.create({
@@ -1829,7 +1829,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_BUY} ${cryptoData.name} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_BUY} ${cryptoData.name} buy request of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {
@@ -1931,7 +1931,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_SELL} ${sellCryptoData.name} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_SELL} ${cryptoData.name} sell request of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {
