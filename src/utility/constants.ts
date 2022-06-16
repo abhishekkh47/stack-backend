@@ -53,6 +53,7 @@ export const PLAIDAPIS = {
 export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",
   accountUpsert: "crm/v2/Accounts/upsert",
+  getAccounts: "crm/v2/Accounts",
 };
 
 export const DROPDOWNLIST = {
@@ -109,4 +110,26 @@ export const NOTIFICATION_KEYS = {
   KYC_SUCCESS: "kyc_success",
   KYC_FAILURE: "kyc_failure",
   KYC_PENDING: "kyc_pending",
+};
+
+export const PARENT_SIGNUP_FUNNEL = {
+  SIGNUP: [
+    "Sign up with SSO",
+    "Enter phone number",
+    "Enter child's phone number",
+    "Enter name, birth, SSN",
+  ],
+  ADDRESS: "Enter address",
+  UPLOAD_DOCUMENT: "Upload ID",
+  ADD_BANK: "Add a bank",
+  SUCCESS: "Registration complete",
+};
+
+export const TEEN_SIGNUP_FUNNEL = {
+  SIGNUP: "Sign up with SSO",
+  USERNAME: "Create username",
+  PHONE_NUMBER: "Enter phone number",
+  NAME: "Enter name",
+  PARENT_INFO: ["Enter parent's info"],
+  SUCCESS: "Registration complete",
 };

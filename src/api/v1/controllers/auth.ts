@@ -39,7 +39,7 @@ import {
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
-import { CONSTANT } from "../../../utility/constants";
+import { CONSTANT, PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import UserController from "./user";
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
@@ -79,17 +79,14 @@ class AuthController extends BaseController {
           const socialLoginToken = reqParam.socialLoginToken;
           switch (loginType) {
             case "1":
-              console.log(envData.GOOGLE_CLIENT_ID, "envData.GOOGLE_CLIENT_ID");
               const googleTicket: any = await google_client
                 .verifyIdToken({
                   idToken: socialLoginToken,
                   audience: envData.GOOGLE_CLIENT_ID,
                 })
                 .catch((error) => {
-                  console.log(error, "error");
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-              console.log(googleTicket, `google ticket`);
               const googlePayload = googleTicket.getPayload();
               if (!googlePayload) {
                 return this.BadRequest(ctx, "Error while logging in");
@@ -102,10 +99,8 @@ class AuthController extends BaseController {
               const appleTicket: any = await apple_client
                 .verifyIdToken(socialLoginToken)
                 .catch((err) => {
-                  console.log(err, "err");
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-              console.log(appleTicket, `apple ticket`);
               if (appleTicket.email != email) {
                 return this.BadRequest(ctx, "Email Doesn't Match");
               }
@@ -187,12 +182,12 @@ class AuthController extends BaseController {
             childExists = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
-            if (childExists && childExists.isParentFirst == false) {
-              return this.BadRequest(
-                ctx,
-                "Your account is already created. Please log in"
-              );
-            }
+            // if (childExists && childExists.isParentFirst == false) {
+            //   return this.BadRequest(
+            //     ctx,
+            //     "Your account is already created. Please log in"
+            //   );
+            // }
             if (reqParam.parentEmail) {
               user = await UserTable.findOne({
                 email: reqParam.parentEmail,
@@ -393,17 +388,14 @@ class AuthController extends BaseController {
           const socialLoginToken = reqParam.socialLoginToken;
           switch (reqParam.loginType) {
             case "1":
-              console.log(envData.GOOGLE_CLIENT_ID, "envData.GOOGLE_CLIENT_ID");
               const googleTicket: any = await google_client
                 .verifyIdToken({
                   idToken: socialLoginToken,
                   audience: envData.GOOGLE_CLIENT_ID,
                 })
                 .catch((error) => {
-                  console.log(error, "error");
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
-              console.log(googleTicket, `--ticket--`);
               const googlePayload = googleTicket.getPayload();
               if (!googlePayload) {
                 return this.BadRequest(ctx, "Error while logging in");
@@ -483,7 +475,6 @@ class AuthController extends BaseController {
                 },
               ]).exec();
               let stackCoins = 0;
-              console.log(checkQuizExists, "checkQuizExists");
               if (checkQuizExists.length > 0) {
                 stackCoins = checkQuizExists[0].sum;
               }
@@ -681,6 +672,12 @@ class AuthController extends BaseController {
               Stack_Coins: isGiftedStackCoins,
             };
           }
+          if (user.type == EUserType.PARENT) {
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Parent_Signup_Funnel: PARENT_SIGNUP_FUNNEL.SIGNUP,
+            };
+          }
           let mainData = {
             data: [dataSentInCrm],
           };
@@ -705,7 +702,6 @@ class AuthController extends BaseController {
               dataSentAgain
             );
           }
-          console.log(dataAddInZoho, "dataAddInZoho");
           await UserController.getProfile(getProfileInput);
           return this.Ok(ctx, {
             token,
@@ -717,6 +713,79 @@ class AuthController extends BaseController {
                 ? `We have sent sms/email to your parent. Once he starts onboarding process you can have access to full features of this app.`
                 : `Your account is created successfully. Please fill other profile details as well.`,
           });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method will be used to verify social id token and email in case of user registration
+   */
+  @Route({ path: "/check-user-signup", method: HttpMethod.POST })
+  public async checkUserSignUp(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.checkUserSignupValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          let userExists = await UserTable.findOne({ email: reqParam.email });
+          if (!userExists) {
+            return this.BadRequest(ctx, "Email Doesn't Exists");
+          } else {
+            /**
+             * Sign in type 1 - google and 2 - apple
+             */
+            const socialLoginToken = reqParam.socialLoginToken;
+            switch (reqParam.loginType) {
+              case "1":
+                const googleTicket: any = await google_client
+                  .verifyIdToken({
+                    idToken: socialLoginToken,
+                    audience: envData.GOOGLE_CLIENT_ID,
+                  })
+                  .catch((error) => {
+                    return this.BadRequest(ctx, "Error Invalid Token Id");
+                  });
+                const googlePayload = googleTicket.getPayload();
+                if (!googlePayload) {
+                  return this.BadRequest(ctx, "Error while logging in");
+                }
+                if (googlePayload.email != reqParam.email) {
+                  return this.BadRequest(ctx, "Email Doesn't Match");
+                }
+                break;
+              case "2":
+                const appleTicket: any = await apple_client
+                  .verifyIdToken(socialLoginToken)
+                  .catch((err) => {
+                    return this.BadRequest(ctx, "Error Invalid Token Id");
+                  });
+                if (appleTicket.email != reqParam.email) {
+                  return this.BadRequest(ctx, "Email Doesn't Match");
+                }
+                break;
+            }
+            const authInfo = await AuthService.getJwtAuthInfo(userExists);
+            const refreshToken = await getRefreshToken(authInfo);
+            userExists.refreshToken = refreshToken;
+            await userExists.save();
+            const token = await getJwtToken(authInfo);
+            let getProfileInput: any = {
+              request: {
+                query: { token },
+                headers: {},
+                params: { id: userExists._id },
+              },
+            };
+            await UserController.getProfile(getProfileInput);
+            return this.Ok(ctx, {
+              token,
+              refreshToken,
+              profileData: getProfileInput.body.data,
+              message: "Success",
+            });
+          }
         }
       }
     );
@@ -1462,7 +1531,6 @@ class AuthController extends BaseController {
             if (twilioResponse.code === 400) {
               return this.BadRequest(ctx, "Error in sending OTP");
             }
-            console.log(twilioResponse, "twilioResponse");
           } catch (error) {
             return this.BadRequest(ctx, error.message);
           }
@@ -1570,6 +1638,15 @@ class AuthController extends BaseController {
                 Billing_City: input.city,
               };
             }
+            if (userExists.type === EUserType.PARENT) {
+              dataSentInCrm = {
+                ...dataSentInCrm,
+                Parent_Signup_Funnel: [
+                  ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                  PARENT_SIGNUP_FUNNEL.ADDRESS,
+                ],
+              };
+            }
             let mainData = {
               data: [dataSentInCrm],
             };
@@ -1577,7 +1654,6 @@ class AuthController extends BaseController {
               ctx.request.zohoAccessToken,
               mainData
             );
-            console.log(dataAddInZoho, "dataAddInZoho");
             return this.Created(ctx, {
               message:
                 "Stored Address and Liquid Asset Information Successfully",

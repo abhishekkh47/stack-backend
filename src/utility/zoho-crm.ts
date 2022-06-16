@@ -8,8 +8,6 @@ import request from "request";
  * @expiry 1hour expiry time
  */
 export const getAccessToken = async (refreshToken) => {
-  console.log(config.ZOHO_CLIENTID, "url");
-
   const response = await axios
     .post(
       `${config.ZOHO_ACCOUNTURL + ZOHOAPIS.getAccessToken}?client_id=${
@@ -19,14 +17,12 @@ export const getAccessToken = async (refreshToken) => {
       }&grant_type=refresh_token&refresh_token=${refreshToken}`
     )
     .then((res) => {
-      console.log(res.data);
       return {
         status: 200,
         data: res.data,
       };
     })
     .catch((error) => {
-      console.log(error, "error");
       if (error) {
         return {
           status: error.response.status,
@@ -50,6 +46,34 @@ export const addAccountInfoInZohoCrm = async (accessToken, data) => {
     })
     .then((res) => {
       console.log(res.data.data[0].details, "res");
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      console.log(error, "error");
+      if (error) {
+        return {
+          status: error.response.status,
+          message: error.response.data,
+        };
+      }
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to get account information
+ */
+export const getAccountInfo = async (accessToken) => {
+  const response = await axios
+    .get(config.ZOHO_DOMAIN + ZOHOAPIS.getAccounts, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    .then((res) => {
       return {
         status: 200,
         data: res.data,

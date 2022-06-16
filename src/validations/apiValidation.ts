@@ -208,6 +208,21 @@ export const validation = {
     }
     return callback(true);
   },
+  checkUserSignupValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      email: Joi.string().email().required(),
+      loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
+      socialLoginToken: Joi.string().required(),
+    });
+    const { error } = schema.validate(req, { allowUnknown: true });
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("checkUserSignupValidation", error))
+      );
+    }
+    return callback(true);
+  },
   changeMobileNumberValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
       mobile: Joi.string()

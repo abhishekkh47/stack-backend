@@ -16,6 +16,7 @@ import {
   sendNotification,
   getAccounts,
   institutionsGetByIdRequest,
+  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import BaseController from "./base";
 import mongoose from "mongoose";
@@ -46,7 +47,11 @@ import {
 import { validation } from "../../../validations/apiValidation";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
+import {
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
+} from "../../../utility/constants";
 
 class TradingController extends BaseController {
   /**
@@ -56,7 +61,7 @@ class TradingController extends BaseController {
    */
   @Route({ path: "/add-bank", method: HttpMethod.POST })
   @Auth()
-  @PrimeTrustJWT()
+  @PrimeTrustJWT(true)
   public async addBankDetails(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
@@ -185,6 +190,22 @@ class TradingController extends BaseController {
                 "We will proceed your request surely in some amount of time.",
             });
           }
+          /**
+           * added bank successfully
+           */
+          let dataSentInCrm: any = {
+            Account_Name: userExists.firstName + " " + userExists.lastName,
+            Parent_Signup_Funnel: [
+              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+              PARENT_SIGNUP_FUNNEL.ADDRESS,
+              PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+              PARENT_SIGNUP_FUNNEL.ADD_BANK,
+            ],
+          };
+          let mainData = {
+            data: [dataSentInCrm],
+          };
+          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
           return this.Ok(ctx, { message: "Bank account linked successfully" });
         }
       }
@@ -738,10 +759,6 @@ class TradingController extends BaseController {
     if (fetchBalance.status == 400) {
       return this.BadRequest(ctx, fetchBalance.message);
     }
-    console.log(
-      fetchBalance.data.data[0].attributes,
-      "fetchBalance.data.data[0].attributes"
-    );
     const balance = fetchBalance.data.data[0].attributes.disbursable;
     const pending = fetchBalance.data.data[0].attributes["pending-transfer"];
     if (fetchBalance.status == 400) {
@@ -1582,7 +1599,6 @@ class TradingController extends BaseController {
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
-    console.log(accountIdDetails.childId, "accountIdDetails.childId");
     let deviceTokenData = await DeviceToken.findOne({
       userId: accountIdDetails.childId,
     }).select("deviceToken");
