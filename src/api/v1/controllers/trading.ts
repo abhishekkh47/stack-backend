@@ -816,7 +816,7 @@ class TradingController extends BaseController {
       if (amount > balance)
         return this.BadRequest(
           ctx,
-          "You dont have sufficient balance to buy cryptocurrenices"
+          "Insufficient funds"
         );
 
       const userType = (
