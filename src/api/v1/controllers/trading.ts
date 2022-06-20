@@ -200,6 +200,7 @@ class TradingController extends BaseController {
               PARENT_SIGNUP_FUNNEL.ADDRESS,
               PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
               PARENT_SIGNUP_FUNNEL.ADD_BANK,
+              PARENT_SIGNUP_FUNNEL.SUCCESS,
             ],
           };
           let mainData = {
@@ -813,11 +814,7 @@ class TradingController extends BaseController {
         return this.BadRequest(ctx, fetchBalance.message);
       }
       const balance = fetchBalance.data.data[0].attributes.disbursable;
-      if (amount > balance)
-        return this.BadRequest(
-          ctx,
-          "Insufficient funds"
-        );
+      if (amount > balance) return this.BadRequest(ctx, "Insufficient funds");
 
       const userType = (
         await UserTable.findOne(
@@ -1494,11 +1491,13 @@ class TradingController extends BaseController {
           /**
            * Fetch Balance
            */
+          console.log(accountIdDetails)
           const fetchBalance: any = await getBalance(
             jwtToken,
             accountIdDetails.accountId
           );
           if (fetchBalance.status == 400) {
+            console.log(fetchBalance.message, "fetchBalance.message");
             return this.BadRequest(ctx, fetchBalance.message);
           }
           const balance = fetchBalance.data.data[0].attributes.disbursable;

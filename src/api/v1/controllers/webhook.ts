@@ -190,13 +190,6 @@ class WebHookController extends BaseController {
             let dataSentInCrm: any = {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Account_Status: "3",
-              Parent_Signup_Funnel: [
-                ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-                PARENT_SIGNUP_FUNNEL.ADDRESS,
-                PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-                PARENT_SIGNUP_FUNNEL.ADD_BANK,
-                PARENT_SIGNUP_FUNNEL.SUCCESS,
-              ],
             };
             let mainData = {
               data: [dataSentInCrm],
