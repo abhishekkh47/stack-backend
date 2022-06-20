@@ -13,6 +13,7 @@ import {
   createAccount,
   addAccountInfoInZohoCrm,
   makeUniqueReferalCode,
+  decodeJwtToken,
 } from "../../../utility";
 import BaseController from "./base";
 import envData from "../../../config/index";
@@ -724,6 +725,7 @@ class AuthController extends BaseController {
   @Route({ path: "/check-user-signup", method: HttpMethod.POST })
   public async checkUserSignUp(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log(reqParam, "reqParam");
     return validation.checkUserSignupValidation(
       reqParam,
       ctx,
@@ -778,6 +780,32 @@ class AuthController extends BaseController {
                 params: { id: userExists._id },
               },
             };
+            if (reqParam.deviceToken) {
+              const checkDeviceTokenExists = await DeviceToken.findOne({
+                userId: userExists._id,
+              });
+              if (!checkDeviceTokenExists) {
+                await DeviceToken.create({
+                  userId: userExists._id,
+                  "deviceToken.0": reqParam.deviceToken,
+                });
+              } else {
+                if (
+                  !checkDeviceTokenExists.deviceToken.includes(
+                    reqParam.deviceToken
+                  )
+                ) {
+                  await DeviceToken.updateOne(
+                    { _id: checkDeviceTokenExists._id },
+                    {
+                      $push: {
+                        deviceToken: reqParam.deviceToken,
+                      },
+                    }
+                  );
+                }
+              }
+            }
             await UserController.getProfile(getProfileInput);
             return this.Ok(ctx, {
               token,
@@ -1680,11 +1708,12 @@ class AuthController extends BaseController {
 
     let user: any;
     try {
-      user = verifyToken(refreshToken);
+      user = decodeJwtToken(refreshToken);
     } catch (error) {
       return this.UnAuthorized(ctx, "Refresh Token Expired");
     }
-    let token = getJwtToken(AuthService.getJwtAuthInfo(user));
+    user = await UserTable.findOne({ _id: user._id });
+    let token = getJwtToken(await AuthService.getJwtAuthInfo(user));
     return this.Ok(ctx, { token });
   }
 
