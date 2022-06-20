@@ -2,7 +2,7 @@ import Jwt from "jsonwebtoken";
 
 export const getJwtToken = (body: any) => {
   return Jwt.sign(body, process.env.JWT_SECRET ?? "secret", {
-    expiresIn: 30,
+    expiresIn: 36000,
   });
 };
 
