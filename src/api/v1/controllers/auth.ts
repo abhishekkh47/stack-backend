@@ -262,7 +262,7 @@ class AuthController extends BaseController {
                     " - " +
                     checkParentExists.lastName,
                   "webhook-config": {
-                    url: "http://34.216.120.156:3500/api/v1/webhook-response",
+                    url: envData.WEBHOOK_URL,
                   },
                   "contact-id": parentTable.contactId,
                 },
