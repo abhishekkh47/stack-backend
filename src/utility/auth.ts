@@ -17,3 +17,7 @@ export const getRefreshToken = (body: any) => {
     expiresIn: "365d",
   });
 };
+
+export const decodeJwtToken = (body: any) => {
+  return Jwt.decode(body);
+};

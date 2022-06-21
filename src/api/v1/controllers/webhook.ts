@@ -14,7 +14,11 @@ import {
   addAccountInfoInZohoCrm,
   getAccountStatusByAccountId,
 } from "../../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
+import {
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
+} from "../../../utility/constants";
 import { json, form } from "co-body";
 import BaseController from "./base";
 import {
@@ -133,7 +137,6 @@ class WebHookController extends BaseController {
               notificationRequest.title,
               notificationRequest
             );
-            console.log(notificationRequest, "notificationRequest");
           }
           return this.Ok(ctx, { message: "User Kyc Failed" });
         }
@@ -148,7 +151,6 @@ class WebHookController extends BaseController {
             body.data["changes"].includes("aml-cleared") ||
             body.data["changes"].includes("identity-confirmed"))
         ) {
-          console.log(body.data["changes"], "CHANGE ARRAY INCLUDE");
           let updateData = {};
           if (body.data["changes"].includes("aml-cleared")) {
             updateData = { ...updateData, amlCleared: true };
@@ -159,7 +161,6 @@ class WebHookController extends BaseController {
           if (body.data["changes"].includes("identity-confirmed")) {
             updateData = { ...updateData, identityConfirmed: true };
           }
-          console.log(updateData, "updateDATA");
           await UserTable.updateOne(
             { _id: userExists._id },
             {
@@ -194,7 +195,7 @@ class WebHookController extends BaseController {
             let mainData = {
               data: [dataSentInCrm],
             };
-            const dataAddInZoho = await addAccountInfoInZohoCrm(
+            await addAccountInfoInZohoCrm(
               ctx.request.zohoAccessToken,
               mainData
             );
@@ -239,10 +240,8 @@ class WebHookController extends BaseController {
                     ctx.request.zohoAccessToken,
                     mainData
                   );
-                  console.log(dataAddInZoho, "dataAddInZoho");
                 }
               }
-              console.log(userIdsToBeGifted, "userIdsToBeGifted");
               await UserTable.updateMany(
                 {
                   _id: { $in: userIdsToBeGifted },
@@ -854,13 +853,20 @@ class WebHookController extends BaseController {
     path: "/test-zoho",
     method: HttpMethod.POST,
   })
-  @PrimeTrustJWT()
+  @PrimeTrustJWT(true)
   public async testZoho(ctx: any) {
-    let accountStatus = await getAccountStatusByAccountId(
-      ctx.request.primeTrustToken,
-      "de72ad0e-fe25-46bc-91bb-61ecf12f1f87"
+    let dataSentInCrm: any = {
+      Account_Name: "Ankit Bhojani",
+      Parent_Signup_Funnel: ["Sign up with SSO"],
+    };
+    let mainData = {
+      data: [dataSentInCrm],
+    };
+    const sucess = await addAccountInfoInZohoCrm(
+      ctx.request.zohoAccessToken,
+      mainData
     );
-    return this.Ok(ctx, { data: accountStatus.data.attributes["status"] });
+    return this.Ok(ctx, { data: sucess });
   }
 }
 

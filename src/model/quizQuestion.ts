@@ -39,7 +39,7 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
       {
         name: {
           type: mongoose.Schema.Types.String,
-          required: true,
+          required: false,
         },
         image: {
           type: mongoose.Schema.Types.String,

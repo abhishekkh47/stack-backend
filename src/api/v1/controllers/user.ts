@@ -39,6 +39,7 @@ import {
   FIREBASE_CREDENCIALS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 import envData from "../../../config/index";
@@ -319,7 +320,6 @@ class UserController extends BaseController {
       },
     };
     const createAccountData: any = await createAccount(jwtToken, data);
-    console.log(createAccountData, "createAccountData");
     if (createAccountData.status == 400) {
       return this.BadRequest(ctx, createAccountData.message);
     }
@@ -430,6 +430,11 @@ class UserController extends BaseController {
     let dataSentInCrm: any = {
       Account_Name: userExists.firstName + " " + userExists.lastName,
       Account_Status: "1",
+      Parent_Signup_Funnel: [
+        ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+        PARENT_SIGNUP_FUNNEL.ADDRESS,
+        PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+      ],
     };
     let mainData = {
       data: [dataSentInCrm],

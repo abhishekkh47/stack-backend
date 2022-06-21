@@ -1,5 +1,25 @@
 import moment from "moment";
 import { ObjectId } from "mongodb";
+import Koa from "koa";
+import {
+  createContributions,
+  createDisbursements,
+  createProcessorToken,
+  getPublicTokenExchange,
+  getBalance,
+  Route,
+  generateQuote,
+  executeQuote,
+  getAccountId,
+  getWireTransfer,
+  getContactId,
+  wireTransfer,
+  getPushTransferMethods,
+  sendNotification,
+  getAccounts,
+  institutionsGetByIdRequest,
+  addAccountInfoInZohoCrm,
+} from "../../../utility";
 import mongoose from "mongoose";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -26,24 +46,10 @@ import {
   messages,
 } from "../../../types";
 import {
-  createContributions,
-  createDisbursements,
-  createProcessorToken,
-  executeQuote,
-  generateQuote,
-  getAccountId,
-  getAccounts,
-  getBalance,
-  getContactId,
-  getPublicTokenExchange,
-  getPushTransferMethods,
-  getWireTransfer,
-  institutionsGetByIdRequest,
-  Route,
-  sendNotification,
-  wireTransfer,
-} from "../../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
+} from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -56,7 +62,7 @@ class TradingController extends BaseController {
   @Route({ path: "/add-bank", method: HttpMethod.POST })
   @PrimeTrustJWT()
   @Auth()
-  @PrimeTrustJWT()
+  @PrimeTrustJWT(true)
   public async addBankDetails(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
@@ -185,6 +191,23 @@ class TradingController extends BaseController {
                 "We will proceed your request surely in some amount of time.",
             });
           }
+          /**
+           * added bank successfully
+           */
+          let dataSentInCrm: any = {
+            Account_Name: userExists.firstName + " " + userExists.lastName,
+            Parent_Signup_Funnel: [
+              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+              PARENT_SIGNUP_FUNNEL.ADDRESS,
+              PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+              PARENT_SIGNUP_FUNNEL.ADD_BANK,
+              PARENT_SIGNUP_FUNNEL.SUCCESS,
+            ],
+          };
+          let mainData = {
+            data: [dataSentInCrm],
+          };
+          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
           return this.Ok(ctx, { message: "Bank account linked successfully" });
         }
       }
@@ -334,7 +357,7 @@ class TradingController extends BaseController {
           await UserActivityTable.create({
             userId: reqParam.childId ? reqParam.childId : userExists._id,
             userType: reqParam.childId ? EUserType.TEEN : userExists.type,
-            message: `${messages.APPROVE_DEPOSIT} of $${reqParam.amount}`,
+            message: `${messages.APPROVE_DEPOSIT} $${reqParam.amount}`,
             currencyType: null,
             currencyValue: reqParam.amount,
             action: EAction.DEPOSIT,
@@ -804,10 +827,6 @@ class TradingController extends BaseController {
     if (fetchBalance.status == 400) {
       return this.BadRequest(ctx, fetchBalance.message);
     }
-    console.log(
-      fetchBalance.data.data[0].attributes,
-      "fetchBalance.data.data[0].attributes"
-    );
     const balance = fetchBalance.data.data[0].attributes.disbursable;
     const pending = fetchBalance.data.data[0].attributes["pending-transfer"];
     if (fetchBalance.status == 400) {
@@ -862,11 +881,7 @@ class TradingController extends BaseController {
         return this.BadRequest(ctx, fetchBalance.message);
       }
       const balance = fetchBalance.data.data[0].attributes.disbursable;
-      if (amount > balance)
-        return this.BadRequest(
-          ctx,
-          "You dont have sufficient balance to buy cryptocurrenices"
-        );
+      if (amount > balance) return this.BadRequest(ctx, "Insufficient funds");
 
       const userType = (
         await UserTable.findOne(
@@ -1320,12 +1335,12 @@ class TradingController extends BaseController {
         status: EStatus.REJECTED,
         message:
           activity.action == EAction.DEPOSIT
-            ? `${messages.REJECT_DEPOSIT} of ${activity.currencyValue}`
+            ? `${messages.REJECT_DEPOSIT} $${activity.currencyValue}`
             : activity.action == EAction.WITHDRAW
-            ? `${messages.REJECT_WITHDRAW} of ${activity.currencyValue}`
+            ? `${messages.REJECT_WITHDRAW} $${activity.currencyValue}`
             : activity.action == EAction.BUY_CRYPTO
-            ? `${messages.REJECT_BUY} of ${crypto.name} of $${activity.currencyValue}`
-            : `${messages.REJECT_SELL} of ${crypto.name} of $${activity.currencyValue}`,
+            ? `${messages.REJECT_BUY} ${crypto.name} buy request of $${activity.currencyValue}`
+            : `${messages.REJECT_SELL} ${crypto.name} sell request of $${activity.currencyValue}`,
       }
     );
     /**
@@ -1531,11 +1546,13 @@ class TradingController extends BaseController {
           /**
            * Fetch Balance
            */
+          console.log(accountIdDetails);
           const fetchBalance: any = await getBalance(
             jwtToken,
             accountIdDetails.accountId
           );
           if (fetchBalance.status == 400) {
+            console.log(fetchBalance.message, "fetchBalance.message");
             return this.BadRequest(ctx, fetchBalance.message);
           }
           const balance = fetchBalance.data.data[0].attributes.disbursable;
@@ -1692,7 +1709,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_DEPOSIT} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_DEPOSIT} $${activity.currencyValue}`,
           }
         );
         await TransactionTable.create({
@@ -1769,7 +1786,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_WITHDRAW} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_WITHDRAW} $${activity.currencyValue}`,
           }
         );
         await TransactionTable.create({
@@ -1882,7 +1899,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_BUY} ${cryptoData.name} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_BUY} ${cryptoData.name} buy request of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {
@@ -1984,7 +2001,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_SELL} ${sellCryptoData.name} of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_SELL} ${cryptoData.name} sell request of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {

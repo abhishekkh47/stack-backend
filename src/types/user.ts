@@ -81,10 +81,22 @@ export enum EUSERSTATUS {
   KYC_DOCUMENT_UPLOAD_FAILED = 2,
 }
 export enum ESCREENSTATUS {
+  /**
+   * for parents
+   */
   SIGN_UP = 0,
   CHANGE_ADDRESS = 1,
   UPLOAD_DOCUMENTS = 3,
   ACKNOWLEDGE_SCREEN = 2,
   ADD_BANK_ACCOUNT = 4,
   SUCCESS = 5,
+  /**
+   * for teen
+   */
+  SIGN_UP_TEEN = 0,
+  CREATE_USERNAME = 1,
+  ENTER_PHONE_NO = 2,
+  ENTER_NAME = 3,
+  ENTER_PARENT_INFO = 4,
+  SUCCESS_TEEN = 5,
 }

@@ -430,6 +430,7 @@ export const getBalance = async (token, id) => {
       };
     })
     .catch((error) => {
+      console.log(error.response.data, "error");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
