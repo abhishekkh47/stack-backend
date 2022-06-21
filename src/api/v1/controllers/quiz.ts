@@ -215,13 +215,13 @@ class QuizController extends BaseController {
           }).sort({ createdAt: -1 });
           const quizIds: any = [];
           if (quizCheck !== null) {
-            // const Time = await get72HoursAhead(quizCheck.createdAt);
-            // if (Time < timeBetweenTwoQuiz) {
-            //   return this.BadRequest(
-            //     ctx,
-            //     "Quiz is locked. Please wait for 72 hours to unlock this quiz."
-            //   );
-            // }
+            const Time = await get72HoursAhead(quizCheck.createdAt);
+            if (Time < timeBetweenTwoQuiz) {
+              return this.BadRequest(
+                ctx,
+                "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+              );
+            }
           }
           const quizCheckCompleted = await QuizResult.find(
             {
@@ -247,7 +247,8 @@ class QuizController extends BaseController {
             return this.BadRequest(ctx, "Quiz Not Found");
           }
           const quizQuestionList = await QuizQuestionTable.find({
-            quizId: data._id,
+            // quizId: data._id,
+            answer_type: 2,
           }).select(
             "_id quizId text answer_array points question_image question_type answer_type"
           );
@@ -292,13 +293,13 @@ class QuizController extends BaseController {
             userId: user._id,
           }).sort({ createdAt: -1 });
           if (lastQuizPlayed) {
-            // const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            // if (timeDiff <= timeBetweenTwoQuiz) {
-            //   return this.BadRequest(
-            //     ctx,
-            //     "Quiz is locked. Please wait for 72 hours to unlock this quiz"
-            //   );
-            // }
+            const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
+            if (timeDiff <= timeBetweenTwoQuiz) {
+              return this.BadRequest(
+                ctx,
+                "Quiz is locked. Please wait for 72 hours to unlock this quiz"
+              );
+            }
           }
           /**
            * Check question acutally exists in that quiz
@@ -379,27 +380,27 @@ class QuizController extends BaseController {
         }).sort({ createdAt: -1 });
         const QuizIds = [];
         if (quizCheck !== null) {
-          // const Time = await get72HoursAhead(quizCheck.createdAt);
-          // if (Time < timeBetweenTwoQuiz) {
-          //   return this.BadRequest(
-          //     ctx,
-          //     "Quiz is locked. Please wait for 72 hours to unlock this quiz."
-          //   );
-          // } else {
-          const quizCheckCompleted = await QuizResult.find(
-            {
-              userId: user._id,
-              topicId: reqParam.topicId,
-            },
-            {
-              _id: 0,
-              quizId: 1,
+          const Time = await get72HoursAhead(quizCheck.createdAt);
+          if (Time < timeBetweenTwoQuiz) {
+            return this.BadRequest(
+              ctx,
+              "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+            );
+          } else {
+            const quizCheckCompleted = await QuizResult.find(
+              {
+                userId: user._id,
+                topicId: reqParam.topicId,
+              },
+              {
+                _id: 0,
+                quizId: 1,
+              }
+            ).select("quizId");
+            for (const quizId of quizCheckCompleted) {
+              QuizIds.push(quizId.quizId);
             }
-          ).select("quizId");
-          for (const quizId of quizCheckCompleted) {
-            QuizIds.push(quizId.quizId);
           }
-          // }
         }
         const data = await QuizTable.find({
           topicId: reqParam.topicId,

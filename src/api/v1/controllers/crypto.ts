@@ -6,7 +6,6 @@ import { ETransactionType, HttpMethod } from "../../../types";
 import {
   CryptoPriceTable,
   CryptoTable,
-  ParentChildTable,
   TransactionTable,
 } from "../../../model";
 import { Auth, PrimeTrustJWT } from "../../../middleware";

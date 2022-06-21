@@ -89,6 +89,7 @@ class AuthController extends BaseController {
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
               const googlePayload = googleTicket.getPayload();
+              console.log(googlePayload, "googlePayload");
               if (!googlePayload) {
                 return this.BadRequest(ctx, "Error while logging in");
               }
