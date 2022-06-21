@@ -247,8 +247,7 @@ class QuizController extends BaseController {
             return this.BadRequest(ctx, "Quiz Not Found");
           }
           const quizQuestionList = await QuizQuestionTable.find({
-            // quizId: data._id,
-            answer_type: 2,
+            quizId: data._id,
           }).select(
             "_id quizId text answer_array points question_image question_type answer_type"
           );
