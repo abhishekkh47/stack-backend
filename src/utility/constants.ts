@@ -141,3 +141,11 @@ export const TEEN_SIGNUP_FUNNEL = {
   PARENT_INFO: ["Enter parent's info"],
   SUCCESS: "Registration complete",
 };
+
+export const CMS_LINKS = {
+  TERMS: "https://www.trystack.io/terms",
+  AMC_POLICY: "",
+  PRIVACY_POLICY: "https://www.trystack.io/privacy",
+  PRIME_TRUST_USER_AGREEMENT:
+    "https://www.primetrust.com/legal/terms-of-service",
+};

@@ -36,6 +36,7 @@ import moment from "moment";
 import { ObjectId } from "mongodb";
 import { AuthService } from "../../../services";
 import {
+  CMS_LINKS,
   FIREBASE_CREDENCIALS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
@@ -564,6 +565,13 @@ class UserController extends BaseController {
         data.isParentApproved = 1;
       }
     }
+    data = {
+      ...data,
+      terms: CMS_LINKS.TERMS,
+      amcPolicy: CMS_LINKS.AMC_POLICY,
+      privacy: CMS_LINKS.PRIVACY_POLICY,
+      ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+    };
     return this.Ok(ctx, data, true);
   }
 
