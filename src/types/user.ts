@@ -41,6 +41,7 @@ export interface IAccount {
   identityConfirmed: boolean;
   accountStatus: string;
   referralCode: string;
+  isAutoApproval: EAUTOAPPROVAL;
 }
 
 export interface IAdmin extends IUser {
@@ -53,6 +54,11 @@ export interface IAdmin extends IUser {
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
+
+export enum EAUTOAPPROVAL {
+  ON = 1,
+  OFF = 0,
+}
 
 export enum EUserType {
   TEEN = 1,

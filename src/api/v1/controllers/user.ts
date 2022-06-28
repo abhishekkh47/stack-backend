@@ -36,6 +36,7 @@ import moment from "moment";
 import { ObjectId } from "mongodb";
 import { AuthService } from "../../../services";
 import {
+  CMS_LINKS,
   FIREBASE_CREDENCIALS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
@@ -498,6 +499,20 @@ class UserController extends BaseController {
         },
         { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
         {
+          $lookup: {
+            from: "user-refferals",
+            localField: "_id",
+            foreignField: "userId",
+            as: "lifeTimeReferral",
+          },
+        },
+        {
+          $unwind: {
+            path: "$lifeTimeReferral",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $addFields: {
             isParentApproved: 0,
           },
@@ -520,6 +535,7 @@ class UserController extends BaseController {
             "state._id": 1,
             "state.name": 1,
             "state.shortName": 1,
+            lifeTimeReferralCount: "$lifeTimeReferral.referralCount",
             screenStatus: 1,
             city: 1,
             postalCode: 1,
@@ -549,6 +565,13 @@ class UserController extends BaseController {
         data.isParentApproved = 1;
       }
     }
+    data = {
+      ...data,
+      terms: CMS_LINKS.TERMS,
+      amcPolicy: CMS_LINKS.AMC_POLICY,
+      privacy: CMS_LINKS.PRIVACY_POLICY,
+      ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+    };
     return this.Ok(ctx, data, true);
   }
 
@@ -669,6 +692,7 @@ class UserController extends BaseController {
           "teens.username": 1,
           "teens._id": 1,
           "teens.profilePicture": 1,
+          "teens.isAutoApproval": 1,
           _id: 0,
         },
       },

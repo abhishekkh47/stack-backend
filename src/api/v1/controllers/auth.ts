@@ -13,13 +13,16 @@ import {
   createAccount,
   addAccountInfoInZohoCrm,
   makeUniqueReferalCode,
+  sendNotification,
   decodeJwtToken,
 } from "../../../utility";
 import BaseController from "./base";
 import envData from "../../../config/index";
 import {
+  EAUTOAPPROVAL,
   EOTPTYPE,
   EOTPVERIFICATION,
+  ERead,
   ESCREENSTATUS,
   EUSERSTATUS,
   EUserType,
@@ -36,11 +39,17 @@ import {
   DeviceToken,
   AdminTable,
   QuizResult,
+  Notification,
   UserReffaralTable,
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
-import { CONSTANT, PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
+import {
+  CONSTANT,
+  NOTIFICATION_KEYS,
+  NOTIFICATION,
+  PARENT_SIGNUP_FUNNEL,
+} from "../../../utility/constants";
 import UserController from "./user";
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
@@ -71,7 +80,10 @@ class AuthController extends BaseController {
               email: { $regex: `${email}`, $options: "i" },
             });
             if (!userExists) {
-              return this.BadRequest(ctx, "User Not Found");
+              return this.BadRequest(
+                ctx,
+                "User not found, Please signup first."
+              );
             }
           }
           /**
@@ -453,6 +465,31 @@ class AuthController extends BaseController {
                 }
               );
               /**
+               * Send notification to user who has given refferal code
+               */
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: refferalCodeExists._id,
+              }).select("deviceToken");
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.FREIND_REFER,
+                  title: NOTIFICATION.SUCCESS_REFER_MESSAGE,
+                  message: null,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: refferalCodeExists._id,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
+              /**
                * Get Quiz Stack Coins
                */
               const checkQuizExists = await QuizResult.aggregate([
@@ -549,6 +586,7 @@ class AuthController extends BaseController {
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               referralCode: uniqueReferralCode,
               preLoadedCoins: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+              isAutoApproval: EAUTOAPPROVAL.ON,
             });
           }
           if (reqParam.type == EUserType.PARENT) {
@@ -592,7 +630,7 @@ class AuthController extends BaseController {
                 referralCount: 1,
                 referralArray: [
                   {
-                    userId: user._id,
+                    referredId: user._id,
                     type: 1,
                     coinsGifted: isGiftedStackCoins,
                   },
@@ -609,7 +647,7 @@ class AuthController extends BaseController {
                   },
                   $push: {
                     referralArray: {
-                      userId: user._id,
+                      referredId: user._id,
                       type: 1,
                       coinsGifted: isGiftedStackCoins,
                     },
@@ -631,11 +669,11 @@ class AuthController extends BaseController {
             },
           };
           if (reqParam.deviceToken) {
-            const checkDeviceTokenExists = await DeviceToken.findOne({
+            let checkDeviceTokenExists: any = await DeviceToken.findOne({
               userId: user._id,
             });
             if (!checkDeviceTokenExists) {
-              await DeviceToken.create({
+              checkDeviceTokenExists = await DeviceToken.create({
                 userId: user._id,
                 "deviceToken.0": reqParam.deviceToken,
               });
@@ -645,15 +683,35 @@ class AuthController extends BaseController {
                   reqParam.deviceToken
                 )
               ) {
-                await DeviceToken.updateOne(
+                checkDeviceTokenExists = await DeviceToken.updateOne(
                   { _id: checkDeviceTokenExists._id },
                   {
                     $push: {
                       deviceToken: reqParam.deviceToken,
                     },
-                  }
+                  },
+                  { new: true }
                 );
               }
+            }
+            if (isGiftedStackCoins > 0) {
+              let notificationRequest = {
+                key: NOTIFICATION_KEYS.FREIND_REFER,
+                title: NOTIFICATION.SUCCESS_REFER_CODE_USE_MESSAGE,
+                message: null,
+              };
+              await sendNotification(
+                checkDeviceTokenExists.deviceToken,
+                notificationRequest.title,
+                notificationRequest
+              );
+              await Notification.create({
+                title: notificationRequest.title,
+                userId: user._id,
+                message: notificationRequest.message,
+                isRead: ERead.UNREAD,
+                data: JSON.stringify(notificationRequest),
+              });
             }
           }
           /**
@@ -1585,6 +1643,7 @@ class AuthController extends BaseController {
             type: EUserType.TEEN,
             referralCode: uniqueReferralCode,
             isParentFirst: true,
+            isAutoApproval: EAUTOAPPROVAL.ON,
           });
           return this.Ok(ctx, {
             message: "We've sent them an invite to create their username!",

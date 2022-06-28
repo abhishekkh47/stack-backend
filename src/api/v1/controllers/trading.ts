@@ -1,3 +1,5 @@
+import moment from "moment";
+import { ObjectId } from "mongodb";
 import Koa from "koa";
 import {
   createContributions,
@@ -18,40 +20,38 @@ import {
   institutionsGetByIdRequest,
   addAccountInfoInZohoCrm,
 } from "../../../utility";
-import BaseController from "./base";
 import mongoose from "mongoose";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
+  CryptoTable,
+  DeviceToken,
+  Notification,
+  ParentChildTable,
+  QuizResult,
+  TransactionTable,
+  UserActivityTable,
+  UserTable,
+} from "../../../model";
+import {
   EAction,
+  EAUTOAPPROVAL,
   ERead,
   ESCREENSTATUS,
   EStatus,
   ETransactionStatus,
   ETransactionType,
-  ETRANSFER,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
   messages,
 } from "../../../types";
 import {
-  CryptoTable,
-  ParentChildTable,
-  TransactionTable,
-  UserActivityTable,
-  UserTable,
-  QuizResult,
-  Notification,
-  DeviceToken,
-} from "../../../model";
-import { validation } from "../../../validations/apiValidation";
-import { ObjectId } from "mongodb";
-import moment from "moment";
-import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
+import { validation } from "../../../validations/apiValidation";
+import BaseController from "./base";
 
 class TradingController extends BaseController {
   /**
@@ -60,6 +60,7 @@ class TradingController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-bank", method: HttpMethod.POST })
+  @PrimeTrustJWT()
   @Auth()
   @PrimeTrustJWT(true)
   public async addBankDetails(ctx: any) {
@@ -237,12 +238,54 @@ class TradingController extends BaseController {
         : { "teens.childId": ctx.request.user._id };
     let parentDetails: any = await ParentChildTable.findOne(query);
     if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
+    const accountIdDetails = await parentDetails.teens.find((x: any) =>
+      reqParam.childId
+        ? x.childId.toString() == reqParam.childId.toString()
+        : userExists.type == EUserType.TEEN &&
+          userExists.isAutoApproval == EAUTOAPPROVAL.ON
+        ? x.childId.toString() == userExists._id.toString()
+        : x.childId.toString() == parentDetails.firstChildId.toString()
+    );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
     return validation.addDepositValidation(
       reqParam,
       ctx,
       userExists.type,
       async (validate) => {
         if (validate) {
+          let contributions: any = null;
+          if (
+            userExists.type == EUserType.PARENT ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+          ) {
+            /**
+             * create fund transfer with fund transfer id in response
+             */
+            let contributionRequest = {
+              type: "contributions",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "contact-id": parentDetails.contactId,
+                "funds-transfer-method": {
+                  "funds-transfer-type": "ach",
+                  "ach-check-type": "personal",
+                  "contact-id": parentDetails.contactId,
+                  "plaid-processor-token": parentDetails.processorToken,
+                },
+                amount: reqParam.amount,
+              },
+            };
+            contributions = await createContributions(
+              jwtToken,
+              contributionRequest
+            );
+            if (contributions.status == 400) {
+              return this.BadRequest(ctx, contributions.message);
+            }
+          }
           /**
            * For teen it will be pending state
            */
@@ -250,75 +293,68 @@ class TradingController extends BaseController {
             const activity = await UserActivityTable.create({
               userId: userExists._id,
               userType: userExists.type,
-              message: `${messages.DEPOSIT} of $${reqParam.amount}`,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `${messages.APPROVE_DEPOSIT} of $${reqParam.amount}`
+                  : `${messages.DEPOSIT} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.DEPOSIT,
               status:
-                userExists.type === EUserType.TEEN
+                userExists.type === EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.OFF
                   ? EStatus.PENDING
                   : EStatus.PROCESSED,
             });
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: parentDetails.userId,
-            }).select("deviceToken");
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.TRADING,
-                title: NOTIFICATION.TEEN_REQUEST_MADE,
-                message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
-                activityId: activity._id,
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-              await Notification.create({
-                title: notificationRequest.title,
-                userId: parentDetails.userId,
-                message: notificationRequest.message,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
+            if (userExists.isAutoApproval == EAUTOAPPROVAL.ON) {
+              await TransactionTable.create({
+                assetId: null,
+                cryptoId: null,
+                accountId: accountIdDetails.accountId,
+                type: ETransactionType.DEPOSIT,
+                settledTime: moment().unix(),
+                amount: reqParam.amount,
+                amountMod: null,
+                userId: accountIdDetails.childId,
+                parentId: parentDetails.userId,
+                status: ETransactionStatus.PENDING,
+                executedQuoteId: contributions.data.included[0].id,
+                unitCount: null,
               });
+            } else {
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: parentDetails.userId,
+              }).select("deviceToken");
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.TRADING,
+                  title: NOTIFICATION.TEEN_REQUEST_MADE,
+                  message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
+                  activityId: activity._id,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: parentDetails.userId,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
             }
             return this.Created(ctx, {
-              message: `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `We are looking into your request and will proceed surely in some amount of time.`
+                  : `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
             });
           }
-          const accountIdDetails = await parentDetails.teens.find((x: any) =>
-            reqParam.childId
-              ? x.childId.toString() == reqParam.childId.toString()
-              : x.childId.toString() == parentDetails.firstChildId.toString()
-          );
-          if (!accountIdDetails) {
-            return this.BadRequest(ctx, "Account Details Not Found");
-          }
-          /**
-           * create fund transfer with fund transfer id in response
-           */
-          let contributionRequest = {
-            type: "contributions",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "contact-id": parentDetails.contactId,
-              "funds-transfer-method": {
-                "funds-transfer-type": "ach",
-                "ach-check-type": "personal",
-                "contact-id": parentDetails.contactId,
-                "plaid-processor-token": parentDetails.processorToken,
-              },
-              amount: reqParam.amount,
-            },
-          };
-          const contributions: any = await createContributions(
-            jwtToken,
-            contributionRequest
-          );
-          if (contributions.status == 400) {
-            return this.BadRequest(ctx, contributions.message);
-          }
-          const activity = await UserActivityTable.create({
+
+          await UserActivityTable.create({
             userId: reqParam.childId ? reqParam.childId : userExists._id,
             userType: reqParam.childId ? EUserType.TEEN : userExists.type,
             message: `${messages.APPROVE_DEPOSIT} $${reqParam.amount}`,
@@ -505,56 +541,12 @@ class TradingController extends BaseController {
               );
             }
           }
-          /**
-           * for teen it will be pending state and for parent it will be in approved
-           */
-          if (userExists.type == EUserType.TEEN) {
-            const activity = await UserActivityTable.create({
-              userId: userExists._id,
-              userType: userExists.type,
-              message: `${messages.WITHDRAW} $${reqParam.amount}`,
-              currencyType: null,
-              currencyValue: reqParam.amount,
-              action: EAction.WITHDRAW,
-              status:
-                userExists.type === EUserType.TEEN
-                  ? EStatus.PENDING
-                  : EStatus.PROCESSED,
-            });
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: parentDetails.userId,
-            }).select("deviceToken");
-            /**
-             * Notification
-             */
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.TRADING,
-                title: NOTIFICATION.TEEN_REQUEST_MADE,
-                message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
-                activityId: activity._id,
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-              await Notification.create({
-                title: notificationRequest.title,
-                userId: parentDetails.userId,
-                message: notificationRequest.message,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
-              });
-            }
-            return this.Created(ctx, {
-              message: `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
-            });
-          }
-          /**
-           * For parent create disbursement code of prime trust with plaid processor token
-           */
-          if (userExists.type === EUserType.PARENT) {
+          let disbursement: any = null;
+          if (
+            userExists.type == EUserType.PARENT ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+          ) {
             /**
              * create fund transfer with fund transfer id in response
              */
@@ -572,13 +564,88 @@ class TradingController extends BaseController {
                 amount: reqParam.amount,
               },
             };
-            const disbursement: any = await createDisbursements(
+            disbursement = await createDisbursements(
               jwtToken,
               disbursementRequest
             );
             if (disbursement.status == 400) {
               return this.BadRequest(ctx, disbursement.message);
             }
+          }
+          /**
+           * for teen it will be pending state and for parent it will be in approved
+           */
+          if (userExists.type == EUserType.TEEN) {
+            const activity = await UserActivityTable.create({
+              userId: userExists._id,
+              userType: userExists.type,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `${messages.APPROVE_WITHDRAW} of $${reqParam.amount}`
+                  : `${messages.WITHDRAW} of $${reqParam.amount}`,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.WITHDRAW,
+              status:
+                userExists.type === EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+                  ? EStatus.PENDING
+                  : EStatus.PROCESSED,
+            });
+            if (userExists.isAutoApproval == EAUTOAPPROVAL.ON) {
+              await TransactionTable.create({
+                assetId: null,
+                cryptoId: null,
+                accountId: accountIdDetails.accountId,
+                type: ETransactionType.WITHDRAW,
+                settledTime: moment().unix(),
+                amount: reqParam.amount,
+                amountMod: null,
+                userId: accountIdDetails.childId,
+                parentId: parentDetails.userId,
+                status: ETransactionStatus.PENDING,
+                executedQuoteId: disbursement.data.included[0].id,
+                unitCount: null,
+              });
+            } else {
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: parentDetails.userId,
+              }).select("deviceToken");
+              /**
+               * Notification
+               */
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.TRADING,
+                  title: NOTIFICATION.TEEN_REQUEST_MADE,
+                  message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
+                  activityId: activity._id,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: parentDetails.userId,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
+            }
+            return this.Created(ctx, {
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `"We are looking into your request and will proceed surely in some amount of time."`
+                  : `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
+            });
+          }
+          /**
+           * For parent create disbursement code of prime trust with plaid processor token
+           */
+          if (userExists.type === EUserType.PARENT) {
             await UserActivityTable.create({
               userId: reqParam.childId ? reqParam.childId : userExists._id,
               userType: reqParam.childId ? EUserType.TEEN : userExists.type,
@@ -844,10 +911,14 @@ class TradingController extends BaseController {
       ) {
         return this.BadRequest(
           ctx,
-          "Please cancel your existing request in order to withdraw money from this request"
+          "Please cancel your existing request in order to buy crypto from this request"
         );
       }
-      if (userType == EUserType.PARENT) {
+      if (
+        userExists.type == EUserType.PARENT ||
+        (userExists.type == EUserType.TEEN &&
+          userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+      ) {
         const requestQuoteDay: any = {
           data: {
             type: "quotes",
@@ -896,7 +967,7 @@ class TradingController extends BaseController {
           amount: amount,
           amountMod: -amount,
           userId: accountIdDetails.childId,
-          parentId: userExists._id,
+          parentId: parent.userId,
           status: ETransactionStatus.PENDING,
           executedQuoteId: executeQuoteResponse.data.data.id,
           unitCount: executeQuoteResponse.data.data.attributes["unit-count"],
@@ -906,8 +977,10 @@ class TradingController extends BaseController {
       const activity = await UserActivityTable.create({
         userId: reqParam.childId ? reqParam.childId : user._id,
         message:
-          userType == EUserType.PARENT
-            ? `${messages.APPROVE_BUY} ${crypto.name} buy request of $${amount}`
+          userExists.type == EUserType.PARENT ||
+          (userExists.type == EUserType.TEEN &&
+            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+            ? `${messages.APPROVE_BUY} $${amount} in ${crypto.name}`
             : `${messages.BUY} $${amount} in ${crypto.name}`,
         action: EAction.BUY_CRYPTO,
         currencyValue: amount,
@@ -915,9 +988,16 @@ class TradingController extends BaseController {
         cryptoId: cryptoId,
         userType,
         status:
-          userType === EUserType.TEEN ? EStatus.PENDING : EStatus.PROCESSED,
+          userExists.type == EUserType.PARENT ||
+          (userExists.type == EUserType.TEEN &&
+            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+            ? EStatus.PROCESSED
+            : EStatus.PENDING,
       });
-      if (userType == EUserType.TEEN) {
+      if (
+        userType == EUserType.TEEN &&
+        userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+      ) {
         let deviceTokenData = await DeviceToken.findOne({
           userId: parent.userId,
         });
@@ -946,35 +1026,11 @@ class TradingController extends BaseController {
         }
       }
       const message =
-        userType === EUserType.TEEN
-          ? `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`
-          : `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`;
-
-      // if (userType === EUserType.TEEN) {
-      //   /**
-      //    * Notification
-      //    */
-      //   let notificationRequest = {
-      //     title: NOTIFICATION.TEEN_REQUEST_MADE,
-      //     message: NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO.replace(
-      //       "@yourteen",
-      //       userExists.username
-      //     ).replace("@crypto", crypto.name),
-      //     activityId: activity._id,
-      //   };
-      //   await sendNotification(
-      //     "",
-      //     notificationRequest.title,
-      //     notificationRequest
-      //   );
-      //   await Notification.create({
-      //     title: notificationRequest.title,
-      //     userId: parent.userId,
-      //     message: notificationRequest.message,
-      //     isRead: ERead.UNREAD,
-      //     data: JSON.stringify(notificationRequest),
-      //   });
-      // }
+        userExists.type == EUserType.PARENT ||
+        (userExists.type == EUserType.TEEN &&
+          userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+          ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
+          : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
       return this.Ok(ctx, { message });
     });
   }
@@ -1004,167 +1060,159 @@ class TradingController extends BaseController {
         : { "teens.childId": ctx.request.user._id };
     let parent: any = await ParentChildTable.findOne(query);
     if (!parent) return this.BadRequest(ctx, "Invalid User");
+    const accountIdDetails = await parent.teens.find((x: any) =>
+      userExists.type == EUserType.PARENT
+        ? reqParam.childId
+          ? x.childId.toString() == reqParam.childId.toString()
+          : x.childId.toString() == parent.firstChildId.toString()
+        : x.childId.toString() == ctx.request.user._id.toString()
+    );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
     return validation.sellCryptoValidation(reqParam, ctx, async (validate) => {
-      const { amount, cryptoId } = reqParam;
-      const crypto = await CryptoTable.findById({ _id: cryptoId });
-      if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
-      let transactionExists = await TransactionTable.findOne({
-        type: ETransactionType.BUY,
-        cryptoId: crypto._id,
-        userId:
-          userExists.type == EUserType.PARENT
-            ? reqParam.childId
+      if (validate) {
+        const { amount, cryptoId } = reqParam;
+        const crypto = await CryptoTable.findById({ _id: cryptoId });
+        if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
+        let transactionExists = await TransactionTable.findOne({
+          type: ETransactionType.BUY,
+          cryptoId: crypto._id,
+          userId:
+            userExists.type == EUserType.PARENT
               ? reqParam.childId
-              : parent.firstChildId
-            : user._id,
-      });
-      if (!transactionExists) {
-        return this.BadRequest(
-          ctx,
-          `${crypto.name} doesn't exists in your portfolio.`
-        );
-      }
-      const activity = await UserActivityTable.create({
-        userId: reqParam.childId ? reqParam.childId : user._id,
-        message:
-          userExists.type === EUserType.TEEN
-            ? `${messages.SELL} $${amount} in ${crypto.name}`
-            : `${messages.APPROVE_SELL} ${crypto.name} sell request of $${amount}`,
-        action: EAction.SELL_CRYPTO,
-        currencyValue: amount,
-        currencyType: cryptoId,
-        cryptoId: cryptoId,
-        userType: userExists.type,
-        status:
-          userExists.type === EUserType.TEEN
-            ? EStatus.PENDING
-            : EStatus.PROCESSED,
-      });
-      if (userExists.type == EUserType.TEEN) {
-        let deviceTokenData = await DeviceToken.findOne({
-          userId: parent.userId,
+                ? reqParam.childId
+                : parent.firstChildId
+              : user._id,
         });
-        if (deviceTokenData) {
-          let notificationRequest = {
-            key: NOTIFICATION_KEYS.TRADING,
-            title: NOTIFICATION.TEEN_REQUEST_MADE,
-            message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
-              "@cryto",
-              crypto.name
-            ),
-            activityId: activity._id,
-          };
-          await sendNotification(
-            deviceTokenData.deviceToken,
-            notificationRequest.title,
-            notificationRequest
+        if (!transactionExists) {
+          return this.BadRequest(
+            ctx,
+            `${crypto.name} doesn't exists in your portfolio.`
           );
-          await Notification.create({
-            title: notificationRequest.title,
+        }
+        const activity = await UserActivityTable.create({
+          userId: reqParam.childId ? reqParam.childId : user._id,
+          message:
+            userExists.type == EUserType.PARENT ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+              ? `${messages.SELL} $${amount} in ${crypto.name}`
+              : `${messages.APPROVE_SELL} $${amount} in ${crypto.name}`,
+          action: EAction.SELL_CRYPTO,
+          currencyValue: amount,
+          currencyType: cryptoId,
+          cryptoId: cryptoId,
+          userType: userExists.type,
+          status:
+            userExists.type == EUserType.PARENT ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+              ? EStatus.PROCESSED
+              : EStatus.PENDING,
+        });
+        if (
+          userExists.type == EUserType.TEEN &&
+          userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+        ) {
+          let deviceTokenData = await DeviceToken.findOne({
             userId: parent.userId,
-            message: notificationRequest.message,
-            isRead: ERead.UNREAD,
-            data: JSON.stringify(notificationRequest),
+          });
+          if (deviceTokenData) {
+            let notificationRequest = {
+              key: NOTIFICATION_KEYS.TRADING,
+              title: NOTIFICATION.TEEN_REQUEST_MADE,
+              message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
+                "@cryto",
+                crypto.name
+              ),
+              activityId: activity._id,
+            };
+            await sendNotification(
+              deviceTokenData.deviceToken,
+              notificationRequest.title,
+              notificationRequest
+            );
+            await Notification.create({
+              title: notificationRequest.title,
+              userId: parent.userId,
+              message: notificationRequest.message,
+              isRead: ERead.UNREAD,
+              data: JSON.stringify(notificationRequest),
+            });
+          }
+        }
+        if (
+          userExists.type == EUserType.PARENT ||
+          (userExists.type == EUserType.TEEN &&
+            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+        ) {
+          /**
+           * Generate a quote
+           */
+          const requestSellQuoteDay: any = {
+            data: {
+              type: "quotes",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "asset-id": crypto.assetId,
+                hot: true,
+                "transaction-type": "sell",
+                total_amount: activity.currencyValue,
+              },
+            },
+          };
+          const generateSellQuoteResponse: any = await generateQuote(
+            jwtToken,
+            requestSellQuoteDay
+          );
+          if (generateSellQuoteResponse.status == 400) {
+            return this.BadRequest(ctx, generateSellQuoteResponse.message);
+          }
+          /**
+           * Execute a quote
+           */
+          const requestSellExecuteQuote: any = {
+            data: {
+              type: "quotes",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "asset-id": crypto.assetId,
+              },
+            },
+          };
+          const executeSellQuoteResponse: any = await executeQuote(
+            jwtToken,
+            generateSellQuoteResponse.data.data.id,
+            requestSellExecuteQuote
+          );
+          if (executeSellQuoteResponse.status == 400) {
+            return this.BadRequest(ctx, executeSellQuoteResponse.message);
+          }
+          await TransactionTable.create({
+            assetId: crypto.assetId,
+            cryptoId: crypto._id,
+            accountId: accountIdDetails.accountId,
+            type: ETransactionType.SELL,
+            settledTime: moment().unix(),
+            amount: activity.currencyValue,
+            amountMod: activity.currencyValue,
+            userId: accountIdDetails.childId,
+            parentId: parent.userId,
+            status: ETransactionStatus.PENDING,
+            executedQuoteId: executeSellQuoteResponse.data.data.id,
+            unitCount:
+              -executeSellQuoteResponse.data.data.attributes["unit-count"],
           });
         }
+        const message =
+          userExists.type == EUserType.PARENT ||
+          (userExists.type == EUserType.TEEN &&
+            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+            ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
+            : `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`;
+        return this.Ok(ctx, { message });
       }
-      if (userExists.type === EUserType.PARENT) {
-        const accountIdDetails = await parent.teens.find((x: any) =>
-          reqParam.childId
-            ? x.childId.toString() == reqParam.childId.toString()
-            : x.childId.toString() == parent.firstChildId.toString()
-        );
-        if (!accountIdDetails) {
-          return this.BadRequest(ctx, "Account Details Not Found");
-        }
-        /**
-         * Generate a quote
-         */
-        const requestSellQuoteDay: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": crypto.assetId,
-              hot: true,
-              "transaction-type": "sell",
-              total_amount: activity.currencyValue,
-            },
-          },
-        };
-        const generateSellQuoteResponse: any = await generateQuote(
-          jwtToken,
-          requestSellQuoteDay
-        );
-        if (generateSellQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, generateSellQuoteResponse.message);
-        }
-        /**
-         * Execute a quote
-         */
-        const requestSellExecuteQuote: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": crypto.assetId,
-            },
-          },
-        };
-        const executeSellQuoteResponse: any = await executeQuote(
-          jwtToken,
-          generateSellQuoteResponse.data.data.id,
-          requestSellExecuteQuote
-        );
-        if (executeSellQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, executeSellQuoteResponse.message);
-        }
-        await TransactionTable.create({
-          assetId: crypto.assetId,
-          cryptoId: crypto._id,
-          accountId: accountIdDetails.accountId,
-          type: ETransactionType.SELL,
-          settledTime: moment().unix(),
-          amount: activity.currencyValue,
-          amountMod: activity.currencyValue,
-          userId: accountIdDetails.childId,
-          parentId: userExists._id,
-          status: ETransactionStatus.PENDING,
-          executedQuoteId: executeSellQuoteResponse.data.data.id,
-          unitCount:
-            -executeSellQuoteResponse.data.data.attributes["unit-count"],
-        });
-      }
-      const message =
-        userExists.type === EUserType.TEEN
-          ? `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`
-          : `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`;
-      // if (userExists.type === EUserType.TEEN) {
-      //   /**
-      //    * Notification
-      //    */
-      //   let notificationRequest = {
-      //     title: NOTIFICATION.TEEN_REQUEST_MADE,
-      //     message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
-      //       "@yourteen",
-      //       userExists.username
-      //     ).replace("@crypto", crypto.name),
-      //     activityId: activity._id,
-      //   };
-      //   await sendNotification(
-      //     "",
-      //     notificationRequest.title,
-      //     notificationRequest
-      //   );
-      //   await Notification.create({
-      //     title: notificationRequest.title,
-      //     userId: parent.userId,
-      //     message: notificationRequest.message,
-      //     isRead: ERead.UNREAD,
-      //     data: JSON.stringify(notificationRequest),
-      //   });
-      // }
-      return this.Ok(ctx, { message });
     });
   }
 
@@ -1179,13 +1227,16 @@ class TradingController extends BaseController {
     const { childId } = ctx.request.params;
     if (!/^[0-9a-fA-F]{24}$/.test(childId))
       return this.BadRequest(ctx, "Enter Correct Child's ID");
-    const parent = await ParentChildTable.findOne({
+    const parent: any = await ParentChildTable.findOne({
       userId: ctx.request.user._id,
     });
+    let userExists: any = await UserTable.findOne({ _id: childId });
     if (!parent) return this.BadRequest(ctx, "Invalid Parent's ID");
     let teen: any;
     parent.teens.forEach((current: any) => {
-      if (current.childId.toString() === childId) teen = current;
+      if (current.childId._id.toString() === childId) {
+        teen = current;
+      }
     });
     if (!teen) this.BadRequest(ctx, "Invalid Child ID");
 
@@ -1238,7 +1289,11 @@ class TradingController extends BaseController {
     }
     return this.Ok(ctx, {
       message: "Success",
-      data: { pending: pendingActivity, processed: processedActivity },
+      data: {
+        pending: pendingActivity,
+        processed: processedActivity,
+        isAutoApproval: userExists.isAutoApproval,
+      },
     });
   }
 
@@ -1491,7 +1546,7 @@ class TradingController extends BaseController {
           /**
            * Fetch Balance
            */
-          console.log(accountIdDetails)
+          console.log(accountIdDetails);
           const fetchBalance: any = await getBalance(
             jwtToken,
             accountIdDetails.accountId
@@ -2047,6 +2102,433 @@ class TradingController extends BaseController {
     return this.Ok(ctx, {
       data: response.data.data.attributes["push-instructions"],
     });
+  }
+
+  /**
+   * @description This method is used for updating auto approval for their teens
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-auto-approval/:childId", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT()
+  public async updateAutoApprovalForTeens(ctx: any) {
+    let childId = ctx.request.params.childId;
+    const jwtToken = ctx.request.primeTrustToken;
+    let reqParam = ctx.request.body;
+    if (!childId) {
+      return this.BadRequest(ctx, "Please enter child details");
+    }
+    let parent: any = await ParentChildTable.findOne({
+      userId: ctx.request.user._id,
+      "teens.childId": childId,
+    }).populate("teens.childId", ["_id", "isAutoApproval"]);
+    if (!parent) {
+      return this.BadRequest(ctx, "Child Details Not Found");
+    }
+    let accountIdDetails = parent.teens.find(
+      (x) => x.childId._id.toString() == childId.toString()
+    );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Child Details Not Found");
+    }
+    let deviceTokenData = await DeviceToken.findOne({
+      userId: accountIdDetails.childId,
+    }).select("deviceToken");
+    return validation.updateAutoApprovalValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          if (
+            accountIdDetails.childId.isAutoApproval == reqParam.isAutoApproval
+          ) {
+            let message =
+              reqParam.isAutoApproval == EAUTOAPPROVAL.OFF ? "off" : "on";
+            return this.BadRequest(
+              ctx,
+              `The auto approval setting is already ${message}`
+            );
+          }
+          await UserTable.updateOne(
+            { _id: childId },
+            {
+              $set: {
+                isAutoApproval: reqParam.isAutoApproval,
+              },
+            }
+          );
+          const fetchBalance: any = await getBalance(
+            jwtToken,
+            accountIdDetails.accountId
+          );
+          if (fetchBalance.status == 400) {
+            return this.BadRequest(ctx, fetchBalance.message);
+          }
+          const balance = fetchBalance.data.data[0].attributes.disbursable;
+          /**
+           * is auto approval if 1 then make all request as approved
+           */
+          let pendingActivities = await UserActivityTable.find({
+            userId: childId,
+            status: EStatus.PENDING,
+          });
+          let insufficentBalance = false;
+          if (pendingActivities.length > 0) {
+            for await (let activity of pendingActivities) {
+              if (
+                activity.action != EAction.DEPOSIT &&
+                balance < activity.currencyValue
+              ) {
+                insufficentBalance = true;
+              }
+              switch (activity.action) {
+                case 1:
+                  /**
+                   * Deposit
+                   */
+                  let contributionRequest = {
+                    type: "contributions",
+                    attributes: {
+                      "account-id": accountIdDetails.accountId,
+                      "contact-id": parent.contactId,
+                      "funds-transfer-method": {
+                        "funds-transfer-type": "ach",
+                        "ach-check-type": "personal",
+                        "contact-id": parent.contactId,
+                        "plaid-processor-token": parent.processorToken,
+                      },
+                      amount: activity.currencyValue,
+                    },
+                  };
+                  const contributions: any = await createContributions(
+                    jwtToken,
+                    contributionRequest
+                  );
+                  if (contributions.status == 400) {
+                    return this.BadRequest(ctx, contributions.message);
+                  }
+                  await UserActivityTable.updateOne(
+                    { _id: activity._id },
+                    {
+                      status: EStatus.PROCESSED,
+                      message: `${messages.APPROVE_DEPOSIT} of $${activity.currencyValue}`,
+                    }
+                  );
+                  await TransactionTable.create({
+                    assetId: null,
+                    cryptoId: null,
+                    accountId: accountIdDetails.accountId,
+                    type: ETransactionType.DEPOSIT,
+                    settledTime: moment().unix(),
+                    amount: activity.currencyValue,
+                    amountMod: null,
+                    userId: accountIdDetails.childId,
+                    parentId: parent.userId,
+                    status: ETransactionStatus.PENDING,
+                    executedQuoteId: contributions.data.included[0].id,
+                    unitCount: null,
+                  });
+                  if (deviceTokenData) {
+                    let notificationRequest = {
+                      key: NOTIFICATION_KEYS.TRADING,
+                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+                      message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
+                      activityId: activity._id,
+                    };
+                    await sendNotification(
+                      deviceTokenData.deviceToken,
+                      notificationRequest.title,
+                      notificationRequest
+                    );
+                    await Notification.create({
+                      title: notificationRequest.title,
+                      userId: accountIdDetails.childId,
+                      message: notificationRequest.message,
+                      isRead: ERead.UNREAD,
+                      data: JSON.stringify(notificationRequest),
+                    });
+                  }
+                  break;
+                case 2:
+                  let disbursementRequest = {
+                    type: "disbursements",
+                    attributes: {
+                      "account-id": accountIdDetails.accountId,
+                      "contact-id": parent.contactId,
+                      "funds-transfer-method": {
+                        "funds-transfer-type": "ach",
+                        "ach-check-type": "personal",
+                        "contact-id": parent.contactId,
+                        "plaid-processor-token": parent.processorToken,
+                      },
+                      amount: activity.currencyValue,
+                    },
+                  };
+                  const disbursementResponse: any = await createDisbursements(
+                    jwtToken,
+                    disbursementRequest
+                  );
+                  if (disbursementResponse.status == 400) {
+                    return this.BadRequest(ctx, disbursementResponse.message);
+                  }
+                  await UserActivityTable.updateOne(
+                    { _id: activity._id },
+                    {
+                      status: EStatus.PROCESSED,
+                      message: `${messages.APPROVE_WITHDRAW} of $${activity.currencyValue}`,
+                    }
+                  );
+                  await TransactionTable.create({
+                    assetId: null,
+                    cryptoId: null,
+                    accountId: accountIdDetails.accountId,
+                    type: ETransactionType.WITHDRAW,
+                    settledTime: moment().unix(),
+                    amount: activity.currencyValue,
+                    amountMod: null,
+                    userId: accountIdDetails.childId,
+                    parentId: parent.userId,
+                    status: ETransactionStatus.PENDING,
+                    executedQuoteId: disbursementResponse.data.included[0].id,
+                    unitCount: null,
+                  });
+                  if (deviceTokenData) {
+                    let notificationRequest = {
+                      key: NOTIFICATION_KEYS.TRADING,
+                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+                      message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
+                      activityId: activity._id,
+                    };
+                    await sendNotification(
+                      deviceTokenData.deviceToken,
+                      notificationRequest.title,
+                      notificationRequest
+                    );
+                    await Notification.create({
+                      title: notificationRequest.title,
+                      userId: accountIdDetails.childId,
+                      message: notificationRequest.message,
+                      isRead: ERead.UNREAD,
+                      data: JSON.stringify(notificationRequest),
+                    });
+                  }
+                  break;
+                case 3:
+                  if (!activity.cryptoId) {
+                    return this.BadRequest(ctx, "Asset Id Not Found");
+                  }
+                  const cryptoData = await CryptoTable.findOne({
+                    _id: activity.cryptoId,
+                  });
+                  /**
+                   * Generate a quote
+                   */
+                  const requestQuoteDay: any = {
+                    data: {
+                      type: "quotes",
+                      attributes: {
+                        "account-id": accountIdDetails.accountId,
+                        "asset-id": cryptoData.assetId,
+                        hot: true,
+                        "transaction-type": "buy",
+                        total_amount: activity.currencyValue,
+                      },
+                    },
+                  };
+                  const generateQuoteResponse: any = await generateQuote(
+                    jwtToken,
+                    requestQuoteDay
+                  );
+                  if (generateQuoteResponse.status == 400) {
+                    return this.BadRequest(ctx, generateQuoteResponse.message);
+                  }
+                  /**
+                   * Execute a quote
+                   */
+                  const requestExecuteQuote: any = {
+                    data: {
+                      type: "quotes",
+                      attributes: {
+                        "account-id": accountIdDetails.accountId,
+                        "asset-id": cryptoData.assetId,
+                      },
+                    },
+                  };
+                  const executeQuoteResponse: any = await executeQuote(
+                    jwtToken,
+                    generateQuoteResponse.data.data.id,
+                    requestExecuteQuote
+                  );
+                  if (executeQuoteResponse.status == 400) {
+                    return this.BadRequest(ctx, executeQuoteResponse.message);
+                  }
+                  await TransactionTable.create({
+                    assetId: cryptoData.assetId,
+                    cryptoId: cryptoData._id,
+                    accountId: accountIdDetails.accountId,
+                    type: ETransactionType.BUY,
+                    settledTime: moment().unix(),
+                    amount: activity.currencyValue,
+                    amountMod: -activity.currencyValue,
+                    userId: accountIdDetails.childId,
+                    parentId: parent.userId,
+                    status: ETransactionStatus.PENDING,
+                    executedQuoteId: executeQuoteResponse.data.data.id,
+                    unitCount:
+                      executeQuoteResponse.data.data.attributes["unit-count"],
+                  });
+                  await UserActivityTable.updateOne(
+                    { _id: activity._id },
+                    {
+                      status: EStatus.PROCESSED,
+                      message: `${messages.APPROVE_BUY} ${cryptoData.name} of $${activity.currencyValue}`,
+                    }
+                  );
+                  if (deviceTokenData) {
+                    let notificationRequest = {
+                      key: NOTIFICATION_KEYS.TRADING,
+                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+                      message:
+                        NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
+                          "@crypto",
+                          cryptoData.name
+                        ),
+                      activityId: activity._id,
+                    };
+                    await sendNotification(
+                      deviceTokenData.deviceToken,
+                      notificationRequest.title,
+                      notificationRequest
+                    );
+                    await Notification.create({
+                      title: notificationRequest.title,
+                      userId: accountIdDetails.childId,
+                      message: notificationRequest.message,
+                      isRead: ERead.UNREAD,
+                      data: JSON.stringify(notificationRequest),
+                    });
+                  }
+                  break;
+                case 4:
+                  if (!activity.cryptoId) {
+                    return this.BadRequest(ctx, "Asset Id Not Found");
+                  }
+                  const sellCryptoData = await CryptoTable.findOne({
+                    _id: activity.cryptoId,
+                  });
+                  /**
+                   * Generate a quote
+                   */
+                  const requestSellQuoteDay: any = {
+                    data: {
+                      type: "quotes",
+                      attributes: {
+                        "account-id": accountIdDetails.accountId,
+                        "asset-id": sellCryptoData.assetId,
+                        hot: true,
+                        "transaction-type": "sell",
+                        total_amount: activity.currencyValue,
+                      },
+                    },
+                  };
+                  const generateSellQuoteResponse: any = await generateQuote(
+                    jwtToken,
+                    requestSellQuoteDay
+                  );
+                  if (generateSellQuoteResponse.status == 400) {
+                    return this.BadRequest(
+                      ctx,
+                      generateSellQuoteResponse.message
+                    );
+                  }
+                  /**
+                   * Execute a quote
+                   */
+                  const requestSellExecuteQuote: any = {
+                    data: {
+                      type: "quotes",
+                      attributes: {
+                        "account-id": accountIdDetails.accountId,
+                        "asset-id": sellCryptoData.assetId,
+                      },
+                    },
+                  };
+                  const executeSellQuoteResponse: any = await executeQuote(
+                    jwtToken,
+                    generateSellQuoteResponse.data.data.id,
+                    requestSellExecuteQuote
+                  );
+                  if (executeSellQuoteResponse.status == 400) {
+                    return this.BadRequest(
+                      ctx,
+                      executeSellQuoteResponse.message
+                    );
+                  }
+                  await TransactionTable.create({
+                    assetId: sellCryptoData.assetId,
+                    cryptoId: sellCryptoData._id,
+                    accountId: accountIdDetails.accountId,
+                    type: ETransactionType.SELL,
+                    settledTime: moment().unix(),
+                    amount: activity.currencyValue,
+                    amountMod: activity.currencyValue,
+                    userId: accountIdDetails.childId,
+                    parentId: parent.userId,
+                    status: ETransactionStatus.PENDING,
+                    executedQuoteId: executeSellQuoteResponse.data.data.id,
+                    unitCount:
+                      -executeSellQuoteResponse.data.data.attributes[
+                        "unit-count"
+                      ],
+                  });
+                  await UserActivityTable.updateOne(
+                    { _id: activity._id },
+                    {
+                      status: EStatus.PROCESSED,
+                      message: `${messages.APPROVE_SELL} ${sellCryptoData.name} of $${activity.currencyValue}`,
+                    }
+                  );
+                  if (deviceTokenData) {
+                    let notificationRequest = {
+                      key: NOTIFICATION_KEYS.TRADING,
+                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+                      message:
+                        NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
+                          "@crypto",
+                          sellCryptoData.name
+                        ),
+                      activityId: activity._id,
+                    };
+                    await sendNotification(
+                      deviceTokenData.deviceToken,
+                      notificationRequest.title,
+                      notificationRequest
+                    );
+                    await Notification.create({
+                      title: notificationRequest.title,
+                      userId: accountIdDetails.childId,
+                      message: notificationRequest.message,
+                      isRead: ERead.UNREAD,
+                      data: JSON.stringify(notificationRequest),
+                    });
+                  }
+                  break;
+                default:
+                  return this.BadRequest(ctx, "Something went wrong");
+              }
+            }
+            if (insufficentBalance) {
+              return this.BadRequest(
+                ctx,
+                "You dont have sufficient balance to perform the operarion"
+              );
+            }
+          }
+          return this.Ok(ctx, { message: "Success" });
+        }
+      }
+    );
   }
 }
 

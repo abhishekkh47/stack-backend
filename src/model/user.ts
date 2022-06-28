@@ -101,6 +101,15 @@ const schema = new mongoose.Schema<IUserSchema>(
     referralCode: { type: mongoose.Schema.Types.String, default: null },
     isParentFirst: { type: mongoose.Schema.Types.Boolean, default: false },
     /**
+     * 1 - on and 2 - off
+     */
+    isAutoApproval: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 1,
+      isIn: [1, 2],
+    },
+    /*
      * accountStatus:- pending , opened and closed
      */
     accountStatus: { type: mongoose.Schema.Types.String, default: "pending" },

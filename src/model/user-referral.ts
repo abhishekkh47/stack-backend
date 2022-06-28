@@ -8,7 +8,7 @@ export type IUserReferralSchema = MongooseModel<IUserReferral> &
 const schema = new mongoose.Schema<IUserReferralSchema>(
   {
     userId: {
-      type: mongoose.Schema.Types.String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "users",
       required: true,
     },
@@ -27,7 +27,7 @@ const schema = new mongoose.Schema<IUserReferralSchema>(
          * 1 - sms and 2 - qr code
          */
         type: {
-          type: mongoose.Schema.Types.String,
+          type: mongoose.Schema.Types.Number,
           default: 1,
           required: true,
         },

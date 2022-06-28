@@ -1,15 +1,15 @@
 import Koa from "koa";
-import BaseController from "./base";
-import { validation } from "../../../validations/apiValidation";
-import { getAssetTotals, Route } from "../../../utility";
-import { ETransactionType, HttpMethod } from "../../../types";
+import { ObjectId } from "mongodb";
+import { Auth } from "../../../middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
   TransactionTable,
 } from "../../../model";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
-import { ObjectId } from "mongodb";
+import { ETransactionType, HttpMethod } from "../../../types";
+import { Route } from "../../../utility";
+import { validation } from "../../../validations/apiValidation";
+import BaseController from "./base";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })

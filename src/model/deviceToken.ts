@@ -9,7 +9,7 @@ const schema = new mongoose.Schema<IDeviceTokenSchema>(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      ref: "users",
     },
     deviceToken: { type: mongoose.Schema.Types.Array, required: true },
   },

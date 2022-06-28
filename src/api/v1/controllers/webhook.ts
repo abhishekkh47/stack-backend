@@ -37,6 +37,7 @@ import {
   WebhookTable,
   DeviceToken,
   AdminTable,
+  Notification,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
