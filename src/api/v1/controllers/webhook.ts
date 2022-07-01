@@ -13,6 +13,9 @@ import {
   getPrimeTrustJWTToken,
   addAccountInfoInZohoCrm,
   getAccountStatusByAccountId,
+  generateQuote,
+  executeQuote,
+  internalAssetTransfers,
 } from "../../../utility";
 import {
   NOTIFICATION,
@@ -38,6 +41,7 @@ import {
   DeviceToken,
   AdminTable,
   Notification,
+  CryptoTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
@@ -45,6 +49,7 @@ import fs from "fs";
 import path from "path";
 import moment from "moment";
 import { getAccessToken } from "../../../utility/zoho-crm";
+import { ObjectId } from "mongodb";
 
 class WebHookController extends BaseController {
   /**
@@ -67,6 +72,7 @@ class WebHookController extends BaseController {
     }).populate("teens.childId", [
       "email",
       "isGifted",
+      "isGiftedCrypto",
       "firstName",
       "lastName",
     ]);
@@ -175,7 +181,6 @@ class WebHookController extends BaseController {
             checkUserAgain.accountStatus == "opened" &&
             checkUserAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
           ) {
-            console.log(`Coming inside true contacts`);
             await UserTable.updateOne(
               { _id: userExists._id },
               {
@@ -298,7 +303,6 @@ class WebHookController extends BaseController {
               getUserDataAgain.identityConfirmed &&
               getUserDataAgain.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
             ) {
-              console.log(`Coming inside true accounts`);
               await UserTable.updateOne(
                 { _id: userExists._id },
                 {
@@ -363,10 +367,8 @@ class WebHookController extends BaseController {
                       ctx.request.zohoAccessToken,
                       mainData
                     );
-                    console.log(dataAddInZoho, "dataAddInZoho");
                   }
                 }
-                console.log(userIdsToBeGifted, "userIdsToBeGifted");
                 await UserTable.updateMany(
                   {
                     _id: { $in: userIdsToBeGifted },
@@ -446,7 +448,6 @@ class WebHookController extends BaseController {
       return this.BadRequest(ctx, "Invalid Request.");
 
     const input = body;
-    console.log(input, "input");
 
     if (input["primary-address"]) {
       input["primary-address"] = JSON.parse(input["primary-address"]);
@@ -855,18 +856,97 @@ class WebHookController extends BaseController {
   })
   @PrimeTrustJWT(true)
   public async testZoho(ctx: any) {
-    let dataSentInCrm: any = {
-      Account_Name: "Ankit Bhojani",
-      Parent_Signup_Funnel: ["Sign up with SSO"],
+    let jwtToken = ctx.request.primeTrustToken;
+    let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+    const requestQuoteDay: any = {
+      data: {
+        type: "quotes",
+        attributes: {
+          "account-id": envData.OPERATIONAL_ACCOUNT,
+          "asset-id": crypto.assetId,
+          hot: true,
+          "transaction-type": "buy",
+          unit_count: 0.00023427,
+        },
+      },
     };
-    let mainData = {
-      data: [dataSentInCrm],
-    };
-    const sucess = await addAccountInfoInZohoCrm(
-      ctx.request.zohoAccessToken,
-      mainData
+    const generateQuoteResponse: any = await generateQuote(
+      jwtToken,
+      requestQuoteDay
     );
-    return this.Ok(ctx, { data: sucess });
+    if (generateQuoteResponse.status == 400) {
+      return this.BadRequest(ctx, generateQuoteResponse.message);
+    }
+    /**
+     * Execute a quote
+     */
+    const requestExecuteQuote: any = {
+      data: {
+        type: "quotes",
+        attributes: {
+          "account-id": envData.OPERATIONAL_ACCOUNT,
+          "asset-id": crypto.assetId,
+        },
+      },
+    };
+    const executeQuoteResponse: any = await executeQuote(
+      jwtToken,
+      generateQuoteResponse.data.data.id,
+      requestExecuteQuote
+    );
+    if (executeQuoteResponse.status == 400) {
+      return this.BadRequest(ctx, executeQuoteResponse.message);
+    }
+    let internalTransferRequest = {
+      data: {
+        type: "internal-asset-transfers",
+        attributes: {
+          "unit-count": 0.00023427,
+          "from-account-id": envData.OPERATIONAL_ACCOUNT,
+          "to-account-id": "24e34898-d86e-4773-a9f7-9911de8bc28b",
+          "asset-id": crypto.assetId,
+          reference: "$5 BTC gift from Stack",
+          "hot-transfer": true,
+        },
+      },
+    };
+    const internalTransferResponse: any = await internalAssetTransfers(
+      jwtToken,
+      internalTransferRequest
+    );
+    if (internalTransferResponse.status == 400) {
+      return this.BadRequest(ctx, internalTransferResponse.message);
+    }
+    if (internalTransferResponse.status == 200) {
+      return this.Ok(ctx, {
+        data: internalTransferResponse.data.data.id,
+      });
+    }
+    // const checkAccountIdExists: any = await ParentChildTable.findOne({
+    //   "teens.childId": new ObjectId("62726e1de68ae364f3a510d9"),
+    // })
+    //   .populate("teens.childId", [
+    //     "email",
+    //     "isGifted",
+    //     "isGiftedCrypto",
+    //     "firstName",
+    //     "lastName",
+    //     "accountId",
+    //   ])
+    //   .populate({ path: "teens.childId" });
+    // let allTeensGiftedCrypto = await checkAccountIdExists.teens.filter(
+    //   (x) =>
+    //     x.childId.isGifted != null &&
+    //     x.childId.isGifted == EGIFTSTACKCOINSSETTING.ON
+    // );
+    // .then((data: any) => {
+    //   data.teens.childId = {};
+    //   console.log(data, "data");
+    //   return data;
+    // });
+    return this.Ok(ctx, {
+      data: internalTransferResponse.data.data.type.attributes["id"],
+    });
   }
 }
 

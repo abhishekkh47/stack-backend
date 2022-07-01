@@ -23,4 +23,5 @@ export enum ETransactionType {
 export enum ETransactionStatus {
   PENDING = 1,
   SETTLED = 2,
+  GIFTED = 3,
 }

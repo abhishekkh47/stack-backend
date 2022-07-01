@@ -19,6 +19,7 @@ export interface IAccount {
   lastName: string;
   preLoadedCoins: number; // 0 by default
   isGifted: number;
+  isGiftedCrypto: number; // 0 , 1 and 2
   type: EUserType;
   parentEmail: string;
   parentMobile: string;
@@ -51,6 +52,8 @@ export interface IAdmin extends IUser {
   zohoAccessToken: string;
   giftStackCoinsSetting: EGIFTSTACKCOINSSETTING;
   stackCoins: number;
+  giftCryptoSetting: EGIFTSTACKCOINSSETTING;
+  giftCryptoAmount: number;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;

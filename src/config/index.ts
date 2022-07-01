@@ -98,4 +98,10 @@ export default {
   get APPLE_PRIVATE_KEY() {
     return process.env.APPLE_PRIVATE_KEY;
   },
+  get OPERATIONAL_ACCOUNT() {
+    return process.env.OPERATIONAL_ACCOUNT;
+  },
+  get CONSTANT_BTC_COUNT() {
+    return 0.00023427;
+  },
 };

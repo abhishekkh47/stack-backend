@@ -151,10 +151,6 @@ export const validation = {
   signupValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
       type: Joi.number().valid(1, 2).required(),
-      username: Joi.string()
-        .min(5)
-        .regex(/^[A-Za-z][A-Za-z0-9_@.-]+$/)
-        .required(),
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
@@ -184,27 +180,7 @@ export const validation = {
           .disallow(Joi.ref("mobile"))
           .required(),
       }),
-      parentEmail: Joi.when("type", {
-        is: 1,
-        then: Joi.string()
-          .email()
-          .allow("")
-          .disallow(Joi.ref("email"))
-          .required(),
-      }),
-      dob: Joi.date().iso().when("type", {
-        is: 2,
-        then: Joi.required(),
-        otherwise: Joi.forbidden(),
-      }),
-      fileTaxesInUS: Joi.when("type", {
-        is: 2,
-        then: Joi.number().valid(0, 1),
-      }),
-      citizenOfUS: Joi.when("type", {
-        is: 2,
-        then: Joi.number().valid(0, 1),
-      }),
+      dob: Joi.date().iso().required(),
       taxIdNo: Joi.when("type", {
         is: 2,
         then: Joi.string()

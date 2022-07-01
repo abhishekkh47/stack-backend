@@ -1,5 +1,5 @@
 import moment from "moment";
-import { ObjectId } from "mongodb";
+import { Admin, ObjectId } from "mongodb";
 import Koa from "koa";
 import {
   createContributions,
@@ -19,10 +19,12 @@ import {
   getAccounts,
   institutionsGetByIdRequest,
   addAccountInfoInZohoCrm,
+  internalAssetTransfers,
 } from "../../../utility";
 import mongoose from "mongoose";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
+  AdminTable,
   CryptoTable,
   DeviceToken,
   Notification,
@@ -35,6 +37,7 @@ import {
 import {
   EAction,
   EAUTOAPPROVAL,
+  EGIFTSTACKCOINSSETTING,
   ERead,
   ESCREENSTATUS,
   EStatus,
@@ -52,6 +55,7 @@ import {
 } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
+import envData from "../../../config/index";
 
 class TradingController extends BaseController {
   /**
@@ -68,6 +72,7 @@ class TradingController extends BaseController {
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
     const userExists = await UserTable.findOne({ _id: user._id });
+    let admin = await AdminTable.findOne({});
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
@@ -78,7 +83,10 @@ class TradingController extends BaseController {
       userExists.type == EUserType.PARENT
         ? { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
-    let parent: any = await ParentChildTable.findOne(query);
+    let parent: any = await ParentChildTable.findOne(query).populate(
+      "firstChildId",
+      ["email", "isGifted", "isGiftedCrypto", "firstName", "lastName"]
+    );
     if (!parent) return this.BadRequest(ctx, "Invalid User");
     if (parent.accessToken || parent.processorToken) {
       return this.BadRequest(ctx, "Bank Details Already Updated");
@@ -180,12 +188,101 @@ class TradingController extends BaseController {
               settledTime: moment().unix(),
               amount: reqParam.depositAmount,
               amountMod: null,
-              userId: userExists._id,
+              userId: parentDetails.firstChildId,
               parentId: userExists._id,
               status: ETransactionStatus.PENDING,
               executedQuoteId: contributions.data.included[0].id,
               unitCount: null,
             });
+            /**
+             * Gift Crypto to to teen who had pending 5btc
+             */
+            if (
+              admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+              parent.firstChildId.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+            ) {
+              let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+              const requestQuoteDay: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "asset-id": crypto.assetId,
+                    hot: true,
+                    "transaction-type": "buy",
+                    unit_count: envData.CONSTANT_BTC_COUNT,
+                  },
+                },
+              };
+              const generateQuoteResponse: any = await generateQuote(
+                jwtToken,
+                requestQuoteDay
+              );
+              if (generateQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, generateQuoteResponse.message);
+              }
+              /**
+               * Execute a quote
+               */
+              const requestExecuteQuote: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "asset-id": crypto.assetId,
+                  },
+                },
+              };
+              const executeQuoteResponse: any = await executeQuote(
+                jwtToken,
+                generateQuoteResponse.data.data.id,
+                requestExecuteQuote
+              );
+              if (executeQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, executeQuoteResponse.message);
+              }
+              let internalTransferRequest = {
+                data: {
+                  type: "internal-asset-transfers",
+                  attributes: {
+                    "unit-count": envData.CONSTANT_BTC_COUNT,
+                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
+                    "to-account-id": accountIdDetails.accountId,
+                    "asset-id": crypto.assetId,
+                    reference: "$5 BTC gift from Stack",
+                    "hot-transfer": true,
+                  },
+                },
+              };
+              const internalTransferResponse: any =
+                await internalAssetTransfers(jwtToken, internalTransferRequest);
+              if (internalTransferResponse.status == 400) {
+                return this.BadRequest(ctx, internalTransferResponse.message);
+              }
+              await TransactionTable.updateOne(
+                {
+                  status: ETransactionStatus.GIFTED,
+                  userId: parent.firstChildId,
+                },
+                {
+                  $set: {
+                    status: ETransactionStatus.SETTLED,
+                    executedQuoteId: internalTransferResponse.data.data.id,
+                    accountId: accountIdDetails.accountId,
+                  },
+                }
+              );
+              await UserTable.updateOne(
+                {
+                  _id: parent.firstChildId,
+                },
+                {
+                  $set: {
+                    isGiftedCrypto: 2,
+                  },
+                }
+              );
+            }
             return this.Ok(ctx, {
               message:
                 "We will proceed your request surely in some amount of time.",
@@ -225,6 +322,7 @@ class TradingController extends BaseController {
   public async addDepositAction(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    let admin = await AdminTable.findOne({});
     const jwtToken = ctx.request.primeTrustToken;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
@@ -352,6 +450,102 @@ class TradingController extends BaseController {
                   ? `We are looking into your request and will proceed surely in some amount of time.`
                   : `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
             });
+          }
+
+          /**
+           * Gift 5$ crypto to teen if deposited first time
+           */
+          if (userExists.type === EUserType.PARENT) {
+            let childExists = await UserTable.findOne({
+              _id: reqParam.childId,
+            });
+            if (
+              childExists &&
+              childExists.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON &&
+              admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON
+            ) {
+              let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+              const requestQuoteDay: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "asset-id": crypto.assetId,
+                    hot: true,
+                    "transaction-type": "buy",
+                    unit_count: envData.CONSTANT_BTC_COUNT,
+                  },
+                },
+              };
+              const generateQuoteResponse: any = await generateQuote(
+                jwtToken,
+                requestQuoteDay
+              );
+              if (generateQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, generateQuoteResponse.message);
+              }
+              /**
+               * Execute a quote
+               */
+              const requestExecuteQuote: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "asset-id": crypto.assetId,
+                  },
+                },
+              };
+              const executeQuoteResponse: any = await executeQuote(
+                jwtToken,
+                generateQuoteResponse.data.data.id,
+                requestExecuteQuote
+              );
+              if (executeQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, executeQuoteResponse.message);
+              }
+              let internalTransferRequest = {
+                data: {
+                  type: "internal-asset-transfers",
+                  attributes: {
+                    "unit-count": envData.CONSTANT_BTC_COUNT,
+                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
+                    "to-account-id": accountIdDetails.accountId,
+                    "asset-id": crypto.assetId,
+                    reference: "$5 BTC gift from Stack",
+                    "hot-transfer": true,
+                  },
+                },
+              };
+              const internalTransferResponse: any =
+                await internalAssetTransfers(jwtToken, internalTransferRequest);
+              if (internalTransferResponse.status == 400) {
+                return this.BadRequest(ctx, internalTransferResponse.message);
+              }
+              await TransactionTable.updateOne(
+                {
+                  status: ETransactionStatus.GIFTED,
+                  userId: childExists._id,
+                },
+                {
+                  $set: {
+                    status: ETransactionStatus.SETTLED,
+                    executedQuoteId: internalTransferResponse.data.data.id,
+                    accountId: accountIdDetails.accountId,
+                  },
+                }
+              );
+              await UserTable.updateOne(
+                {
+                  _id: childExists._id,
+                },
+                {
+                  $set: {
+                    isGiftedCrypto: 2,
+                  },
+                }
+              );
+            }
           }
 
           await UserActivityTable.create({
@@ -927,6 +1121,7 @@ class TradingController extends BaseController {
               "asset-id": crypto.assetId,
               hot: true,
               "transaction-type": "buy",
+              "unit-count": 0.00023427,
               total_amount: amount,
             },
           },
@@ -1407,6 +1602,9 @@ class TradingController extends BaseController {
             {
               $group: {
                 _id: "$cryptoId",
+                status: {
+                  $first: "$status",
+                },
                 cryptoId: {
                   $first: "$cryptoId",
                 },
@@ -1431,7 +1629,15 @@ class TradingController extends BaseController {
                     $gt: ["$totalSum", 0],
                   },
                   then: "$$KEEP",
-                  else: "$$PRUNE",
+                  else: {
+                    $cond: {
+                      if: {
+                        $eq: ["$status", 3],
+                      },
+                      then: "$$KEEP",
+                      else: "$$KEEP",
+                    },
+                  },
                 },
               },
             },
@@ -1481,19 +1687,30 @@ class TradingController extends BaseController {
               $project: {
                 _id: 1,
                 cryptoId: 1,
+                status: 1,
                 totalSum: 1,
                 type: 1,
                 totalAmount: 1,
                 totalAmountMod: 1,
                 cryptoData: 1,
                 currentPrice: "$currentPriceDetails.currentPrice",
-                value: 1,
+                value: {
+                  $cond: {
+                    if: {
+                      $eq: ["$value", 0],
+                    },
+                    then: "$totalAmount",
+                    else: "$value",
+                  },
+                },
                 totalGainLoss: { $round: ["$totalGainLoss", 2] },
               },
             },
           ]).exec();
           let totalStackValue: any = 0;
           let totalGainLoss: any = 0;
+          let intialBalance = 0;
+          let totalIntAmount = 0;
           if (portFolio.length > 0) {
             await portFolio.map((data) => {
               totalStackValue = parseFloat(
@@ -1501,6 +1718,9 @@ class TradingController extends BaseController {
               );
               totalGainLoss = parseFloat(
                 parseFloat(totalGainLoss + data.totalGainLoss).toFixed(2)
+              );
+              totalIntAmount = parseFloat(
+                parseFloat(data.totalAmount).toFixed(2)
               );
             });
           }
@@ -1535,8 +1755,29 @@ class TradingController extends BaseController {
           stackCoins = stackCoins + childExists.preLoadedCoins;
           let parent: any = await ParentChildTable.findOne({
             "teens.childId": childExists._id,
-          });
-          if (!parent) return this.BadRequest(ctx, "Invalid User");
+          }).populate("userId", ["status"]);
+          if (
+            !parent ||
+            parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+          ) {
+            intialBalance = totalIntAmount;
+            if (childExists.isGiftedCrypto == 1) {
+              return this.Ok(ctx, {
+                data: {
+                  portFolio,
+                  totalStackValue,
+                  stackCoins,
+                  totalGainLoss,
+                  balance: 0,
+                  pendingBalance: 0,
+                  parentStatus: null,
+                  intialBalance: intialBalance,
+                },
+              });
+            } else {
+              return this.BadRequest(ctx, "Invalid User");
+            }
+          }
           const accountIdDetails = await parent.teens.find(
             (x: any) => x.childId.toString() == childExists._id.toString()
           );
@@ -1546,26 +1787,26 @@ class TradingController extends BaseController {
           /**
            * Fetch Balance
            */
-          console.log(accountIdDetails);
           const fetchBalance: any = await getBalance(
             jwtToken,
             accountIdDetails.accountId
           );
           if (fetchBalance.status == 400) {
-            console.log(fetchBalance.message, "fetchBalance.message");
             return this.BadRequest(ctx, fetchBalance.message);
           }
           const balance = fetchBalance.data.data[0].attributes.disbursable;
           const pending =
             fetchBalance.data.data[0].attributes["pending-transfer"];
           totalStackValue = totalStackValue + balance;
-          let intialBalance = 0;
+
           let transactionData = await TransactionTable.findOne({
             userId: parent.userId,
             type: ETransactionType.DEPOSIT,
           }).sort({ createdAt: 1 });
           if (transactionData) {
             intialBalance = transactionData.amount;
+          } else {
+            intialBalance = totalIntAmount;
           }
           return this.Ok(ctx, {
             data: {
@@ -1574,6 +1815,7 @@ class TradingController extends BaseController {
               stackCoins,
               totalGainLoss,
               balance,
+              parentStatus: parent.userId.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
             },

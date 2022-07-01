@@ -25,6 +25,15 @@ const schema = new mongoose.Schema<IAdminSchema>(
       isIn: [0, 1],
       default: 0,
     },
+    giftCryptoAmount: { type: mongoose.Schema.Types.Number, default: null },
+    /**
+     * 1 - ON AND 0 -OFF
+     */
+    giftCryptoSetting: {
+      type: mongoose.Schema.Types.Number,
+      isIn: [0, 1],
+      default: 0,
+    },
   },
   { timestamps: true }
 );
