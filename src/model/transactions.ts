@@ -23,11 +23,15 @@ const schema = new mongoose.Schema<ITransactionSchema>(
       default: null,
     },
     /**
-     * 1 - pending and 2 - settled
+     * 1 - pending , 2 - settled and 3 - gifted
      */
     status: {
       type: mongoose.Schema.Types.Number,
-      isIn: [ETransactionStatus.PENDING, ETransactionStatus.SETTLED],
+      isIn: [
+        ETransactionStatus.PENDING,
+        ETransactionStatus.SETTLED,
+        ETransactionStatus.GIFTED,
+      ],
       default: 1,
     },
     /**

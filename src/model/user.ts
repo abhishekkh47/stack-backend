@@ -98,6 +98,10 @@ const schema = new mongoose.Schema<IUserSchema>(
      * 0 - not gifted and 1 - gifted
      */
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
+    /**
+     * 0 - not gifted , 1 - gifted and 2 - gifted with pt
+     */
+    isGiftedCrypto: { type: mongoose.Schema.Types.Number, default: 0 },
     referralCode: { type: mongoose.Schema.Types.String, default: null },
     isParentFirst: { type: mongoose.Schema.Types.Boolean, default: false },
     /**

@@ -1,4 +1,4 @@
-import { CMS_LINKS } from "@app/utility/constants";
+import { CMS_LINKS } from "../../../utility/constants";
 import { Auth } from "../../../middleware";
 import { CMSTable } from "../../../model";
 import { HttpMethod } from "../../../types";

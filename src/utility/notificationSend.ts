@@ -22,7 +22,6 @@ export const sendNotification = async (to, body, data, action = null) => {
       data: data,
     };
     await fcm.send(message, function (err, resp) {
-      console.log(JSON.stringify(err), "errorororor");
       if (err) {
         console.log("Something has gone wrong!", err.results);
       } else {
@@ -30,22 +29,4 @@ export const sendNotification = async (to, body, data, action = null) => {
       }
     });
   }
-  // const admin = require("firebase-admin");
-  // const { getMessaging } = require("firebase-admin/messaging");
-  // if (!admin.apps.length) {
-  //   admin.initializeApp({
-  //     credential: admin.credential.cert(FIREBASE_CREDENCIALS),
-  //   });
-  // } else {
-  //   admin.app(); // if already initialized, use that one
-  // }
-  // const message = {
-  //   notification: {
-  //     title: body,
-  //     body: body,
-  //   },
-  //   tokens: to,
-  // };
-  // let notificationResponse = await admin.messaging().sendMulticast(message);
-  // console.log(notificationResponse, "notificationResponse");
 };

@@ -277,7 +277,6 @@ export const createContributions = async (token, data) => {
       };
     })
     .catch((error) => {
-      console.log(error, "error");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
@@ -430,7 +429,6 @@ export const getBalance = async (token, id) => {
       };
     })
     .catch((error) => {
-      console.log(error.response.data, "error");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
@@ -528,6 +526,38 @@ export const executeQuote = async (token, id, data) => {
 };
 
 /**
+ * @description This api is used to internal transfer
+ * @param data
+ * @param id
+ * @return {*}
+ */
+export const internalAssetTransfers = async (token, data) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.internalAssetTransfers,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
  * @description This api is for wire transfer
  * @param token
  * @param accountId
@@ -574,7 +604,6 @@ export const getAccountStatusByAccountId = async (token, accountId) => {
  * @returns {*}
  */
 export const updateContacts = async (token, contactId, data) => {
-  console.log(data, "data");
   const response = await axios
     .patch(
       config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.updateContacts(contactId),

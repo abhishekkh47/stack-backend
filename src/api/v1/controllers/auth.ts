@@ -27,6 +27,8 @@ import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
+  ETransactionStatus,
+  ETransactionType,
 } from "../../../types";
 import { AuthService } from "../../../services";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
@@ -41,6 +43,8 @@ import {
   QuizResult,
   Notification,
   UserReffaralTable,
+  TransactionTable,
+  CryptoTable,
 } from "../../../model";
 import { TwilioService } from "../../../services";
 import moment from "moment";
@@ -101,7 +105,6 @@ class AuthController extends BaseController {
                   return this.BadRequest(ctx, "Error Invalid Token Id");
                 });
               const googlePayload = googleTicket.getPayload();
-              console.log(googlePayload, "googlePayload");
               if (!googlePayload) {
                 return this.BadRequest(ctx, "Error while logging in");
               }
@@ -188,6 +191,7 @@ class AuthController extends BaseController {
           const childArray = [];
           let user = null;
           let refferalCodeExists = null;
+          let admin = await AdminTable.findOne({});
           /* tslint:disable-next-line */
           if (reqParam.type == EUserType.TEEN) {
             /**
@@ -202,37 +206,12 @@ class AuthController extends BaseController {
             //     "Your account is already created. Please log in"
             //   );
             // }
-            if (reqParam.parentEmail) {
-              user = await UserTable.findOne({
-                email: reqParam.parentEmail,
-                type: EUserType.TEEN,
-              });
-              if (user) {
-                return this.BadRequest(ctx, "Email Already Exists");
-              }
-              user = await UserTable.findOne({
-                username: reqParam.parentEmail,
-              });
-              if (user) {
-                return this.BadRequest(
-                  ctx,
-                  "This parent email is used by some other user as username"
-                );
-              }
-            }
             user = await UserTable.findOne({
               mobile: reqParam.parentMobile,
               type: EUserType.TEEN,
             });
             if (user) {
               return this.BadRequest(ctx, "Mobile Number Already Exists");
-            }
-            user = await UserTable.findOne({ parentEmail: reqParam.username });
-            if (user) {
-              return this.BadRequest(
-                ctx,
-                "This username is used by some other user as parent's email"
-              );
             }
 
             let checkParentExists = await UserTable.findOne({
@@ -377,22 +356,6 @@ class AuthController extends BaseController {
               await childArray.push({ childId: child._id, accountId: null });
             }
           }
-          if (reqParam.username) {
-            user = await UserTable.findOne({ username: reqParam.username });
-            if (user) {
-              return this.BadRequest(ctx, "Username already Exists");
-            }
-            user = await UserTable.findOne({ email: reqParam.username });
-            if (user) {
-              return this.BadRequest(
-                ctx,
-                "This username is used by some other user as email"
-              );
-            }
-          }
-          reqParam.password = reqParam.password
-            ? AuthService.encryptPassword(reqParam.password)
-            : null;
           /**
            * Verify Social Login Token now
            */
@@ -440,7 +403,6 @@ class AuthController extends BaseController {
             if (!refferalCodeExists) {
               return this.BadRequest(ctx, "Refferal Code Not Found");
             }
-            let admin = await AdminTable.findOne({});
             if (
               refferalCodeExists.type == EUserType.PARENT &&
               refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
@@ -536,11 +498,11 @@ class AuthController extends BaseController {
           }
           if (reqParam.type == EUserType.TEEN && childExists) {
             let updateQuery: any = {
-              username: reqParam.username,
+              username: null,
               firstName: reqParam.firstName,
               email: reqParam.email ? reqParam.email : childExists.email,
               lastName: reqParam.lastName,
-              password: reqParam.password,
+              password: null,
               screenStatus: ESCREENSTATUS.SIGN_UP,
               dob: reqParam.dob ? reqParam.dob : null,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
@@ -567,8 +529,8 @@ class AuthController extends BaseController {
              */
             const uniqueReferralCode = await makeUniqueReferalCode();
             user = await UserTable.create({
-              username: reqParam.username ? reqParam.username : null,
-              password: reqParam.password ? reqParam.password : null,
+              username: null,
+              password: null,
               email: reqParam.email ? reqParam.email : null,
               type: reqParam.type,
               firstName: reqParam.firstName,
@@ -588,6 +550,38 @@ class AuthController extends BaseController {
               preLoadedCoins: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
               isAutoApproval: EAUTOAPPROVAL.ON,
             });
+          }
+          if (
+            admin.giftCryptoSetting == 1 &&
+            user.isGiftedCrypto == 0 &&
+            user.type == EUserType.TEEN
+          ) {
+            let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+            /**
+             * bitcoin asset id and crypto id
+             */
+            await TransactionTable.create({
+              assetId: crypto.assetId,
+              cryptoId: crypto._id,
+              accountId: null,
+              type: ETransactionType.BUY,
+              settledTime: moment().unix(),
+              amount: admin.giftCryptoAmount,
+              amountMod: -admin.giftCryptoAmount,
+              userId: user._id,
+              parentId: null,
+              status: ETransactionStatus.GIFTED,
+              executedQuoteId: null,
+              unitCount: 0,
+            });
+            await UserTable.updateOne(
+              { _id: user._id },
+              {
+                $set: {
+                  isGiftedCrypto: 1,
+                },
+              }
+            );
           }
           if (reqParam.type == EUserType.PARENT) {
             await ParentChildTable.create({
@@ -784,7 +778,6 @@ class AuthController extends BaseController {
   @Route({ path: "/check-user-signup", method: HttpMethod.POST })
   public async checkUserSignUp(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log(reqParam, "reqParam");
     return validation.checkUserSignupValidation(
       reqParam,
       ctx,
@@ -1692,7 +1685,7 @@ class AuthController extends BaseController {
                 ? ESCREENSTATUS.ACKNOWLEDGE_SCREEN
                 : ESCREENSTATUS.SIGN_UP;
             await UserTable.findOneAndUpdate(
-              { username: ctx.request.user.username },
+              { _id: ctx.request.user._id },
               { $set: input }
             );
             /**
