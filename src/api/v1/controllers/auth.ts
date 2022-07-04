@@ -15,6 +15,9 @@ import {
   makeUniqueReferalCode,
   sendNotification,
   decodeJwtToken,
+  generateQuote,
+  executeQuote,
+  internalAssetTransfers,
 } from "../../../utility";
 import BaseController from "./base";
 import envData from "../../../config/index";
@@ -184,6 +187,7 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           let childExists = null;
+          let checkParentExists = null;
           let accountId = null;
           let parentId = null;
           let isGiftedStackCoins = 0;
@@ -214,7 +218,7 @@ class AuthController extends BaseController {
               return this.BadRequest(ctx, "Mobile Number Already Exists");
             }
 
-            let checkParentExists = await UserTable.findOne({
+            checkParentExists = await UserTable.findOne({
               mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
@@ -557,31 +561,136 @@ class AuthController extends BaseController {
             user.type == EUserType.TEEN
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-            /**
-             * bitcoin asset id and crypto id
-             */
-            await TransactionTable.create({
-              assetId: crypto.assetId,
-              cryptoId: crypto._id,
-              accountId: null,
-              type: ETransactionType.BUY,
-              settledTime: moment().unix(),
-              amount: admin.giftCryptoAmount,
-              amountMod: -admin.giftCryptoAmount,
+            let checkTransactionExistsAlready = await TransactionTable.findOne({
               userId: user._id,
-              parentId: null,
-              status: ETransactionStatus.GIFTED,
-              executedQuoteId: null,
-              unitCount: 0,
+              type: ETransactionType.DEPOSIT,
             });
-            await UserTable.updateOne(
-              { _id: user._id },
-              {
-                $set: {
-                  isGiftedCrypto: 1,
+            if (checkTransactionExistsAlready) {
+              let parentChildTableExists = await ParentChildTable.findOne({
+                "teens.childId": user._id,
+              });
+              const accountIdDetails: any =
+                await parentChildTableExists.teens.find(
+                  (x: any) =>
+                    x.childId.toString() ==
+                    parentChildTableExists.firstChildId.toString()
+                );
+              const requestQuoteDay: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "asset-id": crypto.assetId,
+                    hot: true,
+                    "transaction-type": "buy",
+                    unit_count: envData.CONSTANT_BTC_COUNT,
+                  },
                 },
+              };
+              const generateQuoteResponse: any = await generateQuote(
+                ctx.request.primeTrustToken,
+                requestQuoteDay
+              );
+              if (generateQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, generateQuoteResponse.message);
               }
-            );
+              /**
+               * Execute a quote
+               */
+              const requestExecuteQuote: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "asset-id": crypto.assetId,
+                  },
+                },
+              };
+              const executeQuoteResponse: any = await executeQuote(
+                ctx.request.primeTrustToken,
+                generateQuoteResponse.data.data.id,
+                requestExecuteQuote
+              );
+              if (executeQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, executeQuoteResponse.message);
+              }
+              console.log(accountIdDetails.accountId);
+              let internalTransferRequest = {
+                data: {
+                  type: "internal-asset-transfers",
+                  attributes: {
+                    "unit-count": envData.CONSTANT_BTC_COUNT,
+                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
+                    "to-account-id": accountIdDetails.accountId,
+                    "asset-id": crypto.assetId,
+                    reference: "$5 BTC gift from Stack",
+                    "hot-transfer": true,
+                  },
+                },
+              };
+              const internalTransferResponse: any =
+                await internalAssetTransfers(
+                  ctx.request.primeTrustToken,
+                  internalTransferRequest
+                );
+              if (internalTransferResponse.status == 400) {
+                return this.BadRequest(ctx, internalTransferResponse.message);
+              }
+              console.log(
+                internalTransferResponse.data,
+                "internalTransferResponse"
+              );
+              await TransactionTable.create({
+                assetId: crypto.assetId,
+                cryptoId: crypto._id,
+                accountId: accountIdDetails.accountId,
+                type: ETransactionType.BUY,
+                settledTime: moment().unix(),
+                amount: admin.giftCryptoAmount,
+                amountMod: -admin.giftCryptoAmount,
+                userId: user._id,
+                parentId: parentChildTableExists.userId,
+                status: ETransactionStatus.SETTLED,
+                executedQuoteId: internalTransferResponse.data.data.id,
+                unitCount: envData.CONSTANT_BTC_COUNT,
+              });
+              await UserTable.updateOne(
+                {
+                  _id: user._id,
+                },
+                {
+                  $set: {
+                    isGiftedCrypto: 2,
+                  },
+                }
+              );
+            } else {
+              /**
+               * bitcoin asset id and crypto id
+               */
+              await TransactionTable.create({
+                assetId: crypto.assetId,
+                cryptoId: crypto._id,
+                accountId: null,
+                type: ETransactionType.BUY,
+                settledTime: moment().unix(),
+                amount: admin.giftCryptoAmount,
+                amountMod: -admin.giftCryptoAmount,
+                userId: user._id,
+                parentId: null,
+                status: ETransactionStatus.GIFTED,
+                executedQuoteId: null,
+                unitCount: 0,
+              });
+              await UserTable.updateOne(
+                { _id: user._id },
+                {
+                  $set: {
+                    isGiftedCrypto: 1,
+                  },
+                }
+              );
+            }
           }
           if (reqParam.type == EUserType.PARENT) {
             await ParentChildTable.create({
