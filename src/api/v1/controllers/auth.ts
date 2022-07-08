@@ -329,12 +329,6 @@ class AuthController extends BaseController {
                 "Sorry We cannot find your accounts. Unable to link them"
               );
             }
-            // if (reqParam.fileTaxesInUS == 0 || reqParam.citizenOfUS == 0) {
-            //   return this.BadRequest(
-            //     ctx,
-            //     "Sorry We are only serving US Based Citizens right now but we do plan to expand. Stay Tuned!!"
-            //   );
-            // }
             if (
               reqParam.type == EUserType.PARENT &&
               new Date(
@@ -542,7 +536,7 @@ class AuthController extends BaseController {
               mobile: reqParam.mobile,
               screenStatus:
                 reqParam.type === EUserType.PARENT
-                  ? ESCREENSTATUS.CHANGE_ADDRESS
+                  ? ESCREENSTATUS.UPLOAD_DOCUMENTS
                   : ESCREENSTATUS.SIGN_UP,
               parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
               parentMobile: reqParam.parentMobile
@@ -553,6 +547,12 @@ class AuthController extends BaseController {
               referralCode: uniqueReferralCode,
               preLoadedCoins: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
               isAutoApproval: EAUTOAPPROVAL.ON,
+              country: reqParam.country ? reqParam.country : null,
+              state: reqParam.state ? reqParam.state : null,
+              city: reqParam.city ? reqParam.city : null,
+              address: reqParam.address ? reqParam.address : null,
+              unitApt: reqParam.unitApt ? reqParam.unitApt : null,
+              postalCode: reqParam.postalCode ? reqParam.postalCode : null,
             });
           }
           if (
@@ -1682,7 +1682,7 @@ class AuthController extends BaseController {
           let user = await UserTable.findOne(query);
           if (user)
             return this.Ok(ctx, {
-              message: "We found their application and linked your accounts!",
+              message: "Account successfully linked!",
               isAccountFound: true,
             });
           /**
@@ -1748,7 +1748,7 @@ class AuthController extends BaseController {
             isAutoApproval: EAUTOAPPROVAL.ON,
           });
           return this.Ok(ctx, {
-            message: "We've sent them an invite to create their username!",
+            message: "Invite sent!",
             isAccountFound: false,
           });
         }
@@ -1772,89 +1772,89 @@ class AuthController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/store-user-details", method: HttpMethod.POST })
-  @Auth()
-  @PrimeTrustJWT(true)
-  public async storeUserDetails(ctx: any) {
-    let input: any = ctx.request.body;
-    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    return validation.storeUserDetailsValidation(
-      input,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          const state = await StateTable.findOne({ _id: input.stateId });
-          if (!state) return this.BadRequest(ctx, "Invalid State ID.");
-          try {
-            input.screenStatus =
-              userExists.type === EUserType.PARENT
-                ? ESCREENSTATUS.ACKNOWLEDGE_SCREEN
-                : ESCREENSTATUS.SIGN_UP;
-            await UserTable.findOneAndUpdate(
-              { _id: ctx.request.user._id },
-              { $set: input }
-            );
-            /**
-             * TODO:- ZOHO CRM ADD ACCOUNTS DATA
-             */
-            let dataSentInCrm: any = {
-              Account_Name: userExists.firstName + " " + userExists.lastName,
-              Billing_Country: "US",
-            };
-            if (input.postalCode) {
-              dataSentInCrm = {
-                ...dataSentInCrm,
-                Billing_Code: input.postalCode,
-              };
-            }
-            if (input.stateId) {
-              dataSentInCrm = {
-                ...dataSentInCrm,
-                Billing_State: state.name,
-              };
-            }
-            if (input.address) {
-              dataSentInCrm = {
-                ...dataSentInCrm,
-                Billing_Street: input.address,
-              };
-            }
-            if (input.city) {
-              dataSentInCrm = {
-                ...dataSentInCrm,
-                Billing_City: input.city,
-              };
-            }
-            if (userExists.type === EUserType.PARENT) {
-              dataSentInCrm = {
-                ...dataSentInCrm,
-                Parent_Signup_Funnel: [
-                  ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-                  PARENT_SIGNUP_FUNNEL.ADDRESS,
-                ],
-              };
-            }
-            let mainData = {
-              data: [dataSentInCrm],
-            };
-            const dataAddInZoho = await addAccountInfoInZohoCrm(
-              ctx.request.zohoAccessToken,
-              mainData
-            );
-            return this.Created(ctx, {
-              message:
-                "Stored Address and Liquid Asset Information Successfully",
-            });
-          } catch (error) {
-            this.BadRequest(ctx, "Something went wrong. Please try again.");
-          }
-        }
-      }
-    );
-  }
+  // @Route({ path: "/store-user-details", method: HttpMethod.POST })
+  // @Auth()
+  // @PrimeTrustJWT(true)
+  // public async storeUserDetails(ctx: any) {
+  //   let input: any = ctx.request.body;
+  //   const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+  //   if (!userExists) {
+  //     return this.BadRequest(ctx, "User Not Found");
+  //   }
+  //   return validation.storeUserDetailsValidation(
+  //     input,
+  //     ctx,
+  //     async (validate) => {
+  //       if (validate) {
+  //         const state = await StateTable.findOne({ _id: input.stateId });
+  //         if (!state) return this.BadRequest(ctx, "Invalid State ID.");
+  //         try {
+  //           input.screenStatus =
+  //             userExists.type === EUserType.PARENT
+  //               ? ESCREENSTATUS.ACKNOWLEDGE_SCREEN
+  //               : ESCREENSTATUS.SIGN_UP;
+  //           await UserTable.findOneAndUpdate(
+  //             { _id: ctx.request.user._id },
+  //             { $set: input }
+  //           );
+  //           /**
+  //            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
+  //            */
+  //           let dataSentInCrm: any = {
+  //             Account_Name: userExists.firstName + " " + userExists.lastName,
+  //             Billing_Country: "US",
+  //           };
+  //           if (input.postalCode) {
+  //             dataSentInCrm = {
+  //               ...dataSentInCrm,
+  //               Billing_Code: input.postalCode,
+  //             };
+  //           }
+  //           if (input.stateId) {
+  //             dataSentInCrm = {
+  //               ...dataSentInCrm,
+  //               Billing_State: state.name,
+  //             };
+  //           }
+  //           if (input.address) {
+  //             dataSentInCrm = {
+  //               ...dataSentInCrm,
+  //               Billing_Street: input.address,
+  //             };
+  //           }
+  //           if (input.city) {
+  //             dataSentInCrm = {
+  //               ...dataSentInCrm,
+  //               Billing_City: input.city,
+  //             };
+  //           }
+  //           if (userExists.type === EUserType.PARENT) {
+  //             dataSentInCrm = {
+  //               ...dataSentInCrm,
+  //               Parent_Signup_Funnel: [
+  //                 ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+  //                 PARENT_SIGNUP_FUNNEL.ADDRESS,
+  //               ],
+  //             };
+  //           }
+  //           let mainData = {
+  //             data: [dataSentInCrm],
+  //           };
+  //           const dataAddInZoho = await addAccountInfoInZohoCrm(
+  //             ctx.request.zohoAccessToken,
+  //             mainData
+  //           );
+  //           return this.Created(ctx, {
+  //             message:
+  //               "Stored Address and Liquid Asset Information Successfully",
+  //           });
+  //         } catch (error) {
+  //           this.BadRequest(ctx, "Something went wrong. Please try again.");
+  //         }
+  //       }
+  //     }
+  //   );
+  // }
 
   /**
    * @description This method is used to create refresh token

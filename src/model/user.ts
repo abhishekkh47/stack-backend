@@ -66,6 +66,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     loginAttempts: { type: mongoose.Schema.Types.Number, default: 0 },
     refreshToken: { type: mongoose.Schema.Types.String, default: null },
     country: { type: mongoose.Schema.Types.String, default: null },
+    state: { type: mongoose.Schema.Types.String, default: null },
     city: { type: mongoose.Schema.Types.String, default: null },
     postalCode: { type: mongoose.Schema.Types.String, default: null },
     unitApt: { type: mongoose.Schema.Types.String, default: null },

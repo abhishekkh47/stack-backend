@@ -39,6 +39,16 @@ class BaseController implements IController {
   protected UnAuthorized(ctx: Koa.Context, message?: string) {
     ctx.throw(401, { status: 401, message: message || "Unauthorized" });
   }
+
+  /**
+   * Only to give webhook response as 200 in case of bad request
+   * @param ctx
+   * @param message
+   */
+  protected OkWebhook(ctx: Koa.Context, message?: string) {
+    ctx.status = 200;
+    ctx.body = { message: message, status: 200 };
+  }
 }
 
 export default BaseController;

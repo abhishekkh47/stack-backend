@@ -294,6 +294,7 @@ class UserController extends BaseController {
         "authorized-signature": fullName,
         "webhook-config": {
           url: envData.WEBHOOK_URL,
+          enabled: true,
         },
         owner: {
           "contact-type": "natural_person",
@@ -314,7 +315,8 @@ class UserController extends BaseController {
             "street-2": userExists.unitApt ? userExists.unitApt : "",
             "postal-code": userExists.postalCode,
             city: userExists.city,
-            region: userExists.stateId.shortName,
+            region: userExists.state,
+            // region: userExists.stateId.shortName,
             country: userExists.country,
           },
         },
