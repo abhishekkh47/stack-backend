@@ -166,11 +166,11 @@ export const validation = {
           .required(),
       }),
       firstName: Joi.string()
-        .min(2)
+        .min(1)
         .regex(/^[A-za-z]*$/)
         .required(),
       lastName: Joi.string()
-        .min(2)
+        .min(1)
         .regex(/^[A-za-z]*$/)
         .required(),
       parentMobile: Joi.when("type", {
@@ -185,6 +185,41 @@ export const validation = {
         is: 2,
         then: Joi.string()
           .regex(/^\d{9}$/)
+          .required(),
+      }),
+      country: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      state: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      city: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      address: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      unitApt: Joi.when("type", {
+        is: 2,
+        then: Joi.string().allow(null).allow(""),
+      }),
+      postalCode: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z0-9]/)
+          .min(4)
           .required(),
       }),
     });
@@ -397,12 +432,12 @@ export const validation = {
       email: Joi.string().email().required(),
       childEmail: Joi.string().email().allow("").disallow(Joi.ref("email")),
       childFirstName: Joi.string()
-        .min(2)
+        .min(1)
         .allow("")
         .regex(/^[A-za-z]*$/)
         .required(),
       childLastName: Joi.string()
-        .min(2)
+        .min(1)
         .allow("")
         .regex(/^[A-za-z]*$/)
         .required(),

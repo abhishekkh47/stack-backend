@@ -1800,7 +1800,7 @@ class TradingController extends BaseController {
           totalStackValue = totalStackValue + balance;
 
           let transactionData = await TransactionTable.findOne({
-            userId: parent.userId,
+            userId: childExists._id,
             type: ETransactionType.DEPOSIT,
           }).sort({ createdAt: 1 });
           if (transactionData) {

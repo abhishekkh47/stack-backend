@@ -3,25 +3,18 @@ import crypto from "crypto";
 import {
   Route,
   updateContacts,
-  uploadIdProof,
-  wireInboundMethod,
   kycDocumentChecks,
   uploadFilesFetch,
   checkValidBase64String,
   getContactId,
   sendNotification,
-  getPrimeTrustJWTToken,
   addAccountInfoInZohoCrm,
   getAccountStatusByAccountId,
   generateQuote,
   executeQuote,
   internalAssetTransfers,
 } from "../../../utility";
-import {
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-  PARENT_SIGNUP_FUNNEL,
-} from "../../../utility/constants";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { json, form } from "co-body";
 import BaseController from "./base";
 import {
@@ -48,8 +41,6 @@ import { PrimeTrustJWT, Auth } from "../../../middleware";
 import fs from "fs";
 import path from "path";
 import moment from "moment";
-import { getAccessToken } from "../../../utility/zoho-crm";
-import { ObjectId } from "mongodb";
 
 class WebHookController extends BaseController {
   /**
@@ -77,13 +68,13 @@ class WebHookController extends BaseController {
       "lastName",
     ]);
     if (!checkAccountIdExists) {
-      return this.BadRequest(ctx, "Account Id Doesn't Exists");
+      return this.OkWebhook(ctx, "Account Id Doesn't Exists");
     }
     const userExists = await UserTable.findOne({
       _id: checkAccountIdExists.userId,
     });
     if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
+      return this.OkWebhook(ctx, "User Not Found");
     }
     /**
      * Notification Send for kyc fail or success
@@ -98,7 +89,7 @@ class WebHookController extends BaseController {
       case "contact":
       case "contacts":
         if (userExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
-          return this.BadRequest(ctx, "User KYC Document Verified");
+          return this.OkWebhook(ctx, "User KYC Document Verified");
         }
         /**
          * Failure phases
@@ -267,7 +258,7 @@ class WebHookController extends BaseController {
         break;
       case "accounts":
         if (userExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
-          return this.BadRequest(ctx, "User KYC Document Verified");
+          return this.OkWebhook(ctx, "User KYC Document Verified");
         }
         if (
           body.data &&
@@ -394,7 +385,7 @@ class WebHookController extends BaseController {
           executedQuoteId: body.resource_id,
         });
         if (!checkQuoteIdExists) {
-          return this.BadRequest(ctx, "Quote Id Doesn't Exists");
+          return this.OkWebhook(ctx, "Quote Id Doesn't Exists");
         }
         if (body.action == "settled") {
           await TransactionTable.updateOne(
@@ -403,7 +394,7 @@ class WebHookController extends BaseController {
           );
           return this.Ok(ctx, { message: "Trade Successfull" });
         } else {
-          return this.BadRequest(ctx, "Bad request for asset");
+          return this.OkWebhook(ctx, "Bad request for asset");
         }
       /**
        * For deposit
@@ -413,7 +404,7 @@ class WebHookController extends BaseController {
           executedQuoteId: body.resource_id,
         });
         if (!checkQuoteIdExistsDeposit) {
-          return this.BadRequest(ctx, "Fund Transfer Id Doesn't Exists");
+          return this.OkWebhook(ctx, "Fund Transfer Id Doesn't Exists");
         }
         if (body.action == "update") {
           await TransactionTable.updateOne(
@@ -422,10 +413,10 @@ class WebHookController extends BaseController {
           );
           return this.Ok(ctx, { message: "Deposit Successfull" });
         } else {
-          return this.BadRequest(ctx, "Bad request for asset");
+          return this.OkWebhook(ctx, "Bad request for asset");
         }
       default:
-        return this.BadRequest(ctx, `Resource Type ${body.resource_type}`);
+        return this.OkWebhook(ctx, `Resource Type ${body.resource_type}`);
     }
     console.log(`++++++END WEBHOOK DATA+++++++++`);
     return this.Ok(ctx, { message: "Success" });
@@ -783,7 +774,7 @@ class WebHookController extends BaseController {
             updates.postalCode = input["primary-address"]["postal-code"];
             requestPrimeTrust["primary-address"]["postal-code"] =
               input["primary-address"]["postal-code"];
-            updates.stateId = input["primary-address"]["region"];
+            updates.state = input["primary-address"]["region"];
             requestPrimeTrust["primary-address"]["region"] =
               input["primary-address"]["region"];
             updates.address = input["primary-address"]["street-1"];
@@ -809,7 +800,7 @@ class WebHookController extends BaseController {
             Object.keys(input["primary-address"]).length > 0
           ) {
             let state = await StateTable.findOne({
-              _id: input["primary-address"].region,
+              shortName: input["primary-address"].region,
             });
             if (!state) return this.BadRequest(ctx, "Invalid State-ID entered");
             input["primary-address"].region = state.shortName;

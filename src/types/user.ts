@@ -27,6 +27,7 @@ export interface IAccount {
   loginAttempts: number;
   country: string;
   stateId: mongoose.Schema.Types.ObjectId;
+  state: string;
   city: string;
   address: string;
   postalCode: string;
@@ -85,14 +86,21 @@ export enum EUSERSTATUS {
 }
 export enum ESCREENSTATUS {
   /**
-   * for parents
+   * for parents old
+   */
+  // SIGN_UP = 0,
+  // CHANGE_ADDRESS = 1,
+  // UPLOAD_DOCUMENTS = 3,
+  // ACKNOWLEDGE_SCREEN = 2,
+  // ADD_BANK_ACCOUNT = 4,
+  // SUCCESS = 5,
+  /**
+   * for parent new
    */
   SIGN_UP = 0,
-  CHANGE_ADDRESS = 1,
-  UPLOAD_DOCUMENTS = 3,
-  ACKNOWLEDGE_SCREEN = 2,
-  ADD_BANK_ACCOUNT = 4,
-  SUCCESS = 5,
+  UPLOAD_DOCUMENTS = 1,
+  ADD_BANK_ACCOUNT = 2,
+  SUCCESS = 3,
   /**
    * for teen
    */

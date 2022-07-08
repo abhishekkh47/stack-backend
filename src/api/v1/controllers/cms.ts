@@ -7,7 +7,6 @@ import BaseController from "./base";
 
 class CMSController extends BaseController {
   @Route({ path: "/get-cms/:type", method: HttpMethod.GET })
-  @Auth()
   public async getCMS(ctx: any) {
     if (!ctx.request.params.type) {
       return this.BadRequest(ctx, "Invalid Type");
