@@ -1121,7 +1121,6 @@ class TradingController extends BaseController {
               "asset-id": crypto.assetId,
               hot: true,
               "transaction-type": "buy",
-              "unit-count": 0.00023427,
               total_amount: amount,
             },
           },
@@ -1292,8 +1291,8 @@ class TradingController extends BaseController {
             userExists.type == EUserType.PARENT ||
             (userExists.type == EUserType.TEEN &&
               userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-              ? `${messages.SELL} $${amount} in ${crypto.name}`
-              : `${messages.APPROVE_SELL} $${amount} in ${crypto.name}`,
+              ? `${messages.APPROVE_SELL} $${amount} in ${crypto.name}`
+              : `${messages.SELL} $${amount} in ${crypto.name}`,
           action: EAction.SELL_CRYPTO,
           currencyValue: amount,
           currencyType: cryptoId,
