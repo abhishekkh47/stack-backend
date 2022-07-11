@@ -44,6 +44,7 @@ class BaseController implements IController {
    * Only to give webhook response as 200 in case of bad request
    * @param ctx
    * @param message
+   * @description This method is only used for webhook
    */
   protected OkWebhook(ctx: Koa.Context, message?: string) {
     ctx.status = 200;

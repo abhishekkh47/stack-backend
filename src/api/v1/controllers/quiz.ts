@@ -110,19 +110,6 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-question", method: HttpMethod.POST })
   // @Auth()
   public async createQuizQuestion(ctx: Koa.Context) {
-    // const doc = new GoogleSpreadsheet(
-    //   "1zVjIzurRcqEsOsOyYjesybaRKqhj1GELDG183_ctsi4"
-    // );
-    // await doc.useServiceAccountAuth(FIREBASE_CREDENCIALS);
-    // await doc.loadInfo();
-    // console.log(doc, "doc");
-    // const sheet = doc.sheetsByIndex[0];
-    // const rows = await sheet.getRows();
-    // let main = [];
-    // rows.map((item) => {
-    //   console.log(item);
-    // });
-    // return this.Ok(ctx, { data: emails });
     await QuizQuestionTable.create(ctx.request.body);
 
     return this.Created(ctx, {

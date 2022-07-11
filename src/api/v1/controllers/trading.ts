@@ -210,7 +210,7 @@ class TradingController extends BaseController {
                     "asset-id": crypto.assetId,
                     hot: true,
                     "transaction-type": "buy",
-                    unit_count: envData.CONSTANT_BTC_COUNT,
+                    total_amount: "5",
                   },
                 },
               };
@@ -245,7 +245,8 @@ class TradingController extends BaseController {
                 data: {
                   type: "internal-asset-transfers",
                   attributes: {
-                    "unit-count": envData.CONSTANT_BTC_COUNT,
+                    "unit-count":
+                      executeQuoteResponse.data.data.attributes["unit-count"],
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
@@ -266,6 +267,8 @@ class TradingController extends BaseController {
                 },
                 {
                   $set: {
+                    unitCount:
+                      executeQuoteResponse.data.data.attributes["unit-count"],
                     status: ETransactionStatus.SETTLED,
                     executedQuoteId: internalTransferResponse.data.data.id,
                     accountId: accountIdDetails.accountId,
@@ -473,7 +476,7 @@ class TradingController extends BaseController {
                     "asset-id": crypto.assetId,
                     hot: true,
                     "transaction-type": "buy",
-                    unit_count: envData.CONSTANT_BTC_COUNT,
+                    total_amount: "5",
                   },
                 },
               };
@@ -508,7 +511,8 @@ class TradingController extends BaseController {
                 data: {
                   type: "internal-asset-transfers",
                   attributes: {
-                    "unit-count": envData.CONSTANT_BTC_COUNT,
+                    "unit-count":
+                      executeQuoteResponse.data.data.attributes["unit-count"],
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
@@ -529,6 +533,8 @@ class TradingController extends BaseController {
                 },
                 {
                   $set: {
+                    unitCount:
+                      executeQuoteResponse.data.data.attributes["unit-count"],
                     status: ETransactionStatus.SETTLED,
                     executedQuoteId: internalTransferResponse.data.data.id,
                     accountId: accountIdDetails.accountId,
