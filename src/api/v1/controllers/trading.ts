@@ -1807,6 +1807,7 @@ class TradingController extends BaseController {
           let transactionData = await TransactionTable.findOne({
             userId: childExists._id,
             type: ETransactionType.DEPOSIT,
+            status: ETransactionStatus.PENDING,
           }).sort({ createdAt: 1 });
           if (transactionData) {
             intialBalance = transactionData.amount;
