@@ -583,7 +583,7 @@ class AuthController extends BaseController {
                     "asset-id": crypto.assetId,
                     hot: true,
                     "transaction-type": "buy",
-                    unit_count: envData.CONSTANT_BTC_COUNT,
+                    total_amount: "5",
                   },
                 },
               };
@@ -614,12 +614,12 @@ class AuthController extends BaseController {
               if (executeQuoteResponse.status == 400) {
                 return this.BadRequest(ctx, executeQuoteResponse.message);
               }
-              console.log(accountIdDetails.accountId);
               let internalTransferRequest = {
                 data: {
                   type: "internal-asset-transfers",
                   attributes: {
-                    "unit-count": envData.CONSTANT_BTC_COUNT,
+                    "unit-count":
+                      executeQuoteResponse.data.data.attributes["unit-count"],
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
@@ -652,7 +652,8 @@ class AuthController extends BaseController {
                 parentId: parentChildTableExists.userId,
                 status: ETransactionStatus.SETTLED,
                 executedQuoteId: internalTransferResponse.data.data.id,
-                unitCount: envData.CONSTANT_BTC_COUNT,
+                unitCount:
+                  executeQuoteResponse.data.data.attributes["unit-count"],
               });
               await UserTable.updateOne(
                 {
@@ -844,10 +845,7 @@ class AuthController extends BaseController {
           let mainData = {
             data: [dataSentInCrm],
           };
-          const dataAddInZoho = await addAccountInfoInZohoCrm(
-            ctx.request.zohoAccessToken,
-            mainData
-          );
+          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
@@ -860,7 +858,7 @@ class AuthController extends BaseController {
                 },
               ],
             };
-            const dataAddInZoho = await addAccountInfoInZohoCrm(
+            await addAccountInfoInZohoCrm(
               ctx.request.zohoAccessToken,
               dataSentAgain
             );

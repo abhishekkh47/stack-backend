@@ -857,7 +857,7 @@ class WebHookController extends BaseController {
           "asset-id": crypto.assetId,
           hot: true,
           "transaction-type": "buy",
-          unit_count: 0.00023427,
+          total_amount: "5",
         },
       },
     };
@@ -892,7 +892,7 @@ class WebHookController extends BaseController {
       data: {
         type: "internal-asset-transfers",
         attributes: {
-          "unit-count": 0.00023427,
+          "unit-count": executeQuoteResponse.data.data.attributes["unit-count"],
           "from-account-id": envData.OPERATIONAL_ACCOUNT,
           "to-account-id": "24e34898-d86e-4773-a9f7-9911de8bc28b",
           "asset-id": crypto.assetId,
