@@ -676,7 +676,7 @@ class AuthController extends BaseController {
                 type: ETransactionType.BUY,
                 settledTime: moment().unix(),
                 amount: admin.giftCryptoAmount,
-                amountMod: -admin.giftCryptoAmount,
+                amountMod: 0,
                 userId: user._id,
                 parentId: null,
                 status: ETransactionStatus.GIFTED,
@@ -1678,11 +1678,23 @@ class AuthController extends BaseController {
             };
           }
           let user = await UserTable.findOne(query);
-          if (user)
+          if (user) {
+            await UserTable.updateOne(
+              {
+                mobile: childMobile,
+              },
+              {
+                $set: {
+                  firstName: childFirstName,
+                  lastName: childLastName,
+                },
+              }
+            );
             return this.Ok(ctx, {
               message: "Account successfully linked!",
               isAccountFound: true,
             });
+          }
           /**
            * This validation is there to keep if any child sign up with parent email or mobile
            */
@@ -1908,13 +1920,16 @@ class AuthController extends BaseController {
     const user = await UserTable.findOne({ _id: userId });
     if (user.type !== EUserType.TEEN)
       return this.BadRequest(ctx, "Logged in user is already parent.");
-    const parent = await UserTable.findOne({ email: user.parentEmail });
+    const parent = await UserTable.findOne({ mobile: user.parentMobile });
     if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
-    sendEmail(user.parentEmail, CONSTANT.RemindParentTemplateId, {
+    if (!user.parentEmail) {
+      return this.BadRequest(ctx, "Please enter parent's email");
+    }
+    await sendEmail(user.parentEmail, CONSTANT.RemindParentTemplateId, {
       subject: "Remind to Signup",
       name: `${user.firstName} ${user.lastName}`,
     });
-    return this.Ok(ctx, { message: "Reminder Email is sent to your parent. " });
+    return this.Ok(ctx, { message: "Reminder sent!" });
   }
 
   /**
