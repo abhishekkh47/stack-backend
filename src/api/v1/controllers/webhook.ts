@@ -377,6 +377,7 @@ class WebHookController extends BaseController {
             }
           }
         }
+        break;
       /**
        * For buy and sell crypto
        */
@@ -388,10 +389,11 @@ class WebHookController extends BaseController {
           return this.OkWebhook(ctx, "Quote Id Doesn't Exists");
         }
         if (body.action == "settled") {
-          await TransactionTable.updateOne(
+          const checkData = await TransactionTable.updateOne(
             { _id: checkQuoteIdExists._id },
             { $set: { status: ETransactionStatus.SETTLED } }
           );
+          console.log(checkData, "checkData");
           return this.Ok(ctx, { message: "Trade Successfull" });
         } else {
           return this.OkWebhook(ctx, "Bad request for asset");
@@ -400,6 +402,7 @@ class WebHookController extends BaseController {
        * For deposit
        */
       case "contingent_holds":
+      case "funds_transfers":
         let checkQuoteIdExistsDeposit = await TransactionTable.findOne({
           executedQuoteId: body.resource_id,
         });
@@ -407,11 +410,17 @@ class WebHookController extends BaseController {
           return this.OkWebhook(ctx, "Fund Transfer Id Doesn't Exists");
         }
         if (body.action == "update") {
-          await TransactionTable.updateOne(
-            { _id: checkQuoteIdExistsDeposit._id },
-            { $set: { status: ETransactionStatus.SETTLED } }
-          );
-          return this.Ok(ctx, { message: "Deposit Successfull" });
+          if (
+            (body.resource_type == "funds_transfers" &&
+              body.data.changes.includes("contingencies-cleared-on")) ||
+            body.resource_type == "contingent_holds"
+          ) {
+            await TransactionTable.updateOne(
+              { _id: checkQuoteIdExistsDeposit._id },
+              { $set: { status: ETransactionStatus.SETTLED } }
+            );
+            return this.Ok(ctx, { message: "Deposit Successfull" });
+          }
         } else {
           return this.OkWebhook(ctx, "Bad request for asset");
         }

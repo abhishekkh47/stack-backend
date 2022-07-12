@@ -272,6 +272,7 @@ class TradingController extends BaseController {
                     status: ETransactionStatus.SETTLED,
                     executedQuoteId: internalTransferResponse.data.data.id,
                     accountId: accountIdDetails.accountId,
+                    amountMod: -admin.giftCryptoAmount,
                   },
                 }
               );
@@ -396,7 +397,7 @@ class TradingController extends BaseController {
               userType: userExists.type,
               message:
                 userExists.isAutoApproval == EAUTOAPPROVAL.ON
-                  ? `${messages.APPROVE_DEPOSIT} of $${reqParam.amount}`
+                  ? `${messages.APPROVE_DEPOSIT} $${reqParam.amount}`
                   : `${messages.DEPOSIT} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
@@ -781,7 +782,7 @@ class TradingController extends BaseController {
               userType: userExists.type,
               message:
                 userExists.isAutoApproval == EAUTOAPPROVAL.ON
-                  ? `${messages.APPROVE_WITHDRAW} of $${reqParam.amount}`
+                  ? `${messages.APPROVE_WITHDRAW} $${reqParam.amount}`
                   : `${messages.WITHDRAW} of $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
@@ -1180,8 +1181,8 @@ class TradingController extends BaseController {
           userExists.type == EUserType.PARENT ||
           (userExists.type == EUserType.TEEN &&
             userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-            ? `${messages.APPROVE_BUY} $${amount} in ${crypto.name}`
-            : `${messages.BUY} $${amount} in ${crypto.name}`,
+            ? `${messages.APPROVE_BUY} ${crypto.name} buy request of $${amount}`
+            : `${messages.BUY} ${crypto.name} buy request of $${amount}`,
         action: EAction.BUY_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
@@ -1297,8 +1298,8 @@ class TradingController extends BaseController {
             userExists.type == EUserType.PARENT ||
             (userExists.type == EUserType.TEEN &&
               userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-              ? `${messages.APPROVE_SELL} $${amount} in ${crypto.name}`
-              : `${messages.SELL} $${amount} in ${crypto.name}`,
+              ? `${messages.APPROVE_SELL} ${crypto.name} sell request of $${amount}`
+              : `${messages.SELL} ${crypto.name} sell request of $${amount}`,
           action: EAction.SELL_CRYPTO,
           currencyValue: amount,
           currencyType: cryptoId,
@@ -1774,9 +1775,9 @@ class TradingController extends BaseController {
                   stackCoins,
                   totalGainLoss,
                   balance: 0,
-                  pendingBalance: 0,
+                  pendingBalance: intialBalance,
                   parentStatus: null,
-                  intialBalance: intialBalance,
+                  intialBalance: 0,
                 },
               });
             } else {
@@ -1804,14 +1805,32 @@ class TradingController extends BaseController {
             fetchBalance.data.data[0].attributes["pending-transfer"];
           totalStackValue = totalStackValue + balance;
 
-          let transactionData = await TransactionTable.findOne({
-            userId: childExists._id,
-            type: ETransactionType.DEPOSIT,
-          }).sort({ createdAt: 1 });
-          if (transactionData) {
-            intialBalance = transactionData.amount;
-          } else {
-            intialBalance = totalIntAmount;
+          let transactionData = await TransactionTable.aggregate([
+            {
+              $match: {
+                userId: childExists._id,
+                type: ETransactionType.DEPOSIT,
+                status: ETransactionStatus.PENDING,
+              },
+            },
+            {
+              $group: {
+                _id: 0,
+                sum: {
+                  $sum: "$amount",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                sum: 1,
+              },
+            },
+          ]).exec();
+          if (transactionData.length > 0) {
+            intialBalance = transactionData[0].sum;
+            totalStackValue = totalStackValue + transactionData[0].sum;
           }
           return this.Ok(ctx, {
             data: {
