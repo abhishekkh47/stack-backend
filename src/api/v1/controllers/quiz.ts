@@ -152,7 +152,9 @@ class QuizController extends BaseController {
     const dataToSent = {
       lastQuizTime: null,
       totalQuestionSolved: 0,
-      totalStackPointsEarned: childExists.preLoadedCoins,
+      totalStackPointsEarned: childExists.preLoadedCoins
+        ? childExists.preLoadedCoins
+        : 0,
     };
     /**
      * Get Stack Point Earned

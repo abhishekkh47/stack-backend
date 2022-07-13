@@ -275,7 +275,7 @@ class AuthController extends BaseController {
             /**
              * Send sms as of now to parent for invting to stack
              */
-            const message: string = `Hello Your teen ${reqParam.username} has invited you to join Stack. Please start the onboarding as soon as possible.`;
+            const message: string = `Hello Your teen has invited you to join Stack. Please start the onboarding as soon as possible.`;
             try {
               const twilioResponse: any = await TwilioService.sendSMS(
                 reqParam.parentMobile,
@@ -1921,14 +1921,22 @@ class AuthController extends BaseController {
     if (user.type !== EUserType.TEEN)
       return this.BadRequest(ctx, "Logged in user is already parent.");
     const parent = await UserTable.findOne({ mobile: user.parentMobile });
-    if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
-    if (!user.parentEmail) {
-      return this.BadRequest(ctx, "Please enter parent's email");
+    // if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
+    /**
+     * send twilio message to the teen in order to signup.
+     */
+    const message: string = `Hello your teen has invited you to join Stack. Please start the onboarding as soon as possible in order to explore new features and invest in cryptos.`;
+    try {
+      const twilioResponse: any = await TwilioService.sendSMS(
+        user.parentMobile,
+        message
+      );
+      if (twilioResponse.code === 400) {
+        return this.BadRequest(ctx, "Error in sending message");
+      }
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
     }
-    await sendEmail(user.parentEmail, CONSTANT.RemindParentTemplateId, {
-      subject: "Remind to Signup",
-      name: `${user.firstName} ${user.lastName}`,
-    });
     return this.Ok(ctx, { message: "Reminder sent!" });
   }
 
