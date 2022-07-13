@@ -1292,6 +1292,69 @@ class TradingController extends BaseController {
             `${crypto.name} doesn't exists in your portfolio.`
           );
         }
+        if (
+          userExists.type == EUserType.PARENT ||
+          (userExists.type == EUserType.TEEN &&
+            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
+        ) {
+          /**
+           * Generate a quote
+           */
+          const requestSellQuoteDay: any = {
+            data: {
+              type: "quotes",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "asset-id": crypto.assetId,
+                hot: true,
+                "transaction-type": "sell",
+                total_amount: amount,
+              },
+            },
+          };
+          const generateSellQuoteResponse: any = await generateQuote(
+            jwtToken,
+            requestSellQuoteDay
+          );
+          if (generateSellQuoteResponse.status == 400) {
+            return this.BadRequest(ctx, generateSellQuoteResponse.message);
+          }
+          /**
+           * Execute a quote
+           */
+          const requestSellExecuteQuote: any = {
+            data: {
+              type: "quotes",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "asset-id": crypto.assetId,
+              },
+            },
+          };
+          const executeSellQuoteResponse: any = await executeQuote(
+            jwtToken,
+            generateSellQuoteResponse.data.data.id,
+            requestSellExecuteQuote
+          );
+          if (executeSellQuoteResponse.status == 400) {
+            return this.BadRequest(ctx, executeSellQuoteResponse.message);
+          }
+          await TransactionTable.create({
+            assetId: crypto.assetId,
+            cryptoId: crypto._id,
+            accountId: accountIdDetails.accountId,
+            type: ETransactionType.SELL,
+            settledTime: moment().unix(),
+            amount: amount,
+            amountMod: amount,
+            userId: accountIdDetails.childId,
+            parentId: parent.userId,
+            status: ETransactionStatus.PENDING,
+            executedQuoteId: executeSellQuoteResponse.data.data.id,
+            unitCount:
+              -executeSellQuoteResponse.data.data.attributes["unit-count"],
+          });
+        }
         const activity = await UserActivityTable.create({
           userId: reqParam.childId ? reqParam.childId : user._id,
           message:
@@ -1342,69 +1405,6 @@ class TradingController extends BaseController {
               data: JSON.stringify(notificationRequest),
             });
           }
-        }
-        if (
-          userExists.type == EUserType.PARENT ||
-          (userExists.type == EUserType.TEEN &&
-            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-        ) {
-          /**
-           * Generate a quote
-           */
-          const requestSellQuoteDay: any = {
-            data: {
-              type: "quotes",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "asset-id": crypto.assetId,
-                hot: true,
-                "transaction-type": "sell",
-                total_amount: activity.currencyValue,
-              },
-            },
-          };
-          const generateSellQuoteResponse: any = await generateQuote(
-            jwtToken,
-            requestSellQuoteDay
-          );
-          if (generateSellQuoteResponse.status == 400) {
-            return this.BadRequest(ctx, generateSellQuoteResponse.message);
-          }
-          /**
-           * Execute a quote
-           */
-          const requestSellExecuteQuote: any = {
-            data: {
-              type: "quotes",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "asset-id": crypto.assetId,
-              },
-            },
-          };
-          const executeSellQuoteResponse: any = await executeQuote(
-            jwtToken,
-            generateSellQuoteResponse.data.data.id,
-            requestSellExecuteQuote
-          );
-          if (executeSellQuoteResponse.status == 400) {
-            return this.BadRequest(ctx, executeSellQuoteResponse.message);
-          }
-          await TransactionTable.create({
-            assetId: crypto.assetId,
-            cryptoId: crypto._id,
-            accountId: accountIdDetails.accountId,
-            type: ETransactionType.SELL,
-            settledTime: moment().unix(),
-            amount: activity.currencyValue,
-            amountMod: activity.currencyValue,
-            userId: accountIdDetails.childId,
-            parentId: parent.userId,
-            status: ETransactionStatus.PENDING,
-            executedQuoteId: executeSellQuoteResponse.data.data.id,
-            unitCount:
-              -executeSellQuoteResponse.data.data.attributes["unit-count"],
-          });
         }
         const message =
           userExists.type == EUserType.PARENT ||
@@ -1641,7 +1641,7 @@ class TradingController extends BaseController {
                         $eq: ["$status", 3],
                       },
                       then: "$$KEEP",
-                      else: "$$KEEP",
+                      else: "$$PRUNE",
                     },
                   },
                 },
@@ -1932,6 +1932,7 @@ class TradingController extends BaseController {
     const balance = fetchBalance.data.data[0].attributes.disbursable;
     if (
       activity.action != EAction.DEPOSIT &&
+      activity.action != EAction.SELL_CRYPTO &&
       balance < activity.currencyValue
     ) {
       return this.BadRequest(
@@ -2206,6 +2207,17 @@ class TradingController extends BaseController {
         const sellCryptoData = await CryptoTable.findOne({
           _id: activity.cryptoId,
         });
+        let transactionExists = await TransactionTable.findOne({
+          type: ETransactionType.BUY,
+          cryptoId: sellCryptoData._id,
+          userId: accountIdDetails.childId,
+        });
+        if (!transactionExists) {
+          return this.BadRequest(
+            ctx,
+            `${sellCryptoData.name} doesn't exists in your portfolio.`
+          );
+        }
         /**
          * Generate a quote
          */
@@ -2444,9 +2456,11 @@ class TradingController extends BaseController {
             for await (let activity of pendingActivities) {
               if (
                 activity.action != EAction.DEPOSIT &&
+                activity.action != EAction.SELL_CRYPTO &&
                 balance < activity.currencyValue
               ) {
                 insufficentBalance = true;
+                break;
               }
               switch (activity.action) {
                 case 1:
