@@ -173,7 +173,7 @@ class TradingController extends BaseController {
             await UserActivityTable.create({
               userId: userExists._id,
               userType: 2,
-              message: `${messages.APPROVE_DEPOSIT} of $${reqParam.depositAmount}`,
+              message: `${messages.APPROVE_DEPOSIT} $${reqParam.depositAmount}`,
               currencyType: null,
               currencyValue: reqParam.depositAmount,
               action: EAction.DEPOSIT,
@@ -850,7 +850,7 @@ class TradingController extends BaseController {
             await UserActivityTable.create({
               userId: reqParam.childId ? reqParam.childId : userExists._id,
               userType: reqParam.childId ? EUserType.TEEN : userExists.type,
-              message: `${messages.APPROVE_WITHDRAW} of $${reqParam.amount}`,
+              message: `${messages.APPROVE_WITHDRAW} $${reqParam.amount}`,
               currencyType: null,
               currencyValue: reqParam.amount,
               action: EAction.WITHDRAW,
@@ -2197,6 +2197,7 @@ class TradingController extends BaseController {
           data: "You have approved teen's request of buying crypto. Please wait while it settles in the portfolio respectively.",
           dataValue: { generateQuoteResponse, executeQuoteResponse },
         });
+        break;
       case 4:
         /**
          * Sell Crypto
@@ -2309,6 +2310,7 @@ class TradingController extends BaseController {
           message: "Success",
           data: "You have approved teen's request of selling crypto. Please wait while it settles in the portfolio respectively.",
         });
+        break;
 
       default:
         return this.BadRequest(ctx, "Something went wrong");
@@ -2462,6 +2464,7 @@ class TradingController extends BaseController {
                 insufficentBalance = true;
                 break;
               }
+              console.log(activity.action, "activity.action");
               switch (activity.action) {
                 case 1:
                   /**
@@ -2492,7 +2495,7 @@ class TradingController extends BaseController {
                     { _id: activity._id },
                     {
                       status: EStatus.PROCESSED,
-                      message: `${messages.APPROVE_DEPOSIT} of $${activity.currencyValue}`,
+                      message: `${messages.APPROVE_DEPOSIT} $${activity.currencyValue}`,
                     }
                   );
                   await TransactionTable.create({
@@ -2556,7 +2559,7 @@ class TradingController extends BaseController {
                     { _id: activity._id },
                     {
                       status: EStatus.PROCESSED,
-                      message: `${messages.APPROVE_WITHDRAW} of $${activity.currencyValue}`,
+                      message: `${messages.APPROVE_WITHDRAW} $${activity.currencyValue}`,
                     }
                   );
                   await TransactionTable.create({
@@ -2661,8 +2664,10 @@ class TradingController extends BaseController {
                   await UserActivityTable.updateOne(
                     { _id: activity._id },
                     {
-                      status: EStatus.PROCESSED,
-                      message: `${messages.APPROVE_BUY} ${cryptoData.name} of $${activity.currencyValue}`,
+                      $set: {
+                        status: EStatus.PROCESSED,
+                        message: `${messages.APPROVE_BUY} ${cryptoData.name} buy request of $${activity.currencyValue}`,
+                      },
                     }
                   );
                   if (deviceTokenData) {
@@ -2766,7 +2771,7 @@ class TradingController extends BaseController {
                     { _id: activity._id },
                     {
                       status: EStatus.PROCESSED,
-                      message: `${messages.APPROVE_SELL} ${sellCryptoData.name} of $${activity.currencyValue}`,
+                      message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
                     }
                   );
                   if (deviceTokenData) {
