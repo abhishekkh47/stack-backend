@@ -307,6 +307,7 @@ class AuthController extends BaseController {
             user = await UserTable.findOne({ mobile: reqParam.mobile });
             if (user) {
               return this.BadRequest(ctx, "Mobile Number already Exists");
+              return this.BadRequest(ctx, "Mobile Number already Exists");
             }
             const parentMobileExistInChild = await UserTable.findOne({
               parentMobile: reqParam.mobile,
@@ -1921,7 +1922,7 @@ class AuthController extends BaseController {
     if (user.type !== EUserType.TEEN)
       return this.BadRequest(ctx, "Logged in user is already parent.");
     const parent = await UserTable.findOne({ mobile: user.parentMobile });
-    // if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
+    if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
     /**
      * send twilio message to the teen in order to signup.
      */
