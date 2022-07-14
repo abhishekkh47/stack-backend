@@ -190,6 +190,7 @@ class AuthController extends BaseController {
           let checkParentExists = null;
           let accountId = null;
           let parentId = null;
+          let parentTable = null;
           let isGiftedStackCoins = 0;
           let accountNumber = null;
           const childArray = [];
@@ -227,7 +228,7 @@ class AuthController extends BaseController {
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
               !childExists
             ) {
-              let parentTable = await ParentChildTable.findOne({
+              parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
               });
               if (!parentTable) {
@@ -306,7 +307,6 @@ class AuthController extends BaseController {
             }
             user = await UserTable.findOne({ mobile: reqParam.mobile });
             if (user) {
-              return this.BadRequest(ctx, "Mobile Number already Exists");
               return this.BadRequest(ctx, "Mobile Number already Exists");
             }
             const parentMobileExistInChild = await UserTable.findOne({
@@ -556,6 +556,34 @@ class AuthController extends BaseController {
               postalCode: reqParam.postalCode ? reqParam.postalCode : null,
             });
           }
+          if (reqParam.type == EUserType.PARENT) {
+            await ParentChildTable.create({
+              userId: user._id,
+              contactId: null,
+              firstChildId: childExists._id,
+              teens: childArray,
+            });
+          } else {
+            if (accountId && accountNumber) {
+              /**
+               * TODO
+               */
+              await ParentChildTable.updateOne(
+                {
+                  _id: parentId,
+                },
+                {
+                  $push: {
+                    teens: {
+                      childId: user._id,
+                      accountId: accountId,
+                      accountNumber: accountNumber,
+                    },
+                  },
+                }
+              );
+            }
+          }
           if (
             admin.giftCryptoSetting == 1 &&
             user.isGiftedCrypto == 0 &&
@@ -563,7 +591,8 @@ class AuthController extends BaseController {
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             let checkTransactionExistsAlready = await TransactionTable.findOne({
-              userId: user._id,
+              userId: checkParentExists ? parentTable.firstChildId : user._id,
+              intialDeposit: true,
               type: ETransactionType.DEPOSIT,
             });
             if (checkTransactionExistsAlready) {
@@ -572,9 +601,7 @@ class AuthController extends BaseController {
               });
               const accountIdDetails: any =
                 await parentChildTableExists.teens.find(
-                  (x: any) =>
-                    x.childId.toString() ==
-                    parentChildTableExists.firstChildId.toString()
+                  (x: any) => x.childId.toString() == user._id.toString()
                 );
               const requestQuoteDay: any = {
                 data: {
@@ -602,7 +629,7 @@ class AuthController extends BaseController {
                 data: {
                   type: "quotes",
                   attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
                   },
                 },
@@ -694,34 +721,7 @@ class AuthController extends BaseController {
               );
             }
           }
-          if (reqParam.type == EUserType.PARENT) {
-            await ParentChildTable.create({
-              userId: user._id,
-              contactId: null,
-              firstChildId: childExists._id,
-              teens: childArray,
-            });
-          } else {
-            if (accountId && accountNumber) {
-              /**
-               * TODO
-               */
-              await ParentChildTable.updateOne(
-                {
-                  _id: parentId,
-                },
-                {
-                  $push: {
-                    teens: {
-                      childId: user._id,
-                      accountId: accountId,
-                      accountNumber: accountNumber,
-                    },
-                  },
-                }
-              );
-            }
-          }
+
           /**
            * add referral code number as well
            */

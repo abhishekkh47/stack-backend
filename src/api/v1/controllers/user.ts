@@ -110,28 +110,11 @@ class UserController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/agreement-preview", method: HttpMethod.POST })
-  @Auth()
   @PrimeTrustJWT()
   public async sendAgreementPreview(ctx: any) {
-    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
-    /**
-     * Validations to be done
-     */
-    const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
-      "stateId",
-      ["name", "shortName"]
-    );
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const parentExists = await ParentChildTable.findOne({
-      userId: userExists._id,
-    });
-    if (!parentExists) {
-      return this.BadRequest(ctx, "User Details Not Found");
-    }
-    const fullName = userExists.firstName + " " + userExists.lastName;
+    const fullName = reqParam.firstName + " " + reqParam.lastName;
     const data = {
       type: "agreement-previews",
       attributes: {
@@ -553,19 +536,17 @@ class UserController extends BaseController {
       ]).exec()
     )[0];
     if (!data) return this.BadRequest(ctx, "Invalid user ID entered.");
-    if (data.type == EUserType.TEEN) {
-      const checkParentExists = await UserTable.findOne({
-        mobile: data.parentMobile,
-      });
-      if (
-        !checkParentExists ||
-        (checkParentExists &&
-          checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-      ) {
-        data.isParentApproved = 0;
-      } else {
-        data.isParentApproved = 1;
-      }
+    const checkParentExists = await UserTable.findOne({
+      mobile: data.parentMobile ? data.parentMobile : data.mobile,
+    });
+    if (
+      !checkParentExists ||
+      (checkParentExists &&
+        checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+    ) {
+      data.isParentApproved = 0;
+    } else {
+      data.isParentApproved = 1;
     }
     data = {
       ...data,

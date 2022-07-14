@@ -11,6 +11,7 @@ import BaseController from "./base";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   EQuizTopicStatus,
+  EUserType,
   everyCorrectAnswerPoints,
   HttpMethod,
   timeBetweenTwoQuiz,
@@ -24,6 +25,7 @@ import {
   QuizQuestionResult,
   CryptoPriceTable,
   UserTable,
+  ParentChildTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import moment from "moment";
@@ -127,11 +129,30 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuizInformation(ctx: any) {
     const user = ctx.request.user;
-    let childExists = await UserTable.findOne({ _id: user._id });
+    let userExists = await UserTable.findOne({ _id: user._id });
+    let childExists = null;
+    if (userExists.type == EUserType.PARENT) {
+      childExists = await ParentChildTable.findOne({
+        userId: userExists._id,
+      }).populate("firstChildId", ["_id", "preLoadedCoins"]);
+    } else {
+      childExists = await ParentChildTable.findOne({
+        firstChildId: userExists._id,
+      }).populate("userId", ["_id", "preLoadedCoins"]);
+    }
     const checkQuizExists = await QuizResult.aggregate([
       {
         $match: {
-          userId: new mongoose.Types.ObjectId(user._id),
+          $or: [
+            { userId: new mongoose.Types.ObjectId(user._id) },
+            {
+              userId: childExists
+                ? userExists.type == EUserType.PARENT
+                  ? new mongoose.Types.ObjectId(childExists.firstChildId._id)
+                  : new mongoose.Types.ObjectId(childExists.userId._id)
+                : null,
+            },
+          ],
         },
       },
       {
@@ -152,15 +173,20 @@ class QuizController extends BaseController {
     const dataToSent = {
       lastQuizTime: null,
       totalQuestionSolved: 0,
-      totalStackPointsEarned: childExists.preLoadedCoins
-        ? childExists.preLoadedCoins
-        : 0,
+      totalStackPointsEarned: 0,
+      totalStackPointsEarnedTop:
+        userExists.type == EUserType.PARENT && childExists
+          ? childExists.firstChildId.preLoadedCoins
+          : userExists.type == EUserType.TEEN
+          ? userExists.preLoadedCoins
+          : 0,
     };
     /**
      * Get Stack Point Earned
      */
     if (checkQuizExists.length > 0) {
       dataToSent.totalStackPointsEarned += checkQuizExists[0].sum;
+      dataToSent.totalStackPointsEarnedTop += checkQuizExists[0].sum;
     }
 
     /**
