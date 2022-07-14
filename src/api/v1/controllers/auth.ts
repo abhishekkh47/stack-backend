@@ -1918,11 +1918,30 @@ class AuthController extends BaseController {
   @Auth()
   public async remindParent(ctx: any) {
     const userId = ctx.request.user._id;
+    const reqParam = ctx.request.body;
     const user = await UserTable.findOne({ _id: userId });
     if (user.type !== EUserType.TEEN)
       return this.BadRequest(ctx, "Logged in user is already parent.");
-    const parent = await UserTable.findOne({ mobile: user.parentMobile });
-    if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
+    const parent = await UserTable.findOne({ mobile: reqParam.parentMobile });
+    if (!parent) {
+      let parentDetails = await ParentChildTable.findOne({
+        "teens.childId": user._id,
+      });
+      if (parentDetails) {
+        await UserTable.updateOne(
+          { _id: parentDetails.userId },
+          {
+            $set: { mobile: reqParam.parentMobile },
+          }
+        );
+      }
+      await UserTable.updateOne(
+        { _id: userId },
+        {
+          $set: { parentMobile: reqParam.parentMobile },
+        }
+      );
+    }
     /**
      * send twilio message to the teen in order to signup.
      */
