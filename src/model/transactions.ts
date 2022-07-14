@@ -34,6 +34,10 @@ const schema = new mongoose.Schema<ITransactionSchema>(
       ],
       default: 1,
     },
+    intialDeposit: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
     /**
      * for buy and sell - it would be quote id and for deposit and withdraw it would be fund transfer id
      */

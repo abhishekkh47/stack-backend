@@ -183,6 +183,7 @@ class TradingController extends BaseController {
             await TransactionTable.create({
               assetId: null,
               cryptoId: null,
+              intialDeposit: true,
               accountId: accountIdDetails.accountId,
               type: ETransactionType.DEPOSIT,
               settledTime: moment().unix(),
@@ -1597,6 +1598,16 @@ class TradingController extends BaseController {
           if (!childExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
+          let userExistsForQuiz = null;
+          if (childExists.type == EUserType.PARENT) {
+            userExistsForQuiz = await ParentChildTable.findOne({
+              userId: childExists._id,
+            }).populate("firstChildId", ["_id", "preLoadedCoins"]);
+          } else {
+            userExistsForQuiz = await ParentChildTable.findOne({
+              firstChildId: childExists._id,
+            }).populate("userId", ["_id", "preLoadedCoins"]);
+          }
           const portFolio = await TransactionTable.aggregate([
             {
               $match: {
@@ -1736,7 +1747,20 @@ class TradingController extends BaseController {
           const checkQuizExists = await QuizResult.aggregate([
             {
               $match: {
-                userId: new mongoose.Types.ObjectId(childExists._id),
+                $or: [
+                  { userId: new mongoose.Types.ObjectId(childExists._id) },
+                  {
+                    userId: userExistsForQuiz
+                      ? childExists.type == EUserType.PARENT
+                        ? new mongoose.Types.ObjectId(
+                            userExistsForQuiz.firstChildId._id
+                          )
+                        : new mongoose.Types.ObjectId(
+                            userExistsForQuiz.userId._id
+                          )
+                      : null,
+                  },
+                ],
               },
             },
             {
@@ -1774,7 +1798,7 @@ class TradingController extends BaseController {
                   totalStackValue,
                   stackCoins,
                   totalGainLoss,
-                  balance: 0,
+                  balance: intialBalance,
                   pendingBalance: intialBalance,
                   parentStatus: null,
                   intialBalance: 0,
@@ -1810,6 +1834,7 @@ class TradingController extends BaseController {
               $match: {
                 userId: childExists._id,
                 type: ETransactionType.DEPOSIT,
+                intialDeposit: true,
                 status: ETransactionStatus.PENDING,
               },
             },
@@ -1838,7 +1863,7 @@ class TradingController extends BaseController {
               totalStackValue,
               stackCoins,
               totalGainLoss,
-              balance,
+              balance: balance > 0 ? balance : intialBalance,
               parentStatus: parent.userId.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
@@ -2464,7 +2489,6 @@ class TradingController extends BaseController {
                 insufficentBalance = true;
                 break;
               }
-              console.log(activity.action, "activity.action");
               switch (activity.action) {
                 case 1:
                   /**

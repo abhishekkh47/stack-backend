@@ -12,6 +12,7 @@ export interface ITransaction {
   type: ETransactionType;
   executedQuoteId: string;
   unitCount: number;
+  intialDeposit: boolean;
 }
 
 export enum ETransactionType {
