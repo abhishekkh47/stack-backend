@@ -1798,7 +1798,7 @@ class TradingController extends BaseController {
                   totalStackValue,
                   stackCoins,
                   totalGainLoss,
-                  balance: intialBalance,
+                  balance: 0,
                   pendingBalance: intialBalance,
                   parentStatus: null,
                   intialBalance: 0,
@@ -2305,7 +2305,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_SELL} ${cryptoData.name} sell request of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {

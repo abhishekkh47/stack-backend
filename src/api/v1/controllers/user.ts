@@ -266,9 +266,12 @@ class UserController extends BaseController {
     if (validExtensionExists) {
       return this.BadRequest(ctx, "Please add valid extension");
     }
-    const fullName = userExists.firstName + " " + userExists.lastName;
-    const childName =
-      firstChildExists.firstName + " " + firstChildExists.lastName;
+    const fullName = userExists.lastName
+      ? userExists.firstName + " " + userExists.lastName
+      : userExists.firstName;
+    const childName = firstChildExists.lastName
+      ? firstChildExists.firstName + " " + firstChildExists.lastName
+      : firstChildExists.firstName;
     const data = {
       type: "account",
       attributes: {
