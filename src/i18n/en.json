@@ -254,5 +254,6 @@
 	"signupValidationPostalcodeRequired": "Please enter postal code",
 	"signupValidationPostalcodeEmpty": "Please enter postal code",
 	"checkAccountReadyToLinkMobilePattern": "Please enter mobile with country code as well",
-	"sellCryptoAmountMin": "Please enter value greater than $1"
+	"sellCryptoAmountMin": "Please enter value greater than $1",
+	"getPortFolioChildidPattern": "getPortFolioChildidPattern"
 }

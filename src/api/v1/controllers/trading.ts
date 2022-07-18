@@ -1720,6 +1720,7 @@ class TradingController extends BaseController {
                     else: "$value",
                   },
                 },
+                investedValue: { $abs: "$totalAmountMod" },
                 totalGainLoss: { $round: ["$totalGainLoss", 2] },
               },
             },
@@ -1783,6 +1784,69 @@ class TradingController extends BaseController {
             stackCoins = checkQuizExists[0].sum;
           }
           stackCoins = stackCoins + childExists.preLoadedCoins;
+          let totalAmountInvested: any = await TransactionTable.aggregate([
+            {
+              $match: {
+                userId: childExists._id,
+                type: {
+                  $in: [ETransactionType.DEPOSIT, ETransactionType.WITHDRAW],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: 0,
+                type1: {
+                  $sum: {
+                    $cond: {
+                      if: {
+                        $eq: ["$type", ETransactionType.DEPOSIT],
+                      },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                type2: {
+                  $sum: {
+                    $cond: {
+                      if: {
+                        $eq: ["$type", ETransactionType.WITHDRAW],
+                      },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                type1: 1,
+                type2: 1,
+                finalSum: {
+                  $subtract: ["$type1", "$type2"],
+                },
+              },
+            },
+            {
+              $redact: {
+                $cond: {
+                  if: {
+                    $gt: ["$finalSum", 0],
+                  },
+                  then: "$$KEEP",
+                  else: "$$PRUNE",
+                },
+              },
+            },
+          ]).exec();
+          if (totalAmountInvested.length > 0) {
+            totalAmountInvested = totalAmountInvested[0].finalSum;
+          } else {
+            totalAmountInvested = 0;
+          }
           let parent: any = await ParentChildTable.findOne({
             "teens.childId": childExists._id,
           }).populate("userId", ["status"]);
@@ -1798,10 +1862,11 @@ class TradingController extends BaseController {
                   totalStackValue,
                   stackCoins,
                   totalGainLoss,
-                  balance: intialBalance,
+                  balance: 0,
                   pendingBalance: intialBalance,
                   parentStatus: null,
                   intialBalance: 0,
+                  totalAmountInvested,
                 },
               });
             } else {
@@ -1867,6 +1932,7 @@ class TradingController extends BaseController {
               parentStatus: parent.userId.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
+              totalAmountInvested,
             },
           });
         }
@@ -2043,7 +2109,6 @@ class TradingController extends BaseController {
             "You have approved teen's request of deposit. Please wait while it take place accordingly.",
           data: contributions.data,
         });
-        break;
       case 2:
         /**
          * Withdraw
@@ -2120,7 +2185,6 @@ class TradingController extends BaseController {
           message:
             "You have approved teen's request of withdrawal. Please wait while it take place accordingly.",
         });
-        break;
       case 3:
         /**
          * Buy Crypto
@@ -2222,7 +2286,6 @@ class TradingController extends BaseController {
           data: "You have approved teen's request of buying crypto. Please wait while it settles in the portfolio respectively.",
           dataValue: { generateQuoteResponse, executeQuoteResponse },
         });
-        break;
       case 4:
         /**
          * Sell Crypto
@@ -2305,7 +2368,7 @@ class TradingController extends BaseController {
           { _id: activityId },
           {
             status: EStatus.PROCESSED,
-            message: `${messages.APPROVE_SELL} ${cryptoData.name} sell request of $${activity.currencyValue}`,
+            message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
           }
         );
         if (deviceTokenData) {
@@ -2335,7 +2398,6 @@ class TradingController extends BaseController {
           message: "Success",
           data: "You have approved teen's request of selling crypto. Please wait while it settles in the portfolio respectively.",
         });
-        break;
 
       default:
         return this.BadRequest(ctx, "Something went wrong");

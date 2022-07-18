@@ -169,10 +169,17 @@ export const validation = {
         .min(1)
         .regex(/^[A-za-z]*$/)
         .required(),
-      lastName: Joi.string()
-        .min(1)
-        .regex(/^[A-za-z]*$/)
-        .required(),
+      lastName: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .min(1)
+          .regex(/^[A-za-z]*$/)
+          .required(),
+        otherwise: Joi.string()
+          .allow("")
+          .min(1)
+          .regex(/^[A-za-z]*$/),
+      }),
       parentMobile: Joi.when("type", {
         is: 1,
         then: Joi.string()

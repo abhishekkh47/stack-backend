@@ -32,6 +32,7 @@ import {
   HttpMethod,
   ETransactionStatus,
   ETransactionType,
+  EGIFTSTACKCOINSSETTING,
 } from "../../../types";
 import { AuthService } from "../../../services";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
@@ -61,6 +62,7 @@ import UserController from "./user";
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
 import mongoose from "mongoose";
+import { Admin } from "mongodb";
 const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
 const apple_client: any = new AppleSignIn({
   clientId: envData.APPLE_CLIENT_ID,
@@ -239,14 +241,15 @@ class AuthController extends BaseController {
                * Create Prime Trust Account for other child as well
                * TODO
                */
+              let childName = reqParam.lastName
+                ? reqParam.firstName + " " + reqParam.lastName
+                : reqParam.firstName;
               const data = {
                 type: "account",
                 attributes: {
                   "account-type": "custodial",
                   name:
-                    reqParam.firstName +
-                    " " +
-                    reqParam.lastName +
+                    childName +
                     " - " +
                     checkParentExists.firstName +
                     " " +
@@ -500,7 +503,7 @@ class AuthController extends BaseController {
               username: null,
               firstName: reqParam.firstName,
               email: reqParam.email ? reqParam.email : childExists.email,
-              lastName: reqParam.lastName,
+              lastName: reqParam.lastName ? reqParam.lastNam : null,
               password: null,
               screenStatus: ESCREENSTATUS.SIGN_UP,
               dob: reqParam.dob ? reqParam.dob : null,
@@ -533,7 +536,7 @@ class AuthController extends BaseController {
               email: reqParam.email ? reqParam.email : null,
               type: reqParam.type,
               firstName: reqParam.firstName,
-              lastName: reqParam.lastName,
+              lastName: reqParam.lastName ? reqParam.lastName : null,
               mobile: reqParam.mobile,
               screenStatus:
                 reqParam.type === EUserType.PARENT
@@ -591,7 +594,10 @@ class AuthController extends BaseController {
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             let checkTransactionExistsAlready = await TransactionTable.findOne({
-              userId: checkParentExists ? parentTable.firstChildId : user._id,
+              userId:
+                checkParentExists && parentTable
+                  ? parentTable.firstChildId
+                  : user._id,
               intialDeposit: true,
               type: ETransactionType.DEPOSIT,
             });
@@ -720,6 +726,46 @@ class AuthController extends BaseController {
                 }
               );
             }
+          }
+          /**
+           * Gift Stack Coins and add entry in zoho
+           */
+          if (
+            user.type == EUserType.TEEN &&
+            user.isGifted == EGIFTSTACKCOINSSETTING.OFF &&
+            admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON &&
+            checkParentExists &&
+            parentTable &&
+            checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+            parentTable.firstChildId != user._id
+          ) {
+            /**
+             * Added in zoho
+             */
+            console.log("Gifted");
+            let dataSentInCrm: any = {
+              Account_Name: user.firstName + " " + user.lastName,
+              Stack_Coins: admin.stackCoins,
+            };
+            let mainData = {
+              data: [dataSentInCrm],
+            };
+            const dataAddInZoho = await addAccountInfoInZohoCrm(
+              ctx.request.zohoAccessToken,
+              mainData
+            );
+            user = await UserTable.findByIdAndUpdate(
+              { _id: user._id },
+              {
+                $set: {
+                  isGifted: EGIFTSTACKCOINSSETTING.ON,
+                },
+                $inc: {
+                  preLoadedCoins: admin.stackCoins,
+                },
+              },
+              { new: true }
+            );
           }
 
           /**
@@ -1251,7 +1297,7 @@ class AuthController extends BaseController {
             }
           }
           const code = generateRandom6DigitCode(true);
-          const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
+          const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
           /**
            * Send Otp to User from registered mobile number
            */
@@ -1403,7 +1449,7 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const code = generateRandom6DigitCode(true);
-          const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
+          const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
           /**
            * Send Otp to User from registered mobile number
            */
@@ -1459,7 +1505,7 @@ class AuthController extends BaseController {
            * Send sms for confirmation of otp
            */
           const code = generateRandom6DigitCode(true);
-          const message: string = `Your verification code is ${code}. Please don't share it with anyone.`;
+          const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
           try {
             const twilioResponse: any = await TwilioService.sendSMS(
               mobile,
@@ -1918,11 +1964,30 @@ class AuthController extends BaseController {
   @Auth()
   public async remindParent(ctx: any) {
     const userId = ctx.request.user._id;
+    const reqParam = ctx.request.body;
     const user = await UserTable.findOne({ _id: userId });
     if (user.type !== EUserType.TEEN)
       return this.BadRequest(ctx, "Logged in user is already parent.");
-    const parent = await UserTable.findOne({ mobile: user.parentMobile });
-    if (parent) return this.BadRequest(ctx, "Parent Already Sign Up");
+    const parent = await UserTable.findOne({ mobile: reqParam.parentMobile });
+    if (!parent) {
+      let parentDetails = await ParentChildTable.findOne({
+        "teens.childId": user._id,
+      });
+      if (parentDetails) {
+        await UserTable.updateOne(
+          { _id: parentDetails.userId },
+          {
+            $set: { mobile: reqParam.parentMobile },
+          }
+        );
+      }
+      await UserTable.updateOne(
+        { _id: userId },
+        {
+          $set: { parentMobile: reqParam.parentMobile },
+        }
+      );
+    }
     /**
      * send twilio message to the teen in order to signup.
      */
