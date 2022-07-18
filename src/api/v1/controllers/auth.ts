@@ -536,7 +536,7 @@ class AuthController extends BaseController {
               email: reqParam.email ? reqParam.email : null,
               type: reqParam.type,
               firstName: reqParam.firstName,
-              lastName: reqParam.lastName ? reqParam.lastNam : null,
+              lastName: reqParam.lastName ? reqParam.lastName : null,
               mobile: reqParam.mobile,
               screenStatus:
                 reqParam.type === EUserType.PARENT
@@ -730,14 +730,6 @@ class AuthController extends BaseController {
           /**
            * Gift Stack Coins and add entry in zoho
            */
-          if (parentTable) {
-            console.log(parentTable.firstChildId, "parentTable.firstChildId");
-            console.log(user._id, "user._id");
-            console.log(
-              parentTable.firstChildId == user._id,
-              "parentTable.firstChildId != user._id"
-            );
-          }
           if (
             user.type == EUserType.TEEN &&
             user.isGifted == EGIFTSTACKCOINSSETTING.OFF &&

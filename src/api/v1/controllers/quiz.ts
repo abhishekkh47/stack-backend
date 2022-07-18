@@ -148,8 +148,8 @@ class QuizController extends BaseController {
             {
               userId: childExists
                 ? userExists.type == EUserType.PARENT
-                  ? new mongoose.Types.ObjectId(childExists.firstChildId._id)
-                  : new mongoose.Types.ObjectId(childExists.userId._id)
+                  ? new mongoose.Types.ObjectId(childExists.userId._id)
+                  : new mongoose.Types.ObjectId(childExists.firstChildId._id)
                 : null,
             },
           ],
@@ -186,7 +186,39 @@ class QuizController extends BaseController {
      */
     if (checkQuizExists.length > 0) {
       dataToSent.totalStackPointsEarned += checkQuizExists[0].sum;
-      dataToSent.totalStackPointsEarnedTop += checkQuizExists[0].sum;
+    }
+    const newQuizData = await QuizResult.aggregate([
+      {
+        $match: {
+          $or: [
+            { userId: new mongoose.Types.ObjectId(user._id) },
+            {
+              userId: childExists
+                ? userExists.type == EUserType.PARENT
+                  ? new mongoose.Types.ObjectId(childExists.firstChildId._id)
+                  : new mongoose.Types.ObjectId(childExists.userId._id)
+                : null,
+            },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          sum: {
+            $sum: "$pointsEarned",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sum: 1,
+        },
+      },
+    ]).exec();
+    if (newQuizData.length > 0) {
+      dataToSent.totalStackPointsEarnedTop += newQuizData[0].sum;
     }
 
     /**
