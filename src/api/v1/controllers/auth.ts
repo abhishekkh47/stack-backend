@@ -279,7 +279,7 @@ class AuthController extends BaseController {
             /**
              * Send sms as of now to parent for invting to stack
              */
-            const message: string = `Hello Your teen has invited you to join Stack. Please start the onboarding as soon as possible.`;
+            const message: string = `Hi! Your child, ${reqParam.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
             try {
               const twilioResponse: any = await TwilioService.sendSMS(
                 reqParam.parentMobile,
@@ -1710,6 +1710,7 @@ class AuthController extends BaseController {
             childMobile,
             email,
             childEmail,
+            firstName,
             childFirstName,
             childLastName,
           } = input;
@@ -1768,7 +1769,7 @@ class AuthController extends BaseController {
           /**
            * send twilio message to the teen in order to signup.
            */
-          const message: string = `Hello Your Parent has invited you to join Stack. Please start the onboarding as soon as possible in order to explore new features and invest in cryptos.`;
+          const message: string = `Hi there! Your ${firstName} has signed you up for Stack - an easy and fun app designed for teens to earn and trade crypto. 🚀  Create your own account to get started. ${envData.INVITE_LINK}`;
           try {
             const twilioResponse: any = await TwilioService.sendSMS(
               childMobile,
@@ -1780,7 +1781,7 @@ class AuthController extends BaseController {
           } catch (error) {
             return this.BadRequest(ctx, error.message);
           }
-          if (!childFirstName || !childLastName) {
+          if (!childFirstName) {
             return this.Ok(ctx, {
               message: "You are inviting your teen in stack",
             });
@@ -1966,9 +1967,13 @@ class AuthController extends BaseController {
     const userId = ctx.request.user._id;
     const reqParam = ctx.request.body;
     const user = await UserTable.findOne({ _id: userId });
-    if (user.type !== EUserType.TEEN)
+    if (user.type !== EUserType.TEEN) {
       return this.BadRequest(ctx, "Logged in user is already parent.");
-    const parent = await UserTable.findOne({ mobile: reqParam.parentMobile });
+    }
+    const parent = await UserTable.findOne({
+      mobile: reqParam.parentMobile,
+      _id: { $ne: user._id },
+    });
     if (!parent) {
       let parentDetails = await ParentChildTable.findOne({
         "teens.childId": user._id,
@@ -1988,10 +1993,13 @@ class AuthController extends BaseController {
         }
       );
     }
+    if (parent && parent.type === EUserType.TEEN) {
+      return this.BadRequest(ctx, "Invalid Mobile Number Entered");
+    }
     /**
      * send twilio message to the teen in order to signup.
      */
-    const message: string = `Hello your teen has invited you to join Stack. Please start the onboarding as soon as possible in order to explore new features and invest in cryptos.`;
+    const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
     try {
       const twilioResponse: any = await TwilioService.sendSMS(
         user.parentMobile,

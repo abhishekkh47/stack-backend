@@ -1867,6 +1867,7 @@ class TradingController extends BaseController {
                   parentStatus: null,
                   intialBalance: 0,
                   totalAmountInvested,
+                  isDeposit: false,
                 },
               });
             } else {
@@ -1933,6 +1934,7 @@ class TradingController extends BaseController {
               pendingBalance: pending,
               intialBalance: intialBalance,
               totalAmountInvested,
+              isDeposit: transactionData.length > 0 ? true : false,
             },
           });
         }
@@ -2892,7 +2894,7 @@ class TradingController extends BaseController {
             if (insufficentBalance) {
               return this.BadRequest(
                 ctx,
-                "You dont have sufficient balance to perform the operarion"
+                "You dont have sufficient balance to perform the operation"
               );
             }
           }

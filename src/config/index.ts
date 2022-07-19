@@ -104,4 +104,7 @@ export default {
   get CONSTANT_BTC_COUNT() {
     return 0.00023427;
   },
+  get INVITE_LINK() {
+    return "https://stackapp.onelink.me/rBVF/grd8dnxd";
+  },
 };
