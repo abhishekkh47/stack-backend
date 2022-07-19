@@ -446,10 +446,9 @@ export const validation = {
       childLastName: Joi.string()
         .min(1)
         .allow("")
-        .regex(/^[A-za-z]*$/)
-        .required(),
+        .regex(/^[A-za-z]*$/),
     });
-    const { error } = schema.validate(req);
+    const { error } = schema.validate(req, { allowUnknown: true });
     if (error)
       return res.throw(
         400,

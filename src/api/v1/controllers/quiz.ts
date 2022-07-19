@@ -29,7 +29,6 @@ import {
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import moment from "moment";
-import { FIREBASE_CREDENCIALS } from "../../../utility/constants";
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
 class QuizController extends BaseController {

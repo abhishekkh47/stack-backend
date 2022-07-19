@@ -1592,7 +1592,8 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const childExists = await UserTable.findOne({
+          let isTeenPending = false;
+          const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
           });
           if (!childExists) {
@@ -1603,10 +1604,22 @@ class TradingController extends BaseController {
             userExistsForQuiz = await ParentChildTable.findOne({
               userId: childExists._id,
             }).populate("firstChildId", ["_id", "preLoadedCoins"]);
+            let isTransaction = await TransactionTable.findOne({
+              userId: childExists.firstChildId._id,
+            });
+            if (!isTransaction) {
+              isTeenPending = true;
+            }
           } else {
             userExistsForQuiz = await ParentChildTable.findOne({
               firstChildId: childExists._id,
             }).populate("userId", ["_id", "preLoadedCoins"]);
+            let isTransaction = await TransactionTable.findOne({
+              userId: childExists._id,
+            });
+            if (!isTransaction) {
+              isTeenPending = true;
+            }
           }
           const portFolio = await TransactionTable.aggregate([
             {
@@ -1867,6 +1880,8 @@ class TradingController extends BaseController {
                   parentStatus: null,
                   intialBalance: 0,
                   totalAmountInvested,
+                  isDeposit: false,
+                  isTeenPending,
                 },
               });
             } else {
@@ -1933,6 +1948,8 @@ class TradingController extends BaseController {
               pendingBalance: pending,
               intialBalance: intialBalance,
               totalAmountInvested,
+              isDeposit: transactionData.length > 0 ? true : false,
+              isTeenPending,
             },
           });
         }
@@ -2892,7 +2909,7 @@ class TradingController extends BaseController {
             if (insufficentBalance) {
               return this.BadRequest(
                 ctx,
-                "You dont have sufficient balance to perform the operarion"
+                "You dont have sufficient balance to perform the operation"
               );
             }
           }
