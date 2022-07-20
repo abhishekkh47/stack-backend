@@ -110,11 +110,15 @@ export const NOTIFICATION = {
     "You have been gifted 1000 Stack coins by using correct referral code 🥳",
   EARN_STACK_COINS_AFTER_SUCCESSFUL_KYC:
     "You have been gifted 1000 Stack coins as your parent's kyc got approved 🥳",
+  ACCOUNT_CLOSED_TITLE: "Your account is closed ❌",
+  ACCOUNT_CLOSED_DESCRIPTION:
+    "Thanks for applying, we can't open an account for you based on the info you provided 😣",
 };
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
   KYC_SUCCESS: "kyc_success",
+  ACCOUNT_CLOSED: "account_closed",
   KYC_FAILURE: "kyc_failure",
   KYC_PENDING: "kyc_pending",
   FREIND_REFER: "refer_freind",
