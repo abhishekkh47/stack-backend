@@ -742,7 +742,6 @@ class AuthController extends BaseController {
             /**
              * Added in zoho
              */
-            console.log("Gifted");
             let dataSentInCrm: any = {
               Account_Name: user.firstName + " " + user.lastName,
               Stack_Coins: admin.stackCoins,
@@ -1972,7 +1971,6 @@ class AuthController extends BaseController {
     }
     const parent = await UserTable.findOne({
       mobile: reqParam.parentMobile,
-      _id: { $ne: user._id },
     });
     if (!parent) {
       let parentDetails = await ParentChildTable.findOne({
@@ -1992,8 +1990,13 @@ class AuthController extends BaseController {
           $set: { parentMobile: reqParam.parentMobile },
         }
       );
-    }
-    if (parent && parent.type === EUserType.TEEN) {
+    } else {
+      if (parent && parent.mobile == user.mobile) {
+        return this.BadRequest(
+          ctx,
+          "Your mobile number and parent's mobile number cannot be same"
+        );
+      }
       return this.BadRequest(ctx, "Invalid Mobile Number Entered");
     }
     /**
@@ -2002,7 +2005,7 @@ class AuthController extends BaseController {
     const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
     try {
       const twilioResponse: any = await TwilioService.sendSMS(
-        user.parentMobile,
+        reqParam.parentMobile,
         message
       );
       if (twilioResponse.code === 400) {

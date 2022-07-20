@@ -377,6 +377,29 @@ class WebHookController extends BaseController {
             }
           }
         }
+        /**
+         * When account gets closed send notification
+         */
+        if (
+          body.data &&
+          body.data["changes"] &&
+          body.data["changes"].length > 0 &&
+          body.data["changes"].includes("disbursements-frozen")
+        ) {
+          if (deviceTokenData) {
+            let notificationRequest = {
+              key: NOTIFICATION_KEYS.ACCOUNT_CLOSED,
+              title: NOTIFICATION.ACCOUNT_CLOSED_TITLE,
+              message: NOTIFICATION.ACCOUNT_CLOSED_DESCRIPTION,
+              userId: userExists._id,
+            };
+            await sendNotification(
+              deviceTokenData.deviceToken,
+              notificationRequest.title,
+              notificationRequest
+            );
+          }
+        }
         break;
       /**
        * For buy and sell crypto
@@ -393,7 +416,6 @@ class WebHookController extends BaseController {
             { _id: checkQuoteIdExists._id },
             { $set: { status: ETransactionStatus.SETTLED } }
           );
-          console.log(checkData, "checkData");
           return this.Ok(ctx, { message: "Trade Successfull" });
         } else {
           return this.OkWebhook(ctx, "Bad request for asset");
