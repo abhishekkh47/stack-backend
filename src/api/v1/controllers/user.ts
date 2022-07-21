@@ -97,7 +97,13 @@ class UserController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const linkToken: any = await getLinkToken(userExists);
+    let parentExists = await ParentChildTable.findOne({
+      userId: userExists._id,
+    });
+    const linkToken: any = await getLinkToken(
+      userExists,
+      parentExists && parentExists.accessToken ? parentExists.accessToken : null
+    );
     if (linkToken.status == 400) {
       return this.BadRequest(ctx, linkToken.message);
     }

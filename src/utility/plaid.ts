@@ -10,7 +10,7 @@ let request = {
 /**
  * @description This api is used to get link token for plaid integerations
  */
-export const getLinkToken = async (userData) => {
+export const getLinkToken = async (userData, accessToken) => {
   const clientUserId = userData._id;
   const request = {
     client_id: config.PLAID_CLIENT_ID,
@@ -20,9 +20,10 @@ export const getLinkToken = async (userData) => {
       client_user_id: clientUserId,
     },
     client_name: "Stack",
-    products: ["auth"],
+    products: accessToken ? [] : ["auth"],
     language: "en",
     country_codes: ["US"],
+    access_token: accessToken,
   };
   const response = await axios
     .post(config.PLAID_ENV + PLAIDAPIS.getLinkToken, request)
