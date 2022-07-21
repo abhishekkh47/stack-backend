@@ -895,7 +895,6 @@ class AuthController extends BaseController {
             ctx.request.zohoAccessToken,
             mainData
           );
-          console.log(dataZohoResp, "dataAddInZoho");
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
