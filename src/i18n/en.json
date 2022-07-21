@@ -255,5 +255,8 @@
 	"signupValidationPostalcodeEmpty": "Please enter postal code",
 	"checkAccountReadyToLinkMobilePattern": "Please enter mobile with country code as well",
 	"sellCryptoAmountMin": "Please enter value greater than $1",
-	"getPortFolioChildidPattern": "getPortFolioChildidPattern"
+	"getPortFolioChildidPattern": "getPortFolioChildidPattern",
+	"checkValidMobileValidationTypeOnly": "Please enter user type",
+	"checkValidMobileValidationMobileEmpty": "Please enter mobile with country code as well",
+	"checkValidMobileValidationMobileRequired": "Please enter mobile with country code as well"
 }
