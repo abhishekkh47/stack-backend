@@ -519,6 +519,22 @@ export const validation = {
       );
     return callback(true);
   },
+  checkValidMobileValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      type: Joi.number().valid(1, 2).required(),
+      mobile: Joi.string()
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("checkValidMobileValidation", error))
+      );
+    return callback(true);
+  },
   getAssetValidation: (req, res, callback) => {
     const schema = Joi.object({
       page: Joi.string()

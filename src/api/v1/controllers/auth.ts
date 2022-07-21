@@ -891,7 +891,10 @@ class AuthController extends BaseController {
           let mainData = {
             data: [dataSentInCrm],
           };
-          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
+          const dataZohoResp = await addAccountInfoInZohoCrm(
+            ctx.request.zohoAccessToken,
+            mainData
+          );
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
@@ -1526,6 +1529,43 @@ class AuthController extends BaseController {
           } catch (error) {
             return this.BadRequest(ctx, error.message);
           }
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to check valid mobile
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/check-valid-mobile", method: HttpMethod.POST })
+  public async checkValidMobile(ctx) {
+    const input = ctx.request.body;
+    return validation.checkValidMobileValidation(
+      input,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const { mobile, type } = input;
+          if (type == EUserType.TEEN) {
+            let userExists = await UserTable.findOne({
+              $or: [{ mobile: mobile }, { parentMobile: mobile }],
+            });
+            if (userExists) {
+              return this.BadRequest(ctx, "Mobile Number Already Exists");
+            }
+          } else if (type == EUserType.PARENT) {
+            let userExists = await UserTable.findOne({
+              mobile: mobile,
+            });
+            if (userExists) {
+              return this.BadRequest(ctx, "Mobile Number Already Exists");
+            }
+          } else {
+            return this.BadRequest(ctx, "Invalid User Type");
+          }
+          return this.Ok(ctx, { message: "Success" });
         }
       }
     );
