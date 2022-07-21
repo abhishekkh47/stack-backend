@@ -891,7 +891,11 @@ class AuthController extends BaseController {
           let mainData = {
             data: [dataSentInCrm],
           };
-          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
+          const dataZohoResp = await addAccountInfoInZohoCrm(
+            ctx.request.zohoAccessToken,
+            mainData
+          );
+          console.log(dataZohoResp, "dataAddInZoho");
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
