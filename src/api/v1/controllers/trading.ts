@@ -296,15 +296,19 @@ class TradingController extends BaseController {
           /**
            * added bank successfully
            */
+          let ParentArray = [
+            ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+            PARENT_SIGNUP_FUNNEL.ADDRESS,
+            PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+            PARENT_SIGNUP_FUNNEL.ADD_BANK,
+            PARENT_SIGNUP_FUNNEL.SUCCESS,
+          ];
+          if (reqParam.depositAmount && reqParam.depositAmount > 0) {
+            ParentArray = [...ParentArray, PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT];
+          }
           let dataSentInCrm: any = {
             Account_Name: userExists.firstName + " " + userExists.lastName,
-            Parent_Signup_Funnel: [
-              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-              PARENT_SIGNUP_FUNNEL.ADDRESS,
-              PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-              PARENT_SIGNUP_FUNNEL.ADD_BANK,
-              PARENT_SIGNUP_FUNNEL.SUCCESS,
-            ],
+            Parent_Signup_Funnel: [...ParentArray],
           };
           let mainData = {
             data: [dataSentInCrm],
