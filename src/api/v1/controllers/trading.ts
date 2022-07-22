@@ -1,5 +1,5 @@
 import moment from "moment";
-import { Admin, ObjectId } from "mongodb";
+import { Admin, ObjectId, Transaction } from "mongodb";
 import Koa from "koa";
 import {
   createContributions,
@@ -64,7 +64,6 @@ class TradingController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-bank", method: HttpMethod.POST })
-  @PrimeTrustJWT()
   @Auth()
   @PrimeTrustJWT(true)
   public async addBankDetails(ctx: any) {
@@ -287,29 +286,29 @@ class TradingController extends BaseController {
                   },
                 }
               );
-              /**
-               * added bank successfully
-               */
-              let ParentArray = [
-                ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-                PARENT_SIGNUP_FUNNEL.ADDRESS,
-                PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-                PARENT_SIGNUP_FUNNEL.ADD_BANK,
-                PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
-                PARENT_SIGNUP_FUNNEL.SUCCESS,
-              ];
-              let dataSentInCrm: any = {
-                Account_Name: userExists.firstName + " " + userExists.lastName,
-                Parent_Signup_Funnel: [...ParentArray],
-              };
-              let mainData = {
-                data: [dataSentInCrm],
-              };
-              await addAccountInfoInZohoCrm(
-                ctx.request.zohoAccessToken,
-                mainData
-              );
             }
+            /**
+             * added bank successfully
+             */
+            let ParentArray = [
+              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+              PARENT_SIGNUP_FUNNEL.ADDRESS,
+              PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+              PARENT_SIGNUP_FUNNEL.ADD_BANK,
+              PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
+              PARENT_SIGNUP_FUNNEL.SUCCESS,
+            ];
+            let dataSentInCrm: any = {
+              Account_Name: userExists.firstName + " " + userExists.lastName,
+              Parent_Signup_Funnel: ParentArray,
+            };
+            let mainData = {
+              data: [dataSentInCrm],
+            };
+            const dataResponse = await addAccountInfoInZohoCrm(
+              ctx.request.zohoAccessToken,
+              mainData
+            );
             return this.Ok(ctx, {
               message:
                 "We will proceed your request surely in some amount of time.",
@@ -327,7 +326,7 @@ class TradingController extends BaseController {
           ];
           let dataSentInCrm: any = {
             Account_Name: userExists.firstName + " " + userExists.lastName,
-            Parent_Signup_Funnel: [...ParentArray],
+            Parent_Signup_Funnel: ParentArray,
           };
           let mainData = {
             data: [dataSentInCrm],
@@ -1626,22 +1625,44 @@ class TradingController extends BaseController {
           if (childExists.type == EUserType.PARENT) {
             userExistsForQuiz = await ParentChildTable.findOne({
               userId: childExists._id,
-            }).populate("firstChildId", ["_id", "preLoadedCoins"]);
-            let isTransaction = await TransactionTable.findOne({
-              userId: childExists.firstChildId._id,
-            });
-            if (!isTransaction) {
+            }).populate("firstChildId", [
+              "_id",
+              "preLoadedCoins",
+              "isGiftedCrypto",
+              "isParentFirst",
+            ]);
+            // let isTransaction = await TransactionTable.findOne({
+            //   userId: childExists.firstChildId._id,
+            //   status: ETransactionStatus.GIFTED,
+            // });
+            // if (!isTransaction) {
+            if (
+              !userExistsForQuiz ||
+              (userExistsForQuiz && userExistsForQuiz.isParentFirst == true)
+            ) {
               isTeenPending = true;
             }
+            // }
           } else {
             userExistsForQuiz = await ParentChildTable.findOne({
               firstChildId: childExists._id,
-            }).populate("userId", ["_id", "preLoadedCoins"]);
-            let isTransaction = await TransactionTable.findOne({
-              userId: childExists._id,
-            });
-            if (!isTransaction) {
+            }).populate("userId", [
+              "_id",
+              "preLoadedCoins",
+              "isGiftedCrypto",
+              "isParentFirst",
+            ]);
+            if (
+              !userExistsForQuiz ||
+              (userExistsForQuiz && userExistsForQuiz.isParentFirst == true)
+            ) {
+              // let isTransaction = await TransactionTable.findOne({
+              //   userId: childExists._id,
+              //   status: ETransactionStatus.GIFTED,
+              // });
+              // if (!isTransaction) {
               isTeenPending = true;
+              // }
             }
           }
           const portFolio = await TransactionTable.aggregate([
@@ -1903,7 +1924,7 @@ class TradingController extends BaseController {
                   parentStatus: null,
                   intialBalance: 0,
                   totalAmountInvested,
-                  isDeposit: false,
+                  isDeposit: 0,
                   isTeenPending,
                 },
               });
@@ -1958,8 +1979,210 @@ class TradingController extends BaseController {
           ]).exec();
           if (transactionData.length > 0) {
             intialBalance = transactionData[0].sum;
-            totalStackValue = totalStackValue + transactionData[0].sum;
+            totalStackValue =
+              balance > 0
+                ? totalStackValue
+                : totalStackValue + transactionData[0].sum;
           }
+          let otherPendingActivity = await TransactionTable.aggregate([
+            {
+              $match: {
+                userId: childExists._id,
+                type: ETransactionType.DEPOSIT,
+                intialDeposit: false,
+                status: ETransactionStatus.PENDING,
+              },
+            },
+            {
+              $group: {
+                _id: 0,
+                sum: {
+                  $sum: "$amount",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                sum: 1,
+              },
+            },
+          ]).exec();
+          if (otherPendingActivity.length > 0) {
+            intialBalance = intialBalance + otherPendingActivity[0].sum;
+            totalStackValue =
+              balance > 0
+                ? totalStackValue
+                : totalStackValue + otherPendingActivity[0].sum;
+          }
+          if (balance > 0) {
+            let newTotalAmountInvested = await TransactionTable.aggregate([
+              {
+                $match: {
+                  userId: childExists._id,
+                  type: {
+                    $in: [ETransactionType.DEPOSIT, ETransactionType.WITHDRAW],
+                  },
+                  $or: [
+                    {
+                      $and: [
+                        { type: ETransactionType.DEPOSIT },
+                        { status: ETransactionStatus.SETTLED },
+                      ],
+                    },
+                    { type: ETransactionType.WITHDRAW },
+                  ],
+                },
+              },
+              {
+                $group: {
+                  _id: 0,
+                  type1: {
+                    $sum: {
+                      $cond: {
+                        if: {
+                          $eq: ["$type", ETransactionType.DEPOSIT],
+                        },
+                        then: "$amount",
+                        else: 0,
+                      },
+                    },
+                  },
+                  type2: {
+                    $sum: {
+                      $cond: {
+                        if: {
+                          $eq: ["$type", ETransactionType.WITHDRAW],
+                        },
+                        then: "$amount",
+                        else: 0,
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                $project: {
+                  _id: 1,
+                  type1: 1,
+                  type2: 1,
+                  finalSum: {
+                    $subtract: ["$type1", "$type2"],
+                  },
+                },
+              },
+              {
+                $redact: {
+                  $cond: {
+                    if: {
+                      $gt: ["$finalSum", 0],
+                    },
+                    then: "$$KEEP",
+                    else: "$$PRUNE",
+                  },
+                },
+              },
+            ]).exec();
+            if (newTotalAmountInvested.length > 0) {
+              totalAmountInvested = newTotalAmountInvested[0].finalSum;
+            } else {
+              newTotalAmountInvested = await TransactionTable.aggregate([
+                {
+                  $match: {
+                    userId: childExists._id,
+                    type: {
+                      $in: [ETransactionType.BUY, ETransactionType.SELL],
+                    },
+                    status: ETransactionStatus.SETTLED,
+                  },
+                },
+                {
+                  $group: {
+                    _id: 0,
+                    type1: {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $eq: ["$type", ETransactionType.BUY],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+                    type2: {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $eq: ["$type", ETransactionType.SELL],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    type1: 1,
+                    type2: 1,
+                    finalSum: {
+                      $subtract: ["$type1", "$type2"],
+                    },
+                  },
+                },
+                {
+                  $redact: {
+                    $cond: {
+                      if: {
+                        $gt: ["$finalSum", 0],
+                      },
+                      then: "$$KEEP",
+                      else: "$$PRUNE",
+                    },
+                  },
+                },
+              ]).exec();
+              if (newTotalAmountInvested.length > 0) {
+                totalAmountInvested =
+                  newTotalAmountInvested[0].finalSum + balance;
+              } else {
+                totalAmountInvested = balance;
+              }
+            }
+          }
+          let clearedDeposit = await TransactionTable.findOne({
+            userId: childExists._id,
+            type: ETransactionType.DEPOSIT,
+            intialDeposit: true,
+            status: ETransactionStatus.SETTLED,
+          });
+          let totalValue =
+            totalGainLoss > 0
+              ? totalStackValue - totalGainLoss
+              : totalStackValue + Math.abs(totalGainLoss);
+          if (isTeenPending) {
+            totalValue = totalValue - 5;
+          }
+          console.log(
+            {
+              portFolio,
+              totalStackValue,
+              stackCoins,
+              totalGainLoss,
+              balance: balance > 0 ? balance : intialBalance,
+              parentStatus: parent.userId.status,
+              pendingBalance: pending,
+              intialBalance: intialBalance,
+              totalAmountInvested: totalValue,
+              isDeposit:
+                transactionData.length > 0 ? 1 : clearedDeposit ? 2 : 0,
+              isTeenPending,
+            },
+            "====portfolio==="
+          );
           return this.Ok(ctx, {
             data: {
               portFolio,
@@ -1970,8 +2193,15 @@ class TradingController extends BaseController {
               parentStatus: parent.userId.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
-              totalAmountInvested,
-              isDeposit: transactionData.length > 0 ? true : false,
+              totalAmountInvested: totalValue,
+              isDeposit:
+                balance > 0
+                  ? 2
+                  : transactionData.length > 0
+                  ? 1
+                  : clearedDeposit
+                  ? 2
+                  : 0,
               isTeenPending,
             },
           });
