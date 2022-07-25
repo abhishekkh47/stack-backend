@@ -1553,6 +1553,13 @@ class AuthController extends BaseController {
               $or: [{ mobile: mobile }, { parentMobile: mobile }],
             });
             if (userExists) {
+              // let transaction = await TransactionTable.findOne({
+              //   userId: userExists._id,
+              //   status: ETransactionStatus.GIFTED,
+              // });
+              if (userExists.isParentFirst == true) {
+                return this.Ok(ctx, { message: "Success" });
+              }
               return this.BadRequest(ctx, "Mobile Number Already Exists");
             }
           } else if (type == EUserType.PARENT) {
@@ -2037,7 +2044,7 @@ class AuthController extends BaseController {
           "Your mobile number and parent's mobile number cannot be same"
         );
       }
-      return this.BadRequest(ctx, "Invalid Mobile Number Entered");
+      return this.BadRequest(ctx, "Mobile Number already exists");
     }
     /**
      * send twilio message to the teen in order to signup.
