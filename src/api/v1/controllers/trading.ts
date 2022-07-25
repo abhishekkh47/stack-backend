@@ -20,6 +20,7 @@ import {
   institutionsGetByIdRequest,
   addAccountInfoInZohoCrm,
   internalAssetTransfers,
+  getLinkToken,
 } from "../../../utility";
 import mongoose from "mongoose";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
@@ -1631,18 +1632,13 @@ class TradingController extends BaseController {
               "isGiftedCrypto",
               "isParentFirst",
             ]);
-            // let isTransaction = await TransactionTable.findOne({
-            //   userId: childExists.firstChildId._id,
-            //   status: ETransactionStatus.GIFTED,
-            // });
-            // if (!isTransaction) {
+            console.log(userExistsForQuiz, "userExistsForQuiz");
             if (
-              !userExistsForQuiz ||
-              (userExistsForQuiz && userExistsForQuiz.isParentFirst == true)
+              userExistsForQuiz &&
+              userExistsForQuiz.firstChildId.isParentFirst == true
             ) {
               isTeenPending = true;
             }
-            // }
           } else {
             userExistsForQuiz = await ParentChildTable.findOne({
               firstChildId: childExists._id,
@@ -1652,17 +1648,9 @@ class TradingController extends BaseController {
               "isGiftedCrypto",
               "isParentFirst",
             ]);
-            if (
-              !userExistsForQuiz ||
-              (userExistsForQuiz && userExistsForQuiz.isParentFirst == true)
-            ) {
-              // let isTransaction = await TransactionTable.findOne({
-              //   userId: childExists._id,
-              //   status: ETransactionStatus.GIFTED,
-              // });
-              // if (!isTransaction) {
+            console.log(userExistsForQuiz, "userExistsForQuiz");
+            if (userExistsForQuiz && childExists.isParentFirst == true) {
               isTeenPending = true;
-              // }
             }
           }
           const portFolio = await TransactionTable.aggregate([
@@ -1670,7 +1658,6 @@ class TradingController extends BaseController {
               $match: {
                 userId: new ObjectId(childExists._id),
                 type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
-                // status:ETransactionStatus.SETTLED
               },
             },
             {
@@ -1841,69 +1828,69 @@ class TradingController extends BaseController {
             stackCoins = checkQuizExists[0].sum;
           }
           stackCoins = stackCoins + childExists.preLoadedCoins;
-          let totalAmountInvested: any = await TransactionTable.aggregate([
-            {
-              $match: {
-                userId: childExists._id,
-                type: {
-                  $in: [ETransactionType.DEPOSIT, ETransactionType.WITHDRAW],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: 0,
-                type1: {
-                  $sum: {
-                    $cond: {
-                      if: {
-                        $eq: ["$type", ETransactionType.DEPOSIT],
-                      },
-                      then: "$amount",
-                      else: 0,
-                    },
-                  },
-                },
-                type2: {
-                  $sum: {
-                    $cond: {
-                      if: {
-                        $eq: ["$type", ETransactionType.WITHDRAW],
-                      },
-                      then: "$amount",
-                      else: 0,
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 1,
-                type1: 1,
-                type2: 1,
-                finalSum: {
-                  $subtract: ["$type1", "$type2"],
-                },
-              },
-            },
-            {
-              $redact: {
-                $cond: {
-                  if: {
-                    $gt: ["$finalSum", 0],
-                  },
-                  then: "$$KEEP",
-                  else: "$$PRUNE",
-                },
-              },
-            },
-          ]).exec();
-          if (totalAmountInvested.length > 0) {
-            totalAmountInvested = totalAmountInvested[0].finalSum;
-          } else {
-            totalAmountInvested = 0;
-          }
+          // let totalAmountInvested: any = await TransactionTable.aggregate([
+          //   {
+          //     $match: {
+          //       userId: childExists._id,
+          //       type: {
+          //         $in: [ETransactionType.DEPOSIT, ETransactionType.WITHDRAW],
+          //       },
+          //     },
+          //   },
+          //   {
+          //     $group: {
+          //       _id: 0,
+          //       type1: {
+          //         $sum: {
+          //           $cond: {
+          //             if: {
+          //               $eq: ["$type", ETransactionType.DEPOSIT],
+          //             },
+          //             then: "$amount",
+          //             else: 0,
+          //           },
+          //         },
+          //       },
+          //       type2: {
+          //         $sum: {
+          //           $cond: {
+          //             if: {
+          //               $eq: ["$type", ETransactionType.WITHDRAW],
+          //             },
+          //             then: "$amount",
+          //             else: 0,
+          //           },
+          //         },
+          //       },
+          //     },
+          //   },
+          //   {
+          //     $project: {
+          //       _id: 1,
+          //       type1: 1,
+          //       type2: 1,
+          //       finalSum: {
+          //         $subtract: ["$type1", "$type2"],
+          //       },
+          //     },
+          //   },
+          //   {
+          //     $redact: {
+          //       $cond: {
+          //         if: {
+          //           $gt: ["$finalSum", 0],
+          //         },
+          //         then: "$$KEEP",
+          //         else: "$$PRUNE",
+          //       },
+          //     },
+          //   },
+          // ]).exec();
+          // if (totalAmountInvested.length > 0) {
+          //   totalAmountInvested = totalAmountInvested[0].finalSum;
+          // } else {
+          //   totalAmountInvested = 0;
+          // }
           let parent: any = await ParentChildTable.findOne({
             "teens.childId": childExists._id,
           }).populate("userId", ["status"]);
@@ -1913,6 +1900,13 @@ class TradingController extends BaseController {
           ) {
             intialBalance = totalIntAmount;
             if (childExists.isGiftedCrypto == 1) {
+              let totalValueForInvestment =
+                totalGainLoss > 0
+                  ? totalStackValue - totalGainLoss
+                  : totalStackValue + Math.abs(totalGainLoss);
+              if (isTeenPending) {
+                totalValueForInvestment = totalValueForInvestment - 5;
+              }
               return this.Ok(ctx, {
                 data: {
                   portFolio,
@@ -1923,7 +1917,7 @@ class TradingController extends BaseController {
                   pendingBalance: intialBalance,
                   parentStatus: null,
                   intialBalance: 0,
-                  totalAmountInvested,
+                  totalAmountInvested: totalValueForInvestment,
                   isDeposit: 0,
                   isTeenPending,
                 },
@@ -2015,144 +2009,6 @@ class TradingController extends BaseController {
                 ? totalStackValue
                 : totalStackValue + otherPendingActivity[0].sum;
           }
-          if (balance > 0) {
-            let newTotalAmountInvested = await TransactionTable.aggregate([
-              {
-                $match: {
-                  userId: childExists._id,
-                  type: {
-                    $in: [ETransactionType.DEPOSIT, ETransactionType.WITHDRAW],
-                  },
-                  $or: [
-                    {
-                      $and: [
-                        { type: ETransactionType.DEPOSIT },
-                        { status: ETransactionStatus.SETTLED },
-                      ],
-                    },
-                    { type: ETransactionType.WITHDRAW },
-                  ],
-                },
-              },
-              {
-                $group: {
-                  _id: 0,
-                  type1: {
-                    $sum: {
-                      $cond: {
-                        if: {
-                          $eq: ["$type", ETransactionType.DEPOSIT],
-                        },
-                        then: "$amount",
-                        else: 0,
-                      },
-                    },
-                  },
-                  type2: {
-                    $sum: {
-                      $cond: {
-                        if: {
-                          $eq: ["$type", ETransactionType.WITHDRAW],
-                        },
-                        then: "$amount",
-                        else: 0,
-                      },
-                    },
-                  },
-                },
-              },
-              {
-                $project: {
-                  _id: 1,
-                  type1: 1,
-                  type2: 1,
-                  finalSum: {
-                    $subtract: ["$type1", "$type2"],
-                  },
-                },
-              },
-              {
-                $redact: {
-                  $cond: {
-                    if: {
-                      $gt: ["$finalSum", 0],
-                    },
-                    then: "$$KEEP",
-                    else: "$$PRUNE",
-                  },
-                },
-              },
-            ]).exec();
-            if (newTotalAmountInvested.length > 0) {
-              totalAmountInvested = newTotalAmountInvested[0].finalSum;
-            } else {
-              newTotalAmountInvested = await TransactionTable.aggregate([
-                {
-                  $match: {
-                    userId: childExists._id,
-                    type: {
-                      $in: [ETransactionType.BUY, ETransactionType.SELL],
-                    },
-                    status: ETransactionStatus.SETTLED,
-                  },
-                },
-                {
-                  $group: {
-                    _id: 0,
-                    type1: {
-                      $sum: {
-                        $cond: {
-                          if: {
-                            $eq: ["$type", ETransactionType.BUY],
-                          },
-                          then: "$amount",
-                          else: 0,
-                        },
-                      },
-                    },
-                    type2: {
-                      $sum: {
-                        $cond: {
-                          if: {
-                            $eq: ["$type", ETransactionType.SELL],
-                          },
-                          then: "$amount",
-                          else: 0,
-                        },
-                      },
-                    },
-                  },
-                },
-                {
-                  $project: {
-                    _id: 1,
-                    type1: 1,
-                    type2: 1,
-                    finalSum: {
-                      $subtract: ["$type1", "$type2"],
-                    },
-                  },
-                },
-                {
-                  $redact: {
-                    $cond: {
-                      if: {
-                        $gt: ["$finalSum", 0],
-                      },
-                      then: "$$KEEP",
-                      else: "$$PRUNE",
-                    },
-                  },
-                },
-              ]).exec();
-              if (newTotalAmountInvested.length > 0) {
-                totalAmountInvested =
-                  newTotalAmountInvested[0].finalSum + balance;
-              } else {
-                totalAmountInvested = balance;
-              }
-            }
-          }
           let clearedDeposit = await TransactionTable.findOne({
             userId: childExists._id,
             type: ETransactionType.DEPOSIT,
@@ -2223,9 +2079,14 @@ class TradingController extends BaseController {
     if (!parentExists) {
       return this.BadRequest(ctx, "User Details Not Found");
     }
-    const getAccountDetails: any = await getAccounts(parentExists.accessToken);
+    let getAccountDetails: any = await getAccounts(parentExists.accessToken);
     if (getAccountDetails.status == 400) {
-      return this.BadRequest(ctx, getAccountDetails.message);
+      return this.BadRequest(
+        ctx,
+        getAccountDetails.error_code !== "ITEM_LOGIN_REQUIRED"
+          ? getAccountDetails.messsage
+          : "ITEM_LOGIN_REQUIRED"
+      );
     }
     if (parentExists.institutionId) {
       const logo: any = await institutionsGetByIdRequest(
