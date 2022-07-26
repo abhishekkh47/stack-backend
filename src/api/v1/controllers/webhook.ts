@@ -12,6 +12,7 @@ import {
   getAccountStatusByAccountId,
   generateQuote,
   executeQuote,
+  createContributions,
   internalAssetTransfers,
 } from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
@@ -23,6 +24,8 @@ import {
   HttpMethod,
   EUserType,
   EGIFTSTACKCOINSSETTING,
+  ETransactionType,
+  ERECURRING,
 } from "../../../types";
 import envData from "../../../config/index";
 import {
@@ -879,96 +882,120 @@ class WebHookController extends BaseController {
   @PrimeTrustJWT(true)
   public async testZoho(ctx: any) {
     let jwtToken = ctx.request.primeTrustToken;
-    let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-    const requestQuoteDay: any = {
-      data: {
-        type: "quotes",
-        attributes: {
-          "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": crypto.assetId,
-          hot: true,
-          "transaction-type": "buy",
-          total_amount: "5",
-        },
-      },
-    };
-    const generateQuoteResponse: any = await generateQuote(
-      jwtToken,
-      requestQuoteDay
-    );
-    if (generateQuoteResponse.status == 400) {
-      return this.BadRequest(ctx, generateQuoteResponse.message);
+    let users: any = await ParentChildTable.find({
+      accessToken: { $ne: null },
+    }).populate("userId", [
+      "_id",
+      "isRecurring",
+      "selectedDeposit",
+      "selectedDepositDate",
+    ]);
+    if (users.length > 0) {
+      users = users.filter(
+        (x) =>
+          x.userId && x.userId.isRecurring != 0 && x.userId.isRecurring != 1
+      );
+      console.log(users.length, "users");
+      let todayDate = moment().startOf("day").unix();
+      if (users.length > 0) {
+        let transactionArray = [];
+        let mainArray = [];
+        for await (let user of users) {
+          const accountIdDetails = await user.teens.find(
+            (x: any) => x.childId.toString() == user.firstChildId.toString()
+          );
+          if (!accountIdDetails) {
+            return false;
+          }
+          let selectedDate = moment(user.userId.selectedDepositDate)
+            .startOf("day")
+            .unix();
+          console.log(selectedDate, "selectedDate");
+          console.log(todayDate, "todayDate");
+          console.log(selectedDate <= todayDate, "todayDate");
+          if (selectedDate <= todayDate) {
+            console.log("selectedDate");
+            /**
+             * create fund transfer with fund transfer id in response
+             */
+            let contributionRequest = {
+              type: "contributions",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "contact-id": user.contactId,
+                "funds-transfer-method": {
+                  "funds-transfer-type": "ach",
+                  "ach-check-type": "personal",
+                  "contact-id": user.contactId,
+                  "plaid-processor-token": user.processorToken,
+                },
+                amount: user.userId.selectedDeposit,
+              },
+            };
+            let contributions: any = await createContributions(
+              jwtToken,
+              contributionRequest
+            );
+            if (contributions.status == 400) {
+              return false;
+            }
+            let transactionData = {
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              recurringDeposit: true,
+              settledTime: moment().unix(),
+              amount: user.userId.selectedDeposit,
+              amountMod: null,
+              userId: accountIdDetails.childId,
+              parentId: user.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            };
+            await transactionArray.push(transactionData);
+            let bulWriteOperation = {
+              updateOne: {
+                filter: { _id: user.userId },
+                update: {
+                  $set: {
+                    selectedDepositDate: moment(user.userId.selectedDepositDate)
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.userId.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.userId.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.userId.isRecurring == ERECURRING.QUATERLY
+                          ? 4
+                          : 0,
+                        user.userId.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.userId.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.userId.isRecurring == ERECURRING.QUATERLY
+                          ? "months"
+                          : "day"
+                      ),
+                  },
+                },
+              },
+            };
+            await mainArray.push(bulWriteOperation);
+          }
+        }
+        console.log(transactionArray, "transactionArray");
+        console.log(mainArray, "mainArray");
+        await TransactionTable.insertMany(transactionArray);
+        await UserTable.bulkWrite(mainArray);
+        return this.Ok(ctx, { message: "Success" });
+      } else {
+        return this.BadRequest(ctx, "User found but no recurring");
+      }
     }
-    /**
-     * Execute a quote
-     */
-    const requestExecuteQuote: any = {
-      data: {
-        type: "quotes",
-        attributes: {
-          "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": crypto.assetId,
-        },
-      },
-    };
-    const executeQuoteResponse: any = await executeQuote(
-      jwtToken,
-      generateQuoteResponse.data.data.id,
-      requestExecuteQuote
-    );
-    if (executeQuoteResponse.status == 400) {
-      return this.BadRequest(ctx, executeQuoteResponse.message);
-    }
-    let internalTransferRequest = {
-      data: {
-        type: "internal-asset-transfers",
-        attributes: {
-          "unit-count": executeQuoteResponse.data.data.attributes["unit-count"],
-          "from-account-id": envData.OPERATIONAL_ACCOUNT,
-          "to-account-id": "24e34898-d86e-4773-a9f7-9911de8bc28b",
-          "asset-id": crypto.assetId,
-          reference: "$5 BTC gift from Stack",
-          "hot-transfer": true,
-        },
-      },
-    };
-    const internalTransferResponse: any = await internalAssetTransfers(
-      jwtToken,
-      internalTransferRequest
-    );
-    if (internalTransferResponse.status == 400) {
-      return this.BadRequest(ctx, internalTransferResponse.message);
-    }
-    if (internalTransferResponse.status == 200) {
-      return this.Ok(ctx, {
-        data: internalTransferResponse.data.data.id,
-      });
-    }
-    // const checkAccountIdExists: any = await ParentChildTable.findOne({
-    //   "teens.childId": new ObjectId("62726e1de68ae364f3a510d9"),
-    // })
-    //   .populate("teens.childId", [
-    //     "email",
-    //     "isGifted",
-    //     "isGiftedCrypto",
-    //     "firstName",
-    //     "lastName",
-    //     "accountId",
-    //   ])
-    //   .populate({ path: "teens.childId" });
-    // let allTeensGiftedCrypto = await checkAccountIdExists.teens.filter(
-    //   (x) =>
-    //     x.childId.isGifted != null &&
-    //     x.childId.isGifted == EGIFTSTACKCOINSSETTING.ON
-    // );
-    // .then((data: any) => {
-    //   data.teens.childId = {};
-    //   console.log(data, "data");
-    //   return data;
-    // });
-    return this.Ok(ctx, {
-      data: internalTransferResponse.data.data.type.attributes["id"],
-    });
+    return this.BadRequest(ctx, "No Such Users");
   }
 }
 

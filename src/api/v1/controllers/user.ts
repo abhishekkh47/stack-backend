@@ -494,6 +494,15 @@ class UserController extends BaseController {
         { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
+            from: "parentchild",
+            localField: "_id",
+            foreignField: "userId",
+            as: "parentchild",
+          },
+        },
+        { $unwind: { path: "$parentchild", preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
             from: "user-refferals",
             localField: "_id",
             foreignField: "userId",
@@ -536,10 +545,14 @@ class UserController extends BaseController {
             unitApt: 1,
             liquidAsset: 1,
             taxIdNo: 1,
+            accessToken: "$parentchild.accessToken",
             taxState: 1,
             status: 1,
             dob: 1,
             profilePicture: 1,
+            isRecurring: 1,
+            selectedDeposit: 1,
+            selectedDepositDate: 1,
           },
         },
       ]).exec()
@@ -556,6 +569,11 @@ class UserController extends BaseController {
       data.isParentApproved = 0;
     } else {
       data.isParentApproved = 1;
+    }
+    if (data.accessToken == null) {
+      data.isRecurring = 0;
+    } else if (data.accessToken) {
+      data.isRecurring = 1;
     }
     data = {
       ...data,

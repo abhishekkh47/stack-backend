@@ -59,6 +59,26 @@ export const validation = {
     }
     return callback(true);
   },
+  recurringDepositValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      isRecurring: Joi.number().valid(0, 1, 2, 3, 4).required(),
+      selectedDeposit: Joi.when("isRecurring", {
+        switch: [
+          { is: 2, then: Joi.number().min(1).required() },
+          { is: 3, then: Joi.number().min(1).required() },
+          { is: 4, then: Joi.number().min(1).required() },
+        ],
+      }),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("recurringDepositValidation", error))
+      );
+    }
+    return callback(true);
+  },
   updateAutoApprovalValidation: (req, res, callback) => {
     const schema = Joi.object({
       isAutoApproval: Joi.number().valid(0, 1).required(),

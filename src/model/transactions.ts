@@ -34,6 +34,10 @@ const schema = new mongoose.Schema<ITransactionSchema>(
       ],
       default: 1,
     },
+    recurringDeposit: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
     intialDeposit: {
       type: mongoose.Schema.Types.Boolean,
       default: false,

@@ -40,6 +40,7 @@ import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
   ERead,
+  ERECURRING,
   ESCREENSTATUS,
   EStatus,
   ETransactionStatus,
@@ -3028,6 +3029,71 @@ class TradingController extends BaseController {
             }
           }
           return this.Ok(ctx, { message: "Success" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used for turning off or on recurring deposit
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/schedule-recurring", method: HttpMethod.POST })
+  @Auth()
+  public async updateRecurringDepositStatus(ctx: any) {
+    let reqParam = ctx.request.body;
+    let user = ctx.request.user;
+    let userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists || (userExists && userExists.type == EUserType.TEEN)) {
+      return this.BadRequest(ctx, "User not allowed to access");
+    }
+    return validation.recurringDepositValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          let scheduleDate = moment()
+            .startOf("day")
+            .add(
+              reqParam.isRecurring == ERECURRING.WEEKLY
+                ? 7
+                : reqParam.isRecurring == ERECURRING.MONTLY
+                ? 1
+                : reqParam.isRecurring == ERECURRING.QUATERLY
+                ? 4
+                : 0,
+              reqParam.isRecurring == ERECURRING.WEEKLY
+                ? "days"
+                : reqParam.isRecurring == ERECURRING.MONTLY
+                ? "months"
+                : reqParam.isRecurring == ERECURRING.QUATERLY
+                ? "months"
+                : "day"
+            )
+            .format("YYYY-MM-DD");
+          await UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            {
+              $set: {
+                isRecurring: reqParam.isRecurring,
+                selectedDeposit:
+                  reqParam.isRecurring == ERECURRING.NO_BANK ||
+                  reqParam.isRecurring == ERECURRING.NO_RECURRING
+                    ? 0
+                    : reqParam.selectedDeposit,
+                selectedDepositDate:
+                  reqParam.isRecurring == ERECURRING.NO_BANK ||
+                  reqParam.isRecurring == ERECURRING.NO_RECURRING
+                    ? null
+                    : scheduleDate,
+              },
+            }
+          );
+          /**
+           * TODO:- Notification to be send
+           */
+          return this.Ok(ctx, { message: "Transaction Processed!" });
         }
       }
     );

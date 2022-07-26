@@ -1,6 +1,19 @@
-import { getHistoricalDataOfCoins, getLatestPrice } from "../../utility";
+import {
+  createContributions,
+  getHistoricalDataOfCoins,
+  getLatestPrice,
+  getPrimeTrustJWTToken,
+} from "../../utility";
 import cron from "node-cron";
-import { CryptoTable, CryptoPriceTable } from "../../model";
+import {
+  CryptoTable,
+  CryptoPriceTable,
+  ParentChildTable,
+  TransactionTable,
+  UserTable,
+} from "../../model";
+import moment from "moment";
+import { ETransactionStatus, ETransactionType, ERECURRING } from "../../types";
 
 export const startCron = () => {
   /**
@@ -98,5 +111,130 @@ export const startCron = () => {
       await CryptoPriceTable.insertMany(mainArray);
     }
     return true;
+  });
+
+  /**
+   * Logic for recurring deposit if user has selected recurring deposit
+   * Time:- at 00:00 am every day
+   */
+  cron.schedule("0 0 * * *", async () => {
+    console.log(`
+     ==========Start Cron For Recurring=============
+    `);
+    let jwtToken = await getPrimeTrustJWTToken();
+    let users: any = await ParentChildTable.find({
+      accessToken: { $ne: null },
+    }).populate("userId", [
+      "_id",
+      "isRecurring",
+      "selectedDeposit",
+      "selectedDepositDate",
+    ]);
+    if (users.length > 0) {
+      users = users.filter(
+        (x) =>
+          x.userId && x.userId.isRecurring != 0 && x.userId.isRecurring != 1
+      );
+      console.log(users.length, "users");
+      let todayDate = moment().startOf("day").unix();
+      if (users.length > 0) {
+        let transactionArray = [];
+        let mainArray = [];
+        for await (let user of users) {
+          const accountIdDetails = await user.teens.find(
+            (x: any) => x.childId.toString() == user.firstChildId.toString()
+          );
+          if (!accountIdDetails) {
+            return false;
+          }
+          let selectedDate = moment(user.userId.selectedDepositDate)
+            .startOf("day")
+            .unix();
+          console.log(selectedDate, "selectedDate");
+          console.log(todayDate, "todayDate");
+          console.log(selectedDate <= todayDate, "todayDate");
+          if (selectedDate <= todayDate) {
+            console.log("selectedDate");
+            /**
+             * create fund transfer with fund transfer id in response
+             */
+            let contributionRequest = {
+              type: "contributions",
+              attributes: {
+                "account-id": accountIdDetails.accountId,
+                "contact-id": user.contactId,
+                "funds-transfer-method": {
+                  "funds-transfer-type": "ach",
+                  "ach-check-type": "personal",
+                  "contact-id": user.contactId,
+                  "plaid-processor-token": user.processorToken,
+                },
+                amount: user.userId.selectedDeposit,
+              },
+            };
+            let contributions: any = await createContributions(
+              jwtToken,
+              contributionRequest
+            );
+            if (contributions.status == 400) {
+              return false;
+            }
+            let transactionData = {
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              recurringDeposit: true,
+              settledTime: moment().unix(),
+              amount: user.userId.selectedDeposit,
+              amountMod: null,
+              userId: accountIdDetails.childId,
+              parentId: user.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            };
+            await transactionArray.push(transactionData);
+            let bulWriteOperation = {
+              updateOne: {
+                filter: { _id: user.userId },
+                update: {
+                  $set: {
+                    selectedDepositDate: moment(user.userId.selectedDepositDate)
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.userId.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.userId.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.userId.isRecurring == ERECURRING.QUATERLY
+                          ? 4
+                          : 0,
+                        user.userId.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.userId.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.userId.isRecurring == ERECURRING.QUATERLY
+                          ? "months"
+                          : "day"
+                      ),
+                  },
+                },
+              },
+            };
+            await mainArray.push(bulWriteOperation);
+          }
+        }
+        console.log(transactionArray, "transactionArray");
+        console.log(mainArray, "mainArray");
+        await TransactionTable.insertMany(transactionArray);
+        await UserTable.bulkWrite(mainArray);
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return false;
   });
 };

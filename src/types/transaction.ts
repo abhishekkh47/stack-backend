@@ -13,6 +13,7 @@ export interface ITransaction {
   executedQuoteId: string;
   unitCount: number;
   intialDeposit: boolean;
+  recurringDeposit: boolean;
 }
 
 export enum ETransactionType {
