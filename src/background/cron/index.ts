@@ -3,6 +3,7 @@ import {
   getHistoricalDataOfCoins,
   getLatestPrice,
   getPrimeTrustJWTToken,
+  sendNotification,
 } from "../../utility";
 import cron from "node-cron";
 import {
@@ -11,9 +12,22 @@ import {
   ParentChildTable,
   TransactionTable,
   UserTable,
+  UserActivityTable,
+  DeviceToken,
+  Notification,
 } from "../../model";
 import moment from "moment";
-import { ETransactionStatus, ETransactionType, ERECURRING } from "../../types";
+import {
+  ETransactionStatus,
+  ETransactionType,
+  ERECURRING,
+  EUserType,
+  EAction,
+  EStatus,
+  messages,
+  ERead,
+} from "../../types";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 
 export const startCron = () => {
   /**
@@ -140,6 +154,7 @@ export const startCron = () => {
       if (users.length > 0) {
         let transactionArray = [];
         let mainArray = [];
+        let activityArray = [];
         for await (let user of users) {
           const accountIdDetails = await user.teens.find(
             (x: any) => x.childId.toString() == user.firstChildId.toString()
@@ -177,8 +192,43 @@ export const startCron = () => {
               contributionRequest
             );
             if (contributions.status == 400) {
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: user.userId,
+              }).select("deviceToken");
+              /**
+               * Notification
+               */
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.RECURRING_FAILED,
+                  title: NOTIFICATION.RECURRING_FAILED,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: user.userId,
+                  message: null,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
               return false;
             }
+            let activityData = {
+              userId: accountIdDetails.childId,
+              userType: EUserType.TEEN,
+              message: `${messages.RECURRING_DEPOSIT} $${user.userId.selectedDeposit}`,
+              currencyType: null,
+              currencyValue: user.userId.selectedDeposit,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            };
+            await activityArray.push(activityData);
             let transactionData = {
               assetId: null,
               cryptoId: null,
@@ -228,7 +278,9 @@ export const startCron = () => {
         }
         console.log(transactionArray, "transactionArray");
         console.log(mainArray, "mainArray");
+        console.log(activityArray, "activityArray");
         await TransactionTable.insertMany(transactionArray);
+        await UserActivityTable.insertMany(activityArray);
         await UserTable.bulkWrite(mainArray);
         return true;
       } else {

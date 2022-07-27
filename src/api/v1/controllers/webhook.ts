@@ -26,6 +26,10 @@ import {
   EGIFTSTACKCOINSSETTING,
   ETransactionType,
   ERECURRING,
+  messages,
+  EAction,
+  ERead,
+  EStatus,
 } from "../../../types";
 import envData from "../../../config/index";
 import {
@@ -38,6 +42,7 @@ import {
   AdminTable,
   Notification,
   CryptoTable,
+  UserActivityTable,
 } from "../../../model";
 import { validation } from "../../../validations/apiValidation";
 import { PrimeTrustJWT, Auth } from "../../../middleware";
@@ -900,6 +905,7 @@ class WebHookController extends BaseController {
       if (users.length > 0) {
         let transactionArray = [];
         let mainArray = [];
+        let activityArray = [];
         for await (let user of users) {
           const accountIdDetails = await user.teens.find(
             (x: any) => x.childId.toString() == user.firstChildId.toString()
@@ -937,8 +943,43 @@ class WebHookController extends BaseController {
               contributionRequest
             );
             if (contributions.status == 400) {
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: user.userId,
+              }).select("deviceToken");
+              /**
+               * Notification
+               */
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.RECURRING_FAILED,
+                  title: NOTIFICATION.RECURRING_FAILED,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: user.userId,
+                  message: null,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
               return false;
             }
+            let activityData = {
+              userId: accountIdDetails.childId,
+              userType: EUserType.TEEN,
+              message: `${messages.RECURRING_DEPOSIT} $${user.userId.selectedDeposit}`,
+              currencyType: null,
+              currencyValue: user.userId.selectedDeposit,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            };
+            await activityArray.push(activityData);
             let transactionData = {
               assetId: null,
               cryptoId: null,
@@ -988,6 +1029,8 @@ class WebHookController extends BaseController {
         }
         console.log(transactionArray, "transactionArray");
         console.log(mainArray, "mainArray");
+        console.log(activityArray, "activityArray");
+        await UserActivityTable.insertMany(activityArray);
         await TransactionTable.insertMany(transactionArray);
         await UserTable.bulkWrite(mainArray);
         return this.Ok(ctx, { message: "Success" });

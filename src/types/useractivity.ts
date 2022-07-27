@@ -37,6 +37,7 @@ export const messages = {
   REJECT_SELL: "Denied",
   APPROVE_DEPOSIT: "Approved deposit request of",
   APPROVE_WITHDRAW: "Approved withdraw request of",
+  RECURRING_DEPOSIT: "Approved Recurring Deposit request of",
   APPROVE_BUY: "Approved",
   APPROVE_SELL: "Approved",
 };

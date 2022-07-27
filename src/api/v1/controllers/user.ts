@@ -573,7 +573,9 @@ class UserController extends BaseController {
     if (data.accessToken == null) {
       data.isRecurring = 0;
     } else if (data.accessToken) {
-      data.isRecurring = 1;
+      if (data.isRecurring == 1 || data.isRecurring == 0) {
+        data.isRecurring = 1;
+      }
     }
     data = {
       ...data,
