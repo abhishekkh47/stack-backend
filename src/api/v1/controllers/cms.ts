@@ -1,8 +1,7 @@
-import { CMS_LINKS } from "../../../utility/constants";
-import { Auth } from "../../../middleware";
 import { CMSTable } from "../../../model";
 import { HttpMethod } from "../../../types";
 import { Route } from "../../../utility";
+import { CMS_LINKS } from "../../../utility/constants";
 import BaseController from "./base";
 
 class CMSController extends BaseController {

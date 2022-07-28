@@ -1,28 +1,7 @@
 import moment from "moment";
-import { Admin, ObjectId, Transaction } from "mongodb";
-import Koa from "koa";
-import {
-  createContributions,
-  createDisbursements,
-  createProcessorToken,
-  getPublicTokenExchange,
-  getBalance,
-  Route,
-  generateQuote,
-  executeQuote,
-  getAccountId,
-  getWireTransfer,
-  getContactId,
-  wireTransfer,
-  getPushTransferMethods,
-  sendNotification,
-  getAccounts,
-  institutionsGetByIdRequest,
-  addAccountInfoInZohoCrm,
-  internalAssetTransfers,
-  getLinkToken,
-} from "../../../utility";
+import { ObjectId } from "mongodb";
 import mongoose from "mongoose";
+import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   AdminTable,
@@ -51,13 +30,32 @@ import {
   messages,
 } from "../../../types";
 import {
+  addAccountInfoInZohoCrm,
+  createContributions,
+  createDisbursements,
+  createProcessorToken,
+  executeQuote,
+  generateQuote,
+  getAccountId,
+  getAccounts,
+  getBalance,
+  getContactId,
+  getPublicTokenExchange,
+  getPushTransferMethods,
+  getWireTransfer,
+  institutionsGetByIdRequest,
+  internalAssetTransfers,
+  Route,
+  sendNotification,
+  wireTransfer,
+} from "../../../utility";
+import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
-import envData from "../../../config/index";
 
 class TradingController extends BaseController {
   /**
@@ -1829,69 +1827,6 @@ class TradingController extends BaseController {
             stackCoins = checkQuizExists[0].sum;
           }
           stackCoins = stackCoins + childExists.preLoadedCoins;
-          // let totalAmountInvested: any = await TransactionTable.aggregate([
-          //   {
-          //     $match: {
-          //       userId: childExists._id,
-          //       type: {
-          //         $in: [ETransactionType.DEPOSIT, ETransactionType.WITHDRAW],
-          //       },
-          //     },
-          //   },
-          //   {
-          //     $group: {
-          //       _id: 0,
-          //       type1: {
-          //         $sum: {
-          //           $cond: {
-          //             if: {
-          //               $eq: ["$type", ETransactionType.DEPOSIT],
-          //             },
-          //             then: "$amount",
-          //             else: 0,
-          //           },
-          //         },
-          //       },
-          //       type2: {
-          //         $sum: {
-          //           $cond: {
-          //             if: {
-          //               $eq: ["$type", ETransactionType.WITHDRAW],
-          //             },
-          //             then: "$amount",
-          //             else: 0,
-          //           },
-          //         },
-          //       },
-          //     },
-          //   },
-          //   {
-          //     $project: {
-          //       _id: 1,
-          //       type1: 1,
-          //       type2: 1,
-          //       finalSum: {
-          //         $subtract: ["$type1", "$type2"],
-          //       },
-          //     },
-          //   },
-          //   {
-          //     $redact: {
-          //       $cond: {
-          //         if: {
-          //           $gt: ["$finalSum", 0],
-          //         },
-          //         then: "$$KEEP",
-          //         else: "$$PRUNE",
-          //       },
-          //     },
-          //   },
-          // ]).exec();
-          // if (totalAmountInvested.length > 0) {
-          //   totalAmountInvested = totalAmountInvested[0].finalSum;
-          // } else {
-          //   totalAmountInvested = 0;
-          // }
           let parent: any = await ParentChildTable.findOne({
             "teens.childId": childExists._id,
           }).populate("userId", ["status"]);
