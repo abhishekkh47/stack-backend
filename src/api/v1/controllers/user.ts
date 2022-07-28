@@ -30,6 +30,7 @@ import {
   HttpMethod,
   ESCREENSTATUS,
   ERead,
+  IUser,
 } from "../../../types";
 import path from "path";
 import moment from "moment";
@@ -570,11 +571,24 @@ class UserController extends BaseController {
     } else {
       data.isParentApproved = 1;
     }
-    if (data.accessToken == null) {
-      data.isRecurring = 0;
-    } else if (data.accessToken) {
-      if (data.isRecurring == 1 || data.isRecurring == 0) {
-        data.isRecurring = 1;
+    if (data.type == EUserType.PARENT) {
+      if (data.accessToken == null) {
+        data.isRecurring = 0;
+      } else if (data.accessToken) {
+        if (data.isRecurring == 1 || data.isRecurring == 0) {
+          data.isRecurring = 1;
+        }
+      }
+    } else {
+      if (
+        !checkParentExists ||
+        (checkParentExists && data.accessToken == null)
+      ) {
+        data.isRecurring = 0;
+      } else if (data.accessToken) {
+        if (data.isRecurring == 1 || data.isRecurring == 0) {
+          data.isRecurring = 1;
+        }
       }
     }
     data = {
