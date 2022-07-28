@@ -1,3 +1,7 @@
+import { OtpTable } from "../model";
+import { EOTPTYPE } from "../types";
+import { generateRandom6DigitCode } from "../utility";
+
 import config from "../config";
 
 class TwilioService {
@@ -32,6 +36,24 @@ class TwilioService {
             message: "Twilio Error Invalid Number",
           });
         });
+    });
+  }
+
+  public async sendOTP(mobile: string, type: EOTPTYPE) {
+    const code = generateRandom6DigitCode(true);
+    const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
+    /**
+     * Send Otp to User from registered mobile number
+     */
+    const twilioResponse: any = await this.sendSMS(mobile, message);
+    if (twilioResponse.code === 400) {
+      throw new Error("Error in sending OTP");
+    }
+    await OtpTable.create({
+      message,
+      code,
+      receiverMobile: mobile,
+      type,
     });
   }
 }

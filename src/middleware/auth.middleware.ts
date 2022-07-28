@@ -5,7 +5,8 @@ export const Auth = () => {
     const fn: Function = descriptor.value;
     descriptor.value = async function (ctx: any) {
       const token =
-        <string>ctx.request.headers["x-access-token"] ||
+        (<string>ctx.request.headers &&
+          ctx.request.headers["x-access-token"]) ||
         (ctx.request.query.token as string);
       if (!token) {
         return this.UnAuthorized(ctx, "Invalid JWT Token");

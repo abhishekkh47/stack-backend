@@ -13,7 +13,7 @@ export const errorHandler = async (ctx: Koa.Context, next: Koa.Next) => {
     const messages = e.messages || [];
 
     if (status === 500) {
-      logger.error("error", e);
+      logger.error("error", e.message);
     }
 
     if (e instanceof multer.MulterError) {

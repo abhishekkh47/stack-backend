@@ -1,75 +1,69 @@
 import Koa from "koa";
-
-import {
-  generateRandom6DigitCode,
-  getJwtToken,
-  Route,
-  getMinutesBetweenDates,
-  verifyToken,
-  sendEmail,
-  hashString,
-  generateTempPassword,
-  getRefreshToken,
-  createAccount,
-  addAccountInfoInZohoCrm,
-  makeUniqueReferalCode,
-  sendNotification,
-  decodeJwtToken,
-  generateQuote,
-  executeQuote,
-  internalAssetTransfers,
-} from "../../../utility";
-import BaseController from "./base";
+import moment from "moment";
+import mongoose from "mongoose";
 import envData from "../../../config/index";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
+import {
+  AdminTable,
+  CryptoTable,
+  DeviceToken,
+  Notification,
+  OtpTable,
+  ParentChildTable,
+  QuizResult,
+  StateTable,
+  TransactionTable,
+  UserReffaralTable,
+  UserTable,
+} from "../../../model";
+import {
+  AuthService,
+  DeviceTokenService,
+  SocialService,
+  TokenService,
+  TwilioService,
+} from "../../../services";
 import {
   EAUTOAPPROVAL,
+  EGIFTSTACKCOINSSETTING,
   EOTPTYPE,
   EOTPVERIFICATION,
   ERead,
   ESCREENSTATUS,
+  ETransactionStatus,
+  ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-  ETransactionStatus,
-  ETransactionType,
-  EGIFTSTACKCOINSSETTING,
 } from "../../../types";
-import { AuthService } from "../../../services";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
-import { validation } from "../../../validations/apiValidation";
 import {
-  UserTable,
-  OtpTable,
-  ParentChildTable,
-  StateTable,
-  DeviceToken,
-  AdminTable,
-  QuizResult,
-  Notification,
-  UserReffaralTable,
-  TransactionTable,
-  CryptoTable,
-} from "../../../model";
-import { TwilioService } from "../../../services";
-import moment from "moment";
+  addAccountInfoInZohoCrm,
+  createAccount,
+  decodeJwtToken,
+  executeQuote,
+  generateQuote,
+  generateTempPassword,
+  getJwtToken,
+  getMinutesBetweenDates,
+  getRefreshToken,
+  hashString,
+  internalAssetTransfers,
+  makeUniqueReferalCode,
+  Route,
+  sendEmail,
+  sendNotification,
+  verifyToken,
+} from "../../../utility";
 import {
   CONSTANT,
-  NOTIFICATION_KEYS,
   NOTIFICATION,
+  NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
+import { validation } from "../../../validations/apiValidation";
+import BaseController from "./base";
 import UserController from "./user";
-import { OAuth2Client } from "google-auth-library";
-import { AppleSignIn } from "apple-sign-in-rest";
-import mongoose from "mongoose";
-import { Admin } from "mongodb";
-const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
-const apple_client: any = new AppleSignIn({
-  clientId: envData.APPLE_CLIENT_ID,
-  teamId: envData.APPLE_TEAM_ID,
-  keyIdentifier: envData.APPLE_KEY_IDENTIFIER,
-  privateKey: envData.APPLE_PRIVATE_KEY,
-});
+
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
   public async handleLogin(ctx: Koa.Context) {
@@ -79,101 +73,52 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          const { email, loginType } = reqParam;
-          if (!email) {
-            return this.BadRequest(ctx, "Please enter email");
-          }
-          let userExists = await UserTable.findOne({ email: email });
-          if (!userExists) {
-            userExists = await UserTable.findOne({
-              email: { $regex: `${email}`, $options: "i" },
-            });
-            if (!userExists) {
-              return this.BadRequest(
-                ctx,
-                "User not found, Please signup first."
-              );
+          try {
+            const { email, deviceToken } = reqParam;
+            if (!email) {
+              return this.BadRequest(ctx, "Please enter email");
             }
-          }
-          /**
-           * Sign in type 1 - google and 2 - apple
-           */
-          const socialLoginToken = reqParam.socialLoginToken;
-          switch (loginType) {
-            case "1":
-              const googleTicket: any = await google_client
-                .verifyIdToken({
-                  idToken: socialLoginToken,
-                  audience: envData.GOOGLE_CLIENT_ID,
-                })
-                .catch((error) => {
-                  return this.BadRequest(ctx, "Error Invalid Token Id");
-                });
-              const googlePayload = googleTicket.getPayload();
-              if (!googlePayload) {
-                return this.BadRequest(ctx, "Error while logging in");
-              }
-              if (googlePayload.email != email) {
-                return this.BadRequest(ctx, "Email Doesn't Match");
-              }
-              break;
-            case "2":
-              const appleTicket: any = await apple_client
-                .verifyIdToken(socialLoginToken)
-                .catch((err) => {
-                  return this.BadRequest(ctx, "Error Invalid Token Id");
-                });
-              if (appleTicket.email != email) {
-                return this.BadRequest(ctx, "Email Doesn't Match");
-              }
-              break;
-          }
-          const authInfo = await AuthService.getJwtAuthInfo(userExists);
-          const token = await getJwtToken(authInfo);
-          const refreshToken = await getRefreshToken(authInfo);
-          userExists.refreshToken = refreshToken;
-          await userExists.save();
-
-          let getProfileInput: any = {
-            request: {
-              query: { token },
-              headers: {},
-              params: { id: userExists._id },
-            },
-          };
-          await UserController.getProfile(getProfileInput);
-          if (reqParam.deviceToken) {
-            const checkDeviceTokenExists = await DeviceToken.findOne({
-              userId: userExists._id,
-            });
-            if (!checkDeviceTokenExists) {
-              await DeviceToken.create({
-                userId: userExists._id,
-                "deviceToken.0": reqParam.deviceToken,
+            let userExists = await UserTable.findOne({ email: email });
+            if (!userExists) {
+              userExists = await UserTable.findOne({
+                email: { $regex: `${email}`, $options: "i" },
               });
-            } else {
-              if (
-                !checkDeviceTokenExists.deviceToken.includes(
-                  reqParam.deviceToken
-                )
-              ) {
-                await DeviceToken.updateOne(
-                  { _id: checkDeviceTokenExists._id },
-                  {
-                    $push: {
-                      deviceToken: reqParam.deviceToken,
-                    },
-                  }
+              if (!userExists) {
+                return this.BadRequest(
+                  ctx,
+                  "User not found, please signup first."
                 );
               }
             }
+            const { token, refreshToken } = await TokenService.generateToken(
+              userExists
+            );
+
+            let getProfileInput: any = {
+              request: {
+                query: { token },
+                params: { id: userExists._id },
+              },
+            };
+
+            await UserController.getProfile(getProfileInput);
+
+            await SocialService.verifySocial(reqParam);
+
+            await DeviceTokenService.addDeviceTokenIfNeeded(
+              userExists._id,
+              deviceToken
+            );
+
+            return this.Ok(ctx, {
+              token,
+              refreshToken,
+              profileData: getProfileInput.body.data,
+              isFor: 2,
+            });
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
           }
-          return this.Ok(ctx, {
-            token,
-            refreshToken,
-            profileData: getProfileInput.body.data,
-            isFor: 2,
-          });
         }
       }
     );
@@ -358,42 +303,9 @@ class AuthController extends BaseController {
               await childArray.push({ childId: child._id, accountId: null });
             }
           }
-          /**
-           * Verify Social Login Token now
-           */
-          /**
-           * Sign in type 1 - google and 2 - apple
-           */
-          const socialLoginToken = reqParam.socialLoginToken;
-          switch (reqParam.loginType) {
-            case "1":
-              const googleTicket: any = await google_client
-                .verifyIdToken({
-                  idToken: socialLoginToken,
-                  audience: envData.GOOGLE_CLIENT_ID,
-                })
-                .catch((error) => {
-                  return this.BadRequest(ctx, "Error Invalid Token Id");
-                });
-              const googlePayload = googleTicket.getPayload();
-              if (!googlePayload) {
-                return this.BadRequest(ctx, "Error while logging in");
-              }
-              if (googlePayload.email != reqParam.email) {
-                return this.BadRequest(ctx, "Email Doesn't Match");
-              }
-              break;
-            case "2":
-              const appleTicket: any = await apple_client
-                .verifyIdToken(socialLoginToken)
-                .catch((err) => {
-                  return this.BadRequest(ctx, "Error Invalid Token Id");
-                });
-              if (appleTicket.email != reqParam.email) {
-                return this.BadRequest(ctx, "Email Doesn't Match");
-              }
-              break;
-          }
+
+          await SocialService.verifySocial(reqParam);
+
           /**
            * Refferal code present and check whole logic for the
            */
@@ -749,7 +661,7 @@ class AuthController extends BaseController {
             let mainData = {
               data: [dataSentInCrm],
             };
-            const dataAddInZoho = await addAccountInfoInZohoCrm(
+            await addAccountInfoInZohoCrm(
               ctx.request.zohoAccessToken,
               mainData
             );
@@ -891,10 +803,7 @@ class AuthController extends BaseController {
           let mainData = {
             data: [dataSentInCrm],
           };
-          const dataZohoResp = await addAccountInfoInZohoCrm(
-            ctx.request.zohoAccessToken,
-            mainData
-          );
+          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
@@ -912,6 +821,7 @@ class AuthController extends BaseController {
               dataSentAgain
             );
           }
+          console.log("1```");
           await UserController.getProfile(getProfileInput);
           return this.Ok(ctx, {
             token,
@@ -939,88 +849,39 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          let userExists = await UserTable.findOne({ email: reqParam.email });
-          if (!userExists) {
-            return this.BadRequest(ctx, "Email Doesn't Exists");
-          } else {
-            /**
-             * Sign in type 1 - google and 2 - apple
-             */
-            const socialLoginToken = reqParam.socialLoginToken;
-            switch (reqParam.loginType) {
-              case "1":
-                const googleTicket: any = await google_client
-                  .verifyIdToken({
-                    idToken: socialLoginToken,
-                    audience: envData.GOOGLE_CLIENT_ID,
-                  })
-                  .catch((error) => {
-                    return this.BadRequest(ctx, "Error Invalid Token Id");
-                  });
-                const googlePayload = googleTicket.getPayload();
-                if (!googlePayload) {
-                  return this.BadRequest(ctx, "Error while logging in");
-                }
-                if (googlePayload.email != reqParam.email) {
-                  return this.BadRequest(ctx, "Email Doesn't Match");
-                }
-                break;
-              case "2":
-                const appleTicket: any = await apple_client
-                  .verifyIdToken(socialLoginToken)
-                  .catch((err) => {
-                    return this.BadRequest(ctx, "Error Invalid Token Id");
-                  });
-                if (appleTicket.email != reqParam.email) {
-                  return this.BadRequest(ctx, "Email Doesn't Match");
-                }
-                break;
-            }
-            const authInfo = await AuthService.getJwtAuthInfo(userExists);
-            const refreshToken = await getRefreshToken(authInfo);
-            userExists.refreshToken = refreshToken;
-            await userExists.save();
-            const token = await getJwtToken(authInfo);
-            let getProfileInput: any = {
-              request: {
-                query: { token },
-                headers: {},
-                params: { id: userExists._id },
-              },
-            };
-            if (reqParam.deviceToken) {
-              const checkDeviceTokenExists = await DeviceToken.findOne({
-                userId: userExists._id,
+          try {
+            const { email, deviceToken } = reqParam;
+            let userExists = await UserTable.findOne({ email });
+            if (!userExists) {
+              return this.BadRequest(ctx, "Email Doesn't Exists");
+            } else {
+              let getProfileInput: any = {
+                request: {
+                  params: { id: userExists._id },
+                },
+              };
+              await UserController.getProfile(getProfileInput);
+
+              await SocialService.verifySocial(reqParam);
+
+              const { token, refreshToken } = await TokenService.generateToken(
+                userExists
+              );
+
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                userExists._id,
+                deviceToken
+              );
+
+              return this.Ok(ctx, {
+                token,
+                refreshToken,
+                profileData: getProfileInput.body.data,
+                message: "Success",
               });
-              if (!checkDeviceTokenExists) {
-                await DeviceToken.create({
-                  userId: userExists._id,
-                  "deviceToken.0": reqParam.deviceToken,
-                });
-              } else {
-                if (
-                  !checkDeviceTokenExists.deviceToken.includes(
-                    reqParam.deviceToken
-                  )
-                ) {
-                  await DeviceToken.updateOne(
-                    { _id: checkDeviceTokenExists._id },
-                    {
-                      $push: {
-                        deviceToken: reqParam.deviceToken,
-                      },
-                    }
-                  );
-                }
-              }
             }
-            await UserController.getProfile(getProfileInput);
-            return this.Ok(ctx, {
-              token,
-              refreshToken,
-              profileData: getProfileInput.body.data,
-              message: "Success",
-            });
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
           }
         }
       }
@@ -1298,24 +1159,7 @@ class AuthController extends BaseController {
               );
             }
           }
-          const code = generateRandom6DigitCode(true);
-          const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
-          /**
-           * Send Otp to User from registered mobile number
-           */
-          const twilioResponse: any = await TwilioService.sendSMS(
-            reqParam.mobile,
-            message
-          );
-          if (twilioResponse.code === 400) {
-            return this.BadRequest(ctx, "Error in sending OTP");
-          }
-          await OtpTable.create({
-            message,
-            code,
-            receiverMobile: reqParam.mobile,
-            type: EOTPTYPE.CHANGE_MOBILE,
-          });
+          await TwilioService.sendOTP(reqParam.mobile, EOTPTYPE.CHANGE_MOBILE);
           return this.Ok(ctx, {
             message:
               "We have sent you code in order to proceed your request of changing cell number. Please check your phone.",
@@ -1450,28 +1294,8 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const code = generateRandom6DigitCode(true);
-          const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
-          /**
-           * Send Otp to User from registered mobile number
-           */
-          try {
-            const twilioResponse: any = await TwilioService.sendSMS(
-              reqParam.mobile,
-              message
-            );
-            if (twilioResponse.code === 400) {
-              return this.BadRequest(ctx, "Error in sending OTP");
-            }
-          } catch (error) {
-            return this.BadRequest(ctx, error);
-          }
-          await OtpTable.create({
-            message,
-            code,
-            receiverMobile: reqParam.mobile,
-            type: EOTPTYPE.CHANGE_MOBILE,
-          });
+          await TwilioService.sendOTP(reqParam.mobile, EOTPTYPE.CHANGE_MOBILE);
+
           return this.Ok(ctx, {
             message:
               "We have sent you code in order to proceed your request of changing cell number. Please check your phone.",
@@ -1494,7 +1318,7 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const { mobile, email } = input;
+          const { mobile } = input;
           // let user = await UserTable.findOne({ mobile });
           // if (user)
           //   return this.BadRequest(ctx, "Mobile number already exists.");
@@ -1506,22 +1330,9 @@ class AuthController extends BaseController {
           /**
            * Send sms for confirmation of otp
            */
-          const code = generateRandom6DigitCode(true);
-          const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
+
           try {
-            const twilioResponse: any = await TwilioService.sendSMS(
-              mobile,
-              message
-            );
-            if (twilioResponse.code === 400) {
-              return this.BadRequest(ctx, "Error in sending OTP");
-            }
-            await OtpTable.create({
-              message,
-              code,
-              receiverMobile: mobile,
-              type: EOTPTYPE.SIGN_UP,
-            });
+            await TwilioService.sendOTP(mobile, EOTPTYPE.SIGN_UP);
             return this.Ok(ctx, {
               message:
                 "We have sent you code in order to proceed your request of confirming mobile number. Please check your phone.",
