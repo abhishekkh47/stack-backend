@@ -1,6 +1,6 @@
-import { OtpTable } from "@app/model";
-import { EOTPTYPE } from "@app/types";
-import { generateRandom6DigitCode } from "@app/utility";
+import { OtpTable } from "../model";
+import { EOTPTYPE } from "../types";
+import { generateRandom6DigitCode } from "../utility";
 
 import config from "../config";
 
@@ -45,10 +45,7 @@ class TwilioService {
     /**
      * Send Otp to User from registered mobile number
      */
-    const twilioResponse: any = await this.sendSMS(
-      mobile,
-      message
-    );
+    const twilioResponse: any = await this.sendSMS(mobile, message);
     if (twilioResponse.code === 400) {
       throw new Error("Error in sending OTP");
     }

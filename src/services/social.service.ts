@@ -13,12 +13,11 @@ const apple_client: any = new AppleSignIn({
 class SocialService {
   public async verifySocial(reqParam: any) {
     const { email, loginType, socialLoginToken: socialLoginToken } = reqParam;
-
     /**
      * Sign in type 1 - google and 2 - apple
      */
     switch (loginType) {
-      case "1":
+      case 1:
         const googleTicket: any = await google_client
           .verifyIdToken({
             idToken: socialLoginToken,
@@ -35,7 +34,7 @@ class SocialService {
           throw Error("Email Doesn't Match");
         }
         break;
-      case "2":
+      case 2:
         const appleTicket: any = await apple_client
           .verifyIdToken(socialLoginToken)
           .catch((err) => {

@@ -1,76 +1,69 @@
 import Koa from "koa";
-
-import {
-  getJwtToken,
-  Route,
-  getMinutesBetweenDates,
-  verifyToken,
-  sendEmail,
-  hashString,
-  generateTempPassword,
-  getRefreshToken,
-  createAccount,
-  addAccountInfoInZohoCrm,
-  makeUniqueReferalCode,
-  sendNotification,
-  decodeJwtToken,
-  generateQuote,
-  executeQuote,
-  internalAssetTransfers,
-} from "../../../utility";
-import BaseController from "./base";
+import moment from "moment";
+import mongoose from "mongoose";
 import envData from "../../../config/index";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
+import {
+  AdminTable,
+  CryptoTable,
+  DeviceToken,
+  Notification,
+  OtpTable,
+  ParentChildTable,
+  QuizResult,
+  StateTable,
+  TransactionTable,
+  UserReffaralTable,
+  UserTable,
+} from "../../../model";
+import {
+  AuthService,
+  DeviceTokenService,
+  SocialService,
+  TokenService,
+  TwilioService,
+} from "../../../services";
 import {
   EAUTOAPPROVAL,
+  EGIFTSTACKCOINSSETTING,
   EOTPTYPE,
   EOTPVERIFICATION,
   ERead,
   ESCREENSTATUS,
+  ETransactionStatus,
+  ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-  ETransactionStatus,
-  ETransactionType,
-  EGIFTSTACKCOINSSETTING,
 } from "../../../types";
-import { AuthService } from "../../../services";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
-import { validation } from "../../../validations/apiValidation";
 import {
-  UserTable,
-  OtpTable,
-  ParentChildTable,
-  StateTable,
-  DeviceToken,
-  AdminTable,
-  QuizResult,
-  Notification,
-  UserReffaralTable,
-  TransactionTable,
-  CryptoTable,
-} from "../../../model";
-import { TwilioService } from "../../../services";
-import moment from "moment";
+  addAccountInfoInZohoCrm,
+  createAccount,
+  decodeJwtToken,
+  executeQuote,
+  generateQuote,
+  generateTempPassword,
+  getJwtToken,
+  getMinutesBetweenDates,
+  getRefreshToken,
+  hashString,
+  internalAssetTransfers,
+  makeUniqueReferalCode,
+  Route,
+  sendEmail,
+  sendNotification,
+  verifyToken,
+} from "../../../utility";
 import {
   CONSTANT,
-  NOTIFICATION_KEYS,
   NOTIFICATION,
+  NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
+import { validation } from "../../../validations/apiValidation";
+import BaseController from "./base";
 import UserController from "./user";
-import { OAuth2Client } from "google-auth-library";
-import { AppleSignIn } from "apple-sign-in-rest";
-import mongoose from "mongoose";
-import SocialService from "@app/services/social.service";
-import TokenService from "@app/services/token.service";
-import DeviceTokenService from "@app/services/device-token.service";
-const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
-const apple_client: any = new AppleSignIn({
-  clientId: envData.APPLE_CLIENT_ID,
-  teamId: envData.APPLE_TEAM_ID,
-  keyIdentifier: envData.APPLE_KEY_IDENTIFIER,
-  privateKey: envData.APPLE_PRIVATE_KEY,
-});
+
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
   public async handleLogin(ctx: Koa.Context) {
@@ -97,20 +90,25 @@ class AuthController extends BaseController {
                 );
               }
             }
-  
+            const { token, refreshToken } = await TokenService.generateToken(
+              userExists
+            );
+
             let getProfileInput: any = {
               request: {
+                query: { token },
                 params: { id: userExists._id },
               },
             };
-  
+
             await UserController.getProfile(getProfileInput);
 
             await SocialService.verifySocial(reqParam);
-  
-            const { token, refreshToken } = await TokenService.generateToken(userExists)
-  
-            await DeviceTokenService.addDeviceTokenIfNeeded(userExists._id, deviceToken)  
+
+            await DeviceTokenService.addDeviceTokenIfNeeded(
+              userExists._id,
+              deviceToken
+            );
 
             return this.Ok(ctx, {
               token,
@@ -306,7 +304,7 @@ class AuthController extends BaseController {
             }
           }
 
-          await SocialService.verifySocial(reqParam)
+          await SocialService.verifySocial(reqParam);
 
           /**
            * Refferal code present and check whole logic for the
@@ -805,10 +803,7 @@ class AuthController extends BaseController {
           let mainData = {
             data: [dataSentInCrm],
           };
-          await addAccountInfoInZohoCrm(
-            ctx.request.zohoAccessToken,
-            mainData
-          );
+          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
@@ -826,6 +821,7 @@ class AuthController extends BaseController {
               dataSentAgain
             );
           }
+          console.log("1```");
           await UserController.getProfile(getProfileInput);
           return this.Ok(ctx, {
             token,
@@ -868,9 +864,14 @@ class AuthController extends BaseController {
 
               await SocialService.verifySocial(reqParam);
 
-              const { token, refreshToken } = await TokenService.generateToken(userExists);
+              const { token, refreshToken } = await TokenService.generateToken(
+                userExists
+              );
 
-              await DeviceTokenService.addDeviceTokenIfNeeded(userExists._id, deviceToken);
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                userExists._id,
+                deviceToken
+              );
 
               return this.Ok(ctx, {
                 token,
@@ -1158,7 +1159,7 @@ class AuthController extends BaseController {
               );
             }
           }
-          await TwilioService.sendOTP(reqParam.mobile, EOTPTYPE.CHANGE_MOBILE)
+          await TwilioService.sendOTP(reqParam.mobile, EOTPTYPE.CHANGE_MOBILE);
           return this.Ok(ctx, {
             message:
               "We have sent you code in order to proceed your request of changing cell number. Please check your phone.",
@@ -1293,7 +1294,7 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          await TwilioService.sendOTP(reqParam.mobile, EOTPTYPE.CHANGE_MOBILE)
+          await TwilioService.sendOTP(reqParam.mobile, EOTPTYPE.CHANGE_MOBILE);
 
           return this.Ok(ctx, {
             message:
@@ -1331,7 +1332,7 @@ class AuthController extends BaseController {
            */
 
           try {
-            await TwilioService.sendOTP(mobile, EOTPTYPE.SIGN_UP)
+            await TwilioService.sendOTP(mobile, EOTPTYPE.SIGN_UP);
             return this.Ok(ctx, {
               message:
                 "We have sent you code in order to proceed your request of confirming mobile number. Please check your phone.",
