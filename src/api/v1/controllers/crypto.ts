@@ -1,15 +1,19 @@
 import Koa from "koa";
 import { ObjectId } from "mongodb";
-import { Auth } from "../../../middleware";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
+  ParentChildTable,
   TransactionTable,
+  UserTable,
 } from "../../../model";
-import { ETransactionType, HttpMethod } from "../../../types";
-import { Route } from "../../../utility";
+import { ETransactionType, EUserType, HttpMethod } from "../../../types";
+import { Route, getBalance } from "../../../utility";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
+import { getPortFolioService } from "../../../services";
+import { CASH_USD_ICON } from "../../../utility/constants";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
@@ -161,6 +165,101 @@ class CryptocurrencyController extends BaseController {
     );
     if (!data) return this.BadRequest(ctx, "Invalid Crypto ID");
     return this.Ok(ctx, { data });
+  }
+
+  /**
+   * @description This api is used for getting crypto list + cash with their portfolio balance and current price based on childId
+   * @param childId
+   * @param symbol
+   * @returns {*}
+   */
+  @Route({
+    path: "/crypto-info/:childId/:symbol",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  @PrimeTrustJWT()
+  public async getCryptoDataWithCurrentPrice(ctx: any) {
+    const jwtToken = ctx.request.primeTrustToken;
+    const { childId, symbol } = ctx.request.params;
+    if (!childId) {
+      return this.BadRequest(ctx, "Child Id Doesn't Exists");
+    }
+    if (!symbol) {
+      return this.BadRequest(ctx, "Crypto Id Doesn't Exists");
+    }
+    const userExists = await UserTable.findOne({ _id: childId });
+    const query =
+      userExists.type == EUserType.PARENT
+        ? { userId: userExists._id }
+        : { "teens.childId": userExists._id };
+    const parentChild = await ParentChildTable.findOne(query);
+    /**
+     * For Cash
+     */
+    if (symbol == "USD") {
+      const accountIdDetails: any = await parentChild.teens.find(
+        (x: any) => x.childId.toString() == userExists._id.toString()
+      );
+      if (!parentChild) {
+        return this.Ok(ctx, { balance: 0 });
+      }
+      const fetchBalance: any = await getBalance(
+        jwtToken,
+        accountIdDetails.accountId
+      );
+      if (fetchBalance.status == 400) {
+        return this.BadRequest(ctx, fetchBalance.message);
+      }
+      const balance = fetchBalance.data.data[0].attributes.disbursable;
+      return this.Ok(ctx, { portFolio: { value: balance, name: "Cash" } });
+    }
+    /**
+     * For Crypto
+     */
+    const crypto = await CryptoTable.findOne({ symbol: symbol });
+    const portFolio =
+      await getPortFolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
+        userExists._id,
+        crypto._id
+      );
+    // crypto
+    return this.Ok(ctx, { message: "Success", portFolio });
+  }
+
+  /**
+   * @description This api is used for getting crypto list + cash shown in new invest screen
+   * @returns {*}
+   */
+  @Route({ path: "/crypto-list-invest-screen", method: HttpMethod.GET })
+  @Auth()
+  public async getCryptoInInvestScreen(ctx: any) {
+    let cryptoList: any = await CryptoTable.aggregate([
+      {
+        $project: {
+          _id: 1,
+          image: 1,
+          name: 1,
+          symbol: 1,
+        },
+      },
+      {
+        $setWindowFields: {
+          sortBy: { _id: 1 },
+          output: { index: { $documentNumber: {} } },
+        },
+      },
+    ]).exec();
+    if (cryptoList.length == 0) {
+      return this.BadRequest(ctx, "Crypto Data Not Found");
+    }
+    cryptoList.unshift({
+      image: CASH_USD_ICON,
+      name: "Cash",
+      symbol: "USD",
+      index: 0,
+    });
+    return this.Ok(ctx, { message: "Success", data: cryptoList });
   }
 }
 

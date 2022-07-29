@@ -62,6 +62,8 @@ export const DROPDOWNLIST = {
   limit: 10,
 };
 
+export const CASH_USD_ICON = "CASH_USD.png";
+
 export const FIREBASE_CREDENCIALS = {
   type: "service_account",
   project_id: "temp-demo-push-notification",

@@ -62,6 +62,7 @@ export const validation = {
   recurringDepositValidation: (req, res, callback) => {
     const schema = Joi.object({
       isRecurring: Joi.number().valid(0, 1, 2, 3, 4).required(),
+      childId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
       selectedDeposit: Joi.when("isRecurring", {
         switch: [
           { is: 2, then: Joi.number().min(1).required() },

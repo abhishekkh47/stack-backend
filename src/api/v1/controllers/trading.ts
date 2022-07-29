@@ -3008,7 +3008,7 @@ class TradingController extends BaseController {
             )
             .format("YYYY-MM-DD");
           await UserTable.findOneAndUpdate(
-            { _id: userExists._id },
+            { _id: reqParam.childId },
             {
               $set: {
                 isRecurring: reqParam.isRecurring,
