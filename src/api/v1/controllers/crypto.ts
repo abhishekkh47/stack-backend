@@ -8,7 +8,12 @@ import {
   TransactionTable,
   UserTable,
 } from "../../../model";
-import { ETransactionType, EUserType, HttpMethod } from "../../../types";
+import {
+  ERECURRING,
+  ETransactionType,
+  EUserType,
+  HttpMethod,
+} from "../../../types";
 import { Route, getBalance } from "../../../utility";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
@@ -212,7 +217,22 @@ class CryptocurrencyController extends BaseController {
         return this.BadRequest(ctx, fetchBalance.message);
       }
       const balance = fetchBalance.data.data[0].attributes.disbursable;
-      return this.Ok(ctx, { portFolio: { value: balance, name: "Cash" } });
+      return this.Ok(ctx, {
+        portFolio: {
+          value: balance,
+          name: "Cash",
+          symbol: "USD",
+          isRecurring:
+            userExists.isRecurring == ERECURRING.WEEKLY ||
+            userExists.isRecurring == ERECURRING.MONTLY ||
+            userExists.isRecurring == ERECURRING.QUATERLY
+              ? userExists.isRecurring
+              : parentChild.accessToken
+              ? 1
+              : 0,
+          selectedDeposit: userExists.selectedDeposit,
+        },
+      });
     }
     /**
      * For Crypto
