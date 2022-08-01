@@ -12,7 +12,12 @@ const apple_client: any = new AppleSignIn({
 });
 class SocialService {
   public async verifySocial(reqParam: any) {
-    const { email, loginType, socialLoginToken: socialLoginToken } = reqParam;
+    const {
+      email,
+      loginType,
+      socialLoginToken: socialLoginToken,
+      deviceType,
+    } = reqParam;
     /**
      * Sign in type 1 - google and 2 - apple
      */
@@ -21,7 +26,10 @@ class SocialService {
         const googleTicket: any = await google_client
           .verifyIdToken({
             idToken: socialLoginToken,
-            audience: envData.GOOGLE_CLIENT_ID,
+            audience:
+              deviceType == 1
+                ? envData.ANDROID_GOOGLE_CLIENT_ID
+                : envData.GOOGLE_CLIENT_ID,
           })
           .catch((error) => {
             throw Error("Error Invalid Token Id");

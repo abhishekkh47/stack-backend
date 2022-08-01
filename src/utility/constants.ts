@@ -62,6 +62,8 @@ export const DROPDOWNLIST = {
   limit: 10,
 };
 
+export const CASH_USD_ICON = "CASH_USD.png";
+
 export const FIREBASE_CREDENCIALS = {
   type: "service_account",
   project_id: "temp-demo-push-notification",
@@ -113,10 +115,12 @@ export const NOTIFICATION = {
   ACCOUNT_CLOSED_TITLE: "Your account is closed",
   ACCOUNT_CLOSED_DESCRIPTION:
     "Thanks for applying, we can't open an account for you based on the info you provided",
+  RECURRING_FAILED: "An error occurred while processing your deposit",
 };
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
+  RECURRING_FAILED: "recurring_failed",
   KYC_SUCCESS: "kyc_success",
   ACCOUNT_CLOSED: "account_closed",
   KYC_FAILURE: "kyc_failure",

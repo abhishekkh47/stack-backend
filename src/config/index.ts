@@ -86,6 +86,9 @@ export default {
   get GOOGLE_CLIENT_ID() {
     return process.env.GOOGLE_CLIENT_ID;
   },
+  get ANDROID_GOOGLE_CLIENT_ID() {
+    return process.env.ANDROID_GOOGLE_CLIENT_ID;
+  },
   get APPLE_CLIENT_ID() {
     return process.env.APPLE_CLIENT_ID;
   },

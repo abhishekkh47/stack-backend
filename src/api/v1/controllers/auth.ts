@@ -821,7 +821,6 @@ class AuthController extends BaseController {
               dataSentAgain
             );
           }
-          console.log("1```");
           await UserController.getProfile(getProfileInput);
           return this.Ok(ctx, {
             token,

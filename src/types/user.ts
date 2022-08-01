@@ -44,6 +44,9 @@ export interface IAccount {
   accountStatus: string;
   referralCode: string;
   isAutoApproval: EAUTOAPPROVAL;
+  isRecurring: ERECURRING;
+  selectedDeposit: number;
+  selectedDepositDate;
 }
 
 export interface IAdmin extends IUser {
@@ -62,6 +65,14 @@ export const ALLOWED_LOGIN_ATTEMPTS = 3;
 export enum EAUTOAPPROVAL {
   ON = 1,
   OFF = 0,
+}
+
+export enum ERECURRING {
+  NO_BANK = 0,
+  NO_RECURRING = 1,
+  WEEKLY = 2,
+  MONTLY = 3,
+  QUATERLY = 4,
 }
 
 export enum EUserType {

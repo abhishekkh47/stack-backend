@@ -258,5 +258,12 @@
 	"getPortFolioChildidPattern": "getPortFolioChildidPattern",
 	"checkValidMobileValidationTypeOnly": "Please enter user type",
 	"checkValidMobileValidationMobileEmpty": "Please enter mobile with country code as well",
-	"checkValidMobileValidationMobileRequired": "Please enter mobile with country code as well"
+	"checkValidMobileValidationMobileRequired": "Please enter mobile with country code as well",
+	"recurringDepositValidationIsrecurringRequired": "Please select isRecurring flag",
+	"recurringDepositValidationIsrecurringOnly": "Please select isRecurring flag from 0 to 4 only",
+	"recurringDepositValidationSelecteddepositRequired": "Please select deposit amount",
+	"recurringDepositValidationSelecteddepositBase": "Please select valid deposit amount",
+	"recurringDepositValidationChildidRequired": "Please enter child details",
+	"recurringDepositValidationChildidEmpty": "Please enter child details",
+	"recurringDepositValidationChildidPattern": "Please enter child details"
 }

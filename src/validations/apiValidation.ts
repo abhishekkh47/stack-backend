@@ -59,6 +59,29 @@ export const validation = {
     }
     return callback(true);
   },
+  recurringDepositValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      isRecurring: Joi.number().valid(0, 1, 2, 3, 4).required(),
+      childId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      selectedDeposit: Joi.when("isRecurring", {
+        switch: [
+          { is: 2, then: Joi.number().min(1).required() },
+          { is: 3, then: Joi.number().min(1).required() },
+          { is: 4, then: Joi.number().min(1).required() },
+        ],
+      }),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("recurringDepositValidation", error))
+      );
+    }
+    return callback(true);
+  },
   updateAutoApprovalValidation: (req, res, callback) => {
     const schema = Joi.object({
       isAutoApproval: Joi.number().valid(0, 1).required(),
@@ -158,6 +181,7 @@ export const validation = {
       refferalCode: Joi.string().optional(),
       loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       socialLoginToken: Joi.string().required(),
+      deviceType: Joi.number().valid(1, 2),
       childMobile: Joi.when("type", {
         is: 2,
         then: Joi.string()
@@ -244,6 +268,7 @@ export const validation = {
       email: Joi.string().email().required(),
       loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       socialLoginToken: Joi.string().required(),
+      deviceType: Joi.number().valid(1, 2),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {
@@ -307,6 +332,7 @@ export const validation = {
       email: Joi.string().email().required(),
       deviceToken: Joi.string(),
       socialLoginToken: Joi.string().required(),
+      deviceType: Joi.number().valid(1, 2), // 1 - android and 2 - ios
     });
 
     const { error } = schema.validate(req);
