@@ -22,6 +22,7 @@ import {
   SocialService,
   TokenService,
   TwilioService,
+  zohoCrmService,
 } from "../../../services";
 import {
   EAUTOAPPROVAL,
@@ -37,7 +38,6 @@ import {
   HttpMethod,
 } from "../../../types";
 import {
-  addAccountInfoInZohoCrm,
   createAccount,
   decodeJwtToken,
   executeQuote,
@@ -401,12 +401,9 @@ class AuthController extends BaseController {
                   refferalCodeExists.lastName,
                 Stack_Coins: stackCoins,
               };
-              let mainData = {
-                data: [dataSentInCrm],
-              };
-              await addAccountInfoInZohoCrm(
+              await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
-                mainData
+                dataSentInCrm
               );
             }
           }
@@ -658,12 +655,9 @@ class AuthController extends BaseController {
               Account_Name: user.firstName + " " + user.lastName,
               Stack_Coins: admin.stackCoins,
             };
-            let mainData = {
-              data: [dataSentInCrm],
-            };
-            await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
-              mainData
+              dataSentInCrm
             );
             user = await UserTable.findByIdAndUpdate(
               { _id: user._id },
@@ -780,12 +774,15 @@ class AuthController extends BaseController {
            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
            */
           let dataSentInCrm: any = {
-            Account_Name: user.firstName + " " + user.lastName,
+            Account_Name: user.lastName
+              ? user.firstName + " " + user.lastName
+              : user.firstName,
             First_Name: user.firstName,
-            Last_Name: user.lastName,
+            Last_Name: user.lastName ? user.lastName : null,
             Email: user.email,
             Mobile: user.mobile,
             Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
+            Birthday: user.dob,
             User_ID: user._id,
           };
           if (isGiftedStackCoins > 0) {
@@ -800,23 +797,26 @@ class AuthController extends BaseController {
               Parent_Signup_Funnel: PARENT_SIGNUP_FUNNEL.SIGNUP,
             };
           }
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm
+          );
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
                 {
-                  Account_Name:
-                    childExists.firstName + " " + childExists.lastName,
+                  Account_Name: childExists.lastName
+                    ? childExists.firstName + " " + childExists.lastName
+                    : childExists.firstName,
                   Parent_Account: {
-                    name: user.firstName + " " + user.lastName,
+                    name: user.lastName
+                      ? user.firstName + " " + user.lastName
+                      : user.firstName,
                   },
                 },
               ],
             };
-            await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
               dataSentAgain
             );
@@ -1680,95 +1680,6 @@ class AuthController extends BaseController {
     const states = await StateTable.find({});
     this.Ok(ctx, { data: states });
   }
-
-  /**
-   * @description This method is used to store address and asset information
-   * @param ctx
-   * @returns
-   */
-  // @Route({ path: "/store-user-details", method: HttpMethod.POST })
-  // @Auth()
-  // @PrimeTrustJWT(true)
-  // public async storeUserDetails(ctx: any) {
-  //   let input: any = ctx.request.body;
-  //   const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
-  //   if (!userExists) {
-  //     return this.BadRequest(ctx, "User Not Found");
-  //   }
-  //   return validation.storeUserDetailsValidation(
-  //     input,
-  //     ctx,
-  //     async (validate) => {
-  //       if (validate) {
-  //         const state = await StateTable.findOne({ _id: input.stateId });
-  //         if (!state) return this.BadRequest(ctx, "Invalid State ID.");
-  //         try {
-  //           input.screenStatus =
-  //             userExists.type === EUserType.PARENT
-  //               ? ESCREENSTATUS.ACKNOWLEDGE_SCREEN
-  //               : ESCREENSTATUS.SIGN_UP;
-  //           await UserTable.findOneAndUpdate(
-  //             { _id: ctx.request.user._id },
-  //             { $set: input }
-  //           );
-  //           /**
-  //            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
-  //            */
-  //           let dataSentInCrm: any = {
-  //             Account_Name: userExists.firstName + " " + userExists.lastName,
-  //             Billing_Country: "US",
-  //           };
-  //           if (input.postalCode) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_Code: input.postalCode,
-  //             };
-  //           }
-  //           if (input.stateId) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_State: state.name,
-  //             };
-  //           }
-  //           if (input.address) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_Street: input.address,
-  //             };
-  //           }
-  //           if (input.city) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_City: input.city,
-  //             };
-  //           }
-  //           if (userExists.type === EUserType.PARENT) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Parent_Signup_Funnel: [
-  //                 ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-  //                 PARENT_SIGNUP_FUNNEL.ADDRESS,
-  //               ],
-  //             };
-  //           }
-  //           let mainData = {
-  //             data: [dataSentInCrm],
-  //           };
-  //           const dataAddInZoho = await addAccountInfoInZohoCrm(
-  //             ctx.request.zohoAccessToken,
-  //             mainData
-  //           );
-  //           return this.Created(ctx, {
-  //             message:
-  //               "Stored Address and Liquid Asset Information Successfully",
-  //           });
-  //         } catch (error) {
-  //           this.BadRequest(ctx, "Something went wrong. Please try again.");
-  //         }
-  //       }
-  //     }
-  //   );
-  // }
 
   /**
    * @description This method is used to create refresh token

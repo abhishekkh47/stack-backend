@@ -30,7 +30,6 @@ import {
   messages,
 } from "../../../types";
 import {
-  addAccountInfoInZohoCrm,
   createContributions,
   createDisbursements,
   createProcessorToken,
@@ -54,6 +53,7 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
+import { zohoCrmService } from "../../../services";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -302,12 +302,9 @@ class TradingController extends BaseController {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Parent_Signup_Funnel: ParentArray,
             };
-            let mainData = {
-              data: [dataSentInCrm],
-            };
-            const dataResponse = await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
-              mainData
+              dataSentInCrm
             );
             return this.Ok(ctx, {
               message:
@@ -328,10 +325,10 @@ class TradingController extends BaseController {
             Account_Name: userExists.firstName + " " + userExists.lastName,
             Parent_Signup_Funnel: ParentArray,
           };
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm
+          );
           return this.Ok(ctx, { message: "Bank account linked successfully" });
         }
       }

@@ -1,7 +1,6 @@
 import config from "../config";
 import axios from "axios";
-import { PLAIDAPIS, ZOHOAPIS } from "./constants";
-import request from "request";
+import { ZOHOAPIS } from "./constants";
 
 /**
  * @description This api is used to get access token for zoho crm

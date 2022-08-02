@@ -1,14 +1,17 @@
 import Koa from "koa";
+import moment from "moment";
 import mongoose from "mongoose";
-import {
-  get72HoursAhead,
-  Route,
-  getHistoricalDataOfCoins,
-  getLatestPrice,
-  addAccountInfoInZohoCrm,
-} from "../../../utility";
-import BaseController from "./base";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
+import {
+  ParentChildTable,
+  QuizQuestionResult,
+  QuizQuestionTable,
+  QuizResult,
+  QuizTable,
+  QuizTopicTable,
+  UserTable,
+} from "../../../model";
+import { zohoCrmService } from "../../../services";
 import {
   EQuizTopicStatus,
   EUserType,
@@ -16,20 +19,9 @@ import {
   HttpMethod,
   timeBetweenTwoQuiz,
 } from "../../../types";
-import {
-  QuizTopicTable,
-  QuizTable,
-  QuizQuestionTable,
-  QuizResult,
-  CryptoTable,
-  QuizQuestionResult,
-  CryptoPriceTable,
-  UserTable,
-  ParentChildTable,
-} from "../../../model";
+import { get72HoursAhead, Route } from "../../../utility";
 import { validation } from "../../../validations/apiValidation";
-import moment from "moment";
-const { GoogleSpreadsheet } = require("google-spreadsheet");
+import BaseController from "./base";
 
 class QuizController extends BaseController {
   /**
@@ -397,10 +389,10 @@ class QuizController extends BaseController {
               },
             ],
           };
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm
+          );
           return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });
         }
       }

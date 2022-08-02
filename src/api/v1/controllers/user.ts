@@ -22,7 +22,6 @@ import {
   uploadImage,
   checkValidBase64String,
   sendNotification,
-  addAccountInfoInZohoCrm,
 } from "../../../utility";
 import {
   EUSERSTATUS,
@@ -35,7 +34,7 @@ import {
 import path from "path";
 import moment from "moment";
 import { ObjectId } from "mongodb";
-import { AuthService } from "../../../services";
+import { AuthService, zohoCrmService } from "../../../services";
 import {
   CMS_LINKS,
   FIREBASE_CREDENCIALS,
@@ -43,7 +42,6 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
-const { GoogleSpreadsheet } = require("google-spreadsheet");
 import envData from "../../../config/index";
 
 class UserController extends BaseController {
@@ -432,12 +430,9 @@ class UserController extends BaseController {
         PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
       ],
     };
-    let mainData = {
-      data: [dataSentInCrm],
-    };
-    const dataAddInZoho = await addAccountInfoInZohoCrm(
+    await zohoCrmService.addAccounts(
       ctx.request.zohoAccessToken,
-      mainData
+      dataSentInCrm
     );
     /**
      * Kyc pending mode call

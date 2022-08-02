@@ -1,55 +1,47 @@
-import Koa from "koa";
-import crypto from "crypto";
+import { json } from "co-body";
+import fs from "fs";
+import moment from "moment";
+import path from "path";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
-  Route,
-  updateContacts,
-  kycDocumentChecks,
-  uploadFilesFetch,
-  checkValidBase64String,
-  getContactId,
-  sendNotification,
-  addAccountInfoInZohoCrm,
-  getAccountStatusByAccountId,
-  generateQuote,
-  executeQuote,
-  createContributions,
-  internalAssetTransfers,
-} from "../../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
-import { json, form } from "co-body";
-import BaseController from "./base";
-import {
-  ETransactionStatus,
-  EUSERSTATUS,
-  HttpMethod,
-  EUserType,
-  EGIFTSTACKCOINSSETTING,
-  ETransactionType,
-  ERECURRING,
-  messages,
-  EAction,
-  ERead,
-  EStatus,
-} from "../../../types";
-import envData from "../../../config/index";
-import {
+  AdminTable,
+  DeviceToken,
+  Notification,
   ParentChildTable,
   StateTable,
-  UserTable,
   TransactionTable,
-  WebhookTable,
-  DeviceToken,
-  AdminTable,
-  Notification,
-  CryptoTable,
   UserActivityTable,
+  UserTable,
+  WebhookTable,
 } from "../../../model";
+import {
+  EAction,
+  EGIFTSTACKCOINSSETTING,
+  ERead,
+  ERECURRING,
+  EStatus,
+  ETransactionStatus,
+  ETransactionType,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+  messages,
+} from "../../../types";
+import {
+  checkValidBase64String,
+  createContributions,
+  getAccountStatusByAccountId,
+  getContactId,
+  kycDocumentChecks,
+  Route,
+  sendNotification,
+  updateContacts,
+  uploadFilesFetch,
+} from "../../../utility";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
-import { PrimeTrustJWT, Auth } from "../../../middleware";
-import fs from "fs";
-import path from "path";
-import moment from "moment";
-import { ObjectId } from "mongodb";
+import BaseController from "./base";
+import { zohoCrmService } from "../../../services";
 
 class WebHookController extends BaseController {
   /**
@@ -124,12 +116,9 @@ class WebHookController extends BaseController {
             Account_Name: userExists.firstName + " " + userExists.lastName,
             Account_Status: "2",
           };
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          const dataAddInZoho = await addAccountInfoInZohoCrm(
+          await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
-            mainData
+            dataSentInCrm
           );
           if (deviceTokenData) {
             let notificationRequest = {
@@ -197,12 +186,9 @@ class WebHookController extends BaseController {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Account_Status: "3",
             };
-            let mainData = {
-              data: [dataSentInCrm],
-            };
-            await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
-              mainData
+              dataSentInCrm
             );
             if (deviceTokenData) {
               let notificationRequest = {
@@ -238,12 +224,9 @@ class WebHookController extends BaseController {
                       allTeen.childId.lastName,
                     Stack_Coins: admin.stackCoins,
                   };
-                  let mainData = {
-                    data: [dataSentInCrm],
-                  };
-                  const dataAddInZoho = await addAccountInfoInZohoCrm(
+                  await zohoCrmService.addAccounts(
                     ctx.request.zohoAccessToken,
-                    mainData
+                    dataSentInCrm
                   );
                 }
               }
@@ -319,12 +302,9 @@ class WebHookController extends BaseController {
                 Account_Name: userExists.firstName + " " + userExists.lastName,
                 Account_Status: "3",
               };
-              let mainData = {
-                data: [dataSentInCrm],
-              };
-              const dataAddInZoho = await addAccountInfoInZohoCrm(
+              await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
-                mainData
+                dataSentInCrm
               );
               if (deviceTokenData) {
                 let notificationRequest = {
@@ -360,12 +340,9 @@ class WebHookController extends BaseController {
                         allTeen.childId.lastName,
                       Stack_Coins: admin.stackCoins,
                     };
-                    let mainData = {
-                      data: [dataSentInCrm],
-                    };
-                    const dataAddInZoho = await addAccountInfoInZohoCrm(
+                    await zohoCrmService.addAccounts(
                       ctx.request.zohoAccessToken,
-                      mainData
+                      dataSentInCrm
                     );
                   }
                 }
