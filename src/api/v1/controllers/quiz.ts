@@ -376,22 +376,106 @@ class QuizController extends BaseController {
               everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
           };
           await QuizResult.create(dataToCreate);
+          let userExistsForQuiz = null;
+          let preLoadedCoins = 0;
+          let isParentOrChild = 0;
+          if (userExists.type == EUserType.PARENT) {
+            userExistsForQuiz = await ParentChildTable.findOne({
+              userId: userExists._id,
+            }).populate("firstChildId", [
+              "_id",
+              "preLoadedCoins",
+              "isGiftedCrypto",
+              "isParentFirst",
+            ]);
+            preLoadedCoins = userExistsForQuiz
+              ? userExistsForQuiz.firstChildId.preLoadedCoins
+              : 0;
+          } else {
+            userExistsForQuiz = await ParentChildTable.findOne({
+              firstChildId: userExists._id,
+            }).populate("userId", [
+              "_id",
+              "preLoadedCoins",
+              "firstName",
+              "lastName",
+              "isGiftedCrypto",
+              "isParentFirst",
+            ]);
+            isParentOrChild = userExistsForQuiz ? 2 : 0;
+            preLoadedCoins = userExistsForQuiz ? userExists.preLoadedCoins : 0;
+          }
+          const checkQuizExists = await QuizResult.aggregate([
+            {
+              $match: {
+                $or: [
+                  { userId: new mongoose.Types.ObjectId(userExists._id) },
+                  {
+                    userId: userExistsForQuiz
+                      ? userExists.type == EUserType.PARENT
+                        ? new mongoose.Types.ObjectId(
+                            userExistsForQuiz.firstChildId._id
+                          )
+                        : new mongoose.Types.ObjectId(
+                            userExistsForQuiz.userId._id
+                          )
+                      : null,
+                  },
+                ],
+              },
+            },
+            {
+              $group: {
+                _id: 0,
+                sum: {
+                  $sum: "$pointsEarned",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                sum: 1,
+              },
+            },
+          ]).exec();
+          let stackCoins = 0;
+          if (checkQuizExists.length > 0) {
+            stackCoins = checkQuizExists[0].sum;
+          }
+          stackCoins = stackCoins + preLoadedCoins;
           /**
            * Added Quiz information to zoho crm
            */
-          let dataSentInCrm: any = {
-            Account_Name: userExists.firstName + " " + userExists.lastName,
-            Quiz_Information: [
-              {
-                Quiz_Number: parseInt(quizExists.quizName.split(" ")[1]),
-                Points:
-                  everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
-              },
-            ],
-          };
+          let dataSentInCrm: any = [
+            {
+              Account_Name: userExists.firstName + " " + userExists.lastName,
+              Stack_Coins: stackCoins,
+              Quiz_Information: [
+                {
+                  Quiz_Number: parseInt(quizExists.quizName.split(" ")[1]),
+                  Points:
+                    everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+                },
+              ],
+            },
+          ];
+          console.log(isParentOrChild, "isParentOrChild");
+          if (isParentOrChild != 0) {
+            isParentOrChild == 2
+              ? dataSentInCrm.push({
+                  Account_Name:
+                    userExistsForQuiz.userId.firstName +
+                    " " +
+                    userExistsForQuiz.userId.lastName,
+                  Stack_Coins: stackCoins,
+                })
+              : dataSentInCrm.push({});
+          }
           await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
-            dataSentInCrm
+            dataSentInCrm,
+            true
           );
           return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });
         }

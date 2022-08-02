@@ -61,13 +61,15 @@ class WebHookController extends BaseController {
     });
     const checkAccountIdExists: any = await ParentChildTable.findOne({
       "teens.accountId": body.account_id,
-    }).populate("teens.childId", [
-      "email",
-      "isGifted",
-      "isGiftedCrypto",
-      "firstName",
-      "lastName",
-    ]);
+    })
+      .populate("teens.childId", [
+        "email",
+        "isGifted",
+        "isGiftedCrypto",
+        "firstName",
+        "lastName",
+      ])
+      .populate("firstChildId", ["firstName", "lastName"]);
     if (!checkAccountIdExists) {
       return this.OkWebhook(ctx, "Account Id Doesn't Exists");
     }
@@ -862,166 +864,19 @@ class WebHookController extends BaseController {
     path: "/test-zoho",
     method: HttpMethod.POST,
   })
-  @PrimeTrustJWT(true)
   public async testZoho(ctx: any) {
-    let jwtToken = ctx.request.primeTrustToken;
-    let users: any = await UserTable.aggregate([
-      {
-        $match: {
-          $and: [
-            { isRecurring: { $exists: true } },
-            { isRecurring: { $nin: [0, 1] } },
-          ],
-        },
-      },
-      {
-        $lookup: {
-          from: "parentchild",
-          localField: "_id",
-          foreignField: "teens.childId",
-          as: "parentChild",
-        },
-      },
-      { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
-    ]).exec();
-    console.log(users, "users");
-    if (users.length > 0) {
-      console.log(users.length, "users");
-      let todayDate = moment().startOf("day").unix();
-      let transactionArray = [];
-      let mainArray = [];
-      let activityArray = [];
-      for await (let user of users) {
-        const accountIdDetails = await user.parentChild.teens.find(
-          (x: any) => x.childId.toString() == user._id.toString()
-        );
-        console.log(accountIdDetails, "accountIdDetails");
-        if (!accountIdDetails) {
-          return false;
-        }
-        let selectedDate = moment(user.selectedDepositDate)
-          .startOf("day")
-          .unix();
-        console.log(selectedDate, "selectedDate");
-        console.log(todayDate, "todayDate");
-        console.log(selectedDate <= todayDate, "todayDate");
-        if (selectedDate <= todayDate) {
-          console.log("selectedDate");
-          /**
-           * create fund transfer with fund transfer id in response
-           */
-          let contributionRequest = {
-            type: "contributions",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "contact-id": user.parentChild.contactId,
-              "funds-transfer-method": {
-                "funds-transfer-type": "ach",
-                "ach-check-type": "personal",
-                "contact-id": user.parentChild.contactId,
-                "plaid-processor-token": user.parentChild.processorToken,
-              },
-              amount: user.selectedDeposit,
-            },
-          };
-          let contributions: any = await createContributions(
-            jwtToken,
-            contributionRequest
-          );
-          if (contributions.status == 400) {
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: user.parentChild.userId,
-            }).select("deviceToken");
-            /**
-             * Notification
-             */
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.RECURRING_FAILED,
-                title: NOTIFICATION.RECURRING_FAILED,
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-              await Notification.create({
-                title: notificationRequest.title,
-                userId: user.parentChild.userId,
-                message: null,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
-              });
-            }
-            return false;
-          }
-          let activityData = {
-            userId: user._id,
-            userType: EUserType.TEEN,
-            message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
-            currencyType: null,
-            currencyValue: user.selectedDeposit,
-            action: EAction.DEPOSIT,
-            resourceId: contributions.data.included[0].id,
-            status: EStatus.PROCESSED,
-          };
-          await activityArray.push(activityData);
-          let transactionData = {
-            assetId: null,
-            cryptoId: null,
-            accountId: accountIdDetails.accountId,
-            type: ETransactionType.DEPOSIT,
-            recurringDeposit: true,
-            settledTime: moment().unix(),
-            amount: user.selectedDeposit,
-            amountMod: null,
-            userId: user._id,
-            parentId: user.parentChild.userId,
-            status: ETransactionStatus.PENDING,
-            executedQuoteId: contributions.data.included[0].id,
-            unitCount: null,
-          };
-          await transactionArray.push(transactionData);
-          let bulWriteOperation = {
-            updateOne: {
-              filter: { _id: user._id },
-              update: {
-                $set: {
-                  selectedDepositDate: moment(user.selectedDepositDate)
-                    .utc()
-                    .startOf("day")
-                    .add(
-                      user.isRecurring == ERECURRING.WEEKLY
-                        ? 7
-                        : user.isRecurring == ERECURRING.MONTLY
-                        ? 1
-                        : user.isRecurring == ERECURRING.QUATERLY
-                        ? 4
-                        : 0,
-                      user.isRecurring == ERECURRING.WEEKLY
-                        ? "days"
-                        : user.isRecurring == ERECURRING.MONTLY
-                        ? "months"
-                        : user.isRecurring == ERECURRING.QUATERLY
-                        ? "months"
-                        : "day"
-                    ),
-                },
-              },
-            },
-          };
-          await mainArray.push(bulWriteOperation);
-        }
-      }
-      console.log(transactionArray, "transactionArray");
-      console.log(mainArray, "mainArray");
-      console.log(activityArray, "activityArray");
-      await UserActivityTable.insertMany(activityArray);
-      await TransactionTable.insertMany(transactionArray);
-      await UserTable.bulkWrite(mainArray);
-      return this.Ok(ctx, { message: "Success" });
-    }
-    return this.BadRequest(ctx, "No Such Users");
+    let parent = await ParentChildTable.findOne({
+      userId: "62e772569b557209f14415e2",
+    })
+      .populate("teens.childId", [
+        "email",
+        "isGifted",
+        "isGiftedCrypto",
+        "firstName",
+        "lastName",
+      ])
+      .populate("firstChildId", ["firstName", "lastName"]);
+    return this.BadRequest(ctx, { parent });
   }
 }
 
