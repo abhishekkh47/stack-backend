@@ -387,7 +387,10 @@ class QuizController extends BaseController {
               "preLoadedCoins",
               "isGiftedCrypto",
               "isParentFirst",
+              "firstName",
+              "lastName",
             ]);
+            isParentOrChild = userExistsForQuiz ? 1 : 0;
             preLoadedCoins = userExistsForQuiz
               ? userExistsForQuiz.firstChildId.preLoadedCoins
               : 0;
@@ -470,7 +473,13 @@ class QuizController extends BaseController {
                     userExistsForQuiz.userId.lastName,
                   Stack_Coins: stackCoins,
                 })
-              : dataSentInCrm.push({});
+              : dataSentInCrm.push({
+                  Account_Name:
+                    userExistsForQuiz.firstChildId.firstName +
+                    " " +
+                    userExistsForQuiz.firstChildId.lastName,
+                  Stack_Coins: stackCoins,
+                });
           }
           await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
