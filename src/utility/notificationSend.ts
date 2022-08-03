@@ -3,7 +3,8 @@ import envData from "../config/index";
 import { FIREBASE_CREDENCIALS } from "../utility/constants";
 const fcm = new FCM(envData.FIREBASE_SERVER_KEY);
 export const sendNotification = async (to, body, data, action = null) => {
-  if (to != null) {
+  console.log(to.length > 0, "sendNotification");
+  if (to.length > 0) {
     const message = {
       registration_ids: to,
       notification: {
@@ -21,11 +22,13 @@ export const sendNotification = async (to, body, data, action = null) => {
       "content-available": true,
       data: data,
     };
-    await fcm.send(message, function (err, resp) {
+    return await fcm.send(message, function (err, resp) {
       if (err) {
         console.log("Something has gone wrong!", err.results);
+        return false;
       } else {
         console.log("Notification Successfully sent", resp);
+        return true;
       }
     });
   }

@@ -105,10 +105,12 @@ class AuthController extends BaseController {
 
             await SocialService.verifySocial(reqParam);
 
-            await DeviceTokenService.addDeviceTokenIfNeeded(
-              userExists._id,
-              deviceToken
-            );
+            const getDevicetoken =
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                userExists._id,
+                deviceToken
+              );
+            console.log(getDevicetoken, "getDevicetoken");
 
             return this.Ok(ctx, {
               token,
@@ -343,17 +345,17 @@ class AuthController extends BaseController {
               /**
                * Send notification to user who has given refferal code
                */
-              let deviceTokenData = await DeviceToken.findOne({
+              let deviceTokenData = await DeviceToken.distinct("deviceToken", {
                 userId: refferalCodeExists._id,
-              }).select("deviceToken");
-              if (deviceTokenData) {
+              });
+              if (deviceTokenData.length > 0) {
                 let notificationRequest = {
                   key: NOTIFICATION_KEYS.FREIND_REFER,
                   title: NOTIFICATION.SUCCESS_REFER_MESSAGE,
                   message: null,
                 };
                 await sendNotification(
-                  deviceTokenData.deviceToken,
+                  deviceTokenData,
                   notificationRequest.title,
                   notificationRequest
                 );
@@ -731,31 +733,11 @@ class AuthController extends BaseController {
             },
           };
           if (reqParam.deviceToken) {
-            let checkDeviceTokenExists: any = await DeviceToken.findOne({
-              userId: user._id,
-            });
-            if (!checkDeviceTokenExists) {
-              checkDeviceTokenExists = await DeviceToken.create({
-                userId: user._id,
-                "deviceToken.0": reqParam.deviceToken,
-              });
-            } else {
-              if (
-                !checkDeviceTokenExists.deviceToken.includes(
-                  reqParam.deviceToken
-                )
-              ) {
-                checkDeviceTokenExists = await DeviceToken.updateOne(
-                  { _id: checkDeviceTokenExists._id },
-                  {
-                    $push: {
-                      deviceToken: reqParam.deviceToken,
-                    },
-                  },
-                  { new: true }
-                );
-              }
-            }
+            let getDeviceTokens =
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                user._id,
+                reqParam.deviceToken
+              );
             if (isGiftedStackCoins > 0) {
               let notificationRequest = {
                 key: NOTIFICATION_KEYS.FREIND_REFER,
@@ -763,7 +745,7 @@ class AuthController extends BaseController {
                 message: null,
               };
               await sendNotification(
-                checkDeviceTokenExists.deviceToken,
+                getDeviceTokens,
                 notificationRequest.title,
                 notificationRequest
               );
@@ -867,10 +849,11 @@ class AuthController extends BaseController {
                 userExists
               );
 
-              await DeviceTokenService.addDeviceTokenIfNeeded(
-                userExists._id,
-                deviceToken
-              );
+              const getDevicetoken =
+                await DeviceTokenService.addDeviceTokenIfNeeded(
+                  userExists._id,
+                  deviceToken
+                );
 
               return this.Ok(ctx, {
                 token,
@@ -1887,25 +1870,16 @@ class AuthController extends BaseController {
     if (!user) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const deviceTokens = await DeviceToken.findOne({ userId: user._id });
     return validation.logoutValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          if (deviceTokens.deviceToken.includes(reqParam.deviceToken)) {
-            await DeviceToken.updateOne(
-              { userId: user._id },
-              {
-                $pull: {
-                  deviceToken: reqParam.deviceToken,
-                },
-              }
-            );
-            return this.Ok(ctx, { message: "Logout Successfully" });
-          } else {
-            return this.BadRequest(ctx, "Device Token Doesn't Match");
-          }
+          await DeviceTokenService.removeDeviceToken(
+            user._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Logout Successfully" });
         }
       }
     );

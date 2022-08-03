@@ -3,46 +3,35 @@ import { DeviceToken } from "../model";
 class DeviceTokenService {
   public async addDeviceTokenIfNeeded(userId: string, deviceToken: string) {
     if (!deviceToken) {
-      return
+      return;
     }
 
     const checkDeviceTokenExists = await DeviceToken.findOne({
       userId,
+      deviceToken: deviceToken,
     });
     if (!checkDeviceTokenExists) {
       await DeviceToken.create({
         userId,
-        "deviceToken.0": deviceToken,
+        deviceToken: deviceToken,
       });
-    } else {
-      if (
-        !checkDeviceTokenExists.deviceToken.includes(
-          deviceToken
-        )
-      ) {
-        await DeviceToken.updateOne(
-          { _id: checkDeviceTokenExists._id },
-          {
-            $push: {
-              deviceToken: deviceToken,
-            },
-          }
-        );
-      }
     }
+    let deviceTokens = await DeviceToken.distinct("deviceToken", {
+      userId: userId,
+    });
+    return deviceTokens;
   }
 
   public async removeDeviceToken(userId: string, deviceToken: string) {
-    const deviceTokens = await DeviceToken.findOne({ userId });
-    if (deviceTokens.deviceToken.includes(deviceToken)) {
-      await DeviceToken.updateOne(
-        { userId },
-        {
-          $pull: {
-            deviceToken: deviceToken,
-          },
-        }
-      );
+    const deviceTokens = await DeviceToken.findOne({
+      userId: userId,
+      deviceToken: deviceToken,
+    });
+    if (deviceTokens) {
+      await DeviceToken.deleteOne({
+        userId: userId,
+        deviceToken: deviceToken,
+      });
     } else {
       throw new Error("Device Token Doesn't Exist");
     }

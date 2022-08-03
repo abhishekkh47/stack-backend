@@ -199,19 +199,19 @@ export const startCron = () => {
             contributionRequest
           );
           if (contributions.status == 400) {
-            let deviceTokenData = await DeviceToken.findOne({
+            let deviceTokenData = await DeviceToken.distinct("deviceToken", {
               userId: user.parentChild.userId,
-            }).select("deviceToken");
+            });
             /**
              * Notification
              */
-            if (deviceTokenData) {
+            if (deviceTokenData.length > 0) {
               let notificationRequest = {
                 key: NOTIFICATION_KEYS.RECURRING_FAILED,
                 title: NOTIFICATION.RECURRING_FAILED,
               };
               await sendNotification(
-                deviceTokenData.deviceToken,
+                deviceTokenData,
                 notificationRequest.title,
                 notificationRequest
               );

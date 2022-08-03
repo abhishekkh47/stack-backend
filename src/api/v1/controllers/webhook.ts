@@ -88,9 +88,9 @@ class WebHookController extends BaseController {
     /**
      * Notification Send for kyc fail or success
      */
-    let deviceTokenData = await DeviceToken.findOne({
+    let deviceTokenData = await DeviceToken.distinct("deviceToken", {
       userId: userExists._id,
-    }).select("deviceToken");
+    });
     switch (body.resource_type) {
       /**
        * For kyc success or failure
@@ -131,7 +131,7 @@ class WebHookController extends BaseController {
             ctx.request.zohoAccessToken,
             mainData
           );
-          if (deviceTokenData) {
+          if (deviceTokenData.length > 0) {
             let notificationRequest = {
               key: NOTIFICATION_KEYS.KYC_FAILURE,
               title: NOTIFICATION.KYC_REJECTED_TITLE,
@@ -139,7 +139,7 @@ class WebHookController extends BaseController {
               userId: userExists._id,
             };
             const notificationCreated = await sendNotification(
-              deviceTokenData.deviceToken,
+              deviceTokenData,
               notificationRequest.title,
               notificationRequest
             );
@@ -204,7 +204,7 @@ class WebHookController extends BaseController {
               ctx.request.zohoAccessToken,
               mainData
             );
-            if (deviceTokenData) {
+            if (deviceTokenData.length > 0) {
               let notificationRequest = {
                 key: NOTIFICATION_KEYS.KYC_SUCCESS,
                 title: NOTIFICATION.KYC_APPROVED_TITLE,
@@ -212,7 +212,7 @@ class WebHookController extends BaseController {
                 userId: userExists._id,
               };
               await sendNotification(
-                deviceTokenData.deviceToken,
+                deviceTokenData,
                 notificationRequest.title,
                 notificationRequest
               );
@@ -326,7 +326,7 @@ class WebHookController extends BaseController {
                 ctx.request.zohoAccessToken,
                 mainData
               );
-              if (deviceTokenData) {
+              if (deviceTokenData.length > 0) {
                 let notificationRequest = {
                   key: NOTIFICATION_KEYS.KYC_SUCCESS,
                   title: NOTIFICATION.KYC_APPROVED_TITLE,
@@ -334,7 +334,7 @@ class WebHookController extends BaseController {
                   userId: userExists._id,
                 };
                 await sendNotification(
-                  deviceTokenData.deviceToken,
+                  deviceTokenData,
                   notificationRequest.title,
                   notificationRequest
                 );
@@ -395,7 +395,7 @@ class WebHookController extends BaseController {
           body.data["changes"].length > 0 &&
           body.data["changes"].includes("disbursements-frozen")
         ) {
-          if (deviceTokenData) {
+          if (deviceTokenData.length > 0) {
             let notificationRequest = {
               key: NOTIFICATION_KEYS.ACCOUNT_CLOSED,
               title: NOTIFICATION.ACCOUNT_CLOSED_TITLE,
@@ -403,7 +403,7 @@ class WebHookController extends BaseController {
               userId: userExists._id,
             };
             await sendNotification(
-              deviceTokenData.deviceToken,
+              deviceTokenData,
               notificationRequest.title,
               notificationRequest
             );
@@ -952,19 +952,19 @@ class WebHookController extends BaseController {
             contributionRequest
           );
           if (contributions.status == 400) {
-            let deviceTokenData = await DeviceToken.findOne({
+            let deviceTokenData = await DeviceToken.distinct("deviceToken", {
               userId: user.parentChild.userId,
-            }).select("deviceToken");
+            });
             /**
              * Notification
              */
-            if (deviceTokenData) {
+            if (deviceTokenData.length > 0) {
               let notificationRequest = {
                 key: NOTIFICATION_KEYS.RECURRING_FAILED,
                 title: NOTIFICATION.RECURRING_FAILED,
               };
               await sendNotification(
-                deviceTokenData.deviceToken,
+                deviceTokenData,
                 notificationRequest.title,
                 notificationRequest
               );

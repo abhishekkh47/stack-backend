@@ -442,17 +442,17 @@ class UserController extends BaseController {
     /**
      * Kyc pending mode call
      */
-    let deviceTokenData = await DeviceToken.findOne({
+    let deviceTokenData = await DeviceToken.distinct("deviceToken", {
       userId: userExists._id,
-    }).select("deviceToken");
-    if (deviceTokenData) {
+    });
+    if (deviceTokenData.length > 0) {
       let notificationRequest = {
         key: NOTIFICATION_KEYS.KYC_PENDING,
         title: NOTIFICATION.KYC_PENDING_TITLE,
         message: NOTIFICATION.KYC_PENDING_DESCRIPTION,
       };
       await sendNotification(
-        deviceTokenData.deviceToken,
+        deviceTokenData,
         notificationRequest.title,
         notificationRequest
       );
@@ -1063,18 +1063,20 @@ class UserController extends BaseController {
   @Route({ path: "/test-notification", method: HttpMethod.POST })
   @Auth()
   public async testNotification(ctx: any) {
+    console.log(ctx.request.user._id, "ctx.request.user._id");
     let notificationRequest = {
       key: NOTIFICATION_KEYS.KYC_SUCCESS,
       title: NOTIFICATION.KYC_APPROVED_TITLE,
       message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
       userId: ctx.request.user._id,
     };
-    const deviceTokenData = await DeviceToken.findOne({
+    const deviceTokenData = await DeviceToken.distinct("deviceToken", {
       userId: ctx.request.user._id,
     });
-    if (deviceTokenData) {
+    console.log(deviceTokenData, "deviceTokenData");
+    if (deviceTokenData.length > 0) {
       await sendNotification(
-        deviceTokenData.deviceToken,
+        deviceTokenData,
         notificationRequest.title,
         notificationRequest
       );
