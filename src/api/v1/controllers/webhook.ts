@@ -6,30 +6,22 @@ import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   AdminTable,
   DeviceToken,
-  Notification,
   ParentChildTable,
   StateTable,
   TransactionTable,
-  UserActivityTable,
   UserTable,
   WebhookTable,
 } from "../../../model";
+import { zohoCrmService } from "../../../services";
 import {
-  EAction,
   EGIFTSTACKCOINSSETTING,
-  ERead,
-  ERECURRING,
-  EStatus,
   ETransactionStatus,
-  ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-  messages,
 } from "../../../types";
 import {
   checkValidBase64String,
-  createContributions,
   getAccountStatusByAccountId,
   getContactId,
   kycDocumentChecks,
@@ -41,7 +33,6 @@ import {
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
-import { zohoCrmService } from "../../../services";
 
 class WebHookController extends BaseController {
   /**

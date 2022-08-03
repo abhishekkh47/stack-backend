@@ -1,48 +1,46 @@
-import BaseController from "./base";
+import { json } from "co-body";
+import fs from "fs";
+import moment from "moment";
+import { ObjectId } from "mongodb";
+import path from "path";
+import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
-import { validation } from "../../../validations/apiValidation";
 import {
-  ParentChildTable,
-  UserTable,
-  NotifyUserTable,
   DeviceToken,
   Notification,
+  NotifyUserTable,
+  ParentChildTable,
+  UserTable,
 } from "../../../model";
-import fs from "fs";
-import { json, form } from "co-body";
+import { AuthService, zohoCrmService } from "../../../services";
 import {
-  agreementPreviews,
-  createAccount,
-  kycDocumentChecks,
-  Route,
-  uploadFilesFetch,
-  getLinkToken,
-  uploadIdProof,
-  tempContribution,
-  uploadImage,
-  checkValidBase64String,
-  sendNotification,
-} from "../../../utility";
-import {
+  ERead,
+  ESCREENSTATUS,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-  ESCREENSTATUS,
-  ERead,
-  IUser,
 } from "../../../types";
-import path from "path";
-import moment from "moment";
-import { ObjectId } from "mongodb";
-import { AuthService, zohoCrmService } from "../../../services";
+import {
+  agreementPreviews,
+  checkValidBase64String,
+  createAccount,
+  getLinkToken,
+  kycDocumentChecks,
+  Route,
+  sendNotification,
+  tempContribution,
+  uploadFilesFetch,
+  uploadIdProof,
+  uploadImage,
+} from "../../../utility";
 import {
   CMS_LINKS,
-  FIREBASE_CREDENCIALS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
-import envData from "../../../config/index";
+import { validation } from "../../../validations/apiValidation";
+import BaseController from "./base";
 
 class UserController extends BaseController {
   /**

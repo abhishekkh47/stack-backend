@@ -1,6 +1,5 @@
+import { CryptoTable } from "../model";
 import { ETransactionType } from "../types";
-import { ObjectId } from "mongodb";
-import { CryptoTable, DeviceToken, TransactionTable } from "../model";
 
 class getPortfolioService {
   public async getPortfolioBasedOnChildIdWithCurrentMarketPrice(
