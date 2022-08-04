@@ -292,7 +292,10 @@ class TradingController extends BaseController {
              */
             let ParentArray = [
               ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-              PARENT_SIGNUP_FUNNEL.ADDRESS,
+              PARENT_SIGNUP_FUNNEL.DOB,
+              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+              PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+              // PARENT_SIGNUP_FUNNEL.ADDRESS,
               PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
               PARENT_SIGNUP_FUNNEL.ADD_BANK,
               PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
@@ -301,7 +304,7 @@ class TradingController extends BaseController {
             let dataSentInCrm: any = {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Parent_Signup_Funnel: ParentArray,
-              Stack_Coins:admin.stackCoins
+              Stack_Coins: admin.stackCoins,
             };
             await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
@@ -317,7 +320,10 @@ class TradingController extends BaseController {
            */
           let ParentArray = [
             ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-            PARENT_SIGNUP_FUNNEL.ADDRESS,
+            PARENT_SIGNUP_FUNNEL.DOB,
+            PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+            PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+            // PARENT_SIGNUP_FUNNEL.ADDRESS,
             PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
             PARENT_SIGNUP_FUNNEL.ADD_BANK,
             PARENT_SIGNUP_FUNNEL.SUCCESS,
@@ -325,7 +331,7 @@ class TradingController extends BaseController {
           let dataSentInCrm: any = {
             Account_Name: userExists.firstName + " " + userExists.lastName,
             Parent_Signup_Funnel: ParentArray,
-            Stack_Coins:admin.stackCoins
+            Stack_Coins: admin.stackCoins,
           };
           await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
@@ -1608,6 +1614,7 @@ class TradingController extends BaseController {
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
+    console.log(reqParam, "reqParam");
     return validation.getPortFolioValidation(
       reqParam,
       ctx,

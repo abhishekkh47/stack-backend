@@ -30,6 +30,7 @@ const server = (async () => {
     app.use(i18nTs);
     // app.use(bodyParser());
     app.use(async (ctx, next) => {
+      console.log(ctx.path, "path");
       if (
         ctx.path === "/api/v1/upload-id-proof" ||
         ctx.path === "/api/v1/update-primetrust-data"

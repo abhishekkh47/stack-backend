@@ -794,7 +794,12 @@ class AuthController extends BaseController {
           if (user.type == EUserType.PARENT) {
             dataSentInCrm = {
               ...dataSentInCrm,
-              Parent_Signup_Funnel: PARENT_SIGNUP_FUNNEL.SIGNUP,
+              Parent_Signup_Funnel: [
+                ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                PARENT_SIGNUP_FUNNEL.DOB,
+                PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+                PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+              ],
             };
           }
           await zohoCrmService.addAccounts(
@@ -852,20 +857,21 @@ class AuthController extends BaseController {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
             if (!userExists) {
-              return this.BadRequest(ctx, "Email Doesn't Exists");
+              return this.NotFound(ctx, "Email Doesn't Exists");
             } else {
-              let getProfileInput: any = {
-                request: {
-                  params: { id: userExists._id },
-                },
-              };
-              await UserController.getProfile(getProfileInput);
-
               await SocialService.verifySocial(reqParam);
 
               const { token, refreshToken } = await TokenService.generateToken(
                 userExists
               );
+
+              let getProfileInput: any = {
+                request: {
+                  query: { token },
+                  params: { id: userExists._id },
+                },
+              };
+              await UserController.getProfile(getProfileInput);
 
               await DeviceTokenService.addDeviceTokenIfNeeded(
                 userExists._id,
@@ -880,6 +886,7 @@ class AuthController extends BaseController {
               });
             }
           } catch (error) {
+            console.log(error, "error");
             return this.BadRequest(ctx, error.message);
           }
         }

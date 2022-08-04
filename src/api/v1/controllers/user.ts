@@ -424,7 +424,10 @@ class UserController extends BaseController {
       Account_Status: "1",
       Parent_Signup_Funnel: [
         ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-        PARENT_SIGNUP_FUNNEL.ADDRESS,
+        PARENT_SIGNUP_FUNNEL.DOB,
+        PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+        PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+        // PARENT_SIGNUP_FUNNEL.ADDRESS,
         PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
       ],
     };

@@ -2,6 +2,7 @@ import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
+import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   AdminTable,
@@ -29,6 +30,7 @@ import {
   sendNotification,
   updateContacts,
   uploadFilesFetch,
+  createAccount,
 } from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
@@ -60,7 +62,8 @@ class WebHookController extends BaseController {
         "firstName",
         "lastName",
       ])
-      .populate("firstChildId", ["firstName", "lastName"]);
+      .populate("firstChildId", ["firstName", "lastName"])
+      .populate("userId", ["firstName", "lastName"]);
     if (!checkAccountIdExists) {
       return this.OkWebhook(ctx, "Account Id Doesn't Exists");
     }
@@ -311,6 +314,74 @@ class WebHookController extends BaseController {
                   notificationRequest.title,
                   notificationRequest
                 );
+              }
+              let allChilds: any = await checkAccountIdExists.teens.filter(
+                (x) =>
+                  checkAccountIdExists.firstChildId._id.toString() !=
+                  x.childId._id.toString()
+              );
+              let contactId = checkAccountIdExists.contactId;
+              if (allChilds.length > 0) {
+                let childArray = [];
+                for await (let allChild of allChilds) {
+                  let childName = allChild.childId.lastName
+                    ? allChild.childId.firstName +
+                      " " +
+                      allChild.childId.lastName
+                    : allChild.childId.firstName;
+                  const data = {
+                    type: "account",
+                    attributes: {
+                      "account-type": "custodial",
+                      name:
+                        childName +
+                        " - " +
+                        checkAccountIdExists.userId.firstName +
+                        " " +
+                        checkAccountIdExists.userId.lastName +
+                        " - " +
+                        contactId,
+                      "authorized-signature":
+                        checkAccountIdExists.userId.firstName +
+                        " - " +
+                        checkAccountIdExists.userId.lastName,
+                      "webhook-config": {
+                        url: envData.WEBHOOK_URL,
+                      },
+                      "contact-id": contactId,
+                    },
+                  };
+                  const createAccountData: any = await createAccount(
+                    ctx.request.primeTrustToken,
+                    data
+                  );
+                  if (createAccountData.status == 400) {
+                    return this.BadRequest(ctx, createAccountData.message);
+                  }
+                  let bulWriteOperation = {
+                    updateOne: {
+                      filter: {
+                        _id: checkAccountIdExists._id,
+                        teens: {
+                          $elemMatch: {
+                            childId: allChild.childId._id,
+                          },
+                        },
+                      },
+                      update: {
+                        $set: {
+                          "teens.$.accountId": createAccountData.data.data.id,
+                        },
+                      },
+                    },
+                  };
+                  await childArray.push(bulWriteOperation);
+                }
+                console.log(childArray[0].updateOne, "childArray");
+                if (childArray.length > 0) {
+                  await ParentChildTable.bulkWrite(childArray);
+                }
+                return this.Ok(ctx, { message: "Success" });
               }
               /**
                * Gift stack coins to all teens whose parent's kyc is approved
@@ -855,10 +926,12 @@ class WebHookController extends BaseController {
     path: "/test-zoho",
     method: HttpMethod.POST,
   })
+  @PrimeTrustJWT()
   public async testZoho(ctx: any) {
-    let parent = await ParentChildTable.findOne({
-      userId: "62e772569b557209f14415e2",
+    let parent: any = await ParentChildTable.findOne({
+      userId: "62eb951e01c7d4e07469ae3e",
     })
+      .populate("userId", ["firstName", "lastName"])
       .populate("teens.childId", [
         "email",
         "isGifted",
@@ -867,7 +940,69 @@ class WebHookController extends BaseController {
         "lastName",
       ])
       .populate("firstChildId", ["firstName", "lastName"]);
-    return this.BadRequest(ctx, { parent });
+    let contactId = parent.contactId;
+    let allChilds: any = await parent.teens.filter(
+      (x) => parent.firstChildId._id.toString() != x.childId._id.toString()
+    );
+    if (allChilds.length > 0) {
+      let childArray = [];
+      for await (let allChild of allChilds) {
+        let childName = allChild.childId.lastName
+          ? allChild.childId.firstName + " " + allChild.childId.lastName
+          : allChild.childId.firstName;
+        const data = {
+          type: "account",
+          attributes: {
+            "account-type": "custodial",
+            name:
+              childName +
+              " - " +
+              parent.userId.firstName +
+              " " +
+              parent.userId.lastName +
+              " - " +
+              contactId,
+            "authorized-signature":
+              parent.userId.firstName + " - " + parent.userId.lastName,
+            "webhook-config": {
+              url: envData.WEBHOOK_URL,
+            },
+            "contact-id": contactId,
+          },
+        };
+        const createAccountData: any = await createAccount(
+          ctx.request.primeTrustToken,
+          data
+        );
+        if (createAccountData.status == 400) {
+          return this.BadRequest(ctx, createAccountData.message);
+        }
+        let bulWriteOperation = {
+          updateOne: {
+            filter: {
+              _id: parent._id,
+              teens: {
+                $elemMatch: {
+                  childId: allChild.childId._id,
+                },
+              },
+            },
+            update: {
+              $set: {
+                "teens.$.accountId": createAccountData.data.data.id,
+              },
+            },
+          },
+        };
+        await childArray.push(bulWriteOperation);
+      }
+      console.log(childArray[0].updateOne, "childArray");
+      if (childArray.length > 0) {
+        await ParentChildTable.bulkWrite(childArray);
+      }
+      return this.Ok(ctx, { message: "Success" });
+    }
+    return this.BadRequest(ctx, "error");
   }
 }
 

@@ -132,10 +132,13 @@ export const NOTIFICATION_KEYS = {
 export const PARENT_SIGNUP_FUNNEL = {
   SIGNUP: [
     "Sign up with SSO",
-    "Enter phone number",
-    "Enter child's phone number",
-    "Enter name, birth, SSN",
+    // "Enter phone number",
+    // "Enter child's phone number",
+    // "Enter name, birth, SSN",
   ],
+  DOB: "Enter DOB",
+  CONFIRM_DETAILS: "Confirm user details",
+  CHILD_INFO: "Enter child's info",
   ADDRESS: "Enter address",
   UPLOAD_DOCUMENT: "Upload ID",
   ADD_BANK: "Add a bank",
