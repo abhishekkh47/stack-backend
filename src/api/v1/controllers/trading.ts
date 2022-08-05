@@ -170,7 +170,7 @@ class TradingController extends BaseController {
               return this.BadRequest(ctx, contributions.message);
             }
             await UserActivityTable.create({
-              userId: userExists._id,
+              userId: parentDetails.firstChildId,
               userType: 2,
               message: `${messages.APPROVE_DEPOSIT} $${reqParam.depositAmount}`,
               currencyType: null,
@@ -1075,6 +1075,7 @@ class TradingController extends BaseController {
   public async buyCrypto(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    console.log(reqParam, "reqParamreqParam");
     const jwtToken = ctx.request.primeTrustToken;
     return validation.buyCryptoValidation(reqParam, ctx, async (validate) => {
       const { amount, cryptoId } = reqParam;
