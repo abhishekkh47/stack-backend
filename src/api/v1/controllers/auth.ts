@@ -469,12 +469,26 @@ class AuthController extends BaseController {
             });
           }
           if (reqParam.type == EUserType.PARENT) {
-            await ParentChildTable.create({
-              userId: user._id,
-              contactId: null,
-              firstChildId: childExists._id,
-              teens: childArray,
-            });
+            const parentchild = await ParentChildTable.findOneAndUpdate(
+              {
+                userId: user._id,
+              },
+              {
+                $set: {
+                  contactId: null,
+                  firstChildId: childExists._id,
+                  teens: childArray,
+                },
+              },
+              { upsert: true, new: true }
+            );
+            console.log("parent called one", parentchild);
+            // await ParentChildTable.create({
+            //   userId: user._id,
+            //   contactId: null,
+            //   firstChildId: childExists._id,
+            //   teens: childArray,
+            // });
           } else {
             if (accountId && accountNumber) {
               /**
@@ -800,6 +814,21 @@ class AuthController extends BaseController {
                 PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
                 PARENT_SIGNUP_FUNNEL.CHILD_INFO,
               ],
+              Parent_Number: reqParam.mobile,
+              Teen_Number: reqParam.childMobile,
+              Teen_Name: reqParam.childLastName
+                ? reqParam.childFirstName + " " + reqParam.childLastName
+                : reqParam.childFirstName,
+            };
+          }
+          if (user.type == EUserType.TEEN) {
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Parent_Number: reqParam.parentMobile,
+              Teen_Number: reqParam.mobile,
+              Teen_Name: reqParam.lastName
+                ? reqParam.firstName + " " + reqParam.lastName
+                : reqParam.firstName,
             };
           }
           await zohoCrmService.addAccounts(
@@ -857,7 +886,7 @@ class AuthController extends BaseController {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
             if (!userExists) {
-              return this.NotFound(ctx, "Email Doesn't Exists");
+              return this.BadRequest(ctx, "Email Doesn't Exists");
             } else {
               await SocialService.verifySocial(reqParam);
 
@@ -1826,6 +1855,26 @@ class AuthController extends BaseController {
           }
         }
       }
+    );
+  }
+
+  /**
+   * @description This api is used for checking parent exists or not in database
+   * @returns {*}
+   */
+  @Route({ path: "/check-parent-exists", method: HttpMethod.POST })
+  public async checkParentExists(ctx: any) {
+    if (!ctx.request.body.parentMobile) {
+      return this.BadRequest(ctx, "Please enter parent's mobile");
+    }
+    let checkParentExists = await UserTable.findOne({
+      mobile: ctx.request.body.parentMobile,
+    });
+    return this.Ok(
+      ctx,
+      !checkParentExists
+        ? { message: "User Not Found", isAccountFound: false }
+        : { message: "Success", isAccountFound: true }
     );
   }
 }

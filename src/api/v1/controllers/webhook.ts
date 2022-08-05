@@ -381,7 +381,6 @@ class WebHookController extends BaseController {
                 if (childArray.length > 0) {
                   await ParentChildTable.bulkWrite(childArray);
                 }
-                return this.Ok(ctx, { message: "Success" });
               }
               /**
                * Gift stack coins to all teens whose parent's kyc is approved

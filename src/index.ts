@@ -65,6 +65,11 @@ const server = (async () => {
   } catch (e) {
     logger.log("error", `Server startup failed: ${e.message}`);
   }
+
+  process.on("uncaughtException", function (error: any) {
+    console.log(error, "uncaught exception");
+    // if (!error.isOperational) process.exit(1);
+  });
 })();
 
 export default server;
