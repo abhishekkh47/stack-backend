@@ -2,6 +2,9 @@ export default {
   get PORT() {
     return process.env.PORT;
   },
+  get APP_ENVIRONMENT() {
+    return process.env.APP_ENVIRONMENT;
+  },
   get PAYPAL_CLIENT_ID() {
     return process.env.PAYPAL_CLIENT_ID;
   },
@@ -79,6 +82,9 @@ export default {
   },
   get ZOHO_DOMAIN() {
     return process.env.ZOHO_DOMAIN;
+  },
+  get ZOHO_STAGING_DOMAIN() {
+    return process.env.ZOHO_STAGING_DOMAIN;
   },
   get TOP_WAITLIST_USER() {
     return process.env.TOP_WAITLIST_USER;
