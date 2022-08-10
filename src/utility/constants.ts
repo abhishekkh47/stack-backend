@@ -120,7 +120,8 @@ export const NOTIFICATION = {
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
-  RECURRING_FAILED: "recurring_failed",
+  RECURRING_FAILED_BANK: "recurring_failed_bank_failure",
+  RECURRING_FAILED_BALANCE: "recurring_failed_insufficient_balance",
   KYC_SUCCESS: "kyc_success",
   ACCOUNT_CLOSED: "account_closed",
   KYC_FAILURE: "kyc_failure",

@@ -1,5 +1,6 @@
 import {
   createContributions,
+  getBalance,
   getHistoricalDataOfCoins,
   getLatestPrice,
   getPrimeTrustJWTToken,
@@ -167,8 +168,11 @@ export const startCron = () => {
         );
         console.log(accountIdDetails, "accountIdDetails");
         if (!accountIdDetails) {
-          return false;
+          continue;
         }
+        let deviceTokenData = await DeviceToken.findOne({
+          userId: user.parentChild.userId,
+        }).select("deviceToken");
         let selectedDate = moment(user.selectedDepositDate)
           .startOf("day")
           .unix();
@@ -177,9 +181,6 @@ export const startCron = () => {
         console.log(selectedDate <= todayDate, "todayDate");
         if (selectedDate <= todayDate) {
           console.log("selectedDate");
-          /**
-           * create fund transfer with fund transfer id in response
-           */
           let contributionRequest = {
             type: "contributions",
             attributes: {
@@ -198,16 +199,17 @@ export const startCron = () => {
             jwtToken,
             contributionRequest
           );
+          console.log(contributions, "contributions");
           if (contributions.status == 400) {
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: user.parentChild.userId,
-            }).select("deviceToken");
             /**
              * Notification
              */
             if (deviceTokenData) {
               let notificationRequest = {
-                key: NOTIFICATION_KEYS.RECURRING_FAILED,
+                key:
+                  contributions.code == 25001
+                    ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
+                    : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
                 title: NOTIFICATION.RECURRING_FAILED,
               };
               await sendNotification(
@@ -223,64 +225,65 @@ export const startCron = () => {
                 data: JSON.stringify(notificationRequest),
               });
             }
-            return false;
-          }
-          let activityData = {
-            userId: user._id,
-            userType: EUserType.TEEN,
-            message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
-            currencyType: null,
-            currencyValue: user.selectedDeposit,
-            action: EAction.DEPOSIT,
-            resourceId: contributions.data.included[0].id,
-            status: EStatus.PROCESSED,
-          };
-          await activityArray.push(activityData);
-          let transactionData = {
-            assetId: null,
-            cryptoId: null,
-            accountId: accountIdDetails.accountId,
-            type: ETransactionType.DEPOSIT,
-            recurringDeposit: true,
-            settledTime: moment().unix(),
-            amount: user.selectedDeposit,
-            amountMod: null,
-            userId: user._id,
-            parentId: user.parentChild.userId,
-            status: ETransactionStatus.PENDING,
-            executedQuoteId: contributions.data.included[0].id,
-            unitCount: null,
-          };
-          await transactionArray.push(transactionData);
-          let bulWriteOperation = {
-            updateOne: {
-              filter: { _id: user._id },
-              update: {
-                $set: {
-                  selectedDepositDate: moment(user.selectedDepositDate)
-                    .utc()
-                    .startOf("day")
-                    .add(
-                      user.isRecurring == ERECURRING.WEEKLY
-                        ? 7
-                        : user.isRecurring == ERECURRING.MONTLY
-                        ? 1
-                        : user.isRecurring == ERECURRING.QUATERLY
-                        ? 4
-                        : 0,
-                      user.isRecurring == ERECURRING.WEEKLY
-                        ? "days"
-                        : user.isRecurring == ERECURRING.MONTLY
-                        ? "months"
-                        : user.isRecurring == ERECURRING.QUATERLY
-                        ? "months"
-                        : "day"
-                    ),
+            continue;
+          } else {
+            let activityData = {
+              userId: user._id,
+              userType: EUserType.TEEN,
+              message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
+              currencyType: null,
+              currencyValue: user.selectedDeposit,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            };
+            await activityArray.push(activityData);
+            let transactionData = {
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              recurringDeposit: true,
+              settledTime: moment().unix(),
+              amount: user.selectedDeposit,
+              amountMod: null,
+              userId: user._id,
+              parentId: user.parentChild.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            };
+            await transactionArray.push(transactionData);
+            let bulWriteOperation = {
+              updateOne: {
+                filter: { _id: user._id },
+                update: {
+                  $set: {
+                    selectedDepositDate: moment(user.selectedDepositDate)
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.isRecurring == ERECURRING.QUATERLY
+                          ? 4
+                          : 0,
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.isRecurring == ERECURRING.QUATERLY
+                          ? "months"
+                          : "day"
+                      ),
+                  },
                 },
               },
-            },
-          };
-          await mainArray.push(bulWriteOperation);
+            };
+            await mainArray.push(bulWriteOperation);
+          }
         }
       }
       console.log(transactionArray, "transactionArray");
@@ -291,6 +294,6 @@ export const startCron = () => {
       await UserTable.bulkWrite(mainArray);
       return true;
     }
-    return false;
+    return true;
   });
 };
