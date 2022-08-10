@@ -116,6 +116,10 @@ export const NOTIFICATION = {
   ACCOUNT_CLOSED_DESCRIPTION:
     "Thanks for applying, we can't open an account for you based on the info you provided",
   RECURRING_FAILED: "An error occurred while processing your deposit",
+  RECURRING_FAILED_BANK_ERROR:
+    "We couldn’t proceed with the recurring deposit because we couldn’t authenticate your bank account. Please unlink your bank account and link again.",
+  RECURRING_FAILED_INSUFFICIENT_BALANCE:
+    "We couldn’t proceed with the recurring deposit because you don’t have a sufficient balance in your bank account. Please deposit money into your bank account. We will check again in the next recurring cycle.",
 };
 
 export const NOTIFICATION_KEYS = {

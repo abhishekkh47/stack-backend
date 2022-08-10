@@ -1012,7 +1012,11 @@ class WebHookController extends BaseController {
                   contributions.code == 25001
                     ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
                     : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
-                title: NOTIFICATION.RECURRING_FAILED,
+                title: "Recurring Deposit Error",
+                message:
+                  contributions.code == 25001
+                    ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
+                    : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE,
               };
               await sendNotification(
                 deviceTokenData.deviceToken,
