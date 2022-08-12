@@ -1769,56 +1769,91 @@ class AuthController extends BaseController {
   public async remindParent(ctx: any) {
     const userId = ctx.request.user._id;
     const reqParam = ctx.request.body;
+    if (!reqParam.type) {
+      return this.BadRequest(ctx, "Please enter type to proceed");
+    }
     const user = await UserTable.findOne({ _id: userId });
     if (user.type !== EUserType.TEEN) {
       return this.BadRequest(ctx, "Logged in user is already parent.");
     }
-    const parent = await UserTable.findOne({
-      mobile: reqParam.parentMobile,
-    });
-    if (!parent) {
+    if (reqParam.type == "NO_BANK") {
       let parentDetails = await ParentChildTable.findOne({
         "teens.childId": user._id,
       });
-      if (parentDetails) {
+      if (!parentDetails) {
+        return this.BadRequest(ctx, "Parent account is not registered");
+      }
+      let deviceTokenData = await DeviceToken.findOne({
+        userId: parentDetails.userId,
+      }).select("deviceToken");
+      if (deviceTokenData) {
+        let notificationRequest = {
+          key: NOTIFICATION_KEYS.NO_BANK_REMINDER,
+          title: NOTIFICATION.NO_BANK_REMINDER_TITLE,
+          message: NOTIFICATION.NO_BANK_REMINDER_MESSAGE,
+        };
+        await sendNotification(
+          deviceTokenData.deviceToken,
+          notificationRequest.title,
+          notificationRequest
+        );
+        await Notification.create({
+          title: notificationRequest.title,
+          userId: parentDetails.userId,
+          message: notificationRequest.message,
+          isRead: ERead.UNREAD,
+          data: JSON.stringify(notificationRequest),
+        });
+      }
+      return this.Ok(ctx, { message: "Success" });
+    } else if (reqParam.type == "SEND_REMINDER") {
+      const parent = await UserTable.findOne({
+        mobile: reqParam.parentMobile,
+      });
+      if (!parent) {
+        let parentDetails = await ParentChildTable.findOne({
+          "teens.childId": user._id,
+        });
+        if (parentDetails) {
+          await UserTable.updateOne(
+            { _id: parentDetails.userId },
+            {
+              $set: { mobile: reqParam.parentMobile },
+            }
+          );
+        }
         await UserTable.updateOne(
-          { _id: parentDetails.userId },
+          { _id: userId },
           {
-            $set: { mobile: reqParam.parentMobile },
+            $set: { parentMobile: reqParam.parentMobile },
           }
         );
-      }
-      await UserTable.updateOne(
-        { _id: userId },
-        {
-          $set: { parentMobile: reqParam.parentMobile },
+      } else {
+        if (parent && parent.mobile == user.mobile) {
+          return this.BadRequest(
+            ctx,
+            "Your mobile number and parent's mobile number cannot be same"
+          );
         }
-      );
-    } else {
-      if (parent && parent.mobile == user.mobile) {
-        return this.BadRequest(
-          ctx,
-          "Your mobile number and parent's mobile number cannot be same"
+        return this.BadRequest(ctx, "Mobile Number already exists");
+      }
+      /**
+       * send twilio message to the teen in order to signup.
+       */
+      const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
+      try {
+        const twilioResponse: any = await TwilioService.sendSMS(
+          reqParam.parentMobile,
+          message
         );
+        if (twilioResponse.code === 400) {
+          return this.BadRequest(ctx, "Error in sending message");
+        }
+      } catch (error) {
+        return this.BadRequest(ctx, error.message);
       }
-      return this.BadRequest(ctx, "Mobile Number already exists");
+      return this.Ok(ctx, { message: "Reminder sent!" });
     }
-    /**
-     * send twilio message to the teen in order to signup.
-     */
-    const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
-    try {
-      const twilioResponse: any = await TwilioService.sendSMS(
-        reqParam.parentMobile,
-        message
-      );
-      if (twilioResponse.code === 400) {
-        return this.BadRequest(ctx, "Error in sending message");
-      }
-    } catch (error) {
-      return this.BadRequest(ctx, error.message);
-    }
-    return this.Ok(ctx, { message: "Reminder sent!" });
   }
 
   /**

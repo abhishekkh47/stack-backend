@@ -117,13 +117,16 @@ export const NOTIFICATION = {
     "Thanks for applying, we can't open an account for you based on the info you provided",
   RECURRING_FAILED: "An error occurred while processing your deposit",
   RECURRING_FAILED_BANK_ERROR:
-    "We couldn’t proceed with the recurring deposit because we couldn’t authenticate your bank account. Please unlink your bank account and link again.",
+    "We couldn’t proceed with the recurring deposit because we couldn’t authenticate your bank account.",
   RECURRING_FAILED_INSUFFICIENT_BALANCE:
-    "We couldn’t proceed with the recurring deposit because you don’t have a sufficient balance in your bank account. Please deposit money into your bank account. We will check again in the next recurring cycle.",
+    "We couldn’t proceed with the recurring deposit because you don’t have a sufficient balance in your bank account.",
+  NO_BANK_REMINDER_TITLE: "REMINDER",
+  NO_BANK_REMINDER_MESSAGE: "Link your bank to activate your account.",
 };
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
+  NO_BANK_REMINDER: "no_bank",
   RECURRING_FAILED_BANK: "recurring_failed_bank_failure",
   RECURRING_FAILED_BALANCE: "recurring_failed_insufficient_balance",
   KYC_SUCCESS: "kyc_success",
