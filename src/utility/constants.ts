@@ -122,11 +122,14 @@ export const NOTIFICATION = {
     "We couldn’t proceed with the recurring deposit because you don’t have a sufficient balance in your bank account.",
   NO_BANK_REMINDER_TITLE: "REMINDER",
   NO_BANK_REMINDER_MESSAGE: "Link your bank to activate your account.",
+  NO_RECURRING_REMINDER_MESSAGE:
+    "Hi! Your child, #firstName, asked you to set up recurring deposit.",
 };
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
   NO_BANK_REMINDER: "no_bank",
+  NO_RECURRING_REMINDER: "no_recurring",
   RECURRING_FAILED_BANK: "recurring_failed_bank_failure",
   RECURRING_FAILED_BALANCE: "recurring_failed_insufficient_balance",
   KYC_SUCCESS: "kyc_success",

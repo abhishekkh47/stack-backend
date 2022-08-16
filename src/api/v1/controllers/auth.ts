@@ -1776,7 +1776,7 @@ class AuthController extends BaseController {
     if (user.type !== EUserType.TEEN) {
       return this.BadRequest(ctx, "Logged in user is already parent.");
     }
-    if (reqParam.type == "NO_BANK") {
+    if (reqParam.type == "NO_BANK" || reqParam.type == "NO_RECURRING") {
       let parentDetails = await ParentChildTable.findOne({
         "teens.childId": user._id,
       });
@@ -1788,9 +1788,18 @@ class AuthController extends BaseController {
       }).select("deviceToken");
       if (deviceTokenData) {
         let notificationRequest = {
-          key: NOTIFICATION_KEYS.NO_BANK_REMINDER,
+          key:
+            reqParam.type == "NO_BANK"
+              ? NOTIFICATION_KEYS.NO_BANK_REMINDER
+              : NOTIFICATION_KEYS.NO_RECURRING_REMINDER,
           title: NOTIFICATION.NO_BANK_REMINDER_TITLE,
-          message: NOTIFICATION.NO_BANK_REMINDER_MESSAGE,
+          message:
+            reqParam.type == "NO_BANK"
+              ? NOTIFICATION.NO_BANK_REMINDER_MESSAGE
+              : NOTIFICATION.NO_RECURRING_REMINDER_MESSAGE.replace(
+                  "#firstName",
+                  user.firstName
+                ),
         };
         await sendNotification(
           deviceTokenData.deviceToken,

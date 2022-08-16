@@ -1161,6 +1161,7 @@ class TradingController extends BaseController {
             },
           },
         };
+        console.log(requestQuoteDay, "requestQuoteDay");
         const generateQuoteResponse: any = await generateQuote(
           jwtToken,
           requestQuoteDay
