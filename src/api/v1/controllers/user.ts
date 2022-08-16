@@ -1,50 +1,46 @@
-import BaseController from "./base";
+import { json } from "co-body";
+import fs from "fs";
+import moment from "moment";
+import { ObjectId } from "mongodb";
+import path from "path";
+import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
-import { validation } from "../../../validations/apiValidation";
 import {
-  ParentChildTable,
-  UserTable,
-  NotifyUserTable,
   DeviceToken,
   Notification,
+  NotifyUserTable,
+  ParentChildTable,
+  UserTable,
 } from "../../../model";
-import fs from "fs";
-import { json, form } from "co-body";
+import { AuthService, zohoCrmService } from "../../../services";
 import {
-  agreementPreviews,
-  createAccount,
-  kycDocumentChecks,
-  Route,
-  uploadFilesFetch,
-  getLinkToken,
-  uploadIdProof,
-  tempContribution,
-  uploadImage,
-  checkValidBase64String,
-  sendNotification,
-  addAccountInfoInZohoCrm,
-} from "../../../utility";
-import {
+  ERead,
+  ESCREENSTATUS,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-  ESCREENSTATUS,
-  ERead,
-  IUser,
 } from "../../../types";
-import path from "path";
-import moment from "moment";
-import { ObjectId } from "mongodb";
-import { AuthService } from "../../../services";
+import {
+  agreementPreviews,
+  checkValidBase64String,
+  createAccount,
+  getLinkToken,
+  kycDocumentChecks,
+  Route,
+  sendNotification,
+  tempContribution,
+  uploadFilesFetch,
+  uploadIdProof,
+  uploadImage,
+} from "../../../utility";
 import {
   CMS_LINKS,
-  FIREBASE_CREDENCIALS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
-const { GoogleSpreadsheet } = require("google-spreadsheet");
-import envData from "../../../config/index";
+import { validation } from "../../../validations/apiValidation";
+import BaseController from "./base";
 
 class UserController extends BaseController {
   /**
@@ -428,16 +424,16 @@ class UserController extends BaseController {
       Account_Status: "1",
       Parent_Signup_Funnel: [
         ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-        PARENT_SIGNUP_FUNNEL.ADDRESS,
+        PARENT_SIGNUP_FUNNEL.DOB,
+        PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+        PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+        // PARENT_SIGNUP_FUNNEL.ADDRESS,
         PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
       ],
     };
-    let mainData = {
-      data: [dataSentInCrm],
-    };
-    const dataAddInZoho = await addAccountInfoInZohoCrm(
+    await zohoCrmService.addAccounts(
       ctx.request.zohoAccessToken,
-      mainData
+      dataSentInCrm
     );
     /**
      * Kyc pending mode call

@@ -30,7 +30,6 @@ import {
   messages,
 } from "../../../types";
 import {
-  addAccountInfoInZohoCrm,
   createContributions,
   createDisbursements,
   createProcessorToken,
@@ -54,6 +53,7 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
+import { zohoCrmService } from "../../../services";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -170,7 +170,7 @@ class TradingController extends BaseController {
               return this.BadRequest(ctx, contributions.message);
             }
             await UserActivityTable.create({
-              userId: userExists._id,
+              userId: parentDetails.firstChildId,
               userType: 2,
               message: `${messages.APPROVE_DEPOSIT} $${reqParam.depositAmount}`,
               currencyType: null,
@@ -292,7 +292,10 @@ class TradingController extends BaseController {
              */
             let ParentArray = [
               ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-              PARENT_SIGNUP_FUNNEL.ADDRESS,
+              PARENT_SIGNUP_FUNNEL.DOB,
+              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+              PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+              // PARENT_SIGNUP_FUNNEL.ADDRESS,
               PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
               PARENT_SIGNUP_FUNNEL.ADD_BANK,
               PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
@@ -301,13 +304,11 @@ class TradingController extends BaseController {
             let dataSentInCrm: any = {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Parent_Signup_Funnel: ParentArray,
+              Stack_Coins: admin.stackCoins,
             };
-            let mainData = {
-              data: [dataSentInCrm],
-            };
-            const dataResponse = await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
-              mainData
+              dataSentInCrm
             );
             return this.Ok(ctx, {
               message:
@@ -319,7 +320,10 @@ class TradingController extends BaseController {
            */
           let ParentArray = [
             ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-            PARENT_SIGNUP_FUNNEL.ADDRESS,
+            PARENT_SIGNUP_FUNNEL.DOB,
+            PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+            PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+            // PARENT_SIGNUP_FUNNEL.ADDRESS,
             PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
             PARENT_SIGNUP_FUNNEL.ADD_BANK,
             PARENT_SIGNUP_FUNNEL.SUCCESS,
@@ -327,11 +331,12 @@ class TradingController extends BaseController {
           let dataSentInCrm: any = {
             Account_Name: userExists.firstName + " " + userExists.lastName,
             Parent_Signup_Funnel: ParentArray,
+            Stack_Coins: admin.stackCoins,
           };
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm
+          );
           return this.Ok(ctx, { message: "Bank account linked successfully" });
         }
       }
@@ -1070,6 +1075,7 @@ class TradingController extends BaseController {
   public async buyCrypto(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
+    console.log(reqParam, "reqParamreqParam");
     const jwtToken = ctx.request.primeTrustToken;
     return validation.buyCryptoValidation(reqParam, ctx, async (validate) => {
       const { amount, cryptoId } = reqParam;
@@ -1155,6 +1161,7 @@ class TradingController extends BaseController {
             },
           },
         };
+        console.log(requestQuoteDay, "requestQuoteDay");
         const generateQuoteResponse: any = await generateQuote(
           jwtToken,
           requestQuoteDay
@@ -1609,6 +1616,7 @@ class TradingController extends BaseController {
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
+    console.log(reqParam, "reqParam");
     return validation.getPortFolioValidation(
       reqParam,
       ctx,

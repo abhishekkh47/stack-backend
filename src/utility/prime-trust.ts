@@ -280,6 +280,7 @@ export const createContributions = async (token, data) => {
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
+        code: error.response.data.errors[0].code,
       };
     });
   return response;

@@ -1,7 +1,6 @@
 import config from "../config";
 import axios from "axios";
-import { PLAIDAPIS, ZOHOAPIS } from "./constants";
-import request from "request";
+import { ZOHOAPIS } from "./constants";
 
 /**
  * @description This api is used to get access token for zoho crm
@@ -37,8 +36,12 @@ export const getAccessToken = async (refreshToken) => {
  * @description This api is used to get add account info in zoho crm
  */
 export const addAccountInfoInZohoCrm = async (accessToken, data) => {
+  const url =
+    config.APP_ENVIRONMENT == "STAGING"
+      ? config.ZOHO_STAGING_DOMAIN
+      : config.ZOHO_DOMAIN;
   const response = await axios
-    .post(config.ZOHO_DOMAIN + ZOHOAPIS.accountUpsert, data, {
+    .post(url + ZOHOAPIS.accountUpsert, data, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -64,8 +67,12 @@ export const addAccountInfoInZohoCrm = async (accessToken, data) => {
  * @description This api is used to get account information
  */
 export const getAccountInfo = async (accessToken) => {
+  const url =
+    config.APP_ENVIRONMENT == "STAGING"
+      ? config.ZOHO_STAGING_DOMAIN
+      : config.ZOHO_DOMAIN;
   const response = await axios
-    .get(config.ZOHO_DOMAIN + ZOHOAPIS.getAccounts, {
+    .get(url + ZOHOAPIS.getAccounts, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },

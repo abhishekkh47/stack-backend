@@ -22,6 +22,7 @@ import {
   SocialService,
   TokenService,
   TwilioService,
+  zohoCrmService,
 } from "../../../services";
 import {
   EAUTOAPPROVAL,
@@ -37,7 +38,6 @@ import {
   HttpMethod,
 } from "../../../types";
 import {
-  addAccountInfoInZohoCrm,
   createAccount,
   decodeJwtToken,
   executeQuote,
@@ -401,12 +401,9 @@ class AuthController extends BaseController {
                   refferalCodeExists.lastName,
                 Stack_Coins: stackCoins,
               };
-              let mainData = {
-                data: [dataSentInCrm],
-              };
-              await addAccountInfoInZohoCrm(
+              await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
-                mainData
+                dataSentInCrm
               );
             }
           }
@@ -472,12 +469,26 @@ class AuthController extends BaseController {
             });
           }
           if (reqParam.type == EUserType.PARENT) {
-            await ParentChildTable.create({
-              userId: user._id,
-              contactId: null,
-              firstChildId: childExists._id,
-              teens: childArray,
-            });
+            const parentchild = await ParentChildTable.findOneAndUpdate(
+              {
+                userId: user._id,
+              },
+              {
+                $set: {
+                  contactId: null,
+                  firstChildId: childExists._id,
+                  teens: childArray,
+                },
+              },
+              { upsert: true, new: true }
+            );
+            console.log("parent called one", parentchild);
+            // await ParentChildTable.create({
+            //   userId: user._id,
+            //   contactId: null,
+            //   firstChildId: childExists._id,
+            //   teens: childArray,
+            // });
           } else {
             if (accountId && accountNumber) {
               /**
@@ -658,12 +669,9 @@ class AuthController extends BaseController {
               Account_Name: user.firstName + " " + user.lastName,
               Stack_Coins: admin.stackCoins,
             };
-            let mainData = {
-              data: [dataSentInCrm],
-            };
-            await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
-              mainData
+              dataSentInCrm
             );
             user = await UserTable.findByIdAndUpdate(
               { _id: user._id },
@@ -780,12 +788,15 @@ class AuthController extends BaseController {
            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
            */
           let dataSentInCrm: any = {
-            Account_Name: user.firstName + " " + user.lastName,
+            Account_Name: user.lastName
+              ? user.firstName + " " + user.lastName
+              : user.firstName,
             First_Name: user.firstName,
-            Last_Name: user.lastName,
+            Last_Name: user.lastName ? user.lastName : null,
             Email: user.email,
             Mobile: user.mobile,
             Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
+            Birthday: user.dob,
             User_ID: user._id,
           };
           if (isGiftedStackCoins > 0) {
@@ -797,26 +808,49 @@ class AuthController extends BaseController {
           if (user.type == EUserType.PARENT) {
             dataSentInCrm = {
               ...dataSentInCrm,
-              Parent_Signup_Funnel: PARENT_SIGNUP_FUNNEL.SIGNUP,
+              Parent_Signup_Funnel: [
+                ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                PARENT_SIGNUP_FUNNEL.DOB,
+                PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+                PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+              ],
+              Parent_Number: reqParam.mobile,
+              Teen_Number: reqParam.childMobile,
+              Teen_Name: reqParam.childLastName
+                ? reqParam.childFirstName + " " + reqParam.childLastName
+                : reqParam.childFirstName,
             };
           }
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          await addAccountInfoInZohoCrm(ctx.request.zohoAccessToken, mainData);
+          if (user.type == EUserType.TEEN) {
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Parent_Number: reqParam.parentMobile,
+              Teen_Number: reqParam.mobile,
+              Teen_Name: reqParam.lastName
+                ? reqParam.firstName + " " + reqParam.lastName
+                : reqParam.firstName,
+            };
+          }
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm
+          );
           if (user.type == EUserType.PARENT) {
             let dataSentAgain = {
               data: [
                 {
-                  Account_Name:
-                    childExists.firstName + " " + childExists.lastName,
+                  Account_Name: childExists.lastName
+                    ? childExists.firstName + " " + childExists.lastName
+                    : childExists.firstName,
                   Parent_Account: {
-                    name: user.firstName + " " + user.lastName,
+                    name: user.lastName
+                      ? user.firstName + " " + user.lastName
+                      : user.firstName,
                   },
                 },
               ],
             };
-            await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
               dataSentAgain
             );
@@ -854,18 +888,19 @@ class AuthController extends BaseController {
             if (!userExists) {
               return this.BadRequest(ctx, "Email Doesn't Exists");
             } else {
-              let getProfileInput: any = {
-                request: {
-                  params: { id: userExists._id },
-                },
-              };
-              await UserController.getProfile(getProfileInput);
-
               await SocialService.verifySocial(reqParam);
 
               const { token, refreshToken } = await TokenService.generateToken(
                 userExists
               );
+
+              let getProfileInput: any = {
+                request: {
+                  query: { token },
+                  params: { id: userExists._id },
+                },
+              };
+              await UserController.getProfile(getProfileInput);
 
               await DeviceTokenService.addDeviceTokenIfNeeded(
                 userExists._id,
@@ -880,6 +915,7 @@ class AuthController extends BaseController {
               });
             }
           } catch (error) {
+            console.log(error, "error");
             return this.BadRequest(ctx, error.message);
           }
         }
@@ -1682,95 +1718,6 @@ class AuthController extends BaseController {
   }
 
   /**
-   * @description This method is used to store address and asset information
-   * @param ctx
-   * @returns
-   */
-  // @Route({ path: "/store-user-details", method: HttpMethod.POST })
-  // @Auth()
-  // @PrimeTrustJWT(true)
-  // public async storeUserDetails(ctx: any) {
-  //   let input: any = ctx.request.body;
-  //   const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
-  //   if (!userExists) {
-  //     return this.BadRequest(ctx, "User Not Found");
-  //   }
-  //   return validation.storeUserDetailsValidation(
-  //     input,
-  //     ctx,
-  //     async (validate) => {
-  //       if (validate) {
-  //         const state = await StateTable.findOne({ _id: input.stateId });
-  //         if (!state) return this.BadRequest(ctx, "Invalid State ID.");
-  //         try {
-  //           input.screenStatus =
-  //             userExists.type === EUserType.PARENT
-  //               ? ESCREENSTATUS.ACKNOWLEDGE_SCREEN
-  //               : ESCREENSTATUS.SIGN_UP;
-  //           await UserTable.findOneAndUpdate(
-  //             { _id: ctx.request.user._id },
-  //             { $set: input }
-  //           );
-  //           /**
-  //            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
-  //            */
-  //           let dataSentInCrm: any = {
-  //             Account_Name: userExists.firstName + " " + userExists.lastName,
-  //             Billing_Country: "US",
-  //           };
-  //           if (input.postalCode) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_Code: input.postalCode,
-  //             };
-  //           }
-  //           if (input.stateId) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_State: state.name,
-  //             };
-  //           }
-  //           if (input.address) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_Street: input.address,
-  //             };
-  //           }
-  //           if (input.city) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Billing_City: input.city,
-  //             };
-  //           }
-  //           if (userExists.type === EUserType.PARENT) {
-  //             dataSentInCrm = {
-  //               ...dataSentInCrm,
-  //               Parent_Signup_Funnel: [
-  //                 ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-  //                 PARENT_SIGNUP_FUNNEL.ADDRESS,
-  //               ],
-  //             };
-  //           }
-  //           let mainData = {
-  //             data: [dataSentInCrm],
-  //           };
-  //           const dataAddInZoho = await addAccountInfoInZohoCrm(
-  //             ctx.request.zohoAccessToken,
-  //             mainData
-  //           );
-  //           return this.Created(ctx, {
-  //             message:
-  //               "Stored Address and Liquid Asset Information Successfully",
-  //           });
-  //         } catch (error) {
-  //           this.BadRequest(ctx, "Something went wrong. Please try again.");
-  //         }
-  //       }
-  //     }
-  //   );
-  // }
-
-  /**
    * @description This method is used to create refresh token
    * @param ctx
    * @returns
@@ -1822,56 +1769,100 @@ class AuthController extends BaseController {
   public async remindParent(ctx: any) {
     const userId = ctx.request.user._id;
     const reqParam = ctx.request.body;
+    if (!reqParam.type) {
+      return this.BadRequest(ctx, "Please enter type to proceed");
+    }
     const user = await UserTable.findOne({ _id: userId });
     if (user.type !== EUserType.TEEN) {
       return this.BadRequest(ctx, "Logged in user is already parent.");
     }
-    const parent = await UserTable.findOne({
-      mobile: reqParam.parentMobile,
-    });
-    if (!parent) {
+    if (reqParam.type == "NO_BANK" || reqParam.type == "NO_RECURRING") {
       let parentDetails = await ParentChildTable.findOne({
         "teens.childId": user._id,
       });
-      if (parentDetails) {
+      if (!parentDetails) {
+        return this.BadRequest(ctx, "Parent account is not registered");
+      }
+      let deviceTokenData = await DeviceToken.findOne({
+        userId: parentDetails.userId,
+      }).select("deviceToken");
+      if (deviceTokenData) {
+        let notificationRequest = {
+          key:
+            reqParam.type == "NO_BANK"
+              ? NOTIFICATION_KEYS.NO_BANK_REMINDER
+              : NOTIFICATION_KEYS.NO_RECURRING_REMINDER,
+          title: NOTIFICATION.NO_BANK_REMINDER_TITLE,
+          message:
+            reqParam.type == "NO_BANK"
+              ? NOTIFICATION.NO_BANK_REMINDER_MESSAGE
+              : NOTIFICATION.NO_RECURRING_REMINDER_MESSAGE.replace(
+                  "#firstName",
+                  user.firstName
+                ),
+        };
+        await sendNotification(
+          deviceTokenData.deviceToken,
+          notificationRequest.title,
+          notificationRequest
+        );
+        await Notification.create({
+          title: notificationRequest.title,
+          userId: parentDetails.userId,
+          message: notificationRequest.message,
+          isRead: ERead.UNREAD,
+          data: JSON.stringify(notificationRequest),
+        });
+      }
+      return this.Ok(ctx, { message: "Success" });
+    } else if (reqParam.type == "SEND_REMINDER") {
+      const parent = await UserTable.findOne({
+        mobile: reqParam.parentMobile,
+      });
+      if (!parent) {
+        let parentDetails = await ParentChildTable.findOne({
+          "teens.childId": user._id,
+        });
+        if (parentDetails) {
+          await UserTable.updateOne(
+            { _id: parentDetails.userId },
+            {
+              $set: { mobile: reqParam.parentMobile },
+            }
+          );
+        }
         await UserTable.updateOne(
-          { _id: parentDetails.userId },
+          { _id: userId },
           {
-            $set: { mobile: reqParam.parentMobile },
+            $set: { parentMobile: reqParam.parentMobile },
           }
         );
-      }
-      await UserTable.updateOne(
-        { _id: userId },
-        {
-          $set: { parentMobile: reqParam.parentMobile },
+      } else {
+        if (parent && parent.mobile == user.mobile) {
+          return this.BadRequest(
+            ctx,
+            "Your mobile number and parent's mobile number cannot be same"
+          );
         }
-      );
-    } else {
-      if (parent && parent.mobile == user.mobile) {
-        return this.BadRequest(
-          ctx,
-          "Your mobile number and parent's mobile number cannot be same"
+        return this.BadRequest(ctx, "Mobile Number already exists");
+      }
+      /**
+       * send twilio message to the teen in order to signup.
+       */
+      const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
+      try {
+        const twilioResponse: any = await TwilioService.sendSMS(
+          reqParam.parentMobile,
+          message
         );
+        if (twilioResponse.code === 400) {
+          return this.BadRequest(ctx, "Error in sending message");
+        }
+      } catch (error) {
+        return this.BadRequest(ctx, error.message);
       }
-      return this.BadRequest(ctx, "Mobile Number already exists");
+      return this.Ok(ctx, { message: "Reminder sent!" });
     }
-    /**
-     * send twilio message to the teen in order to signup.
-     */
-    const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
-    try {
-      const twilioResponse: any = await TwilioService.sendSMS(
-        reqParam.parentMobile,
-        message
-      );
-      if (twilioResponse.code === 400) {
-        return this.BadRequest(ctx, "Error in sending message");
-      }
-    } catch (error) {
-      return this.BadRequest(ctx, error.message);
-    }
-    return this.Ok(ctx, { message: "Reminder sent!" });
   }
 
   /**
@@ -1908,6 +1899,26 @@ class AuthController extends BaseController {
           }
         }
       }
+    );
+  }
+
+  /**
+   * @description This api is used for checking parent exists or not in database
+   * @returns {*}
+   */
+  @Route({ path: "/check-parent-exists", method: HttpMethod.POST })
+  public async checkParentExists(ctx: any) {
+    if (!ctx.request.body.parentMobile) {
+      return this.BadRequest(ctx, "Please enter parent's mobile");
+    }
+    let checkParentExists = await UserTable.findOne({
+      mobile: ctx.request.body.parentMobile,
+    });
+    return this.Ok(
+      ctx,
+      !checkParentExists
+        ? { message: "User Not Found", isAccountFound: false }
+        : { message: "Success", isAccountFound: true }
     );
   }
 }

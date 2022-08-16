@@ -25,7 +25,6 @@ export function Route(
       order = path.order;
       path = path.path;
     }
-
     target.decoratorRoutes.push({
       method,
       path,
