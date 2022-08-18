@@ -19,6 +19,7 @@ import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 import { getPortFolioService } from "../../../services";
 import { CASH_USD_ICON } from "../../../utility/constants";
+import getPortfolioService from "@app/services/get-portfolio-service";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
@@ -51,93 +52,9 @@ class CryptocurrencyController extends BaseController {
       if (!ctx.request.query.childId) {
         return this.BadRequest(ctx, "Child Id Details Doesn't Exists");
       }
-      let portFolio = await TransactionTable.aggregate([
-        {
-          $match: {
-            userId: new ObjectId(ctx.request.query.childId),
-            type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
-          },
-        },
-        {
-          $group: {
-            _id: "$cryptoId",
-            cryptoId: {
-              $first: "$cryptoId",
-            },
-            type: {
-              $first: "$type",
-            },
-            totalSum: {
-              $sum: "$unitCount",
-            },
-            totalAmount: {
-              $sum: "$amount",
-            },
-            totalAmountMod: {
-              $sum: "$amountMod",
-            },
-          },
-        },
-        {
-          $redact: {
-            $cond: {
-              if: {
-                $gt: ["$totalSum", 0],
-              },
-              then: "$$KEEP",
-              else: "$$PRUNE",
-            },
-          },
-        },
-        {
-          $lookup: {
-            from: "cryptos",
-            localField: "cryptoId",
-            foreignField: "_id",
-            as: "cryptoData",
-          },
-        },
-        {
-          $unwind: {
-            path: "$cryptoData",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "cryptoprices",
-            localField: "cryptoId",
-            foreignField: "cryptoId",
-            as: "currentPriceDetails",
-          },
-        },
-        {
-          $unwind: {
-            path: "$currentPriceDetails",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $addFields: {
-            value: {
-              $multiply: ["$currentPriceDetails.currentPrice", "$totalSum"],
-            },
-          },
-        },
-        {
-          $addFields: {
-            totalGainLoss: {
-              $add: ["$value", "$totalAmountMod"],
-            },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            cryptoId: 1,
-          },
-        },
-      ]).exec();
+      let portFolio = await getPortfolioService.getCryptoIdInPortfolio(
+        ctx.request.query.childId
+      );
       if (portFolio.length > 0) {
         portFolio = await portFolio.map((x) => x.cryptoId);
         query = { _id: { $in: portFolio } };

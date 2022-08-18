@@ -11,7 +11,7 @@ import {
   QuizTopicTable,
   UserTable,
 } from "../../../model";
-import { zohoCrmService } from "../../../services";
+import { zohoCrmService, quizService } from "../../../services";
 import {
   EQuizTopicStatus,
   EUserType,
@@ -131,36 +131,18 @@ class QuizController extends BaseController {
         firstChildId: userExists._id,
       }).populate("userId", ["_id", "preLoadedCoins"]);
     }
-    const checkQuizExists = await QuizResult.aggregate([
-      {
-        $match: {
-          $or: [
-            { userId: new mongoose.Types.ObjectId(user._id) },
-            {
-              userId: childExists
-                ? userExists.type == EUserType.PARENT
-                  ? new mongoose.Types.ObjectId(childExists.userId._id)
-                  : new mongoose.Types.ObjectId(childExists.firstChildId._id)
-                : null,
-            },
-          ],
+    const checkQuizExists = await quizService.checkQuizExists({
+      $or: [
+        { userId: new mongoose.Types.ObjectId(user._id) },
+        {
+          userId: childExists
+            ? userExists.type == EUserType.PARENT
+              ? new mongoose.Types.ObjectId(childExists.userId._id)
+              : new mongoose.Types.ObjectId(childExists.firstChildId._id)
+            : null,
         },
-      },
-      {
-        $group: {
-          _id: 0,
-          sum: {
-            $sum: "$pointsEarned",
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          sum: 1,
-        },
-      },
-    ]).exec();
+      ],
+    });
     const dataToSent = {
       lastQuizTime: null,
       totalQuestionSolved: 0,
@@ -408,40 +390,20 @@ class QuizController extends BaseController {
             isParentOrChild = userExistsForQuiz ? 2 : 0;
             preLoadedCoins = userExistsForQuiz ? userExists.preLoadedCoins : 0;
           }
-          const checkQuizExists = await QuizResult.aggregate([
-            {
-              $match: {
-                $or: [
-                  { userId: new mongoose.Types.ObjectId(userExists._id) },
-                  {
-                    userId: userExistsForQuiz
-                      ? userExists.type == EUserType.PARENT
-                        ? new mongoose.Types.ObjectId(
-                            userExistsForQuiz.firstChildId._id
-                          )
-                        : new mongoose.Types.ObjectId(
-                            userExistsForQuiz.userId._id
-                          )
-                      : null,
-                  },
-                ],
+          const checkQuizExists = await quizService.checkQuizExists({
+            $or: [
+              { userId: new mongoose.Types.ObjectId(userExists._id) },
+              {
+                userId: userExistsForQuiz
+                  ? userExists.type == EUserType.PARENT
+                    ? new mongoose.Types.ObjectId(
+                        userExistsForQuiz.firstChildId._id
+                      )
+                    : new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
+                  : null,
               },
-            },
-            {
-              $group: {
-                _id: 0,
-                sum: {
-                  $sum: "$pointsEarned",
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                sum: 1,
-              },
-            },
-          ]).exec();
+            ],
+          });
           let stackCoins = 0;
           if (checkQuizExists.length > 0) {
             stackCoins = checkQuizExists[0].sum;
