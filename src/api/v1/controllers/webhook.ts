@@ -1,46 +1,50 @@
-import Koa from "koa";
-import crypto from "crypto";
-import {
-  Route,
-  updateContacts,
-  kycDocumentChecks,
-  uploadFilesFetch,
-  checkValidBase64String,
-  getContactId,
-  sendNotification,
-  addAccountInfoInZohoCrm,
-  getAccountStatusByAccountId,
-  generateQuote,
-  executeQuote,
-  internalAssetTransfers,
-} from "../../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
-import { json, form } from "co-body";
-import BaseController from "./base";
-import {
-  ETransactionStatus,
-  EUSERSTATUS,
-  HttpMethod,
-  EUserType,
-  EGIFTSTACKCOINSSETTING,
-} from "../../../types";
+import { json } from "co-body";
+import fs from "fs";
+import moment from "moment";
+import path from "path";
 import envData from "../../../config/index";
+import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
+  AdminTable,
+  DeviceToken,
+  Notification,
   ParentChildTable,
   StateTable,
-  UserTable,
   TransactionTable,
+  UserActivityTable,
+  UserTable,
   WebhookTable,
-  DeviceToken,
-  AdminTable,
-  Notification,
-  CryptoTable,
 } from "../../../model";
+import { zohoCrmService } from "../../../services";
+import {
+  EAction,
+  EGIFTSTACKCOINSSETTING,
+  ERead,
+  ERECURRING,
+  EStatus,
+  ETransactionStatus,
+  ETransactionType,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+  messages,
+} from "../../../types";
+import {
+  checkValidBase64String,
+  getAccountStatusByAccountId,
+  getContactId,
+  kycDocumentChecks,
+  Route,
+  sendNotification,
+  updateContacts,
+  uploadFilesFetch,
+  createAccount,
+  createContributions,
+  getBalance,
+} from "../../../utility";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
-import { PrimeTrustJWT, Auth } from "../../../middleware";
-import fs from "fs";
-import path from "path";
-import moment from "moment";
+import BaseController from "./base";
 
 class WebHookController extends BaseController {
   /**
@@ -60,13 +64,16 @@ class WebHookController extends BaseController {
     });
     const checkAccountIdExists: any = await ParentChildTable.findOne({
       "teens.accountId": body.account_id,
-    }).populate("teens.childId", [
-      "email",
-      "isGifted",
-      "isGiftedCrypto",
-      "firstName",
-      "lastName",
-    ]);
+    })
+      .populate("teens.childId", [
+        "email",
+        "isGifted",
+        "isGiftedCrypto",
+        "firstName",
+        "lastName",
+      ])
+      .populate("firstChildId", ["firstName", "lastName"])
+      .populate("userId", ["firstName", "lastName"]);
     if (!checkAccountIdExists) {
       return this.OkWebhook(ctx, "Account Id Doesn't Exists");
     }
@@ -115,12 +122,9 @@ class WebHookController extends BaseController {
             Account_Name: userExists.firstName + " " + userExists.lastName,
             Account_Status: "2",
           };
-          let mainData = {
-            data: [dataSentInCrm],
-          };
-          const dataAddInZoho = await addAccountInfoInZohoCrm(
+          await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
-            mainData
+            dataSentInCrm
           );
           if (deviceTokenData) {
             let notificationRequest = {
@@ -188,12 +192,9 @@ class WebHookController extends BaseController {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Account_Status: "3",
             };
-            let mainData = {
-              data: [dataSentInCrm],
-            };
-            await addAccountInfoInZohoCrm(
+            await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
-              mainData
+              dataSentInCrm
             );
             if (deviceTokenData) {
               let notificationRequest = {
@@ -229,12 +230,9 @@ class WebHookController extends BaseController {
                       allTeen.childId.lastName,
                     Stack_Coins: admin.stackCoins,
                   };
-                  let mainData = {
-                    data: [dataSentInCrm],
-                  };
-                  const dataAddInZoho = await addAccountInfoInZohoCrm(
+                  await zohoCrmService.addAccounts(
                     ctx.request.zohoAccessToken,
-                    mainData
+                    dataSentInCrm
                   );
                 }
               }
@@ -310,12 +308,9 @@ class WebHookController extends BaseController {
                 Account_Name: userExists.firstName + " " + userExists.lastName,
                 Account_Status: "3",
               };
-              let mainData = {
-                data: [dataSentInCrm],
-              };
-              const dataAddInZoho = await addAccountInfoInZohoCrm(
+              await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
-                mainData
+                dataSentInCrm
               );
               if (deviceTokenData) {
                 let notificationRequest = {
@@ -329,6 +324,73 @@ class WebHookController extends BaseController {
                   notificationRequest.title,
                   notificationRequest
                 );
+              }
+              let allChilds: any = await checkAccountIdExists.teens.filter(
+                (x) =>
+                  checkAccountIdExists.firstChildId._id.toString() !=
+                  x.childId._id.toString()
+              );
+              let contactId = checkAccountIdExists.contactId;
+              if (allChilds.length > 0) {
+                let childArray = [];
+                for await (let allChild of allChilds) {
+                  let childName = allChild.childId.lastName
+                    ? allChild.childId.firstName +
+                      " " +
+                      allChild.childId.lastName
+                    : allChild.childId.firstName;
+                  const data = {
+                    type: "account",
+                    attributes: {
+                      "account-type": "custodial",
+                      name:
+                        childName +
+                        " - " +
+                        checkAccountIdExists.userId.firstName +
+                        " " +
+                        checkAccountIdExists.userId.lastName +
+                        " - " +
+                        contactId,
+                      "authorized-signature":
+                        checkAccountIdExists.userId.firstName +
+                        " - " +
+                        checkAccountIdExists.userId.lastName,
+                      "webhook-config": {
+                        url: envData.WEBHOOK_URL,
+                      },
+                      "contact-id": contactId,
+                    },
+                  };
+                  const createAccountData: any = await createAccount(
+                    ctx.request.primeTrustToken,
+                    data
+                  );
+                  if (createAccountData.status == 400) {
+                    return this.BadRequest(ctx, createAccountData.message);
+                  }
+                  let bulWriteOperation = {
+                    updateOne: {
+                      filter: {
+                        _id: checkAccountIdExists._id,
+                        teens: {
+                          $elemMatch: {
+                            childId: allChild.childId._id,
+                          },
+                        },
+                      },
+                      update: {
+                        $set: {
+                          "teens.$.accountId": createAccountData.data.data.id,
+                        },
+                      },
+                    },
+                  };
+                  await childArray.push(bulWriteOperation);
+                }
+                console.log(childArray[0].updateOne, "childArray");
+                if (childArray.length > 0) {
+                  await ParentChildTable.bulkWrite(childArray);
+                }
               }
               /**
                * Gift stack coins to all teens whose parent's kyc is approved
@@ -351,12 +413,9 @@ class WebHookController extends BaseController {
                         allTeen.childId.lastName,
                       Stack_Coins: admin.stackCoins,
                     };
-                    let mainData = {
-                      data: [dataSentInCrm],
-                    };
-                    const dataAddInZoho = await addAccountInfoInZohoCrm(
+                    await zohoCrmService.addAccounts(
                       ctx.request.zohoAccessToken,
-                      mainData
+                      dataSentInCrm
                     );
                   }
                 }
@@ -876,99 +935,173 @@ class WebHookController extends BaseController {
     path: "/test-zoho",
     method: HttpMethod.POST,
   })
-  @PrimeTrustJWT(true)
+  @PrimeTrustJWT()
   public async testZoho(ctx: any) {
     let jwtToken = ctx.request.primeTrustToken;
-    let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-    const requestQuoteDay: any = {
-      data: {
-        type: "quotes",
-        attributes: {
-          "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": crypto.assetId,
-          hot: true,
-          "transaction-type": "buy",
-          total_amount: "5",
+    let users: any = await UserTable.aggregate([
+      {
+        $match: {
+          $and: [
+            { isRecurring: { $exists: true } },
+            { isRecurring: { $nin: [0, 1] } },
+          ],
         },
       },
-    };
-    const generateQuoteResponse: any = await generateQuote(
-      jwtToken,
-      requestQuoteDay
-    );
-    if (generateQuoteResponse.status == 400) {
-      return this.BadRequest(ctx, generateQuoteResponse.message);
-    }
-    /**
-     * Execute a quote
-     */
-    const requestExecuteQuote: any = {
-      data: {
-        type: "quotes",
-        attributes: {
-          "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": crypto.assetId,
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "teens.childId",
+          as: "parentChild",
         },
       },
-    };
-    const executeQuoteResponse: any = await executeQuote(
-      jwtToken,
-      generateQuoteResponse.data.data.id,
-      requestExecuteQuote
-    );
-    if (executeQuoteResponse.status == 400) {
-      return this.BadRequest(ctx, executeQuoteResponse.message);
+      { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
+    ]).exec();
+    console.log(users, "users");
+    if (users.length > 0) {
+      console.log(users.length, "users");
+      let todayDate = moment().startOf("day").unix();
+      let transactionArray = [];
+      let mainArray = [];
+      let activityArray = [];
+      for await (let user of users) {
+        const accountIdDetails = await user.parentChild.teens.find(
+          (x: any) => x.childId.toString() == user._id.toString()
+        );
+        console.log(accountIdDetails, "accountIdDetails");
+        if (!accountIdDetails) {
+          continue;
+        }
+        let deviceTokenData = await DeviceToken.findOne({
+          userId: user.parentChild.userId,
+        }).select("deviceToken");
+        let selectedDate = moment(user.selectedDepositDate)
+          .startOf("day")
+          .unix();
+        console.log(selectedDate, "selectedDate");
+        console.log(todayDate, "todayDate");
+        console.log(selectedDate <= todayDate, "todayDate");
+        if (selectedDate <= todayDate) {
+          console.log("selectedDate");
+          let contributionRequest = {
+            type: "contributions",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "contact-id": user.parentChild.contactId,
+              "funds-transfer-method": {
+                "funds-transfer-type": "ach",
+                "ach-check-type": "personal",
+                "contact-id": user.parentChild.contactId,
+                "plaid-processor-token": user.parentChild.processorToken,
+              },
+              amount: user.selectedDeposit,
+            },
+          };
+          let contributions: any = await createContributions(
+            jwtToken,
+            contributionRequest
+          );
+          console.log(contributions, "contributions");
+          if (contributions.status == 400) {
+            /**
+             * Notification
+             */
+            if (deviceTokenData) {
+              let notificationRequest = {
+                key:
+                  contributions.code == 25001
+                    ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
+                    : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
+                title: "Recurring Deposit Error",
+                message:
+                  contributions.code == 25001
+                    ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
+                    : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE,
+              };
+              await sendNotification(
+                deviceTokenData.deviceToken,
+                notificationRequest.title,
+                notificationRequest
+              );
+              await Notification.create({
+                title: notificationRequest.title,
+                userId: user.parentChild.userId,
+                message: null,
+                isRead: ERead.UNREAD,
+                data: JSON.stringify(notificationRequest),
+              });
+            }
+            continue;
+          } else {
+            let activityData = {
+              userId: user._id,
+              userType: EUserType.TEEN,
+              message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
+              currencyType: null,
+              currencyValue: user.selectedDeposit,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            };
+            await activityArray.push(activityData);
+            let transactionData = {
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              recurringDeposit: true,
+              settledTime: moment().unix(),
+              amount: user.selectedDeposit,
+              amountMod: null,
+              userId: user._id,
+              parentId: user.parentChild.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            };
+            await transactionArray.push(transactionData);
+            let bulWriteOperation = {
+              updateOne: {
+                filter: { _id: user._id },
+                update: {
+                  $set: {
+                    selectedDepositDate: moment(user.selectedDepositDate)
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.isRecurring == ERECURRING.QUATERLY
+                          ? 4
+                          : 0,
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.isRecurring == ERECURRING.QUATERLY
+                          ? "months"
+                          : "day"
+                      ),
+                  },
+                },
+              },
+            };
+            await mainArray.push(bulWriteOperation);
+          }
+          // }
+        }
+      }
+      console.log(transactionArray, "transactionArray");
+      console.log(mainArray, "mainArray");
+      console.log(activityArray, "activityArray");
+      await UserActivityTable.insertMany(activityArray);
+      await TransactionTable.insertMany(transactionArray);
+      await UserTable.bulkWrite(mainArray);
+      return this.Ok(ctx, { message: "Added" });
     }
-    let internalTransferRequest = {
-      data: {
-        type: "internal-asset-transfers",
-        attributes: {
-          "unit-count": executeQuoteResponse.data.data.attributes["unit-count"],
-          "from-account-id": envData.OPERATIONAL_ACCOUNT,
-          "to-account-id": "24e34898-d86e-4773-a9f7-9911de8bc28b",
-          "asset-id": crypto.assetId,
-          reference: "$5 BTC gift from Stack",
-          "hot-transfer": true,
-        },
-      },
-    };
-    const internalTransferResponse: any = await internalAssetTransfers(
-      jwtToken,
-      internalTransferRequest
-    );
-    if (internalTransferResponse.status == 400) {
-      return this.BadRequest(ctx, internalTransferResponse.message);
-    }
-    if (internalTransferResponse.status == 200) {
-      return this.Ok(ctx, {
-        data: internalTransferResponse.data.data.id,
-      });
-    }
-    // const checkAccountIdExists: any = await ParentChildTable.findOne({
-    //   "teens.childId": new ObjectId("62726e1de68ae364f3a510d9"),
-    // })
-    //   .populate("teens.childId", [
-    //     "email",
-    //     "isGifted",
-    //     "isGiftedCrypto",
-    //     "firstName",
-    //     "lastName",
-    //     "accountId",
-    //   ])
-    //   .populate({ path: "teens.childId" });
-    // let allTeensGiftedCrypto = await checkAccountIdExists.teens.filter(
-    //   (x) =>
-    //     x.childId.isGifted != null &&
-    //     x.childId.isGifted == EGIFTSTACKCOINSSETTING.ON
-    // );
-    // .then((data: any) => {
-    //   data.teens.childId = {};
-    //   console.log(data, "data");
-    //   return data;
-    // });
-    return this.Ok(ctx, {
-      data: internalTransferResponse.data.data.type.attributes["id"],
-    });
+    return this.BadRequest(ctx, "No such user");
   }
 }
 

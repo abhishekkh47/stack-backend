@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IUser, MongooseModel } from "../types";
+import { ERECURRING, IUser, MongooseModel } from "../types";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
@@ -118,6 +118,34 @@ const schema = new mongoose.Schema<IUserSchema>(
      * accountStatus:- pending , opened and closed
      */
     accountStatus: { type: mongoose.Schema.Types.String, default: "pending" },
+    /**
+     * 0 - no bank , 1 - no recurring , 2 - weekly , 3 - monthly and 4 - quaterly
+     */
+    isRecurring: {
+      type: mongoose.Schema.Types.Number,
+      isIn: [
+        ERECURRING.NO_BANK,
+        ERECURRING.NO_RECURRING,
+        ERECURRING.WEEKLY,
+        ERECURRING.MONTLY,
+        ERECURRING.QUATERLY,
+      ],
+      default: 0,
+    },
+    /**
+     * If isRecurring done then selectedDeposit else 0
+     */
+    selectedDeposit: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+    },
+    /**
+     * If isRecurring done then selectedDepositDate else null
+     */
+    selectedDepositDate: {
+      type: mongoose.Schema.Types.Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

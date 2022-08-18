@@ -1,6 +1,5 @@
 const FCM = require("fcm-node");
 import envData from "../config/index";
-import { FIREBASE_CREDENCIALS } from "../utility/constants";
 const fcm = new FCM(envData.FIREBASE_SERVER_KEY);
 export const sendNotification = async (to, body, data, action = null) => {
   if (to != null) {

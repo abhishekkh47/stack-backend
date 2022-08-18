@@ -1,5 +1,4 @@
 import Koa from "koa";
-import mongoose from "mongoose";
 import { Route } from "../../../utility";
 import BaseController from "./base";
 import { Auth } from "../../../middleware";

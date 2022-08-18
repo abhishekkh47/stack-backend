@@ -62,6 +62,8 @@ export const DROPDOWNLIST = {
   limit: 10,
 };
 
+export const CASH_USD_ICON = "CASH_USD.png";
+
 export const FIREBASE_CREDENCIALS = {
   type: "service_account",
   project_id: "temp-demo-push-notification",
@@ -113,10 +115,23 @@ export const NOTIFICATION = {
   ACCOUNT_CLOSED_TITLE: "Your account is closed",
   ACCOUNT_CLOSED_DESCRIPTION:
     "Thanks for applying, we can't open an account for you based on the info you provided",
+  RECURRING_FAILED: "An error occurred while processing your deposit",
+  RECURRING_FAILED_BANK_ERROR:
+    "We couldn’t proceed with the recurring deposit because we couldn’t authenticate your bank account.",
+  RECURRING_FAILED_INSUFFICIENT_BALANCE:
+    "We couldn’t proceed with the recurring deposit because you don’t have a sufficient balance in your bank account.",
+  NO_BANK_REMINDER_TITLE: "REMINDER",
+  NO_BANK_REMINDER_MESSAGE: "Link your bank to activate your account.",
+  NO_RECURRING_REMINDER_MESSAGE:
+    "Hi! Your child, #firstName, asked you to set up recurring deposit.",
 };
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
+  NO_BANK_REMINDER: "no_bank",
+  NO_RECURRING_REMINDER: "no_recurring",
+  RECURRING_FAILED_BANK: "recurring_failed_bank_failure",
+  RECURRING_FAILED_BALANCE: "recurring_failed_insufficient_balance",
   KYC_SUCCESS: "kyc_success",
   ACCOUNT_CLOSED: "account_closed",
   KYC_FAILURE: "kyc_failure",
@@ -128,10 +143,13 @@ export const NOTIFICATION_KEYS = {
 export const PARENT_SIGNUP_FUNNEL = {
   SIGNUP: [
     "Sign up with SSO",
-    "Enter phone number",
-    "Enter child's phone number",
-    "Enter name, birth, SSN",
+    // "Enter phone number",
+    // "Enter child's phone number",
+    // "Enter name, birth, SSN",
   ],
+  DOB: "Enter DOB",
+  CONFIRM_DETAILS: "Confirm user details",
+  CHILD_INFO: "Enter child's info",
   ADDRESS: "Enter address",
   UPLOAD_DOCUMENT: "Upload ID",
   ADD_BANK: "Add a bank",

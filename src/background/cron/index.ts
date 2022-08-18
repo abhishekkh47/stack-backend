@@ -1,6 +1,33 @@
-import { getHistoricalDataOfCoins, getLatestPrice } from "../../utility";
+import {
+  createContributions,
+  getBalance,
+  getHistoricalDataOfCoins,
+  getLatestPrice,
+  getPrimeTrustJWTToken,
+  sendNotification,
+} from "../../utility";
 import cron from "node-cron";
-import { CryptoTable, CryptoPriceTable } from "../../model";
+import {
+  CryptoTable,
+  CryptoPriceTable,
+  TransactionTable,
+  UserTable,
+  UserActivityTable,
+  DeviceToken,
+  Notification,
+} from "../../model";
+import moment from "moment";
+import {
+  ETransactionStatus,
+  ETransactionType,
+  ERECURRING,
+  EUserType,
+  EAction,
+  EStatus,
+  messages,
+  ERead,
+} from "../../types";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 
 export const startCron = () => {
   /**
@@ -96,6 +123,181 @@ export const startCron = () => {
         await mainArray.push(arrayToInsert);
       }
       await CryptoPriceTable.insertMany(mainArray);
+    }
+    return true;
+  });
+
+  /**
+   * Logic for recurring deposit if user has selected recurring deposit
+   * Time:- at 00:00 am every day
+   */
+  cron.schedule("0 0 * * *", async () => {
+    console.log(`
+     ==========Start Cron For Recurring=============
+    `);
+    let jwtToken = await getPrimeTrustJWTToken();
+    let users: any = await UserTable.aggregate([
+      {
+        $match: {
+          $and: [
+            { isRecurring: { $exists: true } },
+            { isRecurring: { $nin: [0, 1] } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "teens.childId",
+          as: "parentChild",
+        },
+      },
+      { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
+    ]).exec();
+    console.log(users, "users");
+    if (users.length > 0) {
+      console.log(users.length, "users");
+      let todayDate = moment().startOf("day").unix();
+      let transactionArray = [];
+      let mainArray = [];
+      let activityArray = [];
+      for await (let user of users) {
+        const accountIdDetails = await user.parentChild.teens.find(
+          (x: any) => x.childId.toString() == user._id.toString()
+        );
+        console.log(accountIdDetails, "accountIdDetails");
+        if (!accountIdDetails) {
+          continue;
+        }
+        let deviceTokenData = await DeviceToken.findOne({
+          userId: user.parentChild.userId,
+        }).select("deviceToken");
+        let selectedDate = moment(user.selectedDepositDate)
+          .startOf("day")
+          .unix();
+        console.log(selectedDate, "selectedDate");
+        console.log(todayDate, "todayDate");
+        console.log(selectedDate <= todayDate, "todayDate");
+        if (selectedDate <= todayDate) {
+          console.log("selectedDate");
+          let contributionRequest = {
+            type: "contributions",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "contact-id": user.parentChild.contactId,
+              "funds-transfer-method": {
+                "funds-transfer-type": "ach",
+                "ach-check-type": "personal",
+                "contact-id": user.parentChild.contactId,
+                "plaid-processor-token": user.parentChild.processorToken,
+              },
+              amount: user.selectedDeposit,
+            },
+          };
+          let contributions: any = await createContributions(
+            jwtToken,
+            contributionRequest
+          );
+          console.log(contributions, "contributions");
+          if (contributions.status == 400) {
+            /**
+             * Notification
+             */
+            if (deviceTokenData) {
+              let notificationRequest = {
+                key:
+                  contributions.code == 25001
+                    ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
+                    : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
+                title: "Recurring Deposit Error",
+                message:
+                  contributions.code == 25001
+                    ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
+                    : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE,
+              };
+              console.log(notificationRequest.title);
+              await sendNotification(
+                deviceTokenData.deviceToken,
+                notificationRequest.title,
+                notificationRequest
+              );
+              await Notification.create({
+                title: notificationRequest.title,
+                userId: user.parentChild.userId,
+                message: null,
+                isRead: ERead.UNREAD,
+                data: JSON.stringify(notificationRequest),
+              });
+            }
+            continue;
+          } else {
+            let activityData = {
+              userId: user._id,
+              userType: EUserType.TEEN,
+              message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
+              currencyType: null,
+              currencyValue: user.selectedDeposit,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            };
+            await activityArray.push(activityData);
+            let transactionData = {
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              recurringDeposit: true,
+              settledTime: moment().unix(),
+              amount: user.selectedDeposit,
+              amountMod: null,
+              userId: user._id,
+              parentId: user.parentChild.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            };
+            await transactionArray.push(transactionData);
+            let bulWriteOperation = {
+              updateOne: {
+                filter: { _id: user._id },
+                update: {
+                  $set: {
+                    selectedDepositDate: moment(user.selectedDepositDate)
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.isRecurring == ERECURRING.QUATERLY
+                          ? 4
+                          : 0,
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.isRecurring == ERECURRING.QUATERLY
+                          ? "months"
+                          : "day"
+                      ),
+                  },
+                },
+              },
+            };
+            await mainArray.push(bulWriteOperation);
+          }
+        }
+      }
+      console.log(transactionArray, "transactionArray");
+      console.log(mainArray, "mainArray");
+      console.log(activityArray, "activityArray");
+      await UserActivityTable.insertMany(activityArray);
+      await TransactionTable.insertMany(transactionArray);
+      await UserTable.bulkWrite(mainArray);
+      return true;
     }
     return true;
   });
