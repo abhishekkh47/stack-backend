@@ -137,6 +137,7 @@ class CryptocurrencyController extends BaseController {
       return this.Ok(ctx, {
         portFolio: {
           value: balance,
+          balance: balance,
           name: "Cash",
           symbol: "USD",
           isRecurring:
@@ -158,7 +159,9 @@ class CryptocurrencyController extends BaseController {
     const portFolio =
       await getPortFolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
         userExists._id,
-        crypto._id
+        crypto._id,
+        parentChild,
+        jwtToken
       );
     // crypto
     return this.Ok(ctx, { message: "Success", portFolio });

@@ -1,14 +1,31 @@
+import { getBalance } from "../utility";
 import { CryptoTable, TransactionTable } from "../model";
 import { ETransactionType } from "../types";
 
 class getPortfolioService {
   public async getPortfolioBasedOnChildIdWithCurrentMarketPrice(
     childId: string,
-    cryptoId
+    cryptoId: any,
+    parentChild: any,
+    jwtToken: any
   ) {
     if (!childId) {
       throw Error("Child Id Not Found");
     }
+    const accountIdDetails: any = await parentChild.teens.find(
+      (x: any) => x.childId.toString() == childId.toString()
+    );
+    if (!accountIdDetails) {
+      throw Error("Account ID Details Not Found");
+    }
+    const fetchBalance: any = await getBalance(
+      jwtToken,
+      accountIdDetails.accountId
+    );
+    if (fetchBalance.status == 400) {
+      throw Error(fetchBalance.message);
+    }
+    const balance = fetchBalance.data.data[0].attributes.disbursable;
 
     const portFolio = await CryptoTable.aggregate([
       {
@@ -83,6 +100,7 @@ class getPortfolioService {
               else: true,
             },
           },
+          balance: balance,
         },
       },
     ]).exec();
