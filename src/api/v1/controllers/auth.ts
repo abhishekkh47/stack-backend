@@ -23,6 +23,7 @@ import {
   TokenService,
   TwilioService,
   zohoCrmService,
+  quizService,
 } from "../../../services";
 import {
   EAUTOAPPROVAL,
@@ -368,27 +369,9 @@ class AuthController extends BaseController {
               /**
                * Get Quiz Stack Coins
                */
-              const checkQuizExists = await QuizResult.aggregate([
-                {
-                  $match: {
-                    userId: new mongoose.Types.ObjectId(refferalCodeExists._id),
-                  },
-                },
-                {
-                  $group: {
-                    _id: 0,
-                    sum: {
-                      $sum: "$pointsEarned",
-                    },
-                  },
-                },
-                {
-                  $project: {
-                    _id: 0,
-                    sum: 1,
-                  },
-                },
-              ]).exec();
+              const checkQuizExists = await quizService.checkQuizExists({
+                userId: new mongoose.Types.ObjectId(refferalCodeExists._id),
+              });
               let stackCoins = 0;
               if (checkQuizExists.length > 0) {
                 stackCoins = checkQuizExists[0].sum;

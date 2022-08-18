@@ -53,7 +53,7 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
-import { zohoCrmService } from "../../../services";
+import { zohoCrmService, quizService } from "../../../services";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -1796,40 +1796,20 @@ class TradingController extends BaseController {
           /**
            * Get Quiz Stack Coins
            */
-          const checkQuizExists = await QuizResult.aggregate([
-            {
-              $match: {
-                $or: [
-                  { userId: new mongoose.Types.ObjectId(childExists._id) },
-                  {
-                    userId: userExistsForQuiz
-                      ? childExists.type == EUserType.PARENT
-                        ? new mongoose.Types.ObjectId(
-                            userExistsForQuiz.firstChildId._id
-                          )
-                        : new mongoose.Types.ObjectId(
-                            userExistsForQuiz.userId._id
-                          )
-                      : null,
-                  },
-                ],
+          const checkQuizExists = await quizService.checkQuizExists({
+            $or: [
+              { userId: new mongoose.Types.ObjectId(childExists._id) },
+              {
+                userId: userExistsForQuiz
+                  ? childExists.type == EUserType.PARENT
+                    ? new mongoose.Types.ObjectId(
+                        userExistsForQuiz.firstChildId._id
+                      )
+                    : new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
+                  : null,
               },
-            },
-            {
-              $group: {
-                _id: 0,
-                sum: {
-                  $sum: "$pointsEarned",
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                sum: 1,
-              },
-            },
-          ]).exec();
+            ],
+          });
           let stackCoins = 0;
           if (checkQuizExists.length > 0) {
             stackCoins = checkQuizExists[0].sum;
