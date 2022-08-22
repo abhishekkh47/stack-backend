@@ -1,7 +1,7 @@
-import { UserTable, IUserSchema, StateTable } from "../model";
+import { UserTable, IUserSchema, StateTable, ParentChildTable } from "../model";
 import { EUSERSTATUS, IUser } from "../types";
 import bcrypt from "bcrypt";
-import { getContactId, updateContacts } from "../utility";
+import { getContactId, updateContacts, kycDocumentChecks } from "../utility";
 
 class AuthService {
   async findUserByEmail(email: string) {
@@ -136,6 +136,54 @@ class AuthService {
         $set: {
           status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
           ...updates,
+        },
+      }
+    );
+  }
+
+  public async updateKycDocumentChecks(
+    parentChildExists,
+    jwtToken,
+    frontDocumentId,
+    backDocumentId,
+    userExists
+  ) {
+    /**
+     * Checking the kyc document checks
+     */
+    const kycData = {
+      type: "kyc-document-checks",
+      attributes: {
+        "contact-id": parentChildExists.contactId,
+        "uploaded-document-id": frontDocumentId,
+        "backside-document-id": backDocumentId,
+        "kyc-document-type": "drivers_license",
+        identity: true,
+        "identity-photo": true,
+        "proof-of-address": true,
+        "kyc-document-country": "US",
+      },
+    };
+    let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
+    if (kycResponse.status == 400) {
+      throw new Error(kycResponse.message);
+    }
+    if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
+      throw new Error(kycResponse);
+    }
+    /**
+     * Updating the info in parent child table
+     */
+    await ParentChildTable.updateOne(
+      {
+        userId: userExists._id,
+        "teens.childId": parentChildExists.firstChildId,
+      },
+      {
+        $set: {
+          frontDocumentId: frontDocumentId,
+          backDocumentId: backDocumentId,
+          kycDocumentId: kycResponse.data.data.id,
         },
       }
     );

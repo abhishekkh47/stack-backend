@@ -64,22 +64,6 @@ export const DROPDOWNLIST = {
 
 export const CASH_USD_ICON = "CASH_USD.png";
 
-export const FIREBASE_CREDENCIALS = {
-  type: "service_account",
-  project_id: "temp-demo-push-notification",
-  private_key_id: "a4b2e11cfdbed032856e4564909a75bb1a5ebc46",
-  private_key:
-    "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCijuOdZJk4EBhU\nRW6ifhEM3kbBZ2DlGieSzKeBIysqWx7CSUzJJGPsgDR6nNIIvY4ZdpdoL9RAx/ic\nfHVfgzRfVcs+G7/2XQFALoM4r7oRy1Nb6sDdgeHCkyXy2k3gXuj9zRcjlD/EJBL6\nRzg5dlqk4SlCuHSMdFYrvBkQcBa4dKyD+jtwuF+6Q5V0sKn4HqD6tTCpW2UENlVN\nLNICIw+Ef62gBnx5ox/+y9Fg9C+rWn7ZgnKFASpNKebQBN/KpEr67ct9fNOwTJc+\nLwbQIQNgyfnwX2JofrrjIeNviZq4ahgMPgVR90NeW0jkh+9mtSOySGhoh/9bnhj/\nVGH15mndAgMBAAECggEACJca9aQNib4l/vwNUOZvEbpETG+hWfIEIdiRSHx6iTo3\n+aXkeiOjaSnMPCeB3ObhdbyD20Rdx8+ZdnGIRVQaZihTPXS7c/ItwP3EPvBgWZTg\nUpTo/LuimcTrZjY9k8wILXNTU/S/WubaHuI5GSZFO33Pj6BOPmbeb+C4hVsbBEPG\ngTsc+w3hzSPTy/dzEH3Gf5LKKTaU77+GyPR0a9oCrUyyfsCSJLuJtvsS79jheCpW\n9LgY33+g1QCkgf8jLafFb5Apx5eaCMKQnD7OAnNiDqIwC72PaR4QmoLTytfyrTbL\nMHNJYSKnwVu2d0nTsslC4MkaWux+C68zMXZxYgCW8QKBgQDdU+YQ92DJowbrfB8c\ngSBmFzKcbj57iAcCXbaDSDF1+Tb/fnQlayHBHsgdQG7McBtz80I/ZgOxOZLJkGfu\nS+TtRmZq7Hbp4Hxa7QkwUT5Y1zsByFhsf/n9DpXw7J7nJgiv2xQnGhxpK/xwAzxr\nR01z/1PH4mzP+5btMjqvYafujQKBgQC8Bho/o7B8DRm97QTdLB/+SUsyRQAJHdR5\nnWmtMM+Apbzb7X2mhAEy7cdtwxBecReGHjjWgw7RycP7ecbONs9Ae4LvaiHKOLvv\nmmOrtvFDu7aAtWOzBFUVmn0Hu2RCgC4dRovg9X3VVejPwEABEwuIvYJITK6xVIP0\nlxLyBix8kQKBgQC1cZV3rUXUp+kBXnUm6hkEeNoN8jcZEJAmeWspvyKFQ7S5yhIv\npt86MiD+EheDVBi9etyBmwFF5hwXUGJTsjZP6toFqCtoWpe39wEEcmY5cOE3+eW7\ntULdGXsE0wcGGmEeweyIjdhixCOkNJLwo7i0cspdYJux+eBmPjpsExQX9QKBgQCy\nMpZt+hUpfMEI37ncZBVuSsiZvAtsmHjnSej922TN6EY1qb+MMU9xlSmNPXImD8jb\ns4jqxQsmiLLVg3SHvCpwUp6liVC890gmrYwJEjlWmHE/SqpS36hD8UbOLSu4WwNZ\ne6LWcdPwfJtJSkteuU4VKoZvPz3Rkuf8x7GM74z6AQKBgQChvJAMeleb1mMODeBO\nthG7jaYT32rxUWl03vmwpSSneNn2fJ3WeKXYwGNtkvXJahDtIaPU6RYeTq6QcJOJ\nGKMk91A3CPwAvGHFkc4Jww1HeQ5mAHLRE4Xr1g15s81TXBRdHnaXS6YTFrKnQPLQ\nueZaxGasbXY5H33y4uPG7GCFHw==\n-----END PRIVATE KEY-----\n",
-  client_email:
-    "firebase-adminsdk-zfogf@temp-demo-push-notification.iam.gserviceaccount.com",
-  client_id: "115157352245474769299",
-  auth_uri: "https://accounts.google.com/o/oauth2/auth",
-  token_uri: "https://oauth2.googleapis.com/token",
-  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-  client_x509_cert_url:
-    "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-zfogf%40temp-demo-push-notification.iam.gserviceaccount.com",
-};
-
 export const NOTIFICATION = {
   TEEN_REQUEST_MADE: "A new request has been made 😃",
   TEEN_REQUEST_DENIED: "Your request is updated! ⭐",

@@ -776,47 +776,13 @@ class WebHookController extends BaseController {
             if (uploadFileError) {
               return this.BadRequest(ctx, uploadFileError);
             }
-            /**
-             * Checking the kyc document checks
-             */
-            const kycData = {
-              type: "kyc-document-checks",
-              attributes: {
-                "contact-id": parentChildExists.contactId,
-                "uploaded-document-id": frontDocumentId,
-                "backside-document-id": backDocumentId,
-                "kyc-document-type": "drivers_license",
-                identity: true,
-                "identity-photo": true,
-                "proof-of-address": true,
-                "kyc-document-country": "US",
-              },
-            };
-            let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
-            if (kycResponse.status == 400) {
-              return this.BadRequest(ctx, kycResponse.message);
-            }
-            if (
-              kycResponse.status == 200 &&
-              kycResponse.data.errors != undefined
-            ) {
-              return this.BadRequest(ctx, kycResponse);
-            }
-            /**
-             * Updating the info in parent child table
-             */
-            await ParentChildTable.updateOne(
-              {
-                userId: user._id,
-                "teens.childId": parentChildExists.firstChildId,
-              },
-              {
-                $set: {
-                  frontDocumentId: frontDocumentId,
-                  backDocumentId: backDocumentId,
-                  kycDocumentId: kycResponse.data.data.id,
-                },
-              }
+
+            await AuthService.updateKycDocumentChecks(
+              parentChildExists,
+              jwtToken,
+              frontDocumentId,
+              backDocumentId,
+              userExists
             );
           }
 
