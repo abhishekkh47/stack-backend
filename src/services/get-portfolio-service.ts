@@ -1,7 +1,13 @@
-import { getBalance } from "../utility";
-import { CryptoTable, TransactionTable } from "../model";
-import { ETransactionType } from "../types";
-
+import { getBalance, createContributions } from "../utility";
+import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
+import {
+  ETransactionType,
+  messages,
+  EAction,
+  EStatus,
+  ETransactionStatus,
+} from "../types";
+import moment from "moment";
 class getPortfolioService {
   public async getPortfolioBasedOnChildIdWithCurrentMarketPrice(
     childId: string,
@@ -196,6 +202,64 @@ class getPortfolioService {
       },
     ]).exec();
     return portFolio.length > 0 ? portFolio : [];
+  }
+
+  public async addIntialDeposit(
+    reqParam,
+    parentDetails,
+    jwtToken,
+    userExists,
+    accountIdDetails
+  ) {
+    /**
+     * create fund transfer with fund transfer id in response
+     */
+    let contributionRequest = {
+      type: "contributions",
+      attributes: {
+        "account-id": accountIdDetails.accountId,
+        "contact-id": parentDetails.contactId,
+        "funds-transfer-method": {
+          "funds-transfer-type": "ach",
+          "ach-check-type": "personal",
+          "contact-id": parentDetails.contactId,
+          "plaid-processor-token": parentDetails.processorToken,
+        },
+        amount: reqParam.depositAmount,
+      },
+    };
+    const contributions: any = await createContributions(
+      jwtToken,
+      contributionRequest
+    );
+    if (contributions.status == 400) {
+      throw new Error(contributions.message);
+    }
+    await UserActivityTable.create({
+      userId: parentDetails.firstChildId,
+      userType: 2,
+      message: `${messages.APPROVE_DEPOSIT} $${reqParam.depositAmount}`,
+      currencyType: null,
+      currencyValue: reqParam.depositAmount,
+      action: EAction.DEPOSIT,
+      resourceId: contributions.data.included[0].id,
+      status: EStatus.PROCESSED,
+    });
+    await TransactionTable.create({
+      assetId: null,
+      cryptoId: null,
+      intialDeposit: true,
+      accountId: accountIdDetails.accountId,
+      type: ETransactionType.DEPOSIT,
+      settledTime: moment().unix(),
+      amount: reqParam.depositAmount,
+      amountMod: null,
+      userId: parentDetails.firstChildId,
+      parentId: userExists._id,
+      status: ETransactionStatus.PENDING,
+      executedQuoteId: contributions.data.included[0].id,
+      unitCount: null,
+    });
   }
 }
 

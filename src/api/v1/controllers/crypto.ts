@@ -19,7 +19,6 @@ import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 import { getPortFolioService } from "../../../services";
 import { CASH_USD_ICON } from "../../../utility/constants";
-import getPortfolioService from "@app/services/get-portfolio-service";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
@@ -52,7 +51,7 @@ class CryptocurrencyController extends BaseController {
       if (!ctx.request.query.childId) {
         return this.BadRequest(ctx, "Child Id Details Doesn't Exists");
       }
-      let portFolio = await getPortfolioService.getCryptoIdInPortfolio(
+      let portFolio = await getPortFolioService.getCryptoIdInPortfolio(
         ctx.request.query.childId
       );
       if (portFolio.length > 0) {
