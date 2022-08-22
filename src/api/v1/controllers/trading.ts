@@ -53,7 +53,11 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
-import { zohoCrmService, quizService } from "../../../services";
+import {
+  zohoCrmService,
+  quizService,
+  getPortFolioService,
+} from "../../../services";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -145,55 +149,13 @@ class TradingController extends BaseController {
               (x: any) =>
                 x.childId.toString() == parentDetails.firstChildId.toString()
             );
-            /**
-             * create fund transfer with fund transfer id in response
-             */
-            let contributionRequest = {
-              type: "contributions",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "contact-id": parentDetails.contactId,
-                "funds-transfer-method": {
-                  "funds-transfer-type": "ach",
-                  "ach-check-type": "personal",
-                  "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": parentDetails.processorToken,
-                },
-                amount: reqParam.depositAmount,
-              },
-            };
-            const contributions: any = await createContributions(
+            await getPortFolioService.addIntialDeposit(
+              reqParam,
+              parentDetails,
               jwtToken,
-              contributionRequest
+              userExists,
+              accountIdDetails
             );
-            if (contributions.status == 400) {
-              return this.BadRequest(ctx, contributions.message);
-            }
-            await UserActivityTable.create({
-              userId: parentDetails.firstChildId,
-              userType: 2,
-              message: `${messages.APPROVE_DEPOSIT} $${reqParam.depositAmount}`,
-              currencyType: null,
-              currencyValue: reqParam.depositAmount,
-              action: EAction.DEPOSIT,
-              resourceId: contributions.data.included[0].id,
-              status: EStatus.PROCESSED,
-            });
-            await TransactionTable.create({
-              assetId: null,
-              cryptoId: null,
-              intialDeposit: true,
-              accountId: accountIdDetails.accountId,
-              type: ETransactionType.DEPOSIT,
-              settledTime: moment().unix(),
-              amount: reqParam.depositAmount,
-              amountMod: null,
-              userId: parentDetails.firstChildId,
-              parentId: userExists._id,
-              status: ETransactionStatus.PENDING,
-              executedQuoteId: contributions.data.included[0].id,
-              unitCount: null,
-            });
             /**
              * Gift Crypto to to teen who had pending 5btc
              */
