@@ -28,6 +28,7 @@ import {
   ERead,
 } from "../../types";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+import mongoose from "mongoose";
 
 export const startCron = () => {
   /**
@@ -136,6 +137,9 @@ export const startCron = () => {
      ==========Start Cron For Recurring=============
     `);
     let jwtToken = await getPrimeTrustJWTToken();
+    if (jwtToken.status == 200) {
+      jwtToken = jwtToken.data;
+    }
     let users: any = await UserTable.aggregate([
       {
         $match: {
