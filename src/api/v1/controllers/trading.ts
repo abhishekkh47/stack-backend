@@ -1860,7 +1860,8 @@ class TradingController extends BaseController {
           if (transactionData.length > 0) {
             intialBalance = transactionData[0].sum;
             totalStackValue =
-              balance > 0
+              parent &&
+              parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
                 ? totalStackValue
                 : totalStackValue + transactionData[0].sum;
           }
@@ -1891,7 +1892,8 @@ class TradingController extends BaseController {
           if (otherPendingActivity.length > 0) {
             intialBalance = intialBalance + otherPendingActivity[0].sum;
             totalStackValue =
-              balance > 0
+              parent &&
+              parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
                 ? totalStackValue
                 : totalStackValue + otherPendingActivity[0].sum;
           }
@@ -1914,7 +1916,11 @@ class TradingController extends BaseController {
               totalStackValue,
               stackCoins,
               totalGainLoss,
-              balance: balance > 0 ? balance : intialBalance,
+              balance:
+                parent &&
+                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                  ? balance
+                  : intialBalance,
               parentStatus: parent.userId.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
@@ -1931,13 +1937,18 @@ class TradingController extends BaseController {
               totalStackValue,
               stackCoins,
               totalGainLoss,
-              balance: balance > 0 ? balance : intialBalance,
+              balance:
+                parent &&
+                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                  ? balance
+                  : intialBalance,
               parentStatus: parent.userId.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
               totalAmountInvested: totalValue,
               isDeposit:
-                balance > 0
+                parent &&
+                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
                   ? 2
                   : transactionData.length > 0
                   ? 1
