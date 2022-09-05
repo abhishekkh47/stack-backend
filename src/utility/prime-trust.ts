@@ -29,6 +29,7 @@ export const getPrimeTrustJWTToken = async () => {
         return {
           status: error.response.status,
           message: "Unauthorized",
+          data: null,
         };
       }
     });
