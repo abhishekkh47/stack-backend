@@ -171,6 +171,8 @@ class AuthController extends BaseController {
               mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
+            console.log(reqParam.parentMobile, "reqParam.parentMobile");
+            console.log(checkParentExists, "checkParentExists");
             if (
               checkParentExists &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
@@ -179,6 +181,7 @@ class AuthController extends BaseController {
               parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
               });
+              console.log(parentTable, "parentTable");
               if (!parentTable) {
                 return this.BadRequest(ctx, "Account Details Not Found");
               }
@@ -225,18 +228,18 @@ class AuthController extends BaseController {
             /**
              * Send sms as of now to parent for invting to stack
              */
-            const message: string = `Hi! Your child, ${reqParam.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
-            try {
-              const twilioResponse: any = await TwilioService.sendSMS(
-                reqParam.parentMobile,
-                message
-              );
-              if (twilioResponse.code === 400) {
-                return this.BadRequest(ctx, "Error in sending OTP");
-              }
-            } catch (error) {
-              return this.BadRequest(ctx, error.message);
-            }
+            // const message: string = `Hi! Your child, ${reqParam.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
+            // try {
+            //   const twilioResponse: any = await TwilioService.sendSMS(
+            //     reqParam.parentMobile,
+            //     message
+            //   );
+            //   if (twilioResponse.code === 400) {
+            //     return this.BadRequest(ctx, "Error in sending OTP");
+            //   }
+            // } catch (error) {
+            //   return this.BadRequest(ctx, error.message);
+            // }
           } else {
             /**
              * Parent flow
@@ -1749,6 +1752,7 @@ class AuthController extends BaseController {
    */
   @Route({ path: "/remind-parent", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async remindParent(ctx: any) {
     const userId = ctx.request.user._id;
     const reqParam = ctx.request.body;
@@ -1759,8 +1763,9 @@ class AuthController extends BaseController {
     if (user.type !== EUserType.TEEN) {
       return this.BadRequest(ctx, "Logged in user is already parent.");
     }
+    let parentDetails = null;
     if (reqParam.type == "NO_BANK" || reqParam.type == "NO_RECURRING") {
-      let parentDetails = await ParentChildTable.findOne({
+      parentDetails = await ParentChildTable.findOne({
         "teens.childId": user._id,
       });
       if (!parentDetails) {
@@ -1802,8 +1807,21 @@ class AuthController extends BaseController {
       const parent = await UserTable.findOne({
         mobile: reqParam.parentMobile,
       });
+      if (parent && parent.mobile == user.mobile) {
+        return this.BadRequest(
+          ctx,
+          "Your mobile number and parent's mobile number cannot be same"
+        );
+      }
+      let parentExists = !parent ? false : true;
+      await UserTable.updateOne(
+        { _id: userId },
+        {
+          $set: { parentMobile: reqParam.parentMobile },
+        }
+      );
       if (!parent) {
-        let parentDetails = await ParentChildTable.findOne({
+        parentDetails = await ParentChildTable.findOne({
           "teens.childId": user._id,
         });
         if (parentDetails) {
@@ -1814,37 +1832,78 @@ class AuthController extends BaseController {
             }
           );
         }
-        await UserTable.updateOne(
-          { _id: userId },
+      } else {
+        let accountId = null;
+        let accountNumber = null;
+        if (parent.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
+          let parentChildValues = await ParentChildTable.findOne({
+            userId: parent._id,
+          });
+          let childName = user.lastName
+            ? user.firstName + " " + user.lastName
+            : user.firstName;
+          const data = {
+            type: "account",
+            attributes: {
+              "account-type": "custodial",
+              name:
+                childName +
+                " - " +
+                parent.firstName +
+                " " +
+                parent.lastName +
+                " - " +
+                parentChildValues.contactId,
+              "authorized-signature":
+                parent.firstName + " - " + parent.lastName,
+              "webhook-config": {
+                url: envData.WEBHOOK_URL,
+              },
+              "contact-id": parentChildValues.contactId,
+            },
+          };
+          const createAccountData: any = await createAccount(
+            ctx.request.primeTrustToken,
+            data
+          );
+          if (createAccountData.status == 400) {
+            return this.BadRequest(ctx, createAccountData.message);
+          }
+          accountNumber = createAccountData.data.data.attributes.number;
+          accountId = createAccountData.data.data.id;
+        }
+        await ParentChildTable.updateOne(
           {
-            $set: { parentMobile: reqParam.parentMobile },
+            userId: parent._id,
+          },
+          {
+            $push: {
+              teens: {
+                childId: user._id,
+                accountId: accountId,
+                accountNumber: accountNumber,
+                pushTransferId: null,
+              },
+            },
           }
         );
-      } else {
-        if (parent && parent.mobile == user.mobile) {
-          return this.BadRequest(
-            ctx,
-            "Your mobile number and parent's mobile number cannot be same"
-          );
-        }
-        return this.BadRequest(ctx, "Mobile Number already exists");
       }
       /**
        * send twilio message to the teen in order to signup.
        */
-      const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
-      try {
-        const twilioResponse: any = await TwilioService.sendSMS(
-          reqParam.parentMobile,
-          message
-        );
-        if (twilioResponse.code === 400) {
-          return this.BadRequest(ctx, "Error in sending message");
-        }
-      } catch (error) {
-        return this.BadRequest(ctx, error.message);
-      }
-      return this.Ok(ctx, { message: "Reminder sent!" });
+      // const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
+      // try {
+      //   const twilioResponse: any = await TwilioService.sendSMS(
+      //     reqParam.parentMobile,
+      //     message
+      //   );
+      //   if (twilioResponse.code === 400) {
+      //     return this.BadRequest(ctx, "Error in sending message");
+      //   }
+      // } catch (error) {
+      //   return this.BadRequest(ctx, error.message);
+      // }
+      return this.Ok(ctx, { message: "Reminder sent!", parentExists });
     }
   }
 
@@ -1894,9 +1953,24 @@ class AuthController extends BaseController {
     if (!ctx.request.body.parentMobile) {
       return this.BadRequest(ctx, "Please enter parent's mobile");
     }
+    if (!ctx.request.body.mobile) {
+      return this.BadRequest(ctx, "Please enter your mobile");
+    }
+    if (ctx.request.body.mobile === ctx.request.body.parentMobile) {
+      return this.BadRequest(
+        ctx,
+        "Your mobile number and parent's mobile number cannot be same"
+      );
+    }
     let checkParentExists = await UserTable.findOne({
       mobile: ctx.request.body.parentMobile,
     });
+    if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
+      return this.BadRequest(
+        ctx,
+        "Looks like this phone number is associated with a child account. Please try a different phone number"
+      );
+    }
     return this.Ok(
       ctx,
       !checkParentExists
