@@ -52,6 +52,7 @@ import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
+  PLAID_ITEM_ERROR,
 } from "../../../utility/constants";
 import {
   zohoCrmService,
@@ -375,7 +376,12 @@ class TradingController extends BaseController {
               contributionRequest
             );
             if (contributions.status == 400) {
-              return this.BadRequest(ctx, contributions.message);
+              return this.BadRequest(
+                ctx,
+                contributions.code !== 25001
+                  ? contributions.message
+                  : PLAID_ITEM_ERROR
+              );
             }
           }
           /**
@@ -760,7 +766,9 @@ class TradingController extends BaseController {
               disbursementRequest
             );
             if (disbursement.status == 400) {
-              return this.BadRequest(ctx, disbursement.message);
+              return this.BadRequest(ctx, disbursement.code !== 25001
+                ? disbursement.message
+                : PLAID_ITEM_ERROR);
             }
           }
           /**
@@ -1980,9 +1988,9 @@ class TradingController extends BaseController {
     if (getAccountDetails.status == 400) {
       return this.BadRequest(
         ctx,
-        getAccountDetails.error_code !== "ITEM_LOGIN_REQUIRED"
+        getAccountDetails.error_code !== PLAID_ITEM_ERROR
           ? getAccountDetails.messsage
-          : "ITEM_LOGIN_REQUIRED"
+          : PLAID_ITEM_ERROR
       );
     }
     if (parentExists.institutionId) {

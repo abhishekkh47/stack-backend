@@ -1647,18 +1647,18 @@ class AuthController extends BaseController {
           /**
            * send twilio message to the teen in order to signup.
            */
-          const message: string = `Hi there! Your ${firstName} has signed you up for Stack - an easy and fun app designed for teens to earn and trade crypto. 🚀  Create your own account to get started. ${envData.INVITE_LINK}`;
-          try {
-            const twilioResponse: any = await TwilioService.sendSMS(
-              childMobile,
-              message
-            );
-            if (twilioResponse.code === 400) {
-              return this.BadRequest(ctx, "Error in sending OTP");
-            }
-          } catch (error) {
-            return this.BadRequest(ctx, error.message);
-          }
+          // const message: string = `Hi there! Your ${firstName} has signed you up for Stack - an easy and fun app designed for teens to earn and trade crypto. 🚀  Create your own account to get started. ${envData.INVITE_LINK}`;
+          // try {
+          //   const twilioResponse: any = await TwilioService.sendSMS(
+          //     childMobile,
+          //     message
+          //   );
+          //   if (twilioResponse.code === 400) {
+          //     return this.BadRequest(ctx, "Error in sending OTP");
+          //   }
+          // } catch (error) {
+          //   return this.BadRequest(ctx, error.message);
+          // }
           if (!childFirstName) {
             return this.Ok(ctx, {
               message: "You are inviting your teen in stack",

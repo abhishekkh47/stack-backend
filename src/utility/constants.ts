@@ -64,6 +64,8 @@ export const DROPDOWNLIST = {
 
 export const CASH_USD_ICON = "CASH_USD.png";
 
+export const PLAID_ITEM_ERROR = "ITEM_LOGIN_REQUIRED";
+
 export const NOTIFICATION = {
   TEEN_REQUEST_MADE: "A new request has been made 😃",
   TEEN_REQUEST_DENIED: "Your request is updated! ⭐",
