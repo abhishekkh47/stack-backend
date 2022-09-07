@@ -278,6 +278,7 @@ export const createContributions = async (token, data) => {
       };
     })
     .catch((error) => {
+      console.log(error.response.data, "error.response.data.errors");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
@@ -314,6 +315,7 @@ export const createDisbursements = async (token, data) => {
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
+        code: error.response.data.errors[0].code,
       };
     });
   return response;

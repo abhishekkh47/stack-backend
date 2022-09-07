@@ -12,7 +12,7 @@ let request = {
  */
 export const getLinkToken = async (userData, accessToken) => {
   const clientUserId = userData._id;
-  const request = {
+  let request: any = {
     client_id: config.PLAID_CLIENT_ID,
     secret: config.PLAID_SECRET,
     user: {
@@ -23,8 +23,14 @@ export const getLinkToken = async (userData, accessToken) => {
     products: accessToken ? [] : ["auth"],
     language: "en",
     country_codes: ["US"],
-    access_token: accessToken,
   };
+  if (accessToken) {
+    request = {
+      ...request,
+      update: { account_selection_enabled: true },
+      access_token: accessToken,
+    };
+  }
   const response = await axios
     .post(config.PLAID_ENV + PLAIDAPIS.getLinkToken, request)
     .then((res) => {
