@@ -1872,21 +1872,29 @@ class AuthController extends BaseController {
           accountNumber = createAccountData.data.data.attributes.number;
           accountId = createAccountData.data.data.id;
         }
-        await ParentChildTable.updateOne(
+        await ParentChildTable.bulkWrite([
           {
-            userId: parent._id,
+            updateOne: {
+              filter: { "teens.childId": user._id },
+              update: { $pull: { teens: { childId: user._id } } },
+            },
           },
           {
-            $push: {
-              teens: {
-                childId: user._id,
-                accountId: accountId,
-                accountNumber: accountNumber,
-                pushTransferId: null,
+            updateOne: {
+              filter: { userId: parent._id },
+              update: {
+                $push: {
+                  teens: {
+                    childId: user._id,
+                    accountId: accountId,
+                    accountNumber: accountNumber,
+                    pushTransferId: null,
+                  },
+                },
               },
             },
-          }
-        );
+          },
+        ]);
       }
       /**
        * send twilio message to the teen in order to signup.
