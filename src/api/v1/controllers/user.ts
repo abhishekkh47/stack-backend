@@ -272,14 +272,17 @@ class UserController extends BaseController {
     const fullName = userExists.lastName
       ? userExists.firstName + " " + userExists.lastName
       : userExists.firstName;
-    const childName = firstChildExists.lastName
-      ? firstChildExists.firstName + " " + firstChildExists.lastName
-      : firstChildExists.firstName;
+    const childName = firstChildExists
+      ? firstChildExists.lastName
+        ? firstChildExists.firstName + " " + firstChildExists.lastName
+        : firstChildExists.firstName
+      : null;
+    console.log(firstChildExists ? childName + " - " + fullName : fullName);
     const data = {
       type: "account",
       attributes: {
         "account-type": "custodial",
-        name: childName + " - " + fullName,
+        name: firstChildExists ? childName + " - " + fullName : fullName,
         "authorized-signature": fullName,
         "webhook-config": {
           url: envData.WEBHOOK_URL,
@@ -401,21 +404,38 @@ class UserController extends BaseController {
     /**
      * Updating the info in parent child table
      */
-    await ParentChildTable.updateOne(
-      {
-        userId: userExists._id,
+    let filterQuery: any = {
+      userId: userExists._id,
+    };
+    let updateQuery: any = {
+      contactId: createAccountData.data.included[0].id,
+      frontDocumentId: frontDocumentId,
+      backDocumentId: backDocumentId,
+      kycDocumentId: kycResponse.data.data.id,
+    };
+    if (userExists.type == EUserType.PARENT) {
+      filterQuery = {
+        ...filterQuery,
         "teens.childId": parentChildExists.firstChildId,
-      },
-      {
-        $set: {
-          contactId: createAccountData.data.included[0].id,
-          "teens.$.accountId": createAccountData.data.data.id,
-          frontDocumentId: frontDocumentId,
-          backDocumentId: backDocumentId,
-          kycDocumentId: kycResponse.data.data.id,
-        },
-      }
-    );
+      };
+      updateQuery = {
+        ...updateQuery,
+        contactId: createAccountData.data.included[0].id,
+        frontDocumentId: frontDocumentId,
+        backDocumentId: backDocumentId,
+        kycDocumentId: kycResponse.data.data.id,
+        "teens.$.accountId": createAccountData.data.data.id,
+      };
+    }
+    if (userExists.type == EUserType.SELF) {
+      updateQuery = {
+        ...updateQuery,
+        contactId: createAccountData.data.data.id,
+      };
+    }
+    await ParentChildTable.updateOne(filterQuery, {
+      $set: updateQuery,
+    });
     /**
      * Update the status to zoho crm
      */

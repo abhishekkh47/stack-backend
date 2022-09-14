@@ -213,28 +213,32 @@ class WebHookController extends BaseController {
              * Gift stack coins to all teens whose parent's kyc is approved
              */
             if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
-              let allTeens = await checkAccountIdExists.teens.filter(
-                (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
-              );
               let userIdsToBeGifted = [];
-              if (allTeens.length > 0) {
-                for await (let allTeen of allTeens) {
-                  await userIdsToBeGifted.push(allTeen.childId._id);
-                  /**
-                   * Added in zoho
-                   */
-                  let dataSentInCrm: any = {
-                    Account_Name:
-                      allTeen.childId.firstName +
-                      " " +
-                      allTeen.childId.lastName,
-                    Stack_Coins: admin.stackCoins,
-                  };
-                  await zohoCrmService.addAccounts(
-                    ctx.request.zohoAccessToken,
-                    dataSentInCrm
-                  );
+              if (userExists.type == EUserType.PARENT) {
+                let allTeens = await checkAccountIdExists.teens.filter(
+                  (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
+                );
+                if (allTeens.length > 0) {
+                  for await (let allTeen of allTeens) {
+                    await userIdsToBeGifted.push(allTeen.childId._id);
+                    /**
+                     * Added in zoho
+                     */
+                    let dataSentInCrm: any = {
+                      Account_Name:
+                        allTeen.childId.firstName +
+                        " " +
+                        allTeen.childId.lastName,
+                      Stack_Coins: admin.stackCoins,
+                    };
+                    await zohoCrmService.addAccounts(
+                      ctx.request.zohoAccessToken,
+                      dataSentInCrm
+                    );
+                  }
                 }
+              } else if (userExists.isGifted == EGIFTSTACKCOINSSETTING.OFF) {
+                userIdsToBeGifted.push(userExists._id);
               }
               await UserTable.updateMany(
                 {
@@ -325,99 +329,105 @@ class WebHookController extends BaseController {
                   notificationRequest
                 );
               }
-              let allChilds: any = await checkAccountIdExists.teens.filter(
-                (x) =>
-                  checkAccountIdExists.firstChildId._id.toString() !=
-                  x.childId._id.toString()
-              );
-              let contactId = checkAccountIdExists.contactId;
-              if (allChilds.length > 0) {
-                let childArray = [];
-                for await (let allChild of allChilds) {
-                  let childName = allChild.childId.lastName
-                    ? allChild.childId.firstName +
-                      " " +
-                      allChild.childId.lastName
-                    : allChild.childId.firstName;
-                  const data = {
-                    type: "account",
-                    attributes: {
-                      "account-type": "custodial",
-                      name:
-                        childName +
-                        " - " +
-                        checkAccountIdExists.userId.firstName +
+              if (userExists.type == EUserType.PARENT) {
+                let allChilds: any = await checkAccountIdExists.teens.filter(
+                  (x) =>
+                    checkAccountIdExists.firstChildId._id.toString() !=
+                    x.childId._id.toString()
+                );
+                let contactId = checkAccountIdExists.contactId;
+                if (allChilds.length > 0) {
+                  let childArray = [];
+                  for await (let allChild of allChilds) {
+                    let childName = allChild.childId.lastName
+                      ? allChild.childId.firstName +
                         " " +
-                        checkAccountIdExists.userId.lastName +
-                        " - " +
-                        contactId,
-                      "authorized-signature":
-                        checkAccountIdExists.userId.firstName +
-                        " - " +
-                        checkAccountIdExists.userId.lastName,
-                      "webhook-config": {
-                        url: envData.WEBHOOK_URL,
+                        allChild.childId.lastName
+                      : allChild.childId.firstName;
+                    const data = {
+                      type: "account",
+                      attributes: {
+                        "account-type": "custodial",
+                        name:
+                          childName +
+                          " - " +
+                          checkAccountIdExists.userId.firstName +
+                          " " +
+                          checkAccountIdExists.userId.lastName +
+                          " - " +
+                          contactId,
+                        "authorized-signature":
+                          checkAccountIdExists.userId.firstName +
+                          " - " +
+                          checkAccountIdExists.userId.lastName,
+                        "webhook-config": {
+                          url: envData.WEBHOOK_URL,
+                        },
+                        "contact-id": contactId,
                       },
-                      "contact-id": contactId,
-                    },
-                  };
-                  const createAccountData: any = await createAccount(
-                    ctx.request.primeTrustToken,
-                    data
-                  );
-                  if (createAccountData.status == 400) {
-                    return this.BadRequest(ctx, createAccountData.message);
-                  }
-                  let bulWriteOperation = {
-                    updateOne: {
-                      filter: {
-                        _id: checkAccountIdExists._id,
-                        teens: {
-                          $elemMatch: {
-                            childId: allChild.childId._id,
+                    };
+                    const createAccountData: any = await createAccount(
+                      ctx.request.primeTrustToken,
+                      data
+                    );
+                    if (createAccountData.status == 400) {
+                      return this.BadRequest(ctx, createAccountData.message);
+                    }
+                    let bulWriteOperation = {
+                      updateOne: {
+                        filter: {
+                          _id: checkAccountIdExists._id,
+                          teens: {
+                            $elemMatch: {
+                              childId: allChild.childId._id,
+                            },
+                          },
+                        },
+                        update: {
+                          $set: {
+                            "teens.$.accountId": createAccountData.data.data.id,
                           },
                         },
                       },
-                      update: {
-                        $set: {
-                          "teens.$.accountId": createAccountData.data.data.id,
-                        },
-                      },
-                    },
-                  };
-                  await childArray.push(bulWriteOperation);
-                }
-                console.log(childArray[0].updateOne, "childArray");
-                if (childArray.length > 0) {
-                  await ParentChildTable.bulkWrite(childArray);
+                    };
+                    await childArray.push(bulWriteOperation);
+                  }
+                  console.log(childArray[0].updateOne, "childArray");
+                  if (childArray.length > 0) {
+                    await ParentChildTable.bulkWrite(childArray);
+                  }
                 }
               }
               /**
                * Gift stack coins to all teens whose parent's kyc is approved
                */
               if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
-                let allTeens = await checkAccountIdExists.teens.filter(
-                  (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
-                );
                 let userIdsToBeGifted = [];
-                if (allTeens.length > 0) {
-                  for await (let allTeen of allTeens) {
-                    await userIdsToBeGifted.push(allTeen.childId._id);
-                    /**
-                     * Added in zoho
-                     */
-                    let dataSentInCrm: any = {
-                      Account_Name:
-                        allTeen.childId.firstName +
-                        " " +
-                        allTeen.childId.lastName,
-                      Stack_Coins: admin.stackCoins,
-                    };
-                    await zohoCrmService.addAccounts(
-                      ctx.request.zohoAccessToken,
-                      dataSentInCrm
-                    );
+                if (userExists.type == EUserType.PARENT) {
+                  let allTeens = await checkAccountIdExists.teens.filter(
+                    (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
+                  );
+                  if (allTeens.length > 0) {
+                    for await (let allTeen of allTeens) {
+                      await userIdsToBeGifted.push(allTeen.childId._id);
+                      /**
+                       * Added in zoho
+                       */
+                      let dataSentInCrm: any = {
+                        Account_Name:
+                          allTeen.childId.firstName +
+                          " " +
+                          allTeen.childId.lastName,
+                        Stack_Coins: admin.stackCoins,
+                      };
+                      await zohoCrmService.addAccounts(
+                        ctx.request.zohoAccessToken,
+                        dataSentInCrm
+                      );
+                    }
                   }
+                } else if (userExists.isGifted == EGIFTSTACKCOINSSETTING.OFF) {
+                  userIdsToBeGifted.push(userExists._id);
                 }
                 await UserTable.updateMany(
                   {

@@ -78,6 +78,7 @@ export enum ERECURRING {
 export enum EUserType {
   TEEN = 1,
   PARENT = 2,
+  SELF = 3, //creating account for him/her
 }
 
 export enum EGIFTSTACKCOINSSETTING {

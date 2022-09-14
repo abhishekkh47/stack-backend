@@ -84,7 +84,7 @@ class TradingController extends BaseController {
       return this.BadRequest(ctx, "User Kyc Information not verified");
     }
     const query =
-      userExists.type == EUserType.PARENT
+      userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
         ? { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
     let parent: any = await ParentChildTable.findOne(query).populate(
@@ -766,9 +766,12 @@ class TradingController extends BaseController {
               disbursementRequest
             );
             if (disbursement.status == 400) {
-              return this.BadRequest(ctx, disbursement.code !== 25001
-                ? disbursement.message
-                : PLAID_ITEM_ERROR);
+              return this.BadRequest(
+                ctx,
+                disbursement.code !== 25001
+                  ? disbursement.message
+                  : PLAID_ITEM_ERROR
+              );
             }
           }
           /**

@@ -15,6 +15,20 @@ const schema = new mongoose.Schema<IParentChildType>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    /**
+     * Only for self flow else null
+     */
+    accountId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    /**
+     * Only for self flow else null
+     */
+    accountNumber: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     kycDocumentId: {
       type: mongoose.Schema.Types.String,
       default: null,
@@ -47,10 +61,14 @@ const schema = new mongoose.Schema<IParentChildType>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    /**
+     * default null for self flow
+     */
     firstChildId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
-      required: true,
+      default: null,
+      required: false,
     },
     teens: [
       {
