@@ -14,14 +14,18 @@ class getPortfolioService {
     childId: string,
     cryptoId: any,
     parentChild: any,
-    jwtToken: any
+    jwtToken: any,
+    userExists: any = null
   ) {
     if (!childId) {
       throw Error("Child Id Not Found");
     }
-    const accountIdDetails: any = await parentChild.teens.find(
-      (x: any) => x.childId.toString() == childId.toString()
-    );
+    const accountIdDetails: any =
+      userExists && userExists.type == EUserType.SELF
+        ? parentChild
+        : await parentChild.teens.find(
+            (x: any) => x.childId.toString() == childId.toString()
+          );
     if (!accountIdDetails) {
       throw Error("Account ID Details Not Found");
     }

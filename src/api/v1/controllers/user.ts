@@ -272,17 +272,18 @@ class UserController extends BaseController {
     const fullName = userExists.lastName
       ? userExists.firstName + " " + userExists.lastName
       : userExists.firstName;
-    const childName = firstChildExists
-      ? firstChildExists.lastName
-        ? firstChildExists.firstName + " " + firstChildExists.lastName
-        : firstChildExists.firstName
-      : null;
-    console.log(firstChildExists ? childName + " - " + fullName : fullName);
+    const childName = firstChildExists.lastName
+      ? firstChildExists.firstName + " " + firstChildExists.lastName
+      : firstChildExists.firstName;
+    console.log(firstChildExists);
     const data = {
       type: "account",
       attributes: {
         "account-type": "custodial",
-        name: firstChildExists ? childName + " - " + fullName : fullName,
+        name:
+          userExists.type == EUserType.SELF
+            ? fullName
+            : childName + " - " + fullName,
         "authorized-signature": fullName,
         "webhook-config": {
           url: envData.WEBHOOK_URL,
@@ -430,7 +431,8 @@ class UserController extends BaseController {
     if (userExists.type == EUserType.SELF) {
       updateQuery = {
         ...updateQuery,
-        contactId: createAccountData.data.data.id,
+        contactId: createAccountData.data.included[0].id,
+        accountId: createAccountData.data.data.id,
       };
     }
     await ParentChildTable.updateOne(filterQuery, {
@@ -791,10 +793,13 @@ class UserController extends BaseController {
     if (!parentChildExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const accountIdDetails: any = await parentChildExists.teens.find(
-      (x: any) =>
-        x.childId.toString() == parentChildExists.firstChildId.toString()
-    );
+    const accountIdDetails: any =
+      userExists.type == EUserType.SELF
+        ? parentChildExists
+        : await parentChildExists.teens.find(
+            (x: any) =>
+              x.childId.toString() == parentChildExists.firstChildId.toString()
+          );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
