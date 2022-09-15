@@ -146,10 +146,15 @@ class TradingController extends BaseController {
            * if deposit amount is greater than 0
            */
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-            const accountIdDetails = await parentDetails.teens.find(
-              (x: any) =>
-                x.childId.toString() == parentDetails.firstChildId.toString()
-            );
+            const accountIdDetails =
+              userExists.type == EUserType.PARENT
+                ? await parentDetails.teens.find(
+                    (x: any) =>
+                      x.childId.toString() ==
+                      parentDetails.firstChildId.toString()
+                  )
+                : parent.accountId;
+            console.log(accountIdDetails, "accountIdDetails");
             await getPortFolioService.addIntialDeposit(
               reqParam,
               parentDetails,
@@ -211,7 +216,10 @@ class TradingController extends BaseController {
                     "unit-count":
                       executeQuoteResponse.data.data.attributes["unit-count"],
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                    "to-account-id": accountIdDetails.accountId,
+                    "to-account-id":
+                      userExists.type == EUserType.PARENT
+                        ? accountIdDetails.accountId
+                        : accountIdDetails,
                     "asset-id": crypto.assetId,
                     reference: "$5 BTC gift from Stack",
                     "hot-transfer": true,
@@ -1603,7 +1611,7 @@ class TradingController extends BaseController {
             return this.BadRequest(ctx, "User Not Found");
           }
           let userExistsForQuiz = null;
-          if (childExists.type == EUserType.PARENT) {
+          if (childExists.type == EUserType.PARENT || childExists.type == EUserType.SELF) {
             userExistsForQuiz = await ParentChildTable.findOne({
               userId: childExists._id,
             }).populate("firstChildId", [
@@ -1774,7 +1782,7 @@ class TradingController extends BaseController {
               { userId: new mongoose.Types.ObjectId(childExists._id) },
               {
                 userId: userExistsForQuiz
-                  ? childExists.type == EUserType.PARENT
+                  ? childExists.type == EUserType.PARENT || childExists.type == EUserType.SELF
                     ? new mongoose.Types.ObjectId(
                         userExistsForQuiz.firstChildId._id
                       )
@@ -1823,9 +1831,9 @@ class TradingController extends BaseController {
               return this.BadRequest(ctx, "Invalid User");
             }
           }
-          const accountIdDetails = await parent.teens.find(
+          const accountIdDetails = childExists.type == EUserType.PARENT ? await parent.teens.find(
             (x: any) => x.childId.toString() == childExists._id.toString()
-          );
+          ) : parent;
           if (!accountIdDetails) {
             return this.BadRequest(ctx, "Account Details Not Found");
           }

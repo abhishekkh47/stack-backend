@@ -6,6 +6,7 @@ import {
   EAction,
   EStatus,
   ETransactionStatus,
+  EUserType,
 } from "../types";
 import moment from "moment";
 class getPortfolioService {
@@ -217,7 +218,10 @@ class getPortfolioService {
     let contributionRequest = {
       type: "contributions",
       attributes: {
-        "account-id": accountIdDetails.accountId,
+        "account-id":
+          userExists.type == EUserType.PARENT
+            ? accountIdDetails.accountId
+            : accountIdDetails,
         "contact-id": parentDetails.contactId,
         "funds-transfer-method": {
           "funds-transfer-type": "ach",
@@ -249,7 +253,10 @@ class getPortfolioService {
       assetId: null,
       cryptoId: null,
       intialDeposit: true,
-      accountId: accountIdDetails.accountId,
+      accountId:
+        userExists.type == EUserType.PARENT
+          ? accountIdDetails.accountId
+          : accountIdDetails,
       type: ETransactionType.DEPOSIT,
       settledTime: moment().unix(),
       amount: reqParam.depositAmount,
