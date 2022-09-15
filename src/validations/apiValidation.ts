@@ -196,12 +196,12 @@ export const validation = {
         is: 2,
         then: Joi.string()
           .min(1)
-          .regex(/^[A-za-z]*$/)
+          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
           .required(),
         otherwise: Joi.string()
           .allow("")
           .min(1)
-          .regex(/^[A-za-z]*$/),
+          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/),
       }),
       parentMobile: Joi.when("type", {
         is: 1,
@@ -471,7 +471,7 @@ export const validation = {
       childLastName: Joi.string()
         .min(1)
         .allow("")
-        .regex(/^[A-za-z]*$/),
+        .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error)
@@ -617,7 +617,7 @@ export const validation = {
       "last-name": Joi.string()
         .allow("")
         .min(2)
-        .regex(/^[A-za-z]*$/),
+        .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/),
       "date-of-birth": Joi.alternatives([
         Joi.date().iso(),
         Joi.string().allow(""),
