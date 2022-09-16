@@ -24,7 +24,6 @@ class TwilioService {
           to: phoneNo,
         })
         .then((messageData: any) => {
-          console.log(messageData, "messageData");
           return resolve({
             code: 200,
             message: messageData.sid,

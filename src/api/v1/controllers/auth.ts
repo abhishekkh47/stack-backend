@@ -179,7 +179,6 @@ class AuthController extends BaseController {
               parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
               });
-              console.log(parentTable, "parentTable");
               if (!parentTable) {
                 return this.BadRequest(ctx, "Account Details Not Found");
               }
@@ -587,10 +586,6 @@ class AuthController extends BaseController {
               if (internalTransferResponse.status == 400) {
                 return this.BadRequest(ctx, internalTransferResponse.message);
               }
-              console.log(
-                internalTransferResponse.data,
-                "internalTransferResponse"
-              );
               await TransactionTable.create({
                 assetId: crypto.assetId,
                 cryptoId: crypto._id,
@@ -909,7 +904,6 @@ class AuthController extends BaseController {
               });
             }
           } catch (error) {
-            console.log(error, "error");
             return this.BadRequest(ctx, error.message);
           }
         }

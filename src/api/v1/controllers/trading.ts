@@ -145,9 +145,7 @@ class TradingController extends BaseController {
           /**
            * if deposit amount is greater than 0
            */
-          console.log(reqParam.depositAmount, "reqParam.depositAmount");
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-            console.log("come inside reqParam.depositAmount");
             const accountIdDetails =
               userExists.type == EUserType.PARENT
                 ? await parentDetails.teens.find(
@@ -1613,7 +1611,6 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          console.log(reqParam, "reqParam");
           let isTeenPending = false;
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
@@ -1862,7 +1859,6 @@ class TradingController extends BaseController {
           if (!accountIdDetails) {
             return this.BadRequest(ctx, "Account Details Not Found");
           }
-          console.log(accountIdDetails, "accountIdDetails");
           /**
            * Fetch Balance
            */
@@ -1954,32 +1950,6 @@ class TradingController extends BaseController {
           if (isTeenPending) {
             totalValue = totalValue - 5;
           }
-          console.log(
-            {
-              portFolio,
-              totalStackValue,
-              stackCoins,
-              totalGainLoss,
-              balance:
-                parent &&
-                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                  ? balance
-                  : intialBalance,
-              parentStatus: parent.userId.status,
-              pendingBalance: pending,
-              intialBalance: intialBalance,
-              totalAmountInvested: totalValue,
-              isDeposit:
-                transactionData.length > 0 ? 1 : clearedDeposit ? 2 : 0,
-              isTeenPending,
-            },
-            "====portfolio==="
-          );
-          console.log(
-            parent && parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-          );
-          console.log(transactionData.length > 0);
-          console.log(clearedDeposit);
           return this.Ok(ctx, {
             data: {
               portFolio,

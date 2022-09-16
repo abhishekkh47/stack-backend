@@ -425,7 +425,6 @@ class QuizController extends BaseController {
               ],
             },
           ];
-          console.log(isParentOrChild, "isParentOrChild");
           if (isParentOrChild != 0) {
             isParentOrChild == 2
               ? dataSentInCrm.push({

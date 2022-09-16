@@ -275,7 +275,6 @@ class UserController extends BaseController {
     const childName = firstChildExists.lastName
       ? firstChildExists.firstName + " " + firstChildExists.lastName
       : firstChildExists.firstName;
-    console.log(firstChildExists);
     const data = {
       type: "account",
       attributes: {

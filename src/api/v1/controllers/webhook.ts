@@ -395,7 +395,6 @@ class WebHookController extends BaseController {
                     };
                     await childArray.push(bulWriteOperation);
                   }
-                  console.log(childArray[0].updateOne, "childArray");
                   if (childArray.length > 0) {
                     await ParentChildTable.bulkWrite(childArray);
                   }
@@ -851,7 +850,6 @@ class WebHookController extends BaseController {
         const accountIdDetails = await user.parentChild.teens.find(
           (x: any) => x.childId.toString() == user._id.toString()
         );
-        console.log(accountIdDetails, "accountIdDetails");
         if (!accountIdDetails) {
           continue;
         }
@@ -861,11 +859,7 @@ class WebHookController extends BaseController {
         let selectedDate = moment(user.selectedDepositDate)
           .startOf("day")
           .unix();
-        console.log(selectedDate, "selectedDate");
-        console.log(todayDate, "todayDate");
-        console.log(selectedDate <= todayDate, "todayDate");
         if (selectedDate <= todayDate) {
-          console.log("selectedDate");
           let contributionRequest = {
             type: "contributions",
             attributes: {
@@ -884,7 +878,6 @@ class WebHookController extends BaseController {
             jwtToken,
             contributionRequest
           );
-          console.log(contributions, "contributions");
           if (contributions.status == 400) {
             /**
              * Notification
@@ -976,9 +969,6 @@ class WebHookController extends BaseController {
           // }
         }
       }
-      console.log(transactionArray, "transactionArray");
-      console.log(mainArray, "mainArray");
-      console.log(activityArray, "activityArray");
       await UserActivityTable.insertMany(activityArray);
       await TransactionTable.insertMany(transactionArray);
       await UserTable.bulkWrite(mainArray);
