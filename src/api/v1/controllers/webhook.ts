@@ -63,7 +63,10 @@ class WebHookController extends BaseController {
       data: body,
     });
     const checkAccountIdExists: any = await ParentChildTable.findOne({
-      "teens.accountId": body.account_id,
+      $or: [
+        { "teens.accountId": body.account_id },
+        { accountId: body.account_id },
+      ],
     })
       .populate("teens.childId", [
         "email",

@@ -145,7 +145,9 @@ class TradingController extends BaseController {
           /**
            * if deposit amount is greater than 0
            */
+          console.log(reqParam.depositAmount, "reqParam.depositAmount");
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
+            console.log("come inside reqParam.depositAmount");
             const accountIdDetails =
               userExists.type == EUserType.PARENT
                 ? await parentDetails.teens.find(
@@ -1985,8 +1987,17 @@ class TradingController extends BaseController {
               stackCoins,
               totalGainLoss,
               balance:
-                parent &&
-                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                childExists.type == EUserType.SELF
+                  ? parent &&
+                    parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                    ? balance > 0
+                      ? balance
+                      : clearedDeposit
+                      ? balance
+                      : intialBalance
+                    : intialBalance
+                  : parent &&
+                    parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
                   ? balance
                   : intialBalance,
               parentStatus: parent.userId.status,
