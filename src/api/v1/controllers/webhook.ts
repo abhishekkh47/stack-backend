@@ -842,9 +842,7 @@ class WebHookController extends BaseController {
       },
       { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
     ]).exec();
-    console.log(users, "users");
     if (users.length > 0) {
-      console.log(users.length, "users");
       let todayDate = moment().startOf("day").unix();
       let transactionArray = [];
       let mainArray = [];
