@@ -279,7 +279,10 @@ class UserController extends BaseController {
       type: "account",
       attributes: {
         "account-type": "custodial",
-        name: childName + " - " + fullName,
+        name:
+          userExists.type == EUserType.SELF
+            ? fullName
+            : childName + " - " + fullName,
         "authorized-signature": fullName,
         "webhook-config": {
           url: envData.WEBHOOK_URL,
@@ -401,21 +404,39 @@ class UserController extends BaseController {
     /**
      * Updating the info in parent child table
      */
-    await ParentChildTable.updateOne(
-      {
-        userId: userExists._id,
+    let filterQuery: any = {
+      userId: userExists._id,
+    };
+    let updateQuery: any = {
+      contactId: createAccountData.data.included[0].id,
+      frontDocumentId: frontDocumentId,
+      backDocumentId: backDocumentId,
+      kycDocumentId: kycResponse.data.data.id,
+    };
+    if (userExists.type == EUserType.PARENT) {
+      filterQuery = {
+        ...filterQuery,
         "teens.childId": parentChildExists.firstChildId,
-      },
-      {
-        $set: {
-          contactId: createAccountData.data.included[0].id,
-          "teens.$.accountId": createAccountData.data.data.id,
-          frontDocumentId: frontDocumentId,
-          backDocumentId: backDocumentId,
-          kycDocumentId: kycResponse.data.data.id,
-        },
-      }
-    );
+      };
+      updateQuery = {
+        ...updateQuery,
+        contactId: createAccountData.data.included[0].id,
+        frontDocumentId: frontDocumentId,
+        backDocumentId: backDocumentId,
+        kycDocumentId: kycResponse.data.data.id,
+        "teens.$.accountId": createAccountData.data.data.id,
+      };
+    }
+    if (userExists.type == EUserType.SELF) {
+      updateQuery = {
+        ...updateQuery,
+        contactId: createAccountData.data.included[0].id,
+        accountId: createAccountData.data.data.id,
+      };
+    }
+    await ParentChildTable.updateOne(filterQuery, {
+      $set: updateQuery,
+    });
     /**
      * Update the status to zoho crm
      */
@@ -771,10 +792,13 @@ class UserController extends BaseController {
     if (!parentChildExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const accountIdDetails: any = await parentChildExists.teens.find(
-      (x: any) =>
-        x.childId.toString() == parentChildExists.firstChildId.toString()
-    );
+    const accountIdDetails: any =
+      userExists.type == EUserType.SELF
+        ? parentChildExists
+        : await parentChildExists.teens.find(
+            (x: any) =>
+              x.childId.toString() == parentChildExists.firstChildId.toString()
+          );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }

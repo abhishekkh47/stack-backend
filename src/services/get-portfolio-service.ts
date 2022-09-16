@@ -6,6 +6,7 @@ import {
   EAction,
   EStatus,
   ETransactionStatus,
+  EUserType,
 } from "../types";
 import moment from "moment";
 class getPortfolioService {
@@ -13,14 +14,18 @@ class getPortfolioService {
     childId: string,
     cryptoId: any,
     parentChild: any,
-    jwtToken: any
+    jwtToken: any,
+    userExists: any = null
   ) {
     if (!childId) {
       throw Error("Child Id Not Found");
     }
-    const accountIdDetails: any = await parentChild.teens.find(
-      (x: any) => x.childId.toString() == childId.toString()
-    );
+    const accountIdDetails: any =
+      userExists && userExists.type == EUserType.SELF
+        ? parentChild
+        : await parentChild.teens.find(
+            (x: any) => x.childId.toString() == childId.toString()
+          );
     if (!accountIdDetails) {
       throw Error("Account ID Details Not Found");
     }
@@ -217,7 +222,10 @@ class getPortfolioService {
     let contributionRequest = {
       type: "contributions",
       attributes: {
-        "account-id": accountIdDetails.accountId,
+        "account-id":
+          userExists.type == EUserType.PARENT
+            ? accountIdDetails.accountId
+            : accountIdDetails,
         "contact-id": parentDetails.contactId,
         "funds-transfer-method": {
           "funds-transfer-type": "ach",
@@ -249,7 +257,10 @@ class getPortfolioService {
       assetId: null,
       cryptoId: null,
       intialDeposit: true,
-      accountId: accountIdDetails.accountId,
+      accountId:
+        userExists.type == EUserType.PARENT
+          ? accountIdDetails.accountId
+          : accountIdDetails,
       type: ETransactionType.DEPOSIT,
       settledTime: moment().unix(),
       amount: reqParam.depositAmount,

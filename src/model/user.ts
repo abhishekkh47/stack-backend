@@ -34,7 +34,7 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: null,
     },
     /**
-     * 1 - teenager and 2 - parent
+     * 1 - teenager,  2 - parent and 3 - Self
      */
     type: { type: mongoose.Schema.Types.Number, required: true },
     /**

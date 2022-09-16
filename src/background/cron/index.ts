@@ -159,9 +159,7 @@ export const startCron = () => {
       },
       { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
     ]).exec();
-    console.log(users, "users");
     if (users.length > 0) {
-      console.log(users.length, "users");
       let todayDate = moment().startOf("day").unix();
       let transactionArray = [];
       let mainArray = [];
@@ -170,7 +168,6 @@ export const startCron = () => {
         const accountIdDetails = await user.parentChild.teens.find(
           (x: any) => x.childId.toString() == user._id.toString()
         );
-        console.log(accountIdDetails, "accountIdDetails");
         if (!accountIdDetails) {
           continue;
         }
@@ -180,11 +177,7 @@ export const startCron = () => {
         let selectedDate = moment(user.selectedDepositDate)
           .startOf("day")
           .unix();
-        console.log(selectedDate, "selectedDate");
-        console.log(todayDate, "todayDate");
-        console.log(selectedDate <= todayDate, "todayDate");
         if (selectedDate <= todayDate) {
-          console.log("selectedDate");
           let contributionRequest = {
             type: "contributions",
             attributes: {
@@ -203,7 +196,6 @@ export const startCron = () => {
             jwtToken,
             contributionRequest
           );
-          console.log(contributions, "contributions");
           if (contributions.status == 400) {
             /**
              * Notification
@@ -220,7 +212,6 @@ export const startCron = () => {
                     ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
                     : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE,
               };
-              console.log(notificationRequest.title);
               await sendNotification(
                 deviceTokenData.deviceToken,
                 notificationRequest.title,
@@ -295,9 +286,6 @@ export const startCron = () => {
           }
         }
       }
-      console.log(transactionArray, "transactionArray");
-      console.log(mainArray, "mainArray");
-      console.log(activityArray, "activityArray");
       await UserActivityTable.insertMany(activityArray);
       await TransactionTable.insertMany(transactionArray);
       await UserTable.bulkWrite(mainArray);

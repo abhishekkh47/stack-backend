@@ -171,8 +171,6 @@ class AuthController extends BaseController {
               mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
-            console.log(reqParam.parentMobile, "reqParam.parentMobile");
-            console.log(checkParentExists, "checkParentExists");
             if (
               checkParentExists &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
@@ -181,7 +179,6 @@ class AuthController extends BaseController {
               parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
               });
-              console.log(parentTable, "parentTable");
               if (!parentTable) {
                 return this.BadRequest(ctx, "Account Details Not Found");
               }
@@ -242,7 +239,7 @@ class AuthController extends BaseController {
             // }
           } else {
             /**
-             * Parent flow
+             * Parent flow and self flow
              */
             user = await AuthService.findUserByEmail(reqParam.email);
             if (user) {
@@ -261,50 +258,61 @@ class AuthController extends BaseController {
             if (user) {
               return this.BadRequest(ctx, "Mobile Number already Exists");
             }
-            const parentMobileExistInChild = await UserTable.findOne({
-              parentMobile: reqParam.mobile,
-            });
-            if (!parentMobileExistInChild) {
-              return this.BadRequest(
-                ctx,
-                "Sorry , We cannot find this email/mobile in teen."
-              );
-            }
-            childExists = await UserTable.findOne({
-              mobile: reqParam.childMobile,
-            });
-            if (!childExists) {
-              return this.BadRequest(ctx, "Teen Mobile Number Doesn't Exists");
-            }
-            if (childExists.parentMobile !== reqParam.mobile) {
-              return this.BadRequest(
-                ctx,
-                "Sorry We cannot find your accounts. Unable to link them"
-              );
-            }
             if (
-              reqParam.type == EUserType.PARENT &&
               new Date(
                 Date.now() - new Date(reqParam.dob).getTime()
               ).getFullYear() < 1988
             ) {
-              return this.BadRequest(ctx, "Parent's age should be 18+");
+              return this.BadRequest(
+                ctx,
+                reqParam.type == EUserType.PARENT
+                  ? "Parent's age should be 18+"
+                  : "Your age should be 18+"
+              );
             }
-
-            const childDetails = await UserTable.find(
-              {
-                type: EUserType.TEEN,
+            if (reqParam.type == EUserType.PARENT) {
+              const parentMobileExistInChild = await UserTable.findOne({
                 parentMobile: reqParam.mobile,
-              },
-              {
-                _id: 1,
+              });
+              if (!parentMobileExistInChild) {
+                return this.BadRequest(
+                  ctx,
+                  "Sorry , We cannot find this email/mobile in teen."
+                );
               }
-            );
-            if (childDetails.length == 0) {
-              return this.BadRequest(ctx, "Teen Mobile Number Doesn't Exists");
-            }
-            for await (const child of childDetails) {
-              await childArray.push({ childId: child._id, accountId: null });
+              childExists = await UserTable.findOne({
+                mobile: reqParam.childMobile,
+              });
+              if (!childExists) {
+                return this.BadRequest(
+                  ctx,
+                  "Teen Mobile Number Doesn't Exists"
+                );
+              }
+              if (childExists.parentMobile !== reqParam.mobile) {
+                return this.BadRequest(
+                  ctx,
+                  "Sorry We cannot find your accounts. Unable to link them"
+                );
+              }
+              const childDetails = await UserTable.find(
+                {
+                  type: EUserType.TEEN,
+                  parentMobile: reqParam.mobile,
+                },
+                {
+                  _id: 1,
+                }
+              );
+              if (childDetails.length == 0) {
+                return this.BadRequest(
+                  ctx,
+                  "Teen Mobile Number Doesn't Exists"
+                );
+              }
+              for await (const child of childDetails) {
+                await childArray.push({ childId: child._id, accountId: null });
+              }
             }
           }
 
@@ -434,7 +442,8 @@ class AuthController extends BaseController {
               lastName: reqParam.lastName ? reqParam.lastName : null,
               mobile: reqParam.mobile,
               screenStatus:
-                reqParam.type === EUserType.PARENT
+                reqParam.type === EUserType.PARENT ||
+                reqParam.type === EUserType.SELF
                   ? ESCREENSTATUS.UPLOAD_DOCUMENTS
                   : ESCREENSTATUS.SIGN_UP,
               parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
@@ -468,13 +477,11 @@ class AuthController extends BaseController {
               },
               { upsert: true, new: true }
             );
-            console.log("parent called one", parentchild);
-            // await ParentChildTable.create({
-            //   userId: user._id,
-            //   contactId: null,
-            //   firstChildId: childExists._id,
-            //   teens: childArray,
-            // });
+          } else if (reqParam.type == EUserType.SELF) {
+            await ParentChildTable.create({
+              userId: user._id,
+              firstChildId: user._id,
+            });
           } else {
             if (accountId && accountNumber) {
               /**
@@ -499,7 +506,7 @@ class AuthController extends BaseController {
           if (
             admin.giftCryptoSetting == 1 &&
             user.isGiftedCrypto == 0 &&
-            user.type == EUserType.TEEN
+            user.type !== EUserType.PARENT
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             let checkTransactionExistsAlready = await TransactionTable.findOne({
@@ -579,10 +586,6 @@ class AuthController extends BaseController {
               if (internalTransferResponse.status == 400) {
                 return this.BadRequest(ctx, internalTransferResponse.message);
               }
-              console.log(
-                internalTransferResponse.data,
-                "internalTransferResponse"
-              );
               await TransactionTable.create({
                 assetId: crypto.assetId,
                 cryptoId: crypto._id,
@@ -901,7 +904,6 @@ class AuthController extends BaseController {
               });
             }
           } catch (error) {
-            console.log(error, "error");
             return this.BadRequest(ctx, error.message);
           }
         }
@@ -1394,7 +1396,7 @@ class AuthController extends BaseController {
               }
               return this.BadRequest(ctx, "Mobile Number Already Exists");
             }
-          } else if (type == EUserType.PARENT) {
+          } else if (type == EUserType.PARENT || type == EUserType.SELF) {
             let userExists = await UserTable.findOne({
               mobile: mobile,
             });

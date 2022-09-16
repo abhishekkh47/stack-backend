@@ -84,7 +84,7 @@ class TradingController extends BaseController {
       return this.BadRequest(ctx, "User Kyc Information not verified");
     }
     const query =
-      userExists.type == EUserType.PARENT
+      userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
         ? { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
     let parent: any = await ParentChildTable.findOne(query).populate(
@@ -146,10 +146,14 @@ class TradingController extends BaseController {
            * if deposit amount is greater than 0
            */
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-            const accountIdDetails = await parentDetails.teens.find(
-              (x: any) =>
-                x.childId.toString() == parentDetails.firstChildId.toString()
-            );
+            const accountIdDetails =
+              userExists.type == EUserType.PARENT
+                ? await parentDetails.teens.find(
+                    (x: any) =>
+                      x.childId.toString() ==
+                      parentDetails.firstChildId.toString()
+                  )
+                : parent.accountId;
             await getPortFolioService.addIntialDeposit(
               reqParam,
               parentDetails,
@@ -211,7 +215,10 @@ class TradingController extends BaseController {
                     "unit-count":
                       executeQuoteResponse.data.data.attributes["unit-count"],
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                    "to-account-id": accountIdDetails.accountId,
+                    "to-account-id":
+                      userExists.type == EUserType.PARENT
+                        ? accountIdDetails.accountId
+                        : accountIdDetails,
                     "asset-id": crypto.assetId,
                     reference: "$5 BTC gift from Stack",
                     "hot-transfer": true,
@@ -324,21 +331,24 @@ class TradingController extends BaseController {
       return this.BadRequest(ctx, "User Not Found");
     }
     const query =
-      userExists.type == EUserType.PARENT
+      userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
         ? reqParam.childId
           ? { "teens.childId": reqParam.childId }
           : { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
     let parentDetails: any = await ParentChildTable.findOne(query);
     if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
-    const accountIdDetails = await parentDetails.teens.find((x: any) =>
-      reqParam.childId
-        ? x.childId.toString() == reqParam.childId.toString()
-        : userExists.type == EUserType.TEEN &&
-          userExists.isAutoApproval == EAUTOAPPROVAL.ON
-        ? x.childId.toString() == userExists._id.toString()
-        : x.childId.toString() == parentDetails.firstChildId.toString()
-    );
+    const accountIdDetails =
+      userExists.type == EUserType.SELF
+        ? parentDetails
+        : await parentDetails.teens.find((x: any) =>
+            reqParam.childId
+              ? x.childId.toString() == reqParam.childId.toString()
+              : userExists.type == EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+              ? x.childId.toString() == userExists._id.toString()
+              : x.childId.toString() == parentDetails.firstChildId.toString()
+          );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
@@ -349,11 +359,12 @@ class TradingController extends BaseController {
       async (validate) => {
         if (validate) {
           let contributions: any = null;
-          if (
+          let mainQuery =
             userExists.type == EUserType.PARENT ||
+            userExists.type == EUserType.SELF ||
             (userExists.type == EUserType.TEEN &&
-              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-          ) {
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+          if (mainQuery) {
             /**
              * create fund transfer with fund transfer id in response
              */
@@ -455,9 +466,12 @@ class TradingController extends BaseController {
           /**
            * Gift 5$ crypto to teen if deposited first time
            */
-          if (userExists.type === EUserType.PARENT) {
+          if (
+            userExists.type === EUserType.PARENT ||
+            userExists.type === EUserType.SELF
+          ) {
             let childExists = await UserTable.findOne({
-              _id: reqParam.childId,
+              _id: reqParam.childId ? reqParam.childId : userExists._id,
             });
             if (
               childExists &&
@@ -569,7 +583,9 @@ class TradingController extends BaseController {
             settledTime: moment().unix(),
             amount: reqParam.amount,
             amountMod: null,
-            userId: accountIdDetails.childId,
+            userId: accountIdDetails.childId
+              ? accountIdDetails.childId
+              : userExists._id,
             parentId: userExists._id,
             status: ETransactionStatus.PENDING,
             executedQuoteId: contributions.data.included[0].id,
@@ -678,20 +694,25 @@ class TradingController extends BaseController {
            * Check current balance is greather than withdrawable amount
            */
           const query =
-            userExists.type == EUserType.PARENT
+            userExists.type == EUserType.PARENT ||
+            userExists.type == EUserType.SELF
               ? reqParam.childId
                 ? { "teens.childId": reqParam.childId }
                 : { userId: ctx.request.user._id }
               : { "teens.childId": ctx.request.user._id };
           let parentDetails: any = await ParentChildTable.findOne(query);
           if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
-          const accountIdDetails = await parentDetails.teens.find((x: any) =>
-            userExists.type == EUserType.PARENT
-              ? reqParam.childId
-                ? x.childId.toString() == reqParam.childId.toString()
-                : x.childId.toString() == parentDetails.firstChildId.toString()
-              : x.childId.toString() == ctx.request.user._id.toString()
-          );
+          const accountIdDetails =
+            userExists.type == EUserType.SELF
+              ? parentDetails
+              : await parentDetails.teens.find((x: any) =>
+                  userExists.type == EUserType.PARENT
+                    ? reqParam.childId
+                      ? x.childId.toString() == reqParam.childId.toString()
+                      : x.childId.toString() ==
+                        parentDetails.firstChildId.toString()
+                    : x.childId.toString() == ctx.request.user._id.toString()
+                );
           if (!accountIdDetails) {
             return this.BadRequest(ctx, "Account Details Not Found");
           }
@@ -739,11 +760,12 @@ class TradingController extends BaseController {
             }
           }
           let disbursement: any = null;
-          if (
+          let mainQuery =
             userExists.type == EUserType.PARENT ||
+            userExists.type == EUserType.SELF ||
             (userExists.type == EUserType.TEEN &&
-              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-          ) {
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+          if (mainQuery) {
             /**
              * create fund transfer with fund transfer id in response
              */
@@ -766,9 +788,12 @@ class TradingController extends BaseController {
               disbursementRequest
             );
             if (disbursement.status == 400) {
-              return this.BadRequest(ctx, disbursement.code !== 25001
-                ? disbursement.message
-                : PLAID_ITEM_ERROR);
+              return this.BadRequest(
+                ctx,
+                disbursement.code !== 25001
+                  ? disbursement.message
+                  : PLAID_ITEM_ERROR
+              );
             }
           }
           /**
@@ -844,7 +869,10 @@ class TradingController extends BaseController {
           /**
            * For parent create disbursement code of prime trust with plaid processor token
            */
-          if (userExists.type === EUserType.PARENT) {
+          if (
+            userExists.type === EUserType.PARENT ||
+            userExists.type === EUserType.SELF
+          ) {
             await UserActivityTable.create({
               userId: reqParam.childId ? reqParam.childId : userExists._id,
               userType: reqParam.childId ? EUserType.TEEN : userExists.type,
@@ -862,7 +890,9 @@ class TradingController extends BaseController {
               settledTime: moment().unix(),
               amount: reqParam.amount,
               amountMod: null,
-              userId: accountIdDetails.childId,
+              userId: accountIdDetails.childId
+                ? accountIdDetails.childId
+                : userExists._id,
               parentId: userExists._id,
               status: ETransactionStatus.PENDING,
               executedQuoteId: disbursement.data.included[0].id,
@@ -1005,17 +1035,18 @@ class TradingController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const query = { "teens.childId": childId };
+    const query =
+      userExists.type == EUserType.SELF
+        ? { userId: user._id }
+        : { "teens.childId": childId };
     let parent: any = await ParentChildTable.findOne(query);
     if (!parent) return this.BadRequest(ctx, "Invalid User");
-    // const accountIdDetails = await parent.teens.find((x: any) =>
-    //   userExists.type == EUserType.PARENT
-    //     ? parent.firstChildId.toString()
-    //     : x.childId.toString() == ctx.request.user._id.toString()
-    // );
-    const accountIdDetails = await parent.teens.find(
-      (x: any) => x.childId.toString() == childId.toString()
-    );
+    const accountIdDetails =
+      userExists.type == EUserType.SELF
+        ? parent
+        : await parent.teens.find(
+            (x: any) => x.childId.toString() == childId.toString()
+          );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
@@ -1045,7 +1076,6 @@ class TradingController extends BaseController {
   public async buyCrypto(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
-    console.log(reqParam, "reqParamreqParam");
     const jwtToken = ctx.request.primeTrustToken;
     return validation.buyCryptoValidation(reqParam, ctx, async (validate) => {
       const { amount, cryptoId } = reqParam;
@@ -1056,20 +1086,24 @@ class TradingController extends BaseController {
         return this.BadRequest(ctx, "User Not Found");
       }
       const query =
-        userExists.type == EUserType.PARENT
+        userExists.type == EUserType.PARENT ||
+        userExists.type === EUserType.SELF
           ? reqParam.childId
             ? { "teens.childId": reqParam.childId }
             : { userId: ctx.request.user._id }
           : { "teens.childId": ctx.request.user._id };
       let parent: any = await ParentChildTable.findOne(query);
       if (!parent) return this.BadRequest(ctx, "Invalid User");
-      const accountIdDetails = await parent.teens.find((x: any) =>
-        userExists.type == EUserType.PARENT
-          ? reqParam.childId
-            ? x.childId.toString() == reqParam.childId.toString()
-            : x.childId.toString() == parent.firstChildId.toString()
-          : x.childId.toString() == ctx.request.user._id.toString()
-      );
+      const accountIdDetails =
+        userExists.type === EUserType.SELF
+          ? parent
+          : await parent.teens.find((x: any) =>
+              userExists.type == EUserType.PARENT
+                ? reqParam.childId
+                  ? x.childId.toString() == reqParam.childId.toString()
+                  : x.childId.toString() == parent.firstChildId.toString()
+                : x.childId.toString() == ctx.request.user._id.toString()
+            );
       if (!accountIdDetails) {
         return this.BadRequest(ctx, "Account Details Not Found");
       }
@@ -1114,11 +1148,12 @@ class TradingController extends BaseController {
           "Please cancel your existing request in order to buy crypto from this request"
         );
       }
-      if (
+      let mainQuery =
         userExists.type == EUserType.PARENT ||
+        userExists.type == EUserType.SELF ||
         (userExists.type == EUserType.TEEN &&
-          userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-      ) {
+          userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+      if (mainQuery) {
         const requestQuoteDay: any = {
           data: {
             type: "quotes",
@@ -1131,7 +1166,6 @@ class TradingController extends BaseController {
             },
           },
         };
-        console.log(requestQuoteDay, "requestQuoteDay");
         const generateQuoteResponse: any = await generateQuote(
           jwtToken,
           requestQuoteDay
@@ -1167,7 +1201,9 @@ class TradingController extends BaseController {
           settledTime: moment().unix(),
           amount: amount,
           amountMod: -amount,
-          userId: accountIdDetails.childId,
+          userId: accountIdDetails.childId
+            ? accountIdDetails.childId
+            : parent.userId,
           parentId: parent.userId,
           status: ETransactionStatus.PENDING,
           executedQuoteId: executeQuoteResponse.data.data.id,
@@ -1177,23 +1213,15 @@ class TradingController extends BaseController {
 
       const activity = await UserActivityTable.create({
         userId: reqParam.childId ? reqParam.childId : user._id,
-        message:
-          userExists.type == EUserType.PARENT ||
-          (userExists.type == EUserType.TEEN &&
-            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-            ? `${messages.APPROVE_BUY} ${crypto.name} buy request of $${amount}`
-            : `${messages.BUY} ${crypto.name} buy request of $${amount}`,
+        message: mainQuery
+          ? `${messages.APPROVE_BUY} ${crypto.name} buy request of $${amount}`
+          : `${messages.BUY} ${crypto.name} buy request of $${amount}`,
         action: EAction.BUY_CRYPTO,
         currencyValue: amount,
         currencyType: cryptoId,
         cryptoId: cryptoId,
         userType,
-        status:
-          userExists.type == EUserType.PARENT ||
-          (userExists.type == EUserType.TEEN &&
-            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-            ? EStatus.PROCESSED
-            : EStatus.PENDING,
+        status: mainQuery ? EStatus.PROCESSED : EStatus.PENDING,
       });
       if (
         userType == EUserType.TEEN &&
@@ -1226,12 +1254,9 @@ class TradingController extends BaseController {
           });
         }
       }
-      const message =
-        userExists.type == EUserType.PARENT ||
-        (userExists.type == EUserType.TEEN &&
-          userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-          ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
-          : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
+      const message = mainQuery
+        ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
+        : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
       return this.Ok(ctx, { message });
     });
   }
@@ -1254,20 +1279,23 @@ class TradingController extends BaseController {
       return this.BadRequest(ctx, "User Not Found");
     }
     const query =
-      userExists.type == EUserType.PARENT
+      userExists.type == EUserType.PARENT || userExists.type === EUserType.SELF
         ? reqParam.childId
           ? { "teens.childId": reqParam.childId }
           : { userId: ctx.request.user._id }
         : { "teens.childId": ctx.request.user._id };
     let parent: any = await ParentChildTable.findOne(query);
     if (!parent) return this.BadRequest(ctx, "Invalid User");
-    const accountIdDetails = await parent.teens.find((x: any) =>
-      userExists.type == EUserType.PARENT
-        ? reqParam.childId
-          ? x.childId.toString() == reqParam.childId.toString()
-          : x.childId.toString() == parent.firstChildId.toString()
-        : x.childId.toString() == ctx.request.user._id.toString()
-    );
+    const accountIdDetails =
+      userExists.type === EUserType.SELF
+        ? parent
+        : await parent.teens.find((x: any) =>
+            userExists.type == EUserType.PARENT
+              ? reqParam.childId
+                ? x.childId.toString() == reqParam.childId.toString()
+                : x.childId.toString() == parent.firstChildId.toString()
+              : x.childId.toString() == ctx.request.user._id.toString()
+          );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
@@ -1292,11 +1320,12 @@ class TradingController extends BaseController {
             `${crypto.name} doesn't exists in your portfolio.`
           );
         }
-        if (
+        let mainQuery =
           userExists.type == EUserType.PARENT ||
+          userExists.type == EUserType.SELF ||
           (userExists.type == EUserType.TEEN &&
-            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-        ) {
+            userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+        if (mainQuery) {
           /**
            * Generate a quote
            */
@@ -1347,7 +1376,9 @@ class TradingController extends BaseController {
             settledTime: moment().unix(),
             amount: amount,
             amountMod: amount,
-            userId: accountIdDetails.childId,
+            userId: accountIdDetails.childId
+              ? accountIdDetails.childId
+              : parent.userId,
             parentId: parent.userId,
             status: ETransactionStatus.PENDING,
             executedQuoteId: executeSellQuoteResponse.data.data.id,
@@ -1357,23 +1388,15 @@ class TradingController extends BaseController {
         }
         const activity = await UserActivityTable.create({
           userId: reqParam.childId ? reqParam.childId : user._id,
-          message:
-            userExists.type == EUserType.PARENT ||
-            (userExists.type == EUserType.TEEN &&
-              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-              ? `${messages.APPROVE_SELL} ${crypto.name} sell request of $${amount}`
-              : `${messages.SELL} ${crypto.name} sell request of $${amount}`,
+          message: mainQuery
+            ? `${messages.APPROVE_SELL} ${crypto.name} sell request of $${amount}`
+            : `${messages.SELL} ${crypto.name} sell request of $${amount}`,
           action: EAction.SELL_CRYPTO,
           currencyValue: amount,
           currencyType: cryptoId,
           cryptoId: cryptoId,
           userType: userExists.type,
-          status:
-            userExists.type == EUserType.PARENT ||
-            (userExists.type == EUserType.TEEN &&
-              userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-              ? EStatus.PROCESSED
-              : EStatus.PENDING,
+          status: mainQuery ? EStatus.PROCESSED : EStatus.PENDING,
         });
         if (
           userExists.type == EUserType.TEEN &&
@@ -1406,12 +1429,9 @@ class TradingController extends BaseController {
             });
           }
         }
-        const message =
-          userExists.type == EUserType.PARENT ||
-          (userExists.type == EUserType.TEEN &&
-            userExists.isAutoApproval == EAUTOAPPROVAL.ON)
-            ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
-            : `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`;
+        const message = mainQuery
+          ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
+          : `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`;
         return this.Ok(ctx, { message });
       }
     });
@@ -1586,7 +1606,6 @@ class TradingController extends BaseController {
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
-    console.log(reqParam, "reqParam");
     return validation.getPortFolioValidation(
       reqParam,
       ctx,
@@ -1600,7 +1619,10 @@ class TradingController extends BaseController {
             return this.BadRequest(ctx, "User Not Found");
           }
           let userExistsForQuiz = null;
-          if (childExists.type == EUserType.PARENT) {
+          if (
+            childExists.type == EUserType.PARENT ||
+            childExists.type == EUserType.SELF
+          ) {
             userExistsForQuiz = await ParentChildTable.findOne({
               userId: childExists._id,
             }).populate("firstChildId", [
@@ -1609,7 +1631,6 @@ class TradingController extends BaseController {
               "isGiftedCrypto",
               "isParentFirst",
             ]);
-            console.log(userExistsForQuiz, "userExistsForQuiz");
             if (
               userExistsForQuiz &&
               userExistsForQuiz.firstChildId.isParentFirst == true
@@ -1625,7 +1646,6 @@ class TradingController extends BaseController {
               "isGiftedCrypto",
               "isParentFirst",
             ]);
-            console.log(userExistsForQuiz, "userExistsForQuiz");
             if (userExistsForQuiz && childExists.isParentFirst == true) {
               isTeenPending = true;
             }
@@ -1771,7 +1791,8 @@ class TradingController extends BaseController {
               { userId: new mongoose.Types.ObjectId(childExists._id) },
               {
                 userId: userExistsForQuiz
-                  ? childExists.type == EUserType.PARENT
+                  ? childExists.type == EUserType.PARENT ||
+                    childExists.type == EUserType.SELF
                     ? new mongoose.Types.ObjectId(
                         userExistsForQuiz.firstChildId._id
                       )
@@ -1786,11 +1807,19 @@ class TradingController extends BaseController {
           }
           stackCoins = stackCoins + childExists.preLoadedCoins;
           let parent: any = await ParentChildTable.findOne({
-            "teens.childId": childExists._id,
+            $or: [
+              {
+                "teens.childId": childExists._id,
+              },
+              {
+                userId: childExists._id,
+              },
+            ],
           }).populate("userId", ["status"]);
           if (
-            !parent ||
-            parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            childExists.type !== EUserType.SELF &&
+            (!parent ||
+              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
           ) {
             intialBalance = totalIntAmount;
             if (childExists.isGiftedCrypto == 1) {
@@ -1820,9 +1849,13 @@ class TradingController extends BaseController {
               return this.BadRequest(ctx, "Invalid User");
             }
           }
-          const accountIdDetails = await parent.teens.find(
-            (x: any) => x.childId.toString() == childExists._id.toString()
-          );
+          const accountIdDetails =
+            childExists.type == EUserType.SELF
+              ? parent
+              : await parent.teens.find(
+                  (x: any) => x.childId.toString() == childExists._id.toString()
+                );
+
           if (!accountIdDetails) {
             return this.BadRequest(ctx, "Account Details Not Found");
           }
@@ -1908,7 +1941,6 @@ class TradingController extends BaseController {
           let clearedDeposit = await TransactionTable.findOne({
             userId: childExists._id,
             type: ETransactionType.DEPOSIT,
-            intialDeposit: true,
             status: ETransactionStatus.SETTLED,
           });
           let totalValue =
@@ -1918,27 +1950,6 @@ class TradingController extends BaseController {
           if (isTeenPending) {
             totalValue = totalValue - 5;
           }
-          console.log(
-            {
-              portFolio,
-              totalStackValue,
-              stackCoins,
-              totalGainLoss,
-              balance:
-                parent &&
-                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                  ? balance
-                  : intialBalance,
-              parentStatus: parent.userId.status,
-              pendingBalance: pending,
-              intialBalance: intialBalance,
-              totalAmountInvested: totalValue,
-              isDeposit:
-                transactionData.length > 0 ? 1 : clearedDeposit ? 2 : 0,
-              isTeenPending,
-            },
-            "====portfolio==="
-          );
           return this.Ok(ctx, {
             data: {
               portFolio,
@@ -1946,22 +1957,32 @@ class TradingController extends BaseController {
               stackCoins,
               totalGainLoss,
               balance:
-                parent &&
-                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                childExists.type == EUserType.SELF
+                  ? parent &&
+                    parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                    ? balance > 0
+                      ? balance
+                      : clearedDeposit
+                      ? balance
+                      : intialBalance
+                    : intialBalance
+                  : parent &&
+                    parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
                   ? balance
                   : intialBalance,
               parentStatus: parent.userId.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
               totalAmountInvested: totalValue,
+              // 0 - SKIP , 1 - PENDIGN 2 - DEPOSIT AVAILNA
               isDeposit:
                 parent &&
                 parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                  ? 2
-                  : transactionData.length > 0
-                  ? 1
-                  : clearedDeposit
-                  ? 2
+                  ? transactionData.length > 0
+                    ? 1
+                    : clearedDeposit
+                    ? 2
+                    : 0
                   : 0,
               isTeenPending,
             },

@@ -111,7 +111,7 @@ class CryptocurrencyController extends BaseController {
     }
     const userExists = await UserTable.findOne({ _id: childId });
     const query =
-      userExists.type == EUserType.PARENT
+      userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
         ? { userId: userExists._id }
         : { "teens.childId": userExists._id };
     const parentChild = await ParentChildTable.findOne(query);
@@ -119,9 +119,12 @@ class CryptocurrencyController extends BaseController {
      * For Cash
      */
     if (symbol == "USD") {
-      const accountIdDetails: any = await parentChild.teens.find(
-        (x: any) => x.childId.toString() == userExists._id.toString()
-      );
+      const accountIdDetails: any =
+        userExists.type == EUserType.SELF
+          ? parentChild
+          : await parentChild.teens.find(
+              (x: any) => x.childId.toString() == userExists._id.toString()
+            );
       if (!parentChild) {
         return this.Ok(ctx, { balance: 0 });
       }
@@ -160,7 +163,8 @@ class CryptocurrencyController extends BaseController {
         userExists._id,
         crypto._id,
         parentChild,
-        jwtToken
+        jwtToken,
+        userExists
       );
     // crypto
     return this.Ok(ctx, { message: "Success", portFolio });

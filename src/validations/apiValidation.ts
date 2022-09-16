@@ -172,7 +172,7 @@ export const validation = {
   },
   signupValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
-      type: Joi.number().valid(1, 2).required(),
+      type: Joi.number().valid(1, 2, 3).required(),
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
@@ -546,7 +546,7 @@ export const validation = {
   },
   checkValidMobileValidation: (req, res, callback) => {
     const schema = Joi.object({
-      type: Joi.number().valid(1, 2).required(),
+      type: Joi.number().valid(1, 2, 3).required(),
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),

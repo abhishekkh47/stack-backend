@@ -138,7 +138,6 @@ export const getAccounts = async (accessToken: string) => {
     })
     .catch((error) => {
       if (error) {
-        console.log(error.response.data);
         return {
           status: error.response.status,
           message: error.response.data.error_message,
