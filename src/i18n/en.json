@@ -265,5 +265,6 @@
 	"recurringDepositValidationSelecteddepositBase": "Please select valid deposit amount",
 	"recurringDepositValidationChildidRequired": "Please enter child details",
 	"recurringDepositValidationChildidEmpty": "Please enter child details",
-	"recurringDepositValidationChildidPattern": "Please enter child details"
+	"recurringDepositValidationChildidPattern": "Please enter child details",
+	"checkValidMobileValidationTaxidnoUnknown": "checkValidMobileValidationTaxidnoUnknown"
 }
