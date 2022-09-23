@@ -12,6 +12,7 @@ import {
   ParentChildTable,
   QuizResult,
   StateTable,
+  UserDraftTable,
   TransactionTable,
   UserReffaralTable,
   UserTable,
@@ -239,7 +240,6 @@ class AuthController extends BaseController {
              * Parent flow and self flow
              */
             user = await AuthService.findUserByEmail(reqParam.email);
-            console.log("user: ", user);
             const mobile = await UserTable.findOne({ mobile: reqParam.mobile });
             // if (mobile) {
             //   return this.BadRequest(ctx, "Mobile Number already Exists");
@@ -1258,15 +1258,45 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "Mobile Number Not Found");
           }
           if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
-            await UserTable.updateOne(
-              { _id: reqParam._id },
-              {
-                $set: {
-                  screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
-                  mobile: reqParam.mobile,
-                },
-              }
-            );
+            const childAlready = await UserTable.findOne({
+              mobile: reqParam.mobile,
+            });
+            const childInfo = await UserDraftTable.findOne({
+              _id: reqParam._id,
+            });
+            if (childAlready && childInfo) {
+              const updateObject = {
+                email: childInfo.email,
+                dob: childInfo.dob,
+                type: childInfo.type,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                firstName: childAlready.firstName
+                  ? childAlready.firstName
+                  : childInfo.firstName,
+                lastName: childAlready.lastName
+                  ? childAlready.lastName
+                  : childInfo.lastName,
+              };
+              await UserTable.findOneAndUpdate(
+                { mobile: reqParam.mobile },
+                { $set: updateObject },
+                { new: true }
+              );
+            } else {
+              const createObject = {
+                email: childInfo.email,
+                type: childInfo.type,
+                dob: childInfo.dob,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                lastName: childInfo.lastName,
+                firstName: childInfo.firstName,
+              };
+
+              await UserTable.create(createObject);
+            }
+
             return this.BadRequest(ctx, "Mobile Number Already Verified");
           }
           /**
@@ -1291,15 +1321,44 @@ class AuthController extends BaseController {
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
           if (optVerfidied) {
-            await UserTable.updateOne(
-              { _id: reqParam._id },
-              {
-                $set: {
-                  screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
-                  mobile: reqParam.mobile,
-                },
-              }
-            );
+            const childAlready = await UserTable.findOne({
+              mobile: reqParam.mobile,
+            });
+            const childInfo = await UserDraftTable.findOne({
+              _id: reqParam._id,
+            });
+            if (childAlready && childInfo) {
+              const updateObject = {
+                email: childInfo.email,
+                dob: childInfo.dob,
+                type: childInfo.type,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                firstName: childAlready.firstName
+                  ? childAlready.firstName
+                  : childInfo.firstName,
+                lastName: childAlready.lastName
+                  ? childAlready.lastName
+                  : childInfo.lastName,
+              };
+              await UserTable.findOneAndUpdate(
+                { mobile: reqParam.mobile },
+                { $set: updateObject },
+                { new: true }
+              );
+            } else {
+              const createObject = {
+                email: childInfo.email,
+                type: childInfo.type,
+                dob: childInfo.dob,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                lastName: childInfo.lastName,
+                firstName: childInfo.firstName,
+              };
+
+              await UserTable.create(createObject);
+            }
           }
           return this.Ok(ctx, {
             message: "Your mobile number is verified successfully",
@@ -1388,75 +1447,75 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          console.log(
-            "ctx: ",
-            decodeJwtToken(ctx.headers["x-access-token"])._id
-          );
-
           const { mobile, type } = input;
           if (type == EUserType.TEEN) {
             let userExists = await UserTable.findOne({
               $or: [{ mobile: mobile }, { parentMobile: mobile }],
             });
             if (userExists) {
-              // let transaction = await TransactionTable.findOne({
-              //   userId: userExists._id,
-              //   status: ETransactionStatus.GIFTED,
-              // });
               if (userExists.isParentFirst == true) {
                 return this.Ok(ctx, { message: "Success" });
               }
-              return this.BadRequest(ctx, "Mobile Number Already Exists");
+
+              //if 2 entries then dont say mobile no. exists
+              if (userExists && !userExists.email === null) {
+                return this.BadRequest(ctx, "Mobile Number Already Exists");
+              }
             }
           } else if (type == EUserType.PARENT || type == EUserType.SELF) {
             let userExists = await UserTable.findOne({
               mobile: mobile,
             });
-           
+
             if (userExists) {
               return this.BadRequest(ctx, "Mobile Number Already Exists");
             }
           } else {
             return this.BadRequest(ctx, "Invalid User Type");
           }
-          if (type == EUserType.PARENT ) {
-            await UserTable.updateOne(
-              { _id: decodeJwtToken(ctx.headers["x-access-token"])._id },
-              {
-                $set: {
-                  mobile: input.mobile,
-                  firstName: input.firstName,
-                  lastName: input.lastName,
-                  country: input.country,
-                  state: input.state,
-                  city: input.city,
-                  address: input.address,
-                  unitApt: input.unitApt,
-                  postalCode: input.postalCode,
-                  screenStatus:ESCREENSTATUS.CHILD_INFO_SCREEN, 
-                  taxIdNo: input.taxIdNo,
-                },
-              }
-            );
+          const draftUser = await UserDraftTable.findOne({
+            _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
+          });
+          if (type == EUserType.PARENT && draftUser) {
+            const createObject = {
+              email: draftUser.email,
+              dob: draftUser.dob,
+              type: draftUser.type,
+              mobile: input.mobile,
+              firstName: input.firstName
+                ? input.firstName
+                : draftUser.firstName,
+              lastName: input.lastName ? input.lastName : draftUser.lastName,
+              country: input.country,
+              state: input.state,
+              city: input.city,
+              address: input.address,
+              unitApt: input.unitApt,
+              postalCode: input.postalCode,
+              screenStatus: ESCREENSTATUS.CHILD_INFO_SCREEN,
+              taxIdNo: input.taxIdNo,
+            };
+            await UserTable.create(createObject);
           }
-          if (type == EUserType.SELF ) {
-            await UserTable.updateOne(
-              { _id: decodeJwtToken(ctx.headers["x-access-token"])._id },
-              {
-                $set: {
-                  firstName: input.firstName,
-                  lastName: input.lastName,
-                  mobile: input.mobile,
-                  country: input.country,
-                  state: input.state,
-                  city: input.city,
-                  address: input.address,
-                  unitApt: input.unitApt,
-                  postalCode: input.postalCode,
-                  taxIdNo: input.taxIdNo,
-                },
-              }
-            );
+          if (type == EUserType.SELF && draftUser) {
+            const createObject = {
+              email: draftUser.email,
+              dob: draftUser.dob,
+              type: draftUser.type,
+              mobile: input.mobile,
+              firstName: input.firstName
+                ? input.firstName
+                : draftUser.firstName,
+              lastName: input.lastName ? input.lastName : draftUser.lastName,
+              country: input.country,
+              state: input.state,
+              city: input.city,
+              address: input.address,
+              unitApt: input.unitApt,
+              postalCode: input.postalCode,
+              taxIdNo: input.taxIdNo,
+            };
+            await UserTable.create(createObject);
           }
 
           return this.Ok(ctx, { message: "Success" });
@@ -1654,13 +1713,13 @@ class AuthController extends BaseController {
           if (childEmail) {
             query = {
               ...query,
-              parentEmail: { $regex: `${email}$`, $options: "i" },
+              // parentNumber: { $regex: `${email}$`, $options: "i" },
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
-          let user = await UserTable.findOne(query);
+          let user = await UserDraftTable.findOne(query);
           if (user) {
-            await UserTable.updateOne(
+            await UserDraftTable.updateOne(
               {
                 mobile: childMobile,
               },
@@ -1671,6 +1730,19 @@ class AuthController extends BaseController {
                 },
               }
             );
+            const createObject = {
+              firstName: childFirstName ? childFirstName : user.firstName,
+              lastName: childLastName ? childLastName : user.lastName,
+              mobile: childMobile ? childMobile : user.phoneNumber,
+              parentEmail: email,
+              parentMobile: mobile,
+              type: EUserType.TEEN,
+              screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
+              // referralCode: uniqueReferralCode,
+              isParentFirst: true,
+              isAutoApproval: EAUTOAPPROVAL.ON,
+            };
+            await UserTable.create(createObject);
             return this.Ok(ctx, {
               message: "Account successfully linked!",
               isAccountFound: true,
@@ -1680,14 +1752,14 @@ class AuthController extends BaseController {
            * This validation is there to keep if any child sign up with parent email or mobile
            */
           if (childEmail) {
-            let checkEmailExists = await UserTable.findOne({
+            let checkEmailExists = await UserDraftTable.findOne({
               email: childEmail,
             });
             if (checkEmailExists) {
               return this.BadRequest(ctx, "Child Email Already Exists");
             }
           }
-          let checkMobileExists = await UserTable.findOne({
+          let checkMobileExists = await UserDraftTable.findOne({
             mobile: childMobile,
           });
           if (checkMobileExists) {
@@ -1726,18 +1798,19 @@ class AuthController extends BaseController {
            * Generate referal code when user sign's up.
            */
           const uniqueReferralCode = await makeUniqueReferalCode();
-          await UserTable.create({
-            firstName: childFirstName,
-            lastName: childLastName,
-            email: childEmail,
-            mobile: childMobile,
+          const createObject = {
+            firstName: childFirstName ? childFirstName : user.firstName,
+            lastName: childLastName ? childLastName : user.lastName,
+            mobile: childMobile ? childMobile : user.phoneNumber,
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
+            screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             referralCode: uniqueReferralCode,
             isParentFirst: true,
             isAutoApproval: EAUTOAPPROVAL.ON,
-          });
+          };
+          await UserTable.create(createObject);
           return this.Ok(ctx, {
             message: "Invite sent!",
             isAccountFound: false,
@@ -2072,31 +2145,29 @@ class AuthController extends BaseController {
               await SocialService.verifySocial(reqParam);
               let createQuery: any = {
                 email: reqParam.email,
-                loginType: reqParam.loginType,
-                socialLoginToken: reqParam.socialLoginToken,
                 screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
-                mobile: reqParam.mobile ? reqParam.mobile : null,
-                password: null,
-                type: null,
+                // mobile: reqParam.mobile ? reqParam.mobile : null,
               };
-              const user = await UserTable.create(createQuery);
+              const user = await UserDraftTable.create(createQuery);
               if (user) {
-                let checkUserExists = await UserTable.findOne({ email });
+                let checkUserDraftExists: any = await UserDraftTable.findOne({
+                  email,
+                });
                 const { token, refreshToken } =
-                  await TokenService.generateToken(checkUserExists);
+                  await TokenService.generateToken(checkUserDraftExists);
 
                 let getProfileInput: any = {
                   request: {
                     query: { token },
-                    params: { id: checkUserExists._id },
+                    params: { id: checkUserDraftExists._id },
                   },
                 };
                 await UserController.getProfile(getProfileInput);
 
                 await DeviceTokenService.addDeviceTokenIfNeeded(
-                  checkUserExists._id,
+                  checkUserDraftExists._id,
                   deviceToken
                 );
 
@@ -2161,7 +2232,7 @@ class AuthController extends BaseController {
                 Date.now() - new Date(reqParam.dob).getTime()
               ).getFullYear() < 1988
             ) {
-              userScreenStatusUpdate = await UserTable.findByIdAndUpdate(
+              userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
                 {
                   _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
                 },
@@ -2174,14 +2245,12 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
-
-              console.log("userScreenStatusUpdate: ", userScreenStatusUpdate);
               return this.Ok(ctx, {
                 message: "Dob saved",
                 userScreenStatusUpdate,
               });
             } else {
-              userScreenStatusUpdate = await UserTable.findByIdAndUpdate(
+              userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
                 {
                   _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
                 },
@@ -2193,7 +2262,6 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
-              console.log("userScreenStatusUpdate: ", userScreenStatusUpdate);
               return this.Ok(ctx, {
                 message: "Dob saved",
                 userScreenStatusUpdate,
@@ -2226,7 +2294,7 @@ class AuthController extends BaseController {
               reqParam.type === EUserType.PARENT ||
               reqParam.type === EUserType.SELF
             ) {
-              userTypeScreenUpdate = await UserTable.findByIdAndUpdate(
+              userTypeScreenUpdate = await UserDraftTable.findByIdAndUpdate(
                 {
                   _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
                 },
@@ -2238,7 +2306,6 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
-              console.log("userTypeScreenUpdate: ", userTypeScreenUpdate);
               return this.Ok(ctx, {
                 message: "Dob saved",
                 userTypeScreenUpdate,

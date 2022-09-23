@@ -60,6 +60,18 @@ export interface IAdmin extends IUser {
   giftCryptoAmount: number;
 }
 
+export interface IUserdraft {
+  email: string;
+  dob: string;
+  phoneNumber: string;
+  parentNumber: string;
+  screenStatus: number;
+  firstName: string;
+  lastName: string;
+  type: number;
+  refreshToken: string;
+}
+
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
 
 export enum EAUTOAPPROVAL {
@@ -97,7 +109,6 @@ export enum EUSERSTATUS {
   KYC_DOCUMENT_UPLOAD_FAILED = 2,
 }
 export enum ESCREENSTATUS {
-
   /**
    * for parent new, self and teen
    */
@@ -109,7 +120,7 @@ export enum ESCREENSTATUS {
    */
   MYSELF_PARENT_SCREEN = 2,
   DETAIL_SCREEN = 3,
-  CHILD_INFO_SCREEN=4,
+  CHILD_INFO_SCREEN = 4,
   UPLOAD_DOCUMENTS = 5,
   ADD_BANK_ACCOUNT = 6,
   SUCCESS = 7,
