@@ -1,6 +1,7 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
+import { child } from "winston";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -1251,6 +1252,8 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
+   let migratedId;
+          let childAlready;
           const otpExists = await OtpTable.findOne({
             receiverMobile: reqParam.mobile,
           }).sort({ createdAt: -1 });
@@ -1258,7 +1261,7 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "Mobile Number Not Found");
           }
           if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
-            const childAlready = await UserTable.findOne({
+             childAlready = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
             const childInfo = await UserDraftTable.findOne({
@@ -1283,6 +1286,11 @@ class AuthController extends BaseController {
                 { $set: updateObject },
                 { new: true }
               );
+              await UserDraftTable.findOneAndUpdate({
+                _id: reqParam._id,
+              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
+              migratedId = childAlready ? childAlready._id : ""
+             
             } else {
               const createObject = {
                 email: childInfo.email,
@@ -1294,7 +1302,11 @@ class AuthController extends BaseController {
                 firstName: childInfo.firstName,
               };
 
-              await UserTable.create(createObject);
+             const userResponse =  await UserTable.create(createObject);
+             migratedId = userResponse._id
+              await UserDraftTable.findOneAndUpdate({
+                _id: reqParam._id,
+              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
             }
 
             return this.BadRequest(ctx, "Mobile Number Already Verified");
@@ -1321,7 +1333,7 @@ class AuthController extends BaseController {
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
           if (optVerfidied) {
-            const childAlready = await UserTable.findOne({
+             childAlready = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
             const childInfo = await UserDraftTable.findOne({
@@ -1341,11 +1353,17 @@ class AuthController extends BaseController {
                   ? childAlready.lastName
                   : childInfo.lastName,
               };
+              await UserDraftTable.findOneAndUpdate({
+                _id: reqParam._id,
+              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
+
               await UserTable.findOneAndUpdate(
                 { mobile: reqParam.mobile },
                 { $set: updateObject },
                 { new: true }
               );
+              migratedId = childAlready ? childAlready._id : "";
+             
             } else {
               const createObject = {
                 email: childInfo.email,
@@ -1357,12 +1375,21 @@ class AuthController extends BaseController {
                 firstName: childInfo.firstName,
               };
 
-              await UserTable.create(createObject);
+              const userResponse: any = await UserTable.create(createObject);
+
+              migratedId = userResponse._id
+              
+
+              await UserDraftTable.findOneAndUpdate({
+                _id: reqParam._id,
+              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
+             
             }
           }
           return this.Ok(ctx, {
             message: "Your mobile number is verified successfully",
-          });
+            migratedId
+          }, );
         }
       }
     );
@@ -1448,6 +1475,8 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, type } = input;
+          let migratedId;
+ 
           if (type == EUserType.TEEN) {
             let userExists = await UserTable.findOne({
               $or: [{ mobile: mobile }, { parentMobile: mobile }],
@@ -1495,7 +1524,8 @@ class AuthController extends BaseController {
               screenStatus: ESCREENSTATUS.CHILD_INFO_SCREEN,
               taxIdNo: input.taxIdNo,
             };
-            await UserTable.create(createObject);
+           let userResponse =  await UserTable.create(createObject);
+           migratedId = userResponse._id
           }
           if (type == EUserType.SELF && draftUser) {
             const createObject = {
@@ -1513,14 +1543,22 @@ class AuthController extends BaseController {
               address: input.address,
               unitApt: input.unitApt,
               postalCode: input.postalCode,
+              screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
               taxIdNo: input.taxIdNo,
             };
-            await UserTable.create(createObject);
-          }
-
-          return this.Ok(ctx, { message: "Success" });
+            let userResponse =  await UserTable.create(createObject);
+       
+            migratedId = userResponse._id
+          
+     
         }
-      }
+        if(type == EUserType.SELF ||type == EUserType.PARENT ) {
+          return this.Ok(ctx, { message: "Success", migratedId },);
+        } else {
+          return this.Ok(ctx, { message: "Success" },);
+        }
+             
+      }}
     );
   }
 
@@ -2141,7 +2179,8 @@ class AuthController extends BaseController {
           try {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
-            if (!userExists) {
+            let userDraftExists = await UserDraftTable.findOne({email})
+            if (!userExists && !userDraftExists) {
               await SocialService.verifySocial(reqParam);
               let createQuery: any = {
                 email: reqParam.email,
@@ -2226,6 +2265,7 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           try {
+        
             let userScreenStatusUpdate: any;
             if (
               new Date(
