@@ -1252,7 +1252,7 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-   let migratedId;
+          let migratedId;
           let childAlready;
           const otpExists = await OtpTable.findOne({
             receiverMobile: reqParam.mobile,
@@ -1261,7 +1261,7 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "Mobile Number Not Found");
           }
           if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
-             childAlready = await UserTable.findOne({
+            childAlready = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
             const childInfo = await UserDraftTable.findOne({
@@ -1286,11 +1286,14 @@ class AuthController extends BaseController {
                 { $set: updateObject },
                 { new: true }
               );
-              await UserDraftTable.findOneAndUpdate({
-                _id: reqParam._id,
-              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
-              migratedId = childAlready ? childAlready._id : ""
-             
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
+              migratedId = childAlready ? childAlready._id : "";
             } else {
               const createObject = {
                 email: childInfo.email,
@@ -1302,11 +1305,15 @@ class AuthController extends BaseController {
                 firstName: childInfo.firstName,
               };
 
-             const userResponse =  await UserTable.create(createObject);
-             migratedId = userResponse._id
-              await UserDraftTable.findOneAndUpdate({
-                _id: reqParam._id,
-              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
+              const userResponse = await UserTable.create(createObject);
+              migratedId = userResponse._id;
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
             }
 
             return this.BadRequest(ctx, "Mobile Number Already Verified");
@@ -1333,7 +1340,7 @@ class AuthController extends BaseController {
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
           if (optVerfidied) {
-             childAlready = await UserTable.findOne({
+            childAlready = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
             const childInfo = await UserDraftTable.findOne({
@@ -1353,9 +1360,13 @@ class AuthController extends BaseController {
                   ? childAlready.lastName
                   : childInfo.lastName,
               };
-              await UserDraftTable.findOneAndUpdate({
-                _id: reqParam._id,
-              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
 
               await UserTable.findOneAndUpdate(
                 { mobile: reqParam.mobile },
@@ -1363,7 +1374,6 @@ class AuthController extends BaseController {
                 { new: true }
               );
               migratedId = childAlready ? childAlready._id : "";
-             
             } else {
               const createObject = {
                 email: childInfo.email,
@@ -1377,19 +1387,21 @@ class AuthController extends BaseController {
 
               const userResponse: any = await UserTable.create(createObject);
 
-              migratedId = userResponse._id
-              
+              migratedId = userResponse._id;
 
-              await UserDraftTable.findOneAndUpdate({
-                _id: reqParam._id,
-              }, {$set: {screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO}}, {new: true})
-             
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
             }
           }
           return this.Ok(ctx, {
             message: "Your mobile number is verified successfully",
-            migratedId
-          }, );
+            migratedId,
+          });
         }
       }
     );
@@ -1476,7 +1488,7 @@ class AuthController extends BaseController {
         if (validate) {
           const { mobile, type } = input;
           let migratedId;
- 
+
           if (type == EUserType.TEEN) {
             let userExists = await UserTable.findOne({
               $or: [{ mobile: mobile }, { parentMobile: mobile }],
@@ -1503,7 +1515,7 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "Invalid User Type");
           }
           const draftUser = await UserDraftTable.findOne({
-            _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
+            _id: ctx.request.user._id,
           });
           if (type == EUserType.PARENT && draftUser) {
             const createObject = {
@@ -1524,8 +1536,8 @@ class AuthController extends BaseController {
               screenStatus: ESCREENSTATUS.CHILD_INFO_SCREEN,
               taxIdNo: input.taxIdNo,
             };
-           let userResponse =  await UserTable.create(createObject);
-           migratedId = userResponse._id
+            let userResponse = await UserTable.create(createObject);
+            migratedId = userResponse._id;
           }
           if (type == EUserType.SELF && draftUser) {
             const createObject = {
@@ -1546,19 +1558,17 @@ class AuthController extends BaseController {
               screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
               taxIdNo: input.taxIdNo,
             };
-            let userResponse =  await UserTable.create(createObject);
-       
-            migratedId = userResponse._id
-          
-     
+            let userResponse = await UserTable.create(createObject);
+
+            migratedId = userResponse._id;
+          }
+          if (type == EUserType.SELF || type == EUserType.PARENT) {
+            return this.Ok(ctx, { message: "Success", migratedId });
+          } else {
+            return this.Ok(ctx, { message: "Success" });
+          }
         }
-        if(type == EUserType.SELF ||type == EUserType.PARENT ) {
-          return this.Ok(ctx, { message: "Success", migratedId },);
-        } else {
-          return this.Ok(ctx, { message: "Success" },);
-        }
-             
-      }}
+      }
     );
   }
 
@@ -2179,7 +2189,7 @@ class AuthController extends BaseController {
           try {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
-            let userDraftExists = await UserDraftTable.findOne({email})
+            let userDraftExists = await UserDraftTable.findOne({ email });
             if (!userExists && !userDraftExists) {
               await SocialService.verifySocial(reqParam);
               let createQuery: any = {
@@ -2265,7 +2275,6 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           try {
-        
             let userScreenStatusUpdate: any;
             if (
               new Date(
@@ -2274,7 +2283,7 @@ class AuthController extends BaseController {
             ) {
               userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
                 {
-                  _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
+                  _id: ctx.request.user._id,
                 },
                 {
                   $set: {
@@ -2292,7 +2301,7 @@ class AuthController extends BaseController {
             } else {
               userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
                 {
-                  _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
+                  _id: ctx.request.user._id,
                 },
                 {
                   $set: {
@@ -2336,7 +2345,7 @@ class AuthController extends BaseController {
             ) {
               userTypeScreenUpdate = await UserDraftTable.findByIdAndUpdate(
                 {
-                  _id: decodeJwtToken(ctx.headers["x-access-token"])._id,
+                  _id: ctx.request.user._id,
                 },
                 {
                   $set: {
