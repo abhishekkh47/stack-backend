@@ -24,7 +24,7 @@ export const getLinkToken = async (userData, accessToken) => {
     language: "en",
     country_codes: ["US"],
     redirect_uri:
-      "https://a68c-180-211-108-109.in.ngrok.io/apple-app-site-association/stackapp.plaidoauth",
+      "https://af3b-180-211-108-109.in.ngrok.io/apple-app-site-association/stackapp.plaidoauth",
   };
   if (accessToken) {
     request = {
