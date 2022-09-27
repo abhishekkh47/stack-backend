@@ -95,12 +95,18 @@ class UserController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (!ctx.request.query.deviceType) {
+      return this.BadRequest(ctx, "Please enter device type");
+    }
     let parentExists = await ParentChildTable.findOne({
       userId: userExists._id,
     });
     const linkToken: any = await getLinkToken(
       userExists,
-      parentExists && parentExists.accessToken ? parentExists.accessToken : null
+      parentExists && parentExists.accessToken
+        ? parentExists.accessToken
+        : null,
+      ctx.request.query.deviceType
     );
     if (linkToken.status == 400) {
       return this.BadRequest(ctx, linkToken.message);
