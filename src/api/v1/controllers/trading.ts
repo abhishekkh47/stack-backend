@@ -145,7 +145,6 @@ class TradingController extends BaseController {
           /**
            * if deposit amount is greater than 0
            */
-          console.log(reqParam);
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
             const accountIdDetails =
               userExists.type == EUserType.PARENT
