@@ -85,6 +85,7 @@ export const createAccount = async (token, data) => {
       };
     })
     .catch((error) => {
+      console.log(error.response.data.errors, "error");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
@@ -491,6 +492,8 @@ export const generateQuote = async (token, data) => {
       };
     })
     .catch((error) => {
+      console.log(error.response.data, "GENERATE QUOTE");
+      console.log(data, "GENERATE QUOTE DATA");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
@@ -520,6 +523,8 @@ export const executeQuote = async (token, id, data) => {
       };
     })
     .catch((error) => {
+      console.log(error.response.data, "EXECUTE QUOTE");
+      console.log(data, "EXECUTE QUOTE DATA");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,

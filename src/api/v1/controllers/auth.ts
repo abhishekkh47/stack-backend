@@ -771,7 +771,12 @@ class AuthController extends BaseController {
             Last_Name: user.lastName ? user.lastName : null,
             Email: user.email,
             Mobile: user.mobile,
-            Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
+            Account_Type:
+              user.type == EUserType.PARENT
+                ? "Parent"
+                : user.type == EUserType.SELF
+                ? "Self"
+                : "Teen",
             Birthday: user.dob,
             User_ID: user._id,
           };
@@ -2210,8 +2215,7 @@ class AuthController extends BaseController {
                   First_Name: reqParam.firstName,
                   Last_Name: reqParam.lastName ? reqParam.lastName : null,
                   Email: reqParam.email,
-                }
-             
+                };
 
                 await zohoCrmService.addAccounts(
                   ctx.request.zohoAccessToken,
@@ -2254,7 +2258,12 @@ class AuthController extends BaseController {
               let getProfileInput: any = {
                 request: {
                   query: { token },
-                  params: { id: userExists !== null ? userExists._id : userDraftExists._id},
+                  params: {
+                    id:
+                      userExists !== null
+                        ? userExists._id
+                        : userDraftExists._id,
+                  },
                 },
               };
               await UserController.getProfile(getProfileInput);
@@ -2312,19 +2321,23 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
-/**
-                 * Zoho crm account addition
-                 */
-             let dataSentInCrm: any = {
-              Account_Name: userScreenStatusUpdate.firstName + " " + userScreenStatusUpdate.lastName,
-              Birthday: userScreenStatusUpdate.dob,
-              Account_Type: userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
-             }
+              /**
+               * Zoho crm account addition
+               */
+              let dataSentInCrm: any = {
+                Account_Name:
+                  userScreenStatusUpdate.firstName +
+                  " " +
+                  userScreenStatusUpdate.lastName,
+                Birthday: userScreenStatusUpdate.dob,
+                Account_Type:
+                  userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
+              };
 
-             await zohoCrmService.addAccounts(
-              ctx.request.zohoAccessToken,
-              dataSentInCrm
-            );
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
               return this.Ok(ctx, {
                 message: "Dob saved",
                 userScreenStatusUpdate,

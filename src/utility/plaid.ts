@@ -31,25 +31,25 @@ export const getLinkToken = async (userData, accessToken, deviceType) => {
       access_token: accessToken,
     };
   }
-  if (deviceType == 1) {
-    request = {
-      ...request,
-      android_package_name: config.ANDROID_PACKAGE_NAME,
-    };
-  } else if (deviceType == 2) {
-    request = {
-      ...request,
-      redirect_uri: config.PLAID_IOS_REDIRECT_URI,
-    };
-  }
+  // if (deviceType == 1) {
+  //   request = {
+  //     ...request,
+  //     android_package_name: config.ANDROID_PACKAGE_NAME,
+  //   };
+  // } else if (deviceType == 2) {
+  //   request = {
+  //     ...request,
+  //     redirect_uri: config.PLAID_IOS_REDIRECT_URI,
+  //   };
+  // }
   const response = await axios
-  .post(config.PLAID_ENV + PLAIDAPIS.getLinkToken, request)
-  .then((res) => {
-    return {
-      status: 200,
-      data: res.data,
-    };
-  })
+    .post(config.PLAID_ENV + PLAIDAPIS.getLinkToken, request)
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
     .catch((error) => {
       if (error) {
         return {
