@@ -23,6 +23,8 @@ export const getLinkToken = async (userData, accessToken) => {
     products: accessToken ? [] : ["auth"],
     language: "en",
     country_codes: ["US"],
+    redirect_uri: config.PLAID_REDIRECT_URI,
+    android_package_name : "io.trystack.Stack.android"
   };
   if (accessToken) {
     request = {
@@ -32,13 +34,13 @@ export const getLinkToken = async (userData, accessToken) => {
     };
   }
   const response = await axios
-    .post(config.PLAID_ENV + PLAIDAPIS.getLinkToken, request)
-    .then((res) => {
-      return {
-        status: 200,
-        data: res.data,
-      };
-    })
+  .post(config.PLAID_ENV + PLAIDAPIS.getLinkToken, request)
+  .then((res) => {
+    return {
+      status: 200,
+      data: res.data,
+    };
+  })
     .catch((error) => {
       if (error) {
         return {
@@ -47,6 +49,7 @@ export const getLinkToken = async (userData, accessToken) => {
         };
       }
     });
+    console.log('response: ', response);
   return response;
 };
 

@@ -101,7 +101,7 @@ class UserController extends BaseController {
     const linkToken: any = await getLinkToken(
       userExists,
       parentExists && parentExists.accessToken ? parentExists.accessToken : null
-    );
+      );
     if (linkToken.status == 400) {
       return this.BadRequest(ctx, linkToken.message);
     }
@@ -577,7 +577,7 @@ class UserController extends BaseController {
       ]).exec()
     )[0];
 
-    let userDraft = await UserDraftTable.findOne({ _id: new ObjectId(id) });
+    let userDraft: any = await UserDraftTable.findOne({ _id: new ObjectId(id) });
 
     if (!data && !userDraft)
       return this.BadRequest(ctx, "Invalid user ID entered.");
@@ -606,18 +606,16 @@ class UserController extends BaseController {
       }
     }
 
-    data = data
-      ? {
-          ...data,
-          terms: CMS_LINKS.TERMS,
-          amcPolicy: CMS_LINKS.AMC_POLICY,
-          privacy: CMS_LINKS.PRIVACY_POLICY,
-          ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
-        }
-      : {
-          ...userDraft,
-        };
-    return this.Ok(ctx, userDraft ? data._doc : data, true);
+    data = {
+      ...data,
+      terms: CMS_LINKS.TERMS,
+      amcPolicy: CMS_LINKS.AMC_POLICY,
+      privacy: CMS_LINKS.PRIVACY_POLICY,
+      ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+    };
+      
+    console.log('userDraft._doc: ', userDraft?._doc);
+    return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
   }
 
   /**

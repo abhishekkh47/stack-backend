@@ -2179,6 +2179,7 @@ class AuthController extends BaseController {
    * @description This method will be used to verify social id token and email in case of user registration and if email not verified create a user
    */
   @Route({ path: "/check-signup", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public async checkSignUp(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.checkUserSignupValidation(
@@ -2201,6 +2202,23 @@ class AuthController extends BaseController {
               };
               const user = await UserDraftTable.create(createQuery);
               if (user) {
+                /**
+                 * Zoho crm account addition
+                 */
+                let dataSentInCrm: any = {
+                  Account_Name: reqParam.firstName + " " + reqParam.firstName,
+                  First_Name: reqParam.firstName,
+                  Last_Name: reqParam.firstName ? reqParam.firstName : null,
+                  Email: reqParam.email,
+                  User_ID: user._id,
+                }
+                console.log('dataSentInCrm: ', dataSentInCrm);
+
+                await zohoCrmService.addAccounts(
+                  ctx.request.zohoAccessToken,
+                  dataSentInCrm
+                );
+
                 let checkUserDraftExists: any = await UserDraftTable.findOne({
                   email,
                 });
@@ -2267,6 +2285,7 @@ class AuthController extends BaseController {
    */
   @Route({ path: "/check-dob", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async checkDob(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.dobValidation(
@@ -2294,6 +2313,20 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
+/**
+                 * Zoho crm account addition
+                 */
+             let dataSentInCrm: any = {
+              Account_Name: userScreenStatusUpdate.firstName + " " + userScreenStatusUpdate.firstName,
+              Birthday: userScreenStatusUpdate.dob,
+              Account_Type: userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
+             }
+
+             await zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataSentInCrm
+            );
+            console.log('dataSentInCrm: ', dataSentInCrm);
               return this.Ok(ctx, {
                 message: "Dob saved",
                 userScreenStatusUpdate,
@@ -2310,6 +2343,21 @@ class AuthController extends BaseController {
                   },
                 },
                 { new: true }
+              );
+              /**
+               * Zoho crm account addition
+               */
+              let dataSentInCrm: any = {
+                Account_Name:
+                  userScreenStatusUpdate.firstName +
+                  " " +
+                  userScreenStatusUpdate.firstName,
+                Birthday: userScreenStatusUpdate.dob,
+              };
+              console.log("dataSentInCrm: ", dataSentInCrm);
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
               );
               return this.Ok(ctx, {
                 message: "Dob saved",
@@ -2354,6 +2402,22 @@ class AuthController extends BaseController {
                   },
                 },
                 { new: true }
+              );
+              /**
+               * Zoho crm account addition
+               */
+              let dataSentInCrm: any = {
+                Account_Name:
+                  userTypeScreenUpdate.firstName +
+                  " " +
+                  userTypeScreenUpdate.firstName,
+                Account_Type:
+                  reqParam.type == EUserType.PARENT ? "Parent" : "Self",
+              };
+              console.log("dataSentInCrm: ", dataSentInCrm);
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
               );
               return this.Ok(ctx, {
                 message: "Dob saved",

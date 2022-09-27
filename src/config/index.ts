@@ -116,4 +116,7 @@ export default {
   get INVITE_LINK() {
     return "https://stackapp.onelink.me/rBVF/grd8dnxd";
   },
+  get PLAID_REDIRECT_URI() {
+    return process.env.PLAID_REDIRECT_URI;
+  }
 };
