@@ -2210,7 +2210,6 @@ class AuthController extends BaseController {
                   First_Name: reqParam.firstName,
                   Last_Name: reqParam.lastName ? reqParam.lastName : null,
                   Email: reqParam.email,
-                  User_ID: user?._id,
                 }
              
 
