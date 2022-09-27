@@ -2206,13 +2206,13 @@ class AuthController extends BaseController {
                  * Zoho crm account addition
                  */
                 let dataSentInCrm: any = {
-                  Account_Name: reqParam.firstName + " " + reqParam.firstName,
+                  Account_Name: reqParam.firstName + " " + reqParam.lastName,
                   First_Name: reqParam.firstName,
-                  Last_Name: reqParam.firstName ? reqParam.firstName : null,
+                  Last_Name: reqParam.lastName ? reqParam.lastName : null,
                   Email: reqParam.email,
-                  User_ID: user._id,
+                  User_ID: user?._id,
                 }
-                console.log('dataSentInCrm: ', dataSentInCrm);
+             
 
                 await zohoCrmService.addAccounts(
                   ctx.request.zohoAccessToken,
@@ -2249,19 +2249,19 @@ class AuthController extends BaseController {
               await SocialService.verifySocial(reqParam);
 
               const { token, refreshToken } = await TokenService.generateToken(
-                userExists
+                userExists !== null ? userExists : userDraftExists
               );
 
               let getProfileInput: any = {
                 request: {
                   query: { token },
-                  params: { id: userExists._id },
+                  params: { id: userExists !== null ? userExists._id : userDraftExists._id},
                 },
               };
               await UserController.getProfile(getProfileInput);
 
               await DeviceTokenService.addDeviceTokenIfNeeded(
-                userExists._id,
+                userExists !== null ? userExists._id : userDraftExists._id,
                 deviceToken
               );
 
@@ -2317,7 +2317,7 @@ class AuthController extends BaseController {
                  * Zoho crm account addition
                  */
              let dataSentInCrm: any = {
-              Account_Name: userScreenStatusUpdate.firstName + " " + userScreenStatusUpdate.firstName,
+              Account_Name: userScreenStatusUpdate.firstName + " " + userScreenStatusUpdate.lastName,
               Birthday: userScreenStatusUpdate.dob,
               Account_Type: userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
              }
@@ -2326,7 +2326,6 @@ class AuthController extends BaseController {
               ctx.request.zohoAccessToken,
               dataSentInCrm
             );
-            console.log('dataSentInCrm: ', dataSentInCrm);
               return this.Ok(ctx, {
                 message: "Dob saved",
                 userScreenStatusUpdate,
@@ -2351,10 +2350,9 @@ class AuthController extends BaseController {
                 Account_Name:
                   userScreenStatusUpdate.firstName +
                   " " +
-                  userScreenStatusUpdate.firstName,
+                  userScreenStatusUpdate.lastName,
                 Birthday: userScreenStatusUpdate.dob,
               };
-              console.log("dataSentInCrm: ", dataSentInCrm);
               await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
                 dataSentInCrm
@@ -2377,6 +2375,7 @@ class AuthController extends BaseController {
    */
   @Route({ path: "/check-type", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async checkType(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.typeValidation(
@@ -2410,11 +2409,10 @@ class AuthController extends BaseController {
                 Account_Name:
                   userTypeScreenUpdate.firstName +
                   " " +
-                  userTypeScreenUpdate.firstName,
+                  userTypeScreenUpdate.lastName,
                 Account_Type:
                   reqParam.type == EUserType.PARENT ? "Parent" : "Self",
               };
-              console.log("dataSentInCrm: ", dataSentInCrm);
               await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
                 dataSentInCrm

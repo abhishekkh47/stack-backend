@@ -23,8 +23,6 @@ export const getLinkToken = async (userData, accessToken, deviceType) => {
     products: accessToken ? [] : ["auth"],
     language: "en",
     country_codes: ["US"],
-    redirect_uri: config.PLAID_REDIRECT_URI,
-    android_package_name : "io.trystack.Stack.android"
   };
   if (accessToken) {
     request = {
@@ -60,7 +58,6 @@ export const getLinkToken = async (userData, accessToken, deviceType) => {
         };
       }
     });
-    console.log('response: ', response);
   return response;
 };
 

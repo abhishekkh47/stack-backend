@@ -620,7 +620,6 @@ class UserController extends BaseController {
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
     };
       
-    console.log('userDraft._doc: ', userDraft?._doc);
     return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
   }
 
