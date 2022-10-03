@@ -1,3 +1,4 @@
+
 export default {
   get PORT() {
     return process.env.PORT;
@@ -113,7 +114,13 @@ export default {
   get CONSTANT_BTC_COUNT() {
     return 0.00023427;
   },
-  get INVITE_LINK() {
-    return "https://stackapp.onelink.me/rBVF/grd8dnxd";
+  get ALPACA_API_KEY() {
+    return process.env.ALPACA_API_KEY;
   },
+  get ALPACA_API_SECRET() {
+    return process.env.ALPACA_API_SECRET;
+  },
+  get ALPACA_HOST() {
+    return process.env.ALPACA_HOST;
+  }
 };

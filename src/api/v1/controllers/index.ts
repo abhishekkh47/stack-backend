@@ -7,3 +7,4 @@ export { default as CryptoController } from "./crypto";
 export { default as UserController } from "./user";
 export { default as CMSController } from "./cms";
 export { default as WebHookController } from "./webhook";
+export { default as AssetController } from "./asset";

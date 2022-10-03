@@ -12,3 +12,4 @@ export * from "./coin-market-cap";
 export * from "./uploadImage";
 export * from "./notificationSend";
 export * from "./zoho-crm";
+export * from "./alpaca"
