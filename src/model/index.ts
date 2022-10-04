@@ -20,3 +20,4 @@ export * from "./cryptoPrice";
 export * from "./deviceToken";
 export * from "./notification";
 export * from "./user-referral";
+export * from './user-banks'

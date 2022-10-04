@@ -1,3 +1,4 @@
+import { addBankAccount, createBank, depositAmount, journalAmount } from './../../../utility/alpaca';
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import mongoose from "mongoose";
@@ -68,10 +69,10 @@ class TradingController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/add-bank", method: HttpMethod.POST })
+  @Route({ path: "/add-bank-account", method: HttpMethod.POST })
   @Auth()
   @PrimeTrustJWT(true)
-  public async addBankDetails(ctx: any) {
+  public async addBankDetail(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
@@ -131,7 +132,7 @@ class TradingController extends BaseController {
               },
             },
             { new: true }
-          );
+            );
           await UserTable.updateOne(
             {
               _id: userExists._id,
@@ -141,7 +142,7 @@ class TradingController extends BaseController {
                 screenStatus: ESCREENSTATUS.SUCCESS,
               },
             }
-          );
+            );
           /**
            * if deposit amount is greater than 0
            */
@@ -154,13 +155,14 @@ class TradingController extends BaseController {
                       parentDetails.firstChildId.toString()
                   )
                 : parent.accountId;
-            await getPortFolioService.addIntialDeposit(
-              reqParam,
-              parentDetails,
-              jwtToken,
-              userExists,
-              accountIdDetails
-            );
+            // await getPortFolioService.addIntialDeposit(
+            //   reqParam,
+            //   parentDetails,
+            //   processToken.data.processor_token,
+            //   jwtToken,
+            //   userExists,
+            //   accountIdDetails
+            // );
             /**
              * Gift Crypto to to teen who had pending 5btc
              */
@@ -187,7 +189,7 @@ class TradingController extends BaseController {
               );
               if (generateQuoteResponse.status == 400) {
                 return this.BadRequest(ctx, generateQuoteResponse.message);
-              }
+            }
               /**
                * Execute a quote
                */
@@ -207,7 +209,7 @@ class TradingController extends BaseController {
               );
               if (executeQuoteResponse.status == 400) {
                 return this.BadRequest(ctx, executeQuoteResponse.message);
-              }
+          }
               let internalTransferRequest = {
                 data: {
                   type: "internal-asset-transfers",
@@ -257,9 +259,9 @@ class TradingController extends BaseController {
                 }
               );
             }
-            /**
+          /**
              * added bank successfully
-             */
+           */
             let ParentArray = [
               ...PARENT_SIGNUP_FUNNEL.SIGNUP,
               PARENT_SIGNUP_FUNNEL.DOB,
@@ -312,6 +314,173 @@ class TradingController extends BaseController {
       }
     );
   }
+
+
+    /**
+   * @description This method is used to add bank account in plaid(Link it)
+   * @param ctx
+   * @returns {*}
+   */
+     @Route({ path: "/add-bank", method: HttpMethod.POST })
+     // @Auth()
+     @PrimeTrustJWT(true)
+     public async addBankDetails(ctx: any) {
+       const user = ctx.request.user;
+       const id = '6332dff39f46cb73d65beb0f'
+       const reqParam = ctx.request.body;
+       const jwtToken = ctx.request.primeTrustToken;
+       const userExists = await UserTable.findOne({ _id:id });
+       let admin = await AdminTable.findOne({});
+       if (!userExists) {
+         return this.BadRequest(ctx, "User Not Found");
+       }
+       if (userExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
+         return this.BadRequest(ctx, "User Kyc Information not verified");
+       }
+       const query =
+         userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
+           ? { userId: id }
+           : { "teens.childId": id };
+       let parent: any = await ParentChildTable.findOne(query).populate(
+         "firstChildId",
+         ["email", "isGifted", "isGiftedCrypto", "firstName", "lastName"]
+       );
+       if (!parent) return this.BadRequest(ctx, "Invalid User");
+       if (parent.accessToken || parent.processorToken) {
+         return this.BadRequest(ctx, "Bank Details Already Updated");
+       }
+       return validation.addBankDetailsValidation(
+         reqParam,
+         ctx,
+         async (validate) => {
+           if (validate) {
+             /**
+              * Get public token exchange
+              */
+             const publicTokenExchange: any = await getPublicTokenExchange(
+               reqParam.publicToken
+             );
+             if (publicTokenExchange.status == 400) {
+               return this.BadRequest(ctx, publicTokenExchange.message);
+             }
+             /**
+              * create processor token
+              */
+             const processToken: any = await createProcessorToken(
+               publicTokenExchange.data.access_token,
+               reqParam.accountId
+             );
+             if (processToken.status == 400) {
+               return this.BadRequest(ctx, processToken.message);
+             } else {
+               const bankDetails = await addBankAccount(
+                 processToken.data.processor_token,
+                 parent.accountId
+               );
+               const created = await createBank(
+                 bankDetails,
+                 processToken.data.processor_token,
+                 publicTokenExchange.data.access_token,
+                 reqParam.institutionId,
+                 userExists
+               );
+            
+               const transfer = await journalAmount(parent.accountId);
+
+               if (bankDetails && created  && transfer) {
+                 await UserTable.updateOne(
+                   {
+                     _id: userExists._id,
+                   },
+                   {
+                     $set: {
+                       screenStatus: ESCREENSTATUS.SUCCESS,
+                     },
+                   }
+                 );
+                 /**
+                  * if deposit amount is greater than 0
+                  */
+                 if (reqParam.depositAmount && reqParam.depositAmount > 0) {
+                   await getPortFolioService.addIntialDepositAlpaca(
+                     reqParam,
+                     parent,
+                     bankDetails,
+                     userExists,
+                     parent.accountId
+                   );
+
+                   await UserTable.updateOne(
+                     {
+                       _id: parent.firstChildId,
+                     },
+                     {
+                       $set: {
+                         isGiftedCrypto: 2,
+                         screenStatus: ESCREENSTATUS.SUCCESS,
+                       },
+                     }
+                   );
+                 }
+                 /**
+                  * added bank successfully
+                  */
+                 let ParentArray = [
+                   ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                   PARENT_SIGNUP_FUNNEL.DOB,
+                   PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+                   PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+                   // PARENT_SIGNUP_FUNNEL.ADDRESS,
+                   PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+                   PARENT_SIGNUP_FUNNEL.ADD_BANK,
+                   PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
+                   PARENT_SIGNUP_FUNNEL.SUCCESS,
+                 ];
+                 let dataSentInCrm: any = {
+                   Account_Name:
+                     userExists.firstName + " " + userExists.lastName,
+                   Parent_Signup_Funnel: ParentArray,
+                   Stack_Coins: admin.stackCoins,
+                 };
+                 await zohoCrmService.addAccounts(
+                   ctx.request.zohoAccessToken,
+                   dataSentInCrm
+                 );
+                 return this.Ok(ctx, {
+                   message:
+                     "We will proceed your request surely in some amount of time.",
+                 });
+               }
+               /**
+                * added bank successfully
+                */
+               let ParentArray = [
+                 ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                 PARENT_SIGNUP_FUNNEL.DOB,
+                 PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+                 PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+                 // PARENT_SIGNUP_FUNNEL.ADDRESS,
+                 PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+                 PARENT_SIGNUP_FUNNEL.ADD_BANK,
+                 PARENT_SIGNUP_FUNNEL.SUCCESS,
+               ];
+               let dataSentInCrm: any = {
+                 Account_Name: userExists.firstName + " " + userExists.lastName,
+                 Parent_Signup_Funnel: ParentArray,
+                 Stack_Coins: admin.stackCoins,
+               };
+               await zohoCrmService.addAccounts(
+                 ctx.request.zohoAccessToken,
+                 dataSentInCrm
+               );
+               return this.Ok(ctx, {
+                 message: "Bank account linked successfully",
+               });
+             }
+           }
+         }
+       );
+     }
 
   /**
    * @description This method is used to add deposit for parent as well as teen
