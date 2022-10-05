@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import {EAccountStatus, IBankAccount, MongooseModel } from "../types";
+import {EBankStatus, IBankAccount, MongooseModel } from "../types";
 
 export type IUserBanksSchema = MongooseModel<IBankAccount> &
   mongoose.Document;
@@ -23,9 +23,9 @@ const schema = new mongoose.Schema<IUserBanksSchema>(
     status: {
       type: mongoose.Schema.Types.Number,
       isIn: [
-        EAccountStatus.PENDING,
-        EAccountStatus.QUEUED,
-        EAccountStatus.APPROVED,
+        EBankStatus.PENDING,
+        EBankStatus.QUEUED,
+        EBankStatus.APPROVED,
       ],
       default: 0,
     },

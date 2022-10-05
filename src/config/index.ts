@@ -122,5 +122,8 @@ export default {
   },
   get ALPACA_HOST() {
     return process.env.ALPACA_HOST;
+  },
+  get CLIENT_ALPACA_ACC_ID() {
+return process.env.CLIENT_ALPACA_ACC_ID;
   }
 };

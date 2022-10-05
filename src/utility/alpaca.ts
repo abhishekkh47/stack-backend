@@ -3,7 +3,7 @@ import { UserBanksTable } from './../model/user-banks';
 import axios from "axios";
 import config from "../config";
 import { ALPACAAPI } from "../utility/constants";
-import { EAccountStatus } from '@app/types';
+import { EBankStatus } from '@app/types';
 
 /**
  * @description This api is used to get all the asset crypto
@@ -30,8 +30,7 @@ import { EAccountStatus } from '@app/types';
       if (error) {
         return {
           status: error.response.status,
-          message: error.response.data.error_message,
-          error_code: error.response.data.error_code,
+          message: error.response.data.message,
         };
       }
     });
@@ -40,7 +39,7 @@ import { EAccountStatus } from '@app/types';
 
 
 /**
- * @description This api is used to add bank
+ * @description This api is used to add bank to alpaca
  * @param processorToken
  * @param accountId
  * @returns {*}
@@ -67,7 +66,7 @@ import { EAccountStatus } from '@app/types';
       if (error) {
         return {
           status: error.response.status,
-          message: error.response.data.error_message,
+          message: error.response.data.message,
         };
       }
     });
@@ -97,7 +96,7 @@ import { EAccountStatus } from '@app/types';
       parentId: userExists._id,
       processorToken: processToken,
       accessToken: accessToken,
-      status: bankDetails?.data?.status === 'QUEUED' ? EAccountStatus.QUEUED : 0,
+      status: bankDetails?.data?.status === 'QUEUED' ? EBankStatus.QUEUED : 0,
       isDefault: 1,
       insId: institutionId,
     })
@@ -106,7 +105,7 @@ import { EAccountStatus } from '@app/types';
  };
 
 /**
- * @description This api is used to add bank data to userbank table
+ * @description THis api is used to deposit amount to user
  * @param bankDetails
  * @param amount
  * @returns {*}
@@ -126,7 +125,7 @@ import { EAccountStatus } from '@app/types';
 
     const body = {
       "transfer_type": "ach",
-      "relationship_id": bankDetails.data.id,
+      "relationship_id": bankDetails?.data?.id,
       "amount": amount,
       "direction": "INCOMING"
     }
@@ -140,11 +139,10 @@ import { EAccountStatus } from '@app/types';
       };
     })
     .catch((error) => {
-    
       if (error) {
         return {
           status: error.response.status,
-          message: error.response.data.error_message,
+          message: error.response.data.message,
         };
       }
     });
@@ -155,7 +153,7 @@ import { EAccountStatus } from '@app/types';
 
 
  /**
- * @description This api is used to add bank data to userbank table
+ * @description This api is used to transfer 5 USD from admin to user
  * @param bankDetails
  * @param amount
  * @returns {*}
@@ -171,7 +169,7 @@ import { EAccountStatus } from '@app/types';
       };
   
       const body = {
-        "from_account": "59ca4c25-6c77-4d4a-b432-f9cf5dda960a", //ADMIN ACCOUNT ID
+        "from_account": config.CLIENT_ALPACA_ACC_ID, //ADMIN ACCOUNT ID
         "amount": 5,
         "to_account": accountId,
         "entry_type": "JNLC",
@@ -189,7 +187,7 @@ import { EAccountStatus } from '@app/types';
         if (error) {
           return {
             status: error.response.status,
-            message: error.response.data.error_message,
+            message: error.response.data.message,
           };
         }
       });

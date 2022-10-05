@@ -7,7 +7,7 @@ export interface IBankAccount {
  status: number;
  insId: string,
 }
-export enum EAccountStatus {
+export enum EBankStatus {
  QUEUED = 0,
  APPROVED = 2,
  PENDING = 1

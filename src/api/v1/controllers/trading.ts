@@ -155,14 +155,13 @@ class TradingController extends BaseController {
                       parentDetails.firstChildId.toString()
                   )
                 : parent.accountId;
-            // await getPortFolioService.addIntialDeposit(
-            //   reqParam,
-            //   parentDetails,
-            //   processToken.data.processor_token,
-            //   jwtToken,
-            //   userExists,
-            //   accountIdDetails
-            // );
+            await getPortFolioService.addIntialDeposit(
+              reqParam,
+              parentDetails,
+              jwtToken,
+              userExists,
+              accountIdDetails
+            );
             /**
              * Gift Crypto to to teen who had pending 5btc
              */
@@ -322,33 +321,32 @@ class TradingController extends BaseController {
    * @returns {*}
    */
      @Route({ path: "/add-bank", method: HttpMethod.POST })
-     // @Auth()
+     @Auth()
      @PrimeTrustJWT(true)
      public async addBankDetails(ctx: any) {
-       const user = ctx.request.user;
-       const id = '6332dff39f46cb73d65beb0f'
-       const reqParam = ctx.request.body;
-       const jwtToken = ctx.request.primeTrustToken;
-       const userExists = await UserTable.findOne({ _id:id });
-       let admin = await AdminTable.findOne({});
-       if (!userExists) {
-         return this.BadRequest(ctx, "User Not Found");
-       }
-       if (userExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
-         return this.BadRequest(ctx, "User Kyc Information not verified");
-       }
-       const query =
-         userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
-           ? { userId: id }
-           : { "teens.childId": id };
-       let parent: any = await ParentChildTable.findOne(query).populate(
-         "firstChildId",
-         ["email", "isGifted", "isGiftedCrypto", "firstName", "lastName"]
-       );
-       if (!parent) return this.BadRequest(ctx, "Invalid User");
-       if (parent.accessToken || parent.processorToken) {
-         return this.BadRequest(ctx, "Bank Details Already Updated");
-       }
+      const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    let admin = await AdminTable.findOne({});
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (userExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
+      return this.BadRequest(ctx, "User Kyc Information not verified");
+    }
+    const query =
+      userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
+        ? { userId: ctx.request.user._id }
+        : { "teens.childId": ctx.request.user._id };
+    let parent: any = await ParentChildTable.findOne(query).populate(
+      "firstChildId",
+      ["email", "isGifted", "isGiftedCrypto", "firstName", "lastName"]
+    );
+    if (!parent) return this.BadRequest(ctx, "Invalid User");
+    if (parent.accessToken || parent.processorToken) {
+      return this.BadRequest(ctx, "Bank Details Already Updated");
+    }
        return validation.addBankDetailsValidation(
          reqParam,
          ctx,
@@ -372,22 +370,30 @@ class TradingController extends BaseController {
              );
              if (processToken.status == 400) {
                return this.BadRequest(ctx, processToken.message);
-             } else {
+             } 
+              /**
+               * adding a bank in alpaca
+               */
                const bankDetails = await addBankAccount(
                  processToken.data.processor_token,
                  parent.accountId
                );
-               const created = await createBank(
-                 bankDetails,
-                 processToken.data.processor_token,
-                 publicTokenExchange.data.access_token,
-                 reqParam.institutionId,
-                 userExists
-               );
             
-               const transfer = await journalAmount(parent.accountId);
+               if (bankDetails.status === 200) {
 
-               if (bankDetails && created  && transfer) {
+                  /**
+                * creating an entry in db for the new created bank
+                */
+               const created = await createBank(
+                bankDetails,
+                processToken.data.processor_token,
+                publicTokenExchange.data.access_token,
+                reqParam.institutionId,
+                userExists
+              );
+                /**
+                 * no deposit amount but bank added succefully update screen status
+                 */
                  await UserTable.updateOne(
                    {
                      _id: userExists._id,
@@ -410,18 +416,58 @@ class TradingController extends BaseController {
                      parent.accountId
                    );
 
-                   await UserTable.updateOne(
-                     {
-                       _id: parent.firstChildId,
-                     },
-                     {
-                       $set: {
-                         isGiftedCrypto: 2,
-                         screenStatus: ESCREENSTATUS.SUCCESS,
+                   /**
+                    * Gift 5 USD to to teen who had pending 5btc
+                    */
+                   if (
+                     admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+                     parent.firstChildId.isGiftedCrypto ==
+                       EGIFTSTACKCOINSSETTING.ON
+                   ) {
+
+                    /**
+                     * transfer 5 usd in alpaca
+                     */
+                     const transfer: any = await journalAmount(
+                       parent.accountId
+                     );
+
+                     /**
+                      * create new transaction for internal transfer of 5 USD from admin to user
+                      */
+                     await TransactionTable.create({
+                       assetId: null,
+                       cryptoId: null,
+                       intialDeposit: true,
+                       accountId: parent.accountId,
+                       type: ETransactionType.DEPOSIT,
+                       settledTime: moment().unix(),
+                       amount: transfer?.data?.net_amount,
+                       amountMod: -admin.giftCryptoAmount,
+                       userId: parent.firstChildId,
+                       parentId: userExists._id,
+                       status: ETransactionStatus.PENDING,
+                       executedQuoteId: transfer?.data?.id,
+                       unitCount: null,
+                     });
+
+                     /**
+                      * updating the crypto status and screen status
+                      */
+                     await UserTable.updateOne(
+                       {
+                         _id: parent.firstChildId,
                        },
-                     }
-                   );
+                       {
+                         $set: {
+                           isGiftedCrypto: 2,
+                           screenStatus: ESCREENSTATUS.SUCCESS,
+                         },
+                       }
+                     );
+                   }
                  }
+                   
                  /**
                   * added bank successfully
                   */
@@ -476,7 +522,7 @@ class TradingController extends BaseController {
                return this.Ok(ctx, {
                  message: "Bank account linked successfully",
                });
-             }
+             
            }
          }
        );
