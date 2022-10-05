@@ -51,6 +51,9 @@ export const PLAIDAPIS = {
   institutionsGetById: "institutions/get_by_id",
 };
 
+export const ALPACAAPI = {
+  getAssetCrypto: "/assets"
+}
 export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",
   accountUpsert: "crm/v2/Accounts/upsert",

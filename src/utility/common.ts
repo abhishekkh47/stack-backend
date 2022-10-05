@@ -39,7 +39,7 @@ export const getMinutesBetweenDates = (startDate, endDate) => {
  * @returns {*}
  */
 export const validationMessageKey = (apiTag: string, error: any) => {
-  let key = toUpperCase(error.details[0].context.key);
+  let key = toUpperCase(error?.details[0]?.context?.key);
   let type = error.details[0].type.split(".");
   type = toUpperCase(type[1]);
   key = apiTag + key + type;
@@ -47,12 +47,12 @@ export const validationMessageKey = (apiTag: string, error: any) => {
 };
 
 export const toUpperCase = (str) => {
-  if (str.length > 0) {
+  if (str?.length > 0) {
     const newStr = str
       .toLowerCase()
       .replace(/_([a-z])/, (m) => m.toUpperCase())
       .replace(/_/, "");
-    return str.charAt(0).toUpperCase() + newStr.slice(1);
+    return str?.charAt(0)?.toUpperCase() + newStr?.slice(1);
   }
   return "";
 };
