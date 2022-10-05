@@ -234,7 +234,7 @@
 	"checkAccountReadyToLinkChildlastnameMin": "Last name must be at least 2 characters long and only contain alphabets.",
 	"checkAccountReadyToLinkChildlastnamePattern": "Please enter valid last Name.",
 	"loginEmailUnknown": "loginEmailUnknown",
-	"addBankDetailsInstitutionidRequired": "addBankDetailsInstitutionidRequired",
+	"addBankDetailsInstitutionidRequired": "Please enter institution id",
 	"loginEmailRequired": "loginEmailRequired",
 	"loginLogintypeRequired": "loginLogintypeRequired",
 	"loginSociallogintokenRequired": "loginSociallogintokenRequired",
@@ -255,7 +255,6 @@
 	"signupValidationPostalcodeEmpty": "Please enter postal code",
 	"checkAccountReadyToLinkMobilePattern": "Please enter mobile with country code as well",
 	"sellCryptoAmountMin": "Please enter value greater than $1",
-	"getPortFolioChildidPattern": "getPortFolioChildidPattern",
 	"checkValidMobileValidationTypeOnly": "Please enter user type",
 	"checkValidMobileValidationMobileEmpty": "Please enter mobile with country code as well",
 	"checkValidMobileValidationMobileRequired": "Please enter mobile with country code as well",
@@ -265,6 +264,5 @@
 	"recurringDepositValidationSelecteddepositBase": "Please select valid deposit amount",
 	"recurringDepositValidationChildidRequired": "Please enter child details",
 	"recurringDepositValidationChildidEmpty": "Please enter child details",
-	"recurringDepositValidationChildidPattern": "Please enter child details",
-	"addCryptoBase": "addCryptoBase"
+	"recurringDepositValidationChildidPattern": "Please enter child details"
 }

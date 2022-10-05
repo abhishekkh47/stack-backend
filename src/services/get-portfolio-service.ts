@@ -1,4 +1,4 @@
-import { getBalance, createContributions } from "../utility";
+import { getBalance, createContributions, depositAmount } from "../utility";
 import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
 import {
   ETransactionType,
@@ -215,10 +215,10 @@ class getPortfolioService {
     jwtToken,
     userExists,
     accountIdDetails
-  ) {
-    /**
-     * create fund transfer with fund transfer id in response
-     */
+    ) {
+      /**
+       * create fund transfer with fund transfer id in response
+       */
     let contributionRequest = {
       type: "contributions",
       attributes: {
@@ -239,7 +239,7 @@ class getPortfolioService {
     const contributions: any = await createContributions(
       jwtToken,
       contributionRequest
-    );
+      );
     if (contributions.status == 400) {
       throw new Error(contributions.message);
     }
@@ -269,6 +269,48 @@ class getPortfolioService {
       parentId: userExists._id,
       status: ETransactionStatus.PENDING,
       executedQuoteId: contributions.data.included[0].id,
+      unitCount: null,
+    });
+  }
+
+  public async addIntialDepositAlpaca(
+    reqParam,
+    parentDetails,
+    bankDetails,
+    userExists,
+    accountIdDetails
+    ) {
+      /**
+       * create fund transfer with fund transfer id in response
+       */
+
+    const deposit: any = await depositAmount(
+      bankDetails,
+      reqParam.depositAmount,
+      accountIdDetails
+    );
+
+    await UserActivityTable.create({
+      userId: parentDetails.firstChildId,
+      userType: userExists.type,
+      message: `${messages.APPROVE_DEPOSIT} $${reqParam.depositAmount}`,
+      currencyValue: reqParam.depositAmount,
+      action: EAction.DEPOSIT,
+      status: EStatus.PROCESSED,
+    });
+    await TransactionTable.create({
+      assetId: null,
+      cryptoId: null,
+      intialDeposit: true,
+      accountId:accountIdDetails,
+      type: ETransactionType.DEPOSIT,
+      settledTime: moment().unix(),
+      amount: reqParam.depositAmount,
+      amountMod: null,
+      userId: parentDetails.firstChildId,
+      parentId: userExists._id,
+      status: ETransactionStatus.PENDING,
+      executedQuoteId: deposit?.data?.id,
       unitCount: null,
     });
   }

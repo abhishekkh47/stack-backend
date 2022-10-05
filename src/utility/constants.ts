@@ -1,3 +1,4 @@
+import { journalAmount } from './alpaca';
 "use strict";
 export const CONSTANT = Object.freeze({
   VerifyEmailTemplateId: "d-024fedc867e0407ab4971e642354168f",
@@ -52,7 +53,13 @@ export const PLAIDAPIS = {
 };
 
 export const ALPACAAPI = {
-  getAssetCrypto: "/assets"
+  getAssetCrypto: "/assets",
+  addBank: (accountId) =>
+  `/accounts/${accountId}/ach_relationships`,
+  accountEvents: "/events/accounts/status",
+  depositAmount: (accountId) => 
+  `/accounts/${accountId}/transfers`,
+  journalAmount: '/journals' 
 }
 export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",

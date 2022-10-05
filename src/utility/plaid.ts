@@ -95,7 +95,7 @@ export const createProcessorToken = async (
     secret: config.PLAID_SECRET,
     access_token: accessToken,
     account_id: accountId,
-    processor: "prime_trust",
+    processor: "alpaca",
   };
   const response = await axios
     .post(config.PLAID_ENV + PLAIDAPIS.createProcessorToken, request)

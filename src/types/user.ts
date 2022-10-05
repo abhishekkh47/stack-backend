@@ -123,3 +123,5 @@ export enum ESCREENSTATUS {
   ENTER_PARENT_INFO = 4,
   SUCCESS_TEEN = 5,
 }
+
+
