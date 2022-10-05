@@ -380,10 +380,7 @@ class TradingController extends BaseController {
              );
 
              if (bankDetails.status !== 200) {
-               return this.Ok(ctx, {
-                 code: bankDetails.status,
-                 message: bankDetails.message,
-               });
+               return this.BadRequest(ctx, bankDetails.message);
              }
 
              /**
@@ -451,7 +448,6 @@ class TradingController extends BaseController {
                    executedQuoteId: transfer?.data?.id,
                    unitCount: null,
                  });
-                 console.log("test: ", test);
 
                  /**
                   * updating the crypto status and screen status
