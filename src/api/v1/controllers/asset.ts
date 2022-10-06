@@ -41,9 +41,9 @@ class AssetController extends BaseController {
   @Route({path: "/get-crypto-list", method: HttpMethod.GET})
   @Auth()
   public async getCryptoListAction(ctx: any) {
-    let getCryptoList = await CryptoTable.find();
+    let data = await CryptoTable.find();
     this.Ok(ctx, {
-      getCryptoList,
+      data,
       message: "Found Crypto List Successfully.",
     });
   }

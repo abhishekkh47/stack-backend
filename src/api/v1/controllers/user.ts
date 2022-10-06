@@ -1,3 +1,5 @@
+import { UserBanksTable } from './../../../model/user-banks';
+import { getAchRelationship } from './../../../utility/alpaca';
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -579,6 +581,11 @@ class UserController extends BaseController {
     const checkParentExists = await UserTable.findOne({
       mobile: data.parentMobile ? data.parentMobile : data.mobile,
     });
+
+    const parent: any = await ParentChildTable.findOne({
+      userId: id,
+    });
+    const bankInfo: any = await getAchRelationship(parent.accountId)
     if (
       !checkParentExists ||
       (checkParentExists &&
@@ -595,12 +602,18 @@ class UserController extends BaseController {
         data.isRecurring = 1;
       }
     }
+
     data = {
       ...data,
       terms: CMS_LINKS.TERMS,
       amcPolicy: CMS_LINKS.AMC_POLICY,
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+      bankInfo: [{
+        _id: parent._id,
+        accountNumber: bankInfo.data[0].bank_account_number.substr(bankInfo.data[0].bank_account_number.length - 4),
+        bankName: 'name'
+      }]
     };
     return this.Ok(ctx, data, true);
   }

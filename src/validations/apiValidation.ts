@@ -410,6 +410,7 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+      relationshipId: Joi.string().required()
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -429,6 +430,10 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+        symbol:Joi.string().required(),
+        side: Joi.string().required(),
+        type:Joi.string().required(),
+        time: Joi.string().required()
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {

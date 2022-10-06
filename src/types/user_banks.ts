@@ -5,7 +5,8 @@ export interface IBankAccount {
  processorToken: string;
  accessToken: string;
  status: number;
- insId: string,
+ insId: string;
+ relationshipId: string;
 }
 export enum EBankStatus {
  QUEUED = 0,
