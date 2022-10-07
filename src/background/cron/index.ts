@@ -267,15 +267,15 @@ export const startCron = () => {
                           ? 7
                           : user.isRecurring == ERECURRING.MONTLY
                           ? 1
-                          : user.isRecurring == ERECURRING.QUATERLY
-                          ? 4
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? 24
                           : 0,
                         user.isRecurring == ERECURRING.WEEKLY
                           ? "days"
                           : user.isRecurring == ERECURRING.MONTLY
                           ? "months"
-                          : user.isRecurring == ERECURRING.QUATERLY
-                          ? "months"
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? "hours"
                           : "day"
                       ),
                   },

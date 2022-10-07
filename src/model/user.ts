@@ -119,7 +119,7 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     accountStatus: { type: mongoose.Schema.Types.String, default: "pending" },
     /**
-     * 0 - no bank , 1 - no recurring , 2 - weekly , 3 - monthly and 4 - quaterly
+     * 0 - no bank , 1 - no recurring , 2 - daily , 3 - weekly and 4 - monthly
      */
     isRecurring: {
       type: mongoose.Schema.Types.Number,
@@ -128,7 +128,7 @@ const schema = new mongoose.Schema<IUserSchema>(
         ERECURRING.NO_RECURRING,
         ERECURRING.WEEKLY,
         ERECURRING.MONTLY,
-        ERECURRING.QUATERLY,
+        ERECURRING.DAILY,
       ],
       default: 0,
     },

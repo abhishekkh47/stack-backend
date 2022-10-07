@@ -62,7 +62,7 @@ export const ALPACAAPI = {
   getAchRelationship: (accountId) => `/accounts/${accountId}/ach_relationships`,
   getBalance: (accountId) => `/trading/accounts/${accountId}/account`,
   buySellCrypto: (accountId) =>  `/trading/accounts/${accountId}/orders`,
-  getMarketValue: (accountId, assetId) => `/trading/accounts/${accountId}/positions/${assetId}`
+  getMarketValue: (accountId, symbol) => `/trading/accounts/${accountId}/positions/${symbol}USD`
 }
 export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",

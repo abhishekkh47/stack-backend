@@ -610,9 +610,9 @@ class UserController extends BaseController {
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
       bankInfo: [{
-        _id: parent._id,
-        accountNumber: bankInfo.data[0].bank_account_number.substr(bankInfo.data[0].bank_account_number.length - 4),
-        bankName: 'name'
+        _id: bankInfo?.data[0]?.id,
+        accountNumber: bankInfo?.data[0]?.bank_account_number.substr(bankInfo?.data[0]?.bank_account_number?.length - 4),
+        accountOwnerName:  bankInfo?.data[0]?.account_owner_name
       }]
     };
     return this.Ok(ctx, data, true);
