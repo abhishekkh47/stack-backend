@@ -157,6 +157,7 @@ export const startCron = () => {
           as: "parentChild",
         },
       },
+      { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: "parentchild",
@@ -165,7 +166,7 @@ export const startCron = () => {
           as: "self",
         },
       },
-      { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: "$self", preserveNullAndEmptyArrays: true } },
     ]).exec();
     if (users.length > 0) {
 
