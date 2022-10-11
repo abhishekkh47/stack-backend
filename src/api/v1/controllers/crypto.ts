@@ -98,7 +98,7 @@ class CryptocurrencyController extends BaseController {
     path: "/crypto-info/:childId/:symbol",
     method: HttpMethod.GET,
   })
-  // @Auth()
+  @Auth()
   @PrimeTrustJWT()
   public async getCryptoDataWithCurrentPrice(ctx: any) {
     // const jwtToken = ctx.request.primeTrustToken;
