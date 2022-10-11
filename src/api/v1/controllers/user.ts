@@ -498,6 +498,7 @@ class UserController extends BaseController {
   @Auth()
   public async getProfile(ctx: any) {
     const { id } = ctx.request.params;
+    let bankInfo: any;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     let data = (
@@ -585,7 +586,10 @@ class UserController extends BaseController {
     const parent: any = await ParentChildTable.findOne({
       userId: id,
     });
-    const bankInfo: any = await getAchRelationship(parent.accountId)
+    if(parent) {
+      bankInfo = await getAchRelationship(parent.accountId)
+    }
+
     if (
       !checkParentExists ||
       (checkParentExists &&
@@ -609,11 +613,17 @@ class UserController extends BaseController {
       amcPolicy: CMS_LINKS.AMC_POLICY,
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
-      bankInfo: [{
-        _id: bankInfo?.data[0]?.id,
-        accountNumber: bankInfo?.data[0]?.bank_account_number.substr(bankInfo?.data[0]?.bank_account_number?.length - 4),
-        accountOwnerName:  bankInfo?.data[0]?.account_owner_name
-      }]
+      bankInfo: bankInfo
+        ? [
+            {
+              _id: bankInfo?.data[0]?.id,
+              accountNumber: bankInfo?.data[0]?.bank_account_number.substr(
+                bankInfo?.data[0]?.bank_account_number?.length - 4
+              ),
+              accountOwnerName: bankInfo?.data[0]?.account_owner_name,
+            },
+          ]
+        : "null",
     };
     return this.Ok(ctx, data, true);
   }

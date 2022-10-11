@@ -328,9 +328,9 @@ export const buyCryptoAlpaca = async (accountId: any, reqParam) => {
   const body: any = {
     symbol: `${reqParam.symbol}/USD`,
     notional: reqParam.amount,
-    side: reqParam.side,
-    type: reqParam.type,
-    time_in_force: reqParam.time,
+    side: "buy",
+    type: "market",
+    time_in_force: "gtc",
   };
   const response = await axios
     .post(
@@ -408,9 +408,9 @@ export const sellCryptoAlpaca = async (accountId: any, reqParam, symbol) => {
   const body: any = {
     symbol: `${symbol}/USD`,
     notional: reqParam.amount,
-    side: reqParam.side,
-    type: reqParam.type,
-    time_in_force: reqParam.time,
+    side: "sell",
+    type: "market",
+    time_in_force: "gtc",
   };
   const response = await axios
     .post(

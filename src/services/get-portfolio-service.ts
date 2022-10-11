@@ -1,4 +1,4 @@
-import { getBalance, createContributions, depositAmount } from "../utility";
+import { getBalance, createContributions, depositAmount, getMarketValue, getBalanceAlpaca } from "../utility";
 import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
 import {
   ETransactionType,
@@ -118,6 +118,63 @@ class getPortfolioService {
     return portFolio.length > 0 ? portFolio[0] : [];
   }
 
+  public async getPortfolioBasedOnChildIdWithCurrentMarketPriceAlpaca(
+    childId: string,
+    cryptoId: any,
+    parentChild: any,
+    userExists: any = null
+  ) {
+    if (!childId) {
+      throw Error("Child Id Not Found");
+    }
+    const accountIdDetails: any =
+      userExists && userExists.type == EUserType.SELF
+        ? parentChild
+        : await parentChild.teens.find(
+            (x: any) => x.childId.toString() == childId.toString()
+          );
+    if (!accountIdDetails) {
+      throw Error("Account ID Details Not Found");
+    }
+
+    const cryptoSymbol = await CryptoTable.findById({_id: cryptoId})
+    const fetchBalance: any = await getBalanceAlpaca(
+      accountIdDetails.accountId
+    );
+
+    const marketValue: any = await getMarketValue(
+      accountIdDetails.accountId,
+      cryptoSymbol.symbol
+    );
+
+    if(marketValue.status == 400) {
+      throw Error(marketValue.message);
+    }
+
+    if (fetchBalance.status == 400) {
+      throw Error(fetchBalance.message);
+    }
+    const balance = Number(fetchBalance?.data?.cash);
+    const value = Number(marketValue?.data?.market_value);
+    const portFolio = await CryptoTable.aggregate([
+      {
+        $match: {
+          _id: cryptoId,
+        },
+      },
+      {
+        $addFields: {
+          isSell: marketValue?.data?.market_value > 0.00 ? true : false,
+          balance: Number(balance),
+          currentValue: Number(value),
+        },
+      },
+    ]).exec();
+
+    return portFolio.length > 0 ? portFolio[0] : [];
+  }
+
+  
   public async getCryptoIdInPortfolio(childId: string) {
     const portFolio = await TransactionTable.aggregate([
       {

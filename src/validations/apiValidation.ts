@@ -309,8 +309,6 @@ export const validation = {
   },
   sendIssueInputValidation: (req, res, callback) => {
     const schema = Joi.object({
-      email: Joi.string().email(),
-      mobile: Joi.string().regex(/^\+[1-9]{1}[0-9]{10,14}$/),
       issue: Joi.string().required(),
     });
 
@@ -433,9 +431,6 @@ export const validation = {
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
         symbol:Joi.string().required(),
-        side: Joi.string().required(),
-        type:Joi.string().required(),
-        time: Joi.string().required()
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -453,9 +448,7 @@ export const validation = {
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
       symbol: Joi.string().required(),
-      side: Joi.string().required(),
-      type: Joi.string().required(),
-      time: Joi.string().required(),
+
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
