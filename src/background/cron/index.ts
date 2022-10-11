@@ -54,12 +54,14 @@ export const startCron = () => {
         latestValues = latestValues[0];
         let bulWriteOperation = {
           updateOne: {
-            filter: { symbol: latestValues.symbol },
+            filter: { symbol: latestValues && latestValues.symbol },
             update: {
               $set: {
-                currentPrice: parseFloat(
+                currentPrice: latestValues && parseFloat(
                   parseFloat(latestValues.quote["USD"].price).toFixed(2)
                 ),
+                percent_change_30d:  latestValues && parseFloat(
+                  parseFloat(latestValues.quote["USD"].percent_change_30d).toFixed(2))
               },
             },
           },

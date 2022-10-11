@@ -123,7 +123,7 @@ class getPortfolioService {
     cryptoId: any,
     parentChild: any,
     userExists: any = null
-  ) {
+    ) {
     if (!childId) {
       throw Error("Child Id Not Found");
     }
@@ -154,8 +154,8 @@ class getPortfolioService {
     if (fetchBalance.status == 400) {
       throw Error(fetchBalance.message);
     }
-    const balance = Number(fetchBalance?.data?.cash);
-    const value = Number(marketValue?.data?.market_value);
+    const balance = fetchBalance?.data?.cash;
+    const value = marketValue?.data?.market_value;
     const portFolio = await CryptoTable.aggregate([
       {
         $match: {
@@ -163,10 +163,21 @@ class getPortfolioService {
         },
       },
       {
+        $lookup: {
+          from: "cryptoprices",
+          localField: "_id",
+          foreignField: "cryptoId",
+          as: "cryptoPriceInfo",
+        },
+      },
+      {
         $addFields: {
           isSell: marketValue?.data?.market_value > 0.00 ? true : false,
           balance: Number(balance),
           currentValue: Number(value),
+          currentPrice:  { $arrayElemAt: [`$cryptoPriceInfo.currentPrice`, 0] },
+          percentChange30d:  { $arrayElemAt: ["$cryptoPriceInfo.percent_change_30d", 0] },
+          percentChange365d: null
         },
       },
     ]).exec();

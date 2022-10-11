@@ -147,7 +147,7 @@ class CryptocurrencyController extends BaseController {
       const balanceAlpaca = fetchBalanceAlpaca.data.cash
       return this.Ok(ctx, {
         portFolio: {
-          value: Number(balanceAlpaca),
+          currentValue: Number(balanceAlpaca),
           balance: Number(balanceAlpaca),
           name: "Cash",
           symbol: "USD",

@@ -10,5 +10,6 @@ export interface ICryptoPrice {
   high365D: number;
   low365D: number;
   currentPrice: number;
+  percent_change_30d: number;
   currencyType: string;
 }
