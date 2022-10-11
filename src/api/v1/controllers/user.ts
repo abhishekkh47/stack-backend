@@ -1,3 +1,4 @@
+import { UserDraftTable } from "./../../../model/userDraft";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -94,12 +95,18 @@ class UserController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (!ctx.request.query.deviceType) {
+      return this.BadRequest(ctx, "Please enter device type");
+    }
     let parentExists = await ParentChildTable.findOne({
       userId: userExists._id,
     });
     const linkToken: any = await getLinkToken(
       userExists,
-      parentExists && parentExists.accessToken ? parentExists.accessToken : null
+      parentExists && parentExists.accessToken
+        ? parentExists.accessToken
+        : null,
+      ctx.request.query.deviceType
     );
     if (linkToken.status == 400) {
       return this.BadRequest(ctx, linkToken.message);
@@ -575,26 +582,36 @@ class UserController extends BaseController {
         },
       ]).exec()
     )[0];
-    if (!data) return this.BadRequest(ctx, "Invalid user ID entered.");
-    const checkParentExists = await UserTable.findOne({
-      mobile: data.parentMobile ? data.parentMobile : data.mobile,
-    });
-    if (
-      !checkParentExists ||
-      (checkParentExists &&
-        checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-    ) {
-      data.isParentApproved = 0;
-    } else {
-      data.isParentApproved = 1;
-    }
-    if (!checkParentExists || (checkParentExists && data.accessToken == null)) {
-      data.isRecurring = 0;
-    } else if (data.accessToken) {
-      if (data.isRecurring == 1 || data.isRecurring == 0) {
-        data.isRecurring = 1;
+
+    let userDraft: any = await UserDraftTable.findOne({ _id: new ObjectId(id) });
+
+    if (!data && !userDraft)
+      return this.BadRequest(ctx, "Invalid user ID entered.");
+    if (data) {
+      const checkParentExists = await UserTable.findOne({
+        mobile: data.parentMobile ? data.parentMobile : data.mobile,
+      });
+      if (
+        !checkParentExists ||
+        (checkParentExists &&
+          checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+      ) {
+        data.isParentApproved = 0;
+      } else {
+        data.isParentApproved = 1;
+      }
+      if (
+        !checkParentExists ||
+        (checkParentExists && data.accessToken == null)
+      ) {
+        data.isRecurring = 0;
+      } else if (data.accessToken) {
+        if (data.isRecurring == 1 || data.isRecurring == 0) {
+          data.isRecurring = 1;
+        }
       }
     }
+
     data = {
       ...data,
       terms: CMS_LINKS.TERMS,
@@ -602,7 +619,8 @@ class UserController extends BaseController {
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
     };
-    return this.Ok(ctx, data, true);
+      
+    return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
   }
 
   /**
