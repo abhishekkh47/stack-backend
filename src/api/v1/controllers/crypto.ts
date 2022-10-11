@@ -14,7 +14,7 @@ import {
   EUserType,
   HttpMethod,
 } from "../../../types";
-import { Route, getBalance, getBalanceAlpaca } from "../../../utility";
+import { Route, getBalance, getBalanceAlpaca, getLatestPrice } from "../../../utility";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 import { getPortFolioService } from "../../../services";
@@ -98,7 +98,7 @@ class CryptocurrencyController extends BaseController {
     path: "/crypto-info/:childId/:symbol",
     method: HttpMethod.GET,
   })
-  @Auth()
+  // @Auth()
   @PrimeTrustJWT()
   public async getCryptoDataWithCurrentPrice(ctx: any) {
     // const jwtToken = ctx.request.primeTrustToken;
