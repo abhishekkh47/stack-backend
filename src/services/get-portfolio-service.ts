@@ -180,7 +180,7 @@ class getPortfolioService {
         $addFields: {
           isSell: marketValue?.data?.market_value > 0.0 ? true : false,
           balance: Number(balance),
-          currentValue: Number(value),
+          currencyBalance: Number(value) ? Number(value) : 0.00,
           currentPrice: `$cryptoPriceInfo.currentPrice`,
           percentChange30d: "$cryptoPriceInfo.percent_change_30d",
           percentChange365d: null,
@@ -195,7 +195,7 @@ class getPortfolioService {
           assetId: 1,
           isSell: 1,
           balance: 1,
-          currentValue: 1,
+          currencyBalance: 1,
           currentPrice: 1,
           percentChange30d: 1,
           percentChange365d: 1,
@@ -203,7 +203,7 @@ class getPortfolioService {
       },
     ]).exec();
 
-    return portFolio.length > 0 ? portFolio : [];
+    return portFolio.length > 0 ? portFolio[0] : [];
   }
 
   
