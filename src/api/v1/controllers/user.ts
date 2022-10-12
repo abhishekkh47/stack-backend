@@ -503,7 +503,7 @@ class UserController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/get-profile/:id", method: HttpMethod.GET })
-  @Auth()
+  // @Auth()
   public async getProfile(ctx: any) {
     const { id } = ctx.request.params;
     let bankInfo: any;
@@ -647,18 +647,18 @@ class UserController extends BaseController {
       amcPolicy: CMS_LINKS.AMC_POLICY,
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
-      bankInfo: bankInfo
+      bankInfo: bankInfo && bankInfo?.data
         ? [
             {
               _id: bankInfo?.data[0]?.id,
               accountNumber: bankInfo?.data[0]?.bank_account_number.substr(
                 bankInfo?.data[0]?.bank_account_number?.length - 4
               ),
-              accountOwnerName: bankInfo?.data[0]?.account_owner_name,
-              bankName: bankName.data.accounts[0].name
+              accountOwnerName: bankInfo?.data[0]?.account_owner_name ? bankInfo?.data[0]?.account_owner_name : null,
+              bankName: bankName?.data?.accounts[0]?.name ? bankName?.data?.accounts[0]?.name : null
             },
           ]
-        : "null",
+        : [],
     };
 
     return this.Ok(ctx, userDraft ? userDraft._doc : data, true);

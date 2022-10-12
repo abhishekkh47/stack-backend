@@ -4375,6 +4375,16 @@ class TradingController extends BaseController {
     let reqParam = ctx.request.body;
     let user = ctx.request.user;
     let userExists = await UserTable.findOne({ _id: user._id });
+    let userBank = await UserBanksTable.findOne({
+      $and: [
+        {
+          relationshipId: reqParam.bankId,
+        },
+        {
+          userId: userExists._id,
+        },
+      ],
+    });
     if (!userExists || (userExists && userExists.type == EUserType.TEEN)) {
       return this.BadRequest(ctx, "User not allowed to access");
     }
@@ -4383,6 +4393,25 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          if(userBank.isDefault !== 1) {
+            await UserBanksTable.findOneAndUpdate(
+              { relationshipId: reqParam.bankId },
+              {
+                $set: {
+                  isDefault: 1
+                },
+              }
+            );
+            await UserBanksTable.updateMany({
+              $match: {
+                userId: userExists._id
+              }
+            }, {
+              $set: {
+                isDefault: 0
+              }
+            })
+          }
           let scheduleDate = moment()
             .startOf("day")
             .add(

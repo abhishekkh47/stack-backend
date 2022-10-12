@@ -167,7 +167,7 @@ export const startCron = () => {
         },
       },
       { $unwind: { path: "$self", preserveNullAndEmptyArrays: true } },
-    ]).exec();
+    ] ).exec();
     if (users.length > 0) {
 
       let todayDate = moment().startOf("day").unix();

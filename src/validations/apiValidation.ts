@@ -72,6 +72,7 @@ export const validation = {
           { is: 4, then: Joi.number().min(1).required() },
         ],
       }),
+      bankId: Joi.string().required()
     });
     const { error } = schema.validate(req);
     if (error) {
