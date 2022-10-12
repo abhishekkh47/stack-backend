@@ -27,6 +27,7 @@ import {
   agreementPreviews,
   checkValidBase64String,
   createAccount,
+  getAccounts,
   getLinkToken,
   kycDocumentChecks,
   Route,
@@ -506,6 +507,7 @@ class UserController extends BaseController {
   public async getProfile(ctx: any) {
     const { id } = ctx.request.params;
     let bankInfo: any;
+    let bankName: any;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     let data = (
@@ -544,6 +546,20 @@ class UserController extends BaseController {
           },
         },
         {
+          $lookup: {
+            from: "userbanks",
+            localField: "_id",
+            foreignField: "userId",
+            as: "userBankDetail",
+          },
+        },
+        {
+          $unwind: {
+            path: "$userBankDetail",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $addFields: {
             isParentApproved: 0,
           },
@@ -573,7 +589,7 @@ class UserController extends BaseController {
             unitApt: 1,
             liquidAsset: 1,
             taxIdNo: 1,
-            accessToken: "$parentchild.accessToken",
+            accessToken: "$userBankDetail.accessToken",
             taxState: 1,
             status: 1,
             dob: 1,
@@ -601,6 +617,7 @@ class UserController extends BaseController {
     });
     if (parent) {
       bankInfo = await getAchRelationship(parent.accountId);
+      bankName = await getAccounts(data.accessToken)
     }
     if (data) {
       if (
@@ -638,6 +655,7 @@ class UserController extends BaseController {
                 bankInfo?.data[0]?.bank_account_number?.length - 4
               ),
               accountOwnerName: bankInfo?.data[0]?.account_owner_name,
+              bankName: bankName.data.accounts[0].name
             },
           ]
         : "null",
