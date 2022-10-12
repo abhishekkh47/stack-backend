@@ -1,4 +1,3 @@
-
 export default {
   get PORT() {
     return process.env.PORT;
@@ -124,6 +123,12 @@ export default {
     return process.env.ALPACA_HOST;
   },
   get CLIENT_ALPACA_ACC_ID() {
-return process.env.CLIENT_ALPACA_ACC_ID;
-  }
+    return process.env.CLIENT_ALPACA_ACC_ID;
+  },
+  get PLAID_IOS_REDIRECT_URI() {
+    return process.env.PLAID_IOS_REDIRECT_URI;
+  },
+  get ANDROID_PACKAGE_NAME() {
+    return process.env.ANDROID_PACKAGE_NAME;
+  },
 };

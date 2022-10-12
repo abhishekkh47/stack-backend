@@ -4078,6 +4078,53 @@ class TradingController extends BaseController {
       }
     );
   }
+
+  /**
+   * @description This method is used to remove cardano from the cryptos 
+   * @param ctx
+   * @return {*}
+   */
+   @Route({ path: "/delete-transaction-script", method: HttpMethod.DELETE })
+   public async scriptClearTransaction(ctx: any) {
+     const transactionData = await TransactionTable.find();
+
+     for await (let transaction of transactionData) {
+       if (transaction.cryptoId !== null) {
+         const cryptoInfo = await CryptoTable.findOne({
+           _id: transaction.cryptoId,
+         });
+         if (cryptoInfo == null) {
+           await TransactionTable.deleteOne({ cryptoId: transaction.cryptoId });
+         }
+       }
+     }
+
+     return this.Ok(ctx, { message: "Transaction deleted!" });
+   }
+
+
+  /**
+   * @description This method is used to remove crypto not supported by alpaca from useractivities
+   * @param ctx
+   * @return {*}
+   */
+   @Route({ path: "/delete-useractivities-script", method: HttpMethod.DELETE })
+   public async scriptClearUserActivities(ctx: any) {
+     const userActivitiesData = await UserActivityTable.find();
+
+     for await (let userActivity of userActivitiesData) {
+       if (userActivity.cryptoId !== null) {
+         const cryptoInfo = await CryptoTable.findOne({
+           _id: userActivity.cryptoId,
+         });
+         if (cryptoInfo == null) {
+           await UserActivityTable.deleteOne({ cryptoId: userActivity.cryptoId });
+         }
+       }
+     }
+
+     return this.Ok(ctx, { message: "User Activities deleted!" });
+   }
 }
 
 export default new TradingController();
