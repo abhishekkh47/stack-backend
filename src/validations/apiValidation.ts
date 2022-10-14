@@ -314,6 +314,9 @@ export const validation = {
         .precision(2)
         .required(),
       childId: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+      bankId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
 
     const { error } = schema.validate(req, { convert: false });
@@ -354,6 +357,9 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+      bankId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {

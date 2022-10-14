@@ -94,9 +94,9 @@ class TradingController extends BaseController {
       ["email", "isGifted", "isGiftedCrypto", "firstName", "lastName"]
     );
     if (!parent) return this.BadRequest(ctx, "Invalid User");
-    if (parent.accessToken || parent.processorToken) {
-      return this.BadRequest(ctx, "Bank Details Already Updated");
-    }
+    // if (parent.accessToken || parent.processorToken) {
+    //   return this.BadRequest(ctx, "Bank Details Already Updated");
+    // }
     return validation.addBankDetailsValidation(
       reqParam,
       ctx,
@@ -171,7 +171,8 @@ class TradingController extends BaseController {
               parentDetails,
               jwtToken,
               userExists,
-              accountIdDetails
+              accountIdDetails,
+              processToken.data.processor_token
             );
             /**
              * Gift Crypto to to teen who had pending 5btc
@@ -370,6 +371,12 @@ class TradingController extends BaseController {
       userExists.type,
       async (validate) => {
         if (validate) {
+          let userBankInfo = await UserBanksTable.findOne({
+            _id: reqParam.bankId,
+          });
+          if (!userBankInfo) {
+            return this.BadRequest(ctx, "Bank Details Not Found");
+          }
           let contributions: any = null;
           let mainQuery =
             userExists.type == EUserType.PARENT ||
@@ -389,7 +396,7 @@ class TradingController extends BaseController {
                   "funds-transfer-type": "ach",
                   "ach-check-type": "personal",
                   "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": parentDetails.processorToken,
+                  "plaid-processor-token": userBankInfo.processorToken,
                 },
                 amount: reqParam.amount,
               },
@@ -702,6 +709,12 @@ class TradingController extends BaseController {
       userExists.type,
       async (validate) => {
         if (validate) {
+          let userBankInfo = await UserBanksTable.findOne({
+            _id: reqParam.bankId,
+          });
+          if (!userBankInfo) {
+            return this.BadRequest(ctx, "Bank Details Not Found");
+          }
           /**
            * Check current balance is greather than withdrawable amount
            */
@@ -790,7 +803,7 @@ class TradingController extends BaseController {
                   "funds-transfer-type": "ach",
                   "ach-check-type": "personal",
                   "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": parentDetails.processorToken,
+                  "plaid-processor-token": userBankInfo.processorToken,
                 },
                 amount: reqParam.amount,
               },
@@ -2100,14 +2113,32 @@ class TradingController extends BaseController {
         "You dont have sufficient balance to perform the operarion"
       );
     }
+    const userBankInfo = await UserBanksTable.findOne({
+      $and: [
+        { isDefault: 1 },
+        {
+          $or: [
+            {
+              userId: userExists._id,
+            },
+            {
+              parentId: userExists._id,
+            },
+          ],
+        },
+      ],
+    });
     switch (activity.action) {
       case 1:
         /**
          * Deposit
          */
-        if (!parent.processorToken) {
-          return this.BadRequest(ctx, "Processor Token Doesn't Exists");
+        if (!userBankInfo) {
+          return this.BadRequest(ctx, "Bank Details Not Found");
         }
+        // if (!parent.processorToken) {
+        //   return this.BadRequest(ctx, "Processor Token Doesn't Exists");
+        // }
         /**
          * create fund transfer with fund transfer id in response
          */
@@ -2120,7 +2151,7 @@ class TradingController extends BaseController {
               "funds-transfer-type": "ach",
               "ach-check-type": "personal",
               "contact-id": parent.contactId,
-              "plaid-processor-token": parent.processorToken,
+              "plaid-processor-token": userBankInfo.processorToken,
             },
             amount: activity.currencyValue,
           },
@@ -2182,11 +2213,14 @@ class TradingController extends BaseController {
         /**
          * Withdraw
          */
-        if (!parent.processorToken) {
-          return this.BadRequest(ctx, {
-            message: "Processor Token Doesn't Exists",
-          });
+        if (!userBankInfo) {
+          return this.BadRequest(ctx, "Bank Details Not Found");
         }
+        // if (!parent.processorToken) {
+        //   return this.BadRequest(ctx, {
+        //     message: "Processor Token Doesn't Exists",
+        //   });
+        // }
         let disbursementRequest = {
           type: "disbursements",
           attributes: {
@@ -2196,7 +2230,7 @@ class TradingController extends BaseController {
               "funds-transfer-type": "ach",
               "ach-check-type": "personal",
               "contact-id": parent.contactId,
-              "plaid-processor-token": parent.processorToken,
+              "plaid-processor-token": userBankInfo.processorToken,
             },
             amount: activity.currencyValue,
           },
@@ -2611,6 +2645,14 @@ class TradingController extends BaseController {
           });
           let insufficentBalance = false;
           if (pendingActivities.length > 0) {
+            const userBankInfo = await UserBanksTable.findOne({
+              $and: [
+                { isDefault: 1 },
+                {
+                  userId: childId,
+                },
+              ],
+            });
             for await (let activity of pendingActivities) {
               if (
                 activity.action != EAction.DEPOSIT &&
@@ -2625,6 +2667,9 @@ class TradingController extends BaseController {
                   /**
                    * Deposit
                    */
+                  if (!userBankInfo) {
+                    return this.BadRequest(ctx, "Bank Details Not Found");
+                  }
                   let contributionRequest = {
                     type: "contributions",
                     attributes: {
@@ -2634,7 +2679,7 @@ class TradingController extends BaseController {
                         "funds-transfer-type": "ach",
                         "ach-check-type": "personal",
                         "contact-id": parent.contactId,
-                        "plaid-processor-token": parent.processorToken,
+                        "plaid-processor-token": userBankInfo.processorToken,
                       },
                       amount: activity.currencyValue,
                     },
@@ -2689,6 +2734,9 @@ class TradingController extends BaseController {
                   }
                   break;
                 case 2:
+                  if (!userBankInfo) {
+                    return this.BadRequest(ctx, "Bank Details Not Found");
+                  }
                   let disbursementRequest = {
                     type: "disbursements",
                     attributes: {
@@ -2698,7 +2746,7 @@ class TradingController extends BaseController {
                         "funds-transfer-type": "ach",
                         "ach-check-type": "personal",
                         "contact-id": parent.contactId,
-                        "plaid-processor-token": parent.processorToken,
+                        "plaid-processor-token": userBankInfo.processorToken,
                       },
                       amount: activity.currencyValue,
                     },

@@ -112,6 +112,8 @@ class getPortfolioService {
             },
           },
           balance: balance,
+          percentChange30d: "$currentPriceDetails.percent_change_30d",
+          percentChange365d: null,
         },
       },
     ]).exec();
@@ -214,7 +216,8 @@ class getPortfolioService {
     parentDetails,
     jwtToken,
     userExists,
-    accountIdDetails
+    accountIdDetails,
+    processorToken
   ) {
     /**
      * create fund transfer with fund transfer id in response
@@ -231,7 +234,7 @@ class getPortfolioService {
           "funds-transfer-type": "ach",
           "ach-check-type": "personal",
           "contact-id": parentDetails.contactId,
-          "plaid-processor-token": parentDetails.processorToken,
+          "plaid-processor-token": processorToken,
         },
         amount: reqParam.depositAmount,
       },
