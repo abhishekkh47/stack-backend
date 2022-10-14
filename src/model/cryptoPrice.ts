@@ -47,6 +47,10 @@ const schema = new mongoose.Schema<ICryptoPriceSchema>(
       type: mongoose.Schema.Types.Number,
       default: null,
     },
+    percent_change_30d: {
+      type: mongoose.Schema.Types.Number,
+      default: null,
+    },
     currencyType: {
       type: mongoose.Schema.Types.String,
       default: "USD",

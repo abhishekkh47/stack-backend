@@ -17,6 +17,10 @@ const schema = new mongoose.Schema<IUserBanksSchema>(
       ref: "users",
       default: null,
     },
+    relationshipId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     /**
      * 1 - pending , 2 - approved and 0 - queued
      */

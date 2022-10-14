@@ -1,4 +1,3 @@
-import { journalAmount } from './alpaca';
 "use strict";
 export const CONSTANT = Object.freeze({
   VerifyEmailTemplateId: "d-024fedc867e0407ab4971e642354168f",
@@ -59,7 +58,11 @@ export const ALPACAAPI = {
   accountEvents: "/events/accounts/status",
   depositAmount: (accountId) => 
   `/accounts/${accountId}/transfers`,
-  journalAmount: '/journals' 
+  journalAmount: '/journals',
+  getAchRelationship: (accountId) => `/accounts/${accountId}/ach_relationships`,
+  getBalance: (accountId) => `/trading/accounts/${accountId}/account`,
+  buySellCrypto: (accountId) =>  `/trading/accounts/${accountId}/orders`,
+  getMarketValue: (accountId, symbol) => `/trading/accounts/${accountId}/positions/${symbol}USD`
 }
 export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",

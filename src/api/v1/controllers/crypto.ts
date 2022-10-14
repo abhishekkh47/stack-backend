@@ -14,7 +14,7 @@ import {
   EUserType,
   HttpMethod,
 } from "../../../types";
-import { Route, getBalance } from "../../../utility";
+import { Route, getBalance, getBalanceAlpaca, getLatestPrice } from "../../../utility";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 import { getPortFolioService } from "../../../services";
@@ -101,7 +101,7 @@ class CryptocurrencyController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async getCryptoDataWithCurrentPrice(ctx: any) {
-    const jwtToken = ctx.request.primeTrustToken;
+    // const jwtToken = ctx.request.primeTrustToken;
     const { childId, symbol } = ctx.request.params;
     if (!childId) {
       return this.BadRequest(ctx, "Child Id Doesn't Exists");
@@ -128,24 +128,33 @@ class CryptocurrencyController extends BaseController {
       if (!parentChild) {
         return this.Ok(ctx, { balance: 0 });
       }
-      const fetchBalance: any = await getBalance(
-        jwtToken,
+      // const fetchBalance: any = await getBalance(
+      //   jwtToken,
+      //   accountIdDetails.accountId
+      // );
+
+      const fetchBalanceAlpaca: any = await getBalanceAlpaca(
         accountIdDetails.accountId
       );
-      if (fetchBalance.status == 400) {
-        return this.BadRequest(ctx, fetchBalance.message);
+
+      if(fetchBalanceAlpaca.status !== 200) {
+        return this.BadRequest(ctx, fetchBalanceAlpaca.message)
       }
-      const balance = fetchBalance.data.data[0].attributes.disbursable;
+      // if (fetchBalance.status == 400) {
+      //   return this.BadRequest(ctx, fetchBalance.message);
+      // }
+      // const balance = fetchBalance.data.data[0].attributes.disbursable;
+      const balanceAlpaca = fetchBalanceAlpaca.data.cash
       return this.Ok(ctx, {
         portFolio: {
-          value: balance,
-          balance: balance,
+          currencyBalance: Number(balanceAlpaca),
+          balance: Number(balanceAlpaca),
           name: "Cash",
           symbol: "USD",
           isRecurring:
             userExists.isRecurring == ERECURRING.WEEKLY ||
             userExists.isRecurring == ERECURRING.MONTLY ||
-            userExists.isRecurring == ERECURRING.QUATERLY
+            userExists.isRecurring == ERECURRING.DAILY
               ? userExists.isRecurring
               : parentChild.accessToken
               ? 1
@@ -158,14 +167,23 @@ class CryptocurrencyController extends BaseController {
      * For Crypto
      */
     const crypto = await CryptoTable.findOne({ symbol: symbol });
+    // const portFolio =
+    //   await getPortFolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
+    //     userExists._id,
+    //     crypto._id,
+    //     parentChild,
+    //     jwtToken,
+    //     userExists
+    //   );
+
     const portFolio =
-      await getPortFolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
-        userExists._id,
-        crypto._id,
-        parentChild,
-        jwtToken,
-        userExists
+    await getPortFolioService.getPortfolioBasedOnChildIdWithCurrentMarketPriceAlpaca(
+      userExists._id,
+      crypto._id,
+      parentChild,
+      userExists
       );
+
     // crypto
     return this.Ok(ctx, { message: "Success", portFolio });
   }

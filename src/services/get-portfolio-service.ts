@@ -1,4 +1,4 @@
-import { getBalance, createContributions, depositAmount } from "../utility";
+import { getBalance, createContributions, depositAmount, getMarketValue, getBalanceAlpaca } from "../utility";
 import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
 import {
   ETransactionType,
@@ -118,6 +118,95 @@ class getPortfolioService {
     return portFolio.length > 0 ? portFolio[0] : [];
   }
 
+  public async getPortfolioBasedOnChildIdWithCurrentMarketPriceAlpaca(
+    childId: string,
+    cryptoId: any,
+    parentChild: any,
+    userExists: any = null
+    ) {
+    if (!childId) {
+      throw Error("Child Id Not Found");
+    }
+    const accountIdDetails: any =
+      userExists && userExists.type == EUserType.SELF
+        ? parentChild
+        : await parentChild.teens.find(
+            (x: any) => x.childId.toString() == childId.toString()
+          );
+    if (!accountIdDetails) {
+      throw Error("Account ID Details Not Found");
+    }
+
+    const cryptoSymbol = await CryptoTable.findById({_id: cryptoId})
+    const fetchBalance: any = await getBalanceAlpaca(
+      accountIdDetails.accountId
+    );
+
+    const marketValue: any = await getMarketValue(
+      accountIdDetails.accountId,
+      cryptoSymbol.symbol
+    );
+
+    if(marketValue.status == 400) {
+      throw Error(marketValue.message);
+    }
+
+    if (fetchBalance.status == 400) {
+      throw Error(fetchBalance.message);
+    }
+    const balance = fetchBalance?.data?.cash;
+    const value = marketValue?.data?.market_value;
+    const portFolio = await CryptoTable.aggregate([
+      {
+        $match: {
+          _id: cryptoId,
+        },
+      },
+      {
+        $lookup: {
+          from: "cryptoprices",
+          localField: "_id",
+          foreignField: "cryptoId",
+          as: "cryptoPriceInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$cryptoPriceInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          isSell: marketValue?.data?.market_value > 0.0 ? true : false,
+          balance: Number(balance),
+          currencyBalance: Number(value) ? Number(value) : 0.00,
+          currentPrice: `$cryptoPriceInfo.currentPrice`,
+          percentChange30d: "$cryptoPriceInfo.percent_change_30d",
+          percentChange365d: null,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          image: 1,
+          symbol: 1,
+          assetId: 1,
+          isSell: 1,
+          balance: 1,
+          currencyBalance: 1,
+          currentPrice: 1,
+          percentChange30d: 1,
+          percentChange365d: 1,
+        },
+      },
+    ]).exec();
+
+    return portFolio.length > 0 ? portFolio[0] : [];
+  }
+
+  
   public async getCryptoIdInPortfolio(childId: string) {
     const portFolio = await TransactionTable.aggregate([
       {
@@ -206,7 +295,7 @@ class getPortfolioService {
         },
       },
     ]).exec();
-    return portFolio.length > 0 ? portFolio : [];
+    return portFolio.length > 0 ? portFolio[0] : [];
   }
 
   public async addIntialDeposit(

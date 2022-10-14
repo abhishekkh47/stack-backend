@@ -1,6 +1,7 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
+import { child } from "winston";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -12,6 +13,7 @@ import {
   ParentChildTable,
   QuizResult,
   StateTable,
+  UserDraftTable,
   TransactionTable,
   UserReffaralTable,
   UserTable,
@@ -103,9 +105,6 @@ class AuthController extends BaseController {
             };
 
             await UserController.getProfile(getProfileInput);
-
-            await SocialService.verifySocial(reqParam);
-
             await DeviceTokenService.addDeviceTokenIfNeeded(
               userExists._id,
               deviceToken
@@ -242,22 +241,17 @@ class AuthController extends BaseController {
              * Parent flow and self flow
              */
             user = await AuthService.findUserByEmail(reqParam.email);
-            if (user) {
-              return this.BadRequest(ctx, "Email Already Exists");
-            }
-            user = await UserTable.findOne({
-              username: { $regex: `${reqParam.email}$`, $options: "i" },
-            });
-            if (user) {
-              return this.BadRequest(
-                ctx,
-                "This email is used by some other user as username"
-              );
-            }
-            user = await UserTable.findOne({ mobile: reqParam.mobile });
-            if (user) {
-              return this.BadRequest(ctx, "Mobile Number already Exists");
-            }
+            const mobile = await UserTable.findOne({ mobile: reqParam.mobile });
+            // if (mobile) {
+            //   return this.BadRequest(ctx, "Mobile Number already Exists");
+            // }
+            // if (user && mobile) {
+            //   return this.BadRequest(ctx, "Email Already Exists");
+            // }
+            // user = await UserTable.findOne({
+            //   username: { $regex: `${reqParam.email}$`, $options: "i" },
+            // });
+
             if (
               new Date(
                 Date.now() - new Date(reqParam.dob).getTime()
@@ -404,12 +398,8 @@ class AuthController extends BaseController {
           if (reqParam.type == EUserType.TEEN && childExists) {
             let updateQuery: any = {
               username: null,
-              firstName: reqParam.firstName,
-              email: reqParam.email ? reqParam.email : childExists.email,
-              lastName: reqParam.lastName ? reqParam.lastNam : null,
               password: null,
-              screenStatus: ESCREENSTATUS.SIGN_UP,
-              dob: reqParam.dob ? reqParam.dob : null,
+              screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               isParentFirst: false,
             };
@@ -433,35 +423,32 @@ class AuthController extends BaseController {
              * Generate referal code when user sign's up.
              */
             const uniqueReferralCode = await makeUniqueReferalCode();
-            user = await UserTable.create({
-              username: null,
-              password: null,
-              email: reqParam.email ? reqParam.email : null,
-              type: reqParam.type,
-              firstName: reqParam.firstName,
-              lastName: reqParam.lastName ? reqParam.lastName : null,
-              mobile: reqParam.mobile,
-              screenStatus:
-                reqParam.type === EUserType.PARENT ||
-                reqParam.type === EUserType.SELF
-                  ? ESCREENSTATUS.UPLOAD_DOCUMENTS
-                  : ESCREENSTATUS.SIGN_UP,
-              parentEmail: reqParam.parentEmail ? reqParam.parentEmail : null,
-              parentMobile: reqParam.parentMobile
-                ? reqParam.parentMobile
-                : null,
-              dob: reqParam.dob ? reqParam.dob : null,
-              taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
-              referralCode: uniqueReferralCode,
-              preLoadedCoins: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
-              isAutoApproval: EAUTOAPPROVAL.ON,
-              country: reqParam.country ? reqParam.country : null,
-              state: reqParam.state ? reqParam.state : null,
-              city: reqParam.city ? reqParam.city : null,
-              address: reqParam.address ? reqParam.address : null,
-              unitApt: reqParam.unitApt ? reqParam.unitApt : null,
-              postalCode: reqParam.postalCode ? reqParam.postalCode : null,
-            });
+            user = await UserTable.findOneAndUpdate(
+              { email: reqParam.email },
+              {
+                $set: {
+                  username: null,
+                  password: null,
+                  mobile: reqParam.mobile,
+                  screenStatus:
+                    parseInt(reqParam.type) === EUserType.PARENT ||
+                    parseInt(reqParam.type) === EUserType.SELF
+                      ? ESCREENSTATUS.UPLOAD_DOCUMENTS
+                      : ESCREENSTATUS.SIGN_UP,
+                  parentEmail: reqParam.parentEmail
+                    ? reqParam.parentEmail
+                    : null,
+                  parentMobile: reqParam.parentMobile
+                    ? reqParam.parentMobile
+                    : null,
+                  referralCode: uniqueReferralCode,
+                  preLoadedCoins:
+                    isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+                  isAutoApproval: EAUTOAPPROVAL.ON,
+                },
+              },
+              { new: true }
+            );
           }
           if (reqParam.type == EUserType.PARENT) {
             const parentchild = await ParentChildTable.findOneAndUpdate(
@@ -784,7 +771,12 @@ class AuthController extends BaseController {
             Last_Name: user.lastName ? user.lastName : null,
             Email: user.email,
             Mobile: user.mobile,
-            Account_Type: user.type == EUserType.PARENT ? "Parent" : "Teen",
+            Account_Type:
+              user.type == EUserType.PARENT
+                ? "Parent"
+                : user.type == EUserType.SELF
+                ? "Self"
+                : "Teen",
             Birthday: user.dob,
             User_ID: user._id,
           };
@@ -1265,6 +1257,8 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
+          let migratedId;
+          let childAlready;
           const otpExists = await OtpTable.findOne({
             receiverMobile: reqParam.mobile,
           }).sort({ createdAt: -1 });
@@ -1272,6 +1266,61 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "Mobile Number Not Found");
           }
           if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
+            childAlready = await UserTable.findOne({
+              mobile: reqParam.mobile,
+            });
+            const childInfo = await UserDraftTable.findOne({
+              _id: reqParam._id,
+            });
+            if (childAlready && childInfo) {
+              const updateObject = {
+                email: childInfo.email,
+                dob: childInfo.dob,
+                type: childInfo.type,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                firstName: childAlready.firstName
+                  ? childAlready.firstName
+                  : childInfo.firstName,
+                lastName: childAlready.lastName
+                  ? childAlready.lastName
+                  : childInfo.lastName,
+              };
+              await UserTable.findOneAndUpdate(
+                { mobile: reqParam.mobile },
+                { $set: updateObject },
+                { new: true }
+              );
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
+              migratedId = childAlready ? childAlready._id : "";
+            } else {
+              const createObject = {
+                email: childInfo.email,
+                type: childInfo.type,
+                dob: childInfo.dob,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                lastName: childInfo.lastName,
+                firstName: childInfo.firstName,
+              };
+
+              const userResponse = await UserTable.create(createObject);
+              migratedId = userResponse._id;
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
+            }
+
             return this.BadRequest(ctx, "Mobile Number Already Verified");
           }
           /**
@@ -1291,12 +1340,72 @@ class AuthController extends BaseController {
           if (otpExists.code != reqParam.code) {
             return this.BadRequest(ctx, "Code Doesn't Match");
           }
-          await OtpTable.updateOne(
+          const optVerfidied = await OtpTable.updateOne(
             { _id: otpExists._id },
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
+          if (optVerfidied) {
+            childAlready = await UserTable.findOne({
+              mobile: reqParam.mobile,
+            });
+            const childInfo = await UserDraftTable.findOne({
+              _id: reqParam._id,
+            });
+            if (childAlready && childInfo) {
+              const updateObject = {
+                email: childInfo.email,
+                dob: childInfo.dob,
+                type: childInfo.type,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                firstName: childAlready.firstName
+                  ? childAlready.firstName
+                  : childInfo.firstName,
+                lastName: childAlready.lastName
+                  ? childAlready.lastName
+                  : childInfo.lastName,
+              };
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
+
+              await UserTable.findOneAndUpdate(
+                { mobile: reqParam.mobile },
+                { $set: updateObject },
+                { new: true }
+              );
+              migratedId = childAlready ? childAlready._id : "";
+            } else {
+              const createObject = {
+                email: childInfo.email,
+                type: childInfo.type,
+                dob: childInfo.dob,
+                mobile: reqParam.mobile,
+                screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+                lastName: childInfo.lastName,
+                firstName: childInfo.firstName,
+              };
+
+              const userResponse: any = await UserTable.create(createObject);
+
+              migratedId = userResponse._id;
+
+              await UserDraftTable.findOneAndUpdate(
+                {
+                  _id: reqParam._id,
+                },
+                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
+                { new: true }
+              );
+            }
+          }
           return this.Ok(ctx, {
             message: "Your mobile number is verified successfully",
+            migratedId,
           });
         }
       }
@@ -1374,6 +1483,7 @@ class AuthController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/check-valid-mobile", method: HttpMethod.POST })
+  @Auth()
   public async checkValidMobile(ctx) {
     const input = ctx.request.body;
     return validation.checkValidMobileValidation(
@@ -1382,31 +1492,86 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, type } = input;
+          let migratedId;
+
           if (type == EUserType.TEEN) {
             let userExists = await UserTable.findOne({
               $or: [{ mobile: mobile }, { parentMobile: mobile }],
             });
             if (userExists) {
-              // let transaction = await TransactionTable.findOne({
-              //   userId: userExists._id,
-              //   status: ETransactionStatus.GIFTED,
-              // });
               if (userExists.isParentFirst == true) {
                 return this.Ok(ctx, { message: "Success" });
               }
-              return this.BadRequest(ctx, "Mobile Number Already Exists");
+
+              //if 2 entries then dont say mobile no. exists
+              if (userExists && !userExists.email === null) {
+                return this.BadRequest(ctx, "Mobile Number Already Exists");
+              }
             }
           } else if (type == EUserType.PARENT || type == EUserType.SELF) {
             let userExists = await UserTable.findOne({
               mobile: mobile,
             });
+
             if (userExists) {
               return this.BadRequest(ctx, "Mobile Number Already Exists");
             }
           } else {
             return this.BadRequest(ctx, "Invalid User Type");
           }
-          return this.Ok(ctx, { message: "Success" });
+          const draftUser = await UserDraftTable.findOne({
+            _id: ctx.request.user._id,
+          });
+          if (type == EUserType.PARENT && draftUser) {
+            const createObject = {
+              email: draftUser.email,
+              dob: draftUser.dob,
+              type: draftUser.type,
+              mobile: input.mobile,
+              firstName: input.firstName
+                ? input.firstName
+                : draftUser.firstName,
+              lastName: input.lastName ? input.lastName : draftUser.lastName,
+              country: input.country,
+              state: input.state,
+              city: input.city,
+              address: input.address,
+              unitApt: input.unitApt,
+              postalCode: input.postalCode,
+              screenStatus: ESCREENSTATUS.CHILD_INFO_SCREEN,
+              taxIdNo: input.taxIdNo,
+            };
+            let userResponse = await UserTable.create(createObject);
+            migratedId = userResponse._id;
+          }
+          if (type == EUserType.SELF && draftUser) {
+            const createObject = {
+              email: draftUser.email,
+              dob: draftUser.dob,
+              type: draftUser.type,
+              mobile: input.mobile,
+              firstName: input.firstName
+                ? input.firstName
+                : draftUser.firstName,
+              lastName: input.lastName ? input.lastName : draftUser.lastName,
+              country: input.country,
+              state: input.state,
+              city: input.city,
+              address: input.address,
+              unitApt: input.unitApt,
+              postalCode: input.postalCode,
+              screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
+              taxIdNo: input.taxIdNo,
+            };
+            let userResponse = await UserTable.create(createObject);
+
+            migratedId = userResponse._id;
+          }
+          if (type == EUserType.SELF || type == EUserType.PARENT) {
+            return this.Ok(ctx, { message: "Success", migratedId });
+          } else {
+            return this.Ok(ctx, { message: "Success" });
+          }
         }
       }
     );
@@ -1601,13 +1766,13 @@ class AuthController extends BaseController {
           if (childEmail) {
             query = {
               ...query,
-              parentEmail: { $regex: `${email}$`, $options: "i" },
+              // parentNumber: { $regex: `${email}$`, $options: "i" },
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
-          let user = await UserTable.findOne(query);
+          let user = await UserDraftTable.findOne(query);
           if (user) {
-            await UserTable.updateOne(
+            await UserDraftTable.updateOne(
               {
                 mobile: childMobile,
               },
@@ -1618,6 +1783,19 @@ class AuthController extends BaseController {
                 },
               }
             );
+            const createObject = {
+              firstName: childFirstName ? childFirstName : user.firstName,
+              lastName: childLastName ? childLastName : user.lastName,
+              mobile: childMobile ? childMobile : user.phoneNumber,
+              parentEmail: email,
+              parentMobile: mobile,
+              type: EUserType.TEEN,
+              screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
+              // referralCode: uniqueReferralCode,
+              isParentFirst: true,
+              isAutoApproval: EAUTOAPPROVAL.ON,
+            };
+            await UserTable.create(createObject);
             return this.Ok(ctx, {
               message: "Account successfully linked!",
               isAccountFound: true,
@@ -1627,14 +1805,14 @@ class AuthController extends BaseController {
            * This validation is there to keep if any child sign up with parent email or mobile
            */
           if (childEmail) {
-            let checkEmailExists = await UserTable.findOne({
+            let checkEmailExists = await UserDraftTable.findOne({
               email: childEmail,
             });
             if (checkEmailExists) {
               return this.BadRequest(ctx, "Child Email Already Exists");
             }
           }
-          let checkMobileExists = await UserTable.findOne({
+          let checkMobileExists = await UserDraftTable.findOne({
             mobile: childMobile,
           });
           if (checkMobileExists) {
@@ -1673,18 +1851,19 @@ class AuthController extends BaseController {
            * Generate referal code when user sign's up.
            */
           const uniqueReferralCode = await makeUniqueReferalCode();
-          await UserTable.create({
-            firstName: childFirstName,
-            lastName: childLastName,
-            mobile: childMobile,
-            email: childEmail ? childEmail : null,
+          const createObject = {
+            firstName: childFirstName ? childFirstName : user.firstName,
+            lastName: childLastName ? childLastName : user.lastName,
+            mobile: childMobile ? childMobile : user.phoneNumber,
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
+            screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             referralCode: uniqueReferralCode,
             isParentFirst: true,
             isAutoApproval: EAUTOAPPROVAL.ON,
-          });
+          };
+          await UserTable.create(createObject);
           return this.Ok(ctx, {
             message: "Invite sent!",
             isAccountFound: false,
@@ -1981,11 +2160,285 @@ class AuthController extends BaseController {
         "Looks like this phone number is associated with a child account. Please try a different phone number"
       );
     }
+
+    if (ctx.request.body.parentMobile && !checkParentExists) {
+      await UserTable.updateOne(
+        { mobile: ctx.request.body.mobile },
+        {
+          $set: {
+            screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
+            parentMobile: ctx.request.body.parentMobile,
+          },
+        }
+      );
+    }
     return this.Ok(
       ctx,
       !checkParentExists
         ? { message: "User Not Found", isAccountFound: false }
         : { message: "Success", isAccountFound: true }
+    );
+  }
+
+  /**
+   * @description This method will be used to verify social id token and email in case of user registration and if email not verified create a user
+   */
+  @Route({ path: "/check-signup", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
+  public async checkSignUp(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.checkUserSignupValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          try {
+            const { email, deviceToken } = reqParam;
+            let userExists = await UserTable.findOne({ email });
+            let userDraftExists = await UserDraftTable.findOne({ email });
+            if (!userExists && !userDraftExists) {
+              await SocialService.verifySocial(reqParam);
+              let createQuery: any = {
+                email: reqParam.email,
+                screenStatus: ESCREENSTATUS.DOB_SCREEN,
+                firstName: reqParam.firstName ? reqParam.firstName : null,
+                lastName: reqParam.lastName ? reqParam.lastName : null,
+                // mobile: reqParam.mobile ? reqParam.mobile : null,
+              };
+              const user = await UserDraftTable.create(createQuery);
+              if (user) {
+                /**
+                 * Zoho crm account addition
+                 */
+                let dataSentInCrm: any = {
+                  Account_Name: reqParam.firstName + " " + reqParam.lastName,
+                  First_Name: reqParam.firstName,
+                  Last_Name: reqParam.lastName ? reqParam.lastName : null,
+                  Email: reqParam.email,
+                };
+
+                await zohoCrmService.addAccounts(
+                  ctx.request.zohoAccessToken,
+                  dataSentInCrm
+                );
+
+                let checkUserDraftExists: any = await UserDraftTable.findOne({
+                  email,
+                });
+                const { token, refreshToken } =
+                  await TokenService.generateToken(checkUserDraftExists);
+
+                let getProfileInput: any = {
+                  request: {
+                    query: { token },
+                    params: { id: checkUserDraftExists._id },
+                  },
+                };
+                await UserController.getProfile(getProfileInput);
+
+                await DeviceTokenService.addDeviceTokenIfNeeded(
+                  checkUserDraftExists._id,
+                  deviceToken
+                );
+
+                return this.Ok(ctx, {
+                  token,
+                  refreshToken,
+                  profileData: getProfileInput.body.data,
+                  message: "Success",
+                });
+              }
+            } else {
+              await SocialService.verifySocial(reqParam);
+
+              const { token, refreshToken } = await TokenService.generateToken(
+                userExists !== null ? userExists : userDraftExists
+              );
+
+              let getProfileInput: any = {
+                request: {
+                  query: { token },
+                  params: {
+                    id:
+                      userExists !== null
+                        ? userExists._id
+                        : userDraftExists._id,
+                  },
+                },
+              };
+              await UserController.getProfile(getProfileInput);
+
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                userExists !== null ? userExists._id : userDraftExists._id,
+                deviceToken
+              );
+
+              return this.Ok(ctx, {
+                token,
+                refreshToken,
+                profileData: getProfileInput.body.data,
+                message: "Success",
+              });
+            }
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
+          }
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method will check the dob and update the dob along with the screen status
+   */
+  @Route({ path: "/check-dob", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT(true)
+  public async checkDob(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.dobValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          try {
+            let userScreenStatusUpdate: any;
+            if (
+              new Date(
+                Date.now() - new Date(reqParam.dob).getTime()
+              ).getFullYear() < 1988
+            ) {
+              userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
+                {
+                  _id: ctx.request.user._id,
+                },
+                {
+                  $set: {
+                    screenStatus: ESCREENSTATUS.ENTER_PHONE_NO,
+                    dob: reqParam.dob,
+                    type: 1,
+                  },
+                },
+                { new: true }
+              );
+              /**
+               * Zoho crm account addition
+               */
+              let dataSentInCrm: any = {
+                Account_Name:
+                  userScreenStatusUpdate.firstName +
+                  " " +
+                  userScreenStatusUpdate.lastName,
+                Birthday: userScreenStatusUpdate.dob,
+                Account_Type:
+                  userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
+              };
+
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+              return this.Ok(ctx, {
+                message: "Dob saved",
+                userScreenStatusUpdate,
+              });
+            } else {
+              userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
+                {
+                  _id: ctx.request.user._id,
+                },
+                {
+                  $set: {
+                    screenStatus: ESCREENSTATUS.MYSELF_PARENT_SCREEN,
+                    dob: reqParam.dob,
+                  },
+                },
+                { new: true }
+              );
+              /**
+               * Zoho crm account addition
+               */
+              let dataSentInCrm: any = {
+                Account_Name:
+                  userScreenStatusUpdate.firstName +
+                  " " +
+                  userScreenStatusUpdate.lastName,
+                Birthday: userScreenStatusUpdate.dob,
+              };
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+              return this.Ok(ctx, {
+                message: "Dob saved",
+                userScreenStatusUpdate,
+              });
+            }
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
+          }
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method will be used to check the type and then update type and screen status
+   */
+  @Route({ path: "/check-type", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT(true)
+  public async checkType(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validation.typeValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          try {
+            let userTypeScreenUpdate: any;
+
+            if (
+              reqParam.type === EUserType.PARENT ||
+              reqParam.type === EUserType.SELF
+            ) {
+              userTypeScreenUpdate = await UserDraftTable.findByIdAndUpdate(
+                {
+                  _id: ctx.request.user._id,
+                },
+                {
+                  $set: {
+                    screenStatus: ESCREENSTATUS.DETAIL_SCREEN,
+                    type: reqParam.type,
+                  },
+                },
+                { new: true }
+              );
+              /**
+               * Zoho crm account addition
+               */
+              let dataSentInCrm: any = {
+                Account_Name:
+                  userTypeScreenUpdate.firstName +
+                  " " +
+                  userTypeScreenUpdate.lastName,
+                Account_Type:
+                  reqParam.type == EUserType.PARENT ? "Parent" : "Self",
+              };
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+              return this.Ok(ctx, {
+                message: "Dob saved",
+                userTypeScreenUpdate,
+              });
+            }
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
+          }
+        }
+      }
     );
   }
 }

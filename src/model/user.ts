@@ -21,7 +21,7 @@ const schema = new mongoose.Schema<IUserSchema>(
       required: false,
       default: null,
     },
-    mobile: { type: mongoose.Schema.Types.String, required: true },
+    mobile: { type: mongoose.Schema.Types.String, required: false },
     address: { type: mongoose.Schema.Types.String, default: null },
     firstName: {
       type: mongoose.Schema.Types.String,
@@ -36,7 +36,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     /**
      * 1 - teenager,  2 - parent and 3 - Self
      */
-    type: { type: mongoose.Schema.Types.Number, required: true },
+    type: { type: mongoose.Schema.Types.Number, required: false },
     /**
      * 1 - Kyc document upload , 2 - Kyc failed and reupload document , 3 - Kyc approved
      */
@@ -119,7 +119,7 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     accountStatus: { type: mongoose.Schema.Types.String, default: "pending" },
     /**
-     * 0 - no bank , 1 - no recurring , 2 - weekly , 3 - monthly and 4 - quaterly
+     * 0 - no bank , 1 - no recurring , 2 - daily , 3 - weekly and 4 - monthly
      */
     isRecurring: {
       type: mongoose.Schema.Types.Number,
@@ -128,7 +128,7 @@ const schema = new mongoose.Schema<IUserSchema>(
         ERECURRING.NO_RECURRING,
         ERECURRING.WEEKLY,
         ERECURRING.MONTLY,
-        ERECURRING.QUATERLY,
+        ERECURRING.DAILY,
       ],
       default: 0,
     },

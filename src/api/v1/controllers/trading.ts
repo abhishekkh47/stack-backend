@@ -1,4 +1,16 @@
-import { addBankAccount, createBank, depositAmount, journalAmount } from './../../../utility/alpaca';
+import { UserBanksTable } from "./../../../model/user-banks";
+import {
+  addBankAccount,
+  buyCryptoAlpaca,
+  createBank,
+  depositAmount,
+  getAchRelationship,
+  getBalanceAlpaca,
+  getMarketValue,
+  journalAmount,
+  sellCryptoAlpaca,
+  withdrawAmount,
+} from "./../../../utility/alpaca";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import mongoose from "mongoose";
@@ -132,7 +144,7 @@ class TradingController extends BaseController {
               },
             },
             { new: true }
-            );
+          );
           await UserTable.updateOne(
             {
               _id: userExists._id,
@@ -142,7 +154,7 @@ class TradingController extends BaseController {
                 screenStatus: ESCREENSTATUS.SUCCESS,
               },
             }
-            );
+          );
           /**
            * if deposit amount is greater than 0
            */
@@ -188,7 +200,7 @@ class TradingController extends BaseController {
               );
               if (generateQuoteResponse.status == 400) {
                 return this.BadRequest(ctx, generateQuoteResponse.message);
-            }
+              }
               /**
                * Execute a quote
                */
@@ -208,7 +220,7 @@ class TradingController extends BaseController {
               );
               if (executeQuoteResponse.status == 400) {
                 return this.BadRequest(ctx, executeQuoteResponse.message);
-          }
+              }
               let internalTransferRequest = {
                 data: {
                   type: "internal-asset-transfers",
@@ -258,9 +270,9 @@ class TradingController extends BaseController {
                 }
               );
             }
-          /**
+            /**
              * added bank successfully
-           */
+             */
             let ParentArray = [
               ...PARENT_SIGNUP_FUNNEL.SIGNUP,
               PARENT_SIGNUP_FUNNEL.DOB,
@@ -314,17 +326,16 @@ class TradingController extends BaseController {
     );
   }
 
-
-    /**
+  /**
    * @description This method is used to add bank account in plaid(Link it)
    * @param ctx
    * @returns {*}
    */
-     @Route({ path: "/add-bank", method: HttpMethod.POST })
-     @Auth()
-     @PrimeTrustJWT(true)
-     public async addBankDetails(ctx: any) {
-      const user = ctx.request.user;
+  @Route({ path: "/add-bank", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT(true)
+  public async addBankDetails(ctx: any) {
+    const user = ctx.request.user;
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
     const userExists = await UserTable.findOne({ _id: user._id });
@@ -347,182 +358,227 @@ class TradingController extends BaseController {
     if (parent.accessToken || parent.processorToken) {
       return this.BadRequest(ctx, "Bank Details Already Updated");
     }
-       return validation.addBankDetailsValidation(
-         reqParam,
-         ctx,
-         async (validate) => {
-           if (validate) {
-             /**
-              * Get public token exchange
-              */
-             const publicTokenExchange: any = await getPublicTokenExchange(
-               reqParam.publicToken
-             );
-             if (publicTokenExchange.status == 400) {
-               return this.BadRequest(ctx, publicTokenExchange.message);
-             }
-             /**
-              * create processor token
-              */
-             const processToken: any = await createProcessorToken(
-               publicTokenExchange.data.access_token,
-               reqParam.accountId
-             );
-             if (processToken.status == 400) {
-               return this.BadRequest(ctx, processToken.message);
-             }
-             /**
-              * adding a bank in alpaca
-              */
-             const bankDetails: any = await addBankAccount(
-               processToken.data.processor_token,
-               parent.accountId
-             );
+    return validation.addBankDetailsValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          /**
+           * Get public token exchange
+           */
+          const publicTokenExchange: any = await getPublicTokenExchange(
+            reqParam.publicToken
+          );
+          if (publicTokenExchange.status == 400) {
+            return this.BadRequest(ctx, publicTokenExchange.message);
+          }
+          /**
+           * create processor token
+           */
+          const processToken: any = await createProcessorToken(
+            publicTokenExchange.data.access_token,
+            reqParam.accountId
+          );
+          if (processToken.status == 400) {
+            return this.BadRequest(ctx, processToken.message);
+          }
+          /**
+           * adding a bank in alpaca
+           */
+          const bankDetails: any = await addBankAccount(
+            processToken.data.processor_token,
+            parent.accountId
+          );
 
-             if (bankDetails.status !== 200) {
-               return this.BadRequest(ctx, bankDetails.message);
-             }
+          if (bankDetails.status !== 200) {
+            return this.BadRequest(ctx, bankDetails.message);
+          }
 
-             /**
-              * creating an entry in db for the new created bank
-              */
-             await createBank(
-               bankDetails,
-               processToken.data.processor_token,
-               publicTokenExchange.data.access_token,
-               reqParam.institutionId,
-               userExists
-             );
-             /**
-              * no deposit amount but bank added succefully update screen status
-              */
-             await UserTable.updateOne(
-               {
-                 _id: userExists._id,
-               },
-               {
-                 $set: {
-                   screenStatus: ESCREENSTATUS.SUCCESS,
-                 },
-               }
-             );
-             /**
-              * if deposit amount is greater than 0
-              */
-             if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-               await getPortFolioService.addIntialDepositAlpaca(
-                 reqParam,
-                 parent,
-                 bankDetails,
-                 userExists,
-                 parent.accountId
-               );
+          /**
+           * creating an entry in db for the new created bank
+           */
+          await createBank(
+            bankDetails,
+            processToken.data.processor_token,
+            publicTokenExchange.data.access_token,
+            reqParam.institutionId,
+            userExists
+          );
+          /**
+           * no deposit amount but bank added succefully update screen status
+           */
+          await UserTable.updateOne(
+            {
+              _id: userExists._id,
+            },
+            {
+              $set: {
+                screenStatus: ESCREENSTATUS.SUCCESS,
+                isRecurring: 1,
+                selectedDeposit: 0,
+                selectedDepositDate: null,
+              },
+            }
+          );
+          /**
+           * if deposit amount is greater than 0
+           */
+          if (reqParam.depositAmount && reqParam.depositAmount > 0) {
+            await getPortFolioService.addIntialDepositAlpaca(
+              reqParam,
+              parent,
+              bankDetails,
+              userExists,
+              parent.accountId
+            );
 
-               /**
-                * Gift 5 USD to to teen who had pending 5btc
-                */
-               if (
-                 admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
-                 parent.firstChildId.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
-               ) {
-                 /**
-                  * transfer 5 usd in alpaca
-                  */
-                 const transfer: any = await journalAmount(parent.accountId);
+            /**
+             *  recurring entry for depositing amount according to isRecurring
+             */
+            let scheduleDate = moment()
+              .startOf("day")
+              .add(
+                reqParam.isRecurring == ERECURRING.WEEKLY
+                  ? 7
+                  : reqParam.isRecurring == ERECURRING.MONTLY
+                  ? 1
+                  : reqParam.isRecurring == ERECURRING.DAILY
+                  ? 24
+                  : 0,
+                reqParam.isRecurring == ERECURRING.WEEKLY
+                  ? "days"
+                  : reqParam.isRecurring == ERECURRING.MONTLY
+                  ? "months"
+                  : reqParam.isRecurring == ERECURRING.DAILY
+                  ? "hours"
+                  : "day"
+              )
+              .format("YYYY-MM-DD");
+            await UserTable.findOneAndUpdate(
+              { _id: userExists._id },
+              {
+                $set: {
+                  isRecurring: reqParam.isRecurring,
+                  selectedDeposit:
+                    reqParam.isRecurring == ERECURRING.NO_BANK ||
+                    reqParam.isRecurring == ERECURRING.NO_RECURRING
+                      ? 0
+                      : reqParam.depositAmount,
+                  selectedDepositDate:
+                    reqParam.isRecurring == ERECURRING.NO_BANK ||
+                    reqParam.isRecurring == ERECURRING.NO_RECURRING
+                      ? null
+                      : scheduleDate,
+                },
+              }
+            );
 
-                 /**
-                  * create new transaction for internal transfer of 5 USD from admin to user
-                  */
-                 const test = await TransactionTable.create({
-                   assetId: null,
-                   cryptoId: null,
-                   intialDeposit: true,
-                   accountId: parent.accountId,
-                   type: ETransactionType.DEPOSIT,
-                   settledTime: moment().unix(),
-                   amount: transfer?.data?.net_amount,
-                   amountMod: -admin.giftCryptoAmount,
-                   userId: parent.firstChildId,
-                   parentId: userExists._id,
-                   status: ETransactionStatus.PENDING,
-                   executedQuoteId: transfer?.data?.id,
-                   unitCount: null,
-                 });
+            /**
+             * Gift 5 USD to to teen who had pending 5btc
+             */
+            if (
+              admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+              parent.firstChildId.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+            ) {
+              /**
+               * transfer 5 usd in alpaca
+               */
+              const transfer: any = await journalAmount(parent.accountId);
 
-                 /**
-                  * updating the crypto status and screen status
-                  */
-                 await UserTable.updateOne(
-                   {
-                     _id: parent.firstChildId,
-                   },
-                   {
-                     $set: {
-                       isGiftedCrypto: 2,
-                       screenStatus: ESCREENSTATUS.SUCCESS,
-                     },
-                   }
-                 );
-               }
+              /**
+               * create new transaction for internal transfer of 5 USD from admin to user
+               */
+              await TransactionTable.create({
+                assetId: null,
+                cryptoId: null,
+                intialDeposit: true,
+                accountId: parent.accountId,
+                type: ETransactionType.DEPOSIT,
+                settledTime: moment().unix(),
+                amount: transfer?.data?.net_amount,
+                amountMod: -admin.giftCryptoAmount,
+                userId: parent.firstChildId,
+                parentId: userExists._id,
+                status: ETransactionStatus.GIFTED,
+                executedQuoteId: transfer?.data?.id,
+                unitCount: null,
+              });
 
-               /**
-                * added bank successfully
-                */
-               let ParentArray = [
-                 ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-                 PARENT_SIGNUP_FUNNEL.DOB,
-                 PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
-                 PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-                 // PARENT_SIGNUP_FUNNEL.ADDRESS,
-                 PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-                 PARENT_SIGNUP_FUNNEL.ADD_BANK,
-                 PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
-                 PARENT_SIGNUP_FUNNEL.SUCCESS,
-               ];
-               let dataSentInCrm: any = {
-                 Account_Name: userExists.firstName + " " + userExists.lastName,
-                 Parent_Signup_Funnel: ParentArray,
-                 Stack_Coins: admin.stackCoins,
-               };
-               await zohoCrmService.addAccounts(
-                 ctx.request.zohoAccessToken,
-                 dataSentInCrm
-               );
-               return this.Ok(ctx, {
-                 message:
-                   "We will proceed your request surely in some amount of time.",
-               });
-             }
-             /**
-              * added bank successfully
-              */
-             let ParentArray = [
-               ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-               PARENT_SIGNUP_FUNNEL.DOB,
-               PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
-               PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-               // PARENT_SIGNUP_FUNNEL.ADDRESS,
-               PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-               PARENT_SIGNUP_FUNNEL.ADD_BANK,
-               PARENT_SIGNUP_FUNNEL.SUCCESS,
-             ];
-             let dataSentInCrm: any = {
-               Account_Name: userExists.firstName + " " + userExists.lastName,
-               Parent_Signup_Funnel: ParentArray,
-               Stack_Coins: admin.stackCoins,
-             };
-             await zohoCrmService.addAccounts(
-               ctx.request.zohoAccessToken,
-               dataSentInCrm
-             );
+              /**
+               * updating the crypto status and screen status
+               */
+              await UserTable.updateOne(
+                {
+                  _id: parent.firstChildId,
+                },
+                {
+                  $set: {
+                    isGiftedCrypto: 2,
+                    screenStatus: ESCREENSTATUS.SUCCESS,
+                  },
+                }
+              );
+            }
 
-             return this.Ok(ctx, {
-               message: "Bank account linked successfully",
-             });
-           }
-         }
-       );
-     }
+            /**
+             * added bank successfully
+             */
+            let ParentArray = [
+              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+              PARENT_SIGNUP_FUNNEL.DOB,
+              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+              PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+              // PARENT_SIGNUP_FUNNEL.ADDRESS,
+              PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+              PARENT_SIGNUP_FUNNEL.ADD_BANK,
+              PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
+              PARENT_SIGNUP_FUNNEL.SUCCESS,
+            ];
+            let dataSentInCrm: any = {
+              Account_Name: userExists.firstName + " " + userExists.lastName,
+              Parent_Signup_Funnel: ParentArray,
+              Stack_Coins: admin.stackCoins,
+            };
+            await zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataSentInCrm
+            );
+            return this.Ok(ctx, {
+              message:
+                "We will proceed your request surely in some amount of time.",
+            });
+          }
+
+          /**
+           * added bank successfully
+           */
+          let ParentArray = [
+            ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+            PARENT_SIGNUP_FUNNEL.DOB,
+            PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+            PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+            // PARENT_SIGNUP_FUNNEL.ADDRESS,
+            PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+            PARENT_SIGNUP_FUNNEL.ADD_BANK,
+            PARENT_SIGNUP_FUNNEL.SUCCESS,
+          ];
+          let dataSentInCrm: any = {
+            Account_Name: userExists.firstName + " " + userExists.lastName,
+            Parent_Signup_Funnel: ParentArray,
+            Stack_Coins: admin.stackCoins,
+          };
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm
+          );
+
+          return this.Ok(ctx, {
+            message: "Bank account linked successfully",
+          });
+        }
+      }
+    );
+  }
 
   /**
    * @description This method is used to add deposit for parent as well as teen
@@ -880,6 +936,223 @@ class TradingController extends BaseController {
   }
 
   /**
+   * @description This method is used to add deposit for parent as well as teen
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/add-deposit-alpaca", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT()
+  public async addDepositAlpacaAction(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    let admin = await AdminTable.findOne({});
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const query =
+      userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
+        ? reqParam.childId
+          ? { "teens.childId": reqParam.childId }
+          : { userId: ctx.request.user._id }
+        : { "teens.childId": ctx.request.user._id };
+    let parentDetails: any = await ParentChildTable.findOne(query);
+    if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
+    const accountIdDetails =
+      userExists.type == EUserType.SELF
+        ? parentDetails
+        : await parentDetails.teens.find((x: any) =>
+            reqParam.childId
+              ? x.childId.toString() == reqParam.childId.toString()
+              : userExists.type == EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+              ? x.childId.toString() == userExists._id.toString()
+              : x.childId.toString() == parentDetails.firstChildId.toString()
+          );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    return validation.addDepositValidation(
+      reqParam,
+      ctx,
+      userExists.type,
+      async (validate) => {
+        if (validate) {
+          let deposit: any = null;
+          let mainQuery =
+            userExists.type == EUserType.PARENT ||
+            userExists.type == EUserType.SELF ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+          if (mainQuery) {
+            /**
+             * to deposit amount for the first time by teen
+             */
+
+            deposit = await depositAmount(
+              reqParam.relationshipId,
+              reqParam.amount,
+              parentDetails.accountId
+            );
+
+            if (deposit.status !== 200) {
+              return this.BadRequest(ctx, deposit.message);
+            }
+          }
+          /**
+           * For teen it will be pending state
+           */
+          if (userExists.type === EUserType.TEEN) {
+            const activity = await UserActivityTable.create({
+              userId: userExists._id,
+              userType: userExists.type,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `${messages.APPROVE_DEPOSIT} $${reqParam.amount}`
+                  : `${messages.DEPOSIT} of $${reqParam.amount}`,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.DEPOSIT,
+              status:
+                userExists.type === EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+                  ? EStatus.PENDING
+                  : EStatus.PROCESSED,
+            });
+            if (userExists.isAutoApproval == EAUTOAPPROVAL.ON) {
+              await TransactionTable.create({
+                assetId: null,
+                cryptoId: null,
+                accountId: parentDetails.accountId,
+                type: ETransactionType.DEPOSIT,
+                settledTime: moment().unix(),
+                amount: reqParam.amount,
+                amountMod: null,
+                userId: accountIdDetails.childId,
+                parentId: parentDetails.userId,
+                status: ETransactionStatus.PENDING,
+                executedQuoteId: deposit.data.id,
+                unitCount: null,
+              });
+            } else {
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: parentDetails.userId,
+              }).select("deviceToken");
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.TRADING,
+                  title: NOTIFICATION.TEEN_REQUEST_MADE,
+                  message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
+                  activityId: activity._id,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: parentDetails.userId,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
+            }
+            return this.Created(ctx, {
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `We are looking into your request and will proceed surely in some amount of time.`
+                  : `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
+            });
+          }
+
+          /**
+           * Gift 5$ crypto to teen if deposited first time
+           */
+          if (
+            userExists.type === EUserType.PARENT ||
+            userExists.type === EUserType.SELF
+          ) {
+            let childExists = await UserTable.findOne({
+              _id: reqParam.childId ? reqParam.childId : userExists._id,
+            });
+            if (
+              childExists &&
+              childExists.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON &&
+              admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON
+            ) {
+              /**
+               * transfer 5 USD to user to buy crypto
+               */
+              const transfer: any = await journalAmount(
+                parentDetails.accountId
+              );
+
+              await TransactionTable.create({
+                assetId: null,
+                cryptoId: null,
+                intialDeposit: true,
+                accountId: parentDetails.accountId,
+                type: ETransactionType.DEPOSIT,
+                settledTime: moment().unix(),
+                amount: reqParam.amount,
+                amountMod: null,
+                userId: parentDetails.firstChildId,
+                parentId: userExists._id,
+                status: ETransactionStatus.GIFTED,
+                executedQuoteId: transfer?.data?.id,
+                unitCount: null,
+              });
+              await UserTable.updateOne(
+                {
+                  _id: childExists._id,
+                },
+                {
+                  $set: {
+                    isGiftedCrypto: 2,
+                  },
+                }
+              );
+            }
+          }
+
+          await UserActivityTable.create({
+            userId: reqParam.childId ? reqParam.childId : userExists._id,
+            userType: reqParam.childId ? EUserType.TEEN : userExists.type,
+            message: `${messages.APPROVE_DEPOSIT} $${reqParam.amount}`,
+            currencyType: null,
+            currencyValue: reqParam.amount,
+            action: EAction.DEPOSIT,
+            status: EStatus.PROCESSED,
+          });
+          await TransactionTable.create({
+            assetId: null,
+            cryptoId: null,
+            accountId: parentDetails.accountId,
+            type: ETransactionType.DEPOSIT,
+            settledTime: moment().unix(),
+            amount: reqParam.amount,
+            amountMod: null,
+            userId: accountIdDetails.childId
+              ? accountIdDetails.childId
+              : userExists._id,
+            parentId: userExists._id,
+            status: ETransactionStatus.PENDING,
+            executedQuoteId: deposit.data.id,
+            unitCount: null,
+          });
+          return this.Created(ctx, {
+            message: `We are looking into your request and will proceed surely in some amount of time.`,
+            data: deposit.data,
+          });
+        }
+      }
+    );
+  }
+
+  /**
    * @description This method is used to withdraw money for for parent as well as for tenn
    * @param ctx
    * @returns
@@ -1113,6 +1386,252 @@ class TradingController extends BaseController {
               message:
                 "We are looking into your request and will proceed surely in some amount of time.",
               data: disbursement.data,
+            });
+          }
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to withdraw money for for parent as well as for tenn
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/withdraw-money-alpaca", method: HttpMethod.POST })
+  @Auth()
+  public async withdrawMoneyAlpaca(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const query =
+      userExists.type == EUserType.PARENT || userExists.type == EUserType.SELF
+        ? reqParam.childId
+          ? { "teens.childId": reqParam.childId }
+          : { userId: ctx.request.user._id }
+        : { "teens.childId": ctx.request.user._id };
+    let parentDetails: any = await ParentChildTable.findOne(query);
+    if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
+    const accountIdDetails =
+      userExists.type == EUserType.SELF
+        ? parentDetails
+        : await parentDetails.teens.find((x: any) =>
+            reqParam.childId
+              ? x.childId.toString() == reqParam.childId.toString()
+              : userExists.type == EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+              ? x.childId.toString() == userExists._id.toString()
+              : x.childId.toString() == parentDetails.firstChildId.toString()
+          );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    return validation.withdrawMoneyValidation(
+      reqParam,
+      ctx,
+      userExists.type,
+      async (validate) => {
+        if (validate) {
+          /**
+           * Check current balance is greather than withdrawable amount
+           */
+          const query =
+            userExists.type == EUserType.PARENT ||
+            userExists.type == EUserType.SELF
+              ? reqParam.childId
+                ? { "teens.childId": reqParam.childId }
+                : { userId: ctx.request.user._id }
+              : { "teens.childId": ctx.request.user._id };
+          let parentDetails: any = await ParentChildTable.findOne(query);
+          if (!parentDetails) return this.BadRequest(ctx, "Invalid User");
+          const accountIdDetails =
+            userExists.type == EUserType.SELF
+              ? parentDetails
+              : await parentDetails.teens.find((x: any) =>
+                  userExists.type == EUserType.PARENT
+                    ? reqParam.childId
+                      ? x.childId.toString() == reqParam.childId.toString()
+                      : x.childId.toString() ==
+                        parentDetails.firstChildId.toString()
+                    : x.childId.toString() == ctx.request.user._id.toString()
+                );
+          if (!accountIdDetails) {
+            return this.BadRequest(ctx, "Account Details Not Found");
+          }
+
+          /**
+           * used to fetch the withdrawal cash
+           */
+          const fetchBalance: any = await getBalanceAlpaca(
+            parentDetails.accountId
+          );
+          if (fetchBalance.status !== 200) {
+            return this.BadRequest(ctx, fetchBalance.message);
+          }
+          const balance = fetchBalance.data.cash_withdrawable;
+          if (balance < reqParam.amount) {
+            return this.BadRequest(
+              ctx,
+              "You dont have sufficient balance to withdraw money"
+            );
+          }
+          const checkUserActivityForWithdraw =
+            await UserActivityTable.aggregate([
+              {
+                $match: {
+                  userId: userExists._id,
+                  action: EAction.WITHDRAW,
+                  status: EStatus.PENDING,
+                },
+              },
+              {
+                $group: {
+                  _id: null,
+                  total: {
+                    $sum: "$currencyValue",
+                  },
+                },
+              },
+            ]).exec();
+          if (checkUserActivityForWithdraw.length > 0) {
+            if (
+              balance <
+              checkUserActivityForWithdraw[0].total + reqParam.amount
+            ) {
+              return this.BadRequest(
+                ctx,
+                "Please cancel your existing request in order to withdraw money from this request"
+              );
+            }
+          }
+          let withdrawal: any = null;
+          let mainQuery =
+            userExists.type == EUserType.PARENT ||
+            userExists.type == EUserType.SELF ||
+            (userExists.type == EUserType.TEEN &&
+              userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+          if (mainQuery) {
+            /**
+             * create fund withdrawal with alpaca
+             */
+            withdrawal = await withdrawAmount(
+              reqParam.relationshipId,
+              reqParam.amount,
+              parentDetails.accountId
+            );
+            if (withdrawal.status !== 200) {
+              return this.BadRequest(ctx, withdrawal.message);
+            }
+          }
+          /**
+           * for teen it will be pending state and for parent it will be in approved
+           */
+          if (userExists.type == EUserType.TEEN) {
+            const activity = await UserActivityTable.create({
+              userId: userExists._id,
+              userType: userExists.type,
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `${messages.APPROVE_WITHDRAW} $${reqParam.amount}`
+                  : `${messages.WITHDRAW} of $${reqParam.amount}`,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.WITHDRAW,
+              status:
+                userExists.type === EUserType.TEEN &&
+                userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+                  ? EStatus.PENDING
+                  : EStatus.PROCESSED,
+            });
+            if (userExists.isAutoApproval == EAUTOAPPROVAL.ON) {
+              await TransactionTable.create({
+                assetId: null,
+                cryptoId: null,
+                accountId: accountIdDetails.accountId,
+                type: ETransactionType.WITHDRAW,
+                settledTime: moment().unix(),
+                amount: reqParam.amount,
+                amountMod: null,
+                userId: accountIdDetails.childId,
+                parentId: parentDetails.userId,
+                status: ETransactionStatus.PENDING,
+                executedQuoteId: withdrawal.data.id,
+                unitCount: null,
+              });
+            } else {
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: parentDetails.userId,
+              }).select("deviceToken");
+              /**
+               * Notification
+               */
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.TRADING,
+                  title: NOTIFICATION.TEEN_REQUEST_MADE,
+                  message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
+                  activityId: activity._id,
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                await Notification.create({
+                  title: notificationRequest.title,
+                  userId: parentDetails.userId,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
+            }
+            return this.Created(ctx, {
+              message:
+                userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                  ? `"We are looking into your request and will proceed surely in some amount of time."`
+                  : `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
+            });
+          }
+          /**
+           * For parent create disbursement code of prime trust with plaid processor token
+           */
+          if (
+            userExists.type === EUserType.PARENT ||
+            userExists.type === EUserType.SELF
+          ) {
+            await UserActivityTable.create({
+              userId: reqParam.childId ? reqParam.childId : userExists._id,
+              userType: reqParam.childId ? EUserType.TEEN : userExists.type,
+              message: `${messages.APPROVE_WITHDRAW} $${reqParam.amount}`,
+              currencyType: null,
+              currencyValue: reqParam.amount,
+              action: EAction.WITHDRAW,
+              status: EStatus.PROCESSED,
+            });
+            await TransactionTable.create({
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.WITHDRAW,
+              settledTime: moment().unix(),
+              amount: reqParam.amount,
+              amountMod: null,
+              userId: accountIdDetails.childId
+                ? accountIdDetails.childId
+                : userExists._id,
+              parentId: userExists._id,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: withdrawal.data.id,
+              unitCount: null,
+            });
+            return this.Created(ctx, {
+              message:
+                "We are looking into your request and will proceed surely in some amount of time.",
+              data: withdrawal.data,
             });
           }
         }
@@ -1473,6 +1992,171 @@ class TradingController extends BaseController {
   }
 
   /**
+   * @description new alpaca integrated method used to buy crypto
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/buy-crypto-alpaca", method: HttpMethod.POST })
+  @Auth()
+  public async buyCryptoAlpaca(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    return validation.buyCryptoValidation(reqParam, ctx, async (validate) => {
+      const { amount, cryptoId } = reqParam;
+      const crypto = await CryptoTable.findById({ _id: cryptoId });
+      if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
+      let userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      const query =
+        userExists.type == EUserType.PARENT ||
+        userExists.type === EUserType.SELF
+          ? reqParam.childId
+            ? { "teens.childId": reqParam.childId }
+            : { userId: ctx.request.user._id }
+          : { "teens.childId": ctx.request.user._id };
+      let parent: any = await ParentChildTable.findOne(query);
+      if (!parent) return this.BadRequest(ctx, "Invalid User");
+      const accountIdDetails =
+        userExists.type === EUserType.SELF
+          ? parent
+          : await parent.teens.find((x: any) =>
+              userExists.type == EUserType.PARENT
+                ? reqParam.childId
+                  ? x.childId.toString() == reqParam.childId.toString()
+                  : x.childId.toString() == parent.firstChildId.toString()
+                : x.childId.toString() == ctx.request.user._id.toString()
+            );
+      if (!accountIdDetails) {
+        return this.BadRequest(ctx, "Account Details Not Found");
+      }
+
+      /**
+       * used to get total cash balance of user
+       */
+      const fetchBalance: any = await getBalanceAlpaca(parent.accountId);
+      if (fetchBalance.status !== 200) {
+        return this.BadRequest(ctx, fetchBalance.message);
+      }
+      const balance = fetchBalance.data.cash;
+      if (amount > balance) return this.BadRequest(ctx, "Insufficient funds");
+
+      const userType = (
+        await UserTable.findOne(
+          { username: user.username },
+          { type: 1, _id: -1 }
+        )
+      ).type;
+      const pendingTransactions = await UserActivityTable.aggregate([
+        {
+          $match: {
+            userId: new ObjectId(user._id),
+            action: { $in: [EAction.WITHDRAW, EAction.BUY_CRYPTO] },
+            status: EStatus.PENDING,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$currencyValue" },
+          },
+        },
+      ]).exec();
+
+      if (
+        pendingTransactions.length > 0 &&
+        balance < pendingTransactions[0].total + amount
+      ) {
+        return this.BadRequest(
+          ctx,
+          "Please cancel your existing request in order to buy crypto from this request"
+        );
+      }
+      let mainQuery =
+        userExists.type == EUserType.PARENT ||
+        userExists.type == EUserType.SELF ||
+        (userExists.type == EUserType.TEEN &&
+          userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+      if (mainQuery) {
+        /**
+         * used to buy the crypto
+         */
+        const buy: any = await buyCryptoAlpaca(parent.accountId, reqParam);
+
+        if (buy.status !== 200) {
+          return this.BadRequest(ctx, buy.message);
+        }
+
+        await TransactionTable.create({
+          assetId: crypto.assetId,
+          cryptoId: crypto._id,
+          accountId: parent.accountId,
+          type: ETransactionType.BUY,
+          settledTime: moment().unix(),
+          amount: amount,
+          amountMod: -amount,
+          userId: accountIdDetails.childId
+            ? accountIdDetails.childId
+            : parent.userId,
+          parentId: parent.userId,
+          status: ETransactionStatus.PENDING,
+          executedQuoteId: buy.data.id,
+          unitCount: null,
+        });
+      }
+
+      const activity = await UserActivityTable.create({
+        userId: reqParam.childId ? reqParam.childId : user._id,
+        message: mainQuery
+          ? `${messages.APPROVE_BUY} ${crypto.name} buy request of $${amount}`
+          : `${messages.BUY} ${crypto.name} buy request of $${amount}`,
+        action: EAction.BUY_CRYPTO,
+        currencyValue: amount,
+        currencyType: cryptoId,
+        cryptoId: cryptoId,
+        userType,
+        status: mainQuery ? EStatus.PROCESSED : EStatus.PENDING,
+      });
+      if (
+        userType == EUserType.TEEN &&
+        userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+      ) {
+        let deviceTokenData = await DeviceToken.findOne({
+          userId: parent.userId,
+        });
+        if (deviceTokenData) {
+          let notificationRequest = {
+            key: NOTIFICATION_KEYS.TRADING,
+            title: NOTIFICATION.TEEN_REQUEST_MADE,
+            message: NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO.replace(
+              "@cryto",
+              crypto.name
+            ),
+            activityId: activity._id,
+          };
+          await sendNotification(
+            deviceTokenData.deviceToken,
+            notificationRequest.title,
+            notificationRequest
+          );
+          await Notification.create({
+            title: notificationRequest.title,
+            userId: parent.userId,
+            message: notificationRequest.message,
+            isRead: ERead.UNREAD,
+            data: JSON.stringify(notificationRequest),
+          });
+        }
+      }
+      const message = mainQuery
+        ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
+        : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
+      return this.Ok(ctx, { message });
+    });
+  }
+
+  /**
    * @description This method is used to buy crypto
    * @param ctx
    * @returns
@@ -1595,6 +2279,166 @@ class TradingController extends BaseController {
             executedQuoteId: executeSellQuoteResponse.data.data.id,
             unitCount:
               -executeSellQuoteResponse.data.data.attributes["unit-count"],
+          });
+        }
+        const activity = await UserActivityTable.create({
+          userId: reqParam.childId ? reqParam.childId : user._id,
+          message: mainQuery
+            ? `${messages.APPROVE_SELL} ${crypto.name} sell request of $${amount}`
+            : `${messages.SELL} ${crypto.name} sell request of $${amount}`,
+          action: EAction.SELL_CRYPTO,
+          currencyValue: amount,
+          currencyType: cryptoId,
+          cryptoId: cryptoId,
+          userType: userExists.type,
+          status: mainQuery ? EStatus.PROCESSED : EStatus.PENDING,
+        });
+        if (
+          userExists.type == EUserType.TEEN &&
+          userExists.isAutoApproval == EAUTOAPPROVAL.OFF
+        ) {
+          let deviceTokenData = await DeviceToken.findOne({
+            userId: parent.userId,
+          });
+          if (deviceTokenData) {
+            let notificationRequest = {
+              key: NOTIFICATION_KEYS.TRADING,
+              title: NOTIFICATION.TEEN_REQUEST_MADE,
+              message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
+                "@cryto",
+                crypto.name
+              ),
+              activityId: activity._id,
+            };
+            await sendNotification(
+              deviceTokenData.deviceToken,
+              notificationRequest.title,
+              notificationRequest
+            );
+            await Notification.create({
+              title: notificationRequest.title,
+              userId: parent.userId,
+              message: notificationRequest.message,
+              isRead: ERead.UNREAD,
+              data: JSON.stringify(notificationRequest),
+            });
+          }
+        }
+        const message = mainQuery
+          ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
+          : `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`;
+        return this.Ok(ctx, { message });
+      }
+    });
+  }
+
+  /**
+   * @description This method is used to buy crypto through alpaca
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/sell-crypto-alpaca", method: HttpMethod.POST })
+  @Auth()
+  public async sellCryptoAlpaca(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    let userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const query =
+      userExists.type == EUserType.PARENT || userExists.type === EUserType.SELF
+        ? reqParam.childId
+          ? { "teens.childId": reqParam.childId }
+          : { userId: ctx.request.user._id }
+        : { "teens.childId": ctx.request.user._id };
+    let parent: any = await ParentChildTable.findOne(query);
+    if (!parent) return this.BadRequest(ctx, "Invalid User");
+    const accountIdDetails =
+      userExists.type === EUserType.SELF
+        ? parent
+        : await parent.teens.find((x: any) =>
+            userExists.type == EUserType.PARENT
+              ? reqParam.childId
+                ? x.childId.toString() == reqParam.childId.toString()
+                : x.childId.toString() == parent.firstChildId.toString()
+              : x.childId.toString() == ctx.request.user._id.toString()
+          );
+    if (!accountIdDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    return validation.sellCryptoValidation(reqParam, ctx, async (validate) => {
+      if (validate) {
+        const { amount, cryptoId } = reqParam;
+        const crypto = await CryptoTable.findById({ _id: cryptoId });
+        if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
+        let transactionExists = await TransactionTable.findOne({
+          type: ETransactionType.BUY,
+          cryptoId: crypto._id,
+          userId:
+            userExists.type == EUserType.PARENT
+              ? reqParam.childId
+                ? reqParam.childId
+                : parent.firstChildId
+              : user._id,
+        });
+        if (!transactionExists) {
+          return this.BadRequest(
+            ctx,
+            `${crypto.name} doesn't exists in your portfolio.`
+          );
+        }
+
+        /**
+         * get market value through alpaca
+         */
+        const marketValue: any = await getMarketValue(
+          parent.accountId,
+          reqParam.symbol
+        );
+
+        const value = marketValue?.data?.market_value;
+        if (amount > value) {
+          return this.BadRequest(
+            ctx,
+            `The amount is more than the market value i.e. ${value}`
+          );
+        }
+
+        let mainQuery =
+          userExists.type == EUserType.PARENT ||
+          userExists.type == EUserType.SELF ||
+          (userExists.type == EUserType.TEEN &&
+            userExists.isAutoApproval == EAUTOAPPROVAL.ON);
+        if (mainQuery) {
+          /**
+           * sell crypto alpaca
+           */
+          const sellCrypto: any = await sellCryptoAlpaca(
+            parent.accountId,
+            reqParam,
+            crypto.symbol
+          );
+
+          if (sellCrypto.status !== 200) {
+            return this.BadRequest(ctx, sellCrypto.message);
+          }
+
+          await TransactionTable.create({
+            assetId: crypto.assetId,
+            cryptoId: crypto._id,
+            accountId: accountIdDetails.accountId,
+            type: ETransactionType.SELL,
+            settledTime: moment().unix(),
+            amount: amount,
+            amountMod: amount,
+            userId: accountIdDetails.childId
+              ? accountIdDetails.childId
+              : parent.userId,
+            parentId: parent.userId,
+            status: ETransactionStatus.PENDING,
+            executedQuoteId: sellCrypto.data.id,
+            unitCount: null,
           });
         }
         const activity = await UserActivityTable.create({
@@ -2281,6 +3125,7 @@ class TradingController extends BaseController {
     let deviceTokenData = await DeviceToken.findOne({
       userId: accountIdDetails.childId,
     }).select("deviceToken");
+    
     const fetchBalance: any = await getBalance(
       jwtToken,
       accountIdDetails.accountId
@@ -2307,6 +3152,7 @@ class TradingController extends BaseController {
         if (!parent.processorToken) {
           return this.BadRequest(ctx, "Processor Token Doesn't Exists");
         }
+
         /**
          * create fund transfer with fund transfer id in response
          */
@@ -2463,6 +3309,7 @@ class TradingController extends BaseController {
         const cryptoData = await CryptoTable.findOne({
           _id: activity.cryptoId,
         });
+
         /**
          * Generate a quote
          */
@@ -2671,6 +3518,353 @@ class TradingController extends BaseController {
         return this.BadRequest(ctx, "Something went wrong");
     }
   }
+
+
+  /**
+   * @description This method is used to approv child activities through alpaca
+   * @param ctx
+   * @returns {*}
+   */
+   @Route({ path: "/approve-childs-activity-alpaca", method: HttpMethod.POST })
+   @Auth()
+   @PrimeTrustJWT()
+   public async approveChildActivityAlpaca(ctx: any) {
+     const { activityId } = ctx.request.body;
+     const jwtToken = ctx.request.primeTrustToken;
+     if (!activityId) {
+       return this.BadRequest(ctx, "Activity Id not found");
+     }
+     if (!/^[0-9a-fA-F]{24}$/.test(activityId))
+       return this.BadRequest(ctx, "Enter Correct Activity Details");
+ 
+     const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+     if (!userExists) {
+       return this.BadRequest(ctx, "User Not Found");
+     }
+     let parent: any = await ParentChildTable.findOne({
+       userId: ctx.request.user._id,
+     });
+     if (!parent) return this.BadRequest(ctx, "Invalid Parent's ID");
+ 
+     const activity: any = await UserActivityTable.findOne({
+       _id: activityId,
+       status: EStatus.PENDING,
+     });
+     if (!activity) return this.BadRequest(ctx, "Invalid Pending Activity ID");
+     const accountIdDetails = await parent.teens.find(
+       (x: any) => x.childId.toString() == activity.userId.toString()
+     );
+     if (!accountIdDetails) {
+       return this.BadRequest(ctx, "Account Details Not Found");
+     }
+     let deviceTokenData = await DeviceToken.findOne({
+       userId: accountIdDetails.childId,
+     }).select("deviceToken");
+     
+     // ALPACA get balance 
+     const fetchBalance: any = await getBalanceAlpaca(accountIdDetails.accountId);
+     if (fetchBalance.status !== 200) {
+       return this.BadRequest(ctx, fetchBalance.message);
+     }
+     const balance = fetchBalance.data.cash;
+     if (
+       activity.action != EAction.DEPOSIT &&
+       activity.action != EAction.SELL_CRYPTO &&
+       balance < activity.currencyValue
+     ) {
+       return this.BadRequest(
+         ctx,
+         "You dont have sufficient balance to perform the operarion"
+       );
+     }
+     const userBankInfo = await UserBanksTable.findOne({$or : [
+      {
+        userId: userExists._id
+      },
+      {
+        parentId: userExists._id
+      }
+     ]})
+     switch (activity.action) {
+       case 1:
+         /**
+          * Deposit
+          */
+         if (!userBankInfo.processorToken) {
+           return this.BadRequest(ctx, "Processor Token Doesn't Exists");
+         }
+ 
+         //TODO ADD ALPACA DEPOSIT
+         let deposit: any =  await depositAmount(userBankInfo.relationshipId,activity.currencyValue, accountIdDetails.accountId)
+         /**
+          * create fund transfer with fund transfer id in response
+          */
+         
+        
+         if (deposit.status !== 200) {
+           return this.BadRequest(ctx, deposit.message);
+         }
+         await UserActivityTable.updateOne(
+           { _id: activityId },
+           {
+             status: EStatus.PROCESSED,
+             message: `${messages.APPROVE_DEPOSIT} $${activity.currencyValue}`,
+           }
+         );
+         await TransactionTable.create({
+           assetId: null,
+           cryptoId: null,
+           accountId: accountIdDetails.accountId,
+           type: ETransactionType.DEPOSIT,
+           settledTime: moment().unix(),
+           amount: activity.currencyValue,
+           amountMod: null,
+           userId: accountIdDetails.childId,
+           parentId: userExists._id,
+           status: ETransactionStatus.PENDING,
+           executedQuoteId: deposit.data.id,
+           unitCount: null,
+         });
+         if (deviceTokenData) {
+           let notificationRequest = {
+             key: NOTIFICATION_KEYS.TRADING,
+             title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+             message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
+             activityId: activityId,
+           };
+           await sendNotification(
+             deviceTokenData.deviceToken,
+             notificationRequest.title,
+             notificationRequest
+           );
+           await Notification.create({
+             title: notificationRequest.title,
+             userId: accountIdDetails.childId,
+             message: notificationRequest.message,
+             isRead: ERead.UNREAD,
+             data: JSON.stringify(notificationRequest),
+           });
+         }
+         return this.Ok(ctx, {
+           message:
+             "You have approved teen's request of deposit. Please wait while it take place accordingly.",
+           data: deposit.data,
+         });
+       case 2:
+         /**
+          * Withdraw
+          */
+         if (!userBankInfo.processorToken) {
+           return this.BadRequest(ctx, {
+             message: "Processor Token Doesn't Exists",
+           });
+         }
+         //WITHDRAWAL ALPACA
+
+         const withdraw: any = await withdrawAmount(userBankInfo.relationshipId,activity.currencyValue, accountIdDetails.accountId)
+         if (withdraw.status !== 200) {
+           return this.BadRequest(ctx, withdraw.message);
+         }
+         await UserActivityTable.updateOne(
+           { _id: activityId },
+           {
+             status: EStatus.PROCESSED,
+             message: `${messages.APPROVE_WITHDRAW} $${activity.currencyValue}`,
+           }
+         );
+         await TransactionTable.create({
+           assetId: null,
+           cryptoId: null,
+           accountId: accountIdDetails.accountId,
+           type: ETransactionType.WITHDRAW,
+           settledTime: moment().unix(),
+           amount: activity.currencyValue,
+           amountMod: null,
+           userId: accountIdDetails.childId,
+           parentId: userExists._id,
+           status: ETransactionStatus.PENDING,
+           executedQuoteId: withdraw.data.id,
+           unitCount: null,
+         });
+         if (deviceTokenData) {
+           let notificationRequest = {
+             key: NOTIFICATION_KEYS.TRADING,
+             title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+             message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
+             activityId: activityId,
+           };
+           await sendNotification(
+             deviceTokenData.deviceToken,
+             notificationRequest.title,
+             notificationRequest
+           );
+           await Notification.create({
+             title: notificationRequest.title,
+             userId: accountIdDetails.childId,
+             message: notificationRequest.message,
+             isRead: ERead.UNREAD,
+             data: JSON.stringify(notificationRequest),
+           });
+         }
+         return this.Ok(ctx, {
+           data: withdraw.data,
+           message:
+             "You have approved teen's request of withdrawal. Please wait while it take place accordingly.",
+         });
+       case 3:
+         /**
+          * Buy Crypto
+          */
+         if (!activity.cryptoId) {
+           return this.BadRequest(ctx, "Asset Id Not Found");
+         }
+         const cryptoData = await CryptoTable.findOne({
+           _id: activity.cryptoId,
+         });
+ 
+         // BUY ALPACA
+         const data = {
+          symbol: cryptoData.symbol,
+          notional: activity.currencyValue
+         }
+         const buy: any = await buyCryptoAlpaca(accountIdDetails.accountId, data)
+    
+         if (buy.status !== 200) {
+           return this.BadRequest(ctx, buy.message);
+         }
+         await TransactionTable.create({
+           assetId: cryptoData.assetId,
+           cryptoId: cryptoData._id,
+           accountId: accountIdDetails.accountId,
+           type: ETransactionType.BUY,
+           settledTime: moment().unix(),
+           amount: activity.currencyValue,
+           amountMod: -activity.currencyValue,
+           userId: accountIdDetails.childId,
+           parentId: userExists._id,
+           status: ETransactionStatus.PENDING,
+           executedQuoteId: buy.data.id,
+           unitCount: null,
+         });
+         await UserActivityTable.updateOne(
+           { _id: activityId },
+           {
+             status: EStatus.PROCESSED,
+             message: `${messages.APPROVE_BUY} ${cryptoData.name} buy request of $${activity.currencyValue}`,
+           }
+         );
+         if (deviceTokenData) {
+           let notificationRequest = {
+             key: NOTIFICATION_KEYS.TRADING,
+             title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+             message: NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
+               "@crypto",
+               cryptoData.name
+             ),
+             activityId: activityId,
+           };
+           await sendNotification(
+             deviceTokenData.deviceToken,
+             notificationRequest.title,
+             notificationRequest
+           );
+           await Notification.create({
+             title: notificationRequest.title,
+             userId: accountIdDetails.childId,
+             message: notificationRequest.message,
+             isRead: ERead.UNREAD,
+             data: JSON.stringify(notificationRequest),
+           });
+         }
+         return this.Ok(ctx, {
+           message: "Success",
+           data: "You have approved teen's request of buying crypto. Please wait while it settles in the portfolio respectively.",
+           dataValue: buy.data,
+         });
+       case 4:
+         /**
+          * Sell Crypto
+          */
+ 
+       
+         if (!activity.cryptoId) {
+           return this.BadRequest(ctx, "Asset Id Not Found");
+         }
+         const sellCryptoData = await CryptoTable.findOne({
+           _id: activity.cryptoId,
+         });
+
+         let transactionExists = await TransactionTable.findOne({
+           type: ETransactionType.BUY,
+           cryptoId: sellCryptoData._id,
+           userId: accountIdDetails.childId,
+         });
+         if (!transactionExists) {
+           return this.BadRequest(
+             ctx,
+             `${sellCryptoData.name} doesn't exists in your portfolio.`
+           );
+         }
+         // SELL ALPACA
+         const sell: any = await sellCryptoAlpaca(accountIdDetails.accountId, cryptoData.symbol, activity.currencyValue)
+    
+         if (sell.status !== 200) {
+           return this.BadRequest(ctx, sell.message);
+         }
+      
+         await TransactionTable.create({
+           assetId: sellCryptoData.assetId,
+           cryptoId: sellCryptoData._id,
+           accountId: accountIdDetails.accountId,
+           type: ETransactionType.SELL,
+           settledTime: moment().unix(),
+           amount: activity.currencyValue,
+           amountMod: activity.currencyValue,
+           userId: accountIdDetails.childId,
+           parentId: userExists._id,
+           status: ETransactionStatus.PENDING,
+           executedQuoteId: sell.data.id,
+           unitCount: null,
+         });
+         await UserActivityTable.updateOne(
+           { _id: activityId },
+           {
+             status: EStatus.PROCESSED,
+             message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
+           }
+         );
+         if (deviceTokenData) {
+           let notificationRequest = {
+             key: NOTIFICATION_KEYS.TRADING,
+             title: NOTIFICATION.TEEN_REQUEST_APPROVED,
+             message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
+               "@crypto",
+               sellCryptoData.name
+             ),
+             activityId: activityId,
+           };
+           await sendNotification(
+             deviceTokenData.deviceToken,
+             notificationRequest.title,
+             notificationRequest
+           );
+           await Notification.create({
+             title: notificationRequest.title,
+             userId: accountIdDetails.childId,
+             message: notificationRequest.message,
+             isRead: ERead.UNREAD,
+             data: JSON.stringify(notificationRequest),
+           });
+         }
+         return this.Ok(ctx, {
+           message: "Success",
+           data: "You have approved teen's request of selling crypto. Please wait while it settles in the portfolio respectively.",
+         });
+ 
+       default:
+         return this.BadRequest(ctx, "Something went wrong");
+     }
+   }
 
   /**
    * @description This method is
@@ -3181,6 +4375,16 @@ class TradingController extends BaseController {
     let reqParam = ctx.request.body;
     let user = ctx.request.user;
     let userExists = await UserTable.findOne({ _id: user._id });
+    let userBank = await UserBanksTable.findOne({
+      $and: [
+        {
+          relationshipId: reqParam.bankId,
+        },
+        {
+          userId: userExists._id,
+        },
+      ],
+    });
     if (!userExists || (userExists && userExists.type == EUserType.TEEN)) {
       return this.BadRequest(ctx, "User not allowed to access");
     }
@@ -3189,6 +4393,25 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          if(userBank.isDefault !== 1) {
+            await UserBanksTable.findOneAndUpdate(
+              { relationshipId: reqParam.bankId },
+              {
+                $set: {
+                  isDefault: 1
+                },
+              }
+            );
+            await UserBanksTable.updateMany({
+              $match: {
+                userId: userExists._id
+              }
+            }, {
+              $set: {
+                isDefault: 0
+              }
+            })
+          }
           let scheduleDate = moment()
             .startOf("day")
             .add(
@@ -3196,15 +4419,15 @@ class TradingController extends BaseController {
                 ? 7
                 : reqParam.isRecurring == ERECURRING.MONTLY
                 ? 1
-                : reqParam.isRecurring == ERECURRING.QUATERLY
-                ? 4
+                : reqParam.isRecurring == ERECURRING.DAILY
+                ? 24
                 : 0,
               reqParam.isRecurring == ERECURRING.WEEKLY
                 ? "days"
                 : reqParam.isRecurring == ERECURRING.MONTLY
                 ? "months"
-                : reqParam.isRecurring == ERECURRING.QUATERLY
-                ? "months"
+                : reqParam.isRecurring == ERECURRING.DAILY
+                ? "hours"
                 : "day"
             )
             .format("YYYY-MM-DD");
@@ -3234,6 +4457,53 @@ class TradingController extends BaseController {
       }
     );
   }
+
+  /**
+   * @description This method is used to remove cardano from the cryptos 
+   * @param ctx
+   * @return {*}
+   */
+   @Route({ path: "/delete-transaction-script", method: HttpMethod.DELETE })
+   public async scriptClearTransaction(ctx: any) {
+     const transactionData = await TransactionTable.find();
+
+     for await (let transaction of transactionData) {
+       if (transaction.cryptoId !== null) {
+         const cryptoInfo = await CryptoTable.findOne({
+           _id: transaction.cryptoId,
+         });
+         if (cryptoInfo == null) {
+           await TransactionTable.deleteOne({ cryptoId: transaction.cryptoId });
+         }
+       }
+     }
+
+     return this.Ok(ctx, { message: "Transaction deleted!" });
+   }
+
+
+  /**
+   * @description This method is used to remove crypto not supported by alpaca from useractivities
+   * @param ctx
+   * @return {*}
+   */
+   @Route({ path: "/delete-useractivities-script", method: HttpMethod.DELETE })
+   public async scriptClearUserActivities(ctx: any) {
+     const userActivitiesData = await UserActivityTable.find();
+
+     for await (let userActivity of userActivitiesData) {
+       if (userActivity.cryptoId !== null) {
+         const cryptoInfo = await CryptoTable.findOne({
+           _id: userActivity.cryptoId,
+         });
+         if (cryptoInfo == null) {
+           await UserActivityTable.deleteOne({ cryptoId: userActivity.cryptoId });
+         }
+       }
+     }
+
+     return this.Ok(ctx, { message: "User Activities deleted!" });
+   }
 }
 
 export default new TradingController();

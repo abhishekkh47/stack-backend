@@ -1,3 +1,6 @@
+import { UserBanksTable } from "./../../../model/user-banks";
+import { getAchRelationship } from "./../../../utility/alpaca";
+import { UserDraftTable } from "./../../../model/userDraft";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -24,6 +27,7 @@ import {
   agreementPreviews,
   checkValidBase64String,
   createAccount,
+  getAccounts,
   getLinkToken,
   kycDocumentChecks,
   Route,
@@ -94,12 +98,18 @@ class UserController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (!ctx.request.query.deviceType) {
+      return this.BadRequest(ctx, "Please enter device type");
+    }
     let parentExists = await ParentChildTable.findOne({
       userId: userExists._id,
     });
     const linkToken: any = await getLinkToken(
       userExists,
-      parentExists && parentExists.accessToken ? parentExists.accessToken : null
+      parentExists && parentExists.accessToken
+        ? parentExists.accessToken
+        : null,
+      ctx.request.query.deviceType
     );
     if (linkToken.status == 400) {
       return this.BadRequest(ctx, linkToken.message);
@@ -493,9 +503,11 @@ class UserController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/get-profile/:id", method: HttpMethod.GET })
-  @Auth()
+  // @Auth()
   public async getProfile(ctx: any) {
     const { id } = ctx.request.params;
+    let bankInfo: any;
+    let bankName: any;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     let data = (
@@ -534,6 +546,20 @@ class UserController extends BaseController {
           },
         },
         {
+          $lookup: {
+            from: "userbanks",
+            localField: "_id",
+            foreignField: "userId",
+            as: "userBankDetail",
+          },
+        },
+        {
+          $unwind: {
+            path: "$userBankDetail",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $addFields: {
             isParentApproved: 0,
           },
@@ -563,7 +589,7 @@ class UserController extends BaseController {
             unitApt: 1,
             liquidAsset: 1,
             taxIdNo: 1,
-            accessToken: "$parentchild.accessToken",
+            accessToken: "$userBankDetail.accessToken",
             taxState: 1,
             status: 1,
             dob: 1,
@@ -575,34 +601,67 @@ class UserController extends BaseController {
         },
       ]).exec()
     )[0];
-    if (!data) return this.BadRequest(ctx, "Invalid user ID entered.");
+    let userDraft: any = await UserDraftTable.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!data && !userDraft) {
+      return this.BadRequest(ctx, "Invalid user ID entered.");
+    }
     const checkParentExists = await UserTable.findOne({
       mobile: data.parentMobile ? data.parentMobile : data.mobile,
     });
-    if (
-      !checkParentExists ||
-      (checkParentExists &&
-        checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-    ) {
-      data.isParentApproved = 0;
-    } else {
-      data.isParentApproved = 1;
+
+    const parent: any = await ParentChildTable.findOne({
+      userId: id,
+    });
+    if (parent) {
+      bankInfo = await getAchRelationship(parent.accountId);
+      bankName = await getAccounts(data.accessToken)
     }
-    if (!checkParentExists || (checkParentExists && data.accessToken == null)) {
-      data.isRecurring = 0;
-    } else if (data.accessToken) {
-      if (data.isRecurring == 1 || data.isRecurring == 0) {
-        data.isRecurring = 1;
+    if (data) {
+      if (
+        !checkParentExists ||
+        (checkParentExists &&
+          checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+      ) {
+        data.isParentApproved = 0;
+      } else {
+        data.isParentApproved = 1;
+      }
+      if (
+        !checkParentExists ||
+        (checkParentExists && data.accessToken == null)
+      ) {
+        data.isRecurring = 0;
+      } else if (data.accessToken) {
+        if (data.isRecurring == 1 || data.isRecurring == 0) {
+          data.isRecurring = 1;
+        }
       }
     }
+
     data = {
       ...data,
       terms: CMS_LINKS.TERMS,
       amcPolicy: CMS_LINKS.AMC_POLICY,
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+      bankInfo: bankInfo && bankInfo?.data
+        ? [
+            {
+              _id: bankInfo?.data[0]?.id,
+              accountNumber: bankInfo?.data[0]?.bank_account_number.substr(
+                bankInfo?.data[0]?.bank_account_number?.length - 4
+              ),
+              accountOwnerName: bankInfo?.data[0]?.account_owner_name ? bankInfo?.data[0]?.account_owner_name : null,
+              bankName: bankName?.data?.accounts[0]?.name ? bankName?.data?.accounts[0]?.name : null
+            },
+          ]
+        : [],
     };
-    return this.Ok(ctx, data, true);
+
+    return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
   }
 
   /**

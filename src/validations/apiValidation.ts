@@ -48,6 +48,7 @@ export const validation = {
       accountId: Joi.string().required(),
       institutionId: Joi.string().required(),
       depositAmount: Joi.number(),
+      isRecurring: Joi.number().valid(0, 1, 2, 3, 4).required(),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -71,6 +72,7 @@ export const validation = {
           { is: 4, then: Joi.number().min(1).required() },
         ],
       }),
+      bankId: Joi.string().required()
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -172,15 +174,13 @@ export const validation = {
   },
   signupValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
-      type: Joi.number().valid(1, 2, 3).required(),
+      type: Joi.number().optional().valid(1, 2, 3),
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
-      email: Joi.string().email().required(),
+      email: Joi.string().email().optional(),
       refferalCode: Joi.string().optional(),
-      loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
-      socialLoginToken: Joi.string().required(),
-      deviceType: Joi.number().valid(1, 2),
+
       childMobile: Joi.when("type", {
         is: 2,
         then: Joi.string()
@@ -188,68 +188,11 @@ export const validation = {
           .disallow(Joi.ref("mobile"))
           .required(),
       }),
-      firstName: Joi.string()
-        .min(1)
-        .regex(/^[A-za-z]*$/)
-        .required(),
-      lastName: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .min(1)
-          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
-          .required(),
-        otherwise: Joi.string()
-          .allow("")
-          .min(1)
-          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/),
-      }),
       parentMobile: Joi.when("type", {
         is: 1,
         then: Joi.string()
           .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
           .disallow(Joi.ref("mobile"))
-          .required(),
-      }),
-      dob: Joi.date().iso().required(),
-      taxIdNo: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/^\d{9}$/)
-          .required(),
-      }),
-      country: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      state: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      city: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      address: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      unitApt: Joi.when("type", {
-        is: 2,
-        then: Joi.string().allow(null).allow(""),
-      }),
-      postalCode: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z0-9]/)
-          .min(4)
           .required(),
       }),
     });
@@ -308,8 +251,6 @@ export const validation = {
   },
   sendIssueInputValidation: (req, res, callback) => {
     const schema = Joi.object({
-      email: Joi.string().email(),
-      mobile: Joi.string().regex(/^\+[1-9]{1}[0-9]{10,14}$/),
       issue: Joi.string().required(),
     });
 
@@ -370,6 +311,7 @@ export const validation = {
         .precision(2)
         .required(),
       childId: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+      relationshipId: Joi.string().required()
     });
 
     const { error } = schema.validate(req, { convert: false });
@@ -410,6 +352,7 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+      relationshipId: Joi.string().required()
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -429,6 +372,7 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+        symbol:Joi.string().required(),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -445,6 +389,8 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+      symbol: Joi.string().required(),
+
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -550,6 +496,62 @@ export const validation = {
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
+      taxIdNo: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/^\d{9}$/)
+          .required(),
+      }),
+      country: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      state: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      city: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      address: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .required(),
+      }),
+      unitApt: Joi.when("type", {
+        is: 2,
+        then: Joi.string().allow(null).allow(""),
+      }),
+      postalCode: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z0-9]/)
+          .min(4)
+          .required(),
+      }),
+      firstName: Joi.string()
+        .allow("")
+        .regex(/^[A-za-z]*$/)
+        .optional(),
+      lastName: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
+          .optional()
+          .allow(""),
+        otherwise: Joi.string()
+          .allow("")
+          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
+          .optional(),
+      }),
     });
     const { error } = schema.validate(req);
 
@@ -597,6 +599,36 @@ export const validation = {
     const { error } = schema.validate(req);
     if (error)
       return res.throw(400, res.__(validationMessageKey("updateDOB", error)));
+    return callback(true);
+  },
+  dobValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      dob: Joi.date()
+        .iso()
+        .max(Date.now() + 60 * 60 * 1000)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("dob", error)));
+    return callback(true);
+  },
+  updateTypeValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      type: Joi.number().valid(1, 2, 3).required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("updateDOB", error)));
+    return callback(true);
+  },
+  typeValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      type: Joi.number().valid(1, 2, 3).required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("type", error)));
     return callback(true);
   },
   notifyUserInputValidation: (req, res, callback) => {
