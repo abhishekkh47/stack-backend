@@ -12,6 +12,7 @@ import {
   QuizResult,
   TransactionTable,
   UserActivityTable,
+  UserBanksTable,
   UserTable,
 } from "../../../model";
 import {
@@ -46,6 +47,7 @@ import {
   internalAssetTransfers,
   Route,
   sendNotification,
+  createBank,
   wireTransfer,
 } from "../../../utility";
 import {
@@ -119,6 +121,16 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
+          /**
+           * creating an entry in db for the new created bank
+           */
+          await createBank(
+            processToken.data.processor_token,
+            publicTokenExchange.data.access_token,
+            reqParam.institutionId,
+            userExists
+          );
+          // to be commented code need to check once :
           const parentDetails: any = await ParentChildTable.findOneAndUpdate(
             {
               _id: parent._id,
@@ -2970,6 +2982,16 @@ class TradingController extends BaseController {
     let reqParam = ctx.request.body;
     let user = ctx.request.user;
     let userExists = await UserTable.findOne({ _id: user._id });
+    let userBank = await UserBanksTable.findOne({
+      $and: [
+        {
+          _id: reqParam.bankId,
+        },
+        {
+          userId: userExists._id,
+        },
+      ],
+    });
     if (!userExists || (userExists && userExists.type == EUserType.TEEN)) {
       return this.BadRequest(ctx, "User not allowed to access");
     }
@@ -2978,6 +3000,31 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          if (userBank.isDefault !== 1) {
+            await UserBanksTable.findOneAndUpdate(
+              { _id: reqParam.bankId },
+              {
+                $set: {
+                  isDefault: 1,
+                },
+              }
+            );
+            await UserBanksTable.updateMany(
+              {
+                $match: {
+                  userId: userExists._id,
+                  _id: {
+                    $ne: reqParam.bankId,
+                  },
+                },
+              },
+              {
+                $set: {
+                  isDefault: 0,
+                },
+              }
+            );
+          }
           let scheduleDate = moment()
             .startOf("day")
             .add(
@@ -2985,15 +3032,15 @@ class TradingController extends BaseController {
                 ? 7
                 : reqParam.isRecurring == ERECURRING.MONTLY
                 ? 1
-                : reqParam.isRecurring == ERECURRING.QUATERLY
-                ? 4
+                : reqParam.isRecurring == ERECURRING.DAILY
+                ? 24
                 : 0,
               reqParam.isRecurring == ERECURRING.WEEKLY
                 ? "days"
                 : reqParam.isRecurring == ERECURRING.MONTLY
                 ? "months"
-                : reqParam.isRecurring == ERECURRING.QUATERLY
-                ? "months"
+                : reqParam.isRecurring == ERECURRING.DAILY
+                ? "hours"
                 : "day"
             )
             .format("YYYY-MM-DD");
@@ -3025,51 +3072,52 @@ class TradingController extends BaseController {
   }
 
   /**
-   * @description This method is used to remove cardano from the cryptos 
+   * @description This method is used to remove cardano from the cryptos
    * @param ctx
    * @return {*}
    */
-   @Route({ path: "/delete-transaction-script", method: HttpMethod.DELETE })
-   public async scriptClearTransaction(ctx: any) {
-     const transactionData = await TransactionTable.find();
+  @Route({ path: "/delete-transaction-script", method: HttpMethod.DELETE })
+  public async scriptClearTransaction(ctx: any) {
+    const transactionData = await TransactionTable.find();
 
-     for await (let transaction of transactionData) {
-       if (transaction.cryptoId !== null) {
-         const cryptoInfo = await CryptoTable.findOne({
-           _id: transaction.cryptoId,
-         });
-         if (cryptoInfo == null) {
-           await TransactionTable.deleteOne({ cryptoId: transaction.cryptoId });
-         }
-       }
-     }
+    for await (let transaction of transactionData) {
+      if (transaction.cryptoId !== null) {
+        const cryptoInfo = await CryptoTable.findOne({
+          _id: transaction.cryptoId,
+        });
+        if (cryptoInfo == null) {
+          await TransactionTable.deleteOne({ cryptoId: transaction.cryptoId });
+        }
+      }
+    }
 
-     return this.Ok(ctx, { message: "Transaction deleted!" });
-   }
-
+    return this.Ok(ctx, { message: "Transaction deleted!" });
+  }
 
   /**
    * @description This method is used to remove crypto not supported by alpaca from useractivities
    * @param ctx
    * @return {*}
    */
-   @Route({ path: "/delete-useractivities-script", method: HttpMethod.DELETE })
-   public async scriptClearUserActivities(ctx: any) {
-     const userActivitiesData = await UserActivityTable.find();
+  @Route({ path: "/delete-useractivities-script", method: HttpMethod.DELETE })
+  public async scriptClearUserActivities(ctx: any) {
+    const userActivitiesData = await UserActivityTable.find();
 
-     for await (let userActivity of userActivitiesData) {
-       if (userActivity.cryptoId !== null) {
-         const cryptoInfo = await CryptoTable.findOne({
-           _id: userActivity.cryptoId,
-         });
-         if (cryptoInfo == null) {
-           await UserActivityTable.deleteOne({ cryptoId: userActivity.cryptoId });
-         }
-       }
-     }
+    for await (let userActivity of userActivitiesData) {
+      if (userActivity.cryptoId !== null) {
+        const cryptoInfo = await CryptoTable.findOne({
+          _id: userActivity.cryptoId,
+        });
+        if (cryptoInfo == null) {
+          await UserActivityTable.deleteOne({
+            cryptoId: userActivity.cryptoId,
+          });
+        }
+      }
+    }
 
-     return this.Ok(ctx, { message: "User Activities deleted!" });
-   }
+    return this.Ok(ctx, { message: "User Activities deleted!" });
+  }
 }
 
 export default new TradingController();

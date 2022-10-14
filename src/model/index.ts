@@ -21,3 +21,4 @@ export * from "./deviceToken";
 export * from "./notification";
 export * from "./user-referral";
 export * from "./userDraft";
+export * from "./userBanks";
