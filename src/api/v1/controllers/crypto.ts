@@ -145,7 +145,7 @@ class CryptocurrencyController extends BaseController {
           isRecurring:
             userExists.isRecurring == ERECURRING.WEEKLY ||
             userExists.isRecurring == ERECURRING.MONTLY ||
-            userExists.isRecurring == ERECURRING.QUATERLY
+            userExists.isRecurring == ERECURRING.DAILY
               ? userExists.isRecurring
               : parentChild.accessToken
               ? 1
