@@ -15,7 +15,6 @@ class zohoCrmService {
       data: isArray ? dataCreateOrUpdateInZoho : [dataCreateOrUpdateInZoho],
     };
     const addedData = await addAccountInfoInZohoCrm(zohoAccessToken, mainData);
-    console.log(addedData, "addedData");
     if (addedData.status != 200) {
       throw new Error("Error in syncing zoho crm");
     }
@@ -54,7 +53,6 @@ class zohoCrmService {
       id,
       mainData
     );
-    console.log(addedData, "addedData");
     if (addedData.status != 200) {
       throw new Error("Error in syncing zoho crm");
     }

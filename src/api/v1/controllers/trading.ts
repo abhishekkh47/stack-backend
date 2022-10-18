@@ -2272,8 +2272,6 @@ class TradingController extends BaseController {
           jwtToken,
           requestQuoteDay
         );
-        console.log(generateQuoteResponse, "generateQuoteResponse");
-        console.log(accountIdDetails.accountId, "generateQuoteResponse");
         if (generateQuoteResponse.status == 400) {
           return this.BadRequest(ctx, generateQuoteResponse.message);
         }
@@ -2293,11 +2291,6 @@ class TradingController extends BaseController {
           jwtToken,
           generateQuoteResponse.data.data.id,
           requestExecuteQuote
-        );
-        console.log(cryptoData.assetId, "cryptoData.assetId");
-        console.log(
-          generateQuoteResponse.data.data.id,
-          "generateQuoteResponse.data.data.id"
         );
         if (executeQuoteResponse.status == 400) {
           return this.BadRequest(ctx, executeQuoteResponse.message);
