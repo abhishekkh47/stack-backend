@@ -46,6 +46,7 @@ import {
   executeQuote,
   generateQuote,
   generateTempPassword,
+  getAccountInfo,
   getJwtToken,
   getMinutesBetweenDates,
   getRefreshToken,
@@ -770,7 +771,7 @@ class AuthController extends BaseController {
             First_Name: user.firstName,
             Last_Name: user.lastName ? user.lastName : null,
             Email: user.email,
-            Mobile: user.mobile,
+            Mobile: user.mobile.replace("+", ""),
             Account_Type:
               user.type == EUserType.PARENT
                 ? "Parent"
@@ -795,8 +796,8 @@ class AuthController extends BaseController {
                 PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
                 PARENT_SIGNUP_FUNNEL.CHILD_INFO,
               ],
-              Parent_Number: reqParam.mobile,
-              Teen_Number: reqParam.childMobile,
+              Parent_Number: reqParam.mobile.replace("+", ""),
+              Teen_Number: reqParam.childMobile.replace("+", ""),
               Teen_Name: reqParam.childLastName
                 ? reqParam.childFirstName + " " + reqParam.childLastName
                 : reqParam.childFirstName,
@@ -805,8 +806,8 @@ class AuthController extends BaseController {
           if (user.type == EUserType.TEEN) {
             dataSentInCrm = {
               ...dataSentInCrm,
-              Parent_Number: reqParam.parentMobile,
-              Teen_Number: reqParam.mobile,
+              Parent_Number: reqParam.parentMobile.replace("+", ""),
+              Teen_Number: reqParam.mobile.replace("+", ""),
               Teen_Name: reqParam.lastName
                 ? reqParam.firstName + " " + reqParam.lastName
                 : reqParam.firstName,
@@ -1365,13 +1366,9 @@ class AuthController extends BaseController {
                   ? childAlready.lastName
                   : childInfo.lastName,
               };
-              await UserDraftTable.findOneAndUpdate(
-                {
-                  _id: reqParam._id,
-                },
-                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
-                { new: true }
-              );
+              await UserDraftTable.deleteOne({
+                _id: reqParam._id,
+              });
 
               await UserTable.findOneAndUpdate(
                 { mobile: reqParam.mobile },
@@ -1394,13 +1391,9 @@ class AuthController extends BaseController {
 
               migratedId = userResponse._id;
 
-              await UserDraftTable.findOneAndUpdate(
-                {
-                  _id: reqParam._id,
-                },
-                { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
-                { new: true }
-              );
+              await UserDraftTable.deleteOne({
+                _id: reqParam._id,
+              });
             }
           }
           return this.Ok(ctx, {
@@ -1522,6 +1515,9 @@ class AuthController extends BaseController {
           const draftUser = await UserDraftTable.findOne({
             _id: ctx.request.user._id,
           });
+          if (!draftUser) {
+            return this.BadRequest(ctx, "Account Already Exists");
+          }
           if (type == EUserType.PARENT && draftUser) {
             const createObject = {
               email: draftUser.email,
@@ -1568,6 +1564,7 @@ class AuthController extends BaseController {
             migratedId = userResponse._id;
           }
           if (type == EUserType.SELF || type == EUserType.PARENT) {
+            await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
             return this.Ok(ctx, { message: "Success", migratedId });
           } else {
             return this.Ok(ctx, { message: "Success" });
@@ -1743,6 +1740,7 @@ class AuthController extends BaseController {
    * @returns
    */
   @Route({ path: "/check-account-ready-to-link", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public async checkAccountReadyToLink(ctx: any) {
     const input = ctx.request.body;
     return validation.checkAccountReadyToLinkValidation(
@@ -1770,32 +1768,66 @@ class AuthController extends BaseController {
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
-          let user = await UserDraftTable.findOne(query);
+          let user = await UserTable.findOne(query);
           if (user) {
-            await UserDraftTable.updateOne(
+            await UserTable.updateOne(
               {
-                mobile: childMobile,
+                _id: user._id,
               },
               {
                 $set: {
-                  firstName: childFirstName,
-                  lastName: childLastName,
+                  firstName: childFirstName ? childFirstName : user.firstName,
+                  lastName: childLastName ? childLastName : user.lastName,
+                  mobile: childMobile ? childMobile : user.mobile,
+                  parentEmail: email,
+                  parentMobile: mobile,
+                  type: EUserType.TEEN,
+                  screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
+                  // referralCode: uniqueReferralCode,
+                  isParentFirst: false,
+                  isAutoApproval: EAUTOAPPROVAL.ON,
                 },
               }
             );
-            const createObject = {
-              firstName: childFirstName ? childFirstName : user.firstName,
-              lastName: childLastName ? childLastName : user.lastName,
-              mobile: childMobile ? childMobile : user.phoneNumber,
-              parentEmail: email,
-              parentMobile: mobile,
-              type: EUserType.TEEN,
-              screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
-              // referralCode: uniqueReferralCode,
-              isParentFirst: true,
-              isAutoApproval: EAUTOAPPROVAL.ON,
-            };
-            await UserTable.create(createObject);
+            let parentRecord = await UserTable.findOne({ mobile: mobile });
+            /**
+             * Add zoho crm
+             */
+            let searchAccountTeen: any = await zohoCrmService.searchAccount(
+              ctx.request.zohoAccessToken,
+              childMobile ? childMobile : user.mobile,
+              "Teen"
+            );
+            if (searchAccountTeen) {
+              let dataSentInCrm: any = {};
+              if (parentRecord) {
+                dataSentInCrm = {
+                  Parent_Account: {
+                    name: parentRecord.lastName
+                      ? parentRecord.firstName + " " + parentRecord.lastName
+                      : parentRecord.firstName,
+                  },
+                };
+                await zohoCrmService.updateAccounts(
+                  ctx.request.zohoAccessToken,
+                  searchAccountTeen.id,
+                  dataSentInCrm
+                );
+                let newDataInCrm = {
+                  Account_Name: parentRecord.lastName
+                    ? parentRecord.firstName + " " + parentRecord.lastName
+                    : parentRecord.firstName,
+                  TeenAccount: {
+                    id: searchAccountTeen.id,
+                  },
+                };
+                await zohoCrmService.addAccounts(
+                  ctx.request.zohoAccessToken,
+                  newDataInCrm
+                );
+              }
+            }
+
             return this.Ok(ctx, {
               message: "Account successfully linked!",
               isAccountFound: true,
@@ -1805,14 +1837,14 @@ class AuthController extends BaseController {
            * This validation is there to keep if any child sign up with parent email or mobile
            */
           if (childEmail) {
-            let checkEmailExists = await UserDraftTable.findOne({
+            let checkEmailExists = await UserTable.findOne({
               email: childEmail,
             });
             if (checkEmailExists) {
               return this.BadRequest(ctx, "Child Email Already Exists");
             }
           }
-          let checkMobileExists = await UserDraftTable.findOne({
+          let checkMobileExists = await UserTable.findOne({
             mobile: childMobile,
           });
           if (checkMobileExists) {
@@ -1854,7 +1886,7 @@ class AuthController extends BaseController {
           const createObject = {
             firstName: childFirstName ? childFirstName : user.firstName,
             lastName: childLastName ? childLastName : user.lastName,
-            mobile: childMobile ? childMobile : user.phoneNumber,
+            mobile: childMobile ? childMobile : user.mobile,
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
@@ -2138,6 +2170,7 @@ class AuthController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/check-parent-exists", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public async checkParentExists(ctx: any) {
     if (!ctx.request.body.parentMobile) {
       return this.BadRequest(ctx, "Please enter parent's mobile");
@@ -2171,6 +2204,48 @@ class AuthController extends BaseController {
           },
         }
       );
+    }
+    if (checkParentExists) {
+      let teenData = await UserTable.findOne({
+        mobile: ctx.request.body.mobile,
+      });
+      /**
+       * Add zoho crm
+       */
+      let searchAccountTeen = await zohoCrmService.searchAccount(
+        ctx.request.zohoAccessToken,
+        ctx.request.body.mobile,
+        "Teen"
+      );
+      if (searchAccountTeen) {
+        let dataSentInCrm: any = {};
+        if (checkParentExists) {
+          dataSentInCrm = {
+            Parent_Account: {
+              name: checkParentExists.lastName
+                ? checkParentExists.firstName + " " + checkParentExists.lastName
+                : checkParentExists.firstName,
+            },
+          };
+          await zohoCrmService.updateAccounts(
+            ctx.request.zohoAccessToken,
+            searchAccountTeen.id,
+            dataSentInCrm
+          );
+          let newDataInCrm = {
+            Account_Name: checkParentExists.lastName
+              ? checkParentExists.firstName + " " + checkParentExists.lastName
+              : checkParentExists.firstName,
+            TeenAccount: {
+              id: searchAccountTeen.id,
+            },
+          };
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            newDataInCrm
+          );
+        }
+      }
     }
     return this.Ok(
       ctx,

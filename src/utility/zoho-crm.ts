@@ -47,6 +47,7 @@ export const addAccountInfoInZohoCrm = async (accessToken, data) => {
       },
     })
     .then((res) => {
+      console.log(res.data.data);
       return {
         status: 200,
         data: res.data,
@@ -84,6 +85,69 @@ export const getAccountInfo = async (accessToken) => {
       };
     })
     .catch((error) => {
+      if (error) {
+        return {
+          status: error.response.status,
+          message: error.response.data,
+        };
+      }
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to get update information
+ */
+export const updateAccountInfoInZohoCrm = async (accessToken, id, data) => {
+  const url =
+    config.APP_ENVIRONMENT == "STAGING"
+      ? config.ZOHO_STAGING_DOMAIN
+      : config.ZOHO_DOMAIN;
+  const response = await axios
+    .put(url + ZOHOAPIS.updateAccountInfo(id), data, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      if (error) {
+        return {
+          status: error.response.status,
+          message: error.response.data,
+        };
+      }
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to search account information
+ */
+export const searchAccountInfo = async (accessToken, phone) => {
+  const url =
+    config.APP_ENVIRONMENT == "STAGING"
+      ? config.ZOHO_STAGING_DOMAIN
+      : config.ZOHO_DOMAIN;
+  const response = await axios
+    .get(url + ZOHOAPIS.searchAccounts(phone), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      console.log(error);
       if (error) {
         return {
           status: error.response.status,
