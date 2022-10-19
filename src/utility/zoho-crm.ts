@@ -99,31 +99,34 @@ export const getAccountInfo = async (accessToken) => {
  * @description This api is used to get update information
  */
 export const updateAccountInfoInZohoCrm = async (accessToken, id, data) => {
-  const url =
-    config.APP_ENVIRONMENT == "STAGING"
-      ? config.ZOHO_STAGING_DOMAIN
-      : config.ZOHO_DOMAIN;
-  const response = await axios
-    .put(url + ZOHOAPIS.updateAccountInfo(id), data, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-    .then((res) => {
+  try {
+    const url =
+      config.APP_ENVIRONMENT == "STAGING"
+        ? config.ZOHO_STAGING_DOMAIN
+        : config.ZOHO_DOMAIN;
+    const response = await axios.put(
+      url + ZOHOAPIS.updateAccountInfo(id),
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    if (response) {
       return {
         status: 200,
-        data: res.data,
+        data: response.data,
       };
-    })
-    .catch((error) => {
-      if (error) {
-        return {
-          status: error.response.status,
-          message: error.response.data,
-        };
-      }
-    });
-  return response;
+    }
+  } catch (error) {
+    if (error) {
+      return {
+        status: error.response.status,
+        message: error.response.data,
+      };
+    }
+  }
 };
 
 /**
