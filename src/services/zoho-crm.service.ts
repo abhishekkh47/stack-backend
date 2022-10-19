@@ -1,3 +1,4 @@
+import { UserTable } from "../model";
 import {
   addAccountInfoInZohoCrm,
   searchAccountInfo,
@@ -55,6 +56,45 @@ class zohoCrmService {
     );
     if (addedData.status != 200) {
       throw new Error("Error in syncing zoho crm");
+    }
+  }
+
+  public async searchAccountsAndUpdateDataInCrm(
+    zohoAccessToken: string,
+    teenMobile: string,
+    checkParentExists: any
+  ) {
+    /**
+     * Add zoho crm
+     */
+    let searchAccountTeen = await this.searchAccount(
+      zohoAccessToken,
+      teenMobile,
+      "Teen"
+    );
+    if (searchAccountTeen) {
+      let dataSentInCrm: any = {};
+      dataSentInCrm = {
+        Parent_Account: {
+          name: checkParentExists.lastName
+            ? checkParentExists.firstName + " " + checkParentExists.lastName
+            : checkParentExists.firstName,
+        },
+      };
+      await this.updateAccounts(
+        zohoAccessToken,
+        searchAccountTeen.id,
+        dataSentInCrm
+      );
+      let newDataInCrm = {
+        Account_Name: checkParentExists.lastName
+          ? checkParentExists.firstName + " " + checkParentExists.lastName
+          : checkParentExists.firstName,
+        TeenAccount: {
+          id: searchAccountTeen.id,
+        },
+      };
+      await this.addAccounts(zohoAccessToken, newDataInCrm);
     }
   }
 }

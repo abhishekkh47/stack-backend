@@ -1793,39 +1793,12 @@ class AuthController extends BaseController {
             /**
              * Add zoho crm
              */
-            let searchAccountTeen: any = await zohoCrmService.searchAccount(
-              ctx.request.zohoAccessToken,
-              childMobile ? childMobile : user.mobile,
-              "Teen"
-            );
-            if (searchAccountTeen) {
-              let dataSentInCrm: any = {};
-              if (parentRecord) {
-                dataSentInCrm = {
-                  Parent_Account: {
-                    name: parentRecord.lastName
-                      ? parentRecord.firstName + " " + parentRecord.lastName
-                      : parentRecord.firstName,
-                  },
-                };
-                await zohoCrmService.updateAccounts(
-                  ctx.request.zohoAccessToken,
-                  searchAccountTeen.id,
-                  dataSentInCrm
-                );
-                let newDataInCrm = {
-                  Account_Name: parentRecord.lastName
-                    ? parentRecord.firstName + " " + parentRecord.lastName
-                    : parentRecord.firstName,
-                  TeenAccount: {
-                    id: searchAccountTeen.id,
-                  },
-                };
-                await zohoCrmService.addAccounts(
-                  ctx.request.zohoAccessToken,
-                  newDataInCrm
-                );
-              }
+            if (parentRecord) {
+              await zohoCrmService.searchAccountsAndUpdateDataInCrm(
+                ctx.request.zohoAccessToken,
+                childMobile ? childMobile : user.mobile,
+                parentRecord
+              );
             }
 
             return this.Ok(ctx, {
@@ -2206,46 +2179,11 @@ class AuthController extends BaseController {
       );
     }
     if (checkParentExists) {
-      let teenData = await UserTable.findOne({
-        mobile: ctx.request.body.mobile,
-      });
-      /**
-       * Add zoho crm
-       */
-      let searchAccountTeen = await zohoCrmService.searchAccount(
+      await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
-        "Teen"
+        checkParentExists
       );
-      if (searchAccountTeen) {
-        let dataSentInCrm: any = {};
-        if (checkParentExists) {
-          dataSentInCrm = {
-            Parent_Account: {
-              name: checkParentExists.lastName
-                ? checkParentExists.firstName + " " + checkParentExists.lastName
-                : checkParentExists.firstName,
-            },
-          };
-          await zohoCrmService.updateAccounts(
-            ctx.request.zohoAccessToken,
-            searchAccountTeen.id,
-            dataSentInCrm
-          );
-          let newDataInCrm = {
-            Account_Name: checkParentExists.lastName
-              ? checkParentExists.firstName + " " + checkParentExists.lastName
-              : checkParentExists.firstName,
-            TeenAccount: {
-              id: searchAccountTeen.id,
-            },
-          };
-          await zohoCrmService.addAccounts(
-            ctx.request.zohoAccessToken,
-            newDataInCrm
-          );
-        }
-      }
     }
     return this.Ok(
       ctx,
