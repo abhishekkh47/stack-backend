@@ -417,11 +417,11 @@ class QuizController extends BaseController {
           }).populate("quizId");
           let quizDataAddInCrm = [];
           if (allQuizData.length > 0) {
-            allQuizData.map((res) => {
-              quizDataAddInCrm.push({
+            quizDataAddInCrm = allQuizData.map((res) => {
+              return {
                 Quiz_Number: parseInt(res.quizId.quizName.split(" ")[1]),
                 Points: res.pointsEarned,
-              });
+              };
             });
           }
           let dataSentInCrm: any = [
