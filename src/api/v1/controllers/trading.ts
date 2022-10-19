@@ -1971,6 +1971,8 @@ class TradingController extends BaseController {
                     parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
                   ? balance > 0
                     ? balance
+                    : clearedDeposit
+                    ? balance
                     : intialBalance
                   : intialBalance,
               parentStatus: parent.userId.status,
