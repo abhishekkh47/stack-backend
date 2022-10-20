@@ -1321,7 +1321,9 @@ class AuthController extends BaseController {
                 { new: true }
               );
             }
-
+            await UserDraftTable.deleteOne({
+              _id: reqParam._id,
+            });
             return this.BadRequest(ctx, "Mobile Number Already Verified");
           }
           /**
