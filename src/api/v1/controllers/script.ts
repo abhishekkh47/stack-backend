@@ -1,5 +1,5 @@
 import { UserTable } from "../../../model";
-import { HttpMethod } from "../../../types";
+import { EUserType, HttpMethod } from "../../../types";
 import { Route } from "../../../utility";
 import BaseController from "./base";
 
@@ -14,61 +14,107 @@ class ScriptController extends BaseController {
     const reqParam = ctx.request.body;
     const { email } = reqParam;
 
-    const attachEmail = (query) => email ? {
-      $and: [query, { email }]
-    } : query;
+    const attachEmail_Parent = (query) =>  ({
+      $and: email ? [query, {type: {$not: { $eq:  EUserType.TEEN }} }, { email }] : [query, {type: EUserType.PARENT }]
+    })
 
-    /**
-     * Screen status 0 ,1 ,2 to 0
-     */
-    const updatedCount1 = await UserTable.updateMany(
-      attachEmail({ screenStatus: { $in: [0, 1, 2] } }),
+    const attachEmail_Teen = (query) =>  ({
+      $and: email ? [query, {type: EUserType.TEEN }, { email }] : [query, {type: EUserType.PARENT }]
+    })
+
+    const updatedCountParent1 = await UserTable.updateMany(
+      attachEmail_Parent({ screenStatus: 0 }),
       {
         $set: {
-          screenStatus: 0,
+          screenStatus: 1,
         },
       }
     );
-    /**
-     * Screen status 5 to 7
-     */
-    const updatedCount2 = await UserTable.updateMany(
-      attachEmail({ screenStatus: 5 }),
-      {
-        $set: {
-          screenStatus: 7,
-        },
-      }
-    );
-    /**
-     * Screen status 3 to 5
-     */
-    const updatedCount3 = await UserTable.updateMany(
-      attachEmail({ screenStatus: 3 }),
+    const updatedCountParent2 = await UserTable.updateMany(
+      attachEmail_Parent({ screenStatus: 1 }),
       {
         $set: {
           screenStatus: 5,
         },
       }
     );
-    /**
-     * Screen status 4 to 6
-     */
-    const updatedCount4 = await UserTable.updateMany(
-      attachEmail({ screenStatus: 4 }),
+    const updatedCountParent3 = await UserTable.updateMany(
+      attachEmail_Parent({ screenStatus: 2 }),
       {
         $set: {
           screenStatus: 6,
         },
       }
     );
+    const updatedCountParent4 = await UserTable.updateMany(
+      attachEmail_Parent({ screenStatus: 3 }),
+      {
+        $set: {
+          screenStatus: 7,
+        },
+      }
+    );
+    const updatedCountTeen1 = await UserTable.updateMany(
+      attachEmail_Teen({ screenStatus: 0 }),
+      {
+        $set: {
+          screenStatus: 10,
+        },
+      }
+    );
     return this.Ok(ctx, {
-      updatedCount1,
-      updatedCount2,
-      updatedCount3,
-      updatedCount4,
+      updatedCountParent1,
+      updatedCountParent2,
+      updatedCountParent3,
+      updatedCountParent4,
+      updatedCountTeen1,
     });
   }
 }
 
 export default new ScriptController();
+
+/*
+
+- 1.1.1
+SIGN_UP = 0,
+UPLOAD_DOCUMENTS = 1,
+ADD_BANK_ACCOUNT = 2,
+SUCCESS = 3,
+
+// for teen
+ SIGN_UP_TEEN = 0,
+ CREATE_USERNAME = 1,
+ ENTER_PHONE_NO = 2,
+ ENTER_NAME = 3,
+ ENTER_PARENT_INFO = 4,
+ SUCCESS_TEEN = 5,
+ 
+ - 1.2
+// for parent new, self and teen
+ SIGN_UP = 0,
+ DOB_SCREEN = 1,
+ 
+// for parent and self
+ MYSELF_PARENT_SCREEN = 2,
+ DETAIL_SCREEN = 3,
+ CHILD_INFO_SCREEN = 4,
+ UPLOAD_DOCUMENTS = 5,
+ ADD_BANK_ACCOUNT = 6,
+ SUCCESS = 7,
+ 
+//  for teen
+ ENTER_PHONE_NO = 8,
+ ENTER_PARENT_INFO = 9,
+ SUCCESS_TEEN = 10,
+ 
+- mapping
+ NOT teen:
+ SIGN_UP = 0 -----> DOB_SCREEN = 1
+ UPLOAD_DOCUMENTS = 1 -----> UPLOAD_DOCUMENTS = 5,
+ ADD_BANK_ACCOUNT = 2 -----> ADD_BANK_ACCOUNT = 6,
+ SUCCESS = 3 -------> SUCCESS = 7,
+ 
+ teens:
+ 0 ------> SUCCESS = 10
+*/
