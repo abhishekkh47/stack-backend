@@ -9,13 +9,20 @@ class ScriptController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/update-screen-status-script", method: HttpMethod.GET })
+  @Route({ path: "/update-screen-status-script", method: HttpMethod.POST })
   public async updateScreenStatusScript(ctx: any) {
+    const reqParam = ctx.request.body;
+    const { email } = reqParam;
+
+    const attachEmail = (query) => email ? {
+      $and: [query, { email }]
+    } : query;
+
     /**
      * Screen status 0 ,1 ,2 to 0
      */
     const updatedCount1 = await UserTable.updateMany(
-      { screenStatus: { $in: [0, 1, 2] } },
+      attachEmail({ screenStatus: { $in: [0, 1, 2] } }),
       {
         $set: {
           screenStatus: 0,
@@ -26,7 +33,7 @@ class ScriptController extends BaseController {
      * Screen status 5 to 7
      */
     const updatedCount2 = await UserTable.updateMany(
-      { screenStatus: 5 },
+      attachEmail({ screenStatus: 5 }),
       {
         $set: {
           screenStatus: 7,
@@ -37,7 +44,7 @@ class ScriptController extends BaseController {
      * Screen status 3 to 5
      */
     const updatedCount3 = await UserTable.updateMany(
-      { screenStatus: 3 },
+      attachEmail({ screenStatus: 3 }),
       {
         $set: {
           screenStatus: 5,
@@ -48,7 +55,7 @@ class ScriptController extends BaseController {
      * Screen status 4 to 6
      */
     const updatedCount4 = await UserTable.updateMany(
-      { screenStatus: 4 },
+      attachEmail({ screenStatus: 4 }),
       {
         $set: {
           screenStatus: 6,
