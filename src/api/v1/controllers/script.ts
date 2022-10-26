@@ -22,19 +22,19 @@ class ScriptController extends BaseController {
       $and: email ? [query, {type: EUserType.TEEN }, { email }] : [query, {type: EUserType.PARENT }]
     })
 
-    const updatedCountParent1 = await UserTable.updateMany(
-      attachEmail_Parent({ screenStatus: 0 }),
-      {
-        $set: {
-          screenStatus: 1,
-        },
-      }
-    );
     const updatedCountParent2 = await UserTable.updateMany(
       attachEmail_Parent({ screenStatus: 1 }),
       {
         $set: {
           screenStatus: 5,
+        },
+      }
+    );
+    const updatedCountParent1 = await UserTable.updateMany(
+      attachEmail_Parent({ screenStatus: 0 }),
+      {
+        $set: {
+          screenStatus: 1,
         },
       }
     );
