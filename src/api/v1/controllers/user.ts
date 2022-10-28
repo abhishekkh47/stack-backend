@@ -1104,9 +1104,9 @@ class UserController extends BaseController {
   @Auth()
   public async testNotification(ctx: any) {
     let notificationRequest = {
-      key: NOTIFICATION_KEYS.KYC_FAILURE,
-      title: NOTIFICATION.KYC_REJECTED_TITLE,
-      // message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
+      key: NOTIFICATION_KEYS.KYC_SUCCESS,
+      title: NOTIFICATION.KYC_APPROVED_TITLE,
+      message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
       userId: ctx.request.user._id,
     };
     const deviceTokenData = await DeviceToken.findOne({
