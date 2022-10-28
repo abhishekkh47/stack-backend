@@ -55,6 +55,8 @@ export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",
   accountUpsert: "crm/v2/Accounts/upsert",
   getAccounts: "crm/v2/Accounts",
+  updateAccountInfo: (id) => `crm/v2/Accounts/${id}`,
+  searchAccounts: (phone) => `crm/v2/Accounts/search?phone=${phone}`,
 };
 
 export const DROPDOWNLIST = {

@@ -10,7 +10,7 @@ let request = {
 /**
  * @description This api is used to get link token for plaid integerations
  */
-export const getLinkToken = async (userData, accessToken) => {
+export const getLinkToken = async (userData, accessToken, deviceType) => {
   const clientUserId = userData._id;
   let request: any = {
     client_id: config.PLAID_CLIENT_ID,
@@ -29,6 +29,17 @@ export const getLinkToken = async (userData, accessToken) => {
       ...request,
       update: { account_selection_enabled: true },
       access_token: accessToken,
+    };
+  }
+  if (deviceType == 1) {
+    request = {
+      ...request,
+      android_package_name: config.ANDROID_PACKAGE_NAME,
+    };
+  } else if (deviceType == 2) {
+    request = {
+      ...request,
+      redirect_uri: config.PLAID_IOS_REDIRECT_URI,
     };
   }
   const response = await axios
@@ -138,7 +149,6 @@ export const getAccounts = async (accessToken: string) => {
     })
     .catch((error) => {
       if (error) {
-        console.log(error.response.data);
         return {
           status: error.response.status,
           message: error.response.data.error_message,

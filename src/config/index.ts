@@ -116,4 +116,10 @@ export default {
   get INVITE_LINK() {
     return "https://stackapp.onelink.me/rBVF/grd8dnxd";
   },
+  get PLAID_IOS_REDIRECT_URI() {
+    return process.env.PLAID_IOS_REDIRECT_URI;
+  },
+  get ANDROID_PACKAGE_NAME() {
+    return process.env.ANDROID_PACKAGE_NAME;
+  },
 };

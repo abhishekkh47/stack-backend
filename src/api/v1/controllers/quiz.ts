@@ -412,20 +412,25 @@ class QuizController extends BaseController {
           /**
            * Added Quiz information to zoho crm
            */
+          let allQuizData: any = await QuizResult.find({
+            userId: user._id,
+          }).populate("quizId");
+          let quizDataAddInCrm = [];
+          if (allQuizData.length > 0) {
+            quizDataAddInCrm = allQuizData.map((res) => {
+              return {
+                Quiz_Number: parseInt(res.quizId.quizName.split(" ")[1]),
+                Points: res.pointsEarned,
+              };
+            });
+          }
           let dataSentInCrm: any = [
             {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Stack_Coins: stackCoins,
-              Quiz_Information: [
-                {
-                  Quiz_Number: parseInt(quizExists.quizName.split(" ")[1]),
-                  Points:
-                    everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
-                },
-              ],
+              Quiz_Information: quizDataAddInCrm,
             },
           ];
-          console.log(isParentOrChild, "isParentOrChild");
           if (isParentOrChild != 0) {
             isParentOrChild == 2
               ? dataSentInCrm.push({

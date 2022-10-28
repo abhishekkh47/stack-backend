@@ -1,3 +1,4 @@
+import { UserDraftTable } from "./../../../model/userDraft";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -94,12 +95,18 @@ class UserController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (!ctx.request.query.deviceType) {
+      return this.BadRequest(ctx, "Please enter device type");
+    }
     let parentExists = await ParentChildTable.findOne({
       userId: userExists._id,
     });
     const linkToken: any = await getLinkToken(
       userExists,
-      parentExists && parentExists.accessToken ? parentExists.accessToken : null
+      parentExists && parentExists.accessToken
+        ? parentExists.accessToken
+        : null,
+      ctx.request.query.deviceType
     );
     if (linkToken.status == 400) {
       return this.BadRequest(ctx, linkToken.message);
@@ -279,7 +286,10 @@ class UserController extends BaseController {
       type: "account",
       attributes: {
         "account-type": "custodial",
-        name: childName + " - " + fullName,
+        name:
+          userExists.type == EUserType.SELF
+            ? fullName
+            : childName + " - " + fullName,
         "authorized-signature": fullName,
         "webhook-config": {
           url: envData.WEBHOOK_URL,
@@ -401,21 +411,39 @@ class UserController extends BaseController {
     /**
      * Updating the info in parent child table
      */
-    await ParentChildTable.updateOne(
-      {
-        userId: userExists._id,
+    let filterQuery: any = {
+      userId: userExists._id,
+    };
+    let updateQuery: any = {
+      contactId: createAccountData.data.included[0].id,
+      frontDocumentId: frontDocumentId,
+      backDocumentId: backDocumentId,
+      kycDocumentId: kycResponse.data.data.id,
+    };
+    if (userExists.type == EUserType.PARENT) {
+      filterQuery = {
+        ...filterQuery,
         "teens.childId": parentChildExists.firstChildId,
-      },
-      {
-        $set: {
-          contactId: createAccountData.data.included[0].id,
-          "teens.$.accountId": createAccountData.data.data.id,
-          frontDocumentId: frontDocumentId,
-          backDocumentId: backDocumentId,
-          kycDocumentId: kycResponse.data.data.id,
-        },
-      }
-    );
+      };
+      updateQuery = {
+        ...updateQuery,
+        contactId: createAccountData.data.included[0].id,
+        frontDocumentId: frontDocumentId,
+        backDocumentId: backDocumentId,
+        kycDocumentId: kycResponse.data.data.id,
+        "teens.$.accountId": createAccountData.data.data.id,
+      };
+    }
+    if (userExists.type == EUserType.SELF) {
+      updateQuery = {
+        ...updateQuery,
+        contactId: createAccountData.data.included[0].id,
+        accountId: createAccountData.data.data.id,
+      };
+    }
+    await ParentChildTable.updateOne(filterQuery, {
+      $set: updateQuery,
+    });
     /**
      * Update the status to zoho crm
      */
@@ -554,26 +582,38 @@ class UserController extends BaseController {
         },
       ]).exec()
     )[0];
-    if (!data) return this.BadRequest(ctx, "Invalid user ID entered.");
-    const checkParentExists = await UserTable.findOne({
-      mobile: data.parentMobile ? data.parentMobile : data.mobile,
+
+    let userDraft: any = await UserDraftTable.findOne({
+      _id: new ObjectId(id),
     });
-    if (
-      !checkParentExists ||
-      (checkParentExists &&
-        checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-    ) {
-      data.isParentApproved = 0;
-    } else {
-      data.isParentApproved = 1;
-    }
-    if (!checkParentExists || (checkParentExists && data.accessToken == null)) {
-      data.isRecurring = 0;
-    } else if (data.accessToken) {
-      if (data.isRecurring == 1 || data.isRecurring == 0) {
-        data.isRecurring = 1;
+
+    if (!data && !userDraft)
+      return this.BadRequest(ctx, "Invalid user ID entered.");
+    if (data) {
+      const checkParentExists = await UserTable.findOne({
+        mobile: data.parentMobile ? data.parentMobile : data.mobile,
+      });
+      if (
+        !checkParentExists ||
+        (checkParentExists &&
+          checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+      ) {
+        data.isParentApproved = 0;
+      } else {
+        data.isParentApproved = 1;
+      }
+      if (
+        !checkParentExists ||
+        (checkParentExists && data.accessToken == null)
+      ) {
+        data.isRecurring = 0;
+      } else if (data.accessToken) {
+        if (data.isRecurring == 1 || data.isRecurring == 0) {
+          data.isRecurring = 1;
+        }
       }
     }
+
     data = {
       ...data,
       terms: CMS_LINKS.TERMS,
@@ -581,7 +621,8 @@ class UserController extends BaseController {
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
     };
-    return this.Ok(ctx, data, true);
+
+    return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
   }
 
   /**
@@ -771,10 +812,13 @@ class UserController extends BaseController {
     if (!parentChildExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const accountIdDetails: any = await parentChildExists.teens.find(
-      (x: any) =>
-        x.childId.toString() == parentChildExists.firstChildId.toString()
-    );
+    const accountIdDetails: any =
+      userExists.type == EUserType.SELF
+        ? parentChildExists
+        : await parentChildExists.teens.find(
+            (x: any) =>
+              x.childId.toString() == parentChildExists.firstChildId.toString()
+          );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }

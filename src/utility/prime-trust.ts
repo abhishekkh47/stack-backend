@@ -278,7 +278,6 @@ export const createContributions = async (token, data) => {
       };
     })
     .catch((error) => {
-      console.log(error.response.data, "error.response.data.errors");
       return {
         status: 400,
         message: error.response.data.errors[0].detail,

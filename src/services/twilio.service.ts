@@ -24,7 +24,6 @@ class TwilioService {
           to: phoneNo,
         })
         .then((messageData: any) => {
-          console.log(messageData, "messageData");
           return resolve({
             code: 200,
             message: messageData.sid,
@@ -33,7 +32,7 @@ class TwilioService {
         .catch((error) => {
           return reject({
             code: 400,
-            message: "Twilio Error Invalid Number",
+            message: "Error Invalid Number",
           });
         });
     });
