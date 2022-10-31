@@ -14,7 +14,12 @@ import {
   EUserType,
   HttpMethod,
 } from "../../../types";
-import { Route, getBalance } from "../../../utility";
+import {
+  Route,
+  getBalance,
+  getAssets,
+  getHistoricalDataOfCoins,
+} from "../../../utility";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 import { getPortFolioService } from "../../../services";
@@ -203,6 +208,67 @@ class CryptocurrencyController extends BaseController {
       index: 0,
     });
     return this.Ok(ctx, { message: "Success", data: cryptoList });
+  }
+
+  @Route({ path: "/add-avalanche", method: HttpMethod.POST })
+  @PrimeTrustJWT()
+  public async addCryptoToDB(ctx: any) {
+    let token = ctx.request.primeTrustToken;
+    /**
+     * get the asset data for avalanche
+     */
+    let assets: any = await getAssets(token, 1, 500);
+    assets = await assets.data.data.filter(
+      (x) => x.attributes["unit-name"] === "AVAX"
+    );
+    let array = [];
+    for await (const iterator of assets) {
+      array.push({
+        name: iterator.attributes["name"],
+        symbol: iterator.attributes["unit-name"],
+        assetId: iterator.id,
+      });
+    }
+    const added = await CryptoTable.create(array[0]);
+    if (added) {
+      /**
+       * get historical data for avalanche
+       */
+      let historicalData: any = await getHistoricalDataOfCoins(added.symbol);
+      const historicalValues = historicalData.data.AVAX[0];
+      let arrayToInsert = {
+        name: historicalValues.name,
+        symbol: historicalValues.symbol,
+        assetId: added.assetId,
+        cryptoId: added._id,
+        high365D: parseFloat(
+          parseFloat(
+            historicalValues.periods["365d"].quote["USD"].high
+          ).toFixed(2)
+        ),
+        low365D: parseFloat(
+          parseFloat(historicalValues.periods["365d"].quote["USD"].low).toFixed(
+            2
+          )
+        ),
+        high90D: parseFloat(
+          parseFloat(historicalValues.periods["90d"].quote["USD"].high).toFixed(
+            2
+          )
+        ),
+        low90D: parseFloat(
+          parseFloat(historicalValues.periods["90d"].quote["USD"].low).toFixed(
+            2
+          )
+        ),
+        currencyType: "USD",
+        currentPrice: null,
+      };
+
+      await CryptoPriceTable.create(arrayToInsert);
+    }
+
+    return this.Ok(ctx, { message: assets });
   }
 }
 
