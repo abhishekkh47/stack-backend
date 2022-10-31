@@ -583,7 +583,9 @@ class UserController extends BaseController {
       ]).exec()
     )[0];
 
-    let userDraft: any = await UserDraftTable.findOne({ _id: new ObjectId(id) });
+    let userDraft: any = await UserDraftTable.findOne({
+      _id: new ObjectId(id),
+    });
 
     if (!data && !userDraft)
       return this.BadRequest(ctx, "Invalid user ID entered.");
@@ -619,7 +621,7 @@ class UserController extends BaseController {
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
     };
-      
+
     return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
   }
 
