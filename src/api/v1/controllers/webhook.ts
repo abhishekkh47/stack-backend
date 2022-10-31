@@ -619,11 +619,14 @@ class WebHookController extends BaseController {
               decodedImage,
               "base64"
             );
-            const accountIdDetails: any = await parentChildExists.teens.find(
-              (x: any) =>
-                x.childId.toString() ==
-                parentChildExists.firstChildId.toString()
-            );
+            const accountIdDetails: any =
+              userExists.type === EUserType.SELF
+                ? parentChildExists
+                : await parentChildExists.teens.find(
+                    (x: any) =>
+                      x.childId.toString() ==
+                      parentChildExists.firstChildId.toString()
+                  );
             if (!accountIdDetails) {
               return this.BadRequest(ctx, "Account Details Not Found");
             }

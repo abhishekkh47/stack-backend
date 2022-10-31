@@ -242,7 +242,7 @@ export const validation = {
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
-      code: Joi.number().integer().min(100000).max(999999).required(),
+      code: Joi.number().integer().required(),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {

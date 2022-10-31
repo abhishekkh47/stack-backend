@@ -49,6 +49,7 @@ import {
   sendNotification,
   createBank,
   wireTransfer,
+  getAssets,
 } from "../../../utility";
 import {
   NOTIFICATION,
@@ -1993,7 +1994,11 @@ class TradingController extends BaseController {
                     : intialBalance
                   : parent &&
                     parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                  ? balance
+                  ? balance > 0
+                    ? balance
+                    : clearedDeposit
+                    ? balance
+                    : intialBalance
                   : intialBalance,
               parentStatus: parent.userId.status,
               pendingBalance: pending,
@@ -3120,51 +3125,33 @@ class TradingController extends BaseController {
   }
 
   /**
-   * @description This method is used to remove cardano from the cryptos
+   * @description This method is used to reset crypto from staging
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/delete-transaction-script", method: HttpMethod.DELETE })
+  @Route({ path: "/add-crypto-from-pt", method: HttpMethod.DELETE })
+  @PrimeTrustJWT()
   public async scriptClearTransaction(ctx: any) {
-    const transactionData = await TransactionTable.find();
-
-    for await (let transaction of transactionData) {
-      if (transaction.cryptoId !== null) {
-        const cryptoInfo = await CryptoTable.findOne({
-          _id: transaction.cryptoId,
-        });
-        if (cryptoInfo == null) {
-          await TransactionTable.deleteOne({ cryptoId: transaction.cryptoId });
-        }
-      }
+    let token = ctx.request.primeTrustToken;
+    let assets: any = await getAssets(token, 1, 500);
+    assets = await assets.data.data.filter(
+      (x) =>
+        x.attributes["unit-name"] === "BTC" ||
+        x.attributes["unit-name"] === "ADA" ||
+        x.attributes["unit-name"] === "SOL" ||
+        x.attributes["unit-name"] === "ETH"
+    );
+    let array = [];
+    for await (const iterator of assets) {
+      array.push({
+        name: iterator.attributes["name"],
+        symbol: iterator.attributes["unit-name"],
+        assetId: iterator.id,
+      });
     }
+    await CryptoTable.insertMany(array);
 
-    return this.Ok(ctx, { message: "Transaction deleted!" });
-  }
-
-  /**
-   * @description This method is used to remove crypto not supported by alpaca from useractivities
-   * @param ctx
-   * @return {*}
-   */
-  @Route({ path: "/delete-useractivities-script", method: HttpMethod.DELETE })
-  public async scriptClearUserActivities(ctx: any) {
-    const userActivitiesData = await UserActivityTable.find();
-
-    for await (let userActivity of userActivitiesData) {
-      if (userActivity.cryptoId !== null) {
-        const cryptoInfo = await CryptoTable.findOne({
-          _id: userActivity.cryptoId,
-        });
-        if (cryptoInfo == null) {
-          await UserActivityTable.deleteOne({
-            cryptoId: userActivity.cryptoId,
-          });
-        }
-      }
-    }
-
-    return this.Ok(ctx, { message: "User Activities deleted!" });
+    return this.Ok(ctx, { message: assets });
   }
 }
 
