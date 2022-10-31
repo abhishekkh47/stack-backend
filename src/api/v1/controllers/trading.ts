@@ -159,6 +159,48 @@ class TradingController extends BaseController {
            * if deposit amount is greater than 0
            */
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
+
+            let scheduleDate = moment()
+            .startOf("day")
+            .add(
+              reqParam.isRecurring == ERECURRING.WEEKLY
+                ? 7
+                : reqParam.isRecurring == ERECURRING.MONTLY
+                ? 1
+                : reqParam.isRecurring == ERECURRING.DAILY
+                ? 24
+                : 0,
+              reqParam.isRecurring == ERECURRING.WEEKLY
+                ? "days"
+                : reqParam.isRecurring == ERECURRING.MONTLY
+                ? "months"
+                : reqParam.isRecurring == ERECURRING.DAILY
+                ? "hours"
+                : "day"
+            )
+            .format("YYYY-MM-DD");
+
+            await UserTable.updateOne(
+              {
+                _id: userExists._id,
+              },
+              {
+                $set: {
+                  isRecurring: reqParam.isRecurring,
+                  selectedDeposit:
+                    reqParam.isRecurring == ERECURRING.NO_BANK ||
+                    reqParam.isRecurring == ERECURRING.NO_RECURRING
+                      ? 0
+                      : reqParam.depositAmount,
+                  selectedDepositDate:
+                    reqParam.isRecurring == ERECURRING.NO_BANK ||
+                    reqParam.isRecurring == ERECURRING.NO_RECURRING
+                      ? null
+                      : scheduleDate,
+                },
+              }
+            );
+
             const accountIdDetails =
               userExists.type == EUserType.PARENT
                 ? await parentDetails.teens.find(

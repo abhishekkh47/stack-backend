@@ -1,3 +1,5 @@
+import { UserBanksTable } from "./../../../model/userBanks";
+import { getAccounts } from "./../../../utility/plaid";
 import { UserDraftTable } from "./../../../model/userDraft";
 import { json } from "co-body";
 import fs from "fs";
@@ -624,6 +626,47 @@ class UserController extends BaseController {
     };
 
     return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
+  }
+
+  /**
+   * @description This method is used to get the bank account info
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/get-bank-info", method: HttpMethod.GET })
+  @Auth()
+  public async getBankInfo(ctx: any) {
+    const user = ctx.request.user;
+    let array = [];
+    let account;
+    const userExists = await UserBanksTable.find({
+      $or: [
+        { userId: user._id },
+        {
+          parentId: user._id,
+        },
+      ],
+    });
+    if (userExists) {
+      for await (let user of userExists) {
+        account = await getAccounts(user.accessToken);
+        array.push({
+          _id: user._id,
+          accessToken: user.accessToken,
+          isDefault: user.isDefault,
+          accounts: [
+            {
+              bankId: account.data.accounts[0].account_id,
+              bankAccountNo: account.data.accounts[0].mask,
+              bankName: account.data.accounts[0].name,
+            },
+          ],
+        });
+      }
+      return this.Ok(ctx, { data: array });
+    } else {
+      this.BadRequest(ctx, "No bank account added.");
+    }
   }
 
   /**

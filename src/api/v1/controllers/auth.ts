@@ -1792,6 +1792,7 @@ class AuthController extends BaseController {
               }
             );
             let parentRecord = await UserTable.findOne({ mobile: mobile });
+  
             /**
              * Add zoho crm
              */
@@ -1799,7 +1800,8 @@ class AuthController extends BaseController {
               await zohoCrmService.searchAccountsAndUpdateDataInCrm(
                 ctx.request.zohoAccessToken,
                 childMobile ? childMobile : user.mobile,
-                parentRecord
+                parentRecord,
+                false
               );
             }
 
@@ -1871,6 +1873,20 @@ class AuthController extends BaseController {
             isAutoApproval: EAUTOAPPROVAL.ON,
           };
           await UserTable.create(createObject);
+
+          let parentRecord = await UserTable.findOne({ mobile: mobile });
+    
+          /**
+           * Add zoho crm
+           */
+          if (parentRecord) {
+            await zohoCrmService.searchAccountsAndUpdateDataInCrm(
+              ctx.request.zohoAccessToken,
+              childMobile ? childMobile : user.mobile,
+              parentRecord,
+              true
+            );
+          }
           return this.Ok(ctx, {
             message: "Invite sent!",
             isAccountFound: false,
@@ -2184,9 +2200,11 @@ class AuthController extends BaseController {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
-        checkParentExists
+        checkParentExists,
+        true
       );
     }
+
     return this.Ok(
       ctx,
       !checkParentExists
@@ -2429,25 +2447,25 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
-              /**
-               * Zoho crm account addition
-               */
-              let dataSentInCrm: any = {
-                Account_Name:
-                  userTypeScreenUpdate.firstName +
-                  " " +
-                  userTypeScreenUpdate.lastName,
-                Account_Type:
-                  reqParam.type == EUserType.PARENT ? "Parent" : "Self",
-              };
-              await zohoCrmService.addAccounts(
-                ctx.request.zohoAccessToken,
-                dataSentInCrm
-              );
-              return this.Ok(ctx, {
-                message: "Dob saved",
-                userTypeScreenUpdate,
-              });
+            /**
+             * Zoho crm account addition
+             */
+            let dataSentInCrm: any = {
+              Account_Name:
+                userTypeScreenUpdate.firstName +
+                " " +
+                userTypeScreenUpdate.lastName,
+              Account_Type:
+                reqParam.type == EUserType.PARENT ? "Parent" : "Self",
+            };
+            await zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataSentInCrm
+            );
+            return this.Ok(ctx, {
+              message: "Dob saved",
+              userTypeScreenUpdate,
+            });
             }
           } catch (error) {
             return this.BadRequest(ctx, error.message);

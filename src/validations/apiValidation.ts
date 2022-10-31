@@ -48,6 +48,7 @@ export const validation = {
       accountId: Joi.string().required(),
       institutionId: Joi.string().required(),
       depositAmount: Joi.number(),
+      isRecurring: Joi.number().valid(0, 1, 2, 3, 4).required(),
     });
     const { error } = schema.validate(req);
     if (error) {

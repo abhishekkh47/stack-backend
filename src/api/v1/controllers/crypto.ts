@@ -62,13 +62,34 @@ class CryptocurrencyController extends BaseController {
       }
     }
     return this.Ok(ctx, {
-      data: await CryptoTable.find(query, {
-        _id: 1,
-        name: 1,
-        symbol: 1,
-        assetId: 1,
-        image: 1,
-      }),
+      data: await CryptoTable.aggregate([
+        {
+          $match: {
+            $and: [query],
+          },
+        },
+        {
+          $lookup: {
+            from: "cryptoprices",
+            localField: "_id",
+            foreignField: "cryptoId",
+            as: "cryptoPrice",
+          },
+        },
+        {
+          $unwind: { path: "$cryptoPrice", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            symbol: 1,
+            assetId: 1,
+            image: 1,
+            price: "$cryptoPrice.currentPrice",
+          },
+        },
+      ]).exec()
     });
   }
 
