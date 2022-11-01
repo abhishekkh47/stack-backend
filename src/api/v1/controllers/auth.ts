@@ -868,7 +868,43 @@ class AuthController extends BaseController {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
             if (!userExists) {
-              return this.BadRequest(ctx, "Email Doesn't Exists");
+              const createObject = {
+                email: reqParam.email,
+                refreshToken: reqParam.socialLoginToken,
+                screenStatus: ESCREENSTATUS.DOB_SCREEN,
+                firstName: reqParam.firstName,
+                lastName: reqParam.lastName,
+              };
+
+              const createUserDraft: any = await UserDraftTable.create(
+                createObject
+              );
+              if (createUserDraft) {
+                await SocialService.verifySocial(reqParam);
+
+                const { token, refreshToken } =
+                  await TokenService.generateToken(createUserDraft);
+
+                let getProfileInput: any = {
+                  request: {
+                    query: { token },
+                    params: { id: createUserDraft._id },
+                  },
+                };
+                await UserController.getProfile(getProfileInput);
+
+                await DeviceTokenService.addDeviceTokenIfNeeded(
+                  createUserDraft._id,
+                  deviceToken
+                );
+
+                return this.Ok(ctx, {
+                  token,
+                  refreshToken,
+                  profileData: getProfileInput.body.data,
+                  message: "Success",
+                });
+              }
             } else {
               await SocialService.verifySocial(reqParam);
 
@@ -1792,7 +1828,7 @@ class AuthController extends BaseController {
               }
             );
             let parentRecord = await UserTable.findOne({ mobile: mobile });
-  
+
             /**
              * Add zoho crm
              */
@@ -1875,7 +1911,7 @@ class AuthController extends BaseController {
           await UserTable.create(createObject);
 
           let parentRecord = await UserTable.findOne({ mobile: mobile });
-    
+
           /**
            * Add zoho crm
            */
@@ -2447,25 +2483,25 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
-            /**
-             * Zoho crm account addition
-             */
-            let dataSentInCrm: any = {
-              Account_Name:
-                userTypeScreenUpdate.firstName +
-                " " +
-                userTypeScreenUpdate.lastName,
-              Account_Type:
-                reqParam.type == EUserType.PARENT ? "Parent" : "Self",
-            };
-            await zohoCrmService.addAccounts(
-              ctx.request.zohoAccessToken,
-              dataSentInCrm
-            );
-            return this.Ok(ctx, {
-              message: "Dob saved",
-              userTypeScreenUpdate,
-            });
+              /**
+               * Zoho crm account addition
+               */
+              let dataSentInCrm: any = {
+                Account_Name:
+                  userTypeScreenUpdate.firstName +
+                  " " +
+                  userTypeScreenUpdate.lastName,
+                Account_Type:
+                  reqParam.type == EUserType.PARENT ? "Parent" : "Self",
+              };
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+              return this.Ok(ctx, {
+                message: "Dob saved",
+                userTypeScreenUpdate,
+              });
             }
           } catch (error) {
             return this.BadRequest(ctx, error.message);
