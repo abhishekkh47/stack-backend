@@ -123,7 +123,7 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
-          if (userBanksFound.length > 0) {
+          if (userBanksFound) {
             /**
              * creating an entry in db for the new created bank
              */
@@ -3233,12 +3233,16 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const getBankList = await UserBanksTable.find({ userId: user._id });
+          const getBankList = await UserBanksTable.find({
+            $or: [{ userId: user._id }, { parentId: user._id }],
+          });
           if (getBankList) {
-            await UserBanksTable.updateMany(
+            const updatedToZero = await UserBanksTable.updateMany(
               {
-                _id: { $ne: bankId },
-                userId: user._id,
+                $match: {
+                  _id: { $ne: bankId },
+                  $or: [{ userId: user._id }, { parentId: user._id }],
+                },
               },
               {
                 $set: {
@@ -3246,14 +3250,19 @@ class TradingController extends BaseController {
                 },
               }
             );
-            await UserBanksTable.updateOne(
-              { _id: bankId, userId: user._id },
-              {
-                $set: {
-                  isDefault: 1,
+            if (updatedToZero) {
+              await UserBanksTable.updateOne(
+                {
+                  _id: bankId,
+                  $or: [{ userId: user._id }, { parentId: user._id }],
                 },
-              }
-            );
+                {
+                  $set: {
+                    isDefault: 1,
+                  },
+                }
+              );
+            }
 
             return this.Ok(ctx, { message: "Successfull" });
           } else {
