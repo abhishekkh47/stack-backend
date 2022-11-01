@@ -48,7 +48,7 @@ export const validation = {
       accountId: Joi.string().required(),
       institutionId: Joi.string().required(),
       depositAmount: Joi.number(),
-      isRecurring: Joi.number().valid(0, 1, 2, 3, 4).required(),
+      isRecurring: Joi.number().valid(0, 1, 2, 3, 4),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -151,8 +151,8 @@ export const validation = {
   switchBankAccountValidation: (req, res, callback) => {
     const schema = Joi.object({
       bankId: Joi.string()
-      .regex(/^[0-9a-fA-F]{24}$/)
-      .required(),
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
     const { error } = schema.validate(req);
     if (error) {
