@@ -159,26 +159,25 @@ class TradingController extends BaseController {
            * if deposit amount is greater than 0
            */
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-
             let scheduleDate = moment()
-            .startOf("day")
-            .add(
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? 7
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? 1
-                : reqParam.isRecurring == ERECURRING.DAILY
-                ? 24
-                : 0,
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? "days"
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? "months"
-                : reqParam.isRecurring == ERECURRING.DAILY
-                ? "hours"
-                : "day"
-            )
-            .format("YYYY-MM-DD");
+              .startOf("day")
+              .add(
+                reqParam.isRecurring == ERECURRING.WEEKLY
+                  ? 7
+                  : reqParam.isRecurring == ERECURRING.MONTLY
+                  ? 1
+                  : reqParam.isRecurring == ERECURRING.DAILY
+                  ? 24
+                  : 0,
+                reqParam.isRecurring == ERECURRING.WEEKLY
+                  ? "days"
+                  : reqParam.isRecurring == ERECURRING.MONTLY
+                  ? "months"
+                  : reqParam.isRecurring == ERECURRING.DAILY
+                  ? "hours"
+                  : "day"
+              )
+              .format("YYYY-MM-DD");
 
             await UserTable.updateOne(
               {
@@ -1238,6 +1237,7 @@ class TradingController extends BaseController {
           jwtToken,
           requestQuoteDay
         );
+        console.log(generateQuoteResponse);
         if (generateQuoteResponse.status == 400) {
           return this.BadRequest(ctx, generateQuoteResponse.message);
         }
