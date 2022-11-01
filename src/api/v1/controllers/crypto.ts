@@ -89,7 +89,7 @@ class CryptocurrencyController extends BaseController {
             price: "$cryptoPrice.currentPrice",
           },
         },
-      ]).exec()
+      ]).exec(),
     });
   }
 
@@ -195,7 +195,7 @@ class CryptocurrencyController extends BaseController {
    * @description This api is used for getting crypto list + cash shown in new invest screen
    * @returns {*}
    */
-  @Route({ path: "/crypto-list-invest-screen", method: HttpMethod.GET })
+  @Route({ path: "/cryptos", method: HttpMethod.GET })
   @Auth()
   public async getCryptoInInvestScreen(ctx: any) {
     let cryptoList: any = await CryptoTable.aggregate([

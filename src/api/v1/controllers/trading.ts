@@ -1259,6 +1259,7 @@ class TradingController extends BaseController {
           jwtToken,
           requestQuoteDay
         );
+        console.log(generateQuoteResponse);
         if (generateQuoteResponse.status == 400) {
           return this.BadRequest(ctx, generateQuoteResponse.message);
         }
