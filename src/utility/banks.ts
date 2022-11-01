@@ -15,16 +15,18 @@ export const createBank = async (
   processToken: string,
   accessToken: string,
   institutionId: string,
-  userExists: any
+  userExists: any,
+  childId: any,
+  defaultFlag: any
 ) => {
   const response = await UserBanksTable.create({
-    userId: userExists._id,
+    userId: childId,
     parentId: userExists._id,
     processorToken: processToken,
     relationshipId: null,
     accessToken: accessToken,
     status: EBankStatus.APPROVED,
-    isDefault: 1,
+    isDefault: defaultFlag,
     insId: institutionId,
   });
 

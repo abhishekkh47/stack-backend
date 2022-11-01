@@ -12,4 +12,5 @@ export interface ICryptoPrice {
   currentPrice: number;
   currencyType: string;
   percent_change_30d: number;
+  percent_change_2y: number;
 }

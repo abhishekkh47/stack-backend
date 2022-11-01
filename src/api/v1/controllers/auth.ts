@@ -856,10 +856,9 @@ class AuthController extends BaseController {
   /**
    * @description This method will be used to verify social id token and email in case of user registration
    */
-  @Route({ path: "/check-user-signup", method: HttpMethod.POST })
+  @Route({ path: "/check-signup", method: HttpMethod.POST })
   public async checkUserSignUp(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log(reqParam, "reqParam");
     return validation.checkUserSignupValidation(
       reqParam,
       ctx,
@@ -934,7 +933,6 @@ class AuthController extends BaseController {
               });
             }
           } catch (error) {
-            console.log(error);
             return this.BadRequest(ctx, error.message);
           }
         }
@@ -2254,7 +2252,7 @@ class AuthController extends BaseController {
   /**
    * @description This method will be used to verify social id token and email in case of user registration and if email not verified create a user
    */
-  @Route({ path: "/check-signup", method: HttpMethod.POST })
+  @Route({ path: "/check-user-signup", method: HttpMethod.POST })
   @PrimeTrustJWT(true)
   public async checkSignUp(ctx: any) {
     const reqParam = ctx.request.body;

@@ -83,6 +83,8 @@ class getPortfolioService {
           symbol: 1,
           image: 1,
           currentPrice: "$currentPriceDetails.currentPrice",
+          percentChange30d: "$currentPriceDetails.percent_change_30d",
+          percentChange2y: "$currentPriceDetails.percent_change_2y",
           totalSum: {
             $sum: "$transactionData.unitCount",
           },
@@ -111,9 +113,7 @@ class getPortfolioService {
               else: true,
             },
           },
-          balance: balance,
-          percentChange30d: "$currentPriceDetails.percent_change_30d",
-          percentChange365d: null,
+          balance: balance         
         },
       },
     ]).exec();

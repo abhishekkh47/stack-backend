@@ -78,6 +78,7 @@ class TradingController extends BaseController {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
+    const userBanksFound = await UserBanksTable.find({ userId: user._id });
     const userExists = await UserTable.findOne({ _id: user._id });
     let admin = await AdminTable.findOne({});
     if (!userExists) {
@@ -122,15 +123,35 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
-          /**
-           * creating an entry in db for the new created bank
-           */
-          await createBank(
-            processToken.data.processor_token,
-            publicTokenExchange.data.access_token,
-            reqParam.institutionId,
-            userExists
-          );
+          if (userBanksFound.length > 0) {
+            /**
+             * creating an entry in db for the new created bank
+             */
+            await createBank(
+              processToken.data.processor_token,
+              publicTokenExchange.data.access_token,
+              reqParam.institutionId,
+              userExists,
+              parent.firstChildId._id,
+              0
+            );
+            return this.Ok(ctx, {
+              message: "Bank account linked successfully",
+            });
+          } else {
+            /**
+             * creating an entry in db for the new created bank
+             */
+            await createBank(
+              processToken.data.processor_token,
+              publicTokenExchange.data.access_token,
+              reqParam.institutionId,
+              userExists,
+              parent.firstChildId._id,
+              1
+            );
+          }
+
           // to be commented code need to check once :
           const parentDetails: any = await ParentChildTable.findOneAndUpdate(
             {
@@ -159,26 +180,25 @@ class TradingController extends BaseController {
            * if deposit amount is greater than 0
            */
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-
             let scheduleDate = moment()
-            .startOf("day")
-            .add(
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? 7
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? 1
-                : reqParam.isRecurring == ERECURRING.DAILY
-                ? 24
-                : 0,
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? "days"
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? "months"
-                : reqParam.isRecurring == ERECURRING.DAILY
-                ? "hours"
-                : "day"
-            )
-            .format("YYYY-MM-DD");
+              .startOf("day")
+              .add(
+                reqParam.isRecurring == ERECURRING.WEEKLY
+                  ? 7
+                  : reqParam.isRecurring == ERECURRING.MONTLY
+                  ? 1
+                  : reqParam.isRecurring == ERECURRING.DAILY
+                  ? 24
+                  : 0,
+                reqParam.isRecurring == ERECURRING.WEEKLY
+                  ? "days"
+                  : reqParam.isRecurring == ERECURRING.MONTLY
+                  ? "months"
+                  : reqParam.isRecurring == ERECURRING.DAILY
+                  ? "hours"
+                  : "day"
+              )
+              .format("YYYY-MM-DD");
 
             await UserTable.updateOne(
               {
@@ -1183,7 +1203,8 @@ class TradingController extends BaseController {
         return this.BadRequest(ctx, fetchBalance.message);
       }
       const balance = fetchBalance.data.data[0].attributes.disbursable;
-      if (amount > balance) return this.BadRequest(ctx, "Insufficient funds");
+      if (amount > balance)
+        return this.BadRequest(ctx, "ERROR: Insufficient Funds");
 
       const userType = (
         await UserTable.findOne(
@@ -1322,10 +1343,10 @@ class TradingController extends BaseController {
           });
         }
       }
-      const message = mainQuery
-        ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
-        : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
-      return this.Ok(ctx, { message });
+      // const message = mainQuery
+      //   ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
+      //   : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
+      return this.Ok(ctx, { message: "Transaction Processed!" });
     });
   }
 
@@ -3194,6 +3215,52 @@ class TradingController extends BaseController {
     await CryptoTable.insertMany(array);
 
     return this.Ok(ctx, { message: assets });
+  }
+
+  /**
+   * @description This method is used to switch bank account
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/switch-bank-account-api/:bankId", method: HttpMethod.POST })
+  @Auth()
+  public async switchBankAccountApi(ctx: any) {
+    const user = ctx.request.user;
+    const { bankId } = ctx.request.params;
+    return validation.switchBankAccountValidation(
+      ctx.request.params,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const getBankList = await UserBanksTable.find({ userId: user._id });
+          if (getBankList) {
+            await UserBanksTable.updateMany(
+              {
+                _id: { $ne: bankId },
+                userId: user._id,
+              },
+              {
+                $set: {
+                  isDefault: 0,
+                },
+              }
+            );
+            await UserBanksTable.updateOne(
+              { _id: bankId, userId: user._id },
+              {
+                $set: {
+                  isDefault: 1,
+                },
+              }
+            );
+
+            return this.Ok(ctx, { message: "Successfull" });
+          } else {
+            return this.BadRequest(ctx, "The Bank Account Does not exist");
+          }
+        }
+      }
+    );
   }
 }
 

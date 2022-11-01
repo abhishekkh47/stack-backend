@@ -210,6 +210,9 @@ export const startCron = () => {
               { userId: accountIdDetails.userId },
               { parentId: accountIdDetails.userId },
             ],
+            $and: [
+              {isDefault: 1}
+            ]
           });
           let contributionRequest = {
             type: "contributions",
