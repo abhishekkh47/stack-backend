@@ -859,6 +859,7 @@ class AuthController extends BaseController {
   @Route({ path: "/check-user-signup", method: HttpMethod.POST })
   public async checkUserSignUp(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log(reqParam, "reqParam");
     return validation.checkUserSignupValidation(
       reqParam,
       ctx,
@@ -933,6 +934,7 @@ class AuthController extends BaseController {
               });
             }
           } catch (error) {
+            console.log(error);
             return this.BadRequest(ctx, error.message);
           }
         }
@@ -1837,7 +1839,7 @@ class AuthController extends BaseController {
                 ctx.request.zohoAccessToken,
                 childMobile ? childMobile : user.mobile,
                 parentRecord,
-                false
+                "false"
               );
             }
 
@@ -1920,7 +1922,7 @@ class AuthController extends BaseController {
               ctx.request.zohoAccessToken,
               childMobile ? childMobile : user.mobile,
               parentRecord,
-              true
+              "true"
             );
           }
           return this.Ok(ctx, {
@@ -2237,7 +2239,7 @@ class AuthController extends BaseController {
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
         checkParentExists,
-        true
+        "true"
       );
     }
 
