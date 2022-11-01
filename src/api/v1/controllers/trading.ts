@@ -123,33 +123,18 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
+          await createBank(
+            processToken.data.processor_token,
+            publicTokenExchange.data.access_token,
+            reqParam.institutionId,
+            userExists,
+            parent.firstChildId._id,
+            userBanksFound.length > 0 ? 0 : 1
+          );
           if (userBanksFound.length > 0) {
-            /**
-             * creating an entry in db for the new created bank
-             */
-            await createBank(
-              processToken.data.processor_token,
-              publicTokenExchange.data.access_token,
-              reqParam.institutionId,
-              userExists,
-              parent.firstChildId._id,
-              0
-            );
             return this.Ok(ctx, {
               message: "Bank account linked successfully",
             });
-          } else {
-            /**
-             * creating an entry in db for the new created bank
-             */
-            await createBank(
-              processToken.data.processor_token,
-              publicTokenExchange.data.access_token,
-              reqParam.institutionId,
-              userExists,
-              parent.firstChildId._id,
-              1
-            );
           }
 
           // to be commented code need to check once :

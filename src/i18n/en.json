@@ -266,5 +266,6 @@
 	"recurringDepositValidationChildidRequired": "Please enter child details",
 	"recurringDepositValidationChildidEmpty": "Please enter child details",
 	"recurringDepositValidationChildidPattern": "Please enter child details",
-	"addDepositBankidRequired": "Please select bank"
+	"addDepositBankidRequired": "Please select bank",
+	"addBankDetailsIsrecurringRequired": "addBankDetailsIsrecurringRequired"
 }
