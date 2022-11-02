@@ -171,10 +171,16 @@ class AuthController extends BaseController {
               mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
+            
+            const getTeenInfo = await ParentChildTable.findOne({
+              userId: checkParentExists._id
+            })
+          
+            const checkCondition = await getTeenInfo.teens.filter((x: any) => x.childId.toString() == childExists.id.toString())
             if (
               checkParentExists &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-              !childExists
+              checkCondition.length == 0
             ) {
               parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
@@ -183,13 +189,14 @@ class AuthController extends BaseController {
                 return this.BadRequest(ctx, "Account Details Not Found");
               }
               parentId = parentTable._id;
+
               /**
                * Create Prime Trust Account for other child as well
                * TODO
                */
-              let childName = reqParam.lastName
-                ? reqParam.firstName + " " + reqParam.lastName
-                : reqParam.firstName;
+              let childName = childExists.lastName
+              ? childExists.firstName + " " + childExists.lastName
+              : childExists.firstName;
               const data = {
                 type: "account",
                 attributes: {
@@ -804,8 +811,16 @@ class AuthController extends BaseController {
             };
           }
           if (user.type == EUserType.TEEN) {
+            //todo parent aexist then add parent name
             dataSentInCrm = {
               ...dataSentInCrm,
+              Parent_Account: checkParentExists
+                ? checkParentExists.lastName
+                  ? checkParentExists.firstName +
+                    " " +
+                    checkParentExists.lastName
+                  : checkParentExists.firstName
+                : null,
               Parent_Number: reqParam.parentMobile.replace("+", ""),
               Teen_Number: reqParam.mobile.replace("+", ""),
               Teen_Name: reqParam.lastName
@@ -2214,30 +2229,34 @@ class AuthController extends BaseController {
     let checkParentExists = await UserTable.findOne({
       mobile: ctx.request.body.parentMobile,
     });
+    let alreadyChildExists = await UserTable.find({
+      parentMobile: ctx.request.body.parentMobile,
+    });
     if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
       return this.BadRequest(
         ctx,
         "Looks like this phone number is associated with a child account. Please try a different phone number"
       );
     }
-
-    if (ctx.request.body.parentMobile && !checkParentExists) {
+    if (ctx.request.body.parentMobile) {
       await UserTable.updateOne(
         { mobile: ctx.request.body.mobile },
         {
           $set: {
             screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             parentMobile: ctx.request.body.parentMobile,
+            parentEmail: checkParentExists.email
           },
         }
       );
     }
+
     if (checkParentExists) {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
         checkParentExists,
-        "true"
+        checkParentExists && !alreadyChildExists ? "true" : "false"
       );
     }
 
@@ -2264,8 +2283,7 @@ class AuthController extends BaseController {
           try {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
-            let userDraftExists = await UserDraftTable.findOne({ email });
-            if (!userExists && !userDraftExists) {
+            if (!userExists) {
               await SocialService.verifySocial(reqParam);
               let createQuery: any = {
                 email: reqParam.email,
@@ -2321,24 +2339,21 @@ class AuthController extends BaseController {
               await SocialService.verifySocial(reqParam);
 
               const { token, refreshToken } = await TokenService.generateToken(
-                userExists !== null ? userExists : userDraftExists
+                userExists !== null && userExists
               );
 
               let getProfileInput: any = {
                 request: {
                   query: { token },
                   params: {
-                    id:
-                      userExists !== null
-                        ? userExists._id
-                        : userDraftExists._id,
+                    id: userExists !== null && userExists._id,
                   },
                 },
               };
               await UserController.getProfile(getProfileInput);
 
               await DeviceTokenService.addDeviceTokenIfNeeded(
-                userExists !== null ? userExists._id : userDraftExists._id,
+                userExists !== null && userExists._id,
                 deviceToken
               );
 

@@ -491,7 +491,6 @@ export const generateQuote = async (token, data) => {
       };
     })
     .catch((error) => {
-      console.log(error.response.data.errors);
       return {
         status: 400,
         message: error.response.data.errors[0].detail,
@@ -521,7 +520,6 @@ export const executeQuote = async (token, id, data) => {
       };
     })
     .catch((error) => {
-      console.log(error.response.data.errors);
       return {
         status: 400,
         message: error.response.data.errors[0].detail,

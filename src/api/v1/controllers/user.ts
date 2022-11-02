@@ -639,11 +639,23 @@ class UserController extends BaseController {
     const user = ctx.request.user;
     let array = [];
     let account;
+    const getUserType = await UserTable.findOne({
+      _id: ctx.request.user._id
+    })
+     let parentId;
+    if(getUserType.type == EUserType.TEEN) 
+    {
+      parentId = await UserTable.findOne({
+        email: getUserType.parentEmail
+      })
+       
+
+    }
     const userExists = await UserBanksTable.find({
       $or: [
-        { userId: user._id },
+        { userId: parentId ? parentId : user._id },
         {
-          parentId: user._id,
+          parentId: parentId ? parentId : user._id,
         },
       ],
     });
