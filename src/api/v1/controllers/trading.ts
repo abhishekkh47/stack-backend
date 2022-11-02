@@ -9,12 +9,17 @@ import {
   DeviceToken,
   Notification,
   ParentChildTable,
-  QuizResult,
   TransactionTable,
   UserActivityTable,
   UserBanksTable,
   UserTable,
 } from "../../../model";
+import {
+  getPortFolioService,
+  quizService,
+  userService,
+  zohoCrmService,
+} from "../../../services";
 import {
   EAction,
   EAUTOAPPROVAL,
@@ -31,6 +36,7 @@ import {
   messages,
 } from "../../../types";
 import {
+  createBank,
   createContributions,
   createDisbursements,
   createProcessorToken,
@@ -38,6 +44,7 @@ import {
   generateQuote,
   getAccountId,
   getAccounts,
+  getAssets,
   getBalance,
   getContactId,
   getPublicTokenExchange,
@@ -47,9 +54,7 @@ import {
   internalAssetTransfers,
   Route,
   sendNotification,
-  createBank,
   wireTransfer,
-  getAssets,
 } from "../../../utility";
 import {
   NOTIFICATION,
@@ -57,11 +62,6 @@ import {
   PARENT_SIGNUP_FUNNEL,
   PLAID_ITEM_ERROR,
 } from "../../../utility/constants";
-import {
-  zohoCrmService,
-  quizService,
-  getPortFolioService,
-} from "../../../services";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -96,9 +96,6 @@ class TradingController extends BaseController {
       ["email", "isGifted", "isGiftedCrypto", "firstName", "lastName"]
     );
     if (!parent) return this.BadRequest(ctx, "Invalid User");
-    // if (parent.accessToken || parent.processorToken) {
-    //   return this.BadRequest(ctx, "Bank Details Already Updated");
-    // }
     return validation.addBankDetailsValidation(
       reqParam,
       ctx,
@@ -165,25 +162,9 @@ class TradingController extends BaseController {
            * if deposit amount is greater than 0
            */
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-            let scheduleDate = moment()
-              .startOf("day")
-              .add(
-                reqParam.isRecurring == ERECURRING.WEEKLY
-                  ? 7
-                  : reqParam.isRecurring == ERECURRING.MONTLY
-                  ? 1
-                  : reqParam.isRecurring == ERECURRING.DAILY
-                  ? 24
-                  : 0,
-                reqParam.isRecurring == ERECURRING.WEEKLY
-                  ? "days"
-                  : reqParam.isRecurring == ERECURRING.MONTLY
-                  ? "months"
-                  : reqParam.isRecurring == ERECURRING.DAILY
-                  ? "hours"
-                  : "day"
-              )
-              .format("YYYY-MM-DD");
+            let scheduleDate = userService.getScheduleDate(
+              reqParam.isRecurring
+            );
 
             await UserTable.updateOne(
               {
@@ -326,7 +307,6 @@ class TradingController extends BaseController {
               PARENT_SIGNUP_FUNNEL.DOB,
               PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
               PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-              // PARENT_SIGNUP_FUNNEL.ADDRESS,
               PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
               PARENT_SIGNUP_FUNNEL.ADD_BANK,
               PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
@@ -354,7 +334,6 @@ class TradingController extends BaseController {
             PARENT_SIGNUP_FUNNEL.DOB,
             PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
             PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-            // PARENT_SIGNUP_FUNNEL.ADDRESS,
             PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
             PARENT_SIGNUP_FUNNEL.ADD_BANK,
             PARENT_SIGNUP_FUNNEL.SUCCESS,
@@ -1244,7 +1223,6 @@ class TradingController extends BaseController {
           jwtToken,
           requestQuoteDay
         );
-        console.log(generateQuoteResponse);
         if (generateQuoteResponse.status == 400) {
           return this.BadRequest(ctx, generateQuoteResponse.message);
         }
@@ -2190,9 +2168,6 @@ class TradingController extends BaseController {
         if (!userBankInfo) {
           return this.BadRequest(ctx, "Bank Details Not Found");
         }
-        // if (!parent.processorToken) {
-        //   return this.BadRequest(ctx, "Processor Token Doesn't Exists");
-        // }
         /**
          * create fund transfer with fund transfer id in response
          */
@@ -2270,11 +2245,6 @@ class TradingController extends BaseController {
         if (!userBankInfo) {
           return this.BadRequest(ctx, "Bank Details Not Found");
         }
-        // if (!parent.processorToken) {
-        //   return this.BadRequest(ctx, {
-        //     message: "Processor Token Doesn't Exists",
-        //   });
-        // }
         let disbursementRequest = {
           type: "disbursements",
           attributes: {
@@ -3127,25 +3097,7 @@ class TradingController extends BaseController {
               }
             );
           }
-          let scheduleDate = moment()
-            .startOf("day")
-            .add(
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? 7
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? 1
-                : reqParam.isRecurring == ERECURRING.DAILY
-                ? 24
-                : 0,
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? "days"
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? "months"
-                : reqParam.isRecurring == ERECURRING.DAILY
-                ? "hours"
-                : "day"
-            )
-            .format("YYYY-MM-DD");
+          let scheduleDate = userService.getScheduleDate(reqParam.isRecurring);
           await UserTable.findOneAndUpdate(
             { _id: reqParam.childId },
             {

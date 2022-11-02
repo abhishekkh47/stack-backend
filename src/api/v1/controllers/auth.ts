@@ -1,7 +1,6 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
-import { child } from "winston";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -11,21 +10,20 @@ import {
   Notification,
   OtpTable,
   ParentChildTable,
-  QuizResult,
   StateTable,
-  UserDraftTable,
   TransactionTable,
+  UserDraftTable,
   UserReffaralTable,
   UserTable,
 } from "../../../model";
 import {
   AuthService,
   DeviceTokenService,
+  quizService,
   SocialService,
   TokenService,
   TwilioService,
   zohoCrmService,
-  quizService,
 } from "../../../services";
 import {
   EAUTOAPPROVAL,
@@ -46,7 +44,6 @@ import {
   executeQuote,
   generateQuote,
   generateTempPassword,
-  getAccountInfo,
   getJwtToken,
   getMinutesBetweenDates,
   getRefreshToken,
@@ -1482,17 +1479,6 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile } = input;
-          // let user = await UserTable.findOne({ mobile });
-          // if (user)
-          //   return this.BadRequest(ctx, "Mobile number already exists.");
-          // user = await UserTable.findOne({
-          //   email: { $regex: `${email}$`, $options: "i" },
-          // });
-          // if (user) return this.BadRequest(ctx, "Email-ID already exists.");
-
-          /**
-           * Send sms for confirmation of otp
-           */
 
           try {
             await TwilioService.sendOTP(mobile, EOTPTYPE.SIGN_UP);
@@ -1556,7 +1542,10 @@ class AuthController extends BaseController {
           if (!draftUser) {
             return this.BadRequest(ctx, "Account Already Exists");
           }
-          if (type == EUserType.PARENT && draftUser) {
+          if (
+            (type == EUserType.PARENT || type == EUserType.SELF) &&
+            draftUser
+          ) {
             const createObject = {
               email: draftUser.email,
               dob: draftUser.dob,
@@ -1572,33 +1561,13 @@ class AuthController extends BaseController {
               address: input.address,
               unitApt: input.unitApt,
               postalCode: input.postalCode,
-              screenStatus: ESCREENSTATUS.CHILD_INFO_SCREEN,
+              screenStatus:
+                type == EUserType.PARENT
+                  ? ESCREENSTATUS.CHILD_INFO_SCREEN
+                  : ESCREENSTATUS.ENTER_PARENT_INFO,
               taxIdNo: input.taxIdNo,
             };
             let userResponse = await UserTable.create(createObject);
-            migratedId = userResponse._id;
-          }
-          if (type == EUserType.SELF && draftUser) {
-            const createObject = {
-              email: draftUser.email,
-              dob: draftUser.dob,
-              type: draftUser.type,
-              mobile: input.mobile,
-              firstName: input.firstName
-                ? input.firstName
-                : draftUser.firstName,
-              lastName: input.lastName ? input.lastName : draftUser.lastName,
-              country: input.country,
-              state: input.state,
-              city: input.city,
-              address: input.address,
-              unitApt: input.unitApt,
-              postalCode: input.postalCode,
-              screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
-              taxIdNo: input.taxIdNo,
-            };
-            let userResponse = await UserTable.create(createObject);
-
             migratedId = userResponse._id;
           }
           if (type == EUserType.SELF || type == EUserType.PARENT) {
@@ -1863,35 +1832,11 @@ class AuthController extends BaseController {
           if (checkMobileExists) {
             return this.BadRequest(ctx, "Child Mobile Already Exists");
           }
-          // let checkParentMobileExists = await UserTable.findOne({
-          //   mobile: childMobile,
-          // });
-          // if (checkParentMobileExists) {
-          //   return this.BadRequest(ctx, "Parent Mobile Already Exists");
-          // }
-          /**
-           * send twilio message to the teen in order to signup.
-           */
-          // const message: string = `Hi there! Your ${firstName} has signed you up for Stack - an easy and fun app designed for teens to earn and trade crypto. 🚀  Create your own account to get started. ${envData.INVITE_LINK}`;
-          // try {
-          //   const twilioResponse: any = await TwilioService.sendSMS(
-          //     childMobile,
-          //     message
-          //   );
-          //   if (twilioResponse.code === 400) {
-          //     return this.BadRequest(ctx, "Error in sending OTP");
-          //   }
-          // } catch (error) {
-          //   return this.BadRequest(ctx, error.message);
-          // }
           if (!childFirstName) {
             return this.Ok(ctx, {
               message: "You are inviting your teen in stack",
             });
           }
-          /**
-           * Create child account based on parent's input
-           */
           /**
            * Generate referal code when user sign's up.
            */
@@ -2136,21 +2081,6 @@ class AuthController extends BaseController {
           },
         ]);
       }
-      /**
-       * send twilio message to the teen in order to signup.
-       */
-      // const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
-      // try {
-      //   const twilioResponse: any = await TwilioService.sendSMS(
-      //     reqParam.parentMobile,
-      //     message
-      //   );
-      //   if (twilioResponse.code === 400) {
-      //     return this.BadRequest(ctx, "Error in sending message");
-      //   }
-      // } catch (error) {
-      //   return this.BadRequest(ctx, error.message);
-      // }
       return this.Ok(ctx, { message: "Reminder sent!", parentExists });
     }
   }
