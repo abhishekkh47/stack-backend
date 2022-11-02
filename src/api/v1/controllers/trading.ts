@@ -44,7 +44,6 @@ import {
   generateQuote,
   getAccountId,
   getAccounts,
-  getAssets,
   getBalance,
   getContactId,
   getPublicTokenExchange,
@@ -55,6 +54,8 @@ import {
   Route,
   sendNotification,
   wireTransfer,
+  getAssets,
+  getPrimeTrustJWTToken,
 } from "../../../utility";
 import {
   NOTIFICATION,
@@ -124,9 +125,7 @@ class TradingController extends BaseController {
             processToken.data.processor_token,
             publicTokenExchange.data.access_token,
             reqParam.institutionId,
-            userExists,
-            parent.firstChildId._id,
-            userBanksFound.length > 0 ? 0 : 1
+            userExists
           );
           if (userBanksFound.length > 0) {
             return this.Ok(ctx, {
@@ -1307,10 +1306,10 @@ class TradingController extends BaseController {
           });
         }
       }
-      // const message = mainQuery
-      //   ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
-      //   : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
-      return this.Ok(ctx, { message: "Transaction Processed!" });
+      const message = mainQuery
+        ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
+        : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
+      return this.Ok(ctx, { message });
     });
   }
 
@@ -1664,6 +1663,7 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          console.log("======");
           let isTeenPending = false;
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
@@ -1883,6 +1883,19 @@ class TradingController extends BaseController {
               if (isTeenPending) {
                 totalValueForInvestment = totalValueForInvestment - 5;
               }
+              console.log({
+                portFolio,
+                totalStackValue,
+                stackCoins,
+                totalGainLoss,
+                balance: 0,
+                pendingBalance: intialBalance,
+                parentStatus: null,
+                intialBalance: 0,
+                totalAmountInvested: totalValueForInvestment,
+                isDeposit: 0,
+                isTeenPending,
+              });
               return this.Ok(ctx, {
                 data: {
                   portFolio,
@@ -1983,6 +1996,7 @@ class TradingController extends BaseController {
               },
             },
           ]).exec();
+          console.log("==");
           if (otherPendingActivity.length > 0) {
             intialBalance = intialBalance + otherPendingActivity[0].sum;
             totalStackValue =
@@ -1996,6 +2010,8 @@ class TradingController extends BaseController {
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
+          console.log(childExists._id,'childExists._id')
+          console.log(transactionData.length > 0)
           let totalValue =
             totalGainLoss > 0
               ? totalStackValue - totalGainLoss
@@ -3208,6 +3224,205 @@ class TradingController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to check the cron
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/test-cron", method: HttpMethod.POST })
+  public async testCron(ctx: any) {
+    let token = await getPrimeTrustJWTToken();
+    let users: any = await UserTable.aggregate([
+      {
+        $match: {
+          $and: [
+            { isRecurring: { $exists: true } },
+            { isRecurring: { $nin: [0, 1] } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "teens.childId",
+          as: "parentChild",
+        },
+      },
+      { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "firstChildId",
+          as: "self",
+        },
+      },
+      { $unwind: { path: "$self", preserveNullAndEmptyArrays: true } },
+    ]).exec();
+    if (users.length > 0) {
+      let todayDate = moment().startOf("day").unix();
+      let transactionArray = [];
+      let mainArray = [];
+      let activityArray = [];
+      let accountIdDetails: any;
+      for await (let user of users) {
+        if (user.type == EUserType.SELF) {
+          accountIdDetails =
+            (await user.self.userId.toString()) == user._id.toString() &&
+            user.self;
+        } else {
+          accountIdDetails = await user.parentChild?.teens.find(
+            (x: any) => x.childId.toString() == user._id.toString()
+          );
+        }
+
+        if (!accountIdDetails) {
+          continue;
+        }
+        let deviceTokenData = await DeviceToken.findOne({
+          userId:
+            user.type == EUserType.SELF
+              ? user.self.userId
+              : user.parentChild.userId,
+        }).select("deviceToken");
+        let selectedDate = moment(user.selectedDepositDate)
+          .startOf("day")
+          .unix();
+        if (selectedDate <= todayDate) {
+          const id =
+            user.type == EUserType.SELF
+              ? accountIdDetails.userId
+              : accountIdDetails.childId;
+          const userInfo = await UserBanksTable.findOne({
+            $or: [{ userId: id }, { parentId: id }],
+            $and: [{ isDefault: 1 }],
+          });
+          let contributionRequest = {
+            type: "contributions",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "contact-id":
+                user.type == EUserType.SELF
+                  ? user.self.contactId
+                  : user.parentChild.contactId,
+              "funds-transfer-method": {
+                "funds-transfer-type": "ach",
+                "ach-check-type": "personal",
+                "contact-id":
+                  user.type == EUserType.SELF
+                    ? user.self.contactId
+                    : user.parentChild.contactId,
+                "plaid-processor-token": userInfo.processorToken,
+              },
+              amount: user.selectedDeposit,
+            },
+          };
+          let contributions: any = await createContributions(
+            token.data,
+            contributionRequest
+          );
+          if (contributions.status == 400) {
+            /**
+             * Notification
+             */
+            if (deviceTokenData) {
+              let notificationRequest = {
+                key:
+                  contributions.code == 25001
+                    ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
+                    : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
+                title: "Recurring Deposit Error",
+                message:
+                  contributions.code == 25001
+                    ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
+                    : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE,
+              };
+              await sendNotification(
+                deviceTokenData.deviceToken,
+                notificationRequest.title,
+                notificationRequest
+              );
+              await Notification.create({
+                title: notificationRequest.title,
+                userId:
+                  user.type == EUserType.SELF
+                    ? user.self.userId
+                    : user.parentChild.userId,
+                message: null,
+                isRead: ERead.UNREAD,
+                data: JSON.stringify(notificationRequest),
+              });
+            }
+            continue;
+          } else {
+            let activityData = {
+              userId: user._id,
+              userType: EUserType.TEEN,
+              message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
+              currencyType: null,
+              currencyValue: user.selectedDeposit,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            };
+            await activityArray.push(activityData);
+            let transactionData = {
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              recurringDeposit: true,
+              settledTime: moment().unix(),
+              amount: user.selectedDeposit,
+              amountMod: null,
+              userId: user._id,
+              parentId: user.parentChild.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            };
+            await transactionArray.push(transactionData);
+            let bulWriteOperation = {
+              updateOne: {
+                filter: { _id: user._id },
+                update: {
+                  $set: {
+                    selectedDepositDate: moment(user.selectedDepositDate)
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? 24
+                          : 0,
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? "hours"
+                          : "day"
+                      ),
+                  },
+                },
+              },
+            };
+            await mainArray.push(bulWriteOperation);
+          }
+        }
+      }
+      await UserActivityTable.insertMany(activityArray);
+      await TransactionTable.insertMany(transactionArray);
+      await UserTable.bulkWrite(mainArray);
+      return true;
+    }
+    return true;
   }
 }
 

@@ -81,7 +81,6 @@ class zohoCrmService {
             ? checkParentExists.firstName + " " + checkParentExists.lastName
             : checkParentExists.firstName,
         },
-        Parent_First: parentFirst
       };
       await this.updateAccounts(
         zohoAccessToken,
