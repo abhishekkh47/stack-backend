@@ -1,24 +1,17 @@
 import Koa from "koa";
-import { ObjectId } from "mongodb";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
   ParentChildTable,
-  TransactionTable,
   UserTable,
 } from "../../../model";
-import {
-  ERECURRING,
-  ETransactionType,
-  EUserType,
-  HttpMethod,
-} from "../../../types";
-import { Route, getBalance } from "../../../utility";
+import { getPortFolioService } from "../../../services";
+import { ERECURRING, EUserType, HttpMethod } from "../../../types";
+import { getBalance, Route } from "../../../utility";
+import { CASH_USD_ICON } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
-import { getPortFolioService } from "../../../services";
-import { CASH_USD_ICON } from "../../../utility/constants";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
@@ -62,13 +55,34 @@ class CryptocurrencyController extends BaseController {
       }
     }
     return this.Ok(ctx, {
-      data: await CryptoTable.find(query, {
-        _id: 1,
-        name: 1,
-        symbol: 1,
-        assetId: 1,
-        image: 1,
-      }),
+      data: await CryptoTable.aggregate([
+        {
+          $match: {
+            $and: [query],
+          },
+        },
+        {
+          $lookup: {
+            from: "cryptoprices",
+            localField: "_id",
+            foreignField: "cryptoId",
+            as: "cryptoPrice",
+          },
+        },
+        {
+          $unwind: { path: "$cryptoPrice", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            symbol: 1,
+            assetId: 1,
+            image: 1,
+            price: "$cryptoPrice.currentPrice",
+          },
+        },
+      ]).exec(),
     });
   }
 
@@ -145,7 +159,7 @@ class CryptocurrencyController extends BaseController {
           isRecurring:
             userExists.isRecurring == ERECURRING.WEEKLY ||
             userExists.isRecurring == ERECURRING.MONTLY ||
-            userExists.isRecurring == ERECURRING.QUATERLY
+            userExists.isRecurring == ERECURRING.DAILY
               ? userExists.isRecurring
               : parentChild.accessToken
               ? 1
@@ -174,7 +188,7 @@ class CryptocurrencyController extends BaseController {
    * @description This api is used for getting crypto list + cash shown in new invest screen
    * @returns {*}
    */
-  @Route({ path: "/crypto-list-invest-screen", method: HttpMethod.GET })
+  @Route({ path: "/cryptos", method: HttpMethod.GET })
   @Auth()
   public async getCryptoInInvestScreen(ctx: any) {
     let cryptoList: any = await CryptoTable.aggregate([

@@ -9,11 +9,17 @@ import {
   DeviceToken,
   Notification,
   ParentChildTable,
-  QuizResult,
   TransactionTable,
   UserActivityTable,
+  UserBanksTable,
   UserTable,
 } from "../../../model";
+import {
+  getPortFolioService,
+  quizService,
+  userService,
+  zohoCrmService,
+} from "../../../services";
 import {
   EAction,
   EAUTOAPPROVAL,
@@ -30,6 +36,7 @@ import {
   messages,
 } from "../../../types";
 import {
+  createBank,
   createContributions,
   createDisbursements,
   createProcessorToken,
@@ -48,6 +55,7 @@ import {
   sendNotification,
   wireTransfer,
   getAssets,
+  getPrimeTrustJWTToken,
 } from "../../../utility";
 import {
   NOTIFICATION,
@@ -55,11 +63,6 @@ import {
   PARENT_SIGNUP_FUNNEL,
   PLAID_ITEM_ERROR,
 } from "../../../utility/constants";
-import {
-  zohoCrmService,
-  quizService,
-  getPortFolioService,
-} from "../../../services";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -76,6 +79,7 @@ class TradingController extends BaseController {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
+    const userBanksFound = await UserBanksTable.find({ userId: user._id });
     const userExists = await UserTable.findOne({ _id: user._id });
     let admin = await AdminTable.findOne({});
     if (!userExists) {
@@ -93,9 +97,6 @@ class TradingController extends BaseController {
       ["email", "isGifted", "isGiftedCrypto", "firstName", "lastName"]
     );
     if (!parent) return this.BadRequest(ctx, "Invalid User");
-    if (parent.accessToken || parent.processorToken) {
-      return this.BadRequest(ctx, "Bank Details Already Updated");
-    }
     return validation.addBankDetailsValidation(
       reqParam,
       ctx,
@@ -120,6 +121,19 @@ class TradingController extends BaseController {
           if (processToken.status == 400) {
             return this.BadRequest(ctx, processToken.message);
           }
+          await createBank(
+            processToken.data.processor_token,
+            publicTokenExchange.data.access_token,
+            reqParam.institutionId,
+            userExists
+          );
+          if (userBanksFound.length > 0) {
+            return this.Ok(ctx, {
+              message: "Bank account linked successfully",
+            });
+          }
+
+          // to be commented code need to check once :
           const parentDetails: any = await ParentChildTable.findOneAndUpdate(
             {
               _id: parent._id,
@@ -147,6 +161,31 @@ class TradingController extends BaseController {
            * if deposit amount is greater than 0
            */
           if (reqParam.depositAmount && reqParam.depositAmount > 0) {
+            let scheduleDate = userService.getScheduleDate(
+              reqParam.isRecurring
+            );
+
+            await UserTable.updateOne(
+              {
+                _id: userExists._id,
+              },
+              {
+                $set: {
+                  isRecurring: reqParam.isRecurring,
+                  selectedDeposit:
+                    reqParam.isRecurring == ERECURRING.NO_BANK ||
+                    reqParam.isRecurring == ERECURRING.NO_RECURRING
+                      ? 0
+                      : reqParam.depositAmount,
+                  selectedDepositDate:
+                    reqParam.isRecurring == ERECURRING.NO_BANK ||
+                    reqParam.isRecurring == ERECURRING.NO_RECURRING
+                      ? null
+                      : scheduleDate,
+                },
+              }
+            );
+
             const accountIdDetails =
               userExists.type == EUserType.PARENT
                 ? await parentDetails.teens.find(
@@ -160,7 +199,8 @@ class TradingController extends BaseController {
               parentDetails,
               jwtToken,
               userExists,
-              accountIdDetails
+              accountIdDetails,
+              processToken.data.processor_token
             );
             /**
              * Gift Crypto to to teen who had pending 5btc
@@ -266,7 +306,6 @@ class TradingController extends BaseController {
               PARENT_SIGNUP_FUNNEL.DOB,
               PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
               PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-              // PARENT_SIGNUP_FUNNEL.ADDRESS,
               PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
               PARENT_SIGNUP_FUNNEL.ADD_BANK,
               PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
@@ -294,7 +333,6 @@ class TradingController extends BaseController {
             PARENT_SIGNUP_FUNNEL.DOB,
             PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
             PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-            // PARENT_SIGNUP_FUNNEL.ADDRESS,
             PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
             PARENT_SIGNUP_FUNNEL.ADD_BANK,
             PARENT_SIGNUP_FUNNEL.SUCCESS,
@@ -359,6 +397,12 @@ class TradingController extends BaseController {
       userExists.type,
       async (validate) => {
         if (validate) {
+          let userBankInfo = await UserBanksTable.findOne({
+            _id: reqParam.bankId,
+          });
+          if (!userBankInfo) {
+            return this.BadRequest(ctx, "Bank Details Not Found");
+          }
           let contributions: any = null;
           let mainQuery =
             userExists.type == EUserType.PARENT ||
@@ -378,7 +422,7 @@ class TradingController extends BaseController {
                   "funds-transfer-type": "ach",
                   "ach-check-type": "personal",
                   "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": parentDetails.processorToken,
+                  "plaid-processor-token": userBankInfo.processorToken,
                 },
                 amount: reqParam.amount,
               },
@@ -691,6 +735,12 @@ class TradingController extends BaseController {
       userExists.type,
       async (validate) => {
         if (validate) {
+          let userBankInfo = await UserBanksTable.findOne({
+            _id: reqParam.bankId,
+          });
+          if (!userBankInfo) {
+            return this.BadRequest(ctx, "Bank Details Not Found");
+          }
           /**
            * Check current balance is greather than withdrawable amount
            */
@@ -779,7 +829,7 @@ class TradingController extends BaseController {
                   "funds-transfer-type": "ach",
                   "ach-check-type": "personal",
                   "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": parentDetails.processorToken,
+                  "plaid-processor-token": userBankInfo.processorToken,
                 },
                 amount: reqParam.amount,
               },
@@ -1116,7 +1166,8 @@ class TradingController extends BaseController {
         return this.BadRequest(ctx, fetchBalance.message);
       }
       const balance = fetchBalance.data.data[0].attributes.disbursable;
-      if (amount > balance) return this.BadRequest(ctx, "Insufficient funds");
+      if (amount > balance)
+        return this.BadRequest(ctx, "ERROR: Insufficient Funds");
 
       const userType = (
         await UserTable.findOne(
@@ -1612,6 +1663,7 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          console.log("======");
           let isTeenPending = false;
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
@@ -1831,6 +1883,19 @@ class TradingController extends BaseController {
               if (isTeenPending) {
                 totalValueForInvestment = totalValueForInvestment - 5;
               }
+              console.log({
+                portFolio,
+                totalStackValue,
+                stackCoins,
+                totalGainLoss,
+                balance: 0,
+                pendingBalance: intialBalance,
+                parentStatus: null,
+                intialBalance: 0,
+                totalAmountInvested: totalValueForInvestment,
+                isDeposit: 0,
+                isTeenPending,
+              });
               return this.Ok(ctx, {
                 data: {
                   portFolio,
@@ -1931,6 +1996,7 @@ class TradingController extends BaseController {
               },
             },
           ]).exec();
+          console.log("==");
           if (otherPendingActivity.length > 0) {
             intialBalance = intialBalance + otherPendingActivity[0].sum;
             totalStackValue =
@@ -1944,6 +2010,8 @@ class TradingController extends BaseController {
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
+          console.log(childExists._id,'childExists._id')
+          console.log(transactionData.length > 0)
           let totalValue =
             totalGainLoss > 0
               ? totalStackValue - totalGainLoss
@@ -2093,13 +2161,28 @@ class TradingController extends BaseController {
         "You dont have sufficient balance to perform the operarion"
       );
     }
+    const userBankInfo = await UserBanksTable.findOne({
+      $and: [
+        { isDefault: 1 },
+        {
+          $or: [
+            {
+              userId: userExists._id,
+            },
+            {
+              parentId: userExists._id,
+            },
+          ],
+        },
+      ],
+    });
     switch (activity.action) {
       case 1:
         /**
          * Deposit
          */
-        if (!parent.processorToken) {
-          return this.BadRequest(ctx, "Processor Token Doesn't Exists");
+        if (!userBankInfo) {
+          return this.BadRequest(ctx, "Bank Details Not Found");
         }
         /**
          * create fund transfer with fund transfer id in response
@@ -2113,7 +2196,7 @@ class TradingController extends BaseController {
               "funds-transfer-type": "ach",
               "ach-check-type": "personal",
               "contact-id": parent.contactId,
-              "plaid-processor-token": parent.processorToken,
+              "plaid-processor-token": userBankInfo.processorToken,
             },
             amount: activity.currencyValue,
           },
@@ -2175,10 +2258,8 @@ class TradingController extends BaseController {
         /**
          * Withdraw
          */
-        if (!parent.processorToken) {
-          return this.BadRequest(ctx, {
-            message: "Processor Token Doesn't Exists",
-          });
+        if (!userBankInfo) {
+          return this.BadRequest(ctx, "Bank Details Not Found");
         }
         let disbursementRequest = {
           type: "disbursements",
@@ -2189,7 +2270,7 @@ class TradingController extends BaseController {
               "funds-transfer-type": "ach",
               "ach-check-type": "personal",
               "contact-id": parent.contactId,
-              "plaid-processor-token": parent.processorToken,
+              "plaid-processor-token": userBankInfo.processorToken,
             },
             amount: activity.currencyValue,
           },
@@ -2604,6 +2685,14 @@ class TradingController extends BaseController {
           });
           let insufficentBalance = false;
           if (pendingActivities.length > 0) {
+            const userBankInfo = await UserBanksTable.findOne({
+              $and: [
+                { isDefault: 1 },
+                {
+                  userId: childId,
+                },
+              ],
+            });
             for await (let activity of pendingActivities) {
               if (
                 activity.action != EAction.DEPOSIT &&
@@ -2618,6 +2707,9 @@ class TradingController extends BaseController {
                   /**
                    * Deposit
                    */
+                  if (!userBankInfo) {
+                    return this.BadRequest(ctx, "Bank Details Not Found");
+                  }
                   let contributionRequest = {
                     type: "contributions",
                     attributes: {
@@ -2627,7 +2719,7 @@ class TradingController extends BaseController {
                         "funds-transfer-type": "ach",
                         "ach-check-type": "personal",
                         "contact-id": parent.contactId,
-                        "plaid-processor-token": parent.processorToken,
+                        "plaid-processor-token": userBankInfo.processorToken,
                       },
                       amount: activity.currencyValue,
                     },
@@ -2682,6 +2774,9 @@ class TradingController extends BaseController {
                   }
                   break;
                 case 2:
+                  if (!userBankInfo) {
+                    return this.BadRequest(ctx, "Bank Details Not Found");
+                  }
                   let disbursementRequest = {
                     type: "disbursements",
                     attributes: {
@@ -2691,7 +2786,7 @@ class TradingController extends BaseController {
                         "funds-transfer-type": "ach",
                         "ach-check-type": "personal",
                         "contact-id": parent.contactId,
-                        "plaid-processor-token": parent.processorToken,
+                        "plaid-processor-token": userBankInfo.processorToken,
                       },
                       amount: activity.currencyValue,
                     },
@@ -2975,6 +3070,16 @@ class TradingController extends BaseController {
     let reqParam = ctx.request.body;
     let user = ctx.request.user;
     let userExists = await UserTable.findOne({ _id: user._id });
+    let userBank = await UserBanksTable.findOne({
+      $and: [
+        {
+          _id: reqParam.bankId,
+        },
+        {
+          userId: userExists._id,
+        },
+      ],
+    });
     if (!userExists || (userExists && userExists.type == EUserType.TEEN)) {
       return this.BadRequest(ctx, "User not allowed to access");
     }
@@ -2983,25 +3088,32 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          let scheduleDate = moment()
-            .startOf("day")
-            .add(
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? 7
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? 1
-                : reqParam.isRecurring == ERECURRING.QUATERLY
-                ? 4
-                : 0,
-              reqParam.isRecurring == ERECURRING.WEEKLY
-                ? "days"
-                : reqParam.isRecurring == ERECURRING.MONTLY
-                ? "months"
-                : reqParam.isRecurring == ERECURRING.QUATERLY
-                ? "months"
-                : "day"
-            )
-            .format("YYYY-MM-DD");
+          if (userBank.isDefault !== 1) {
+            await UserBanksTable.findOneAndUpdate(
+              { _id: reqParam.bankId },
+              {
+                $set: {
+                  isDefault: 1,
+                },
+              }
+            );
+            await UserBanksTable.updateMany(
+              {
+                $match: {
+                  userId: userExists._id,
+                  _id: {
+                    $ne: reqParam.bankId,
+                  },
+                },
+              },
+              {
+                $set: {
+                  isDefault: 0,
+                },
+              }
+            );
+          }
+          let scheduleDate = userService.getScheduleDate(reqParam.isRecurring);
           await UserTable.findOneAndUpdate(
             { _id: reqParam.childId },
             {
@@ -3057,6 +3169,260 @@ class TradingController extends BaseController {
     await CryptoTable.insertMany(array);
 
     return this.Ok(ctx, { message: assets });
+  }
+
+  /**
+   * @description This method is used to switch bank account
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/switch-bank-account-api/:bankId", method: HttpMethod.POST })
+  @Auth()
+  public async switchBankAccountApi(ctx: any) {
+    const user = ctx.request.user;
+    const { bankId } = ctx.request.params;
+    return validation.switchBankAccountValidation(
+      ctx.request.params,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const getBankList = await UserBanksTable.find({
+            $or: [{ userId: user._id }, { parentId: user._id }],
+          });
+          if (getBankList) {
+            const updatedToZero = await UserBanksTable.updateMany(
+              {
+                $match: {
+                  _id: { $ne: bankId },
+                  $or: [{ userId: user._id }, { parentId: user._id }],
+                },
+              },
+              {
+                $set: {
+                  isDefault: 0,
+                },
+              }
+            );
+            if (updatedToZero) {
+              await UserBanksTable.updateOne(
+                {
+                  _id: bankId,
+                  $or: [{ userId: user._id }, { parentId: user._id }],
+                },
+                {
+                  $set: {
+                    isDefault: 1,
+                  },
+                }
+              );
+            }
+
+            return this.Ok(ctx, { message: "Successfull" });
+          } else {
+            return this.BadRequest(ctx, "The Bank Account Does not exist");
+          }
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to check the cron
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/test-cron", method: HttpMethod.POST })
+  public async testCron(ctx: any) {
+    let token = await getPrimeTrustJWTToken();
+    let users: any = await UserTable.aggregate([
+      {
+        $match: {
+          $and: [
+            { isRecurring: { $exists: true } },
+            { isRecurring: { $nin: [0, 1] } },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "teens.childId",
+          as: "parentChild",
+        },
+      },
+      { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "firstChildId",
+          as: "self",
+        },
+      },
+      { $unwind: { path: "$self", preserveNullAndEmptyArrays: true } },
+    ]).exec();
+    if (users.length > 0) {
+      let todayDate = moment().startOf("day").unix();
+      let transactionArray = [];
+      let mainArray = [];
+      let activityArray = [];
+      let accountIdDetails: any;
+      for await (let user of users) {
+        if (user.type == EUserType.SELF) {
+          accountIdDetails =
+            (await user.self.userId.toString()) == user._id.toString() &&
+            user.self;
+        } else {
+          accountIdDetails = await user.parentChild?.teens.find(
+            (x: any) => x.childId.toString() == user._id.toString()
+          );
+        }
+
+        if (!accountIdDetails) {
+          continue;
+        }
+        let deviceTokenData = await DeviceToken.findOne({
+          userId:
+            user.type == EUserType.SELF
+              ? user.self.userId
+              : user.parentChild.userId,
+        }).select("deviceToken");
+        let selectedDate = moment(user.selectedDepositDate)
+          .startOf("day")
+          .unix();
+        if (selectedDate <= todayDate) {
+          const id =
+            user.type == EUserType.SELF
+              ? accountIdDetails.userId
+              : accountIdDetails.childId;
+          const userInfo = await UserBanksTable.findOne({
+            $or: [{ userId: id }, { parentId: id }],
+            $and: [{ isDefault: 1 }],
+          });
+          let contributionRequest = {
+            type: "contributions",
+            attributes: {
+              "account-id": accountIdDetails.accountId,
+              "contact-id":
+                user.type == EUserType.SELF
+                  ? user.self.contactId
+                  : user.parentChild.contactId,
+              "funds-transfer-method": {
+                "funds-transfer-type": "ach",
+                "ach-check-type": "personal",
+                "contact-id":
+                  user.type == EUserType.SELF
+                    ? user.self.contactId
+                    : user.parentChild.contactId,
+                "plaid-processor-token": userInfo.processorToken,
+              },
+              amount: user.selectedDeposit,
+            },
+          };
+          let contributions: any = await createContributions(
+            token.data,
+            contributionRequest
+          );
+          if (contributions.status == 400) {
+            /**
+             * Notification
+             */
+            if (deviceTokenData) {
+              let notificationRequest = {
+                key:
+                  contributions.code == 25001
+                    ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
+                    : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
+                title: "Recurring Deposit Error",
+                message:
+                  contributions.code == 25001
+                    ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
+                    : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE,
+              };
+              await sendNotification(
+                deviceTokenData.deviceToken,
+                notificationRequest.title,
+                notificationRequest
+              );
+              await Notification.create({
+                title: notificationRequest.title,
+                userId:
+                  user.type == EUserType.SELF
+                    ? user.self.userId
+                    : user.parentChild.userId,
+                message: null,
+                isRead: ERead.UNREAD,
+                data: JSON.stringify(notificationRequest),
+              });
+            }
+            continue;
+          } else {
+            let activityData = {
+              userId: user._id,
+              userType: EUserType.TEEN,
+              message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
+              currencyType: null,
+              currencyValue: user.selectedDeposit,
+              action: EAction.DEPOSIT,
+              resourceId: contributions.data.included[0].id,
+              status: EStatus.PROCESSED,
+            };
+            await activityArray.push(activityData);
+            let transactionData = {
+              assetId: null,
+              cryptoId: null,
+              accountId: accountIdDetails.accountId,
+              type: ETransactionType.DEPOSIT,
+              recurringDeposit: true,
+              settledTime: moment().unix(),
+              amount: user.selectedDeposit,
+              amountMod: null,
+              userId: user._id,
+              parentId: user.parentChild.userId,
+              status: ETransactionStatus.PENDING,
+              executedQuoteId: contributions.data.included[0].id,
+              unitCount: null,
+            };
+            await transactionArray.push(transactionData);
+            let bulWriteOperation = {
+              updateOne: {
+                filter: { _id: user._id },
+                update: {
+                  $set: {
+                    selectedDepositDate: moment(user.selectedDepositDate)
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? 24
+                          : 0,
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? "hours"
+                          : "day"
+                      ),
+                  },
+                },
+              },
+            };
+            await mainArray.push(bulWriteOperation);
+          }
+        }
+      }
+      await UserActivityTable.insertMany(activityArray);
+      await TransactionTable.insertMany(transactionArray);
+      await UserTable.bulkWrite(mainArray);
+      return true;
+    }
+    return true;
   }
 }
 

@@ -32,8 +32,8 @@ class zohoCrmService {
     }
     if (getData.status == 200) {
       let mainValue =
-        getData.data.data.length > 0
-          ? getData.data.data.filter((x) => x.Account_Type === filterValue)
+        getData?.data?.data?.length > 0
+          ? getData?.data?.data?.filter((x) => x.Account_Type === filterValue)
           : [];
       return mainValue.length > 0 ? mainValue[0] : null;
     }
@@ -62,7 +62,8 @@ class zohoCrmService {
   public async searchAccountsAndUpdateDataInCrm(
     zohoAccessToken: string,
     teenMobile: string,
-    checkParentExists: any
+    checkParentExists: any,
+    parentFirst: any
   ) {
     /**
      * Add zoho crm
@@ -93,6 +94,7 @@ class zohoCrmService {
         TeenAccount: {
           id: searchAccountTeen.id,
         },
+        Parent_First: parentFirst
       };
       await this.addAccounts(zohoAccessToken, newDataInCrm);
     }
