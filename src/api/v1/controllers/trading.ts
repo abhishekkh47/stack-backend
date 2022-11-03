@@ -1325,7 +1325,7 @@ class TradingController extends BaseController {
   public async sellCrypto(ctx: any) {
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
-    const reqParam = ctx.request.body;
+    const reqParam=ctx.request.body;
     let userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
