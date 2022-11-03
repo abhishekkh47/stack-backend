@@ -109,7 +109,6 @@ class UserService {
             unitApt: 1,
             liquidAsset: 1,
             taxIdNo: 1,
-            accessToken: "$parentchild.accessToken",
             taxState: 1,
             status: 1,
             dob: 1,

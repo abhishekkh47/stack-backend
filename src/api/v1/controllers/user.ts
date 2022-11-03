@@ -479,6 +479,9 @@ class UserController extends BaseController {
       const checkParentExists = await UserTable.findOne({
         mobile: data.parentMobile ? data.parentMobile : data.mobile,
       });
+      const checkBankExists = await UserBanksTable.find({
+        userId: checkParentExists._id,
+      })
       if (
         !checkParentExists ||
         (checkParentExists &&
@@ -490,10 +493,10 @@ class UserController extends BaseController {
       }
       if (
         !checkParentExists ||
-        (checkParentExists && data.accessToken == null)
+        (checkParentExists && checkBankExists.length == 0 )
       ) {
         data.isRecurring = 0;
-      } else if (data.accessToken) {
+      } else if (checkBankExists.length > 0) {
         if (data.isRecurring == 1 || data.isRecurring == 0) {
           data.isRecurring = 1;
         }
@@ -523,16 +526,13 @@ class UserController extends BaseController {
     let array = [];
     let account;
     const getUserType = await UserTable.findOne({
-      _id: ctx.request.user._id
-    })
-     let parentId;
-    if(getUserType.type == EUserType.TEEN) 
-    {
+      _id: ctx.request.user._id,
+    });
+    let parentId;
+    if (getUserType.type == EUserType.TEEN) {
       parentId = await UserTable.findOne({
-        email: getUserType.parentEmail
-      })
-       
-
+        email: getUserType.parentEmail,
+      });
     }
     const userExists = await UserBanksTable.find({
       $or: [
@@ -564,28 +564,27 @@ class UserController extends BaseController {
     }
   }
 
-    /**
+  /**
    * @description This method is used to get the bank account info
    * @param ctx
    * @returns
    */
-    @Route({ path: "/get-next-deposit-date", method: HttpMethod.GET })
-    @Auth()
-    public async getNextDepositDate(ctx: any) {
-      const { user } = ctx.request;
-      const foundUser = await UserTable.findOne({
-        _id: user._id
-      })
+  @Route({ path: "/get-next-deposit-date", method: HttpMethod.GET })
+  @Auth()
+  public async getNextDepositDate(ctx: any) {
+    const { user } = ctx.request;
+    const foundUser = await UserTable.findOne({
+      _id: user._id,
+    });
 
-      if(foundUser.type == EUserType.TEEN) 
-      {
-        return this.BadRequest(ctx, "User not allowed to access");
-      }
-
-      return this.Ok(ctx, {
-        nextDepositDate: foundUser.selectedDepositDate,
-      });      
+    if (foundUser.type == EUserType.TEEN) {
+      return this.BadRequest(ctx, "User not allowed to access");
     }
+
+    return this.Ok(ctx, {
+      nextDepositDate: foundUser.selectedDepositDate,
+    });
+  }
 
   /**
    * @description This method is used to update user's date of birth (DOB)
