@@ -32,15 +32,19 @@ class getPortfolioService {
     const fetchBalance: any = await getBalance(
       jwtToken,
       accountIdDetails.accountId
-      );
+    );
     if (fetchBalance.status == 400) {
       throw Error(fetchBalance.message);
     }
     const balance = fetchBalance.data.data[0].attributes.disbursable;
 
-    const cryptoInfo = await CryptoTable.findOne({_id: cryptoId})
+    const cryptoInfo = await CryptoTable.findOne({ _id: cryptoId });
 
-    const getUnitCount: any = await getAssetTotals(jwtToken, accountIdDetails.accountId, cryptoInfo.assetId)
+    const getUnitCount: any = await getAssetTotals(
+      jwtToken,
+      accountIdDetails.accountId,
+      cryptoInfo.assetId
+    );
 
     if (getUnitCount.status == 400) {
       throw Error(getUnitCount.message);
@@ -93,9 +97,7 @@ class getPortfolioService {
           currentPrice: "$currentPriceDetails.currentPrice",
           percentChange30d: "$currentPriceDetails.percent_change_30d",
           percentChange2y: "$currentPriceDetails.percent_change_2y",
-          totalSum: {
-            $sum: "$transactionData.unitCount",
-          },
+          totalSum: getUnitCount.data.data[0].attributes.disbursable,
           totalAmount: {
             $sum: "$transactionData.amount",
           },
@@ -105,7 +107,7 @@ class getPortfolioService {
           value: {
             $multiply: [
               "$currentPriceDetails.currentPrice",
-              getUnitCount.data.data[0].attributes.disbursable
+              getUnitCount.data.data[0].attributes.disbursable,
             ],
           },
         },
@@ -119,7 +121,7 @@ class getPortfolioService {
               else: true,
             },
           },
-          balance: balance         
+          balance: balance,
         },
       },
     ]).exec();
