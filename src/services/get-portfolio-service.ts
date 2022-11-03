@@ -1,4 +1,4 @@
-import { getBalance, createContributions } from "../utility";
+import { getBalance, createContributions, getAssetTotals } from "../utility";
 import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
 import {
   ETransactionType,
@@ -37,6 +37,18 @@ class getPortfolioService {
       throw Error(fetchBalance.message);
     }
     const balance = fetchBalance.data.data[0].attributes.disbursable;
+
+    const cryptoInfo = await CryptoTable.findOne({ _id: cryptoId });
+
+    const getUnitCount: any = await getAssetTotals(
+      jwtToken,
+      accountIdDetails.accountId,
+      cryptoInfo.assetId
+    );
+
+    if (getUnitCount.status == 400) {
+      throw Error(getUnitCount.message);
+    }
 
     const portFolio = await CryptoTable.aggregate([
       {
@@ -85,9 +97,7 @@ class getPortfolioService {
           currentPrice: "$currentPriceDetails.currentPrice",
           percentChange30d: "$currentPriceDetails.percent_change_30d",
           percentChange2y: "$currentPriceDetails.percent_change_2y",
-          totalSum: {
-            $sum: "$transactionData.unitCount",
-          },
+          totalSum: getUnitCount.data.data[0].attributes.disbursable,
           totalAmount: {
             $sum: "$transactionData.amount",
           },
@@ -97,9 +107,7 @@ class getPortfolioService {
           value: {
             $multiply: [
               "$currentPriceDetails.currentPrice",
-              {
-                $sum: "$transactionData.unitCount",
-              },
+              getUnitCount.data.data[0].attributes.disbursable,
             ],
           },
         },
@@ -113,7 +121,7 @@ class getPortfolioService {
               else: true,
             },
           },
-          balance: balance         
+          balance: balance,
         },
       },
     ]).exec();

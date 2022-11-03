@@ -78,7 +78,6 @@ class WebHookController extends BaseController {
     let deviceTokenData = await DeviceToken.findOne({
       userId: userExists._id,
     }).select("deviceToken");
-    console.log(body);
     switch (body.resource_type) {
       /**
        * For kyc success or failure
