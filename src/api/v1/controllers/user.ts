@@ -1,4 +1,3 @@
-import { UserDraftTable } from "./../../../model/userDraft";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -13,7 +12,7 @@ import {
   ParentChildTable,
   UserTable,
 } from "../../../model";
-import { AuthService, zohoCrmService } from "../../../services";
+import { userService, zohoCrmService } from "../../../services";
 import {
   ERead,
   ESCREENSTATUS,
@@ -29,7 +28,6 @@ import {
   kycDocumentChecks,
   Route,
   sendNotification,
-  tempContribution,
   uploadFilesFetch,
   uploadIdProof,
   uploadImage,
@@ -41,6 +39,8 @@ import {
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
+import { UserBanksTable } from "./../../../model/userBanks";
+import { getAccounts } from "./../../../utility/plaid";
 import BaseController from "./base";
 
 class UserController extends BaseController {
@@ -125,37 +125,7 @@ class UserController extends BaseController {
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
     const fullName = reqParam.firstName + " " + reqParam.lastName;
-    const data = {
-      type: "agreement-previews",
-      attributes: {
-        "account-type": "custodial",
-        name: fullName + " child-1",
-        "authorized-signature": " ",
-        // "contact-id": parentExists.contactId,
-        owner: {
-          "contact-type": "natural_person",
-          name: fullName,
-          email: "rohan@email.in",
-          "tax-id-number": "123123123456",
-          "tax-country": "IN",
-          "date-of-birth": "1993-03-16",
-          sex: "male",
-          "primary-phone-number": {
-            country: "IN",
-            number: "99209145545",
-            sms: true,
-          },
-          "primary-address": {
-            "street-1": "123 MK Road",
-            "street-2": "Flat 3",
-            "postal-code": "400020",
-            city: "Mumbai",
-            region: "Maharashtra",
-            country: "IN",
-          },
-        },
-      },
-    };
+    const data = await userService.getAgreementPreview(fullName);
     /**
      * Send Agreement Previews
      */
@@ -455,7 +425,6 @@ class UserController extends BaseController {
         PARENT_SIGNUP_FUNNEL.DOB,
         PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
         PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-        // PARENT_SIGNUP_FUNNEL.ADDRESS,
         PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
       ],
     };
@@ -505,90 +474,7 @@ class UserController extends BaseController {
     const { id } = ctx.request.params;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
-    let data = (
-      await UserTable.aggregate([
-        { $match: { _id: new ObjectId(id) } },
-        {
-          $lookup: {
-            from: "states",
-            localField: "stateId",
-            foreignField: "_id",
-            as: "state",
-          },
-        },
-        { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
-            from: "parentchild",
-            localField: "_id",
-            foreignField: "userId",
-            as: "parentchild",
-          },
-        },
-        { $unwind: { path: "$parentchild", preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
-            from: "user-refferals",
-            localField: "_id",
-            foreignField: "userId",
-            as: "lifeTimeReferral",
-          },
-        },
-        {
-          $unwind: {
-            path: "$lifeTimeReferral",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $addFields: {
-            isParentApproved: 0,
-          },
-        },
-        {
-          $project: {
-            _id: 1,
-            email: 1,
-            kycMessages: 1,
-            username: 1,
-            mobile: 1,
-            address: 1,
-            firstName: 1,
-            lastName: 1,
-            type: 1,
-            isParentApproved: 1,
-            parentMobile: 1,
-            parentEmail: 1,
-            country: 1,
-            "state._id": 1,
-            "state.name": 1,
-            "state.shortName": 1,
-            lifeTimeReferralCount: "$lifeTimeReferral.referralCount",
-            screenStatus: 1,
-            city: 1,
-            postalCode: 1,
-            unitApt: 1,
-            liquidAsset: 1,
-            taxIdNo: 1,
-            accessToken: "$parentchild.accessToken",
-            taxState: 1,
-            status: 1,
-            dob: 1,
-            profilePicture: 1,
-            isRecurring: 1,
-            selectedDeposit: 1,
-            selectedDepositDate: 1,
-          },
-        },
-      ]).exec()
-    )[0];
-
-    let userDraft: any = await UserDraftTable.findOne({
-      _id: new ObjectId(id),
-    });
-
-    if (!data && !userDraft)
-      return this.BadRequest(ctx, "Invalid user ID entered.");
+    let { data, userDraft } = await userService.getProfile(id);
     if (data) {
       const checkParentExists = await UserTable.findOne({
         mobile: data.parentMobile ? data.parentMobile : data.mobile,
@@ -623,6 +509,59 @@ class UserController extends BaseController {
     };
 
     return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
+  }
+
+  /**
+   * @description This method is used to get the bank account info
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/get-bank-info", method: HttpMethod.GET })
+  @Auth()
+  public async getBankInfo(ctx: any) {
+    const user = ctx.request.user;
+    let array = [];
+    let account;
+    const getUserType = await UserTable.findOne({
+      _id: ctx.request.user._id
+    })
+     let parentId;
+    if(getUserType.type == EUserType.TEEN) 
+    {
+      parentId = await UserTable.findOne({
+        email: getUserType.parentEmail
+      })
+       
+
+    }
+    const userExists = await UserBanksTable.find({
+      $or: [
+        { userId: parentId ? parentId : user._id },
+        {
+          parentId: parentId ? parentId : user._id,
+        },
+      ],
+    });
+    if (userExists) {
+      for await (let user of userExists) {
+        account = await getAccounts(user.accessToken);
+        array.push({
+          _id: user._id,
+          accessToken: user.accessToken,
+          isDefault: user.isDefault,
+          accounts: [
+            {
+              bankId: account.data.accounts[0].account_id,
+              bankAccountNo: account.data.accounts[0].mask,
+              bankName: account.data.accounts[0].name,
+            },
+          ],
+        });
+      }
+      return this.Ok(ctx, { data: array });
+    } else {
+      this.BadRequest(ctx, "No bank account added.");
+    }
   }
 
   /**
@@ -667,7 +606,6 @@ class UserController extends BaseController {
   @Route({
     path: "/update-profile-picture",
     method: HttpMethod.POST,
-    // middleware: [uploadFileS3.single("profile_picture")],
   })
   @Auth()
   public async updateProfilePicture(ctx: any) {
@@ -710,8 +648,6 @@ class UserController extends BaseController {
     );
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
-  // return this.BadRequest(ctx, "Error in Profile Image Upload");
-  // }
 
   /**
    * @description This method is used to get child of parent
@@ -721,34 +657,7 @@ class UserController extends BaseController {
   @Route({ path: "/get-children", method: HttpMethod.GET })
   @Auth()
   public async getChildren(ctx: any) {
-    let teens = await ParentChildTable.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "teens.childId",
-          foreignField: "_id",
-          as: "teens",
-        },
-      },
-      {
-        $match: {
-          userId: new ObjectId(ctx.request.user._id),
-        },
-      },
-      {
-        $project: {
-          "teens.firstName": 1,
-          "teens.lastName": 1,
-          "teens.username": 1,
-          "teens._id": 1,
-          "teens.profilePicture": 1,
-          "teens.isAutoApproval": 1,
-          _id: 0,
-        },
-      },
-    ]).exec();
-    if (teens.length == 0) return this.BadRequest(ctx, "No child found");
-    teens = teens[0];
+    let teens = await userService.getChildren(ctx.request.user._id);
     return this.Ok(ctx, teens);
   }
 
@@ -930,140 +839,6 @@ class UserController extends BaseController {
         }
       }
     );
-  }
-
-  /**
-   * @description This method is used for script of 250 user in beta testing
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/user-waitlist", method: HttpMethod.POST })
-  @PrimeTrustJWT()
-  public async temp(ctx: any) {
-    const getMobileNubmer = (template, number) => {
-      switch (`${number}`.length) {
-        case 1:
-          return `${template}000${number}`;
-        case 2:
-          return `${template}00${number}`;
-        case 3:
-          return `${template}0${number}`;
-        case 4:
-          return `${template}${number}`;
-        default:
-          return `${template}0000`;
-      }
-    };
-
-    const { contactId, emails } = ctx.request.body;
-    const jwtToken = ctx.request.primeTrustToken;
-    const mobileNubmerTemp = (() => {
-      let areaCodes = [
-        212, 315, 332, 347, 516, 518, 585, 607, 631, 646, 680, 716, 718, 838,
-        845, 914, 917, 929, 934, 201, 551, 609, 640, 732, 848, 856, 862, 908,
-        973, 215, 223, 267, 272, 412, 484, 610, 717, 724, 814, 878,
-      ];
-      return `+1${areaCodes[Math.floor(Math.random() * areaCodes.length)]}${
-        areaCodes[Math.floor(Math.random() * areaCodes.length)]
-      }`;
-    })();
-    const AMOUNT_TO_BE_ADDED = 500;
-
-    const parentChild = await ParentChildTable.findOne({ contactId });
-    if (!parentChild)
-      return this.BadRequest(ctx, "Contact ID not found in any parent");
-
-    const parent = await UserTable.findOne({ _id: parentChild.userId });
-    if (!parent) return this.BadRequest(ctx, "Account not found");
-
-    // const doc = new GoogleSpreadsheet(
-    //   "1RXMtUAo1d0_xzv4H-E-4sY_sDNeF2QdVBHFaX3AqT3w"
-    // );
-    // await doc.useServiceAccountAuth(FIREBASE_CREDENCIALS);
-    // await doc.loadInfo();
-    // const sheet = doc.sheetsByIndex[0];
-    // const rows = await sheet.getRows();
-    // let main = [];
-    // rows.map((item) => {
-    //   if (item._rawData[1] > 1700 && item._rawData[1] < 1759)
-    //     main.push(item._rawData[0]);
-    // });
-    // return this.Ok(ctx, { data: emails });
-
-    let children = [];
-    let toBePushedInTeens = [];
-    for (let i = 0; i < emails.length; i++) {
-      children.push({
-        email: `${emails[i]}`,
-        username: `StackUser${parentChild.teens.length + 1 + i}`,
-        mobile: `${getMobileNubmer(
-          mobileNubmerTemp,
-          parentChild.teens.length + 1 + i
-        )}`,
-        firstName: "Stack",
-        lastName: `User${parentChild.teens.length + 1 + i}`,
-        password: AuthService.encryptPassword("Stack123!"),
-        type: 1,
-        parentEmail: parent.email,
-        parentMobile: parent.mobile,
-      });
-
-      let response: any = await createAccount(jwtToken, {
-        type: "accounts",
-        attributes: {
-          name: `StackUser${parentChild.teens.length + 1 + i}`,
-          "authorized-signature": `${parent.firstName} ${parent.lastName}`,
-          "account-type": "custodial",
-          "contact-id": contactId,
-        },
-      });
-      if (response.status === 400)
-        return this.Ok(ctx, {
-          response,
-          message: `Stopped from creating acc ${i}`,
-        });
-
-      let contributionResponse = await tempContribution(
-        jwtToken,
-        response.data.data.id,
-        {
-          data: {
-            type: "accounts",
-            attributes: { amount: AMOUNT_TO_BE_ADDED },
-          },
-        }
-      );
-      if (contributionResponse.status === 400)
-        return this.Ok(ctx, {
-          contributionResponse,
-          message: `Stopped from contribution ${i}`,
-        });
-
-      // const currentChild = await UserTable.create(children[i]);
-
-      toBePushedInTeens.push({
-        accountId: response.data.data.id,
-        accountNumber: response.data.data.attributes.number,
-      });
-      // await ParentChildTable.updateOne(
-      //   { userId: parent._id },
-      //   {
-      //     $push: { teens: toBePushed }
-      //   }
-      // );
-    }
-
-    const addedChildren = await UserTable.insertMany(children);
-
-    for (let j = 0; j < emails.length; j++) {
-      toBePushedInTeens[j].childId = addedChildren[j]._id;
-      await ParentChildTable.updateOne(
-        { userId: parent._id },
-        { $push: { teens: toBePushedInTeens[j] } }
-      );
-    }
-
-    return this.Ok(ctx, { message: "success" });
   }
 
   /**

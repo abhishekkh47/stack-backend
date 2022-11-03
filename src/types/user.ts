@@ -82,9 +82,9 @@ export enum EAUTOAPPROVAL {
 export enum ERECURRING {
   NO_BANK = 0,
   NO_RECURRING = 1,
-  WEEKLY = 2,
-  MONTLY = 3,
-  QUATERLY = 4,
+  DAILY = 2,
+  WEEKLY = 3,
+  MONTLY = 4,
 }
 
 export enum EUserType {

@@ -1,7 +1,6 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
-import { child } from "winston";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -11,21 +10,20 @@ import {
   Notification,
   OtpTable,
   ParentChildTable,
-  QuizResult,
   StateTable,
-  UserDraftTable,
   TransactionTable,
+  UserDraftTable,
   UserReffaralTable,
   UserTable,
 } from "../../../model";
 import {
   AuthService,
   DeviceTokenService,
+  quizService,
   SocialService,
   TokenService,
   TwilioService,
   zohoCrmService,
-  quizService,
 } from "../../../services";
 import {
   EAUTOAPPROVAL,
@@ -46,7 +44,6 @@ import {
   executeQuote,
   generateQuote,
   generateTempPassword,
-  getAccountInfo,
   getJwtToken,
   getMinutesBetweenDates,
   getRefreshToken,
@@ -171,10 +168,16 @@ class AuthController extends BaseController {
               mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
+            
+            const getTeenInfo = await ParentChildTable.findOne({
+              userId: checkParentExists._id
+            })
+          
+            const checkCondition = await getTeenInfo.teens.filter((x: any) => x.childId.toString() == childExists.id.toString())
             if (
               checkParentExists &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-              !childExists
+              checkCondition.length == 0
             ) {
               parentTable = await ParentChildTable.findOne({
                 userId: checkParentExists._id,
@@ -183,13 +186,14 @@ class AuthController extends BaseController {
                 return this.BadRequest(ctx, "Account Details Not Found");
               }
               parentId = parentTable._id;
+
               /**
                * Create Prime Trust Account for other child as well
                * TODO
                */
-              let childName = reqParam.lastName
-                ? reqParam.firstName + " " + reqParam.lastName
-                : reqParam.firstName;
+              let childName = childExists.lastName
+              ? childExists.firstName + " " + childExists.lastName
+              : childExists.firstName;
               const data = {
                 type: "account",
                 attributes: {
@@ -804,8 +808,16 @@ class AuthController extends BaseController {
             };
           }
           if (user.type == EUserType.TEEN) {
+            //todo parent aexist then add parent name
             dataSentInCrm = {
               ...dataSentInCrm,
+              Parent_Account: checkParentExists
+                ? checkParentExists.lastName
+                  ? checkParentExists.firstName +
+                    " " +
+                    checkParentExists.lastName
+                  : checkParentExists.firstName
+                : null,
               Parent_Number: reqParam.parentMobile.replace("+", ""),
               Teen_Number: reqParam.mobile.replace("+", ""),
               Teen_Name: reqParam.lastName
@@ -856,7 +868,7 @@ class AuthController extends BaseController {
   /**
    * @description This method will be used to verify social id token and email in case of user registration
    */
-  @Route({ path: "/check-user-signup", method: HttpMethod.POST })
+  @Route({ path: "/check-signup", method: HttpMethod.POST })
   public async checkUserSignUp(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.checkUserSignupValidation(
@@ -868,7 +880,43 @@ class AuthController extends BaseController {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
             if (!userExists) {
-              return this.BadRequest(ctx, "Email Doesn't Exists");
+              const createObject = {
+                email: reqParam.email,
+                refreshToken: reqParam.socialLoginToken,
+                screenStatus: ESCREENSTATUS.DOB_SCREEN,
+                firstName: reqParam.firstName,
+                lastName: reqParam.lastName,
+              };
+
+              const createUserDraft: any = await UserDraftTable.create(
+                createObject
+              );
+              if (createUserDraft) {
+                await SocialService.verifySocial(reqParam);
+
+                const { token, refreshToken } =
+                  await TokenService.generateToken(createUserDraft);
+
+                let getProfileInput: any = {
+                  request: {
+                    query: { token },
+                    params: { id: createUserDraft._id },
+                  },
+                };
+                await UserController.getProfile(getProfileInput);
+
+                await DeviceTokenService.addDeviceTokenIfNeeded(
+                  createUserDraft._id,
+                  deviceToken
+                );
+
+                return this.Ok(ctx, {
+                  token,
+                  refreshToken,
+                  profileData: getProfileInput.body.data,
+                  message: "Success",
+                });
+              }
             } else {
               await SocialService.verifySocial(reqParam);
 
@@ -1446,17 +1494,6 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile } = input;
-          // let user = await UserTable.findOne({ mobile });
-          // if (user)
-          //   return this.BadRequest(ctx, "Mobile number already exists.");
-          // user = await UserTable.findOne({
-          //   email: { $regex: `${email}$`, $options: "i" },
-          // });
-          // if (user) return this.BadRequest(ctx, "Email-ID already exists.");
-
-          /**
-           * Send sms for confirmation of otp
-           */
 
           try {
             await TwilioService.sendOTP(mobile, EOTPTYPE.SIGN_UP);
@@ -1520,7 +1557,10 @@ class AuthController extends BaseController {
           if (!draftUser) {
             return this.BadRequest(ctx, "Account Already Exists");
           }
-          if (type == EUserType.PARENT && draftUser) {
+          if (
+            (type == EUserType.PARENT || type == EUserType.SELF) &&
+            draftUser
+          ) {
             const createObject = {
               email: draftUser.email,
               dob: draftUser.dob,
@@ -1536,33 +1576,13 @@ class AuthController extends BaseController {
               address: input.address,
               unitApt: input.unitApt,
               postalCode: input.postalCode,
-              screenStatus: ESCREENSTATUS.CHILD_INFO_SCREEN,
+              screenStatus:
+                type == EUserType.PARENT
+                  ? ESCREENSTATUS.CHILD_INFO_SCREEN
+                  : ESCREENSTATUS.ENTER_PARENT_INFO,
               taxIdNo: input.taxIdNo,
             };
             let userResponse = await UserTable.create(createObject);
-            migratedId = userResponse._id;
-          }
-          if (type == EUserType.SELF && draftUser) {
-            const createObject = {
-              email: draftUser.email,
-              dob: draftUser.dob,
-              type: draftUser.type,
-              mobile: input.mobile,
-              firstName: input.firstName
-                ? input.firstName
-                : draftUser.firstName,
-              lastName: input.lastName ? input.lastName : draftUser.lastName,
-              country: input.country,
-              state: input.state,
-              city: input.city,
-              address: input.address,
-              unitApt: input.unitApt,
-              postalCode: input.postalCode,
-              screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
-              taxIdNo: input.taxIdNo,
-            };
-            let userResponse = await UserTable.create(createObject);
-
             migratedId = userResponse._id;
           }
           if (type == EUserType.SELF || type == EUserType.PARENT) {
@@ -1792,6 +1812,7 @@ class AuthController extends BaseController {
               }
             );
             let parentRecord = await UserTable.findOne({ mobile: mobile });
+
             /**
              * Add zoho crm
              */
@@ -1799,7 +1820,8 @@ class AuthController extends BaseController {
               await zohoCrmService.searchAccountsAndUpdateDataInCrm(
                 ctx.request.zohoAccessToken,
                 childMobile ? childMobile : user.mobile,
-                parentRecord
+                parentRecord,
+                "false"
               );
             }
 
@@ -1825,35 +1847,11 @@ class AuthController extends BaseController {
           if (checkMobileExists) {
             return this.BadRequest(ctx, "Child Mobile Already Exists");
           }
-          // let checkParentMobileExists = await UserTable.findOne({
-          //   mobile: childMobile,
-          // });
-          // if (checkParentMobileExists) {
-          //   return this.BadRequest(ctx, "Parent Mobile Already Exists");
-          // }
-          /**
-           * send twilio message to the teen in order to signup.
-           */
-          // const message: string = `Hi there! Your ${firstName} has signed you up for Stack - an easy and fun app designed for teens to earn and trade crypto. 🚀  Create your own account to get started. ${envData.INVITE_LINK}`;
-          // try {
-          //   const twilioResponse: any = await TwilioService.sendSMS(
-          //     childMobile,
-          //     message
-          //   );
-          //   if (twilioResponse.code === 400) {
-          //     return this.BadRequest(ctx, "Error in sending OTP");
-          //   }
-          // } catch (error) {
-          //   return this.BadRequest(ctx, error.message);
-          // }
           if (!childFirstName) {
             return this.Ok(ctx, {
               message: "You are inviting your teen in stack",
             });
           }
-          /**
-           * Create child account based on parent's input
-           */
           /**
            * Generate referal code when user sign's up.
            */
@@ -1871,6 +1869,20 @@ class AuthController extends BaseController {
             isAutoApproval: EAUTOAPPROVAL.ON,
           };
           await UserTable.create(createObject);
+
+          let parentRecord = await UserTable.findOne({ mobile: mobile });
+
+          /**
+           * Add zoho crm
+           */
+          if (parentRecord) {
+            await zohoCrmService.searchAccountsAndUpdateDataInCrm(
+              ctx.request.zohoAccessToken,
+              childMobile ? childMobile : user.mobile,
+              parentRecord,
+              "true"
+            );
+          }
           return this.Ok(ctx, {
             message: "Invite sent!",
             isAccountFound: false,
@@ -2084,21 +2096,6 @@ class AuthController extends BaseController {
           },
         ]);
       }
-      /**
-       * send twilio message to the teen in order to signup.
-       */
-      // const message: string = `Hi! Your child, ${user.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
-      // try {
-      //   const twilioResponse: any = await TwilioService.sendSMS(
-      //     reqParam.parentMobile,
-      //     message
-      //   );
-      //   if (twilioResponse.code === 400) {
-      //     return this.BadRequest(ctx, "Error in sending message");
-      //   }
-      // } catch (error) {
-      //   return this.BadRequest(ctx, error.message);
-      // }
       return this.Ok(ctx, { message: "Reminder sent!", parentExists });
     }
   }
@@ -2162,31 +2159,37 @@ class AuthController extends BaseController {
     let checkParentExists = await UserTable.findOne({
       mobile: ctx.request.body.parentMobile,
     });
+    let alreadyChildExists = await UserTable.find({
+      parentMobile: ctx.request.body.parentMobile,
+    });
     if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
       return this.BadRequest(
         ctx,
         "Looks like this phone number is associated with a child account. Please try a different phone number"
       );
     }
-
-    if (ctx.request.body.parentMobile && !checkParentExists) {
+    if (ctx.request.body.parentMobile) {
       await UserTable.updateOne(
         { mobile: ctx.request.body.mobile },
         {
           $set: {
             screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             parentMobile: ctx.request.body.parentMobile,
+            parentEmail: checkParentExists.email
           },
         }
       );
     }
+
     if (checkParentExists) {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
-        checkParentExists
+        checkParentExists,
+        checkParentExists && !alreadyChildExists ? "true" : "false"
       );
     }
+
     return this.Ok(
       ctx,
       !checkParentExists
@@ -2198,7 +2201,7 @@ class AuthController extends BaseController {
   /**
    * @description This method will be used to verify social id token and email in case of user registration and if email not verified create a user
    */
-  @Route({ path: "/check-signup", method: HttpMethod.POST })
+  @Route({ path: "/check-user-signup", method: HttpMethod.POST })
   @PrimeTrustJWT(true)
   public async checkSignUp(ctx: any) {
     const reqParam = ctx.request.body;
@@ -2210,8 +2213,7 @@ class AuthController extends BaseController {
           try {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
-            let userDraftExists = await UserDraftTable.findOne({ email });
-            if (!userExists && !userDraftExists) {
+            if (!userExists) {
               await SocialService.verifySocial(reqParam);
               let createQuery: any = {
                 email: reqParam.email,
@@ -2267,24 +2269,21 @@ class AuthController extends BaseController {
               await SocialService.verifySocial(reqParam);
 
               const { token, refreshToken } = await TokenService.generateToken(
-                userExists !== null ? userExists : userDraftExists
+                userExists !== null && userExists
               );
 
               let getProfileInput: any = {
                 request: {
                   query: { token },
                   params: {
-                    id:
-                      userExists !== null
-                        ? userExists._id
-                        : userDraftExists._id,
+                    id: userExists !== null && userExists._id,
                   },
                 },
               };
               await UserController.getProfile(getProfileInput);
 
               await DeviceTokenService.addDeviceTokenIfNeeded(
-                userExists !== null ? userExists._id : userDraftExists._id,
+                userExists !== null && userExists._id,
                 deviceToken
               );
 

@@ -15,6 +15,7 @@ import {
   UserActivityTable,
   DeviceToken,
   Notification,
+  UserBanksTable,
 } from "../../model";
 import moment from "moment";
 import {
@@ -52,12 +53,21 @@ export const startCron = () => {
         latestValues = latestValues[0];
         let bulWriteOperation = {
           updateOne: {
-            filter: { symbol: latestValues.symbol },
+            filter: { symbol: latestValues && latestValues.symbol },
             update: {
               $set: {
-                currentPrice: parseFloat(
-                  parseFloat(latestValues.quote["USD"].price).toFixed(2)
-                ),
+                currentPrice:
+                  latestValues &&
+                  parseFloat(
+                    parseFloat(latestValues.quote["USD"].price).toFixed(2)
+                  ),
+                percent_change_30d:
+                  latestValues &&
+                  parseFloat(
+                    parseFloat(
+                      latestValues.quote["USD"].percent_change_30d
+                    ).toFixed(2)
+                  ),
               },
             },
           },
@@ -73,60 +83,60 @@ export const startCron = () => {
    * Logic for getting crypto historical price
    * Time:- at 00:00 am every day
    */
-  cron.schedule("0 0 * * *", async () => {
-    console.log(`
-     ==========Start Cron=============
-    `);
-    let cryptos: any = await CryptoTable.find({});
-    let symbolList = cryptos.map((x) => x.symbol).toString();
-    let historicalData: any = await getHistoricalDataOfCoins(symbolList);
-    let mainArray = [];
-    if (historicalData) {
-      historicalData = Object.values(historicalData.data);
-      if (historicalData.length == 0) {
-        return false;
-      }
-      await CryptoPriceTable.deleteMany({});
-      for await (let historicalValues of historicalData) {
-        historicalValues = historicalValues[0];
-        let arrayToInsert = {
-          name: historicalValues.name,
-          symbol: historicalValues.symbol,
-          assetId: cryptos.find((x) => x.symbol == historicalValues.symbol)
-            ? cryptos.find((x) => x.symbol == historicalValues.symbol).assetId
-            : null,
-          cryptoId: cryptos.find((x) => x.symbol == historicalValues.symbol)
-            ? cryptos.find((x) => x.symbol == historicalValues.symbol)._id
-            : null,
-          high365D: parseFloat(
-            parseFloat(
-              historicalValues.periods["365d"].quote["USD"].high
-            ).toFixed(2)
-          ),
-          low365D: parseFloat(
-            parseFloat(
-              historicalValues.periods["365d"].quote["USD"].low
-            ).toFixed(2)
-          ),
-          high90D: parseFloat(
-            parseFloat(
-              historicalValues.periods["90d"].quote["USD"].high
-            ).toFixed(2)
-          ),
-          low90D: parseFloat(
-            parseFloat(
-              historicalValues.periods["90d"].quote["USD"].low
-            ).toFixed(2)
-          ),
-          currencyType: "USD",
-          currentPrice: null,
-        };
-        await mainArray.push(arrayToInsert);
-      }
-      await CryptoPriceTable.insertMany(mainArray);
-    }
-    return true;
-  });
+  // cron.schedule("0 0 * * *", async () => {
+  //   console.log(`
+  //    ==========Start Cron=============
+  //   `);
+  //   let cryptos: any = await CryptoTable.find({});
+  //   let symbolList = cryptos.map((x) => x.symbol).toString();
+  //   let historicalData: any = await getHistoricalDataOfCoins(symbolList);
+  //   let mainArray = [];
+  //   if (historicalData) {
+  //     historicalData = Object.values(historicalData.data);
+  //     if (historicalData.length == 0) {
+  //       return false;
+  //     }
+  //     await CryptoPriceTable.deleteMany({});
+  //     for await (let historicalValues of historicalData) {
+  //       historicalValues = historicalValues[0];
+  //       let arrayToInsert = {
+  //         name: historicalValues.name,
+  //         symbol: historicalValues.symbol,
+  //         assetId: cryptos.find((x) => x.symbol == historicalValues.symbol)
+  //           ? cryptos.find((x) => x.symbol == historicalValues.symbol).assetId
+  //           : null,
+  //         cryptoId: cryptos.find((x) => x.symbol == historicalValues.symbol)
+  //           ? cryptos.find((x) => x.symbol == historicalValues.symbol)._id
+  //           : null,
+  //         high365D: parseFloat(
+  //           parseFloat(
+  //             historicalValues.periods["365d"].quote["USD"].high
+  //           ).toFixed(2)
+  //         ),
+  //         low365D: parseFloat(
+  //           parseFloat(
+  //             historicalValues.periods["365d"].quote["USD"].low
+  //           ).toFixed(2)
+  //         ),
+  //         high90D: parseFloat(
+  //           parseFloat(
+  //             historicalValues.periods["90d"].quote["USD"].high
+  //           ).toFixed(2)
+  //         ),
+  //         low90D: parseFloat(
+  //           parseFloat(
+  //             historicalValues.periods["90d"].quote["USD"].low
+  //           ).toFixed(2)
+  //         ),
+  //         currencyType: "USD",
+  //         currentPrice: null,
+  //       };
+  //       await mainArray.push(arrayToInsert);
+  //     }
+  //     await CryptoPriceTable.insertMany(mainArray);
+  //   }
+  //   return true;
+  // });
 
   /**
    * Logic for recurring deposit if user has selected recurring deposit
@@ -136,10 +146,7 @@ export const startCron = () => {
     console.log(`
      ==========Start Cron For Recurring=============
     `);
-    let jwtToken = await getPrimeTrustJWTToken();
-    if (jwtToken.status == 200) {
-      jwtToken = jwtToken.data;
-    }
+    let token = await getPrimeTrustJWTToken();
     let users: any = await UserTable.aggregate([
       {
         $match: {
@@ -158,26 +165,53 @@ export const startCron = () => {
         },
       },
       { $unwind: { path: "$parentChild", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "firstChildId",
+          as: "self",
+        },
+      },
+      { $unwind: { path: "$self", preserveNullAndEmptyArrays: true } },
     ]).exec();
     if (users.length > 0) {
       let todayDate = moment().startOf("day").unix();
       let transactionArray = [];
       let mainArray = [];
       let activityArray = [];
+      let accountIdDetails: any;
       for await (let user of users) {
-        const accountIdDetails = await user.parentChild.teens.find(
-          (x: any) => x.childId.toString() == user._id.toString()
-        );
+        if (user.type == EUserType.SELF) {
+          accountIdDetails = await user.self.find(
+            (x: any) => x.userId.toString() == user._id.toString()
+          );
+        } else {
+          accountIdDetails = await user.parentChild?.teens.find(
+            (x: any) => x.childId.toString() == user._id.toString()
+          );
+        }
+
         if (!accountIdDetails) {
           continue;
         }
         let deviceTokenData = await DeviceToken.findOne({
-          userId: user.parentChild.userId,
+          userId:
+            user.type == EUserType.SELF
+              ? user.self.userId
+              : user.parentChild.userId,
         }).select("deviceToken");
         let selectedDate = moment(user.selectedDepositDate)
           .startOf("day")
           .unix();
         if (selectedDate <= todayDate) {
+          const userInfo = await UserBanksTable.findOne({
+            $or: [
+              { userId: accountIdDetails.userId },
+              { parentId: accountIdDetails.userId },
+            ],
+            $and: [{ isDefault: 1 }],
+          });
           let contributionRequest = {
             type: "contributions",
             attributes: {
@@ -193,7 +227,7 @@ export const startCron = () => {
             },
           };
           let contributions: any = await createContributions(
-            jwtToken,
+            token.data,
             contributionRequest
           );
           if (contributions.status == 400) {
@@ -267,15 +301,15 @@ export const startCron = () => {
                           ? 7
                           : user.isRecurring == ERECURRING.MONTLY
                           ? 1
-                          : user.isRecurring == ERECURRING.QUATERLY
-                          ? 4
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? 24
                           : 0,
                         user.isRecurring == ERECURRING.WEEKLY
                           ? "days"
                           : user.isRecurring == ERECURRING.MONTLY
                           ? "months"
-                          : user.isRecurring == ERECURRING.QUATERLY
-                          ? "months"
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? "hours"
                           : "day"
                       ),
                   },

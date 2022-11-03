@@ -48,6 +48,7 @@ export const validation = {
       accountId: Joi.string().required(),
       institutionId: Joi.string().required(),
       depositAmount: Joi.number(),
+      isRecurring: Joi.number().valid(0, 1, 2, 3, 4),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -62,6 +63,9 @@ export const validation = {
     const schema = Joi.object({
       isRecurring: Joi.number().valid(0, 1, 2, 3, 4).required(),
       childId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      bankId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
       selectedDeposit: Joi.when("isRecurring", {
@@ -144,6 +148,21 @@ export const validation = {
     }
     return callback(true);
   },
+  switchBankAccountValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      bankId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("switchBankAccount", error))
+      );
+    }
+    return callback(true);
+  },
   changeEmailValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
       email: Joi.string().email().required(),
@@ -209,6 +228,14 @@ export const validation = {
       loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       socialLoginToken: Joi.string().required(),
       deviceType: Joi.number().valid(1, 2),
+      firstName: Joi.string()
+        .allow("")
+        .regex(/^[A-za-z]*$/)
+        .optional(),
+      lastName: Joi.string()
+        .allow("")
+        .regex(/^[A-za-z]*$/)
+        .optional(),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {
@@ -311,6 +338,9 @@ export const validation = {
         .precision(2)
         .required(),
       childId: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
+      bankId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
 
     const { error } = schema.validate(req, { convert: false });
@@ -351,6 +381,9 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+      bankId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
