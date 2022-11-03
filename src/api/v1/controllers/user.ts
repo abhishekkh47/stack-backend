@@ -564,6 +564,29 @@ class UserController extends BaseController {
     }
   }
 
+    /**
+   * @description This method is used to get the bank account info
+   * @param ctx
+   * @returns
+   */
+    @Route({ path: "/get-next-deposit-date", method: HttpMethod.GET })
+    @Auth()
+    public async getNextDepositDate(ctx: any) {
+      const { user } = ctx.request;
+      const foundUser = await UserTable.findOne({
+        _id: user._id
+      })
+
+      if(foundUser.type == EUserType.TEEN) 
+      {
+        return this.BadRequest(ctx, "User not allowed to access");
+      }
+
+      return this.Ok(ctx, {
+        nextDepositDate: foundUser.selectedDepositDate,
+      });      
+    }
+
   /**
    * @description This method is used to update user's date of birth (DOB)
    * @param ctx
