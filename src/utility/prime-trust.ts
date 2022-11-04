@@ -449,7 +449,8 @@ export const getBalance = async (token, id) => {
 export const getAssetTotalWithId = async (token, accountId, assetId) => {
   const response = await axios
     .get(
-      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.accountAssetTotalWithId(accountId, assetId),
+      config.PRIMETRUSTAPI_URL +
+        PRIMETRUSTAPIS.accountAssetTotalWithId(accountId, assetId),
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -477,7 +478,7 @@ export const getAssetTotalWithId = async (token, accountId, assetId) => {
  * @param id
  * @returns {*}
  */
- export const getAssetTotals = async (token, accountId) => {
+export const getAssetTotals = async (token, accountId) => {
   const response = await axios
     .get(
       config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.accountAssetTotals(accountId),

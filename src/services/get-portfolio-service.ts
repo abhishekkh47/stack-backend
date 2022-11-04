@@ -49,7 +49,7 @@ class getPortfolioService {
       jwtToken,
       accountIdDetails.accountId,
       cryptoInfo.assetId
-      );
+    );
 
     if (getUnitCount.status == 400) {
       throw Error(getUnitCount.message);
@@ -111,7 +111,10 @@ class getPortfolioService {
           value: {
             $multiply: [
               "$currentPriceDetails.currentPrice",
-              getUnitCount.data.data[0] && getUnitCount.data.data[0]?.attributes?.disbursable > 0 ?  getUnitCount.data.data[0]?.attributes?.disbursable : 0,
+              getUnitCount.data.data[0] &&
+              getUnitCount.data.data[0]?.attributes?.disbursable > 0
+                ? getUnitCount.data.data[0]?.attributes?.disbursable
+                : 0,
             ],
           },
         },

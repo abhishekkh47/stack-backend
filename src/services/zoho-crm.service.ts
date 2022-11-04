@@ -11,11 +11,13 @@ class zohoCrmService {
     dataCreateOrUpdateInZoho: object,
     isArray: boolean = null
   ) {
-    console.log(`zohoCrmService Being Called`);
+    
     let mainData = {
       data: isArray ? dataCreateOrUpdateInZoho : [dataCreateOrUpdateInZoho],
     };
     const addedData = await addAccountInfoInZohoCrm(zohoAccessToken, mainData);
+    
+
     if (addedData.status != 200) {
       throw new Error("Error in syncing zoho crm");
     }
@@ -45,7 +47,7 @@ class zohoCrmService {
     id: string,
     updateRecord: object
   ) {
-    console.log(`zohoCrmService Being Called`);
+    
     let mainData = {
       data: [updateRecord],
     };
@@ -72,7 +74,8 @@ class zohoCrmService {
       zohoAccessToken,
       teenMobile,
       "Teen"
-    );
+      );
+      
     if (searchAccountTeen) {
       let dataSentInCrm: any = {};
       dataSentInCrm = {

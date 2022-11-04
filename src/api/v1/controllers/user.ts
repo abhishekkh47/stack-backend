@@ -481,7 +481,7 @@ class UserController extends BaseController {
       });
       const checkBankExists = await UserBanksTable.find({
         userId: checkParentExists._id,
-      })
+      });
       if (
         !checkParentExists ||
         (checkParentExists &&
@@ -493,7 +493,7 @@ class UserController extends BaseController {
       }
       if (
         !checkParentExists ||
-        (checkParentExists && checkBankExists.length == 0 )
+        (checkParentExists && checkBankExists.length == 0)
       ) {
         data.isRecurring = 0;
       } else if (checkBankExists.length > 0) {
@@ -569,21 +569,27 @@ class UserController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/get-next-deposit-date", method: HttpMethod.GET })
+  @Route({ path: "/get-next-deposit-date/:userId", method: HttpMethod.GET })
   @Auth()
   public async getNextDepositDate(ctx: any) {
-    const { user } = ctx.request;
-    const foundUser = await UserTable.findOne({
-      _id: user._id,
-    });
+    const { userId } = ctx.request.params;
+    return validation.nextDepositDateValidation(
+      ctx.request.params,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const foundUser = await UserTable.findOne({
+            _id: userId,
+          });
 
-    if (foundUser.type == EUserType.TEEN) {
-      return this.BadRequest(ctx, "User not allowed to access");
-    }
-
-    return this.Ok(ctx, {
-      nextDepositDate: foundUser.selectedDepositDate,
-    });
+          return this.Ok(ctx, {
+            nextDepositDate: foundUser.selectedDepositDate ? moment(foundUser.selectedDepositDate).format(
+              "DD/MM/YYYY"
+            ) : null ,
+          });
+        }
+      }
+    );
   }
 
   /**

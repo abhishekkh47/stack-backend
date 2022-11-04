@@ -34,6 +34,10 @@ const schema = new mongoose.Schema<IUserActivitySchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
+    isMax: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
     /**
      * 1 - Pending , 2 - Processed , 3 - Rejected and 4 - Cancelled
      */
