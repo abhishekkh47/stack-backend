@@ -14,7 +14,7 @@ import {
   EUserType,
 } from "../types";
 import moment from "moment";
-class getPortfolioService {
+class PortfolioService {
   public async getPortfolioBasedOnChildIdWithCurrentMarketPrice(
     childId: string,
     cryptoId: any,
@@ -304,4 +304,4 @@ class getPortfolioService {
   }
 }
 
-export default new getPortfolioService();
+export default new PortfolioService();
