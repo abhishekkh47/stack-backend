@@ -1,7 +1,14 @@
-import { ParentChildTable, UserDraftTable, UserTable } from "../model";
+import {
+  DeviceToken,
+  Notification,
+  ParentChildTable,
+  UserDraftTable,
+  UserTable,
+} from "../model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { ERECURRING } from "../types";
+import { ERead, ERECURRING } from "../types";
+import { sendNotification } from "../utility";
 
 class UserService {
   /**
@@ -200,7 +207,37 @@ class UserService {
   /**
    * @description This method is used to create notification
    */
-  public sendNotificationAction() {}
+  public async sendNotificationAction(
+    userId: string,
+    key: string,
+    title: string,
+    message: string,
+    dataToAdd: any
+  ) {
+    let deviceTokenData = await DeviceToken.findOne({
+      userId: userId,
+    });
+    if (deviceTokenData) {
+      let notificationRequest = {
+        key: key,
+        title: title,
+        message: message,
+        dataToAdd,
+      };
+      await sendNotification(
+        deviceTokenData.deviceToken,
+        notificationRequest.title,
+        notificationRequest
+      );
+      await Notification.create({
+        title: notificationRequest.title,
+        userId: userId,
+        message: notificationRequest.message,
+        isRead: ERead.UNREAD,
+        data: JSON.stringify(notificationRequest),
+      });
+    }
+  }
 }
 
 export default new UserService();
