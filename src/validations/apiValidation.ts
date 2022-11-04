@@ -419,6 +419,7 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+        isMax: Joi.boolean()
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {

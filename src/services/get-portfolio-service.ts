@@ -1,4 +1,9 @@
-import { getBalance, createContributions, getAssetTotals } from "../utility";
+import {
+  getBalance,
+  createContributions,
+  getAssetTotalWithId,
+  getAssetTotals,
+} from "../utility";
 import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
 import {
   ETransactionType,
@@ -40,11 +45,11 @@ class getPortfolioService {
 
     const cryptoInfo = await CryptoTable.findOne({ _id: cryptoId });
 
-    const getUnitCount: any = await getAssetTotals(
+    const getUnitCount: any = await getAssetTotalWithId(
       jwtToken,
       accountIdDetails.accountId,
       cryptoInfo.assetId
-    );
+      );
 
     if (getUnitCount.status == 400) {
       throw Error(getUnitCount.message);
@@ -97,7 +102,6 @@ class getPortfolioService {
           currentPrice: "$currentPriceDetails.currentPrice",
           percentChange30d: "$currentPriceDetails.percent_change_30d",
           percentChange2y: "$currentPriceDetails.percent_change_2y",
-          totalSum: getUnitCount.data.data[0].attributes.disbursable,
           totalAmount: {
             $sum: "$transactionData.amount",
           },
@@ -107,7 +111,7 @@ class getPortfolioService {
           value: {
             $multiply: [
               "$currentPriceDetails.currentPrice",
-              getUnitCount.data.data[0].attributes.disbursable,
+              getUnitCount.data.data[0] && getUnitCount.data.data[0]?.attributes?.disbursable > 0 ?  getUnitCount.data.data[0]?.attributes?.disbursable : 0,
             ],
           },
         },
@@ -282,6 +286,18 @@ class getPortfolioService {
       executedQuoteId: contributions.data.included[0].id,
       unitCount: null,
     });
+  }
+
+  public async getResentPricePorfolio(jwtToken, accountId) {
+    const getIds: any = await getAssetTotals(jwtToken, accountId);
+
+    let arrayId = [];
+
+    for await (let crypto of getIds.data.data) {
+      crypto.attributes.disbursable > 0 &&
+        arrayId.push(crypto.relationships.asset.links.related.split("/")[3]);
+    }
+    return arrayId;
   }
 }
 

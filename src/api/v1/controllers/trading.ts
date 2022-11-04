@@ -1,3 +1,4 @@
+import getPortfolioService from "@app/services/get-portfolio-service";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import mongoose from "mongoose";
@@ -56,6 +57,7 @@ import {
   wireTransfer,
   getAssets,
   getPrimeTrustJWTToken,
+  getAssetTotalWithId,
 } from "../../../utility";
 import {
   NOTIFICATION,
@@ -435,8 +437,7 @@ class TradingController extends BaseController {
               return this.BadRequest(
                 ctx,
                 contributions.code !== 25001
-                  ? // ? contributions.message
-                    "ERROR: Insufficient Funds"
+                  ? "ERROR: Insufficient Funds"
                   : PLAID_ITEM_ERROR
               );
             }
@@ -501,12 +502,13 @@ class TradingController extends BaseController {
                 });
               }
             }
-            // return this.Created(ctx, {
-            //   message:
-            //     userExists.isAutoApproval == EAUTOAPPROVAL.ON
-            //       ? `We are looking into your request and will proceed surely in some amount of time.`
-            //       : `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`,
-            // });
+
+            /*   message:
+                   userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                   ? `We are looking into your request and will proceed surely in some amount of time.`
+                   : `Your request for deposit of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`, 
+            */
+
             return this.Created(ctx, {
               message: "Transaction Processed!",
             });
@@ -640,10 +642,7 @@ class TradingController extends BaseController {
             executedQuoteId: contributions.data.included[0].id,
             unitCount: null,
           });
-          // return this.Created(ctx, {
-          //   message: `We are looking into your request and will proceed surely in some amount of time.`,
-          //   data: contributions.data,
-          // });
+
           return this.Created(ctx, {
             message: `Transaction Processed!`,
             data: contributions.data,
@@ -786,7 +785,6 @@ class TradingController extends BaseController {
           if (balance < reqParam.amount) {
             return this.BadRequest(
               ctx,
-              // "You dont have sufficient balance to withdraw money"
               "ERROR: Insufficient Funds"
             );
           }
@@ -919,12 +917,12 @@ class TradingController extends BaseController {
                 });
               }
             }
-            // return this.Created(ctx, {
-            //   message:
-            //     userExists.isAutoApproval == EAUTOAPPROVAL.ON
-            //       ? `"We are looking into your request and will proceed surely in some amount of time."`
-            //       : `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
-            // });
+
+            /*  message:
+                 userExists.isAutoApproval == EAUTOAPPROVAL.ON
+                   ? `"We are looking into your request and will proceed surely in some amount of time."`
+                  : `Your request for withdrawal of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`,
+ */
             return this.Created(ctx, {
               message: "Transaction Processed!",
             });
@@ -961,11 +959,7 @@ class TradingController extends BaseController {
               executedQuoteId: disbursement.data.included[0].id,
               unitCount: null,
             });
-            // return this.Created(ctx, {
-            //   message:
-            //     "We are looking into your request and will proceed surely in some amount of time.",
-            //   data: disbursement.data,
-            // });
+
             return this.Created(ctx, {
               message: "Transaction Processed!",
               data: disbursement.data,
@@ -1322,9 +1316,9 @@ class TradingController extends BaseController {
           });
         }
       }
-      // const message = mainQuery
-      //   ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
-      //   : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`;
+      /* const message = mainQuery
+        ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
+         : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`; */
       const message = "Transaction Processed!";
       return this.Ok(ctx, { message });
     });
@@ -1395,6 +1389,15 @@ class TradingController extends BaseController {
           (userExists.type == EUserType.TEEN &&
             userExists.isAutoApproval == EAUTOAPPROVAL.ON);
         if (mainQuery) {
+          const getUnitCount: any = await getAssetTotalWithId(
+            jwtToken,
+            accountIdDetails.accountId,
+            crypto.assetId
+          );
+
+          if (getUnitCount.status == 400) {
+            throw Error(getUnitCount.message);
+          }
           /**
            * Generate a quote
            */
@@ -1406,7 +1409,10 @@ class TradingController extends BaseController {
                 "asset-id": crypto.assetId,
                 hot: true,
                 "transaction-type": "sell",
-                total_amount: amount,
+                ...(!reqParam.isMax && { total_amount: amount }),
+                ...(reqParam.isMax && {
+                  unit_count: getUnitCount.data.data[0].attributes.settled,
+                }),
               },
             },
           };
@@ -1498,9 +1504,9 @@ class TradingController extends BaseController {
             });
           }
         }
-        // const message = mainQuery
-        //   ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
-        //   : `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`;
+        /* const message = mainQuery
+           ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
+           : `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`; */
         const message = "Transaction Processed!";
         return this.Ok(ctx, { message });
       }
@@ -1720,11 +1726,24 @@ class TradingController extends BaseController {
               isTeenPending = true;
             }
           }
+
+          const getAccountId =
+          childExists.type == EUserType.SELF
+          ? userExistsForQuiz
+          : userExistsForQuiz.teens.find(
+            (x) => x.childId.toString() == reqParam.childId
+            );
+
+         let arrayOfIds =  await getPortfolioService.getResentPricePorfolio(
+           jwtToken,
+           getAccountId.accountId
+           );
           const portFolio = await TransactionTable.aggregate([
             {
               $match: {
                 userId: new ObjectId(childExists._id),
                 type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+                assetId: {$in: arrayOfIds}
               },
             },
             {
@@ -2159,8 +2178,7 @@ class TradingController extends BaseController {
     ) {
       return this.BadRequest(
         ctx,
-        // "You dont have sufficient balance to perform the operarion"
-        "ERROR: Insufficient Funds"
+         "ERROR: Insufficient Funds"
       );
     }
     const userBankInfo = await UserBanksTable.findOne({
@@ -2208,7 +2226,6 @@ class TradingController extends BaseController {
           contributionRequest
         );
         if (contributions.status == 400) {
-          // return this.BadRequest(ctx, contributions.message);
           return this.BadRequest(ctx, "ERROR: Insufficient Funds");
         }
         await UserActivityTable.updateOne(
@@ -2252,11 +2269,7 @@ class TradingController extends BaseController {
             data: JSON.stringify(notificationRequest),
           });
         }
-        // return this.Ok(ctx, {
-        //   message:
-        //     "You have approved teen's request of deposit. Please wait while it take place accordingly.",
-        //   data: contributions.data,
-        // });
+       
         return this.Ok(ctx, {
           message: "Transaction Processed!",
           data: contributions.data,
@@ -2330,11 +2343,7 @@ class TradingController extends BaseController {
             data: JSON.stringify(notificationRequest),
           });
         }
-        // return this.Ok(ctx, {
-        //   data: disbursementResponse.data,
-        //   message:
-        //     "You have approved teen's request of withdrawal. Please wait while it take place accordingly.",
-        // });
+       
         return this.Ok(ctx, {
           data: disbursementResponse.data,
           message: "Transaction Processed!",
@@ -2435,11 +2444,8 @@ class TradingController extends BaseController {
             data: JSON.stringify(notificationRequest),
           });
         }
-        // return this.Ok(ctx, {
-        //   message: "Success",
-        //   data: "You have approved teen's request of buying crypto. Please wait while it settles in the portfolio respectively.",
-        //   dataValue: { generateQuoteResponse, executeQuoteResponse },
-        // });
+
+        
         return this.Ok(ctx, {
           message: "Success",
           data: "Transaction Processed!",
@@ -2553,10 +2559,7 @@ class TradingController extends BaseController {
             data: JSON.stringify(notificationRequest),
           });
         }
-        // return this.Ok(ctx, {
-        //   message: "Success",
-        //   data: "You have approved teen's request of selling crypto. Please wait while it settles in the portfolio respectively.",
-        // });
+       
         return this.Ok(ctx, {
           message: "Success",
           data: "Transaction Processed!",

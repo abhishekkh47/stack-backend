@@ -1531,14 +1531,16 @@ class AuthController extends BaseController {
               $or: [{ mobile: mobile }, { parentMobile: mobile }],
             });
             if (userExists) {
-              if (userExists.isParentFirst == true) {
+              return this.BadRequest(ctx, "Mobile Number Already Exists");
+
+             /*  if (userExists.isParentFirst == true) {
                 return this.Ok(ctx, { message: "Success" });
               }
 
               //if 2 entries then dont say mobile no. exists
               if (userExists && !userExists.email === null) {
                 return this.BadRequest(ctx, "Mobile Number Already Exists");
-              }
+              } */
             }
           } else if (type == EUserType.PARENT || type == EUserType.SELF) {
             let userExists = await UserTable.findOne({
