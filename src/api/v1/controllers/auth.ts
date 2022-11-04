@@ -168,12 +168,14 @@ class AuthController extends BaseController {
               mobile: reqParam.parentMobile,
               type: EUserType.PARENT,
             });
-            
+
             const getTeenInfo = await ParentChildTable.findOne({
-              userId: checkParentExists._id
-            })
-          
-            const checkCondition = await getTeenInfo.teens.filter((x: any) => x.childId.toString() == childExists.id.toString())
+              userId: checkParentExists._id,
+            });
+
+            const checkCondition = await getTeenInfo.teens.filter(
+              (x: any) => x.childId.toString() == childExists.id.toString()
+            );
             if (
               checkParentExists &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
@@ -192,8 +194,8 @@ class AuthController extends BaseController {
                * TODO
                */
               let childName = childExists.lastName
-              ? childExists.firstName + " " + childExists.lastName
-              : childExists.firstName;
+                ? childExists.firstName + " " + childExists.lastName
+                : childExists.firstName;
               const data = {
                 type: "account",
                 attributes: {
@@ -1535,10 +1537,7 @@ class AuthController extends BaseController {
                 return this.Ok(ctx, { message: "Success" });
               }
 
-              //if 2 entries then dont say mobile no. exists
-              if (userExists && !userExists.email === null) {
-                return this.BadRequest(ctx, "Mobile Number Already Exists");
-              }
+              return this.BadRequest(ctx, "Mobile Number Already Exists");
             }
           } else if (type == EUserType.PARENT || type == EUserType.SELF) {
             let userExists = await UserTable.findOne({
@@ -2175,7 +2174,7 @@ class AuthController extends BaseController {
           $set: {
             screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             parentMobile: ctx.request.body.parentMobile,
-            parentEmail: checkParentExists.email
+            parentEmail: checkParentExists.email,
           },
         }
       );

@@ -419,10 +419,22 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
+        isMax: Joi.boolean()
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
       return res.throw(400, res.__(validationMessageKey("sellCrypto", error)));
+    }
+    return callback(true);
+  },
+  nextDepositDateValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      userId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
+     
+    });
+    const { error } = schema.validate(req, { convert: false });
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("nextDepositDate", error)));
     }
     return callback(true);
   },

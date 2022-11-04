@@ -30,8 +30,10 @@ export const PRIMETRUSTAPIS = {
     `v2/push-transfer-methods?account.id=${accountId}`,
   updateContacts: (contactId) => `v2/contacts/${contactId}`,
   pushTransferMethod: `v2/push-transfer-methods`,
-  accountAssetTotals: (accountId, assetId) =>
+  accountAssetTotalWithId: (accountId, assetId) =>
     `v2/account-asset-totals?account.id=${accountId}&asset.id=${assetId}`,
+    accountAssetTotals: (accountId) =>
+    `v2/account-asset-totals?account.id=${accountId}`,
   pushTransferMethodGet: (id) => `v2/push-transfer-methods/${id}`,
   getAccountByAccountId: (accountId) => `v2/accounts/${accountId}`,
   internalAssetTransfers: `v2/internal-asset-transfers`,

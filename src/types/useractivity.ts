@@ -10,6 +10,7 @@ export interface IUserActivity {
   currencyValue: number;
   currencyType: mongoose.Schema.Types.ObjectId;
   cryptoId: mongoose.Schema.Types.ObjectId;
+  isMax: Boolean;
 }
 
 export enum EAction {
