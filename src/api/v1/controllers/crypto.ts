@@ -6,7 +6,7 @@ import {
   ParentChildTable,
   UserTable,
 } from "../../../model";
-import { getPortFolioService } from "../../../services";
+import { PortfolioService } from "../../../services";
 import { ERECURRING, EUserType, HttpMethod } from "../../../types";
 import { getBalance, Route } from "../../../utility";
 import { CASH_USD_ICON } from "../../../utility/constants";
@@ -44,7 +44,7 @@ class CryptocurrencyController extends BaseController {
       if (!ctx.request.query.childId) {
         return this.BadRequest(ctx, "Child Id Details Doesn't Exists");
       }
-      let portFolio = await getPortFolioService.getCryptoIdInPortfolio(
+      let portFolio = await PortfolioService.getCryptoIdInPortfolio(
         ctx.request.query.childId
       );
       if (portFolio.length > 0) {
@@ -173,7 +173,7 @@ class CryptocurrencyController extends BaseController {
      */
     const crypto = await CryptoTable.findOne({ symbol: symbol });
     const portFolio =
-      await getPortFolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
+      await PortfolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
         userExists._id,
         crypto._id,
         parentChild,

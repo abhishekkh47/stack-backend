@@ -1,4 +1,3 @@
-import getPortfolioService from "@app/services/get-portfolio-service";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import mongoose from "mongoose";
@@ -16,7 +15,7 @@ import {
   UserTable,
 } from "../../../model";
 import {
-  getPortFolioService,
+  PortfolioService,
   quizService,
   userService,
   zohoCrmService,
@@ -196,7 +195,7 @@ class TradingController extends BaseController {
                       parentDetails.firstChildId.toString()
                   )
                 : parent.accountId;
-            await getPortFolioService.addIntialDeposit(
+            await PortfolioService.addIntialDeposit(
               reqParam,
               parentDetails,
               jwtToken,
@@ -1733,7 +1732,7 @@ class TradingController extends BaseController {
                   (x) => x.childId.toString() == reqParam.childId
                 );
 
-          let arrayOfIds = await getPortfolioService.getResentPricePorfolio(
+          let arrayOfIds = await PortfolioService.getResentPricePorfolio(
             jwtToken,
             getAccountId.accountId
           );
