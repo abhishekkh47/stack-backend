@@ -196,6 +196,11 @@ class UserService {
       .format("YYYY-MM-DD");
     return scheduleDate;
   }
+
+  /**
+   * @description This method is used to create notification
+   */
+  public sendNotificationAction() {}
 }
 
 export default new UserService();

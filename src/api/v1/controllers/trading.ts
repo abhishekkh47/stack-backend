@@ -19,6 +19,7 @@ import {
   quizService,
   userService,
   zohoCrmService,
+  tradingService,
 } from "../../../services";
 import {
   EAction,
@@ -210,67 +211,25 @@ class TradingController extends BaseController {
               parent.firstChildId.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
             ) {
               let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-              const requestQuoteDay: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                    hot: true,
-                    "transaction-type": "buy",
-                    total_amount: "5",
-                  },
-                },
+              let details = {
+                accountId: envData.OPERATIONAL_ACCOUNT,
               };
-              const generateQuoteResponse: any = await generateQuote(
+              const executeQuoteResponse = await tradingService.buyCryptoAction(
+                details,
+                crypto,
                 jwtToken,
-                requestQuoteDay
+                "5"
               );
-              if (generateQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, generateQuoteResponse.message);
-              }
-              /**
-               * Execute a quote
-               */
-              const requestExecuteQuote: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                  },
-                },
-              };
-              const executeQuoteResponse: any = await executeQuote(
-                jwtToken,
-                generateQuoteResponse.data.data.id,
-                requestExecuteQuote
-              );
-              if (executeQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, executeQuoteResponse.message);
-              }
-              let internalTransferRequest = {
-                data: {
-                  type: "internal-asset-transfers",
-                  attributes: {
-                    "unit-count":
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                    "to-account-id":
-                      userExists.type == EUserType.PARENT
-                        ? accountIdDetails.accountId
-                        : accountIdDetails,
-                    "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
-                    "hot-transfer": true,
-                  },
-                },
-              };
-              const internalTransferResponse: any =
-                await internalAssetTransfers(jwtToken, internalTransferRequest);
-              if (internalTransferResponse.status == 400) {
-                return this.BadRequest(ctx, internalTransferResponse.message);
-              }
+              const internalTransferResponse =
+                await tradingService.internalAssetTransfersAction(
+                  envData.OPERATIONAL_ACCOUNT,
+                  executeQuoteResponse,
+                  crypto,
+                  jwtToken,
+                  userExists.type == EUserType.PARENT
+                    ? accountIdDetails.accountId
+                    : accountIdDetails
+                );
               await TransactionTable.updateOne(
                 {
                   status: ETransactionStatus.GIFTED,
@@ -410,36 +369,13 @@ class TradingController extends BaseController {
             (userExists.type == EUserType.TEEN &&
               userExists.isAutoApproval == EAUTOAPPROVAL.ON);
           if (mainQuery) {
-            /**
-             * create fund transfer with fund transfer id in response
-             */
-            let contributionRequest = {
-              type: "contributions",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "contact-id": parentDetails.contactId,
-                "funds-transfer-method": {
-                  "funds-transfer-type": "ach",
-                  "ach-check-type": "personal",
-                  "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": userBankInfo.processorToken,
-                },
-                amount: reqParam.amount,
-              },
-            };
-            contributions = await createContributions(
+            contributions = await tradingService.depositAction(
+              accountIdDetails,
+              parentDetails,
+              userBankInfo,
               jwtToken,
-              contributionRequest
+              reqParam.amount
             );
-            if (contributions.status == 400) {
-              return this.BadRequest(
-                ctx,
-                contributions.code !== 25001
-                  ? // ? contributions.message
-                    "ERROR: Insufficient Funds"
-                  : PLAID_ITEM_ERROR
-              );
-            }
           }
           /**
            * For teen it will be pending state
@@ -528,64 +464,23 @@ class TradingController extends BaseController {
               admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON
             ) {
               let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-              const requestQuoteDay: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                    hot: true,
-                    "transaction-type": "buy",
-                    total_amount: "5",
-                  },
-                },
+              let details = {
+                accountId: envData.OPERATIONAL_ACCOUNT,
               };
-              const generateQuoteResponse: any = await generateQuote(
+              let executeQuoteResponse = await tradingService.buyCryptoAction(
+                details,
+                crypto,
                 jwtToken,
-                requestQuoteDay
+                "5"
               );
-              if (generateQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, generateQuoteResponse.message);
-              }
-              /**
-               * Execute a quote
-               */
-              const requestExecuteQuote: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                  },
-                },
-              };
-              const executeQuoteResponse: any = await executeQuote(
-                jwtToken,
-                generateQuoteResponse.data.data.id,
-                requestExecuteQuote
-              );
-              if (executeQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, executeQuoteResponse.message);
-              }
-              let internalTransferRequest = {
-                data: {
-                  type: "internal-asset-transfers",
-                  attributes: {
-                    "unit-count":
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                    "to-account-id": accountIdDetails.accountId,
-                    "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
-                    "hot-transfer": true,
-                  },
-                },
-              };
-              const internalTransferResponse: any =
-                await internalAssetTransfers(jwtToken, internalTransferRequest);
-              if (internalTransferResponse.status == 400) {
-                return this.BadRequest(ctx, internalTransferResponse.message);
-              }
+              const internalTransferResponse =
+                await tradingService.internalAssetTransfersAction(
+                  envData.OPERATIONAL_ACCOUNT,
+                  executeQuoteResponse,
+                  crypto,
+                  jwtToken,
+                  accountIdDetails.accountId
+                );
               await TransactionTable.updateOne(
                 {
                   status: ETransactionStatus.GIFTED,
@@ -648,74 +543,6 @@ class TradingController extends BaseController {
             message: `Transaction Processed!`,
             data: contributions.data,
           });
-
-          // else if (reqParam.depositType == ETRANSFER.WIRE) {
-          //   /**
-          //    * Check if push transfer exists and move ahead else create
-          //    */
-          //   let pushTransferId = accountIdDetails.pushTransferId
-          //     ? accountIdDetails.pushTransferId
-          //     : null;
-          //   if (accountIdDetails.pushTransferId == null) {
-          //     const pushTransferRequest = {
-          //       type: "push-transfer-methods",
-          //       attributes: {
-          //         "account-id": accountIdDetails.accountId,
-          //         "contact-id": parentDetails.contactId,
-          //       },
-          //     };
-          //     const pushTransferResponse: any = await createPushTransferMethod(
-          //       jwtToken,
-          //       pushTransferRequest
-          //     );
-          //     if (pushTransferResponse.status == 400) {
-          //       return this.BadRequest(ctx, pushTransferResponse.message);
-          //     }
-          //     pushTransferId = pushTransferResponse.data.id;
-          //     await ParentChildTable.updateOne(
-          //       {
-          //         userId: userExists._id,
-          //         "teens.childId": parentDetails.firstChildId,
-          //       },
-          //       {
-          //         $set: {
-          //           "teens.$.pushTransferId": pushTransferId,
-          //         },
-          //       }
-          //     );
-          //   }
-          //   /**
-          //    * Create a wire transfer method respectively
-          //    */
-          //   // const wireRequest = {
-          //   //   "push-transfer-method-id": pushTransferId,
-          //   //   data: {
-          //   //     type: "ach",
-          //   //     attributes: {
-          //   //       amount: reqParam.amount,
-          //   //       reference: reqParam.amount,
-          //   //     },
-          //   //   },
-          //   // };
-          //   // const wireResponse: any = await wireInboundMethod(
-          //   //   jwtToken,
-          //   //   wireRequest,
-          //   //   pushTransferId
-          //   // );
-          //   // if (wireResponse.status == 400) {
-          //   //   return this.BadRequest(ctx, wireResponse.message);
-          //   // }
-
-          //   /**
-          //    * For parent update the user balance directly
-          //    */
-          //   if (userExists.type === EUserType.PARENT) {
-          //     return this.Created(ctx, {
-          //       message:
-          //         "We are looking into your request and will proceed surely in some amount of time.",
-          //     });
-          //   }
-          // }
         }
       }
     );
@@ -826,35 +653,13 @@ class TradingController extends BaseController {
             (userExists.type == EUserType.TEEN &&
               userExists.isAutoApproval == EAUTOAPPROVAL.ON);
           if (mainQuery) {
-            /**
-             * create fund transfer with fund transfer id in response
-             */
-            let disbursementRequest = {
-              type: "disbursements",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "contact-id": parentDetails.contactId,
-                "funds-transfer-method": {
-                  "funds-transfer-type": "ach",
-                  "ach-check-type": "personal",
-                  "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": userBankInfo.processorToken,
-                },
-                amount: reqParam.amount,
-              },
-            };
-            disbursement = await createDisbursements(
+            disbursement = await tradingService.withdrawAction(
+              accountIdDetails,
+              parentDetails,
+              userBankInfo,
               jwtToken,
-              disbursementRequest
+              reqParam.amount
             );
-            if (disbursement.status == 400) {
-              return this.BadRequest(
-                ctx,
-                disbursement.code !== 25001
-                  ? disbursement.message
-                  : PLAID_ITEM_ERROR
-              );
-            }
           }
           /**
            * for teen it will be pending state and for parent it will be in approved
@@ -1222,45 +1027,12 @@ class TradingController extends BaseController {
         (userExists.type == EUserType.TEEN &&
           userExists.isAutoApproval == EAUTOAPPROVAL.ON);
       if (mainQuery) {
-        const requestQuoteDay: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": crypto.assetId,
-              hot: true,
-              "transaction-type": "buy",
-              total_amount: amount,
-            },
-          },
-        };
-        const generateQuoteResponse: any = await generateQuote(
+        let executeQuoteResponse = await tradingService.buyCryptoAction(
+          accountIdDetails,
+          crypto,
           jwtToken,
-          requestQuoteDay
+          amount
         );
-        if (generateQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, generateQuoteResponse.message);
-        }
-        /**
-         * Execute a quote
-         */
-        const requestExecuteQuote: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": crypto.assetId,
-            },
-          },
-        };
-        const executeQuoteResponse: any = await executeQuote(
-          jwtToken,
-          generateQuoteResponse.data.data.id,
-          requestExecuteQuote
-        );
-        if (executeQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, executeQuoteResponse.message);
-        }
         await TransactionTable.create({
           assetId: crypto.assetId,
           cryptoId: crypto._id,
@@ -1395,48 +1167,12 @@ class TradingController extends BaseController {
           (userExists.type == EUserType.TEEN &&
             userExists.isAutoApproval == EAUTOAPPROVAL.ON);
         if (mainQuery) {
-          /**
-           * Generate a quote
-           */
-          const requestSellQuoteDay: any = {
-            data: {
-              type: "quotes",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "asset-id": crypto.assetId,
-                hot: true,
-                "transaction-type": "sell",
-                total_amount: amount,
-              },
-            },
-          };
-          const generateSellQuoteResponse: any = await generateQuote(
+          let executeSellQuoteResponse = await tradingService.sellCryptoAction(
+            accountIdDetails,
+            crypto,
             jwtToken,
-            requestSellQuoteDay
+            amount
           );
-          if (generateSellQuoteResponse.status == 400) {
-            return this.BadRequest(ctx, generateSellQuoteResponse.message);
-          }
-          /**
-           * Execute a quote
-           */
-          const requestSellExecuteQuote: any = {
-            data: {
-              type: "quotes",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "asset-id": crypto.assetId,
-              },
-            },
-          };
-          const executeSellQuoteResponse: any = await executeQuote(
-            jwtToken,
-            generateSellQuoteResponse.data.data.id,
-            requestSellExecuteQuote
-          );
-          if (executeSellQuoteResponse.status == 400) {
-            return this.BadRequest(ctx, executeSellQuoteResponse.message);
-          }
           await TransactionTable.create({
             assetId: crypto.assetId,
             cryptoId: crypto._id,
@@ -2186,31 +1922,13 @@ class TradingController extends BaseController {
         if (!userBankInfo) {
           return this.BadRequest(ctx, "Bank Details Not Found");
         }
-        /**
-         * create fund transfer with fund transfer id in response
-         */
-        let contributionRequest = {
-          type: "contributions",
-          attributes: {
-            "account-id": accountIdDetails.accountId,
-            "contact-id": parent.contactId,
-            "funds-transfer-method": {
-              "funds-transfer-type": "ach",
-              "ach-check-type": "personal",
-              "contact-id": parent.contactId,
-              "plaid-processor-token": userBankInfo.processorToken,
-            },
-            amount: activity.currencyValue,
-          },
-        };
-        const contributions: any = await createContributions(
+        let contributions = await tradingService.depositAction(
+          accountIdDetails,
+          parent,
+          userBankInfo,
           jwtToken,
-          contributionRequest
+          activity.currencyValue
         );
-        if (contributions.status == 400) {
-          // return this.BadRequest(ctx, contributions.message);
-          return this.BadRequest(ctx, "ERROR: Insufficient Funds");
-        }
         await UserActivityTable.updateOne(
           { _id: activityId },
           {
@@ -2268,27 +1986,13 @@ class TradingController extends BaseController {
         if (!userBankInfo) {
           return this.BadRequest(ctx, "Bank Details Not Found");
         }
-        let disbursementRequest = {
-          type: "disbursements",
-          attributes: {
-            "account-id": accountIdDetails.accountId,
-            "contact-id": parent.contactId,
-            "funds-transfer-method": {
-              "funds-transfer-type": "ach",
-              "ach-check-type": "personal",
-              "contact-id": parent.contactId,
-              "plaid-processor-token": userBankInfo.processorToken,
-            },
-            amount: activity.currencyValue,
-          },
-        };
-        const disbursementResponse: any = await createDisbursements(
+        let disbursementResponse = await tradingService.withdrawAction(
+          accountIdDetails,
+          parent,
+          userBankInfo,
           jwtToken,
-          disbursementRequest
+          activity.currencyValue
         );
-        if (disbursementResponse.status == 400) {
-          return this.BadRequest(ctx, disbursementResponse.message);
-        }
         await UserActivityTable.updateOne(
           { _id: activityId },
           {
@@ -2349,48 +2053,12 @@ class TradingController extends BaseController {
         const cryptoData = await CryptoTable.findOne({
           _id: activity.cryptoId,
         });
-        /**
-         * Generate a quote
-         */
-        const requestQuoteDay: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": cryptoData.assetId,
-              hot: true,
-              "transaction-type": "buy",
-              total_amount: activity.currencyValue,
-            },
-          },
-        };
-        const generateQuoteResponse: any = await generateQuote(
+        const executeQuoteResponse = await tradingService.buyCryptoAction(
+          accountIdDetails,
+          cryptoData,
           jwtToken,
-          requestQuoteDay
+          activity.currencyValue
         );
-        if (generateQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, generateQuoteResponse.message);
-        }
-        /**
-         * Execute a quote
-         */
-        const requestExecuteQuote: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": cryptoData.assetId,
-            },
-          },
-        };
-        const executeQuoteResponse: any = await executeQuote(
-          jwtToken,
-          generateQuoteResponse.data.data.id,
-          requestExecuteQuote
-        );
-        if (executeQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, executeQuoteResponse.message);
-        }
         await TransactionTable.create({
           assetId: cryptoData.assetId,
           cryptoId: cryptoData._id,
@@ -2443,7 +2111,7 @@ class TradingController extends BaseController {
         return this.Ok(ctx, {
           message: "Success",
           data: "Transaction Processed!",
-          dataValue: { generateQuoteResponse, executeQuoteResponse },
+          dataValue: { executeQuoteResponse },
         });
       case 4:
         /**
@@ -2466,48 +2134,12 @@ class TradingController extends BaseController {
             `${sellCryptoData.name} doesn't exists in your portfolio.`
           );
         }
-        /**
-         * Generate a quote
-         */
-        const requestSellQuoteDay: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": sellCryptoData.assetId,
-              hot: true,
-              "transaction-type": "sell",
-              total_amount: activity.currencyValue,
-            },
-          },
-        };
-        const generateSellQuoteResponse: any = await generateQuote(
+        const executeSellQuoteResponse = await tradingService.sellCryptoAction(
+          accountIdDetails,
+          sellCryptoData,
           jwtToken,
-          requestSellQuoteDay
+          activity.currencyValue
         );
-        if (generateSellQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, generateSellQuoteResponse.message);
-        }
-        /**
-         * Execute a quote
-         */
-        const requestSellExecuteQuote: any = {
-          data: {
-            type: "quotes",
-            attributes: {
-              "account-id": accountIdDetails.accountId,
-              "asset-id": sellCryptoData.assetId,
-            },
-          },
-        };
-        const executeSellQuoteResponse: any = await executeQuote(
-          jwtToken,
-          generateSellQuoteResponse.data.data.id,
-          requestSellExecuteQuote
-        );
-        if (executeSellQuoteResponse.status == 400) {
-          return this.BadRequest(ctx, executeSellQuoteResponse.message);
-        }
         await TransactionTable.create({
           assetId: sellCryptoData.assetId,
           cryptoId: sellCryptoData._id,
