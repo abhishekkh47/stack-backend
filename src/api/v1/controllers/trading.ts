@@ -1712,9 +1712,11 @@ class TradingController extends BaseController {
               isTeenPending = true;
             }
           } else {
-            userExistsForQuiz = await ParentChildTable.findOne({
-              firstChildId: childExists._id,
-            }).populate("userId", [
+            userExistsForQuiz = await ParentChildTable.findOne({teens: {
+              $elemMatch: {
+                childId: childExists._id,
+              },
+            }}).populate("userId", [
               "_id",
               "preLoadedCoins",
               "isGiftedCrypto",
