@@ -134,8 +134,8 @@ class AuthController extends BaseController {
           let childExists = null;
           let checkParentExists = null;
           let accountId = null;
-          let parentId = null;
-          let parentTable = null;
+          let parentChildInfoId = null;
+          let parentChildInfo = null;
           let isGiftedStackCoins = 0;
           let accountNumber = null;
           const childArray = [];
@@ -169,11 +169,11 @@ class AuthController extends BaseController {
               type: EUserType.PARENT,
             });
 
-            const getTeenInfo = await ParentChildTable.findOne({
+            parentChildInfo = await ParentChildTable.findOne({
               userId: checkParentExists._id,
             });
 
-            const checkCondition = await getTeenInfo.teens.filter(
+            const checkCondition = parentChildInfo.teens.filter(
               (x: any) => x.childId.toString() == childExists.id.toString()
             );
             if (
@@ -181,13 +181,10 @@ class AuthController extends BaseController {
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
               checkCondition.length == 0
             ) {
-              parentTable = await ParentChildTable.findOne({
-                userId: checkParentExists._id,
-              });
-              if (!parentTable) {
+              if (!parentChildInfo) {
                 return this.BadRequest(ctx, "Account Details Not Found");
               }
-              parentId = parentTable._id;
+              parentChildInfoId = parentChildInfo._id;
 
               /**
                * Create Prime Trust Account for other child as well
@@ -207,7 +204,7 @@ class AuthController extends BaseController {
                     " " +
                     checkParentExists.lastName +
                     " - " +
-                    parentTable.contactId,
+                    parentChildInfo.contactId,
                   "authorized-signature":
                     checkParentExists.firstName +
                     " - " +
@@ -215,7 +212,7 @@ class AuthController extends BaseController {
                   "webhook-config": {
                     url: envData.WEBHOOK_URL,
                   },
-                  "contact-id": parentTable.contactId,
+                  "contact-id": parentChildInfo.contactId,
                 },
               };
               const createAccountData: any = await createAccount(
@@ -228,36 +225,11 @@ class AuthController extends BaseController {
               accountNumber = createAccountData.data.data.attributes.number;
               accountId = createAccountData.data.data.id;
             }
-            /**
-             * Send sms as of now to parent for invting to stack
-             */
-            // const message: string = `Hi! Your child, ${reqParam.firstName}, signed up for Stack - a safe and free app designed for teens to learn and earn crypto. 🚀  Register with Stack to unlock their account. ${envData.INVITE_LINK}`;
-            // try {
-            //   const twilioResponse: any = await TwilioService.sendSMS(
-            //     reqParam.parentMobile,
-            //     message
-            //   );
-            //   if (twilioResponse.code === 400) {
-            //     return this.BadRequest(ctx, "Error in sending OTP");
-            //   }
-            // } catch (error) {
-            //   return this.BadRequest(ctx, error.message);
-            // }
           } else {
             /**
              * Parent flow and self flow
              */
             user = await AuthService.findUserByEmail(reqParam.email);
-            const mobile = await UserTable.findOne({ mobile: reqParam.mobile });
-            // if (mobile) {
-            //   return this.BadRequest(ctx, "Mobile Number already Exists");
-            // }
-            // if (user && mobile) {
-            //   return this.BadRequest(ctx, "Email Already Exists");
-            // }
-            // user = await UserTable.findOne({
-            //   username: { $regex: `${reqParam.email}$`, $options: "i" },
-            // });
 
             if (
               new Date(
@@ -312,7 +284,7 @@ class AuthController extends BaseController {
                 );
               }
               for await (const child of childDetails) {
-                await childArray.push({ childId: child._id, accountId: null });
+                childArray.push({ childId: child._id, accountId: null });
               }
             }
           }
@@ -483,7 +455,7 @@ class AuthController extends BaseController {
                */
               await ParentChildTable.updateOne(
                 {
-                  _id: parentId,
+                  _id: parentChildInfoId,
                 },
                 {
                   $push: {
@@ -505,8 +477,8 @@ class AuthController extends BaseController {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             let checkTransactionExistsAlready = await TransactionTable.findOne({
               userId:
-                checkParentExists && parentTable
-                  ? parentTable.firstChildId
+                checkParentExists && parentChildInfo
+                  ? parentChildInfo.firstChildId
                   : user._id,
               intialDeposit: true,
               type: ETransactionType.DEPOSIT,
@@ -516,7 +488,7 @@ class AuthController extends BaseController {
                 "teens.childId": user._id,
               });
               const accountIdDetails: any =
-                await parentChildTableExists.teens.find(
+                parentChildTableExists.teens.find(
                   (x: any) => x.childId.toString() == user._id.toString()
                 );
               const requestQuoteDay: any = {
@@ -641,9 +613,9 @@ class AuthController extends BaseController {
             user.isGifted == EGIFTSTACKCOINSSETTING.OFF &&
             admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON &&
             checkParentExists &&
-            parentTable &&
+            parentChildInfo &&
             checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-            parentTable.firstChildId != user._id
+            parentChildInfo.firstChildId != user._id
           ) {
             /**
              * Added in zoho
