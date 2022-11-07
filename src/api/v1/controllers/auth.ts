@@ -2136,9 +2136,10 @@ class AuthController extends BaseController {
       parentMobile: ctx.request.body.parentMobile,
     });
     if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
+      const msg = checkParentExists.type === EUserType.SELF ? "self" : "child";
       return this.BadRequest(
         ctx,
-        "Looks like this phone number is associated with a child account. Please try a different phone number"
+        `Looks like this phone number is associated with a ${msg} account. Please try a different phone number`
       );
     }
     if (ctx.request.body.parentMobile) {
