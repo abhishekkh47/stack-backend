@@ -487,10 +487,9 @@ class AuthController extends BaseController {
               let parentChildTableExists = await ParentChildTable.findOne({
                 "teens.childId": user._id,
               });
-              const accountIdDetails: any =
-                parentChildTableExists.teens.find(
-                  (x: any) => x.childId.toString() == user._id.toString()
-                );
+              const accountIdDetails: any = parentChildTableExists.teens.find(
+                (x: any) => x.childId.toString() == user._id.toString()
+              );
               const requestQuoteDay: any = {
                 data: {
                   type: "quotes",
@@ -2115,6 +2114,7 @@ class AuthController extends BaseController {
   @Route({ path: "/check-parent-exists", method: HttpMethod.POST })
   @PrimeTrustJWT(true)
   public async checkParentExists(ctx: any) {
+    console.log(ctx.request.body);
     if (!ctx.request.body.parentMobile) {
       return this.BadRequest(ctx, "Please enter parent's mobile");
     }
@@ -2146,7 +2146,10 @@ class AuthController extends BaseController {
           $set: {
             screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             parentMobile: ctx.request.body.parentMobile,
-            parentEmail: checkParentExists.email,
+            parentEmail:
+              checkParentExists && checkParentExists.type == EUserType.PARENT
+                ? checkParentExists.email
+                : null,
           },
         }
       );
