@@ -2114,7 +2114,6 @@ class AuthController extends BaseController {
   @Route({ path: "/check-parent-exists", method: HttpMethod.POST })
   @PrimeTrustJWT(true)
   public async checkParentExists(ctx: any) {
-    console.log(ctx.request.body);
     if (!ctx.request.body.parentMobile) {
       return this.BadRequest(ctx, "Please enter parent's mobile");
     }
