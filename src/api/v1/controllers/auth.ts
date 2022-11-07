@@ -1760,6 +1760,8 @@ class AuthController extends BaseController {
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
+
+          // check here for the task to not change name 
           let user = await UserTable.findOne(query);
           if (user) {
             await UserTable.updateOne(
@@ -1825,6 +1827,7 @@ class AuthController extends BaseController {
           /**
            * Generate referal code when user sign's up.
            */
+          //and here for task of user name
           const uniqueReferralCode = await makeUniqueReferalCode();
           const createObject = {
             firstName: childFirstName ? childFirstName : user.firstName,

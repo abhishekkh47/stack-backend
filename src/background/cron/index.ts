@@ -182,19 +182,17 @@ export const startCron = () => {
       let activityArray = [];
       let accountIdDetails: any;
       for await (let user of users) {
-        if (user.type == EUserType.SELF) {
-          accountIdDetails = await user.self.find(
-            (x: any) => x.userId.toString() == user._id.toString()
+        accountIdDetails = await user.parentChild?.teens.find(
+          (x: any) => x.childId.toString() == user._id.toString()
           );
-        } else {
-          accountIdDetails = await user.parentChild?.teens.find(
-            (x: any) => x.childId.toString() == user._id.toString()
-          );
-        }
-
-        if (!accountIdDetails) {
-          continue;
-        }
+          if (!accountIdDetails) {
+            accountIdDetails =
+            (await user.self.userId.toString()) == user._id.toString() &&
+            user.self;
+            continue;
+          }
+          console.log('accountIdDetails: ', accountIdDetails);
+         
         let deviceTokenData = await DeviceToken.findOne({
           userId:
             user.type == EUserType.SELF
@@ -202,13 +200,15 @@ export const startCron = () => {
               : user.parentChild.userId,
         }).select("deviceToken");
         let selectedDate = moment(user.selectedDepositDate)
-          .startOf("day")
-          .unix();
+        .startOf("day")
+        .unix();
         if (selectedDate <= todayDate) {
+          const id = user.type == EUserType.SELF   ? user.self.userId
+          : user.parentChild.userId
           const userInfo = await UserBanksTable.findOne({
             $or: [
-              { userId: accountIdDetails.userId },
-              { parentId: accountIdDetails.userId },
+              { userId: id },
+              { parentId: id },
             ],
             $and: [{ isDefault: 1 }],
           });
@@ -216,16 +216,23 @@ export const startCron = () => {
             type: "contributions",
             attributes: {
               "account-id": accountIdDetails.accountId,
-              "contact-id": user.parentChild.contactId,
+              "contact-id":
+              user.type == EUserType.SELF
+              ? user.self.contactId
+              : user.parentChild.contactId,
               "funds-transfer-method": {
                 "funds-transfer-type": "ach",
                 "ach-check-type": "personal",
-                "contact-id": user.parentChild.contactId,
-                "plaid-processor-token": user.parentChild.processorToken,
+                "contact-id":
+                user.type == EUserType.SELF
+                ? user.self.contactId
+                : user.parentChild.contactId,
+                "plaid-processor-token": userInfo.processorToken,
               },
               amount: user.selectedDeposit,
             },
           };
+          console.log('contributionRequest: ', contributionRequest);
           let contributions: any = await createContributions(
             token.data,
             contributionRequest
@@ -253,7 +260,10 @@ export const startCron = () => {
               );
               await Notification.create({
                 title: notificationRequest.title,
-                userId: user.parentChild.userId,
+                userId:
+                  user.type == EUserType.SELF
+                    ? user.self.userId
+                    : user.parentChild.userId,
                 message: null,
                 isRead: ERead.UNREAD,
                 data: JSON.stringify(notificationRequest),
@@ -263,7 +273,8 @@ export const startCron = () => {
           } else {
             let activityData = {
               userId: user._id,
-              userType: EUserType.TEEN,
+              userType:
+              user.type == EUserType.SELF ? EUserType.SELF : EUserType.TEEN,
               message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
               currencyType: null,
               currencyValue: user.selectedDeposit,
@@ -282,7 +293,10 @@ export const startCron = () => {
               amount: user.selectedDeposit,
               amountMod: null,
               userId: user._id,
-              parentId: user.parentChild.userId,
+              parentId:
+                user.type == EUserType.SELF
+                  ? user.self.userId
+                  : user.parentChild.userId,
               status: ETransactionStatus.PENDING,
               executedQuoteId: contributions.data.included[0].id,
               unitCount: null,
@@ -294,28 +308,28 @@ export const startCron = () => {
                 update: {
                   $set: {
                     selectedDepositDate: moment(user.selectedDepositDate)
-                      .utc()
-                      .startOf("day")
-                      .add(
-                        user.isRecurring == ERECURRING.WEEKLY
-                          ? 7
-                          : user.isRecurring == ERECURRING.MONTLY
-                          ? 1
-                          : user.isRecurring == ERECURRING.DAILY
-                          ? 24
-                          : 0,
-                        user.isRecurring == ERECURRING.WEEKLY
-                          ? "days"
-                          : user.isRecurring == ERECURRING.MONTLY
-                          ? "months"
-                          : user.isRecurring == ERECURRING.DAILY
-                          ? "hours"
-                          : "day"
+                    .utc()
+                    .startOf("day")
+                    .add(
+                      user.isRecurring == ERECURRING.WEEKLY
+                      ? 7
+                      : user.isRecurring == ERECURRING.MONTLY
+                      ? 1
+                      : user.isRecurring == ERECURRING.DAILY
+                      ? 24
+                      : 0,
+                      user.isRecurring == ERECURRING.WEEKLY
+                      ? "days"
+                      : user.isRecurring == ERECURRING.MONTLY
+                      ? "months"
+                      : user.isRecurring == ERECURRING.DAILY
+                      ? "hours"
+                      : "day"
                       ),
+                    },
                   },
                 },
-              },
-            };
+              };
             await mainArray.push(bulWriteOperation);
           }
         }
