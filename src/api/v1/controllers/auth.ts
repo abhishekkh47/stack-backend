@@ -2133,7 +2133,7 @@ class AuthController extends BaseController {
       parentMobile: ctx.request.body.parentMobile,
     });
     if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
-      let msg = checkParentExists.type === EUserType.SELF ? "self" : "child";
+      const msg = checkParentExists.type === EUserType.SELF ? "self" : "child";
       return this.BadRequest(
         ctx,
         `Looks like this phone number is associated with a ${msg} account. Please try a different phone number`
