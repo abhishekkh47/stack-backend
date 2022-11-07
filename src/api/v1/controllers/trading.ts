@@ -3306,7 +3306,6 @@ class TradingController extends BaseController {
         accountIdDetails = await user.parentChild?.teens.find(
           (x: any) => x.childId.toString() == user._id.toString()
         );
-        console.log(accountIdDetails, "accountIdDetails");
         if (!accountIdDetails) {
           accountIdDetails =
             (await user.self.userId.toString()) == user._id.toString() &&
@@ -3315,7 +3314,6 @@ class TradingController extends BaseController {
               continue;
             }
         }
-        console.log("accountIdDetails: ", accountIdDetails);
 
         let deviceTokenData = await DeviceToken.findOne({
           userId:
@@ -3355,7 +3353,6 @@ class TradingController extends BaseController {
               amount: user.selectedDeposit,
             },
           };
-          console.log("contributionRequest: ", contributionRequest);
           let contributions: any = await createContributions(
             token.data,
             contributionRequest

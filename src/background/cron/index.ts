@@ -230,7 +230,6 @@ export const startCron = () => {
               amount: user.selectedDeposit,
             },
           };
-          console.log("contributionRequest: ", contributionRequest);
           let contributions: any = await createContributions(
             token.data,
             contributionRequest

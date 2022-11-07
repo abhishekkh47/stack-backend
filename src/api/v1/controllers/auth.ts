@@ -1761,7 +1761,6 @@ class AuthController extends BaseController {
             };
           }
 
-          // check here for the task to not change name 
           let user = await UserTable.findOne(query);
           if (user) {
             await UserTable.updateOne(
@@ -1833,6 +1832,7 @@ class AuthController extends BaseController {
             firstName: childFirstName ? childFirstName : user.firstName,
             lastName: childLastName ? childLastName : user.lastName,
             mobile: childMobile ? childMobile : user.mobile,
+            email: childEmail,
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
@@ -2132,9 +2132,8 @@ class AuthController extends BaseController {
     let checkParentExists = await UserTable.findOne({
       mobile: ctx.request.body.parentMobile,
     });
-    let alreadyChildExists = await UserTable.find({
-      parentMobile: ctx.request.body.parentMobile,
-    });
+  
+
     if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
       const msg = checkParentExists.type === EUserType.SELF ? "self" : "child";
       return this.BadRequest(
@@ -2157,13 +2156,16 @@ class AuthController extends BaseController {
         }
       );
     }
+    let alreadyChildExists = await UserTable.find({
+      parentMobile: ctx.request.body.parentMobile,
+    });
 
     if (checkParentExists) {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
         checkParentExists,
-        checkParentExists && !alreadyChildExists ? "true" : "false"
+        !alreadyChildExists ? "true" : "false"
       );
     }
 
