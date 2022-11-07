@@ -182,19 +182,18 @@ export const startCron = () => {
       let activityArray = [];
       let accountIdDetails: any;
       for await (let user of users) {
-        if (user.type == EUserType.SELF) {
-          accountIdDetails = await user.self.find(
-            (x: any) => x.userId.toString() == user._id.toString()
-          );
-        } else {
-          accountIdDetails = await user.parentChild?.teens.find(
-            (x: any) => x.childId.toString() == user._id.toString()
-          );
+        accountIdDetails = await user.parentChild?.teens.find(
+          (x: any) => x.childId.toString() == user._id.toString()
+        );
+        if (!accountIdDetails) {
+          accountIdDetails =
+            (await user.self.userId.toString()) == user._id.toString() &&
+            user.self;
+          if (!accountIdDetails) {
+            continue;
+          }
         }
 
-        if (!accountIdDetails) {
-          continue;
-        }
         let deviceTokenData = await DeviceToken.findOne({
           userId:
             user.type == EUserType.SELF
@@ -205,23 +204,28 @@ export const startCron = () => {
           .startOf("day")
           .unix();
         if (selectedDate <= todayDate) {
+          const id =
+            user.type == EUserType.SELF
+              ? user.self.userId
+              : user.parentChild.userId;
           const userInfo = await UserBanksTable.findOne({
-            $or: [
-              { userId: accountIdDetails.userId },
-              { parentId: accountIdDetails.userId },
-            ],
+            $or: [{ userId: id }, { parentId: id }],
             $and: [{ isDefault: 1 }],
           });
+          let contactId =
+            user.type == EUserType.SELF
+              ? user.self.contactId
+              : user.parentChild.contactId;
           let contributionRequest = {
             type: "contributions",
             attributes: {
               "account-id": accountIdDetails.accountId,
-              "contact-id": user.parentChild.contactId,
+              "contact-id": contactId,
               "funds-transfer-method": {
                 "funds-transfer-type": "ach",
                 "ach-check-type": "personal",
-                "contact-id": user.parentChild.contactId,
-                "plaid-processor-token": user.parentChild.processorToken,
+                "contact-id": contactId,
+                "plaid-processor-token": userInfo.processorToken,
               },
               amount: user.selectedDeposit,
             },
@@ -253,7 +257,10 @@ export const startCron = () => {
               );
               await Notification.create({
                 title: notificationRequest.title,
-                userId: user.parentChild.userId,
+                userId:
+                  user.type == EUserType.SELF
+                    ? user.self.userId
+                    : user.parentChild.userId,
                 message: null,
                 isRead: ERead.UNREAD,
                 data: JSON.stringify(notificationRequest),
@@ -263,7 +270,8 @@ export const startCron = () => {
           } else {
             let activityData = {
               userId: user._id,
-              userType: EUserType.TEEN,
+              userType:
+                user.type == EUserType.SELF ? EUserType.SELF : EUserType.TEEN,
               message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
               currencyType: null,
               currencyValue: user.selectedDeposit,
@@ -282,7 +290,10 @@ export const startCron = () => {
               amount: user.selectedDeposit,
               amountMod: null,
               userId: user._id,
-              parentId: user.parentChild.userId,
+              parentId:
+                user.type == EUserType.SELF
+                  ? user.self.userId
+                  : user.parentChild.userId,
               status: ETransactionStatus.PENDING,
               executedQuoteId: contributions.data.included[0].id,
               unitCount: null,

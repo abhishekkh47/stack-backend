@@ -487,10 +487,9 @@ class AuthController extends BaseController {
               let parentChildTableExists = await ParentChildTable.findOne({
                 "teens.childId": user._id,
               });
-              const accountIdDetails: any =
-                parentChildTableExists.teens.find(
-                  (x: any) => x.childId.toString() == user._id.toString()
-                );
+              const accountIdDetails: any = parentChildTableExists.teens.find(
+                (x: any) => x.childId.toString() == user._id.toString()
+              );
               const requestQuoteDay: any = {
                 data: {
                   type: "quotes",
@@ -1761,6 +1760,7 @@ class AuthController extends BaseController {
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
+
           let user = await UserTable.findOne(query);
           if (user) {
             await UserTable.updateOne(
@@ -1831,6 +1831,7 @@ class AuthController extends BaseController {
             firstName: childFirstName ? childFirstName : user.firstName,
             lastName: childLastName ? childLastName : user.lastName,
             mobile: childMobile ? childMobile : user.mobile,
+            email: childEmail,
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
@@ -2130,13 +2131,13 @@ class AuthController extends BaseController {
     let checkParentExists = await UserTable.findOne({
       mobile: ctx.request.body.parentMobile,
     });
-    let alreadyChildExists = await UserTable.find({
-      parentMobile: ctx.request.body.parentMobile,
-    });
+  
+
     if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
+      const msg = checkParentExists.type === EUserType.SELF ? "self" : "child";
       return this.BadRequest(
         ctx,
-        "Looks like this phone number is associated with a child account. Please try a different phone number"
+        `Looks like this phone number is associated with a ${msg} account. Please try a different phone number`
       );
     }
     if (ctx.request.body.parentMobile) {
@@ -2146,18 +2147,24 @@ class AuthController extends BaseController {
           $set: {
             screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             parentMobile: ctx.request.body.parentMobile,
-            parentEmail: checkParentExists.email,
+            parentEmail:
+              checkParentExists && checkParentExists.type == EUserType.PARENT
+                ? checkParentExists.email
+                : null,
           },
         }
       );
     }
+    let alreadyChildExists = await UserTable.find({
+      parentMobile: ctx.request.body.parentMobile,
+    });
 
     if (checkParentExists) {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
         checkParentExists,
-        checkParentExists && !alreadyChildExists ? "true" : "false"
+        !alreadyChildExists ? "true" : "false"
       );
     }
 

@@ -897,35 +897,6 @@ class UserController extends BaseController {
     );
     return this.Ok(ctx, { message: "Acknowledged" });
   }
-
-  /**
-   * @description This method is used for test notification
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/test-notification", method: HttpMethod.POST })
-  @Auth()
-  public async testNotification(ctx: any) {
-    let notificationRequest = {
-      key: NOTIFICATION_KEYS.KYC_SUCCESS,
-      title: NOTIFICATION.KYC_APPROVED_TITLE,
-      message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
-      userId: ctx.request.user._id,
-    };
-    const deviceTokenData = await DeviceToken.findOne({
-      userId: ctx.request.user._id,
-    });
-    if (deviceTokenData) {
-      await sendNotification(
-        deviceTokenData.deviceToken,
-        notificationRequest.title,
-        notificationRequest
-      );
-      return this.Ok(ctx, { message: "Notification Sent" });
-    } else {
-      return this.Ok(ctx, { message: "No device token" });
-    }
-  }
 }
 
 export default new UserController();
