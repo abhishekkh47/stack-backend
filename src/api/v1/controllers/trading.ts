@@ -3305,15 +3305,18 @@ class TradingController extends BaseController {
       for await (let user of users) {
         accountIdDetails = await user.parentChild?.teens.find(
           (x: any) => x.childId.toString() == user._id.toString()
-          );
-          if (!accountIdDetails) {
-            accountIdDetails =
+        );
+        console.log(accountIdDetails, "accountIdDetails");
+        if (!accountIdDetails) {
+          accountIdDetails =
             (await user.self.userId.toString()) == user._id.toString() &&
             user.self;
-            continue;
-          }
-          console.log('accountIdDetails: ', accountIdDetails);
-         
+            if(!accountIdDetails){
+              continue;
+            }
+        }
+        console.log("accountIdDetails: ", accountIdDetails);
+
         let deviceTokenData = await DeviceToken.findOne({
           userId:
             user.type == EUserType.SELF
@@ -3321,16 +3324,15 @@ class TradingController extends BaseController {
               : user.parentChild.userId,
         }).select("deviceToken");
         let selectedDate = moment(user.selectedDepositDate)
-        .startOf("day")
-        .unix();
+          .startOf("day")
+          .unix();
         if (selectedDate <= todayDate) {
-          const id = user.type == EUserType.SELF   ? user.self.userId
-          : user.parentChild.userId
+          const id =
+            user.type == EUserType.SELF
+              ? user.self.userId
+              : user.parentChild.userId;
           const userInfo = await UserBanksTable.findOne({
-            $or: [
-              { userId: id },
-              { parentId: id },
-            ],
+            $or: [{ userId: id }, { parentId: id }],
             $and: [{ isDefault: 1 }],
           });
           let contributionRequest = {
@@ -3338,22 +3340,22 @@ class TradingController extends BaseController {
             attributes: {
               "account-id": accountIdDetails.accountId,
               "contact-id":
-              user.type == EUserType.SELF
-              ? user.self.contactId
-              : user.parentChild.contactId,
+                user.type == EUserType.SELF
+                  ? user.self.contactId
+                  : user.parentChild.contactId,
               "funds-transfer-method": {
                 "funds-transfer-type": "ach",
                 "ach-check-type": "personal",
                 "contact-id":
-                user.type == EUserType.SELF
-                ? user.self.contactId
-                : user.parentChild.contactId,
+                  user.type == EUserType.SELF
+                    ? user.self.contactId
+                    : user.parentChild.contactId,
                 "plaid-processor-token": userInfo.processorToken,
               },
               amount: user.selectedDeposit,
             },
           };
-          console.log('contributionRequest: ', contributionRequest);
+          console.log("contributionRequest: ", contributionRequest);
           let contributions: any = await createContributions(
             token.data,
             contributionRequest
@@ -3395,7 +3397,7 @@ class TradingController extends BaseController {
             let activityData = {
               userId: user._id,
               userType:
-              user.type == EUserType.SELF ? EUserType.SELF : EUserType.TEEN,
+                user.type == EUserType.SELF ? EUserType.SELF : EUserType.TEEN,
               message: `${messages.RECURRING_DEPOSIT} $${user.selectedDeposit}`,
               currencyType: null,
               currencyValue: user.selectedDeposit,
@@ -3429,28 +3431,28 @@ class TradingController extends BaseController {
                 update: {
                   $set: {
                     selectedDepositDate: moment(user.selectedDepositDate)
-                    .utc()
-                    .startOf("day")
-                    .add(
-                      user.isRecurring == ERECURRING.WEEKLY
-                      ? 7
-                      : user.isRecurring == ERECURRING.MONTLY
-                      ? 1
-                      : user.isRecurring == ERECURRING.DAILY
-                      ? 24
-                      : 0,
-                      user.isRecurring == ERECURRING.WEEKLY
-                      ? "days"
-                      : user.isRecurring == ERECURRING.MONTLY
-                      ? "months"
-                      : user.isRecurring == ERECURRING.DAILY
-                      ? "hours"
-                      : "day"
+                      .utc()
+                      .startOf("day")
+                      .add(
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? 7
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? 1
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? 24
+                          : 0,
+                        user.isRecurring == ERECURRING.WEEKLY
+                          ? "days"
+                          : user.isRecurring == ERECURRING.MONTLY
+                          ? "months"
+                          : user.isRecurring == ERECURRING.DAILY
+                          ? "hours"
+                          : "day"
                       ),
-                    },
                   },
                 },
-              };
+              },
+            };
             await mainArray.push(bulWriteOperation);
           }
         }
