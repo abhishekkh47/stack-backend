@@ -380,7 +380,7 @@ class AuthController extends BaseController {
               password: null,
               screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
-              isParentFirst: false,
+              isParentFirst: childExists.isParentFirst,
             };
             if (reqParam.refferalCode) {
               updateQuery = {

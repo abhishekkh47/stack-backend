@@ -1737,7 +1737,7 @@ class TradingController extends BaseController {
                   (x) => x.childId.toString() == reqParam.childId
                 );
           const arrayOfIds =
-            rootAccount &&
+            rootAccount && rootAccount.accountId &&
             (await PortfolioService.getResentPricePorfolio(
               jwtToken,
               rootAccount.accountId

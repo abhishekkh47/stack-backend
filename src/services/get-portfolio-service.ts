@@ -293,12 +293,10 @@ class PortfolioService {
 
   public async getResentPricePorfolio(jwtToken, accountId) {
     const getIds: any = await getAssetTotals(jwtToken, accountId);
-
     let arrayId = [];
-
-    for await (let crypto of getIds.data.data) {
-      crypto.attributes.disbursable > 0 &&
-        arrayId.push(crypto.relationships.asset.links.related.split("/")[3]);
+    for await (let crypto of getIds?.data?.data) {
+      crypto?.attributes?.disbursable > 0 &&
+        arrayId.push(crypto?.relationships?.asset?.links?.related?.split("/")[3]);
     }
     return arrayId;
   }
