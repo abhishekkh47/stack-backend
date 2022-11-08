@@ -1729,18 +1729,18 @@ class TradingController extends BaseController {
             }
           }
 
-          const getAccountId =
+          const rootAccount =
             childExists.type == EUserType.SELF
               ? userExistsForQuiz
-              : userExistsForQuiz.teens.find(
+              : userExistsForQuiz && userExistsForQuiz.teens.find(
                   (x) => x.childId.toString() == reqParam.childId
                 );
 
-          let arrayOfIds = await PortfolioService.getResentPricePorfolio(
+          const arrayOfIds = rootAccount && await PortfolioService.getResentPricePorfolio(
             jwtToken,
-            getAccountId.accountId
+            rootAccount.accountId
           );
-          const portFolio = await TransactionTable.aggregate([
+          const portFolio = arrayOfIds?.length > 0 && await TransactionTable.aggregate([
             {
               $match: {
                 userId: new ObjectId(childExists._id),
@@ -1862,7 +1862,7 @@ class TradingController extends BaseController {
           let intialBalance = 0;
           let totalIntAmount = 0;
           if (portFolio.length > 0) {
-            await portFolio.map((data) => {
+            portFolio.map((data) => {
               totalStackValue = parseFloat(
                 parseFloat(totalStackValue + data.value).toFixed(2)
               );

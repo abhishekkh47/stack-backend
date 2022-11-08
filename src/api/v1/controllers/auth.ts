@@ -169,11 +169,11 @@ class AuthController extends BaseController {
               type: EUserType.PARENT,
             });
 
-            parentChildInfo = await ParentChildTable.findOne({
+            parentChildInfo = checkParentExists?._id && await ParentChildTable.findOne({
               userId: checkParentExists._id,
             });
 
-            const checkCondition = parentChildInfo.teens.filter(
+            const checkCondition = (parentChildInfo?.teens || []).filter(
               (x: any) => x.childId.toString() == childExists.id.toString()
             );
             if (
