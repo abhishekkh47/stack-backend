@@ -1736,9 +1736,7 @@ class TradingController extends BaseController {
                 userExistsForQuiz.teens.find(
                   (x) => x.childId.toString() == reqParam.childId
                 );
-          const arrayOfIds =
-            rootAccount &&
-            rootAccount.accountId &&
+          const arrayOfIds = rootAccount?.accountId &&
             (await PortfolioService.getResentPricePorfolio(
               jwtToken,
               rootAccount.accountId
@@ -1753,20 +1751,17 @@ class TradingController extends BaseController {
               },
             ],
           }).populate("userId", ["status"]);
-          let query = {};
-          const matchRequest =
-            childExists.type !== EUserType.SELF &&
-            (!parent ||
-              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-              ? {
-                  userId: new ObjectId(childExists._id),
-                  type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
-                }
-              : {
-                  userId: new ObjectId(childExists._id),
-                  type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
-                  assetId: { $in: arrayOfIds },
-                };
+
+          const isKidBeforeParent = childExists.type !== EUserType.SELF &&
+            (!parent || parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+          let baseFilter = {
+            userId: new ObjectId(childExists._id),
+            type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+          };
+          const matchRequest = isKidBeforeParent ? baseFilter : {
+            ...baseFilter,
+            assetId: { $in: arrayOfIds },
+          };
           const portFolio = await TransactionTable.aggregate([
             {
               $match: matchRequest,
