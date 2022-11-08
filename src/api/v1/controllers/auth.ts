@@ -380,7 +380,7 @@ class AuthController extends BaseController {
               password: null,
               screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
-              isParentFirst: false,
+              isParentFirst: childExists.isParentFirst,
             };
             if (reqParam.refferalCode) {
               updateQuery = {
@@ -2155,16 +2155,13 @@ class AuthController extends BaseController {
         }
       );
     }
-    let alreadyChildExists = await UserTable.find({
-      parentMobile: ctx.request.body.parentMobile,
-    });
-
+    
     if (checkParentExists) {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
         checkParentExists,
-        !alreadyChildExists ? "true" : "false"
+        "true"
       );
     }
 

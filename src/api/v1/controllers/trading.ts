@@ -1732,21 +1732,39 @@ class TradingController extends BaseController {
           const rootAccount =
             childExists.type == EUserType.SELF
               ? userExistsForQuiz
-              : userExistsForQuiz && userExistsForQuiz.teens.find(
+              : userExistsForQuiz &&
+                userExistsForQuiz.teens.find(
                   (x) => x.childId.toString() == reqParam.childId
                 );
-
-          const arrayOfIds = rootAccount && await PortfolioService.getResentPricePorfolio(
-            jwtToken,
-            rootAccount.accountId
-          );
-          const portFolio = arrayOfIds?.length > 0 && await TransactionTable.aggregate([
-            {
-              $match: {
-                userId: new ObjectId(childExists._id),
-                type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
-                assetId: { $in: arrayOfIds },
+          const arrayOfIds = rootAccount?.accountId &&
+            (await PortfolioService.getResentPricePorfolio(
+              jwtToken,
+              rootAccount.accountId
+            ));
+          let parent: any = await ParentChildTable.findOne({
+            $or: [
+              {
+                "teens.childId": childExists._id,
               },
+              {
+                userId: childExists._id,
+              },
+            ],
+          }).populate("userId", ["status"]);
+
+          const isKidBeforeParent = childExists.type !== EUserType.SELF &&
+            (!parent || parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+          let baseFilter = {
+            userId: new ObjectId(childExists._id),
+            type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+          };
+          const matchRequest = isKidBeforeParent ? baseFilter : {
+            ...baseFilter,
+            assetId: { $in: arrayOfIds },
+          };
+          const portFolio = await TransactionTable.aggregate([
+            {
+              $match: matchRequest,
             },
             {
               $group: {
@@ -1857,6 +1875,7 @@ class TradingController extends BaseController {
               },
             },
           ]).exec();
+
           let totalStackValue: any = 0;
           let totalGainLoss: any = 0;
           let intialBalance = 0;
@@ -1897,16 +1916,7 @@ class TradingController extends BaseController {
             stackCoins = checkQuizExists[0].sum;
           }
           stackCoins = stackCoins + childExists.preLoadedCoins;
-          let parent: any = await ParentChildTable.findOne({
-            $or: [
-              {
-                "teens.childId": childExists._id,
-              },
-              {
-                userId: childExists._id,
-              },
-            ],
-          }).populate("userId", ["status"]);
+
           if (
             childExists.type !== EUserType.SELF &&
             (!parent ||
