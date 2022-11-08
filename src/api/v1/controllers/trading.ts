@@ -1737,7 +1737,8 @@ class TradingController extends BaseController {
                   (x) => x.childId.toString() == reqParam.childId
                 );
           const arrayOfIds =
-            rootAccount && rootAccount.accountId &&
+            rootAccount &&
+            rootAccount.accountId &&
             (await PortfolioService.getResentPricePorfolio(
               jwtToken,
               rootAccount.accountId
@@ -1752,18 +1753,23 @@ class TradingController extends BaseController {
               },
             ],
           }).populate("userId", ["status"]);
-
+          let query = {};
+          const matchRequest =
+            childExists.type !== EUserType.SELF &&
+            (!parent ||
+              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+              ? {
+                  userId: new ObjectId(childExists._id),
+                  type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+                }
+              : {
+                  userId: new ObjectId(childExists._id),
+                  type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+                  assetId: { $in: arrayOfIds },
+                };
           const portFolio = await TransactionTable.aggregate([
             {
-              $match: {
-                userId: new ObjectId(childExists._id),
-                type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
-                ...(!(
-                  childExists.type !== EUserType.SELF &&
-                  (!parent ||
-                    parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-                ) && { assetId: { $in: arrayOfIds } }),
-              },
+              $match: matchRequest,
             },
             {
               $group: {
