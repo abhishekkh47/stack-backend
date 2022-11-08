@@ -479,7 +479,7 @@ class UserController extends BaseController {
       const checkParentExists = await UserTable.findOne({
         mobile: data.parentMobile ? data.parentMobile : data.mobile,
       });
-      const checkBankExists = await UserBanksTable.find({
+      const checkBankExists = checkParentExists?._id && await UserBanksTable.find({
         userId: checkParentExists._id,
       });
       if (
