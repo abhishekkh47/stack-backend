@@ -2155,16 +2155,13 @@ class AuthController extends BaseController {
         }
       );
     }
-    let alreadyChildExists = await UserTable.find({
-      parentMobile: ctx.request.body.parentMobile,
-    });
-
+    
     if (checkParentExists) {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
         ctx.request.body.mobile,
         checkParentExists,
-        !alreadyChildExists ? "true" : "false"
+        "true"
       );
     }
 
