@@ -1923,7 +1923,7 @@ class TradingController extends BaseController {
               }
               return this.Ok(ctx, {
                 data: {
-                  portFolio,
+                  portFolio: portFolio || [],
                   totalStackValue,
                   stackCoins,
                   totalGainLoss,
