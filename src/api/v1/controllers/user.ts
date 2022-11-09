@@ -479,9 +479,11 @@ class UserController extends BaseController {
       const checkParentExists = await UserTable.findOne({
         mobile: data.parentMobile ? data.parentMobile : data.mobile,
       });
-      const checkBankExists = checkParentExists?._id && await UserBanksTable.find({
-        userId: checkParentExists._id,
-      });
+      const checkBankExists =
+        checkParentExists?._id &&
+        (await UserBanksTable.find({
+          userId: checkParentExists._id,
+        }));
       if (
         !checkParentExists ||
         (checkParentExists &&
@@ -583,9 +585,9 @@ class UserController extends BaseController {
           });
 
           return this.Ok(ctx, {
-            nextDepositDate: foundUser.selectedDepositDate ? moment(foundUser.selectedDepositDate).format(
-              "DD/MM/YYYY"
-            ) : null ,
+            nextDepositDate: foundUser.selectedDepositDate
+              ? moment(foundUser.selectedDepositDate).format("DD/MM/YYYY")
+              : null,
           });
         }
       }

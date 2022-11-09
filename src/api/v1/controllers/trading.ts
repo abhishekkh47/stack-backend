@@ -2669,6 +2669,7 @@ class TradingController extends BaseController {
               ],
             });
             for await (let activity of pendingActivities) {
+             
               if (
                 activity.action != EAction.DEPOSIT &&
                 activity.action != EAction.SELL_CRYPTO &&
@@ -2935,7 +2936,7 @@ class TradingController extends BaseController {
                       },
                     },
                   };
-                  const generateSellQuoteResponse: any = await generateQuote(
+                 const generateSellQuoteResponse: any = await generateQuote(
                     jwtToken,
                     requestSellQuoteDay
                   );

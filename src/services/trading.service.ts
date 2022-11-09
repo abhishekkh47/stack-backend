@@ -46,7 +46,7 @@ class TradingService {
   }
 
   /**
-   * @description This method is used for adding deposit action
+   * @description This method is used for adding withdraw action
    * @param accountIdDetails
    * @param parentDetails
    * @param userBankInfo
