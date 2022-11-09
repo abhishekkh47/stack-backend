@@ -8,3 +8,4 @@ export { default as PortfolioService } from "./get-portfolio-service";
 export { default as zohoCrmService } from "./zoho-crm.service";
 export { default as quizService } from "./quiz.service";
 export { default as userService } from "./user.service";
+export { default as tradingService } from "./trading.service";
