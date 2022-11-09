@@ -17,6 +17,7 @@ import {
 import {
   PortfolioService,
   quizService,
+  tradingService,
   userService,
   zohoCrmService,
 } from "../../../services";
@@ -411,35 +412,13 @@ class TradingController extends BaseController {
             (userExists.type == EUserType.TEEN &&
               userExists.isAutoApproval == EAUTOAPPROVAL.ON);
           if (mainQuery) {
-            /**
-             * create fund transfer with fund transfer id in response
-             */
-            let contributionRequest = {
-              type: "contributions",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "contact-id": parentDetails.contactId,
-                "funds-transfer-method": {
-                  "funds-transfer-type": "ach",
-                  "ach-check-type": "personal",
-                  "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": userBankInfo.processorToken,
-                },
-                amount: reqParam.amount,
-              },
-            };
-            contributions = await createContributions(
+            contributions = await tradingService.depositAction(
+              accountIdDetails,
+              parentDetails,
+              userBankInfo,
               jwtToken,
-              contributionRequest
+              reqParam.amount
             );
-            if (contributions.status == 400) {
-              return this.BadRequest(
-                ctx,
-                contributions.code !== 25001
-                  ? "ERROR: Insufficient Funds"
-                  : PLAID_ITEM_ERROR
-              );
-            }
           }
           /**
            * For teen it will be pending state
@@ -820,35 +799,13 @@ class TradingController extends BaseController {
             (userExists.type == EUserType.TEEN &&
               userExists.isAutoApproval == EAUTOAPPROVAL.ON);
           if (mainQuery) {
-            /**
-             * create fund transfer with fund transfer id in response
-             */
-            let disbursementRequest = {
-              type: "disbursements",
-              attributes: {
-                "account-id": accountIdDetails.accountId,
-                "contact-id": parentDetails.contactId,
-                "funds-transfer-method": {
-                  "funds-transfer-type": "ach",
-                  "ach-check-type": "personal",
-                  "contact-id": parentDetails.contactId,
-                  "plaid-processor-token": userBankInfo.processorToken,
-                },
-                amount: reqParam.amount,
-              },
-            };
-            disbursement = await createDisbursements(
+            disbursement = await tradingService.withdrawAction(
+              accountIdDetails,
+              parentDetails,
+              userBankInfo,
               jwtToken,
-              disbursementRequest
+              reqParam.amount
             );
-            if (disbursement.status == 400) {
-              return this.BadRequest(
-                ctx,
-                disbursement.code !== 25001
-                  ? disbursement.message
-                  : PLAID_ITEM_ERROR
-              );
-            }
           }
           /**
            * for teen it will be pending state and for parent it will be in approved
@@ -1736,7 +1693,8 @@ class TradingController extends BaseController {
                 userExistsForQuiz.teens.find(
                   (x) => x.childId.toString() == reqParam.childId
                 );
-          const arrayOfIds = rootAccount?.accountId &&
+          const arrayOfIds =
+            rootAccount?.accountId &&
             (await PortfolioService.getResentPricePorfolio(
               jwtToken,
               rootAccount.accountId
@@ -1752,16 +1710,20 @@ class TradingController extends BaseController {
             ],
           }).populate("userId", ["status"]);
 
-          const isKidBeforeParent = childExists.type !== EUserType.SELF &&
-            (!parent || parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+          const isKidBeforeParent =
+            childExists.type !== EUserType.SELF &&
+            (!parent ||
+              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED);
           let baseFilter = {
             userId: new ObjectId(childExists._id),
             type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
           };
-          const matchRequest = isKidBeforeParent ? baseFilter : {
-            ...baseFilter,
-            assetId: { $in: arrayOfIds },
-          };
+          const matchRequest = isKidBeforeParent
+            ? baseFilter
+            : {
+                ...baseFilter,
+                assetId: { $in: arrayOfIds },
+              };
           const portFolio = await TransactionTable.aggregate([
             {
               $match: matchRequest,
@@ -2213,30 +2175,13 @@ class TradingController extends BaseController {
         if (!userBankInfo) {
           return this.BadRequest(ctx, "Bank Details Not Found");
         }
-        /**
-         * create fund transfer with fund transfer id in response
-         */
-        let contributionRequest = {
-          type: "contributions",
-          attributes: {
-            "account-id": accountIdDetails.accountId,
-            "contact-id": parent.contactId,
-            "funds-transfer-method": {
-              "funds-transfer-type": "ach",
-              "ach-check-type": "personal",
-              "contact-id": parent.contactId,
-              "plaid-processor-token": userBankInfo.processorToken,
-            },
-            amount: activity.currencyValue,
-          },
-        };
-        const contributions: any = await createContributions(
+        let contributions = await tradingService.depositAction(
+          accountIdDetails,
+          parent,
+          userBankInfo,
           jwtToken,
-          contributionRequest
+          activity.currencyValue
         );
-        if (contributions.status == 400) {
-          return this.BadRequest(ctx, "ERROR: Insufficient Funds");
-        }
         await UserActivityTable.updateOne(
           { _id: activityId },
           {
@@ -2290,27 +2235,13 @@ class TradingController extends BaseController {
         if (!userBankInfo) {
           return this.BadRequest(ctx, "Bank Details Not Found");
         }
-        let disbursementRequest = {
-          type: "disbursements",
-          attributes: {
-            "account-id": accountIdDetails.accountId,
-            "contact-id": parent.contactId,
-            "funds-transfer-method": {
-              "funds-transfer-type": "ach",
-              "ach-check-type": "personal",
-              "contact-id": parent.contactId,
-              "plaid-processor-token": userBankInfo.processorToken,
-            },
-            amount: activity.currencyValue,
-          },
-        };
-        const disbursementResponse: any = await createDisbursements(
+        let disbursementResponse = await tradingService.withdrawAction(
+          accountIdDetails,
+          parent,
+          userBankInfo,
           jwtToken,
-          disbursementRequest
+          activity.currencyValue
         );
-        if (disbursementResponse.status == 400) {
-          return this.BadRequest(ctx, disbursementResponse.message);
-        }
         await UserActivityTable.updateOne(
           { _id: activityId },
           {
