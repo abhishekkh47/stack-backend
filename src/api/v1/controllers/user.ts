@@ -147,328 +147,321 @@ class UserController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async uploadFilesData(ctx: any) {
-    try {
-      const body = await json(ctx, { limit: "150mb" });
-      const jwtToken = ctx.request.primeTrustToken;
-      const userExists: any = await UserTable.findOne({
-        _id: ctx.request.user._id,
-      }).populate("stateId", ["name", "shortName"]);
-      const requestParams = body;
-      if (!requestParams.id_proof_front) {
-        return this.BadRequest(
-          ctx,
-          "Please select front image of driving license"
-        );
-      }
-      if (!requestParams.id_proof_back) {
-        return this.BadRequest(
-          ctx,
-          "Please select back image of driving license"
-        );
-      }
-      let validBase64Front = await checkValidBase64String(
-        requestParams.id_proof_front
+    const body = await json(ctx, { limit: "150mb" });
+    const jwtToken = ctx.request.primeTrustToken;
+    const userExists: any = await UserTable.findOne({
+      _id: ctx.request.user._id,
+    }).populate("stateId", ["name", "shortName"]);
+    const requestParams = body;
+    if (!requestParams.id_proof_front) {
+      return this.BadRequest(
+        ctx,
+        "Please select front image of driving license"
       );
-      if (!validBase64Front) {
-        return this.BadRequest(ctx, "Please enter valid image");
-      }
-      let validBase64Back = await checkValidBase64String(
-        requestParams.id_proof_back
+    }
+    if (!requestParams.id_proof_back) {
+      return this.BadRequest(
+        ctx,
+        "Please select back image of driving license"
       );
-      if (!validBase64Back) {
-        return this.BadRequest(ctx, "Please enter valid image");
-      }
-      const parentChildExists = await ParentChildTable.findOne({
-        userId: userExists._id,
+    }
+    let validBase64Front = await checkValidBase64String(
+      requestParams.id_proof_front
+    );
+    if (!validBase64Front) {
+      return this.BadRequest(ctx, "Please enter valid image");
+    }
+    let validBase64Back = await checkValidBase64String(
+      requestParams.id_proof_back
+    );
+    if (!validBase64Back) {
+      return this.BadRequest(ctx, "Please enter valid image");
+    }
+    const parentChildExists = await ParentChildTable.findOne({
+      userId: userExists._id,
+    });
+    if (parentChildExists && parentChildExists.frontDocumentId) {
+      return this.Ok(ctx, {
+        message: "You have already uploaded driving license",
       });
-      if (parentChildExists && parentChildExists.frontDocumentId) {
-        return this.Ok(ctx, {
-          message: "You have already uploaded driving license",
-        });
+    }
+    let firstChildExists = await UserTable.findOne({
+      _id: parentChildExists.firstChildId,
+    });
+    let files = [
+      { id_proof_front: requestParams.id_proof_front },
+      { id_proof_back: requestParams.id_proof_back },
+    ];
+    /**
+     * Upload image front and back accordingly
+     */
+    let validExtensionExists = false;
+    let newArrayFiles = [];
+    for await (let identificationFile of files) {
+      const extension =
+        identificationFile.id_proof_front &&
+        identificationFile.id_proof_front !== ""
+          ? identificationFile.id_proof_front.split(";")[0].split("/")[1]
+          : identificationFile.id_proof_back &&
+            identificationFile.id_proof_back !== ""
+          ? identificationFile.id_proof_back.split(";")[0].split("/")[1]
+          : "";
+      const imageName =
+        identificationFile.id_proof_front &&
+        identificationFile.id_proof_front !== ""
+          ? `id_proof_front_${moment().unix()}.${extension}`
+          : `id_proof_back_${moment().unix()}.${extension}`;
+      const imageExtArr = ["jpg", "jpeg", "png"];
+      if (imageName && !imageExtArr.includes(extension)) {
+        validExtensionExists = true;
+        break;
       }
-      let firstChildExists = await UserTable.findOne({
-        _id: parentChildExists.firstChildId,
+      const decodedImage = Buffer.from(
+        identificationFile.id_proof_front
+          ? identificationFile.id_proof_front.replace(
+              /^data:image\/\w+;base64,/,
+              ""
+            )
+          : identificationFile.id_proof_back.replace(
+              /^data:image\/\w+;base64,/,
+              ""
+            ),
+        "base64"
+      );
+      if (!fs.existsSync(path.join(__dirname, "../../../../uploads"))) {
+        fs.mkdirSync(path.join(__dirname, "../../../../uploads"));
+      }
+      fs.writeFileSync(
+        path.join(__dirname, "../../../../uploads", imageName),
+        decodedImage,
+        "base64"
+      );
+      newArrayFiles.push({
+        fieldname: identificationFile.id_proof_front
+          ? "id_proof_front"
+          : "id_proof_back",
+        filename: imageName,
       });
-      let files = [
-        { id_proof_front: requestParams.id_proof_front },
-        { id_proof_back: requestParams.id_proof_back },
-      ];
-      /**
-       * Upload image front and back accordingly
-       */
-      let validExtensionExists = false;
-      let newArrayFiles = [];
-      for await (let identificationFile of files) {
-        const extension =
-          identificationFile.id_proof_front &&
-          identificationFile.id_proof_front !== ""
-            ? identificationFile.id_proof_front.split(";")[0].split("/")[1]
-            : identificationFile.id_proof_back &&
-              identificationFile.id_proof_back !== ""
-            ? identificationFile.id_proof_back.split(";")[0].split("/")[1]
-            : "";
-        const imageName =
-          identificationFile.id_proof_front &&
-          identificationFile.id_proof_front !== ""
-            ? `id_proof_front_${moment().unix()}.${extension}`
-            : `id_proof_back_${moment().unix()}.${extension}`;
-        const imageExtArr = ["jpg", "jpeg", "png"];
-        if (imageName && !imageExtArr.includes(extension)) {
-          validExtensionExists = true;
-          break;
-        }
-        const decodedImage = Buffer.from(
-          identificationFile.id_proof_front
-            ? identificationFile.id_proof_front.replace(
-                /^data:image\/\w+;base64,/,
-                ""
-              )
-            : identificationFile.id_proof_back.replace(
-                /^data:image\/\w+;base64,/,
-                ""
-              ),
-          "base64"
-        );
-        if (!fs.existsSync(path.join(__dirname, "../../../../uploads"))) {
-          fs.mkdirSync(path.join(__dirname, "../../../../uploads"));
-        }
-        fs.writeFileSync(
-          path.join(__dirname, "../../../../uploads", imageName),
-          decodedImage,
-          "base64"
-        );
-        newArrayFiles.push({
-          fieldname: identificationFile.id_proof_front
-            ? "id_proof_front"
-            : "id_proof_back",
-          filename: imageName,
-        });
-      }
-      if (validExtensionExists) {
-        return this.BadRequest(ctx, "Please add valid extension");
-      }
-      const fullName = userExists.lastName
-        ? userExists.firstName + " " + userExists.lastName
-        : userExists.firstName;
-      const childName = firstChildExists.lastName
-        ? firstChildExists.firstName + " " + firstChildExists.lastName
-        : firstChildExists.firstName;
-      const data = {
-        type: "account",
-        attributes: {
-          "account-type": "custodial",
-          name:
-            userExists.type == EUserType.SELF
-              ? fullName
-              : childName + " - " + fullName,
-          "authorized-signature": fullName,
-          "webhook-config": {
-            url: envData.WEBHOOK_URL,
-            enabled: true,
+    }
+    if (validExtensionExists) {
+      return this.BadRequest(ctx, "Please add valid extension");
+    }
+    const fullName = userExists.lastName
+      ? userExists.firstName + " " + userExists.lastName
+      : userExists.firstName;
+    const childName = firstChildExists.lastName
+      ? firstChildExists.firstName + " " + firstChildExists.lastName
+      : firstChildExists.firstName;
+    const data = {
+      type: "account",
+      attributes: {
+        "account-type": "custodial",
+        name:
+          userExists.type == EUserType.SELF
+            ? fullName
+            : childName + " - " + fullName,
+        "authorized-signature": fullName,
+        "webhook-config": {
+          url: envData.WEBHOOK_URL,
+          enabled: true,
+        },
+        owner: {
+          "contact-type": "natural_person",
+          name: fullName,
+          email: userExists.email,
+          "date-of-birth": userExists.dob,
+          "tax-id-number": userExists.taxIdNo,
+          "tax-country": userExists.country,
+          "ip-address": "127.0.0.2",
+          geolocation: "",
+          "primary-phone-number": {
+            country: "CA",
+            number: userExists.mobile,
+            sms: false,
           },
-          owner: {
-            "contact-type": "natural_person",
-            name: fullName,
-            email: userExists.email,
-            "date-of-birth": userExists.dob,
-            "tax-id-number": userExists.taxIdNo,
-            "tax-country": userExists.country,
-            "ip-address": "127.0.0.2",
-            geolocation: "",
-            "primary-phone-number": {
-              country: "CA",
-              number: userExists.mobile,
-              sms: false,
-            },
-            "primary-address": {
-              "street-1": userExists.address,
-              "street-2": userExists.unitApt ? userExists.unitApt : "",
-              "postal-code": userExists.postalCode,
-              city: userExists.city,
-              region: userExists.state,
-              // region: userExists.stateId.shortName,
-              country: userExists.country,
-            },
+          "primary-address": {
+            "street-1": userExists.address,
+            "street-2": userExists.unitApt ? userExists.unitApt : "",
+            "postal-code": userExists.postalCode,
+            city: userExists.city,
+            region: userExists.state,
+            // region: userExists.stateId.shortName,
+            country: userExists.country,
           },
         },
-      };
-      const createAccountData: any = await createAccount(jwtToken, data);
-      if (createAccountData.status == 400) {
-        return this.BadRequest(ctx, createAccountData.message);
-      }
+      },
+    };
+    const createAccountData: any = await createAccount(jwtToken, data);
+    if (createAccountData.status == 400) {
+      return this.BadRequest(ctx, createAccountData.message);
+    }
 
-      /**
-       * Upload both file
-       */
-      let frontDocumentId = null;
-      let backDocumentId = null;
-      let uploadFileError = null;
-      for await (let fileData of newArrayFiles) {
-        let uploadData = {
-          "contact-id": createAccountData.data.included[0].id,
-          description:
-            fileData.fieldname == "id_proof_front"
-              ? "Front Side Driving License"
-              : "Back Side Driving License",
-          label:
-            fileData.fieldname == "id_proof_back"
-              ? "Back Side Driving License"
-              : "Front Side Driving License",
-          public: "true",
-          file: fs.createReadStream(
-            path.join(__dirname, "../../../../uploads", fileData.filename)
-          ),
-        };
-        let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-        if (uploadFile.status == 400) {
-          uploadFileError = uploadFile.message;
-          break;
-        }
-        if (
-          uploadFile.status == 200 &&
-          uploadFile.message.errors != undefined
-        ) {
-          uploadFileError = uploadFile.message;
-          break;
-        }
-        fileData.fieldname == "id_proof_front"
-          ? (frontDocumentId = uploadFile.message.data.id)
-          : (backDocumentId = uploadFile.message.data.id);
-        /**
-         * Delete image from our server
-         */
-        try {
-          fs.unlinkSync(
-            path.join(__dirname, "../../../../uploads", fileData.filename)
-          );
-        } catch (err) {
-          console.log("Error in removing image");
-        }
-      }
-      if (uploadFileError) {
-        return this.BadRequest(ctx, uploadFileError);
-      }
-      /**
-       * Checking the kyc document checks
-       */
-      const kycData = {
-        type: "kyc-document-checks",
-        attributes: {
-          "contact-id": createAccountData.data.included[0].id,
-          "uploaded-document-id": frontDocumentId,
-          "backside-document-id": backDocumentId,
-          "kyc-document-type": "drivers_license",
-          identity: true,
-          "identity-photo": true,
-          "proof-of-address": true,
-          "kyc-document-country": "US",
-        },
+    /**
+     * Upload both file
+     */
+    let frontDocumentId = null;
+    let backDocumentId = null;
+    let uploadFileError = null;
+    for await (let fileData of newArrayFiles) {
+      let uploadData = {
+        "contact-id": createAccountData.data.included[0].id,
+        description:
+          fileData.fieldname == "id_proof_front"
+            ? "Front Side Driving License"
+            : "Back Side Driving License",
+        label:
+          fileData.fieldname == "id_proof_back"
+            ? "Back Side Driving License"
+            : "Front Side Driving License",
+        public: "true",
+        file: fs.createReadStream(
+          path.join(__dirname, "../../../../uploads", fileData.filename)
+        ),
       };
-      let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
-      if (kycResponse.status == 400) {
-        return this.BadRequest(ctx, kycResponse.message);
+      let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
+      if (uploadFile.status == 400) {
+        uploadFileError = uploadFile.message;
+        break;
       }
-      if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
-        return this.BadRequest(ctx, kycResponse);
+      if (uploadFile.status == 200 && uploadFile.message.errors != undefined) {
+        uploadFileError = uploadFile.message;
+        break;
       }
-      await UserTable.updateOne(
-        {
-          _id: userExists._id,
-        },
-        {
-          $set: {
-            status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
-            screenStatus: ESCREENSTATUS.ADD_BANK_ACCOUNT,
-          },
-        }
-      );
+      fileData.fieldname == "id_proof_front"
+        ? (frontDocumentId = uploadFile.message.data.id)
+        : (backDocumentId = uploadFile.message.data.id);
       /**
-       * Updating the info in parent child table
+       * Delete image from our server
        */
-      let filterQuery: any = {
-        userId: userExists._id,
+      try {
+        fs.unlinkSync(
+          path.join(__dirname, "../../../../uploads", fileData.filename)
+        );
+      } catch (err) {
+        console.log("Error in removing image");
+      }
+    }
+    if (uploadFileError) {
+      return this.BadRequest(ctx, uploadFileError);
+    }
+    /**
+     * Checking the kyc document checks
+     */
+    const kycData = {
+      type: "kyc-document-checks",
+      attributes: {
+        "contact-id": createAccountData.data.included[0].id,
+        "uploaded-document-id": frontDocumentId,
+        "backside-document-id": backDocumentId,
+        "kyc-document-type": "drivers_license",
+        identity: true,
+        "identity-photo": true,
+        "proof-of-address": true,
+        "kyc-document-country": "US",
+      },
+    };
+    let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
+    if (kycResponse.status == 400) {
+      return this.BadRequest(ctx, kycResponse.message);
+    }
+    if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
+      return this.BadRequest(ctx, kycResponse);
+    }
+    await UserTable.updateOne(
+      {
+        _id: userExists._id,
+      },
+      {
+        $set: {
+          status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
+          screenStatus: ESCREENSTATUS.ADD_BANK_ACCOUNT,
+        },
+      }
+    );
+    /**
+     * Updating the info in parent child table
+     */
+    let filterQuery: any = {
+      userId: userExists._id,
+    };
+    let updateQuery: any = {
+      contactId: createAccountData.data.included[0].id,
+      frontDocumentId: frontDocumentId,
+      backDocumentId: backDocumentId,
+      kycDocumentId: kycResponse.data.data.id,
+    };
+    if (userExists.type == EUserType.PARENT) {
+      filterQuery = {
+        ...filterQuery,
+        "teens.childId": parentChildExists.firstChildId,
       };
-      let updateQuery: any = {
+      updateQuery = {
+        ...updateQuery,
         contactId: createAccountData.data.included[0].id,
         frontDocumentId: frontDocumentId,
         backDocumentId: backDocumentId,
         kycDocumentId: kycResponse.data.data.id,
+        "teens.$.accountId": createAccountData.data.data.id,
       };
-      if (userExists.type == EUserType.PARENT) {
-        filterQuery = {
-          ...filterQuery,
-          "teens.childId": parentChildExists.firstChildId,
-        };
-        updateQuery = {
-          ...updateQuery,
-          contactId: createAccountData.data.included[0].id,
-          frontDocumentId: frontDocumentId,
-          backDocumentId: backDocumentId,
-          kycDocumentId: kycResponse.data.data.id,
-          "teens.$.accountId": createAccountData.data.data.id,
-        };
-      }
-      if (userExists.type == EUserType.SELF) {
-        updateQuery = {
-          ...updateQuery,
-          contactId: createAccountData.data.included[0].id,
-          accountId: createAccountData.data.data.id,
-        };
-      }
-      await ParentChildTable.updateOne(filterQuery, {
-        $set: updateQuery,
-      });
-      /**
-       * Update the status to zoho crm
-       */
-      let dataSentInCrm: any = {
-        Account_Name: userExists.firstName + " " + userExists.lastName,
-        Account_Status: "1",
-        Parent_Signup_Funnel: [
-          ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-          PARENT_SIGNUP_FUNNEL.DOB,
-          PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
-          PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-          PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-        ],
-      };
-      await zohoCrmService.addAccounts(
-        ctx.request.zohoAccessToken,
-        dataSentInCrm
-      );
-      /**
-       * Kyc pending mode call
-       */
-      let deviceTokenData = await DeviceToken.findOne({
-        userId: userExists._id,
-      }).select("deviceToken");
-      if (deviceTokenData) {
-        let notificationRequest = {
-          key: NOTIFICATION_KEYS.KYC_PENDING,
-          title: NOTIFICATION.KYC_PENDING_TITLE,
-          message: NOTIFICATION.KYC_PENDING_DESCRIPTION,
-        };
-        await sendNotification(
-          deviceTokenData.deviceToken,
-          notificationRequest.title,
-          notificationRequest
-        );
-        await Notification.create({
-          title: notificationRequest.title,
-          userId: userExists._id,
-          message: notificationRequest.message,
-          isRead: ERead.UNREAD,
-          data: JSON.stringify(notificationRequest),
-        });
-      }
-      return this.Ok(ctx, {
-        data: kycResponse.data,
-        message:
-          "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
-      });
-    } catch (e) {
-      return this.BadRequest(ctx, "Please select images");
     }
+    if (userExists.type == EUserType.SELF) {
+      updateQuery = {
+        ...updateQuery,
+        contactId: createAccountData.data.included[0].id,
+        accountId: createAccountData.data.data.id,
+      };
+    }
+    await ParentChildTable.updateOne(filterQuery, {
+      $set: updateQuery,
+    });
+    /**
+     * Update the status to zoho crm
+     */
+    let dataSentInCrm: any = {
+      Account_Name: userExists.firstName + " " + userExists.lastName,
+      Account_Status: "1",
+      Parent_Signup_Funnel: [
+        ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+        PARENT_SIGNUP_FUNNEL.DOB,
+        PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+        PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+        PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+      ],
+    };
+    await zohoCrmService.addAccounts(
+      ctx.request.zohoAccessToken,
+      dataSentInCrm
+    );
+    /**
+     * Kyc pending mode call
+     */
+    let deviceTokenData = await DeviceToken.findOne({
+      userId: userExists._id,
+    }).select("deviceToken");
+    if (deviceTokenData) {
+      let notificationRequest = {
+        key: NOTIFICATION_KEYS.KYC_PENDING,
+        title: NOTIFICATION.KYC_PENDING_TITLE,
+        message: NOTIFICATION.KYC_PENDING_DESCRIPTION,
+      };
+      await sendNotification(
+        deviceTokenData.deviceToken,
+        notificationRequest.title,
+        notificationRequest
+      );
+      await Notification.create({
+        title: notificationRequest.title,
+        userId: userExists._id,
+        message: notificationRequest.message,
+        isRead: ERead.UNREAD,
+        data: JSON.stringify(notificationRequest),
+      });
+    }
+    return this.Ok(ctx, {
+      data: kycResponse.data,
+      message:
+        "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
+    });
   }
 
   /**
