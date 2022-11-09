@@ -467,7 +467,7 @@ class UserController extends BaseController {
           "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
       });
     } catch (e) {
-      return this.BadRequest(ctx, "Please upload images");
+      return this.BadRequest(ctx, "Please select images");
     }
   }
 
