@@ -17,4 +17,3 @@ export * from "./cryptoPrice";
 export * from "./deviceToken";
 export * from "./user-referral";
 export * from "./userBanks";
-export * from "./userBanks1";
