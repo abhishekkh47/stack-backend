@@ -22,3 +22,4 @@ export * from "./notification";
 export * from "./user-referral";
 export * from "./userDraft";
 export * from "./userBanks";
+export * from "./userBanks1";
