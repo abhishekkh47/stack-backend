@@ -81,6 +81,6 @@ setControllerRoutes(router, CryptoController);
 setControllerRoutes(router, UserController);
 setControllerRoutes(router, CMSController);
 setControllerRoutes(router, WebHookController);
-// setControllerRoutes(router, ScriptController);
+setControllerRoutes(router, ScriptController);
 
 export default Compose([router.routes(), router.allowedMethods()]);

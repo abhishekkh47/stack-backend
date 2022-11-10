@@ -82,7 +82,7 @@ class ScriptController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/update-userbanks", method: HttpMethod.POST })
+  @Route({ path: "/migrate-userbanks", method: HttpMethod.POST })
   public async updateUserBanksDataScript(ctx: any) {
     let banksArray = [];
     let BanksData = await ParentChildTable.find();
@@ -98,9 +98,9 @@ class ScriptController extends BaseController {
         isDefault: 1,
       });
     }
-    await UserBanks1Table.insertMany(banksArray);
+    const response = await UserBanks1Table.insertMany(banksArray);
 
-    return this.Ok(ctx, { message: "Successfull Migration" });
+    return this.Ok(ctx, { message: "Successfull Migration", data: response });
   }
 }
 
