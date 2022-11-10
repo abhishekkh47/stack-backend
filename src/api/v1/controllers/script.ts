@@ -1,6 +1,5 @@
-import { UserBanksTable } from "./../../../model/userBanks";
 import { ParentChildTable } from "./../../../model/parentChild";
-import { UserBanks1Table, UserTable } from "../../../model";
+import { UserBanksTable, UserTable } from "../../../model";
 import { EUserType, HttpMethod } from "../../../types";
 import { Route } from "../../../utility";
 import BaseController from "./base";
@@ -85,7 +84,11 @@ class ScriptController extends BaseController {
   @Route({ path: "/migrate-userbanks", method: HttpMethod.POST })
   public async updateUserBanksDataScript(ctx: any) {
     let banksArray = [];
-    let BanksData = await ParentChildTable.find();
+    let query = {};
+    if (ctx.request.body.userId) {
+      query = { ...query, userId: ctx.request.body.userId };
+    }
+    let BanksData = await ParentChildTable.find(query);
     for await (let bankInfo of BanksData) {
       console.log("userId for banks", bankInfo.userId);
       banksArray.push({
@@ -98,7 +101,7 @@ class ScriptController extends BaseController {
         isDefault: 1,
       });
     }
-    const response = await UserBanks1Table.insertMany(banksArray);
+    const response = await UserBanksTable.insertMany(banksArray);
 
     return this.Ok(ctx, { message: "Successfull Migration", data: response });
   }
