@@ -1,4 +1,5 @@
-import { UserTable } from "../../../model";
+import { ParentChildTable } from "./../../../model/parentChild";
+import { UserBanksTable, UserTable } from "../../../model";
 import { EUserType, HttpMethod } from "../../../types";
 import { Route } from "../../../utility";
 import BaseController from "./base";
@@ -14,13 +15,17 @@ class ScriptController extends BaseController {
     const reqParam = ctx.request.body;
     const { email } = reqParam;
 
-    const attachEmail_Parent = (query) =>  ({
-      $and: email ? [query, {type: {$not: { $eq:  EUserType.TEEN }} }, { email }] : [query, {type: EUserType.PARENT }]
-    })
+    const attachEmail_Parent = (query) => ({
+      $and: email
+        ? [query, { type: { $not: { $eq: EUserType.TEEN } } }, { email }]
+        : [query, { type: EUserType.PARENT }],
+    });
 
-    const attachEmail_Teen = (query) =>  ({
-      $and: email ? [query, {type: EUserType.TEEN }, { email }] : [query, {type: EUserType.PARENT }]
-    })
+    const attachEmail_Teen = (query) => ({
+      $and: email
+        ? [query, { type: EUserType.TEEN }, { email }]
+        : [query, { type: EUserType.PARENT }],
+    });
 
     const updatedCountParent2 = await UserTable.updateMany(
       attachEmail_Parent({ screenStatus: 1 }),
@@ -69,6 +74,36 @@ class ScriptController extends BaseController {
       updatedCountParent4,
       updatedCountTeen1,
     });
+  }
+
+  /**
+   * @description This method is for updating user banks by script for migration into production
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/migrate-userbanks", method: HttpMethod.POST })
+  public async updateUserBanksDataScript(ctx: any) {
+    let banksArray = [];
+    let query = {};
+    if (ctx.request.body.userId) {
+      query = { ...query, userId: ctx.request.body.userId };
+    }
+    let BanksData = await ParentChildTable.find(query);
+    for await (let bankInfo of BanksData) {
+      console.log("userId for banks", bankInfo.userId);
+      banksArray.push({
+        userId: bankInfo.userId,
+        parentId: bankInfo.userId,
+        status: 2,
+        processorToken: bankInfo.processorToken,
+        insId: bankInfo.institutionId,
+        accessToken: bankInfo.accessToken,
+        isDefault: 1,
+      });
+    }
+    const response = await UserBanksTable.insertMany(banksArray);
+
+    return this.Ok(ctx, { message: "Successfull Migration", data: response });
   }
 }
 
