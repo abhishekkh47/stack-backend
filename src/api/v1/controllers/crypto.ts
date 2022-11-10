@@ -156,6 +156,7 @@ class CryptocurrencyController extends BaseController {
           balance: balance,
           name: "Cash",
           symbol: "USD",
+          image: CASH_USD_ICON,
           isRecurring:
             userExists.isRecurring == ERECURRING.WEEKLY ||
             userExists.isRecurring == ERECURRING.MONTLY ||
