@@ -143,10 +143,10 @@ class ScriptController extends BaseController {
     const added = await CryptoTable.create(array[0]);
     if (added) {
       /**
-       * get historical data for avalanche
+       * get historical data for symbol
        */
       let historicalData: any = await getHistoricalDataOfCoins(added.symbol);
-      const historicalValues = historicalData.data[symbol[0]];
+      const historicalValues = historicalData.data[symbol][0];
       let arrayToInsert = {
         name: historicalValues.name,
         symbol: historicalValues.symbol,
