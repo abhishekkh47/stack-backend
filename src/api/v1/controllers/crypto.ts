@@ -8,12 +8,7 @@ import {
 } from "../../../model";
 import { PortfolioService } from "../../../services";
 import { ERECURRING, EUserType, HttpMethod } from "../../../types";
-import {
-  getAssets,
-  getBalance,
-  getHistoricalDataOfCoins,
-  Route,
-} from "../../../utility";
+import { getBalance, Route } from "../../../utility";
 import { CASH_USD_ICON } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
