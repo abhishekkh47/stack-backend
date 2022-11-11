@@ -446,6 +446,38 @@ export const getBalance = async (token, id) => {
  * @param id
  * @returns {*}
  */
+export const getAssetTotalWithId = async (token, accountId, assetId) => {
+  const response = await axios
+    .get(
+      config.PRIMETRUSTAPI_URL +
+        PRIMETRUSTAPIS.accountAssetTotalWithId(accountId, assetId),
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to get the portfolio
+ * @param token
+ * @param id
+ * @returns {*}
+ */
 export const getAssetTotals = async (token, accountId) => {
   const response = await axios
     .get(

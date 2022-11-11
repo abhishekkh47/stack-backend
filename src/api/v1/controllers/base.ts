@@ -1,5 +1,4 @@
 import * as Koa from "koa";
-
 import { IController, IControllerRoute } from "../../../types";
 
 class BaseController implements IController {

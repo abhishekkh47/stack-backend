@@ -7,18 +7,6 @@ import { VideosTable } from "../../../model/videos";
 
 class VideoController extends BaseController {
   /**
-   * @description This method is used to create static videos in db
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/add-video", method: HttpMethod.POST })
-  // @Auth()
-  public async addVideos(ctx: Koa.Context) {
-    await VideosTable.insertMany(ctx.request.body);
-    return this.Ok(ctx, { message: "Success" });
-  }
-
-  /**
    * @description This method is used to get videos in video library module
    * @param ctx
    * @returns {*}

@@ -1,29 +1,22 @@
 import Koa from "koa";
-import { ObjectId } from "mongodb";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
   ParentChildTable,
-  TransactionTable,
   UserTable,
 } from "../../../model";
+import { PortfolioService } from "../../../services";
+import { ERECURRING, EUserType, HttpMethod } from "../../../types";
 import {
-  ERECURRING,
-  ETransactionType,
-  EUserType,
-  HttpMethod,
-} from "../../../types";
-import {
-  Route,
-  getBalance,
   getAssets,
+  getBalance,
   getHistoricalDataOfCoins,
+  Route,
 } from "../../../utility";
+import { CASH_USD_ICON } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
-import { getPortFolioService } from "../../../services";
-import { CASH_USD_ICON } from "../../../utility/constants";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
@@ -56,7 +49,7 @@ class CryptocurrencyController extends BaseController {
       if (!ctx.request.query.childId) {
         return this.BadRequest(ctx, "Child Id Details Doesn't Exists");
       }
-      let portFolio = await getPortFolioService.getCryptoIdInPortfolio(
+      let portFolio = await PortfolioService.getCryptoIdInPortfolio(
         ctx.request.query.childId
       );
       if (portFolio.length > 0) {
@@ -67,13 +60,34 @@ class CryptocurrencyController extends BaseController {
       }
     }
     return this.Ok(ctx, {
-      data: await CryptoTable.find(query, {
-        _id: 1,
-        name: 1,
-        symbol: 1,
-        assetId: 1,
-        image: 1,
-      }),
+      data: await CryptoTable.aggregate([
+        {
+          $match: {
+            $and: [query],
+          },
+        },
+        {
+          $lookup: {
+            from: "cryptoprices",
+            localField: "_id",
+            foreignField: "cryptoId",
+            as: "cryptoPrice",
+          },
+        },
+        {
+          $unwind: { path: "$cryptoPrice", preserveNullAndEmptyArrays: true },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            symbol: 1,
+            assetId: 1,
+            image: 1,
+            price: "$cryptoPrice.currentPrice",
+          },
+        },
+      ]).exec(),
     });
   }
 
@@ -147,10 +161,11 @@ class CryptocurrencyController extends BaseController {
           balance: balance,
           name: "Cash",
           symbol: "USD",
+          image: CASH_USD_ICON,
           isRecurring:
             userExists.isRecurring == ERECURRING.WEEKLY ||
             userExists.isRecurring == ERECURRING.MONTLY ||
-            userExists.isRecurring == ERECURRING.QUATERLY
+            userExists.isRecurring == ERECURRING.DAILY
               ? userExists.isRecurring
               : parentChild.accessToken
               ? 1
@@ -164,7 +179,7 @@ class CryptocurrencyController extends BaseController {
      */
     const crypto = await CryptoTable.findOne({ symbol: symbol });
     const portFolio =
-      await getPortFolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
+      await PortfolioService.getPortfolioBasedOnChildIdWithCurrentMarketPrice(
         userExists._id,
         crypto._id,
         parentChild,
@@ -179,7 +194,7 @@ class CryptocurrencyController extends BaseController {
    * @description This api is used for getting crypto list + cash shown in new invest screen
    * @returns {*}
    */
-  @Route({ path: "/crypto-list-invest-screen", method: HttpMethod.GET })
+  @Route({ path: "/cryptos", method: HttpMethod.GET })
   @Auth()
   public async getCryptoInInvestScreen(ctx: any) {
     let cryptoList: any = await CryptoTable.aggregate([
@@ -208,67 +223,6 @@ class CryptocurrencyController extends BaseController {
       index: 0,
     });
     return this.Ok(ctx, { message: "Success", data: cryptoList });
-  }
-
-  @Route({ path: "/add-avalanche", method: HttpMethod.POST })
-  @PrimeTrustJWT()
-  public async addCryptoToDB(ctx: any) {
-    let token = ctx.request.primeTrustToken;
-    /**
-     * get the asset data for avalanche
-     */
-    let assets: any = await getAssets(token, 1, 500);
-    assets = await assets.data.data.filter(
-      (x) => x.attributes["unit-name"] === "AVAX"
-    );
-    let array = [];
-    for await (const iterator of assets) {
-      array.push({
-        name: iterator.attributes["name"],
-        symbol: iterator.attributes["unit-name"],
-        assetId: iterator.id,
-      });
-    }
-    const added = await CryptoTable.create(array[0]);
-    if (added) {
-      /**
-       * get historical data for avalanche
-       */
-      let historicalData: any = await getHistoricalDataOfCoins(added.symbol);
-      const historicalValues = historicalData.data.AVAX[0];
-      let arrayToInsert = {
-        name: historicalValues.name,
-        symbol: historicalValues.symbol,
-        assetId: added.assetId,
-        cryptoId: added._id,
-        high365D: parseFloat(
-          parseFloat(
-            historicalValues.periods["365d"].quote["USD"].high
-          ).toFixed(2)
-        ),
-        low365D: parseFloat(
-          parseFloat(historicalValues.periods["365d"].quote["USD"].low).toFixed(
-            2
-          )
-        ),
-        high90D: parseFloat(
-          parseFloat(historicalValues.periods["90d"].quote["USD"].high).toFixed(
-            2
-          )
-        ),
-        low90D: parseFloat(
-          parseFloat(historicalValues.periods["90d"].quote["USD"].low).toFixed(
-            2
-          )
-        ),
-        currencyType: "USD",
-        currentPrice: null,
-      };
-
-      await CryptoPriceTable.create(arrayToInsert);
-    }
-
-    return this.Ok(ctx, { message: assets });
   }
 }
 

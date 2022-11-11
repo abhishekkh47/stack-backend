@@ -11,11 +11,13 @@ class zohoCrmService {
     dataCreateOrUpdateInZoho: object,
     isArray: boolean = null
   ) {
-    console.log(`zohoCrmService Being Called`);
+    
     let mainData = {
       data: isArray ? dataCreateOrUpdateInZoho : [dataCreateOrUpdateInZoho],
     };
     const addedData = await addAccountInfoInZohoCrm(zohoAccessToken, mainData);
+    
+
     if (addedData.status != 200) {
       throw new Error("Error in syncing zoho crm");
     }
@@ -32,8 +34,8 @@ class zohoCrmService {
     }
     if (getData.status == 200) {
       let mainValue =
-        getData.data.data.length > 0
-          ? getData.data.data.filter((x) => x.Account_Type === filterValue)
+        getData?.data?.data?.length > 0
+          ? getData?.data?.data?.filter((x) => x.Account_Type === filterValue)
           : [];
       return mainValue.length > 0 ? mainValue[0] : null;
     }
@@ -45,7 +47,7 @@ class zohoCrmService {
     id: string,
     updateRecord: object
   ) {
-    console.log(`zohoCrmService Being Called`);
+    
     let mainData = {
       data: [updateRecord],
     };
@@ -62,7 +64,8 @@ class zohoCrmService {
   public async searchAccountsAndUpdateDataInCrm(
     zohoAccessToken: string,
     teenMobile: string,
-    checkParentExists: any
+    checkParentExists: any,
+    parentFirst: any
   ) {
     /**
      * Add zoho crm
@@ -71,7 +74,8 @@ class zohoCrmService {
       zohoAccessToken,
       teenMobile,
       "Teen"
-    );
+      );
+      
     if (searchAccountTeen) {
       let dataSentInCrm: any = {};
       dataSentInCrm = {
@@ -93,6 +97,7 @@ class zohoCrmService {
         TeenAccount: {
           id: searchAccountTeen.id,
         },
+        Parent_First: parentFirst
       };
       await this.addAccounts(zohoAccessToken, newDataInCrm);
     }

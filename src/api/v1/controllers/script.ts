@@ -1,6 +1,13 @@
-import { UserTable } from "../../../model";
+import { ParentChildTable } from "./../../../model/parentChild";
+import {
+  CryptoPriceTable,
+  CryptoTable,
+  UserBanksTable,
+  UserTable,
+} from "../../../model";
 import { EUserType, HttpMethod } from "../../../types";
-import { Route } from "../../../utility";
+import { PrimeTrustJWT } from "../../../middleware";
+import { getAssets, getHistoricalDataOfCoins, Route } from "../../../utility";
 import BaseController from "./base";
 
 class ScriptController extends BaseController {
@@ -14,13 +21,17 @@ class ScriptController extends BaseController {
     const reqParam = ctx.request.body;
     const { email } = reqParam;
 
-    const attachEmail_Parent = (query) =>  ({
-      $and: email ? [query, {type: {$not: { $eq:  EUserType.TEEN }} }, { email }] : [query, {type: EUserType.PARENT }]
-    })
+    const attachEmail_Parent = (query) => ({
+      $and: email
+        ? [query, { type: { $not: { $eq: EUserType.TEEN } } }, { email }]
+        : [query, { type: EUserType.PARENT }],
+    });
 
-    const attachEmail_Teen = (query) =>  ({
-      $and: email ? [query, {type: EUserType.TEEN }, { email }] : [query, {type: EUserType.PARENT }]
-    })
+    const attachEmail_Teen = (query) => ({
+      $and: email
+        ? [query, { type: EUserType.TEEN }, { email }]
+        : [query, { type: EUserType.PARENT }],
+    });
 
     const updatedCountParent2 = await UserTable.updateMany(
       attachEmail_Parent({ screenStatus: 1 }),
@@ -69,6 +80,106 @@ class ScriptController extends BaseController {
       updatedCountParent4,
       updatedCountTeen1,
     });
+  }
+
+  /**
+   * @description This method is for updating user banks by script for migration into production
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/migrate-userbanks", method: HttpMethod.POST })
+  public async updateUserBanksDataScript(ctx: any) {
+    let banksArray = [];
+    let query = {};
+    if (ctx.request.body.userId) {
+      query = { ...query, userId: ctx.request.body.userId };
+    }
+    let BanksData = await ParentChildTable.find(query);
+    for await (let bankInfo of BanksData) {
+      console.log("userId for banks", bankInfo.userId);
+      banksArray.push({
+        userId: bankInfo.userId,
+        parentId: bankInfo.userId,
+        status: 2,
+        processorToken: bankInfo.processorToken,
+        insId: bankInfo.institutionId,
+        accessToken: bankInfo.accessToken,
+        isDefault: 1,
+      });
+    }
+    const response = await UserBanksTable.insertMany(banksArray);
+
+    return this.Ok(ctx, { message: "Successfull Migration", data: response });
+  }
+
+  /**
+   * @description This method is for adding crypto from pt in staging and production
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/add-crypto-in-db", method: HttpMethod.POST })
+  @PrimeTrustJWT()
+  public async addCryptoToDB(ctx: any) {
+    let token = ctx.request.primeTrustToken;
+    let symbol = ctx.request.body.symbol;
+    if (!symbol) {
+      return this.BadRequest(ctx, "Please enter crypto");
+    }
+    /**
+     * get the asset data for avalanche
+     */
+    let assets: any = await getAssets(token, 1, 500);
+    assets = await assets.data.data.filter(
+      (x) => x.attributes["unit-name"] === symbol
+    );
+    let array = [];
+    for await (const iterator of assets) {
+      array.push({
+        name: iterator.attributes["name"],
+        symbol: iterator.attributes["unit-name"],
+        assetId: iterator.id,
+      });
+    }
+    const added = await CryptoTable.create(array[0]);
+    if (added) {
+      /**
+       * get historical data for avalanche
+       */
+      let historicalData: any = await getHistoricalDataOfCoins(added.symbol);
+      const historicalValues = historicalData.data[symbol[0]];
+      let arrayToInsert = {
+        name: historicalValues.name,
+        symbol: historicalValues.symbol,
+        assetId: added.assetId,
+        cryptoId: added._id,
+        high365D: parseFloat(
+          parseFloat(
+            historicalValues.periods["365d"].quote["USD"].high
+          ).toFixed(2)
+        ),
+        low365D: parseFloat(
+          parseFloat(historicalValues.periods["365d"].quote["USD"].low).toFixed(
+            2
+          )
+        ),
+        high90D: parseFloat(
+          parseFloat(historicalValues.periods["90d"].quote["USD"].high).toFixed(
+            2
+          )
+        ),
+        low90D: parseFloat(
+          parseFloat(historicalValues.periods["90d"].quote["USD"].low).toFixed(
+            2
+          )
+        ),
+        currencyType: "USD",
+        currentPrice: null,
+      };
+
+      await CryptoPriceTable.create(arrayToInsert);
+    }
+
+    return this.Ok(ctx, { message: assets });
   }
 }
 

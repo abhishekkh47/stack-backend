@@ -1,4 +1,9 @@
-import { getBalance, createContributions } from "../utility";
+import {
+  getBalance,
+  createContributions,
+  getAssetTotalWithId,
+  getAssetTotals,
+} from "../utility";
 import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
 import {
   ETransactionType,
@@ -9,7 +14,7 @@ import {
   EUserType,
 } from "../types";
 import moment from "moment";
-class getPortfolioService {
+class PortfolioService {
   public async getPortfolioBasedOnChildIdWithCurrentMarketPrice(
     childId: string,
     cryptoId: any,
@@ -37,6 +42,18 @@ class getPortfolioService {
       throw Error(fetchBalance.message);
     }
     const balance = fetchBalance.data.data[0].attributes.disbursable;
+
+    const cryptoInfo = await CryptoTable.findOne({ _id: cryptoId });
+
+    const getUnitCount: any = await getAssetTotalWithId(
+      jwtToken,
+      accountIdDetails.accountId,
+      cryptoInfo.assetId
+    );
+
+    if (getUnitCount.status == 400) {
+      throw Error(getUnitCount.message);
+    }
 
     const portFolio = await CryptoTable.aggregate([
       {
@@ -83,9 +100,8 @@ class getPortfolioService {
           symbol: 1,
           image: 1,
           currentPrice: "$currentPriceDetails.currentPrice",
-          totalSum: {
-            $sum: "$transactionData.unitCount",
-          },
+          percentChange30d: "$currentPriceDetails.percent_change_30d",
+          percentChange2y: "$currentPriceDetails.percent_change_2y",
           totalAmount: {
             $sum: "$transactionData.amount",
           },
@@ -95,9 +111,10 @@ class getPortfolioService {
           value: {
             $multiply: [
               "$currentPriceDetails.currentPrice",
-              {
-                $sum: "$transactionData.unitCount",
-              },
+              getUnitCount.data.data[0] &&
+              getUnitCount.data.data[0]?.attributes?.disbursable > 0
+                ? getUnitCount.data.data[0]?.attributes?.disbursable
+                : 0,
             ],
           },
         },
@@ -214,7 +231,8 @@ class getPortfolioService {
     parentDetails,
     jwtToken,
     userExists,
-    accountIdDetails
+    accountIdDetails,
+    processorToken
   ) {
     /**
      * create fund transfer with fund transfer id in response
@@ -231,7 +249,7 @@ class getPortfolioService {
           "funds-transfer-type": "ach",
           "ach-check-type": "personal",
           "contact-id": parentDetails.contactId,
-          "plaid-processor-token": parentDetails.processorToken,
+          "plaid-processor-token": processorToken,
         },
         amount: reqParam.depositAmount,
       },
@@ -272,6 +290,16 @@ class getPortfolioService {
       unitCount: null,
     });
   }
+
+  public async getResentPricePorfolio(jwtToken, accountId) {
+    const getIds: any = await getAssetTotals(jwtToken, accountId);
+    let arrayId = [];
+    for await (let crypto of getIds?.data?.data) {
+      crypto?.attributes?.disbursable > 0 &&
+        arrayId.push(crypto?.relationships?.asset?.links?.related?.split("/")[3]);
+    }
+    return arrayId;
+  }
 }
 
-export default new getPortfolioService();
+export default new PortfolioService();

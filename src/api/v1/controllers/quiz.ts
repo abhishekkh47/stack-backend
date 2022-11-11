@@ -11,7 +11,7 @@ import {
   QuizTopicTable,
   UserTable,
 } from "../../../model";
-import { zohoCrmService, quizService } from "../../../services";
+import { quizService, zohoCrmService } from "../../../services";
 import {
   EQuizTopicStatus,
   EUserType,
