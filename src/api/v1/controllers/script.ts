@@ -1,7 +1,13 @@
+import { TransactionTable } from "./../../../model/transactions";
+import { DeviceToken } from "./../../../model/deviceToken";
 import { ParentChildTable } from "./../../../model/parentChild";
 import {
   CryptoPriceTable,
   CryptoTable,
+  Notification,
+  QuizQuestionResult,
+  QuizResult,
+  UserActivityTable,
   UserBanksTable,
   UserTable,
 } from "../../../model";
@@ -180,6 +186,78 @@ class ScriptController extends BaseController {
     }
 
     return this.Ok(ctx, { message: assets });
+  }
+
+  /**
+   * @description This method is for deleting user created before 30 days
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/delete-data-after-30d", method: HttpMethod.POST })
+  @PrimeTrustJWT()
+  public async deleteDataAfter30D(ctx: any) {
+    let dateBefore30Days = new Date(Date.now() - 60 * 60 * 24 * 30 * 1000); // 30 days before date
+    console.log("dateBefore30Days: ", dateBefore30Days);
+
+    // get all the users to get the criterion of 30 days date
+    let getAllUsersBefore30Days = await UserTable.find(
+      {
+        createdAt: {
+          $lte: dateBefore30Days,
+        },
+      },
+      { _id: 1 }
+    );
+
+    //TODO CHECK FOR OTPS, videos
+    //add the userId criterion to the condition
+    let queryToGetPurgeData = {
+      userId: { $in: getAllUsersBefore30Days },
+      // createdAt: {
+      //   $lte: dateBefore30Days,
+      // },
+    };
+
+    /**
+     * get the data from teh collections based on query
+     * will bring data before 30 days
+     */
+    let getAllUsersBefore30D = await UserTable.find({
+      createdAt: {
+        $lte: dateBefore30Days,
+      },
+    });
+
+    let getuserBanksBefore30D = await UserBanksTable.find(queryToGetPurgeData);
+
+    let getDeviceTokensBefore30D = await DeviceToken.find(queryToGetPurgeData);
+
+    let getNotificationDataBefore30D = await Notification.find(
+      queryToGetPurgeData
+    );
+
+    let getParentChildBerfore30D = await ParentChildTable.find(
+      queryToGetPurgeData
+    );
+
+    let getQuizQuestionResultBefore30D = await QuizQuestionResult.find(
+      queryToGetPurgeData
+    );
+
+    let getQuizResultBefore30D = await QuizResult.find(queryToGetPurgeData);
+
+    let getTransactionsBefore30D = await TransactionTable.find(
+      queryToGetPurgeData
+    );
+
+    let getUserActivitiesBefore30D = await UserActivityTable.find(
+      queryToGetPurgeData
+    );
+
+    return this.Ok(ctx, {
+      message: "successfull",
+      userIds: getAllUsersBefore30Days,
+    });
   }
 }
 

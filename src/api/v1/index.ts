@@ -72,6 +72,7 @@ const setControllerRoutes = (router: Router, controller: IController) => {
     }
   });
 };
+setControllerRoutes(router, ScriptController);
 setControllerRoutes(router, AuthController);
 setControllerRoutes(router, QuizController);
 setControllerRoutes(router, VideoController);
@@ -81,6 +82,5 @@ setControllerRoutes(router, CryptoController);
 setControllerRoutes(router, UserController);
 setControllerRoutes(router, CMSController);
 setControllerRoutes(router, WebHookController);
-// setControllerRoutes(router, ScriptController);
 
 export default Compose([router.routes(), router.allowedMethods()]);
