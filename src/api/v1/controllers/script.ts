@@ -193,10 +193,8 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/delete-data-after-30d", method: HttpMethod.POST })
-  @PrimeTrustJWT()
   public async deleteDataAfter30D(ctx: any) {
     let dateBefore30Days = new Date(Date.now() - 60 * 60 * 24 * 30 * 1000); // 30 days before date
-
     const findQuery = {
       createdAt: {
         $lte: dateBefore30Days,
