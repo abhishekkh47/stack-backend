@@ -13,3 +13,4 @@ export * from "./uploadImage";
 export * from "./notificationSend";
 export * from "./zoho-crm";
 export * from "./banks";
+export * from "./gift-card";

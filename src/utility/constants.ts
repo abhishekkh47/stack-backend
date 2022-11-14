@@ -32,7 +32,7 @@ export const PRIMETRUSTAPIS = {
   pushTransferMethod: `v2/push-transfer-methods`,
   accountAssetTotalWithId: (accountId, assetId) =>
     `v2/account-asset-totals?account.id=${accountId}&asset.id=${assetId}`,
-    accountAssetTotals: (accountId) =>
+  accountAssetTotals: (accountId) =>
     `v2/account-asset-totals?account.id=${accountId}`,
   pushTransferMethodGet: (id) => `v2/push-transfer-methods/${id}`,
   getAccountByAccountId: (accountId) => `v2/accounts/${accountId}`,
@@ -114,6 +114,7 @@ export const NOTIFICATION = {
   NO_BANK_REMINDER_MESSAGE: "Link your bank to activate your account.",
   NO_RECURRING_REMINDER_MESSAGE:
     "Hi! Your child, #firstName, asked you to set up recurring deposit.",
+  GIFT_CARD_REDEEMED: "Gift card redeemed.",
 };
 
 export const NOTIFICATION_KEYS = {
@@ -127,6 +128,7 @@ export const NOTIFICATION_KEYS = {
   KYC_FAILURE: "kyc_failure",
   KYC_PENDING: "kyc_pending",
   FREIND_REFER: "refer_freind",
+  GIFT_CARD_ISSUED: "gift_card_issued",
   EARN_STACK_COINS_AFTER_KYC_APPROVED: "earn_stack_coins_after_kyc_approved",
 };
 

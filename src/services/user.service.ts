@@ -195,6 +195,41 @@ class UserService {
       .format("YYYY-MM-DD");
     return scheduleDate;
   }
+
+  /**
+   * @description get whether kyc approved or not
+   * @param email
+   */
+  public async getKycApproved(email: string) {
+    /**
+     * get the type, status and parentEmail
+     */
+    let checkKyc: any = await UserTable.findOne(
+      { email: email },
+      { type: 1, status: 1, parentEmail: 1}
+    );
+  
+    /**
+     * if type if child look for parent and check status === 3
+     */
+    if (checkKyc.type === 1) {
+      let checkParentExists = await UserTable.findOne(
+        { email: checkKyc.parentEmail },
+        { status: 1 }
+      );
+      if (checkParentExists.status === 3) {
+        return {status:true, userId: checkParentExists._id,childId:checkKyc._id, type: checkKyc.type };
+      }
+    }
+
+    /**
+     * if the type is self directly check the status === 3
+     */
+    if (checkKyc.status === 3 && checkKyc.type === 3) {
+      return {status:true, userId: checkKyc._id, childId:checkKyc._id, type: checkKyc.type };
+    }
+    return {status:false, userId: checkKyc._id, childId:checkKyc._id, type: checkKyc.type };
+  }
 }
 
 export default new UserService();
