@@ -194,6 +194,11 @@ class CryptocurrencyController extends BaseController {
   public async getCryptoInInvestScreen(ctx: any) {
     let cryptoList: any = await CryptoTable.aggregate([
       {
+        $match: {
+          disabled: { $not: { $eq: true } },
+        },
+      },
+      {
         $project: {
           _id: 1,
           image: 1,
