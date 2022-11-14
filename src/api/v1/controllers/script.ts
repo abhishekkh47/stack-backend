@@ -209,13 +209,9 @@ class ScriptController extends BaseController {
       { _id: 1 }
     );
 
-    //TODO CHECK FOR OTPS, videos
     //add the userId criterion to the condition
     let queryToGetPurgeData = {
       userId: { $in: getAllUsersBefore30Days },
-      // createdAt: {
-      //   $lte: dateBefore30Days,
-      // },
     };
 
     /**
@@ -253,6 +249,11 @@ class ScriptController extends BaseController {
     let getUserActivitiesBefore30D = await UserActivityTable.find(
       queryToGetPurgeData
     );
+
+    // delete the record
+    await UserBanksTable.deleteMany(queryToGetPurgeData);
+
+  
 
     return this.Ok(ctx, {
       message: "successfull",
