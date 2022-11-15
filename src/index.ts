@@ -68,7 +68,6 @@ const server = (async () => {
 
   process.on("uncaughtException", function (error: any) {
     console.log(error, "uncaught exception");
-    // if (!error.isOperational) process.exit(1);
   });
 })();
 

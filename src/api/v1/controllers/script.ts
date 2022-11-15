@@ -7,9 +7,14 @@ import {
   CryptoTable,
   DeviceToken,
   Notification,
+  QuizQuestionResult,
+  QuizResult,
+  UserActivityTable,
   UserBanksTable,
   UserGiftCardTable,
   UserTable,
+  TransactionTable,
+  ParentChildTable
 } from "../../../model";
 import tradingService from "../../../services/trading.service";
 import userService from "../../../services/user.service";
@@ -28,9 +33,6 @@ import {
   Route,
   sendNotification,
 } from "../../../utility";
-import { ParentChildTable } from "./../../../model/parentChild";
-import { TransactionTable } from "./../../../model/transactions";
-import { UserActivityTable } from "./../../../model/useractivity";
 import BaseController from "./base";
 
 class ScriptController extends BaseController {
@@ -119,7 +121,6 @@ class ScriptController extends BaseController {
     }
     let BanksData = await ParentChildTable.find(query);
     for await (let bankInfo of BanksData) {
-      console.log("userId for banks", bankInfo.userId);
       banksArray.push({
         userId: bankInfo.userId,
         parentId: bankInfo.userId,
@@ -398,6 +399,53 @@ class ScriptController extends BaseController {
     }
 
     return this.Ok(ctx, { data: allGiftCards });
+  }
+    /*
+   * @description This method is for deleting user created before 30 days
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/delete-data-after-30d", method: HttpMethod.POST })
+  public async deleteDataAfter30D(ctx: any) {
+    let dateBefore30Days = new Date(Date.now() - 60 * 60 * 24 * 30 * 1000); // 30 days before date
+    const findQuery = {
+      createdAt: {
+        $lte: dateBefore30Days,
+      },
+    };
+
+    // get all the users to get the criterion of 30 days date
+    let getAllUsersBefore30Days = await UserTable.find(findQuery, { _id: 1 });
+
+    //add the userId criterion to the condition
+    let queryToGetPurgeData = {
+      userId: { $in: getAllUsersBefore30Days },
+    };
+
+    /**
+     * get the data from teh collections based on query
+     * will bring data before 30 days
+     */
+    let getAllUsersBefore30D = await UserTable.find(findQuery);
+
+    /**
+     * delete the records based on query
+     */
+    await UserTable.deleteMany(findQuery);
+    await UserBanksTable.deleteMany(queryToGetPurgeData);
+    await DeviceToken.deleteMany(queryToGetPurgeData);
+    await Notification.deleteMany(queryToGetPurgeData);
+    await ParentChildTable.deleteMany(queryToGetPurgeData);
+    await QuizQuestionResult.deleteMany(queryToGetPurgeData);
+    await QuizResult.deleteMany(queryToGetPurgeData);
+    await TransactionTable.deleteMany(queryToGetPurgeData);
+    await UserActivityTable.deleteMany(queryToGetPurgeData);
+
+    return this.Ok(ctx, {
+      message: "successfull",
+      userIds: getAllUsersBefore30D,
+      count: getAllUsersBefore30D.length,
+    });
   }
 }
 
