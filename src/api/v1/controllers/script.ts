@@ -217,7 +217,7 @@ class ScriptController extends BaseController {
     let admin = await AdminTable.findOne({});
     const crypto = await CryptoTable.findOne({ symbol: "BTC" });
     /**
-     * to get all the gift cards
+     * to get all the gift cards from shopify
      */
     let allGiftCards: any = await getAllGiftCards();
 
@@ -262,7 +262,7 @@ class ScriptController extends BaseController {
     let onlyEmailsArray = getEmailAllUsers.map((obj: any) => obj.email);
 
     /**
-     * get the required status, email and send on date to check further
+     * get the required status, email and send on date, etc to check further
      */
     let getRequiredGiftInfo = await UserGiftCardTable.find(
       {
@@ -312,7 +312,7 @@ class ScriptController extends BaseController {
           /**
            * used to do internal transfer for the given amount
            */
-          let internalTranfser = await tradingService.internalDepositAction(
+          let internalTranfser = await tradingService.internalTransferAction(
             kycApproved.userId,
             kycApproved.childId,
             token,
@@ -373,8 +373,7 @@ class ScriptController extends BaseController {
               let notificationRequest = {
                 key: NOTIFICATION_KEYS.GIFT_CARD_ISSUED,
                 title: NOTIFICATION.GIFT_CARD_REDEEMED,
-                message: `🎉 Your ${getDate.amount} BTC Gift Card from ${getDate.sender_name} is redeemed. Check out your latest portfolio 🤩
-                `,
+                message: `🎉 Your ${getDate.amount} BTC Gift Card from ${getDate.sender_name} is redeemed. Check out your latest portfolio 🤩`,
               };
               await sendNotification(
                 deviceTokenData.deviceToken,

@@ -206,9 +206,9 @@ class UserService {
      */
     let checkKyc: any = await UserTable.findOne(
       { email: email },
-      { type: 1, status: 1, parentEmail: 1}
+      { type: 1, status: 1, parentEmail: 1 }
     );
-  
+
     /**
      * if type if child look for parent and check status === 3
      */
@@ -218,7 +218,32 @@ class UserService {
         { status: 1 }
       );
       if (checkParentExists.status === 3) {
-        return {status:true, userId: checkParentExists._id,childId:checkKyc._id, type: checkKyc.type };
+        return {
+          status: true,
+          userId: checkParentExists._id,
+          childId: checkKyc._id,
+          type: checkKyc.type,
+        };
+      }
+    }
+
+    /**
+     * if type is parent give the giftcard to first child
+     */
+    if (checkKyc.type === 2) {
+      let getFirstChild = await ParentChildTable.findOne(
+        {
+          userId: checkKyc._id,
+        },
+        { firstChildId: 1, _id: 0 }
+      );
+      if (checkKyc.status === 3) {
+        return {
+          status: true,
+          userId: checkKyc._id,
+          childId: getFirstChild.firstChildId,
+          type: checkKyc.type,
+        };
       }
     }
 
@@ -226,9 +251,19 @@ class UserService {
      * if the type is self directly check the status === 3
      */
     if (checkKyc.status === 3 && checkKyc.type === 3) {
-      return {status:true, userId: checkKyc._id, childId:checkKyc._id, type: checkKyc.type };
+      return {
+        status: true,
+        userId: checkKyc._id,
+        childId: checkKyc._id,
+        type: checkKyc.type,
+      };
     }
-    return {status:false, userId: checkKyc._id, childId:checkKyc._id, type: checkKyc.type };
+    return {
+      status: false,
+      userId: checkKyc._id,
+      childId: checkKyc._id,
+      type: checkKyc.type,
+    };
   }
 }
 

@@ -1,3 +1,4 @@
+import { CryptoTable } from "./../model/crypto";
 import { ParentChildTable } from "./../model/parentChild";
 import { PLAID_ITEM_ERROR } from "../utility/constants";
 import {
@@ -102,13 +103,21 @@ class TradingService {
    * @param jwtToken
    * @param amount
    */
-  public async internalDepositAction(
+  public async internalTransferAction(
     userId: any,
     childId: any,
     jwtToken: any,
     amount: any = null
   ) {
     console.log("userId: ", userId);
+    /**
+     * to get the asset id of crypto
+     */
+    let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+
+    /**
+     * get the account info to get account id
+     */
     let getAccountInfo = await ParentChildTable.findOne({
       userId: userId,
     });
@@ -120,12 +129,15 @@ class TradingService {
         : getAccountInfo;
     console.log("getAccountId: ", getAccountId);
 
+    /**
+     * request quote for execution
+     */
     const requestQuoteDay: any = {
       data: {
         type: "quotes",
         attributes: {
           "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": "798debbc-ec84-43ea-8096-13e2ebcf4749",
+          "asset-id": crypto.assetId,
           hot: true,
           "transaction-type": "buy",
           total_amount: amount,
@@ -139,6 +151,7 @@ class TradingService {
     if (generateQuoteResponse.status == 400) {
       return { giftCardStatus: false };
     }
+
     /**
      * Execute a quote
      */
@@ -147,7 +160,7 @@ class TradingService {
         type: "quotes",
         attributes: {
           "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": "798debbc-ec84-43ea-8096-13e2ebcf4749",
+          "asset-id": crypto.assetId,
         },
       },
     };
@@ -159,6 +172,10 @@ class TradingService {
     if (executeQuoteResponse.status == 400) {
       return { giftCardStatus: false };
     }
+
+    /**
+     * for internal transfer of BTC
+     */
     let internalTransferRequest = {
       data: {
         type: "internal-asset-transfers",
@@ -166,7 +183,7 @@ class TradingService {
           "unit-count": executeQuoteResponse.data.data.attributes["unit-count"],
           "from-account-id": envData.OPERATIONAL_ACCOUNT,
           "to-account-id": getAccountId.accountId,
-          "asset-id": "798debbc-ec84-43ea-8096-13e2ebcf4749",
+          "asset-id": crypto.assetId,
           reference: `$${amount} BTC gift from Stack`,
           "hot-transfer": true,
         },
@@ -187,7 +204,7 @@ class TradingService {
       executedQuoteUnitCount:
         executeQuoteResponse.data.data.attributes["unit-count"],
       internalTransferId: internalTransferResponse.data.data.id,
-      accountId: getAccountId.accountId
+      accountId: getAccountId.accountId,
     };
   }
 }
