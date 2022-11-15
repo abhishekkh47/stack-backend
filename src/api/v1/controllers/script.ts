@@ -1,4 +1,8 @@
-import { NOTIFICATION, NOTIFICATION_KEYS } from "./../../../utility/constants";
+import {
+  GIFTCARDS,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "./../../../utility/constants";
 import moment from "moment";
 import { PrimeTrustJWT } from "../../../middleware";
 import {
@@ -28,6 +32,7 @@ import {
   HttpMethod,
 } from "../../../types";
 import {
+  countGiftCards,
   getAllGiftCards,
   getAssets,
   getHistoricalDataOfCoins,
@@ -257,7 +262,7 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to integrate gift card api
+   * @description This method is used to test redeeming of gift card
    * @param ctx
    * @return {*}
    */
@@ -265,10 +270,14 @@ class ScriptController extends BaseController {
   public async addGiftCard(ctx: any) {
     let token = await getPrimeTrustJWTToken();
     const crypto = await CryptoTable.findOne({ symbol: "BTC" });
+
     /**
      * to get all the gift cards from shopify
      */
-    let allGiftCards: any = await getAllGiftCards();
+    let allGiftCards: any = await getAllGiftCards(
+      GIFTCARDS.page,
+      GIFTCARDS.limit,
+      );
 
     /**
      * to get already existing uuids
@@ -277,7 +286,7 @@ class ScriptController extends BaseController {
     let getAllUUIDs = await UserGiftCardTable.find({}, { uuid: 1, _id: 0 });
 
     /**
-     * enter all the new entries in an array
+     * enter all the new data in an array
      */
     if (allGiftCards?.data && allGiftCards?.data.length > 0) {
       for await (let card of allGiftCards?.data) {
@@ -365,7 +374,7 @@ class ScriptController extends BaseController {
 
             if (internalTranfser.giftCardStatus) {
               /**
-               * array containing all enteries of transactions
+               * array containing all transactions
                */
               pushTransactionArray.push({
                 status: ETransactionStatus.SETTLED,

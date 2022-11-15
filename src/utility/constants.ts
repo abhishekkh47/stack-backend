@@ -54,7 +54,8 @@ export const PLAIDAPIS = {
 };
 
 export const GIFTCARDAPIS = {
-  getAllGiftCards: "api/giftcards",
+  getAllGiftCards: (page, limit) => `api/giftcards?page=${page}&limit=${limit}`,
+  countGiftCards: "api/giftcards/count"
 };
 
 export const ZOHOAPIS = {
@@ -68,6 +69,11 @@ export const ZOHOAPIS = {
 export const DROPDOWNLIST = {
   page: 1,
   limit: 10,
+};
+
+export const GIFTCARDS = {
+  page: 1,
+  limit: 50,
 };
 
 export const CASH_USD_ICON = "CASH_USD.png";

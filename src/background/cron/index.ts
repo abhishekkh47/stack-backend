@@ -30,7 +30,11 @@ import {
   messages,
   ERead,
 } from "../../types";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+import {
+  GIFTCARDS,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "../../utility/constants";
 import mongoose from "mongoose";
 import userService from "../../services/user.service";
 import tradingService from "../../services/trading.service";
@@ -356,7 +360,10 @@ export const startCron = () => {
     /**
      * to get all the gift cards from shopify
      */
-    let allGiftCards: any = await getAllGiftCards();
+    let allGiftCards: any = await getAllGiftCards(
+      GIFTCARDS.page,
+      GIFTCARDS.limit
+    );
 
     /**
      * to get already existing uuids
@@ -365,7 +372,7 @@ export const startCron = () => {
     let getAllUUIDs = await UserGiftCardTable.find({}, { uuid: 1, _id: 0 });
 
     /**
-     * enter all the new entries in an array
+     * enter all the new data in an array
      */
     if (allGiftCards?.data && allGiftCards?.data.length > 0) {
       for await (let card of allGiftCards?.data) {
@@ -453,7 +460,7 @@ export const startCron = () => {
 
             if (internalTranfser.giftCardStatus) {
               /**
-               * array containing all enteries of transactions
+               * array containing all transactions
                */
               pushTransactionArray.push({
                 status: ETransactionStatus.SETTLED,
