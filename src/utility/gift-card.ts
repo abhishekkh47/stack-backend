@@ -26,7 +26,6 @@ export const getAllGiftCards = async (
     })
     .then(async (res) => {
       if (res.data.error) {
-        console.log("error");
         return await getAllGiftCards(page, limit);
       }
       if (res.data.length > 0) {
