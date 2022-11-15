@@ -1,4 +1,4 @@
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "./../../../utility/constants";
 import moment from "moment";
 import { PrimeTrustJWT } from "../../../middleware";
 import {
@@ -14,7 +14,7 @@ import {
   UserGiftCardTable,
   UserTable,
   TransactionTable,
-  ParentChildTable
+  ParentChildTable,
 } from "../../../model";
 import tradingService from "../../../services/trading.service";
 import userService from "../../../services/user.service";
@@ -23,6 +23,7 @@ import {
   ERead,
   EStatus,
   ETransactionStatus,
+  ETransactionType,
   EUserType,
   HttpMethod,
 } from "../../../types";
@@ -30,6 +31,7 @@ import {
   getAllGiftCards,
   getAssets,
   getHistoricalDataOfCoins,
+  getPrimeTrustJWTToken,
   Route,
   sendNotification,
 } from "../../../utility";
@@ -207,15 +209,61 @@ class ScriptController extends BaseController {
   }
 
   /**
+   * @description This method is for deleting user created before 30 days
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/delete-data-after-30d", method: HttpMethod.POST })
+  public async deleteDataAfter30D(ctx: any) {
+    let dateBefore30Days = new Date(Date.now() - 60 * 60 * 24 * 30 * 1000); // 30 days before date
+    const findQuery = {
+      createdAt: {
+        $lte: dateBefore30Days,
+      },
+    };
+
+    // get all the users to get the criterion of 30 days date
+    let getAllUsersBefore30Days = await UserTable.find(findQuery, { _id: 1 });
+
+    //add the userId criterion to the condition
+    let queryToGetPurgeData = {
+      userId: { $in: getAllUsersBefore30Days },
+    };
+
+    /**
+     * get the data from teh collections based on query
+     * will bring data before 30 days
+     */
+    let getAllUsersBefore30D = await UserTable.find(findQuery);
+
+    /**
+     * delete the records based on query
+     */
+    await UserTable.deleteMany(findQuery);
+    await UserBanksTable.deleteMany(queryToGetPurgeData);
+    await DeviceToken.deleteMany(queryToGetPurgeData);
+    await Notification.deleteMany(queryToGetPurgeData);
+    await ParentChildTable.deleteMany(queryToGetPurgeData);
+    await QuizQuestionResult.deleteMany(queryToGetPurgeData);
+    await QuizResult.deleteMany(queryToGetPurgeData);
+    await TransactionTable.deleteMany(queryToGetPurgeData);
+    await UserActivityTable.deleteMany(queryToGetPurgeData);
+
+    return this.Ok(ctx, {
+      message: "successfull",
+      userIds: getAllUsersBefore30D,
+      count: getAllUsersBefore30D.length,
+    });
+  }
+
+  /**
    * @description This method is used to integrate gift card api
    * @param ctx
    * @return {*}
    */
   @Route({ path: "/add-gift-card", method: HttpMethod.POST })
-  @PrimeTrustJWT()
   public async addGiftCard(ctx: any) {
-    let token = ctx.request.primeTrustToken;
-    let admin = await AdminTable.findOne({});
+    let token = await getPrimeTrustJWTToken();
     const crypto = await CryptoTable.findOne({ symbol: "BTC" });
     /**
      * to get all the gift cards from shopify
@@ -282,169 +330,128 @@ class ScriptController extends BaseController {
         sender_name: 1,
       }
     );
-    console.log("getRequiredGiftInfo: ", getRequiredGiftInfo);
 
     /**
      * condition of date to check whether add or not
      */
-    let todayDate, dateToSend, updateQuery;
+    let todayDate, dateToSend;
     if (getRequiredGiftInfo && getRequiredGiftInfo.length > 0) {
       let pushTransactionArray = [];
       let pushUserActivityArray = [];
-      todayDate = moment().startOf("day").unix(); // today's date
+      let notificationArray = [];
+      let uuidArray = [];
+      todayDate = moment().utc().startOf("day").unix(); // today's date
       for await (let getDate of getRequiredGiftInfo) {
-        dateToSend = moment(getDate.send_on_date).startOf("day").unix(); // date to send the card on
+        dateToSend = moment(getDate.send_on_date).utc().startOf("day").unix(); // date to send the card on
 
-        /**
-         * to check kyc approved or not and also get the userId and childId
-         */
-        let kycApproved: any = await userService.getKycApproved(
-          getDate.recieptent_email
-        );
-
-        /**
-         * query to update in case of kyc approved and send on date less than or equals to today's date
-         */
-        updateQuery = {
-          uuid: getDate.uuid,
-        };
-
-        if (dateToSend <= todayDate && kycApproved.status) {
+        if (dateToSend <= todayDate) {
           /**
-           * used to do internal transfer for the given amount
+           * to check kyc approved or not and also get the userId and childId
            */
-          let internalTranfser = await tradingService.internalTransferAction(
-            kycApproved.userId,
-            kycApproved.childId,
-            token,
-            getDate.amount
+          let kycApproved: any = await userService.getKycApproved(
+            getDate.recieptent_email
           );
-          console.log("internalTranfser: ", internalTranfser);
 
-          if (internalTranfser.giftCardStatus) {
-            updateQuery = {
-              ...updateQuery,
-              $set: {
-                redeemed: true,
-              },
-            };
-
+          if (kycApproved.status) {
             /**
-             * array containing all enteries of transactions
+             * used to do internal transfer for the given amount
              */
-            pushTransactionArray.push({
-              status: ETransactionStatus.GIFTED,
-              userId: kycApproved.childId,
-              executedQuoteId: internalTranfser.internalTransferId,
-              unitCount: internalTranfser.executedQuoteUnitCount,
-              accountId: internalTranfser.accountId,
-              amountMod: -admin.giftCryptoAmount,
-              amount: getDate.amount,
-              settledTime: moment().unix(),
-              cryptoId: crypto._id,
-              assetId: crypto.assetId,
-            });
-            console.log("pushTransactionArray: ", pushTransactionArray);
+            let internalTranfser = await tradingService.internalTransferAction(
+              kycApproved.userId,
+              kycApproved.childId,
+              token.data,
+              getDate.amount
+            );
 
-            /**
-             * array containing all the activities
-             */
-            console.log("getDate.amount: ", getDate.amount);
-            pushUserActivityArray.push({
-              userId: kycApproved.childId,
-              userType: kycApproved.type,
-              message: `Redeemed ${getDate.amount} Bitcoin Gift Card from ${getDate.sender_name} `,
-              currencyType: null,
-              currencyValue: getDate.amount,
-              action: EAction.BUY_CRYPTO,
-              status: EStatus.PROCESSED,
-              cryptoId: crypto._id,
-              assetId: crypto.assetId,
-            });
-            console.log("pushUserActivityArray: ", pushUserActivityArray);
-
-            /**
-             * for push notification
-             */
-
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: kycApproved.childId,
-            }).select("deviceToken");
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.GIFT_CARD_ISSUED,
-                title: NOTIFICATION.GIFT_CARD_REDEEMED,
-                message: `🎉 Your ${getDate.amount} BTC Gift Card from ${getDate.sender_name} is redeemed. Check out your latest portfolio 🤩`,
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-              await Notification.create({
-                title: notificationRequest.title,
+            if (internalTranfser.giftCardStatus) {
+              /**
+               * array containing all enteries of transactions
+               */
+              pushTransactionArray.push({
+                status: ETransactionStatus.SETTLED,
                 userId: kycApproved.childId,
-                message: notificationRequest.message,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
+                executedQuoteId: internalTranfser.internalTransferId,
+                unitCount: internalTranfser.executedQuoteUnitCount,
+                accountId: internalTranfser.accountId,
+                amountMod: -getDate.amount,
+                amount: getDate.amount,
+                settledTime: moment().unix(),
+                cryptoId: crypto._id,
+                assetId: crypto.assetId,
+                type: ETransactionType.BUY,
               });
+
+              /**
+               * array containing all the activities
+               */
+              pushUserActivityArray.push({
+                userId: kycApproved.childId,
+                userType: kycApproved.type,
+                message: NOTIFICATION.GIFT_CARD_ACITVITY_MESSAGE.replace(
+                  "{amount}",
+                  getDate.amount.toString()
+                ).replace("{sender}", getDate.sender_name),
+                currencyType: null,
+                currencyValue: getDate.amount,
+                action: EAction.BUY_CRYPTO,
+                status: EStatus.PROCESSED,
+                cryptoId: crypto._id,
+                assetId: crypto.assetId,
+              });
+
+              /**
+               * for push notification
+               */
+              let deviceTokenData = await DeviceToken.findOne({
+                userId: kycApproved.childId,
+              }).select("deviceToken");
+              if (deviceTokenData) {
+                let notificationRequest = {
+                  key: NOTIFICATION_KEYS.GIFT_CARD_ISSUED,
+                  title: NOTIFICATION.GIFT_CARD_REDEEMED,
+                  message: NOTIFICATION.GIFT_CARD_REDEEM_MESSAGE.replace(
+                    "{amount}",
+                    getDate.amount.toString()
+                  ).replace("{sender}", getDate.sender_name),
+                };
+                await sendNotification(
+                  deviceTokenData.deviceToken,
+                  notificationRequest.title,
+                  notificationRequest
+                );
+                notificationArray.push({
+                  title: notificationRequest.title,
+                  userId: kycApproved.childId,
+                  message: notificationRequest.message,
+                  isRead: ERead.UNREAD,
+                  data: JSON.stringify(notificationRequest),
+                });
+              }
             }
+            uuidArray.push(getDate.uuid);
           }
         }
-
-        await UserGiftCardTable.updateOne(updateQuery);
       }
+
+      /**
+       * update and insert the db with data
+       */
+      await UserGiftCardTable.updateMany(
+        { uuid: { $in: uuidArray } },
+
+        {
+          $set: {
+            redeemed: true,
+          },
+        }
+      );
       await TransactionTable.insertMany(pushTransactionArray);
       await UserActivityTable.insertMany(pushUserActivityArray);
+      await Notification.insertMany(notificationArray);
     }
 
-    return this.Ok(ctx, { data: allGiftCards });
-  }
-    /*
-   * @description This method is for deleting user created before 30 days
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/delete-data-after-30d", method: HttpMethod.POST })
-  public async deleteDataAfter30D(ctx: any) {
-    let dateBefore30Days = new Date(Date.now() - 60 * 60 * 24 * 30 * 1000); // 30 days before date
-    const findQuery = {
-      createdAt: {
-        $lte: dateBefore30Days,
-      },
-    };
-
-    // get all the users to get the criterion of 30 days date
-    let getAllUsersBefore30Days = await UserTable.find(findQuery, { _id: 1 });
-
-    //add the userId criterion to the condition
-    let queryToGetPurgeData = {
-      userId: { $in: getAllUsersBefore30Days },
-    };
-
-    /**
-     * get the data from teh collections based on query
-     * will bring data before 30 days
-     */
-    let getAllUsersBefore30D = await UserTable.find(findQuery);
-
-    /**
-     * delete the records based on query
-     */
-    await UserTable.deleteMany(findQuery);
-    await UserBanksTable.deleteMany(queryToGetPurgeData);
-    await DeviceToken.deleteMany(queryToGetPurgeData);
-    await Notification.deleteMany(queryToGetPurgeData);
-    await ParentChildTable.deleteMany(queryToGetPurgeData);
-    await QuizQuestionResult.deleteMany(queryToGetPurgeData);
-    await QuizResult.deleteMany(queryToGetPurgeData);
-    await TransactionTable.deleteMany(queryToGetPurgeData);
-    await UserActivityTable.deleteMany(queryToGetPurgeData);
-
     return this.Ok(ctx, {
-      message: "successfull",
-      userIds: getAllUsersBefore30D,
-      count: getAllUsersBefore30D.length,
+      data: allGiftCards,
     });
   }
 }

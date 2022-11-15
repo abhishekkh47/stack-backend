@@ -1,7 +1,7 @@
 import { Config } from "aws-sdk";
 import axios from "axios";
-import config  from "../config/index";
-
+import config from "../config/index";
+import { GIFTCARDAPIS } from "./constants";
 
 /**
  * @description This api is used to get the gift cards
@@ -9,32 +9,30 @@ import config  from "../config/index";
  * @param data
  * @returns {*}
  */
- export const getAllGiftCards = async () => {
+export const getAllGiftCards = async () => {
   /**
    * used to get all the gift cards using api secret and url
    */
   const response = await axios
-    .get(
-      "https://giftcardpro.app/api/giftcards",
-      {
-        headers: {
-        "X-GIFT-CARD-PRO-SECRET": "90a24764-5fce-43ac-97db-d16fdd23fd56",
-        "X-GIFT-CARD-PRO-SHOP": "stack-gift-card.myshopify.com"
-        },
+    .get(config.GIFT_CARD_API + GIFTCARDAPIS.getAllGiftCards, {
+      headers: {
+        "X-GIFT-CARD-PRO-SECRET": config.GIFT_CARD_API_SECRET,
+        "X-GIFT-CARD-PRO-SHOP": config.GIFT_CARD_API_URL,
+      },
+    })
+    .then(async (res) => {
+      if (res.data.error) {
+        return await getAllGiftCards();
       }
-    )
-    .then((res) => {
       return {
         status: 200,
         data: res.data,
       };
     })
     .catch((error) => {
-     console.log('error: ', error);
       return {
         status: 400,
-        message: error.response.data.errors[0].detail,
-        code: error.response.data.errors[0].code,
+        message: error.message,
       };
     });
   return response;

@@ -109,7 +109,6 @@ class TradingService {
     jwtToken: any,
     amount: any = null
   ) {
-    console.log("userId: ", userId);
     /**
      * to get the asset id of crypto
      */
@@ -127,7 +126,6 @@ class TradingService {
             (x: any) => x.childId.toString() == childId.toString()
           )
         : getAccountInfo;
-    console.log("getAccountId: ", getAccountId);
 
     /**
      * request quote for execution
@@ -194,7 +192,6 @@ class TradingService {
       internalTransferRequest
     );
 
-    console.log("internalTransferResponse: ", internalTransferResponse);
     if (internalTransferResponse.status == 400) {
       return { giftCardStatus: false };
     }

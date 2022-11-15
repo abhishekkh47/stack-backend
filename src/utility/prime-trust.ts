@@ -584,7 +584,6 @@ export const internalAssetTransfers = async (token, data) => {
       };
     })
     .catch((error) => {
-      console.log('error.response.data.errors[0]: ', error.response.data.errors[0]);
       return {
         status: 400,
         message: error.response.data.errors[0].detail,

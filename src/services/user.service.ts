@@ -1,3 +1,4 @@
+import { EUserType, EUSERSTATUS } from "./../types/user";
 import { ParentChildTable, UserDraftTable, UserTable } from "../model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
@@ -212,12 +213,12 @@ class UserService {
     /**
      * if type if child look for parent and check status === 3
      */
-    if (checkKyc.type === 1) {
+    if (checkKyc.type === EUserType.TEEN) {
       let checkParentExists = await UserTable.findOne(
         { email: checkKyc.parentEmail },
         { status: 1 }
       );
-      if (checkParentExists.status === 3) {
+      if (checkParentExists.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
         return {
           status: true,
           userId: checkParentExists._id,
@@ -230,14 +231,14 @@ class UserService {
     /**
      * if type is parent give the giftcard to first child
      */
-    if (checkKyc.type === 2) {
+    if (checkKyc.type === EUserType.PARENT) {
       let getFirstChild = await ParentChildTable.findOne(
         {
           userId: checkKyc._id,
         },
         { firstChildId: 1, _id: 0 }
       );
-      if (checkKyc.status === 3) {
+      if (checkKyc.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
         return {
           status: true,
           userId: checkKyc._id,
@@ -250,7 +251,10 @@ class UserService {
     /**
      * if the type is self directly check the status === 3
      */
-    if (checkKyc.status === 3 && checkKyc.type === 3) {
+    if (
+      checkKyc.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+      checkKyc.type === EUserType.SELF
+    ) {
       return {
         status: true,
         userId: checkKyc._id,

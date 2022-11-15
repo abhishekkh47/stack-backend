@@ -53,6 +53,10 @@ export const PLAIDAPIS = {
   institutionsGetById: "institutions/get_by_id",
 };
 
+export const GIFTCARDAPIS = {
+  getAllGiftCards: "api/giftcards",
+};
+
 export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",
   accountUpsert: "crm/v2/Accounts/upsert",
@@ -115,6 +119,10 @@ export const NOTIFICATION = {
   NO_RECURRING_REMINDER_MESSAGE:
     "Hi! Your child, #firstName, asked you to set up recurring deposit.",
   GIFT_CARD_REDEEMED: "Gift card redeemed.",
+  GIFT_CARD_REDEEM_MESSAGE:
+    "🎉 Your ${amount} BTC Gift Card from {sender} is redeemed. Check out your latest portfolio 🤩",
+  GIFT_CARD_ACITVITY_MESSAGE:
+    "Redeemed ${amount} Bitcoin Gift Card from {sender}",
 };
 
 export const NOTIFICATION_KEYS = {
