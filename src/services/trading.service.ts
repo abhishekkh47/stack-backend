@@ -1,6 +1,14 @@
+import { CryptoTable } from "./../model/crypto";
+import { ParentChildTable } from "./../model/parentChild";
 import { PLAID_ITEM_ERROR } from "../utility/constants";
-import { createContributions, createDisbursements } from "../utility";
-
+import {
+  createContributions,
+  createDisbursements,
+  executeQuote,
+  generateQuote,
+  internalAssetTransfers,
+} from "../utility";
+import envData from "../config/index";
 class TradingService {
   /**
    * @description This method is used for adding deposit action
@@ -87,6 +95,114 @@ class TradingService {
       );
     }
     return disbursement;
+  }
+
+  /**
+   * @description This method is used for doing internal transfer for gift card
+   * @param accountIdDetails
+   * @param jwtToken
+   * @param amount
+   */
+  public async internalTransferAction(
+    userId: any,
+    childId: any,
+    jwtToken: any,
+    amount: any = null
+  ) {
+    /**
+     * to get the asset id of crypto
+     */
+    let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+
+    /**
+     * get the account info to get account id
+     */
+    let getAccountInfo = await ParentChildTable.findOne({
+      userId: userId,
+    });
+    let getAccountId: any =
+      getAccountInfo.teens.length > 0
+        ? await getAccountInfo.teens.find(
+            (x: any) => x.childId.toString() == childId.toString()
+          )
+        : getAccountInfo;
+
+    /**
+     * request quote for execution
+     */
+    const requestQuoteDay: any = {
+      data: {
+        type: "quotes",
+        attributes: {
+          "account-id": envData.OPERATIONAL_ACCOUNT,
+          "asset-id": crypto.assetId,
+          hot: true,
+          "transaction-type": "buy",
+          total_amount: amount,
+        },
+      },
+    };
+    const generateQuoteResponse: any = await generateQuote(
+      jwtToken,
+      requestQuoteDay
+    );
+    if (generateQuoteResponse.status == 400) {
+      return { giftCardStatus: false };
+    }
+
+    /**
+     * Execute a quote
+     */
+    const requestExecuteQuote: any = {
+      data: {
+        type: "quotes",
+        attributes: {
+          "account-id": envData.OPERATIONAL_ACCOUNT,
+          "asset-id": crypto.assetId,
+        },
+      },
+    };
+    const executeQuoteResponse: any = await executeQuote(
+      jwtToken,
+      generateQuoteResponse.data.data.id,
+      requestExecuteQuote
+    );
+    if (executeQuoteResponse.status == 400) {
+      return { giftCardStatus: false };
+    }
+
+    /**
+     * for internal transfer of BTC
+     */
+    let internalTransferRequest = {
+      data: {
+        type: "internal-asset-transfers",
+        attributes: {
+          "unit-count": executeQuoteResponse.data.data.attributes["unit-count"],
+          "from-account-id": envData.OPERATIONAL_ACCOUNT,
+          "to-account-id": getAccountId.accountId,
+          "asset-id": crypto.assetId,
+          reference: `$${amount} BTC gift from Stack`,
+          "hot-transfer": true,
+        },
+      },
+    };
+    const internalTransferResponse: any = await internalAssetTransfers(
+      jwtToken,
+      internalTransferRequest
+    );
+
+    if (internalTransferResponse.status == 400) {
+      return { giftCardStatus: false };
+    }
+
+    return {
+      giftCardStatus: true,
+      executedQuoteUnitCount:
+        executeQuoteResponse.data.data.attributes["unit-count"],
+      internalTransferId: internalTransferResponse.data.data.id,
+      accountId: getAccountId.accountId,
+    };
   }
 }
 

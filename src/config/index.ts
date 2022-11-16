@@ -122,4 +122,13 @@ export default {
   get ANDROID_PACKAGE_NAME() {
     return process.env.ANDROID_PACKAGE_NAME;
   },
+  get GIFT_CARD_API_SECRET() {
+    return process.env.GIFT_CARD_API_SECRET
+  },
+  get GIFT_CARD_API_URL() {
+    return process.env.GIFT_CARD_API_URL
+  },
+  get GIFT_CARD_API() {
+    return process.env.GIFT_CARD_API
+  }
 };

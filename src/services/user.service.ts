@@ -1,3 +1,4 @@
+import { EUserType, EUSERSTATUS } from "./../types/user";
 import { ParentChildTable, UserDraftTable, UserTable } from "../model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
@@ -194,6 +195,79 @@ class UserService {
       )
       .format("YYYY-MM-DD");
     return scheduleDate;
+  }
+
+  /**
+   * @description get whether kyc approved or not
+   * @param email
+   */
+  public async getKycApproved(email: string) {
+    /**
+     * get the type, status and parentEmail
+     */
+    let checkKyc: any = await UserTable.findOne(
+      { email: email },
+      { type: 1, status: 1, parentEmail: 1 }
+    );
+
+    /**
+     * if type if child look for parent and check status === 3
+     */
+    if (checkKyc.type === EUserType.TEEN) {
+      let checkParentExists = await UserTable.findOne(
+        { email: checkKyc.parentEmail },
+        { status: 1 }
+      );
+      if (checkParentExists.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
+        return {
+          status: true,
+          userId: checkParentExists._id,
+          childId: checkKyc._id,
+          type: checkKyc.type,
+        };
+      }
+    }
+
+    /**
+     * if type is parent give the giftcard to first child
+     */
+    if (checkKyc.type === EUserType.PARENT) {
+      let getFirstChild = await ParentChildTable.findOne(
+        {
+          userId: checkKyc._id,
+        },
+        { firstChildId: 1, _id: 0 }
+      );
+      if (checkKyc.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
+        return {
+          status: true,
+          userId: checkKyc._id,
+          childId: getFirstChild.firstChildId,
+          type: checkKyc.type,
+        };
+      }
+    }
+
+    /**
+     * if the type is self directly check the status === 3
+     */
+    if (
+      checkKyc.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+      checkKyc.type === EUserType.SELF
+    ) {
+      return {
+        status: true,
+        userId: checkKyc._id,
+        childId: checkKyc._id,
+        type: checkKyc.type,
+      };
+    }
+    return {
+      status: false,
+      userId: checkKyc._id,
+      childId: checkKyc._id,
+      type: checkKyc.type,
+    };
   }
 }
 

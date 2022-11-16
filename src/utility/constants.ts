@@ -32,7 +32,7 @@ export const PRIMETRUSTAPIS = {
   pushTransferMethod: `v2/push-transfer-methods`,
   accountAssetTotalWithId: (accountId, assetId) =>
     `v2/account-asset-totals?account.id=${accountId}&asset.id=${assetId}`,
-    accountAssetTotals: (accountId) =>
+  accountAssetTotals: (accountId) =>
     `v2/account-asset-totals?account.id=${accountId}`,
   pushTransferMethodGet: (id) => `v2/push-transfer-methods/${id}`,
   getAccountByAccountId: (accountId) => `v2/accounts/${accountId}`,
@@ -53,6 +53,11 @@ export const PLAIDAPIS = {
   institutionsGetById: "institutions/get_by_id",
 };
 
+export const GIFTCARDAPIS = {
+  getAllGiftCards: (page, limit) => `api/giftcards?page=${page}&limit=${limit}`,
+  countGiftCards: "api/giftcards/count"
+};
+
 export const ZOHOAPIS = {
   getAccessToken: "oauth/v2/token",
   accountUpsert: "crm/v2/Accounts/upsert",
@@ -64,6 +69,11 @@ export const ZOHOAPIS = {
 export const DROPDOWNLIST = {
   page: 1,
   limit: 10,
+};
+
+export const GIFTCARDS = {
+  page: 1,
+  limit: 50,
 };
 
 export const CASH_USD_ICON = "CASH_USD.png";
@@ -114,6 +124,11 @@ export const NOTIFICATION = {
   NO_BANK_REMINDER_MESSAGE: "Link your bank to activate your account.",
   NO_RECURRING_REMINDER_MESSAGE:
     "Hi! Your child, #firstName, asked you to set up recurring deposit.",
+  GIFT_CARD_REDEEMED: "Gift card redeemed.",
+  GIFT_CARD_REDEEM_MESSAGE:
+    "🎉 Your ${amount} BTC Gift Card from {sender} is redeemed. Check out your latest portfolio 🤩",
+  GIFT_CARD_ACITVITY_MESSAGE:
+    "Redeemed ${amount} Bitcoin Gift Card from {sender}",
 };
 
 export const NOTIFICATION_KEYS = {
@@ -127,6 +142,7 @@ export const NOTIFICATION_KEYS = {
   KYC_FAILURE: "kyc_failure",
   KYC_PENDING: "kyc_pending",
   FREIND_REFER: "refer_freind",
+  GIFT_CARD_ISSUED: "gift_card_issued",
   EARN_STACK_COINS_AFTER_KYC_APPROVED: "earn_stack_coins_after_kyc_approved",
 };
 
