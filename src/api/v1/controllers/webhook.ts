@@ -12,7 +12,7 @@ import {
   UserTable,
   WebhookTable,
 } from "../../../model";
-import { AuthService, zohoCrmService } from "../../../services";
+import { AuthService, userService, zohoCrmService } from "../../../services";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
@@ -203,6 +203,15 @@ class WebHookController extends BaseController {
              */
             if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
               let userIdsToBeGifted = [];
+
+              /**
+               * for user referral
+               */
+              await userService.getUserReferral(
+                userExists._id,
+                userExists.referralCode
+              );
+
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = await checkAccountIdExists.teens.filter(
                   (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
@@ -226,6 +235,21 @@ class WebHookController extends BaseController {
                     );
                   }
                 }
+              } else if (userExists.type === EUserType.SELF) {
+                userIdsToBeGifted.push(userExists._id);
+
+                /**
+                 * Added in zoho
+                 */
+                let dataSentInCrm: any = {
+                  Account_Name:
+                    userExists.firstName + " " + userExists.lastName,
+                  Stack_Coins: admin.stackCoins,
+                };
+                await zohoCrmService.addAccounts(
+                  ctx.request.zohoAccessToken,
+                  dataSentInCrm
+                );
               } else if (userExists.isGifted == EGIFTSTACKCOINSSETTING.OFF) {
                 userIdsToBeGifted.push(userExists._id);
               }
@@ -391,6 +415,14 @@ class WebHookController extends BaseController {
                */
               if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
                 let userIdsToBeGifted = [];
+
+                /**
+                 * for user referral
+                 */
+                await userService.getUserReferral(
+                  userExists._id,
+                  userExists.referralCode
+                );
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(
                     (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
@@ -414,6 +446,21 @@ class WebHookController extends BaseController {
                       );
                     }
                   }
+                } else if (userExists.type === EUserType.SELF) {
+                  userIdsToBeGifted.push(userExists._id);
+
+                  /**
+                   * Added in zoho
+                   */
+                  let dataSentInCrm: any = {
+                    Account_Name:
+                      userExists.firstName + " " + userExists.lastName,
+                    Stack_Coins: admin.stackCoins,
+                  };
+                  await zohoCrmService.addAccounts(
+                    ctx.request.zohoAccessToken,
+                    dataSentInCrm
+                  );
                 } else if (userExists.isGifted == EGIFTSTACKCOINSSETTING.OFF) {
                   userIdsToBeGifted.push(userExists._id);
                 }

@@ -1,8 +1,9 @@
 import { EUserType, EUSERSTATUS } from "./../types/user";
-import { ParentChildTable, UserDraftTable, UserTable } from "../model";
+import { ParentChildTable, UserDraftTable, UserReffaralTable, UserTable } from "../model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
 import { ERECURRING } from "../types";
+import config from '../config/index'
 
 class UserService {
   /**
@@ -103,7 +104,8 @@ class UserService {
             "state._id": 1,
             "state.name": 1,
             "state.shortName": 1,
-            lifeTimeReferralCount: "$lifeTimeReferral.referralCount",
+            lifeTimeReferralCount: { $ifNull: [ "$lifeTimeReferral.referralCount", 0 ] },
+            referralCode: 1,
             screenStatus: 1,
             city: 1,
             postalCode: 1,
@@ -268,6 +270,45 @@ class UserService {
       childId: checkKyc._id,
       type: checkKyc.type,
     };
+  }
+
+  /**
+   * @description to get the referral amount
+   * @param userId
+   * @param userReferral
+   */
+  public async getUserReferral(userId: string, userReferral: string) {
+    let referralCoins = 0;
+    let userUpdateReferrals = [];
+    if (userReferral) {
+      let getReferralCode = await UserReffaralTable.findOne({
+        userId: userId,
+      });
+
+      if (getReferralCode) {
+        referralCoins =
+          referralCoins + parseInt(config.APP_REFERRAL_COINS);
+        await getReferralCode.referralArray.map((obj) => {
+          if (!userUpdateReferrals.includes(obj.referredId)) {
+            return userUpdateReferrals.push(obj.referredId);
+          }
+        });
+        userUpdateReferrals.push(userId);
+      }
+    }
+
+    await UserTable.updateMany(
+      {
+        _id: { $in: userUpdateReferrals },
+      },
+      {
+        $inc: {
+          preLoadedCoins: referralCoins,
+        },
+      }
+    );
+
+    return true;
   }
 }
 

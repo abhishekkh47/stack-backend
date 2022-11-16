@@ -1,6 +1,7 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
+import config from "../../../config/index";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -303,10 +304,10 @@ class AuthController extends BaseController {
               return this.BadRequest(ctx, "Refferal Code Not Found");
             }
             if (
-              refferalCodeExists.type == EUserType.PARENT &&
+             ( refferalCodeExists.type == EUserType.PARENT || refferalCodeExists.type == EUserType.SELF) &&
               refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
             ) {
-              isGiftedStackCoins = admin.stackCoins;
+              isGiftedStackCoins = parseInt(config.APP_REFERRAL_COINS);
             } else if (refferalCodeExists.type == EUserType.TEEN) {
               let checkTeenParent = await UserTable.findOne({
                 mobile: refferalCodeExists.parentMobile,
@@ -315,14 +316,14 @@ class AuthController extends BaseController {
                 checkTeenParent &&
                 checkTeenParent.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
               ) {
-                isGiftedStackCoins = admin.stackCoins;
+                isGiftedStackCoins = parseInt(config.APP_REFERRAL_COINS);
               }
             }
             if (isGiftedStackCoins > 0) {
               await UserTable.updateOne(
                 { _id: refferalCodeExists._id },
                 {
-                  $inc: { preLoadedCoins: isGiftedStackCoins },
+                  $inc: { preLoadedCoins:  isGiftedStackCoins },
                 }
               );
               /**
@@ -422,7 +423,7 @@ class AuthController extends BaseController {
                     : null,
                   referralCode: uniqueReferralCode,
                   preLoadedCoins:
-                    isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+                    isGiftedStackCoins > 0 ? isGiftedStackCoins +  admin.stackCoins: 0,
                   isAutoApproval: EAUTOAPPROVAL.ON,
                 },
               },
@@ -655,7 +656,7 @@ class AuthController extends BaseController {
                 referralArray: [
                   {
                     referredId: user._id,
-                    type: 1,
+                    type: reqParam.type,
                     coinsGifted: isGiftedStackCoins,
                   },
                 ],
@@ -672,7 +673,7 @@ class AuthController extends BaseController {
                   $push: {
                     referralArray: {
                       referredId: user._id,
-                      type: 1,
+                      type: reqParam.type,
                       coinsGifted: isGiftedStackCoins,
                     },
                   },
@@ -1762,6 +1763,7 @@ class AuthController extends BaseController {
           }
 
           let user = await UserTable.findOne(query);
+          const uniqueReferralCode = await makeUniqueReferalCode();
           if (user) {
             await UserTable.updateOne(
               {
@@ -1776,7 +1778,7 @@ class AuthController extends BaseController {
                   parentMobile: mobile,
                   type: EUserType.TEEN,
                   screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
-                  // referralCode: uniqueReferralCode,
+                  referralCode: user.referralCode == null && uniqueReferralCode,
                   isParentFirst: false,
                   isAutoApproval: EAUTOAPPROVAL.ON,
                 },
@@ -1826,7 +1828,6 @@ class AuthController extends BaseController {
           /**
            * Generate referal code when user sign's up.
            */
-          const uniqueReferralCode = await makeUniqueReferalCode();
           const createObject = {
             firstName: childFirstName ? childFirstName : user.firstName,
             lastName: childLastName ? childLastName : user.lastName,
