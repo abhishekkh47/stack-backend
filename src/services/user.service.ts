@@ -1,9 +1,19 @@
+import { referralArray } from "./../types/user-referral";
 import { EUserType, EUSERSTATUS } from "./../types/user";
-import { ParentChildTable, UserDraftTable, UserReffaralTable, UserTable } from "../model";
+import {
+  DeviceToken,
+  Notification,
+  ParentChildTable,
+  UserDraftTable,
+  UserReffaralTable,
+  UserTable,
+} from "../model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { ERECURRING } from "../types";
-import config from '../config/index'
+import { ERead, ERECURRING } from "../types";
+import config from "../config/index";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../utility/constants";
+import { sendNotification } from "../utility/notificationSend";
 
 class UserService {
   /**
@@ -104,7 +114,9 @@ class UserService {
             "state._id": 1,
             "state.name": 1,
             "state.shortName": 1,
-            lifeTimeReferralCount: { $ifNull: [ "$lifeTimeReferral.referralCount", 0 ] },
+            lifeTimeReferralCount: {
+              $ifNull: ["$lifeTimeReferral.referralCount", 0],
+            },
             referralCode: 1,
             screenStatus: 1,
             city: 1,
@@ -280,20 +292,79 @@ class UserService {
   public async getUserReferral(userId: string, userReferral: string) {
     let referralCoins = 0;
     let userUpdateReferrals = [];
+    let getReferralCode;
     if (userReferral) {
-      let getReferralCode = await UserReffaralTable.findOne({
-        userId: userId,
-      });
+      getReferralCode = await UserReffaralTable.aggregate([
+        {
+          $match: {
+            userId: userId,
+          },
+        },
+        {
+          $lookup: {
+            from: "devicetokens",
+            localField: "userId",
+            foreignField: "userId",
+            as: "deviceTokenInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$deviceTokenInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "devicetokens",
+            localField: "referralArray.referredId",
+            foreignField: "userId",
+            as: "recieverDeviceTokenInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$recieverDeviceTokenInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            userId: {
+              $first: "$userId",
+            },
+            senderName: {
+              $first: "$senderName",
+            },
+            referralCount: {
+              $first: "$referralCount",
+            },
+            referralArray: {
+              $first: "$referralArray",
+            },
+            deviceTokenInfo: {
+              $first: "$deviceTokenInfo",
+            },
+            recieverDeviceTokenInfo: {
+              $push: "$recieverDeviceTokenInfo",
+            },
+          },
+        },
+      ]).exec();
+
+      console.log("getReferralCode: ", getReferralCode[0]);
 
       if (getReferralCode) {
-        referralCoins =
-          referralCoins + parseInt(config.APP_REFERRAL_COINS);
-        await getReferralCode.referralArray.map((obj) => {
+        referralCoins = referralCoins + parseInt(config.APP_REFERRAL_COINS);
+        await getReferralCode[0].referralArray.map((obj) => {
           if (!userUpdateReferrals.includes(obj.referredId)) {
             return userUpdateReferrals.push(obj.referredId);
           }
         });
         userUpdateReferrals.push(userId);
+        console.log("referralCoins :>> ", referralCoins);
+        console.log("userUpdateReferrals: ", userUpdateReferrals);
       }
     }
 
@@ -307,6 +378,62 @@ class UserService {
         },
       }
     );
+
+    for await (let receiver of getReferralCode[0].referralArray) {
+      await this.sendNotificationService(
+        userId,
+        getReferralCode[0].deviceTokenInfo.deviceToken[0],
+        NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+        receiver.receiverName
+      );
+      console.log(
+        "getReferralCode[0] ",
+        getReferralCode[0].recieverDeviceTokenInfo
+      );
+      for await (let deviceToken of getReferralCode[0]
+        .recieverDeviceTokenInfo) {
+        console.log("here");
+        if (receiver.referredId.toString() == deviceToken.userId.toString()) {
+          await this.sendNotificationService(
+            receiver.referredId,
+            deviceToken.deviceToken[0],
+            NOTIFICATION.REFERRAL_RECEIVER_MESSAGE,
+            getReferralCode[0].senderName
+          );
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * send notification service
+   */
+
+  public async sendNotificationService(
+    userId: string,
+    deviceToken: any,
+    key: any,
+    name: any
+  ) {
+    let notificationRequest = {
+      key: NOTIFICATION_KEYS.FREIND_REFER,
+      title: NOTIFICATION.REFERR_TITLE,
+      message: key.replace("{friendName}", name),
+    };
+    await sendNotification(
+      deviceToken,
+      notificationRequest.title,
+      notificationRequest
+    );
+
+    await Notification.create({
+      title: notificationRequest.title,
+      userId: userId,
+      message: notificationRequest.message,
+      isRead: ERead.UNREAD,
+      data: JSON.stringify(notificationRequest),
+    });
 
     return true;
   }

@@ -16,6 +16,10 @@ const schema = new mongoose.Schema<IUserReferralSchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
+    senderName: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
     referralArray: [
       {
         referredId: {
@@ -35,6 +39,10 @@ const schema = new mongoose.Schema<IUserReferralSchema>(
           type: mongoose.Schema.Types.Number,
           required: true,
         },
+        receiverName: {
+          type: mongoose.Schema.Types.String,
+          required: true,
+        }
       },
     ],
   },

@@ -1,3 +1,4 @@
+import { PARENT_SIGNUP_FUNNEL, TEEN_SIGNUP_FUNNEL } from "../utility/constants";
 import { UserTable } from "../model";
 import {
   addAccountInfoInZohoCrm,
@@ -11,12 +12,10 @@ class zohoCrmService {
     dataCreateOrUpdateInZoho: object,
     isArray: boolean = null
   ) {
-    
     let mainData = {
       data: isArray ? dataCreateOrUpdateInZoho : [dataCreateOrUpdateInZoho],
     };
     const addedData = await addAccountInfoInZohoCrm(zohoAccessToken, mainData);
-    
 
     if (addedData.status != 200) {
       throw new Error("Error in syncing zoho crm");
@@ -47,7 +46,6 @@ class zohoCrmService {
     id: string,
     updateRecord: object
   ) {
-    
     let mainData = {
       data: [updateRecord],
     };
@@ -74,8 +72,8 @@ class zohoCrmService {
       zohoAccessToken,
       teenMobile,
       "Teen"
-      );
-      
+    );
+
     if (searchAccountTeen) {
       let dataSentInCrm: any = {};
       dataSentInCrm = {
@@ -84,6 +82,10 @@ class zohoCrmService {
             ? checkParentExists.firstName + " " + checkParentExists.lastName
             : checkParentExists.firstName,
         },
+        TEEN_SIGNUP_FUNNEL: [
+          TEEN_SIGNUP_FUNNEL.PARENT_INFO,
+          TEEN_SIGNUP_FUNNEL.SUCCESS,
+        ],
       };
       await this.updateAccounts(
         zohoAccessToken,
@@ -97,7 +99,11 @@ class zohoCrmService {
         TeenAccount: {
           id: searchAccountTeen.id,
         },
-        Parent_First: parentFirst
+        Parent_First: parentFirst,
+        Parent_Signup_Funnel: [
+          PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+          PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+        ],
       };
       await this.addAccounts(zohoAccessToken, newDataInCrm);
     }

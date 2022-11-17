@@ -1,3 +1,4 @@
+import { UserDraftTable } from "./../model/userDraft";
 import config from "../config";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
@@ -95,7 +96,10 @@ export const makeUniqueReferalCode = async (length = 7) => {
     const checkReferralCodeExists = await UserTable.findOne({
       referralCode: result,
     });
-    if (!checkReferralCodeExists) {
+    const checkReferralUserDraft = await UserDraftTable.findOne({
+      referralCode: result,
+    });
+    if (!checkReferralCodeExists && !checkReferralUserDraft) {
       flag = false;
     } else {
       result = "";

@@ -129,6 +129,11 @@ export const NOTIFICATION = {
     "🎉 Your ${amount} BTC Gift Card from {sender} is redeemed. Check out your latest portfolio 🤩",
   GIFT_CARD_ACITVITY_MESSAGE:
     "Redeemed ${amount} Bitcoin Gift Card from {sender}",
+  REFERR_TITLE: "Congrats 🎉",
+  REFERRAL_SENDER_MESSAGE:
+    "You have received 500🔥from referring your friend {friendName}! Be sure to say thanks.",
+  REFERRAL_RECEIVER_MESSAGE:
+    "You have received 500🔥from your friend {friendName}! Be sure to say thanks.",
 };
 
 export const NOTIFICATION_KEYS = {
@@ -165,10 +170,9 @@ export const PARENT_SIGNUP_FUNNEL = {
 
 export const TEEN_SIGNUP_FUNNEL = {
   SIGNUP: "Sign up with SSO",
-  USERNAME: "Create username",
+  DOB: "Enter DOB",
   PHONE_NUMBER: "Enter phone number",
-  NAME: "Enter name",
-  PARENT_INFO: ["Enter parent's info"],
+  PARENT_INFO: "Enter parent's info",
   SUCCESS: "Registration complete",
 };
 
