@@ -351,13 +351,13 @@ class UserService {
             },
           },
         },
-      ]).exec();
+      ]).exec()[0];
 
-      console.log("getReferralCode: ", getReferralCode[0]);
+      console.log("getReferralCode: ", getReferralCode);
 
       if (getReferralCode) {
         referralCoins = referralCoins + parseInt(config.APP_REFERRAL_COINS);
-        await getReferralCode[0].referralArray.map((obj) => {
+        await getReferralCode.referralArray.map((obj) => {
           if (!userUpdateReferrals.includes(obj.referredId)) {
             return userUpdateReferrals.push(obj.referredId);
           }
@@ -379,30 +379,35 @@ class UserService {
       }
     );
 
-    for await (let receiver of getReferralCode[0].referralArray) {
-      await this.sendNotificationService(
-        userId,
-        getReferralCode[0].deviceTokenInfo.deviceToken[0],
-        NOTIFICATION.REFERRAL_SENDER_MESSAGE,
-        receiver.receiverName
+    let referredIdsArray = [];
+    let allNotifications = [];
+    for await (let receiver of getReferralCode.referralArray) {
+      console.log("USER REFERRAL FLOW WITH MAIN USER");
+      referredIdsArray.push(receiver.referredId.toString());
+      allNotifications.push(
+        await this.sendNotificationService(
+          userId,
+          getReferralCode.deviceTokenInfo.deviceToken,
+          NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+          receiver.receiverName
+        )
       );
-      console.log(
-        "getReferralCode[0] ",
-        getReferralCode[0].recieverDeviceTokenInfo
-      );
-      for await (let deviceToken of getReferralCode[0]
-        .recieverDeviceTokenInfo) {
-        console.log("here");
-        if (receiver.referredId.toString() == deviceToken.userId.toString()) {
+    }
+    console.log("getReferralCode ", getReferralCode.recieverDeviceTokenInfo);
+    for await (let deviceToken of getReferralCode.recieverDeviceTokenInfo) {
+      console.log("USER REFERRAL FLOW WITH REFERRED USER");
+      if (referredIdsArray.includes(deviceToken.userId.toString())) {
+        allNotifications.push(
           await this.sendNotificationService(
-            receiver.referredId,
-            deviceToken.deviceToken[0],
+            deviceToken.userId,
+            deviceToken.deviceToken,
             NOTIFICATION.REFERRAL_RECEIVER_MESSAGE,
-            getReferralCode[0].senderName
-          );
-        }
+            getReferralCode.senderName
+          )
+        );
       }
     }
+    await Notification.insertMany(allNotifications);
     return true;
   }
 
@@ -416,6 +421,7 @@ class UserService {
     key: any,
     name: any
   ) {
+    console.log(userId);
     let notificationRequest = {
       key: NOTIFICATION_KEYS.FREIND_REFER,
       title: NOTIFICATION.REFERR_TITLE,
@@ -427,15 +433,13 @@ class UserService {
       notificationRequest
     );
 
-    await Notification.create({
+    return {
       title: notificationRequest.title,
       userId: userId,
       message: notificationRequest.message,
       isRead: ERead.UNREAD,
       data: JSON.stringify(notificationRequest),
-    });
-
-    return true;
+    };
   }
 }
 

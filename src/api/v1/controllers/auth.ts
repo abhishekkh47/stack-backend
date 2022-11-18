@@ -309,23 +309,23 @@ class AuthController extends BaseController {
             if (!refferalCodeExists) {
               return this.BadRequest(ctx, "Refferal Code Not Found");
             }
-            if (
-              (refferalCodeExists.type == EUserType.PARENT ||
-                refferalCodeExists.type == EUserType.SELF) &&
-              refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              isGiftedStackCoins = admin.stackCoins;
-            } else if (refferalCodeExists.type == EUserType.TEEN) {
-              let checkTeenParent = await UserTable.findOne({
-                mobile: refferalCodeExists.parentMobile,
-              });
-              if (
-                checkTeenParent &&
-                checkTeenParent.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-              ) {
-                isGiftedStackCoins = admin.stackCoins;
-              }
-            }
+            // if (
+            //   (refferalCodeExists.type == EUserType.PARENT ||
+            //     refferalCodeExists.type == EUserType.SELF) &&
+            //   refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            // ) {
+            //   isGiftedStackCoins = admin.stackCoins;
+            // } else if (refferalCodeExists.type == EUserType.TEEN) {
+            //   let checkTeenParent = await UserTable.findOne({
+            //     mobile: refferalCodeExists.parentMobile,
+            //   });
+            //   if (
+            //     checkTeenParent &&
+            //     checkTeenParent.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            //   ) {
+            //     isGiftedStackCoins = admin.stackCoins;
+            //   }
+            // }
 
             if (isGiftedStackCoins > 0) {
               /**
@@ -365,9 +365,9 @@ class AuthController extends BaseController {
                 { _id: childExists._id },
                 {
                   $set: updateQuery,
-                  $inc: {
-                    preLoadedCoins: isGiftedStackCoins,
-                  },
+                  // $inc: {
+                  //   preLoadedCoins: isGiftedStackCoins,
+                  // },
                 },
                 { new: true }
               );
@@ -670,11 +670,9 @@ class AuthController extends BaseController {
               if (
                 (user.type == EUserType.PARENT ||
                   user.type == EUserType.SELF) &&
-                (refferalCodeExists.type == EUserType.PARENT ||
-                  refferalCodeExists.type == EUserType.SELF) &&
-                user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-                refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+                user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
               ) {
+                console.log("Parent coming");
                 await userService.getUserReferral(
                   refferalCodeExists._id,
                   reqParam.refferalCode
@@ -685,6 +683,7 @@ class AuthController extends BaseController {
                 parentChildInfo &&
                 checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
               ) {
+                console.log("Teen coming");
                 await userService.getUserReferral(
                   refferalCodeExists._id,
                   reqParam.refferalCode
@@ -787,7 +786,6 @@ class AuthController extends BaseController {
                     PARENT_SIGNUP_FUNNEL.DOB,
                     PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
                     PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-                    
                   ],
                   Parent_Number: reqParam.mobile.replace("+", ""),
                   Teen_Number: reqParam.childMobile.replace("+", ""),
@@ -1350,7 +1348,7 @@ class AuthController extends BaseController {
                 { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
                 { new: true }
               );
-             
+
               migratedId = childAlready ? childAlready._id : "";
             } else {
               const createObject = {
@@ -2206,7 +2204,6 @@ class AuthController extends BaseController {
           },
         }
       );
-     
     }
 
     if (checkParentExists) {
@@ -2415,7 +2412,6 @@ class AuthController extends BaseController {
                 Parent_Signup_Funnel: [
                   ...PARENT_SIGNUP_FUNNEL.SIGNUP,
                   PARENT_SIGNUP_FUNNEL.DOB,
-                  
                 ],
               };
               await zohoCrmService.addAccounts(
@@ -2477,7 +2473,6 @@ class AuthController extends BaseController {
                   userTypeScreenUpdate.lastName,
                 Account_Type:
                   reqParam.type == EUserType.PARENT ? "Parent" : "Self",
-                  
               };
               await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
