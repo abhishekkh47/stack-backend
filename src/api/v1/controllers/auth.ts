@@ -327,6 +327,7 @@ class AuthController extends BaseController {
             //   }
             // }
 
+            console.log('isGiftedStackCoins: ', isGiftedStackCoins);
             if (isGiftedStackCoins > 0) {
               /**
                * Get Quiz Stack Coins
@@ -352,6 +353,11 @@ class AuthController extends BaseController {
               );
             }
           }
+          console.log(
+            "reqParam.type == EUserType.TEEN && childExists: ",
+            reqParam.type == EUserType.TEEN && childExists
+          );
+
           if (reqParam.type == EUserType.TEEN && childExists) {
             let updateQuery: any = {
               username: null,
@@ -372,483 +378,452 @@ class AuthController extends BaseController {
                 { new: true }
               );
               console.log("user: ", user);
-            } else {
-              /**
-               * Generate referal code when user sign's up.
-               */
-
-              user = await UserTable.findOneAndUpdate(
-                { email: reqParam.email },
-                {
-                  $set: {
-                    username: null,
-                    password: null,
-                    mobile: reqParam.mobile,
-                    screenStatus:
-                      parseInt(reqParam.type) === EUserType.PARENT ||
-                      parseInt(reqParam.type) === EUserType.SELF
-                        ? ESCREENSTATUS.UPLOAD_DOCUMENTS
-                        : ESCREENSTATUS.SIGN_UP,
-                    parentEmail: reqParam.parentEmail
-                      ? reqParam.parentEmail
-                      : null,
-                    parentMobile: reqParam.parentMobile
-                      ? reqParam.parentMobile
-                      : null,
-                    preLoadedCoins:
-                      isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
-
-                    isAutoApproval: EAUTOAPPROVAL.ON,
-                  },
-                },
-                { new: true }
-              );
             }
-            if (reqParam.type == EUserType.PARENT) {
-              const parentchild = await ParentChildTable.findOneAndUpdate(
-                {
-                  userId: user._id,
-                },
-                {
-                  $set: {
-                    contactId: null,
-                    firstChildId: childExists._id,
-                    teens: childArray,
-                  },
-                },
-                { upsert: true, new: true }
-              );
-            } else if (reqParam.type == EUserType.SELF) {
-              await ParentChildTable.create({
-                userId: user._id,
-                firstChildId: user._id,
-              });
-            } else {
-              if (accountId && accountNumber) {
-                /**
-                 * TODO
-                 */
-                await ParentChildTable.updateOne(
-                  {
-                    _id: parentChildInfoId,
-                  },
-                  {
-                    $push: {
-                      teens: {
-                        childId: user._id,
-                        accountId: accountId,
-                        accountNumber: accountNumber,
-                      },
-                    },
-                  }
-                );
-              }
-            }
-            if (
-              admin.giftCryptoSetting == 1 &&
-              user.isGiftedCrypto == 0 &&
-              user.type !== EUserType.PARENT
-            ) {
-              let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-              let checkTransactionExistsAlready =
-                await TransactionTable.findOne({
-                  userId:
-                    checkParentExists && parentChildInfo
-                      ? parentChildInfo.firstChildId
-                      : user._id,
-                  intialDeposit: true,
-                  type: ETransactionType.DEPOSIT,
-                });
-              if (checkTransactionExistsAlready) {
-                let parentChildTableExists = await ParentChildTable.findOne({
-                  "teens.childId": user._id,
-                });
-                const accountIdDetails: any = parentChildTableExists.teens.find(
-                  (x: any) => x.childId.toString() == user._id.toString()
-                );
-                const requestQuoteDay: any = {
-                  data: {
-                    type: "quotes",
-                    attributes: {
-                      "account-id": envData.OPERATIONAL_ACCOUNT,
-                      "asset-id": crypto.assetId,
-                      hot: true,
-                      "transaction-type": "buy",
-                      total_amount: "5",
-                    },
-                  },
-                };
-                const generateQuoteResponse: any = await generateQuote(
-                  ctx.request.primeTrustToken,
-                  requestQuoteDay
-                );
-                if (generateQuoteResponse.status == 400) {
-                  return this.BadRequest(ctx, generateQuoteResponse.message);
-                }
-                /**
-                 * Execute a quote
-                 */
-                const requestExecuteQuote: any = {
-                  data: {
-                    type: "quotes",
-                    attributes: {
-                      "account-id": accountIdDetails.accountId,
-                      "asset-id": crypto.assetId,
-                    },
-                  },
-                };
-                const executeQuoteResponse: any = await executeQuote(
-                  ctx.request.primeTrustToken,
-                  generateQuoteResponse.data.data.id,
-                  requestExecuteQuote
-                );
-                if (executeQuoteResponse.status == 400) {
-                  return this.BadRequest(ctx, executeQuoteResponse.message);
-                }
-                let internalTransferRequest = {
-                  data: {
-                    type: "internal-asset-transfers",
-                    attributes: {
-                      "unit-count":
-                        executeQuoteResponse.data.data.attributes["unit-count"],
-                      "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                      "to-account-id": accountIdDetails.accountId,
-                      "asset-id": crypto.assetId,
-                      reference: "$5 BTC gift from Stack",
-                      "hot-transfer": true,
-                    },
-                  },
-                };
-                const internalTransferResponse: any =
-                  await internalAssetTransfers(
-                    ctx.request.primeTrustToken,
-                    internalTransferRequest
-                  );
-                if (internalTransferResponse.status == 400) {
-                  return this.BadRequest(ctx, internalTransferResponse.message);
-                }
-                await TransactionTable.create({
-                  assetId: crypto.assetId,
-                  cryptoId: crypto._id,
-                  accountId: accountIdDetails.accountId,
-                  type: ETransactionType.BUY,
-                  settledTime: moment().unix(),
-                  amount: admin.giftCryptoAmount,
-                  amountMod: -admin.giftCryptoAmount,
-                  userId: user._id,
-                  parentId: parentChildTableExists.userId,
-                  status: ETransactionStatus.SETTLED,
-                  executedQuoteId: internalTransferResponse.data.data.id,
-                  unitCount:
-                    executeQuoteResponse.data.data.attributes["unit-count"],
-                });
-                await UserTable.updateOne(
-                  {
-                    _id: user._id,
-                  },
-                  {
-                    $set: {
-                      isGiftedCrypto: 2,
-                    },
-                  }
-                );
-              } else {
-                /**
-                 * bitcoin asset id and crypto id
-                 */
-                await TransactionTable.create({
-                  assetId: crypto.assetId,
-                  cryptoId: crypto._id,
-                  accountId: null,
-                  type: ETransactionType.BUY,
-                  settledTime: moment().unix(),
-                  amount: admin.giftCryptoAmount,
-                  amountMod: 0,
-                  userId: user._id,
-                  parentId: null,
-                  status: ETransactionStatus.GIFTED,
-                  executedQuoteId: null,
-                  unitCount: 0,
-                });
-                await UserTable.updateOne(
-                  { _id: user._id },
-                  {
-                    $set: {
-                      isGiftedCrypto: 1,
-                    },
-                  }
-                );
-              }
-            }
+          } else {
             /**
-             * Gift Stack Coins and add entry in zoho
+             * Generate referal code when user sign's up.
              */
-            if (
-              user.type == EUserType.TEEN &&
-              user.isGifted == EGIFTSTACKCOINSSETTING.OFF &&
-              admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON &&
-              checkParentExists &&
-              parentChildInfo &&
-              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-              parentChildInfo.firstChildId != user._id
-            ) {
+
+            user = await UserTable.findOneAndUpdate(
+              { email: reqParam.email },
+              {
+                $set: {
+                  username: null,
+                  password: null,
+                  mobile: reqParam.mobile,
+                  screenStatus:
+                    parseInt(reqParam.type) === EUserType.PARENT ||
+                    parseInt(reqParam.type) === EUserType.SELF
+                      ? ESCREENSTATUS.UPLOAD_DOCUMENTS
+                      : ESCREENSTATUS.SIGN_UP,
+                  parentEmail: reqParam.parentEmail
+                    ? reqParam.parentEmail
+                    : null,
+                  parentMobile: reqParam.parentMobile
+                    ? reqParam.parentMobile
+                    : null,
+                  preLoadedCoins:
+                    isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+
+                  isAutoApproval: EAUTOAPPROVAL.ON,
+                },
+              },
+              { new: true }
+            );
+          }
+          if (reqParam.type == EUserType.PARENT) {
+            const parentchild = await ParentChildTable.findOneAndUpdate(
+              {
+                userId: user._id,
+              },
+              {
+                $set: {
+                  contactId: null,
+                  firstChildId: childExists._id,
+                  teens: childArray,
+                },
+              },
+              { upsert: true, new: true }
+            );
+          } else if (reqParam.type == EUserType.SELF) {
+            await ParentChildTable.create({
+              userId: user._id,
+              firstChildId: user._id,
+            });
+          } else {
+            if (accountId && accountNumber) {
               /**
-               * Added in zoho
+               * TODO
                */
-              let dataSentInCrm: any = {
-                Account_Name: user.firstName + " " + user.lastName,
-                Stack_Coins: admin.stackCoins,
-              };
-              await zohoCrmService.addAccounts(
-                ctx.request.zohoAccessToken,
-                dataSentInCrm
+              await ParentChildTable.updateOne(
+                {
+                  _id: parentChildInfoId,
+                },
+                {
+                  $push: {
+                    teens: {
+                      childId: user._id,
+                      accountId: accountId,
+                      accountNumber: accountNumber,
+                    },
+                  },
+                }
               );
-              user = await UserTable.findByIdAndUpdate(
+            }
+          }
+          if (
+            admin.giftCryptoSetting == 1 &&
+            user.isGiftedCrypto == 0 &&
+            user.type !== EUserType.PARENT
+          ) {
+            let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+            let checkTransactionExistsAlready = await TransactionTable.findOne({
+              userId:
+                checkParentExists && parentChildInfo
+                  ? parentChildInfo.firstChildId
+                  : user._id,
+              intialDeposit: true,
+              type: ETransactionType.DEPOSIT,
+            });
+            if (checkTransactionExistsAlready) {
+              let parentChildTableExists = await ParentChildTable.findOne({
+                "teens.childId": user._id,
+              });
+              const accountIdDetails: any = parentChildTableExists.teens.find(
+                (x: any) => x.childId.toString() == user._id.toString()
+              );
+              const requestQuoteDay: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": envData.OPERATIONAL_ACCOUNT,
+                    "asset-id": crypto.assetId,
+                    hot: true,
+                    "transaction-type": "buy",
+                    total_amount: "5",
+                  },
+                },
+              };
+              const generateQuoteResponse: any = await generateQuote(
+                ctx.request.primeTrustToken,
+                requestQuoteDay
+              );
+              if (generateQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, generateQuoteResponse.message);
+              }
+              /**
+               * Execute a quote
+               */
+              const requestExecuteQuote: any = {
+                data: {
+                  type: "quotes",
+                  attributes: {
+                    "account-id": accountIdDetails.accountId,
+                    "asset-id": crypto.assetId,
+                  },
+                },
+              };
+              const executeQuoteResponse: any = await executeQuote(
+                ctx.request.primeTrustToken,
+                generateQuoteResponse.data.data.id,
+                requestExecuteQuote
+              );
+              if (executeQuoteResponse.status == 400) {
+                return this.BadRequest(ctx, executeQuoteResponse.message);
+              }
+              let internalTransferRequest = {
+                data: {
+                  type: "internal-asset-transfers",
+                  attributes: {
+                    "unit-count":
+                      executeQuoteResponse.data.data.attributes["unit-count"],
+                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
+                    "to-account-id": accountIdDetails.accountId,
+                    "asset-id": crypto.assetId,
+                    reference: "$5 BTC gift from Stack",
+                    "hot-transfer": true,
+                  },
+                },
+              };
+              const internalTransferResponse: any =
+                await internalAssetTransfers(
+                  ctx.request.primeTrustToken,
+                  internalTransferRequest
+                );
+              if (internalTransferResponse.status == 400) {
+                return this.BadRequest(ctx, internalTransferResponse.message);
+              }
+              await TransactionTable.create({
+                assetId: crypto.assetId,
+                cryptoId: crypto._id,
+                accountId: accountIdDetails.accountId,
+                type: ETransactionType.BUY,
+                settledTime: moment().unix(),
+                amount: admin.giftCryptoAmount,
+                amountMod: -admin.giftCryptoAmount,
+                userId: user._id,
+                parentId: parentChildTableExists.userId,
+                status: ETransactionStatus.SETTLED,
+                executedQuoteId: internalTransferResponse.data.data.id,
+                unitCount:
+                  executeQuoteResponse.data.data.attributes["unit-count"],
+              });
+              await UserTable.updateOne(
+                {
+                  _id: user._id,
+                },
+                {
+                  $set: {
+                    isGiftedCrypto: 2,
+                  },
+                }
+              );
+            } else {
+              /**
+               * bitcoin asset id and crypto id
+               */
+              await TransactionTable.create({
+                assetId: crypto.assetId,
+                cryptoId: crypto._id,
+                accountId: null,
+                type: ETransactionType.BUY,
+                settledTime: moment().unix(),
+                amount: admin.giftCryptoAmount,
+                amountMod: 0,
+                userId: user._id,
+                parentId: null,
+                status: ETransactionStatus.GIFTED,
+                executedQuoteId: null,
+                unitCount: 0,
+              });
+              await UserTable.updateOne(
                 { _id: user._id },
                 {
                   $set: {
-                    isGifted: EGIFTSTACKCOINSSETTING.ON,
+                    isGiftedCrypto: 1,
                   },
-
-                  $inc: {
-                    preLoadedCoins: isGiftedStackCoins,
-                  },
-                },
-                { new: true }
-              );
-            }
-
-            /**
-             * add referral code number as well
-             */
-            if (refferalCodeExists) {
-              let dataExists = await UserReffaralTable.findOne({
-                userId: refferalCodeExists._id,
-              });
-              if (!dataExists) {
-                await UserReffaralTable.create({
-                  userId: refferalCodeExists._id,
-                  referralCount: 1,
-                  senderName: refferalCodeExists.lastName
-                    ? refferalCodeExists.firstName +
-                      " " +
-                      refferalCodeExists.lastName
-                    : refferalCodeExists.firstName,
-                  referralArray: [
-                    {
-                      referredId: user._id,
-                      receiverName: user.lastName
-                        ? user.firstName + " " + user.lastName
-                        : user.firstName,
-                      type: reqParam.type,
-                      coinsGifted: parseInt(config.APP_REFERRAL_COINS),
-                    },
-                  ],
-                });
-              } else {
-                await UserReffaralTable.updateOne(
-                  {
-                    userId: refferalCodeExists._id,
-                  },
-                  {
-                    $set: {
-                      referralCount: dataExists.referralCount + 1,
-                    },
-                    $push: {
-                      referralArray: {
-                        receiverName: user.lastName
-                          ? user.firstName + " " + user.lastName
-                          : user.firstName,
-                        referredId: user._id,
-                        type: reqParam.type,
-                        coinsGifted: parseInt(config.APP_REFERRAL_COINS),
-                      },
-                    },
-                  }
-                );
-              }
-              if (
-                (user.type == EUserType.PARENT ||
-                  user.type == EUserType.SELF) &&
-                user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-              ) {
-                console.log("Parent coming");
-                await userService.getUserReferral(
-                  refferalCodeExists._id,
-                  reqParam.refferalCode
-                );
-              } else if (
-                user.type == EUserType.TEEN &&
-                checkParentExists &&
-                parentChildInfo &&
-                checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-              ) {
-                console.log("Teen coming");
-                await userService.getUserReferral(
-                  refferalCodeExists._id,
-                  reqParam.refferalCode
-                );
-              }
-            }
-
-            const authInfo = await AuthService.getJwtAuthInfo(user);
-            const refreshToken = await getRefreshToken(authInfo);
-            user.refreshToken = refreshToken;
-            await user.save();
-            const token = await getJwtToken(authInfo);
-            let getProfileInput: any = {
-              request: {
-                query: { token },
-                headers: {},
-                params: { id: user._id },
-              },
-            };
-
-            if (reqParam.deviceToken) {
-              let checkDeviceTokenExists: any = await DeviceToken.findOne({
-                userId: user._id,
-              });
-              if (!checkDeviceTokenExists) {
-                checkDeviceTokenExists = await DeviceToken.create({
-                  userId: user._id,
-                  "deviceToken.0": reqParam.deviceToken,
-                });
-              } else {
-                if (
-                  !checkDeviceTokenExists.deviceToken.includes(
-                    reqParam.deviceToken
-                  )
-                ) {
-                  checkDeviceTokenExists = await DeviceToken.updateOne(
-                    { _id: checkDeviceTokenExists._id },
-                    {
-                      $push: {
-                        deviceToken: reqParam.deviceToken,
-                      },
-                    },
-                    { new: true }
-                  );
                 }
-              }
-
-              // todo sender gets the success info
-              //   if (isGiftedStackCoins > 0) {
-              //     let notificationRequest = {
-              //       key: NOTIFICATION_KEYS.FREIND_REFER,
-              //       title: NOTIFICATION.SUCCESS_REFER_CODE_USE_MESSAGE,
-              //       message: null,
-              //     };
-              //     await sendNotification(
-              //       checkDeviceTokenExists.deviceToken,
-              //       notificationRequest.title,
-              //       notificationRequest
-              //     );
-              //     await Notification.create({
-              //       title: notificationRequest.title,
-              //       userId: user._id,
-              //       message: notificationRequest.message,
-              //       isRead: ERead.UNREAD,
-              //       data: JSON.stringify(notificationRequest),
-              //     });
-              //   }
-              // }
-              /**
-               * TODO:- ZOHO CRM ADD ACCOUNTS DATA
-               */
-              let dataSentInCrm: any = {
-                Account_Name: user.lastName
-                  ? user.firstName + " " + user.lastName
-                  : user.firstName,
-                First_Name: user.firstName,
-                Last_Name: user.lastName ? user.lastName : null,
-                Email: user.email,
-                Mobile: user.mobile.replace("+", ""),
-                Account_Type:
-                  user.type == EUserType.PARENT
-                    ? "Parent"
-                    : user.type == EUserType.SELF
-                    ? "Self"
-                    : "Teen",
-                Birthday: user.dob,
-                User_ID: user._id,
-              };
-              if (isGiftedStackCoins > 0) {
-                dataSentInCrm = {
-                  ...dataSentInCrm,
-                  Stack_Coins: isGiftedStackCoins,
-                };
-              }
-              if (user.type == EUserType.PARENT) {
-                dataSentInCrm = {
-                  ...dataSentInCrm,
-                  Parent_Signup_Funnel: [
-                    ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-                    PARENT_SIGNUP_FUNNEL.DOB,
-                    PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
-                    PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-                  ],
-                  Parent_Number: reqParam.mobile.replace("+", ""),
-                  Teen_Number: reqParam.childMobile.replace("+", ""),
-                  Teen_Name: reqParam.childLastName
-                    ? reqParam.childFirstName + " " + reqParam.childLastName
-                    : reqParam.childFirstName,
-                };
-              }
-              if (user.type == EUserType.TEEN) {
-                //todo parent aexist then add parent name
-                dataSentInCrm = {
-                  ...dataSentInCrm,
-                  Parent_Account: checkParentExists
-                    ? checkParentExists.lastName
-                      ? checkParentExists.firstName +
-                        " " +
-                        checkParentExists.lastName
-                      : checkParentExists.firstName
-                    : null,
-                  Parent_Number: reqParam.parentMobile.replace("+", ""),
-                  Teen_Number: reqParam.mobile.replace("+", ""),
-                  Teen_Name: reqParam.lastName
-                    ? reqParam.firstName + " " + reqParam.lastName
-                    : reqParam.firstName,
-                };
-              }
-              await zohoCrmService.addAccounts(
-                ctx.request.zohoAccessToken,
-                dataSentInCrm
               );
-              if (user.type == EUserType.PARENT) {
-                let dataSentAgain = {
-                  data: [
-                    {
-                      Account_Name: childExists.lastName
-                        ? childExists.firstName + " " + childExists.lastName
-                        : childExists.firstName,
-                      Parent_Account: {
-                        name: user.lastName
-                          ? user.firstName + " " + user.lastName
-                          : user.firstName,
-                      },
-                    },
-                  ],
-                };
-                await zohoCrmService.addAccounts(
-                  ctx.request.zohoAccessToken,
-                  dataSentAgain
-                );
-              }
-              await UserController.getProfile(getProfileInput);
-              return this.Ok(ctx, {
-                token,
-                refreshToken,
-                profileData: getProfileInput.body.data,
-                message:
-                  /* tslint:disable-next-line */
-                  reqParam.type == EUserType.TEEN
-                    ? `We have sent sms/email to your parent. Once he starts onboarding process you can have access to full features of this app.`
-                    : `Your account is created successfully. Please fill other profile details as well.`,
-              });
             }
           }
+          /**
+           * Gift Stack Coins and add entry in zoho
+           */
+          if (
+            user.type == EUserType.TEEN &&
+            user.isGifted == EGIFTSTACKCOINSSETTING.OFF &&
+            admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON &&
+            checkParentExists &&
+            parentChildInfo &&
+            checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+            parentChildInfo.firstChildId != user._id
+          ) {
+            /**
+             * Added in zoho
+             */
+            let dataSentInCrm: any = {
+              Account_Name: user.firstName + " " + user.lastName,
+              Stack_Coins: admin.stackCoins,
+            };
+            await zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataSentInCrm
+            );
+            user = await UserTable.findByIdAndUpdate(
+              { _id: user._id },
+              {
+                $set: {
+                  isGifted: EGIFTSTACKCOINSSETTING.ON,
+                },
+
+                $inc: {
+                  preLoadedCoins: isGiftedStackCoins,
+                },
+              },
+              { new: true }
+            );
+          }
+
+          if (reqParam.deviceToken) {
+            let checkDeviceTokenExists: any = await DeviceToken.findOne({
+              userId: user._id,
+            });
+            if (!checkDeviceTokenExists) {
+              checkDeviceTokenExists = await DeviceToken.create({
+                userId: user._id,
+                "deviceToken.0": reqParam.deviceToken,
+              });
+            } else {
+              if (
+                !checkDeviceTokenExists.deviceToken.includes(
+                  reqParam.deviceToken
+                )
+              ) {
+                checkDeviceTokenExists = await DeviceToken.updateOne(
+                  { _id: checkDeviceTokenExists._id },
+                  {
+                    $push: {
+                      deviceToken: reqParam.deviceToken,
+                    },
+                  },
+                  { new: true }
+                );
+              }
+            }
+
+            // todo sender gets the success info
+            //   if (isGiftedStackCoins > 0) {
+            //     let notificationRequest = {
+            //       key: NOTIFICATION_KEYS.FREIND_REFER,
+            //       title: NOTIFICATION.SUCCESS_REFER_CODE_USE_MESSAGE,
+            //       message: null,
+            //     };
+            //     await sendNotification(
+            //       checkDeviceTokenExists.deviceToken,
+            //       notificationRequest.title,
+            //       notificationRequest
+            //     );
+            //     await Notification.create({
+            //       title: notificationRequest.title,
+            //       userId: user._id,
+            //       message: notificationRequest.message,
+            //       isRead: ERead.UNREAD,
+            //       data: JSON.stringify(notificationRequest),
+            //     });
+            //   }
+          }
+
+          /**
+           * add referral code number as well
+           */
+          if (refferalCodeExists) {
+            let senderName = refferalCodeExists.lastName
+              ? refferalCodeExists.firstName + " " + refferalCodeExists.lastName
+              : refferalCodeExists.firstName;
+
+            let receiverName = user.lastName
+              ? user.firstName + " " + user.lastName
+              : user.firstName;
+
+            await userService.updateCreateUserReferral(
+              refferalCodeExists._id,
+              user._id,
+              senderName,
+              receiverName,
+              reqParam.type
+            );
+
+            if (
+              (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
+              user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              console.log("Parent coming");
+              await userService.getUserReferral(
+                refferalCodeExists._id,
+                reqParam.refferalCode
+              );
+            } else if (
+              user.type == EUserType.TEEN &&
+              checkParentExists &&
+              parentChildInfo &&
+              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              console.log("Teen coming");
+              await userService.getUserReferral(
+                refferalCodeExists._id,
+                reqParam.refferalCode
+              );
+            }
+          }
+
+          const authInfo = await AuthService.getJwtAuthInfo(user);
+          const refreshToken = await getRefreshToken(authInfo);
+          user.refreshToken = refreshToken;
+          await user.save();
+          const token = await getJwtToken(authInfo);
+          let getProfileInput: any = {
+            request: {
+              query: { token },
+              headers: {},
+              params: { id: user._id },
+            },
+          };
+
+          /**
+           * TODO:- ZOHO CRM ADD ACCOUNTS DATA
+           */
+          let dataSentInCrm: any = {
+            Account_Name: user.lastName
+              ? user.firstName + " " + user.lastName
+              : user.firstName,
+            First_Name: user.firstName,
+            Last_Name: user.lastName ? user.lastName : null,
+            Email: user.email,
+            Mobile: user.mobile.replace("+", ""),
+            Account_Type:
+              user.type == EUserType.PARENT
+                ? "Parent"
+                : user.type == EUserType.SELF
+                ? "Self"
+                : "Teen",
+            Birthday: user.dob,
+            User_ID: user._id,
+          };
+          if (isGiftedStackCoins > 0) {
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Stack_Coins: isGiftedStackCoins,
+            };
+          }
+          if (user.type == EUserType.PARENT) {
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Parent_Signup_Funnel: [
+                ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                PARENT_SIGNUP_FUNNEL.DOB,
+                PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+                PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+              ],
+              Parent_Number: reqParam.mobile.replace("+", ""),
+              Teen_Number: reqParam.childMobile.replace("+", ""),
+              Teen_Name: reqParam.childLastName
+                ? reqParam.childFirstName + " " + reqParam.childLastName
+                : reqParam.childFirstName,
+            };
+          }
+          if (user.type == EUserType.TEEN) {
+            //todo parent aexist then add parent name
+            dataSentInCrm = {
+              ...dataSentInCrm,
+              Parent_Account: checkParentExists
+                ? checkParentExists.lastName
+                  ? checkParentExists.firstName +
+                    " " +
+                    checkParentExists.lastName
+                  : checkParentExists.firstName
+                : null,
+              Parent_Number: reqParam.parentMobile.replace("+", ""),
+              Teen_Number: reqParam.mobile.replace("+", ""),
+              Teen_Name: reqParam.lastName
+                ? reqParam.firstName + " " + reqParam.lastName
+                : reqParam.firstName,
+            };
+          }
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm
+          );
+          if (user.type == EUserType.PARENT) {
+            let dataSentAgain = {
+              data: [
+                {
+                  Account_Name: childExists.lastName
+                    ? childExists.firstName + " " + childExists.lastName
+                    : childExists.firstName,
+                  Parent_Account: {
+                    name: user.lastName
+                      ? user.firstName + " " + user.lastName
+                      : user.firstName,
+                  },
+                },
+              ],
+            };
+            await zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataSentAgain
+            );
+          }
+          await UserController.getProfile(getProfileInput);
+          return this.Ok(ctx, {
+            token,
+            refreshToken,
+            profileData: getProfileInput.body.data,
+            message:
+              /* tslint:disable-next-line */
+              reqParam.type == EUserType.TEEN
+                ? `We have sent sms/email to your parent. Once he starts onboarding process you can have access to full features of this app.`
+                : `Your account is created successfully. Please fill other profile details as well.`,
+          });
         }
       }
     );

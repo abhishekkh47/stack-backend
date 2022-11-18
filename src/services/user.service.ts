@@ -351,8 +351,8 @@ class UserService {
             },
           },
         },
-      ]).exec()[0];
-
+      ]).exec();
+      getReferralCode = getReferralCode.length > 0 ? getReferralCode[0] : null;
       console.log("getReferralCode: ", getReferralCode);
 
       if (getReferralCode) {
@@ -440,6 +440,56 @@ class UserService {
       isRead: ERead.UNREAD,
       data: JSON.stringify(notificationRequest),
     };
+  }
+
+  /**
+   * create or update user referral
+   */
+  public async updateCreateUserReferral(
+    senderId: string,
+    receiverId: string,
+    senderName: string,
+    receiverName: string,
+    type: number
+  ) {
+    let dataExists = await UserReffaralTable.findOne({
+      userId: senderId,
+    });
+    if (!dataExists) {
+      await UserReffaralTable.create({
+        userId: senderId,
+        referralCount: 1,
+        senderName: senderName,
+        referralArray: [
+          {
+            referredId: receiverId,
+            receiverName: receiverName,
+            type: type,
+            coinsGifted: parseInt(config.APP_REFERRAL_COINS),
+          },
+        ],
+      });
+    } else {
+      await UserReffaralTable.updateOne(
+        {
+          userId: senderId,
+        },
+        {
+          $set: {
+            referralCount: dataExists.referralCount + 1,
+          },
+          $push: {
+            referralArray: {
+              receiverName: receiverName,
+              referredId: receiverId,
+              type: type,
+              coinsGifted: parseInt(config.APP_REFERRAL_COINS),
+            },
+          },
+        }
+      );
+    }
+    return true;
   }
 }
 

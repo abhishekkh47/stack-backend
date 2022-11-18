@@ -1,3 +1,4 @@
+import { UserReffaralTable } from './../../../model/user-referral';
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -72,6 +73,11 @@ class WebHookController extends BaseController {
     if (!userExists) {
       return this.OkWebhook(ctx, "User Not Found");
     }
+
+    let getReferralSenderId = await UserReffaralTable.findOne({
+      'referralArray.referredId': userExists._id
+    })
+    
     /**
      * Notification Send for kyc fail or success
      */
@@ -207,8 +213,10 @@ class WebHookController extends BaseController {
               /**
                * for user referral
                */
+
+           
               await userService.getUserReferral(
-                userExists._id,
+                getReferralSenderId.userId,
                 userExists.referralCode
               );
 
@@ -419,8 +427,9 @@ class WebHookController extends BaseController {
                 /**
                  * for user referral
                  */
+              
                 await userService.getUserReferral(
-                  userExists._id,
+                  getReferralSenderId.userId,
                   userExists.referralCode
                 );
                 if (userExists.type == EUserType.PARENT) {
