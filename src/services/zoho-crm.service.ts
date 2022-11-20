@@ -14,6 +14,7 @@ class zohoCrmService {
     
     let mainData = {
       data: isArray ? dataCreateOrUpdateInZoho : [dataCreateOrUpdateInZoho],
+      duplicate_check_fields: ["Email"]
     };
     const addedData = await addAccountInfoInZohoCrm(zohoAccessToken, mainData);
     
