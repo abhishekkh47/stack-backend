@@ -82,7 +82,7 @@ class zohoCrmService {
             ? checkParentExists.firstName + " " + checkParentExists.lastName
             : checkParentExists.firstName,
         },
-        TEEN_SIGNUP_FUNNEL: [
+        Teen_Signup_Funnel: [
           TEEN_SIGNUP_FUNNEL.PARENT_INFO,
           TEEN_SIGNUP_FUNNEL.SUCCESS,
         ],

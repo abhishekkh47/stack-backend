@@ -301,11 +301,12 @@ class AuthController extends BaseController {
            * Refferal code present and check whole logic for the
            */
 
-          console.log("reqParam.refferalCode: ", reqParam.refferalCode);
+          console.log("reqParam.refferalCode in signup ", reqParam.refferalCode);
           if (reqParam.refferalCode) {
             refferalCodeExists = await UserTable.findOne({
               referralCode: reqParam.refferalCode,
             });
+            console.log('refferalCodeExists in signup ', refferalCodeExists);
             if (!refferalCodeExists) {
               return this.BadRequest(ctx, "Refferal Code Not Found");
             }
@@ -353,11 +354,6 @@ class AuthController extends BaseController {
               );
             }
           }
-          console.log(
-            "reqParam.type == EUserType.TEEN && childExists: ",
-            reqParam.type == EUserType.TEEN && childExists
-          );
-
           if (reqParam.type == EUserType.TEEN && childExists) {
             let updateQuery: any = {
               username: null,
@@ -377,7 +373,6 @@ class AuthController extends BaseController {
                 },
                 { new: true }
               );
-              console.log("user: ", user);
             }
           } else {
             /**
@@ -685,6 +680,8 @@ class AuthController extends BaseController {
               ? user.firstName + " " + user.lastName
               : user.firstName;
 
+              console.log("In signup before updatecreate service");
+
             await userService.updateCreateUserReferral(
               refferalCodeExists._id,
               user._id,
@@ -692,7 +689,7 @@ class AuthController extends BaseController {
               receiverName,
               reqParam.type
             );
-
+            console.log("In signup after updatecreate service");
             if (
               (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
               user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
@@ -1263,6 +1260,7 @@ class AuthController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/verify-otp-signup", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public verifyOtpSignUp(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.verifyOtpValidation(
@@ -1309,7 +1307,7 @@ class AuthController extends BaseController {
               let dataSentInCrm: any = {
                 Account_Name:
                   childAlready.firstName + " " + childAlready.lastName,
-                TEEN_SIGNUP_FUNNEL: [TEEN_SIGNUP_FUNNEL.PHONE_NUMBER],
+                Teen_Signup_Funnel: [TEEN_SIGNUP_FUNNEL.PHONE_NUMBER],
               };
 
               await zohoCrmService.addAccounts(
@@ -1350,7 +1348,7 @@ class AuthController extends BaseController {
 
             let dataSentInCrm: any = {
               Account_Name: childInfo.firstName + " " + childInfo.lastName,
-              TEEN_SIGNUP_FUNNEL: [TEEN_SIGNUP_FUNNEL.PHONE_NUMBER],
+              Teen_Signup_Funnel: [TEEN_SIGNUP_FUNNEL.PHONE_NUMBER],
             };
 
             await zohoCrmService.addAccounts(
@@ -1431,7 +1429,7 @@ class AuthController extends BaseController {
 
               let dataSentInCrm: any = {
                 Account_Name: childInfo.firstName + " " + childInfo.lastName,
-                TEEN_SIGNUP_FUNNEL: [TEEN_SIGNUP_FUNNEL.PHONE_NUMBER],
+                Teen_Signup_Funnel: [TEEN_SIGNUP_FUNNEL.PHONE_NUMBER],
               };
 
               await zohoCrmService.addAccounts(
@@ -2348,7 +2346,7 @@ class AuthController extends BaseController {
                 Birthday: userScreenStatusUpdate.dob,
                 Account_Type:
                   userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
-                TEEN_SIGNUP_FUNNEL: [
+                Teen_Signup_Funnel: [
                   TEEN_SIGNUP_FUNNEL.SIGNUP,
                   TEEN_SIGNUP_FUNNEL.DOB,
                 ],

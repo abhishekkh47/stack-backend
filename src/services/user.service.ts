@@ -353,7 +353,7 @@ class UserService {
         },
       ]).exec();
       getReferralCode = getReferralCode.length > 0 ? getReferralCode[0] : null;
-      console.log("getReferralCode: ", getReferralCode);
+      console.log("getReferralCode in service ", getReferralCode);
 
       if (getReferralCode) {
         referralCoins = referralCoins + parseInt(config.APP_REFERRAL_COINS);
@@ -363,8 +363,7 @@ class UserService {
           }
         });
         userUpdateReferrals.push(userId);
-        console.log("referralCoins :>> ", referralCoins);
-        console.log("userUpdateReferrals: ", userUpdateReferrals);
+        console.log("userUpdateReferrals in service ", userUpdateReferrals);
       }
     }
 
@@ -393,7 +392,6 @@ class UserService {
         )
       );
     }
-    console.log("getReferralCode ", getReferralCode.recieverDeviceTokenInfo);
     for await (let deviceToken of getReferralCode.recieverDeviceTokenInfo) {
       console.log("USER REFERRAL FLOW WITH REFERRED USER");
       if (referredIdsArray.includes(deviceToken.userId.toString())) {
@@ -455,6 +453,7 @@ class UserService {
     let dataExists = await UserReffaralTable.findOne({
       userId: senderId,
     });
+    console.log('dataExists update and create user referral service ', dataExists);
     if (!dataExists) {
       await UserReffaralTable.create({
         userId: senderId,
