@@ -83,6 +83,9 @@ class zohoCrmService {
             : checkParentExists.firstName,
         },
         Teen_Signup_Funnel: [
+          TEEN_SIGNUP_FUNNEL.SIGNUP,
+          TEEN_SIGNUP_FUNNEL.DOB,
+          TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
           TEEN_SIGNUP_FUNNEL.PARENT_INFO,
           TEEN_SIGNUP_FUNNEL.SUCCESS,
         ],

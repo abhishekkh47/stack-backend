@@ -1709,31 +1709,32 @@ class TradingController extends BaseController {
               },
             ],
           }).populate("userId", ["status"]);
-          console.log("parent: ", parent);
 
-          let userBankExists = await UserBanksTable.find({
-            userId: parent.userId._id, 
-            isDefault: 1
-          })
+          let userBankExists =
+            parent &&
+            (await UserBanksTable.find({
+              userId: parent.userId._id,
+              isDefault: 1,
+            }));
 
           const isKidBeforeParent =
             childExists.type !== EUserType.SELF &&
             (!parent ||
-              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED || userBankExists.length === 0 );
+              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
+              userBankExists.length === 0);
 
-          console.log("isKidBeforeParent: ", isKidBeforeParent);
           let baseFilter = {
             userId: new ObjectId(childExists._id),
             type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
           };
-          console.log("baseFilter: ", baseFilter);
+
           const matchRequest = isKidBeforeParent
-          ? baseFilter
-          : {
-            ...baseFilter,
-            assetId: { $in: arrayOfIds },
-          };
-          console.log('matchRequest: ', matchRequest);
+            ? baseFilter
+            : {
+                ...baseFilter,
+                assetId: { $in: arrayOfIds },
+              };
+              
           const portFolio = await TransactionTable.aggregate([
             {
               $match: matchRequest,

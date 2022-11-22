@@ -74,22 +74,24 @@ class WebHookController extends BaseController {
       return this.OkWebhook(ctx, "User Not Found");
     }
 
+    /**
+     * to get all the teen ids for the parent and self ids in case of self
+     */
     let arrayForReferral = [];
     if (
       userExists.type === EUserType.PARENT &&
       checkAccountIdExists.teens.length > 0
     ) {
-      checkAccountIdExists.teens.map((obj) => arrayForReferral.push(obj.childId._id));
-      console.log('arrayForReferral in if ', arrayForReferral);
+      checkAccountIdExists.teens.map((obj) =>
+        arrayForReferral.push(obj.childId._id)
+      );
     } else {
       arrayForReferral.push(checkAccountIdExists.firstChildId._id);
-      console.log('arrayForReferral in else ', arrayForReferral);
     }
 
     let getReferralSenderId = await UserReffaralTable.findOne({
       "referralArray.referredId": { $in: arrayForReferral },
     });
-    console.log("getReferralSenderId: in webhook", getReferralSenderId);
 
     /**
      * Notification Send for kyc fail or success
@@ -226,13 +228,11 @@ class WebHookController extends BaseController {
               /**
                * for user referral
                */
-
-              console.log("before service in webhook case contacts");
               await userService.getUserReferral(
                 getReferralSenderId.userId,
                 userExists.referralCode
               );
-              console.log("after service in webhook case contacts");
+
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = await checkAccountIdExists.teens.filter(
                   (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
@@ -440,12 +440,11 @@ class WebHookController extends BaseController {
                 /**
                  * for user referral
                  */
-                console.log("before service in webhook case accounts");
                 await userService.getUserReferral(
                   getReferralSenderId.userId,
                   userExists.referralCode
                 );
-                console.log("after service in webhook case accounts");
+
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(
                     (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF

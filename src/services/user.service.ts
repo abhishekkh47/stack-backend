@@ -294,7 +294,10 @@ class UserService {
     let userUpdateReferrals = [];
     let getReferralCode;
     if (userReferral) {
-      getReferralCode = await UserReffaralTable.aggregate([
+      /**
+       * get user referral info along with device token for notification
+       */
+      const userReferralAggregate = [
         {
           $match: {
             userId: userId,
@@ -351,11 +354,16 @@ class UserService {
             },
           },
         },
-      ]).exec();
+      ];
+      getReferralCode = await UserReffaralTable.aggregate(
+        userReferralAggregate
+      ).exec();
       getReferralCode = getReferralCode.length > 0 ? getReferralCode[0] : null;
-      console.log("getReferralCode in service ", getReferralCode);
 
       if (getReferralCode) {
+        /**
+         * get all ids in an array
+         */
         referralCoins = referralCoins + parseInt(config.APP_REFERRAL_COINS);
         await getReferralCode.referralArray.map((obj) => {
           if (!userUpdateReferrals.includes(obj.referredId)) {
@@ -363,7 +371,6 @@ class UserService {
           }
         });
         userUpdateReferrals.push(userId);
-        console.log("userUpdateReferrals in service ", userUpdateReferrals);
       }
     }
 
@@ -378,13 +385,15 @@ class UserService {
       }
     );
 
+    /**
+     *  for sending notification to each user for referring and being referred
+     */
     let referredIdsArray = [];
     let allNotifications = [];
     for await (let receiver of getReferralCode.referralArray) {
-      console.log("USER REFERRAL FLOW WITH MAIN USER");
       referredIdsArray.push(receiver.referredId.toString());
       allNotifications.push(
-        await this.sendNotificationService(
+        await this.sendNotificationForUserReferral(
           userId,
           getReferralCode.deviceTokenInfo.deviceToken,
           NOTIFICATION.REFERRAL_SENDER_MESSAGE,
@@ -393,10 +402,9 @@ class UserService {
       );
     }
     for await (let deviceToken of getReferralCode.recieverDeviceTokenInfo) {
-      console.log("USER REFERRAL FLOW WITH REFERRED USER");
       if (referredIdsArray.includes(deviceToken.userId.toString())) {
         allNotifications.push(
-          await this.sendNotificationService(
+          await this.sendNotificationForUserReferral(
             deviceToken.userId,
             deviceToken.deviceToken,
             NOTIFICATION.REFERRAL_RECEIVER_MESSAGE,
@@ -413,13 +421,12 @@ class UserService {
    * send notification service
    */
 
-  public async sendNotificationService(
+  public async sendNotificationForUserReferral(
     userId: string,
     deviceToken: any,
     key: any,
     name: any
   ) {
-    console.log(userId);
     let notificationRequest = {
       key: NOTIFICATION_KEYS.FREIND_REFER,
       title: NOTIFICATION.REFERR_TITLE,
@@ -443,17 +450,23 @@ class UserService {
   /**
    * create or update user referral
    */
-  public async updateCreateUserReferral(
+  public async updateOrCreateUserReferral(
     senderId: string,
     receiverId: string,
     senderName: string,
     receiverName: string,
     type: number
   ) {
+    /**
+     * check whether user exist in referral
+     */
     let dataExists = await UserReffaralTable.findOne({
       userId: senderId,
     });
-    console.log('dataExists update and create user referral service ', dataExists);
+
+    /**
+     * add or update referral
+     */
     if (!dataExists) {
       await UserReffaralTable.create({
         userId: senderId,

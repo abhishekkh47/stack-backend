@@ -93,12 +93,10 @@ export const makeUniqueReferalCode = async (length = 7) => {
     for (let i = 0; i < length; i += 1) {
       result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
-    const checkReferralCodeExists = await UserTable.findOne({
-      referralCode: result,
-    });
-    const checkReferralUserDraft = await UserDraftTable.findOne({
-      referralCode: result,
-    });
+
+    let findQuery = { referralCode: result };
+    const checkReferralCodeExists = await UserTable.findOne(findQuery);
+    const checkReferralUserDraft = await UserDraftTable.findOne(findQuery);
     if (!checkReferralCodeExists && !checkReferralUserDraft) {
       flag = false;
     } else {
