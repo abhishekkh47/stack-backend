@@ -132,6 +132,6 @@ export default {
     return process.env.GIFT_CARD_API;
   },
   get APP_REFERRAL_COINS() {
-    return process.env.APP_REFERRAL_COINS;
+    return parseInt(process.env.APP_REFERRAL_COINS);
   },
 };
