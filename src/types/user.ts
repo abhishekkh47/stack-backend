@@ -8,6 +8,7 @@ export interface IUser extends IAccount {
   verificationEmailExpireAt: string;
   verificationCode: string;
   status: EUSERSTATUS;
+  funded: boolean;
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
   refreshToken: string;
@@ -106,8 +107,8 @@ export enum ETRANSFER {
 
 export enum EUSERSTATUS {
   KYC_DOCUMENT_UPLOAD = 1,
-  KYC_DOCUMENT_VERIFIED = 3,
   KYC_DOCUMENT_UPLOAD_FAILED = 2,
+  KYC_DOCUMENT_VERIFIED = 3,
 }
 export enum ESCREENSTATUS {
   /**

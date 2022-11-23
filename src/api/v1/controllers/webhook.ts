@@ -542,6 +542,7 @@ class WebHookController extends BaseController {
             { _id: checkQuoteIdExists._id },
             { $set: { status: ETransactionStatus.SETTLED } }
           );
+
           return this.Ok(ctx, { message: "Trade Successfull" });
         } else {
           return this.OkWebhook(ctx, "Bad request for asset");
@@ -563,10 +564,32 @@ class WebHookController extends BaseController {
               body.data.changes.includes("contingencies-cleared-on")) ||
             body.resource_type == "contingent_holds"
           ) {
+            // Set our deposit status to settled
             await TransactionTable.updateOne(
               { _id: checkQuoteIdExistsDeposit._id },
               { $set: { status: ETransactionStatus.SETTLED } }
             );
+
+            // Update user's `funded` status
+            if (!userExists.funded) {
+              // prevent unnecessary queries
+              await UserTable.updateOne(
+                { _id: userExists._id },
+                { $set: { funded: true } }
+              );
+
+              let dataSentInCrm: any = {
+                Account_Name: userExists.firstName + " " + userExists.lastName,
+                Email: userExists.email,
+                Funded: true,
+              };
+  
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+            }
+
             return this.Ok(ctx, { message: "Deposit Successfull" });
           }
         } else {
