@@ -1,6 +1,6 @@
+import { TEEN_SIGNUP_FUNNEL } from "./../../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
-import mongoose from "mongoose";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -19,11 +19,11 @@ import {
 import {
   AuthService,
   DeviceTokenService,
-  quizService,
   SocialService,
   TokenService,
   TwilioService,
   zohoCrmService,
+  userService,
 } from "../../../services";
 import {
   EAUTOAPPROVAL,
@@ -169,9 +169,11 @@ class AuthController extends BaseController {
               type: EUserType.PARENT,
             });
 
-            parentChildInfo = checkParentExists?._id && await ParentChildTable.findOne({
-              userId: checkParentExists._id,
-            });
+            parentChildInfo =
+              checkParentExists?._id &&
+              (await ParentChildTable.findOne({
+                userId: checkParentExists._id,
+              }));
 
             const checkCondition = (parentChildInfo?.teens || []).filter(
               (x: any) => x.childId.toString() == childExists.id.toString()
@@ -292,86 +294,14 @@ class AuthController extends BaseController {
           await SocialService.verifySocial(reqParam);
 
           /**
-           * Refferal code present and check whole logic for the
+           * Refferal code present
            */
-
           if (reqParam.refferalCode) {
             refferalCodeExists = await UserTable.findOne({
               referralCode: reqParam.refferalCode,
             });
             if (!refferalCodeExists) {
               return this.BadRequest(ctx, "Refferal Code Not Found");
-            }
-            if (
-              refferalCodeExists.type == EUserType.PARENT &&
-              refferalCodeExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              isGiftedStackCoins = admin.stackCoins;
-            } else if (refferalCodeExists.type == EUserType.TEEN) {
-              let checkTeenParent = await UserTable.findOne({
-                mobile: refferalCodeExists.parentMobile,
-              });
-              if (
-                checkTeenParent &&
-                checkTeenParent.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-              ) {
-                isGiftedStackCoins = admin.stackCoins;
-              }
-            }
-            if (isGiftedStackCoins > 0) {
-              await UserTable.updateOne(
-                { _id: refferalCodeExists._id },
-                {
-                  $inc: { preLoadedCoins: isGiftedStackCoins },
-                }
-              );
-              /**
-               * Send notification to user who has given refferal code
-               */
-              let deviceTokenData = await DeviceToken.findOne({
-                userId: refferalCodeExists._id,
-              }).select("deviceToken");
-              if (deviceTokenData) {
-                let notificationRequest = {
-                  key: NOTIFICATION_KEYS.FREIND_REFER,
-                  title: NOTIFICATION.SUCCESS_REFER_MESSAGE,
-                  message: null,
-                };
-                await sendNotification(
-                  deviceTokenData.deviceToken,
-                  notificationRequest.title,
-                  notificationRequest
-                );
-                await Notification.create({
-                  title: notificationRequest.title,
-                  userId: refferalCodeExists._id,
-                  message: notificationRequest.message,
-                  isRead: ERead.UNREAD,
-                  data: JSON.stringify(notificationRequest),
-                });
-              }
-              /**
-               * Get Quiz Stack Coins
-               */
-              const checkQuizExists = await quizService.checkQuizExists({
-                userId: new mongoose.Types.ObjectId(refferalCodeExists._id),
-              });
-              let stackCoins = 0;
-              if (checkQuizExists.length > 0) {
-                stackCoins = checkQuizExists[0].sum;
-              }
-              stackCoins = stackCoins + isGiftedStackCoins;
-              let dataSentInCrm: any = {
-                Account_Name:
-                  refferalCodeExists.firstName +
-                  " " +
-                  refferalCodeExists.lastName,
-                Stack_Coins: stackCoins,
-              };
-              await zohoCrmService.addAccounts(
-                ctx.request.zohoAccessToken,
-                dataSentInCrm
-              );
             }
           }
           if (reqParam.type == EUserType.TEEN && childExists) {
@@ -382,14 +312,7 @@ class AuthController extends BaseController {
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               isParentFirst: childExists.isParentFirst,
             };
-            if (reqParam.refferalCode) {
-              updateQuery = {
-                ...updateQuery,
-                preLoadedCoins: {
-                  $inc: isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
-                },
-              };
-            }
+
             user = await UserTable.findByIdAndUpdate(
               { _id: childExists._id },
               {
@@ -401,7 +324,7 @@ class AuthController extends BaseController {
             /**
              * Generate referal code when user sign's up.
              */
-            const uniqueReferralCode = await makeUniqueReferalCode();
+
             user = await UserTable.findOneAndUpdate(
               { email: reqParam.email },
               {
@@ -420,9 +343,9 @@ class AuthController extends BaseController {
                   parentMobile: reqParam.parentMobile
                     ? reqParam.parentMobile
                     : null,
-                  referralCode: uniqueReferralCode,
                   preLoadedCoins:
                     isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
+
                   isAutoApproval: EAUTOAPPROVAL.ON,
                 },
               },
@@ -430,7 +353,7 @@ class AuthController extends BaseController {
             );
           }
           if (reqParam.type == EUserType.PARENT) {
-            const parentchild = await ParentChildTable.findOneAndUpdate(
+            await ParentChildTable.findOneAndUpdate(
               {
                 userId: user._id,
               },
@@ -633,65 +556,15 @@ class AuthController extends BaseController {
                 $set: {
                   isGifted: EGIFTSTACKCOINSSETTING.ON,
                 },
+
                 $inc: {
-                  preLoadedCoins: admin.stackCoins,
+                  preLoadedCoins: isGiftedStackCoins,
                 },
               },
               { new: true }
             );
           }
 
-          /**
-           * add referral code number as well
-           */
-          if (refferalCodeExists && isGiftedStackCoins > 0) {
-            let dataExists = await UserReffaralTable.findOne({
-              userId: refferalCodeExists._id,
-            });
-            if (!dataExists) {
-              await UserReffaralTable.create({
-                userId: refferalCodeExists._id,
-                referralCount: 1,
-                referralArray: [
-                  {
-                    referredId: user._id,
-                    type: 1,
-                    coinsGifted: isGiftedStackCoins,
-                  },
-                ],
-              });
-            } else {
-              await UserReffaralTable.updateOne(
-                {
-                  userId: refferalCodeExists._id,
-                },
-                {
-                  $set: {
-                    referralCount: dataExists.referralCount + 1,
-                  },
-                  $push: {
-                    referralArray: {
-                      referredId: user._id,
-                      type: 1,
-                      coinsGifted: isGiftedStackCoins,
-                    },
-                  },
-                }
-              );
-            }
-          }
-          const authInfo = await AuthService.getJwtAuthInfo(user);
-          const refreshToken = await getRefreshToken(authInfo);
-          user.refreshToken = refreshToken;
-          await user.save();
-          const token = await getJwtToken(authInfo);
-          let getProfileInput: any = {
-            request: {
-              query: { token },
-              headers: {},
-              params: { id: user._id },
-            },
-          };
           if (reqParam.deviceToken) {
             let checkDeviceTokenExists: any = await DeviceToken.findOne({
               userId: user._id,
@@ -718,26 +591,62 @@ class AuthController extends BaseController {
                 );
               }
             }
-            if (isGiftedStackCoins > 0) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.FREIND_REFER,
-                title: NOTIFICATION.SUCCESS_REFER_CODE_USE_MESSAGE,
-                message: null,
-              };
-              await sendNotification(
-                checkDeviceTokenExists.deviceToken,
-                notificationRequest.title,
-                notificationRequest
+          }
+
+          /**
+           * add referral code number as well
+           */
+          if (refferalCodeExists) {
+            let senderName = refferalCodeExists.lastName
+              ? refferalCodeExists.firstName + " " + refferalCodeExists.lastName
+              : refferalCodeExists.firstName;
+
+            let receiverName = user.lastName
+              ? user.firstName + " " + user.lastName
+              : user.firstName;
+
+            await userService.updateOrCreateUserReferral(
+              refferalCodeExists._id,
+              user._id,
+              senderName,
+              receiverName,
+              reqParam.type
+            );
+
+            if (
+              (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
+              user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              await userService.getUserReferral(
+                refferalCodeExists._id,
+                reqParam.refferalCode
               );
-              await Notification.create({
-                title: notificationRequest.title,
-                userId: user._id,
-                message: notificationRequest.message,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
-              });
+            } else if (
+              user.type == EUserType.TEEN &&
+              checkParentExists &&
+              parentChildInfo &&
+              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+            ) {
+              await userService.getUserReferral(
+                refferalCodeExists._id,
+                reqParam.refferalCode
+              );
             }
           }
+
+          const authInfo = await AuthService.getJwtAuthInfo(user);
+          const refreshToken = await getRefreshToken(authInfo);
+          user.refreshToken = refreshToken;
+          await user.save();
+          const token = await getJwtToken(authInfo);
+          let getProfileInput: any = {
+            request: {
+              query: { token },
+              headers: {},
+              params: { id: user._id },
+            },
+          };
+
           /**
            * TODO:- ZOHO CRM ADD ACCOUNTS DATA
            */
@@ -781,7 +690,6 @@ class AuthController extends BaseController {
             };
           }
           if (user.type == EUserType.TEEN) {
-            //todo parent aexist then add parent name
             dataSentInCrm = {
               ...dataSentInCrm,
               Parent_Account: checkParentExists
@@ -1272,6 +1180,7 @@ class AuthController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/verify-otp-signup", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public verifyOtpSignUp(ctx: any) {
     const reqParam = ctx.request.body;
     return validation.verifyOtpValidation(
@@ -1307,11 +1216,27 @@ class AuthController extends BaseController {
                 lastName: childAlready.lastName
                   ? childAlready.lastName
                   : childInfo.lastName,
+                referralCode: childAlready.referralCode,
               };
               await UserTable.findOneAndUpdate(
                 { mobile: reqParam.mobile },
                 { $set: updateObject },
                 { new: true }
+              );
+
+              let dataSentInCrm: any = {
+                Account_Name:
+                  childAlready.firstName + " " + childAlready.lastName,
+                Teen_Signup_Funnel: [
+                  TEEN_SIGNUP_FUNNEL.SIGNUP,
+                  TEEN_SIGNUP_FUNNEL.DOB,
+                  TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+                ],
+              };
+
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
               );
               await UserDraftTable.findOneAndUpdate(
                 {
@@ -1320,6 +1245,7 @@ class AuthController extends BaseController {
                 { $set: { screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO } },
                 { new: true }
               );
+
               migratedId = childAlready ? childAlready._id : "";
             } else {
               const createObject = {
@@ -1330,6 +1256,7 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
+                referralCode: childInfo.referralCode,
               };
 
               const userResponse = await UserTable.create(createObject);
@@ -1342,6 +1269,20 @@ class AuthController extends BaseController {
                 { new: true }
               );
             }
+
+            let dataSentInCrm: any = {
+              Account_Name: childInfo.firstName + " " + childInfo.lastName,
+              Teen_Signup_Funnel: [
+                TEEN_SIGNUP_FUNNEL.SIGNUP,
+                TEEN_SIGNUP_FUNNEL.DOB,
+                TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+              ],
+            };
+
+            await zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataSentInCrm
+            );
             await UserDraftTable.deleteOne({
               _id: reqParam._id,
             });
@@ -1388,6 +1329,7 @@ class AuthController extends BaseController {
                 lastName: childAlready.lastName
                   ? childAlready.lastName
                   : childInfo.lastName,
+                referralCode: childAlready.referralCode,
               };
               await UserDraftTable.deleteOne({
                 _id: reqParam._id,
@@ -1408,10 +1350,24 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
+                referralCode: childInfo.referralCode,
               };
 
               const userResponse: any = await UserTable.create(createObject);
 
+              let dataSentInCrm: any = {
+                Account_Name: childInfo.firstName + " " + childInfo.lastName,
+                Teen_Signup_Funnel: [
+                  TEEN_SIGNUP_FUNNEL.SIGNUP,
+                  TEEN_SIGNUP_FUNNEL.DOB,
+                  TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+                ],
+              };
+
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
               migratedId = userResponse._id;
 
               await UserDraftTable.deleteOne({
@@ -1546,6 +1502,7 @@ class AuthController extends BaseController {
               address: input.address,
               unitApt: input.unitApt,
               postalCode: input.postalCode,
+              referralCode: draftUser.referralCode,
               screenStatus:
                 type == EUserType.PARENT
                   ? ESCREENSTATUS.CHILD_INFO_SCREEN
@@ -1776,7 +1733,6 @@ class AuthController extends BaseController {
                   parentMobile: mobile,
                   type: EUserType.TEEN,
                   screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
-                  // referralCode: uniqueReferralCode,
                   isParentFirst: false,
                   isAutoApproval: EAUTOAPPROVAL.ON,
                 },
@@ -2131,7 +2087,6 @@ class AuthController extends BaseController {
     let checkParentExists = await UserTable.findOne({
       mobile: ctx.request.body.parentMobile,
     });
-  
 
     if (checkParentExists && checkParentExists.type !== EUserType.PARENT) {
       const msg = checkParentExists.type === EUserType.SELF ? "self" : "child";
@@ -2155,7 +2110,7 @@ class AuthController extends BaseController {
         }
       );
     }
-    
+
     if (checkParentExists) {
       await zohoCrmService.searchAccountsAndUpdateDataInCrm(
         ctx.request.zohoAccessToken,
@@ -2190,11 +2145,13 @@ class AuthController extends BaseController {
             let userExists = await UserTable.findOne({ email });
             if (!userExists) {
               await SocialService.verifySocial(reqParam);
+              const uniqueReferralCode = await makeUniqueReferalCode();
               let createQuery: any = {
                 email: reqParam.email,
                 screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
+                referralCode: uniqueReferralCode,
                 // mobile: reqParam.mobile ? reqParam.mobile : null,
               };
               const user = await UserDraftTable.create(createQuery);
@@ -2321,6 +2278,10 @@ class AuthController extends BaseController {
                 Birthday: userScreenStatusUpdate.dob,
                 Account_Type:
                   userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
+                Teen_Signup_Funnel: [
+                  TEEN_SIGNUP_FUNNEL.SIGNUP,
+                  TEEN_SIGNUP_FUNNEL.DOB,
+                ],
               };
 
               await zohoCrmService.addAccounts(
@@ -2353,6 +2314,10 @@ class AuthController extends BaseController {
                   " " +
                   userScreenStatusUpdate.lastName,
                 Birthday: userScreenStatusUpdate.dob,
+                Parent_Signup_Funnel: [
+                  ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                  PARENT_SIGNUP_FUNNEL.DOB,
+                ],
               };
               await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
