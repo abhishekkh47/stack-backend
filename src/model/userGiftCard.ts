@@ -42,7 +42,8 @@ const schema = new mongoose.Schema<IUserGiftCardSchema>(
     },
     recipient_phone: {
       type: mongoose.Schema.Types.String,
-      required: true,
+      required: false,
+      default: null
     },
     /**
      * false - pending , true - reedemed
