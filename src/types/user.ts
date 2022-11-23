@@ -70,6 +70,7 @@ export interface IUserdraft {
   lastName: string;
   type: number;
   refreshToken: string;
+  referralCode: string;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;

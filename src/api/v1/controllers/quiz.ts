@@ -149,7 +149,11 @@ class QuizController extends BaseController {
       totalStackPointsEarned: 0,
       totalStackPointsEarnedTop:
         userExists.type == EUserType.PARENT && childExists
-          ? childExists.firstChildId.preLoadedCoins
+          ? childExists.firstChildId
+            ? childExists.firstChildId.preLoadedCoins
+              ? childExists.firstChildId.preLoadedCoins
+              : 0
+            : 0
           : userExists.type == EUserType.TEEN
           ? userExists.preLoadedCoins
           : 0,

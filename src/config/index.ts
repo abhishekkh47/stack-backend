@@ -123,12 +123,15 @@ export default {
     return process.env.ANDROID_PACKAGE_NAME;
   },
   get GIFT_CARD_API_SECRET() {
-    return process.env.GIFT_CARD_API_SECRET
+    return process.env.GIFT_CARD_API_SECRET;
   },
   get GIFT_CARD_API_URL() {
-    return process.env.GIFT_CARD_API_URL
+    return process.env.GIFT_CARD_API_URL;
   },
   get GIFT_CARD_API() {
-    return process.env.GIFT_CARD_API
-  }
+    return process.env.GIFT_CARD_API;
+  },
+  get APP_REFERRAL_COINS() {
+    return process.env.APP_REFERRAL_COINS;
+  },
 };

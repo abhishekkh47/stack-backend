@@ -1,8 +1,19 @@
+import { referralArray } from "./../types/user-referral";
 import { EUserType, EUSERSTATUS } from "./../types/user";
-import { ParentChildTable, UserDraftTable, UserTable } from "../model";
+import {
+  DeviceToken,
+  Notification,
+  ParentChildTable,
+  UserDraftTable,
+  UserReffaralTable,
+  UserTable,
+} from "../model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { ERECURRING } from "../types";
+import { ERead, ERECURRING } from "../types";
+import config from "../config/index";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../utility/constants";
+import { sendNotification } from "../utility/notificationSend";
 
 class UserService {
   /**
@@ -103,7 +114,10 @@ class UserService {
             "state._id": 1,
             "state.name": 1,
             "state.shortName": 1,
-            lifeTimeReferralCount: "$lifeTimeReferral.referralCount",
+            lifeTimeReferralCount: {
+              $ifNull: ["$lifeTimeReferral.referralCount", 0],
+            },
+            referralCode: 1,
             screenStatus: 1,
             city: 1,
             postalCode: 1,
@@ -268,6 +282,226 @@ class UserService {
       childId: checkKyc._id,
       type: checkKyc.type,
     };
+  }
+
+  /**
+   * @description to get the referral amount
+   * @param userId
+   * @param userReferral
+   */
+  public async getUserReferral(userId: string, userReferral: string) {
+    let referralCoins = 0;
+    let userUpdateReferrals = [];
+    let getReferralCode;
+    if (userReferral) {
+      /**
+       * get user referral info along with device token for notification
+       */
+      const userReferralAggregate = [
+        {
+          $match: {
+            userId: userId,
+          },
+        },
+        {
+          $lookup: {
+            from: "devicetokens",
+            localField: "userId",
+            foreignField: "userId",
+            as: "deviceTokenInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$deviceTokenInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "devicetokens",
+            localField: "referralArray.referredId",
+            foreignField: "userId",
+            as: "recieverDeviceTokenInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$recieverDeviceTokenInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            userId: {
+              $first: "$userId",
+            },
+            senderName: {
+              $first: "$senderName",
+            },
+            referralCount: {
+              $first: "$referralCount",
+            },
+            referralArray: {
+              $first: "$referralArray",
+            },
+            deviceTokenInfo: {
+              $first: "$deviceTokenInfo",
+            },
+            recieverDeviceTokenInfo: {
+              $push: "$recieverDeviceTokenInfo",
+            },
+          },
+        },
+      ];
+      getReferralCode = await UserReffaralTable.aggregate(
+        userReferralAggregate
+      ).exec();
+      getReferralCode = getReferralCode.length > 0 ? getReferralCode[0] : null;
+
+      if (getReferralCode) {
+        /**
+         * get all ids in an array
+         */
+        referralCoins = referralCoins + parseInt(config.APP_REFERRAL_COINS);
+        await getReferralCode.referralArray.map((obj) => {
+          if (!userUpdateReferrals.includes(obj.referredId)) {
+            return userUpdateReferrals.push(obj.referredId);
+          }
+        });
+        userUpdateReferrals.push(userId);
+      }
+    }
+
+    await UserTable.updateMany(
+      {
+        _id: { $in: userUpdateReferrals },
+      },
+      {
+        $inc: {
+          preLoadedCoins: referralCoins,
+        },
+      }
+    );
+
+    /**
+     *  for sending notification to each user for referring and being referred
+     */
+    let referredIdsArray = [];
+    let allNotifications = [];
+    for await (let receiver of getReferralCode.referralArray) {
+      referredIdsArray.push(receiver.referredId.toString());
+      allNotifications.push(
+        await this.sendNotificationForUserReferral(
+          userId,
+          getReferralCode.deviceTokenInfo.deviceToken,
+          NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+          receiver.receiverName
+        )
+      );
+    }
+    for await (let deviceToken of getReferralCode.recieverDeviceTokenInfo) {
+      if (referredIdsArray.includes(deviceToken.userId.toString())) {
+        allNotifications.push(
+          await this.sendNotificationForUserReferral(
+            deviceToken.userId,
+            deviceToken.deviceToken,
+            NOTIFICATION.REFERRAL_RECEIVER_MESSAGE,
+            getReferralCode.senderName
+          )
+        );
+      }
+    }
+    await Notification.insertMany(allNotifications);
+    return true;
+  }
+
+  /**
+   * send notification service
+   */
+
+  public async sendNotificationForUserReferral(
+    userId: string,
+    deviceToken: any,
+    key: any,
+    name: any
+  ) {
+    let notificationRequest = {
+      key: NOTIFICATION_KEYS.FREIND_REFER,
+      title: NOTIFICATION.REFERR_TITLE,
+      message: key.replace("{friendName}", name),
+    };
+    await sendNotification(
+      deviceToken,
+      notificationRequest.title,
+      notificationRequest
+    );
+
+    return {
+      title: notificationRequest.title,
+      userId: userId,
+      message: notificationRequest.message,
+      isRead: ERead.UNREAD,
+      data: JSON.stringify(notificationRequest),
+    };
+  }
+
+  /**
+   * create or update user referral
+   */
+  public async updateOrCreateUserReferral(
+    senderId: string,
+    receiverId: string,
+    senderName: string,
+    receiverName: string,
+    type: number
+  ) {
+    /**
+     * check whether user exist in referral
+     */
+    let dataExists = await UserReffaralTable.findOne({
+      userId: senderId,
+    });
+
+    /**
+     * add or update referral
+     */
+    if (!dataExists) {
+      await UserReffaralTable.create({
+        userId: senderId,
+        referralCount: 1,
+        senderName: senderName,
+        referralArray: [
+          {
+            referredId: receiverId,
+            receiverName: receiverName,
+            type: type,
+            coinsGifted: parseInt(config.APP_REFERRAL_COINS),
+          },
+        ],
+      });
+    } else {
+      await UserReffaralTable.updateOne(
+        {
+          userId: senderId,
+        },
+        {
+          $set: {
+            referralCount: dataExists.referralCount + 1,
+          },
+          $push: {
+            referralArray: {
+              receiverName: receiverName,
+              referredId: receiverId,
+              type: type,
+              coinsGifted: parseInt(config.APP_REFERRAL_COINS),
+            },
+          },
+        }
+      );
+    }
+    return true;
   }
 }
 

@@ -149,7 +149,6 @@ export const searchAccountInfo = async (accessToken, phone) => {
       };
     })
     .catch((error) => {
-      console.log(error);
       if (error) {
         return {
           status: error.response.status,
