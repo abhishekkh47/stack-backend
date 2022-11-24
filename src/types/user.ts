@@ -12,6 +12,7 @@ export interface IUser extends IAccount {
   kycMessages: string[];
   refreshToken: string;
   isParentFirst: boolean;
+  quizCoins: number;
 }
 
 export interface IAccount {

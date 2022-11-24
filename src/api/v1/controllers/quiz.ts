@@ -362,6 +362,15 @@ class QuizController extends BaseController {
               everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
           };
           await QuizResult.create(dataToCreate);
+          await UserTable.updateOne(
+            { _id: user._id },
+            {
+              $inc: {
+                quizCoins:
+                  everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+              },
+            }
+          );
           let userExistsForQuiz = null;
           let preLoadedCoins = 0;
           let isParentOrChild = 0;

@@ -731,4 +731,18 @@ export const validation = {
       );
     return callback(true);
   },
+  redeemCryptoValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      dripShopId: Joi.string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("redeemCrypto", error))
+      );
+    return callback(true);
+  }
 };

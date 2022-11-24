@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+import { DripShopTable } from "./../../../model/dripShop";
 import {
   GIFTCARDS,
   NOTIFICATION,
@@ -276,8 +278,8 @@ class ScriptController extends BaseController {
      */
     let allGiftCards: any = await getAllGiftCards(
       GIFTCARDS.page,
-      GIFTCARDS.limit,
-      );
+      GIFTCARDS.limit
+    );
 
     /**
      * to get already existing uuids
@@ -462,6 +464,78 @@ class ScriptController extends BaseController {
     return this.Ok(ctx, {
       data: allGiftCards,
     });
+  }
+
+  /**
+   * @description This method is used to add the cryptos in the drip shop
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/add-dripshop-offers", method: HttpMethod.POST })
+  public async addItemsDripShop(ctx: any) {
+    /**
+     * get all the crypto and push in array to insert all together
+     */
+    let itemsDripShop = [];
+
+    const getAllCrypto = await CryptoTable.find();
+
+    for await (let crypto of getAllCrypto) {
+      itemsDripShop.push({
+        cryptoId: crypto._id,
+        assetId: crypto.assetId,
+        requiredFuels: 2000,
+        cryptoToBeRedeemed: 10,
+      });
+    }
+    await DripShopTable.insertMany(itemsDripShop);
+
+    return this.Ok(ctx, { message: "items added to drip shop" });
+  }
+
+  /**
+   * @description This method is used to add the total quiz coins to userTable
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/add-quiz-coins", method: HttpMethod.POST })
+  public async addQuizCoins(ctx: any) {
+    let getAllQuizCoinData = await QuizResult.aggregate([
+      {
+        $group: {
+          _id: "$userId",
+          sum: {
+            $sum: "$pointsEarned",
+          },
+        },
+      },
+      {
+        $project: {
+          sum: 1,
+        },
+      },
+    ]).exec();
+
+    let mainArray = [];
+
+
+    for await (let quizCoin of getAllQuizCoinData) {
+      let bulWriteOperation = {
+        updateOne: {
+          filter: { _id:  quizCoin._id},
+          update: {
+            $set: {
+              quizCoins:  quizCoin.sum,
+            },
+          },
+        },
+      };
+
+      mainArray.push(bulWriteOperation);
+
+    }
+    const updatedData = await UserTable.bulkWrite(mainArray);
+   return this.Ok(ctx, {message: "success", updatedData})
   }
 }
 
