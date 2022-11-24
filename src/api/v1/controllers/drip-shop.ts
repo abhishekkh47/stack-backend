@@ -42,7 +42,6 @@ class DripShopController extends BaseController {
           },
         },
       },
-
       {
         $project: {
           cryptoId: 1,
@@ -54,9 +53,10 @@ class DripShopController extends BaseController {
         },
       },
     ];
+
     let getAllData = await DripShopTable.aggregate(getDataQuery).exec();
 
-    return this.Ok(ctx, { data: getAllData || [] });
+    return this.Ok(ctx, { data: getAllData });
   }
 
   /**
