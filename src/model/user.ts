@@ -42,6 +42,10 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     status: { type: mongoose.Schema.Types.Number, default: 0 },
     /**
+     * false if the account does not have any settled deposits, true otherwise
+     */
+    funded: {type: mongoose.Schema.Types.Boolean, default: false },
+    /**
      * 0 - Sign up , 1 - change address , 2 - upload document field , 3 - acknowledge screen , 4 - add bank account
      */
     screenStatus: { type: mongoose.Schema.Types.Number, default: 0 },

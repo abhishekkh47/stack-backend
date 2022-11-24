@@ -364,7 +364,7 @@ class UserService {
         /**
          * get all ids in an array
          */
-        referralCoins = referralCoins + parseInt(config.APP_REFERRAL_COINS);
+        referralCoins = referralCoins + config.APP_REFERRAL_COINS;
         await getReferralCode.referralArray.map((obj) => {
           if (!userUpdateReferrals.includes(obj.referredId)) {
             return userUpdateReferrals.push(obj.referredId);
@@ -477,7 +477,7 @@ class UserService {
             referredId: receiverId,
             receiverName: receiverName,
             type: type,
-            coinsGifted: parseInt(config.APP_REFERRAL_COINS),
+            coinsGifted: config.APP_REFERRAL_COINS,
           },
         ],
       });
@@ -495,7 +495,7 @@ class UserService {
               receiverName: receiverName,
               referredId: receiverId,
               type: type,
-              coinsGifted: parseInt(config.APP_REFERRAL_COINS),
+              coinsGifted: config.APP_REFERRAL_COINS,
             },
           },
         }
