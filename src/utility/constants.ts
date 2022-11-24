@@ -134,7 +134,7 @@ export const NOTIFICATION = {
     "You have received 500🔥from referring your friend {friendName}! Be sure to say thanks.",
   REFERRAL_RECEIVER_MESSAGE:
     "You have received 500🔥from your friend {friendName}! Be sure to say thanks.",
-  DRIP_SHOP_MESSAGE: "You have received $10 {cryptoName} for 2000 fuels."
+  DRIP_SHOP_MESSAGE: "Reedemed ${cryptoAmount} of ${cryptoName} in exchange of {fuelAmount} fuel"
 };
 
 export const NOTIFICATION_KEYS = {

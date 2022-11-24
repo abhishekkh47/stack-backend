@@ -472,23 +472,23 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-dripshop-offers", method: HttpMethod.POST })
-  public async addItemsDripShop(ctx: any) {
+  public async addDripShop(ctx: any) {
     /**
      * get all the crypto and push in array to insert all together
      */
-    let itemsDripShop = [];
+    let dripShopData = [];
 
     const getAllCrypto = await CryptoTable.find();
 
     for await (let crypto of getAllCrypto) {
-      itemsDripShop.push({
+      dripShopData.push({
         cryptoId: crypto._id,
         assetId: crypto.assetId,
         requiredFuels: 2000,
         cryptoToBeRedeemed: 10,
       });
     }
-    await DripShopTable.insertMany(itemsDripShop);
+    await DripShopTable.insertMany(dripShopData);
 
     return this.Ok(ctx, { message: "items added to drip shop" });
   }

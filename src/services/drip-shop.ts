@@ -1,26 +1,25 @@
-import { EAction, EStatus } from './../types/useractivity';
-import { NOTIFICATION } from './../utility/constants';
-import { UserActivityTable } from './../model/useractivity';
-import { ETransactionStatus, ETransactionType } from './../types/transaction';
-import { TransactionTable } from './../model/transactions';
+import { EAction, EStatus } from "./../types/useractivity";
+import { NOTIFICATION } from "./../utility/constants";
+import { UserActivityTable } from "./../model/useractivity";
+import { ETransactionStatus, ETransactionType } from "./../types/transaction";
+import { TransactionTable } from "./../model/transactions";
 import {
   generateQuote,
   executeQuote,
   internalAssetTransfers,
 } from "./../utility/prime-trust";
 import { ParentChildTable } from "./../model/parentChild";
-import { CryptoTable } from "./../model/crypto";
 import { ObjectId } from "mongodb";
 import { DripShopTable } from "./../model/dripShop";
 import envData from "../config/index";
-import moment from 'moment';
+import moment from "moment";
 
 class DripShopService {
   /**
    * @description to get the drip shop info for id
    * @param dripShopId
    */
-  public async dripShopInfoForId(dripShopId: string) {
+  public async dripShopInfoForId(dripShopId: any) {
     /**
      * find the info for given dripshop id
      */
@@ -70,7 +69,7 @@ class DripShopService {
    * @param jwtToken
    * @param type
    */
-  public async internalTransferDripShop(
+  public async internalTransforDripShop(
     userId: any,
     type: number,
     dripShopInfo: any,
@@ -109,9 +108,8 @@ class DripShopService {
       jwtToken,
       requestQuoteDay
     );
-    console.log("generateQuoteResponse: ", generateQuoteResponse);
     if (generateQuoteResponse.status == 400) {
-      return { responseStatus: false };
+      throw Error(generateQuoteResponse.message);
     }
 
     /**
@@ -126,15 +124,15 @@ class DripShopService {
         },
       },
     };
-   
+
     const executeQuoteResponse: any = await executeQuote(
       jwtToken,
       generateQuoteResponse.data.data.id,
       requestExecuteQuote
     );
-    console.log("executeQuoteResponse: ", executeQuoteResponse);
+
     if (executeQuoteResponse.status == 400) {
-      return { responseStatus: false };
+      throw Error(executeQuoteResponse.message);
     }
 
     /**
@@ -148,7 +146,9 @@ class DripShopService {
           "from-account-id": envData.OPERATIONAL_ACCOUNT,
           "to-account-id": getAccountId.accountId,
           "asset-id": dripShopInfo.assetId,
-          reference: `$${10} BTC gift from Stack`,
+          reference: `Redeemed $${10} ${
+            dripShopInfo.cryptoName
+          } for exchange of fuels`,
           "hot-transfer": true,
         },
       },
@@ -157,14 +157,13 @@ class DripShopService {
       jwtToken,
       internalTransferRequest
     );
-    console.log("internalTransferResponse: ", internalTransferResponse);
 
     if (internalTransferResponse.status == 400) {
-      return { responseStatus: false };
+      throw Error(internalTransferResponse.message);
     }
 
     /**
-     * array containing all transactions
+     * array containing transaction
      */
 
     await TransactionTable.create({
@@ -182,16 +181,17 @@ class DripShopService {
     });
 
     /**
-     * array containing all the activities
+     * array containing the activity
      */
-
     await UserActivityTable.create({
       userId: userId,
       userType: type,
       message: NOTIFICATION.DRIP_SHOP_MESSAGE.replace(
-        "{cryptoName}",
-        dripShopInfo.cryptoName
-      ),
+        "{cryptoAmount}",
+        dripShopInfo.cryptoToBeRedeemed
+      )
+        .replace("{cryptoName}", dripShopInfo.cryptoName)
+        .replace("{fuelAmount}", dripShopInfo.requiredFuels),
       currencyType: null,
       currencyValue: dripShopInfo.cryptoToBeRedeemed,
       action: EAction.BUY_CRYPTO,
@@ -200,9 +200,7 @@ class DripShopService {
       assetId: dripShopInfo.assetId,
     });
 
-    return {
-      responseStatus: true,
-    };
+    return true;
   }
 }
 export default new DripShopService();

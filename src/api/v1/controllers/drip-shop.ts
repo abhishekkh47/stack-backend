@@ -1,12 +1,3 @@
-import { EAction, EStatus } from "./../../../types/useractivity";
-import { NOTIFICATION } from "./../../../utility/constants";
-import { UserActivityTable } from "./../../../model/useractivity";
-import {
-  ETransactionType,
-  ETransactionStatus,
-} from "./../../../types/transaction";
-import { TransactionTable } from "./../../../model/transactions";
-import { EUserType } from "./../../../types/user";
 import { ObjectId } from "mongodb";
 import { UserTable } from "./../../../model/user";
 import { validation } from "./../../../validations/apiValidation";
@@ -15,7 +6,7 @@ import BaseController from "./base";
 import { Route } from "../../../utility";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { HttpMethod } from "../../../types";
-import { dripShopService, quizService } from "../../../services/index";
+import { dripShopService } from "../../../services/index";
 
 class DripShopController extends BaseController {
   /**
@@ -41,6 +32,18 @@ class DripShopController extends BaseController {
         $unwind: { path: "$cryptoInfo", preserveNullAndEmptyArrays: true },
       },
       {
+        $redact: {
+          $cond: {
+            if: {
+              $ne: ["$cryptoInfo.disabled", true],
+            },
+            then: "$$KEEP",
+            else: "$$PRUNE",
+          },
+        },
+      },
+
+      {
         $project: {
           cryptoId: 1,
           assetId: 1,
@@ -62,7 +65,7 @@ class DripShopController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/redeem-crypto", method: HttpMethod.POST })
-  // @Auth()
+  @Auth()
   @PrimeTrustJWT(true)
   public async redeemCrypto(ctx: any) {
     const user = ctx.request.user;
@@ -73,15 +76,10 @@ class DripShopController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          let internalTransfer;
-
-          /**
-           * The query to find the users and it's respective parent info in case of teen or if self only self info
-           */
           const findUserInfoQuery = [
             {
               $match: {
-                _id: new ObjectId("637c8fa2dd8aadd5fff08ea1"),
+                _id: new ObjectId(user._id),
               },
             },
             {
@@ -101,7 +99,7 @@ class DripShopController extends BaseController {
             {
               $lookup: {
                 from: "users",
-                localField: "parentId",
+                localField: "parentId.userId",
                 foreignField: "_id",
                 as: "parentInfo",
               },
@@ -118,7 +116,7 @@ class DripShopController extends BaseController {
                   $ifNull: ["$parentId.userId", null],
                 },
                 parentQuizCoins: {
-                  $isNull: ["$parentInfo.quizCoins", 0],
+                  $ifNull: ["$parentInfo.quizCoins", 0],
                 },
               },
             },
@@ -140,60 +138,43 @@ class DripShopController extends BaseController {
 
           userExists = userExists.length > 0 ? userExists[0] : null;
 
+          if (!userExists) {
+            return this.BadRequest(ctx, "User does not exist");
+          }
+
           /**
            * get the drip shop information for specific drip shop id
            */
           let dripShopData = await dripShopService.dripShopInfoForId(
             reqParam.dripShopId
           );
-
-          /**
-           * the total of preloaded and quiz points
-           */
           let totalChildFuels =
             userExists.preLoadedCoins + userExists.quizCoins;
 
-          let flag = false; // set true when conditions fulfill
           let updateQuery = {};
 
           if (totalChildFuels >= dripShopData.requiredFuels) {
-
             /**
              * once true check what to update preloaded or quiz coins or both
              */
-            flag = true;
-            if (userExists.preLoadedCoins === dripShopData.requiredFuels) {
+            if (userExists.preLoadedCoins >= dripShopData.requiredFuels) {
               updateQuery = {
                 ...updateQuery,
-                $set: {
-                  preLoadedCoins: 0,
-                },
+                preLoadedCoins:
+                  userExists.preLoadedCoins - dripShopData.requiredFuels,
               };
             } else {
-
               /**
-               * remainingAmountBeforeQuiz - contains amount left after removal of preloaded coins fron required fuels
+               * amountLeftAfterPreloaded - contains amount left after removal of preloaded coins from required fuels
                */
-              let remainingAmountBeforeQuiz =
+              let amountLeftAfterPreloaded =
                 dripShopData.requiredFuels - userExists.preLoadedCoins;
-                
-              if (remainingAmountBeforeQuiz === userExists.quizCoins) {
+
+              if (amountLeftAfterPreloaded <= userExists.quizCoins) {
                 updateQuery = {
                   ...updateQuery,
-                  $set: {
-                    preLoadedCoins: 0,
-                    quizCoins: 0,
-                  },
-                };
-              } else {
-                let quizCoinsRemaining =
-                  userExists.quizCoins - remainingAmountBeforeQuiz;
-                updateQuery = {
-                  ...updateQuery,
-                  $set: {
-                    preLoadedCoins: 0,
-                    quizCoins: quizCoinsRemaining,
-                  },
+                  preLoadedCoins: 0,
+                  quizCoins: userExists.quizCoins - amountLeftAfterPreloaded,
                 };
               }
             }
@@ -202,17 +183,17 @@ class DripShopController extends BaseController {
             totalChildFuels + userExists.parentQuizCoins >=
               dripShopData.requiredFuels
           ) {
-            flag = true;
-            let getRemainingAmount =
+            /**
+             * amountLeftAfterTotalChildCoins - amount left after removal of preloaded and quiz coins from fuels
+             */
+            let amountLeftAfterTotalChildCoins =
               dripShopData.requiredFuels - totalChildFuels;
-            if (getRemainingAmount === userExists.parentQuizCoins) {
-              console.log("in first parent");
+
+            if (amountLeftAfterTotalChildCoins <= userExists.parentQuizCoins) {
               updateQuery = {
                 ...updateQuery,
-                $set: {
-                  preLoadedCoins: 0,
-                  quizCoins: 0,
-                },
+                preLoadedCoins: 0,
+                quizCoins: 0,
               };
 
               await UserTable.updateOne(
@@ -221,28 +202,9 @@ class DripShopController extends BaseController {
                 },
                 {
                   $set: {
-                    quizCoins: 0,
-                  },
-                }
-              );
-            } else {
-              console.log("in second parent");
-              let coinsRemaining =
-                userExists.parentQuizCoins - getRemainingAmount;
-              updateQuery = {
-                ...updateQuery,
-                $set: {
-                  preLoadedCoins: 0,
-                  quizCoins: 0,
-                },
-              };
-              await UserTable.updateOne(
-                {
-                  _id: userExists.parentId,
-                },
-                {
-                  $set: {
-                    quizCoins: coinsRemaining,
+                    quizCoins:
+                      userExists.parentQuizCoins -
+                      amountLeftAfterTotalChildCoins,
                   },
                 }
               );
@@ -251,24 +213,25 @@ class DripShopController extends BaseController {
             return this.BadRequest(ctx, "ERROR: Insufficient Funds");
           }
 
-          if (flag) {
-            internalTransfer = await dripShopService.internalTransferDripShop(
-              userExists._id,
-              userExists.type,
-              dripShopData,
-              jwtToken
-            );
-            await UserTable.updateOne(
-              {
-                _id: userExists._id,
-              },
-              updateQuery
-            );
-
-            if (internalTransfer.responseStatus) {
-              return this.Ok(ctx, { message: "Transaction Processed!" });
+          /**
+           * internal transfer for redeeming crypto
+           */
+          await dripShopService.internalTransforDripShop(
+            userExists._id,
+            userExists.type,
+            dripShopData,
+            jwtToken
+          );
+          await UserTable.updateOne(
+            {
+              _id: userExists._id,
+            },
+            {
+              $set: updateQuery,
             }
-          }
+          );
+
+          return this.Ok(ctx, { message: "Transaction Processed!" });
         }
       }
     );
