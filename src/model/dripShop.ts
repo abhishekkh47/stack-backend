@@ -1,11 +1,10 @@
 import mongoose from "mongoose";
 
-import type { IDripShop, MongooseModel } from "../types";
+import type { IDripshop, MongooseModel } from "../types";
 
-export type IDripShopSchema = MongooseModel<IDripShop> &
-  mongoose.Document;
+export type IDripShopSchema = MongooseModel<IDripshop> & mongoose.Document;
 
-const schema = new mongoose.Schema<IDripShop>(
+const schema = new mongoose.Schema<IDripshop>(
   {
     cryptoId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -18,18 +17,18 @@ const schema = new mongoose.Schema<IDripShop>(
       required: true,
       unique: true,
     },
-    requiredFuels:{
-     type: mongoose.Schema.Types.Number,
-     required: false,
-     default: 0
+    requiredFuels: {
+      type: mongoose.Schema.Types.Number,
+      required: false,
+      default: 0,
     },
-    cryptoToBeRedeemed:{
-     type: mongoose.Schema.Types.Number,
-     required: false,
-     default: 0
-    }
+    cryptoToBeRedeemed: {
+      type: mongoose.Schema.Types.Number,
+      required: false,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
 
-export const DripShopTable = mongoose.model<IDripShop>("dripShop", schema);
+export const DripShopTable = mongoose.model<IDripshop>("dripshop", schema);

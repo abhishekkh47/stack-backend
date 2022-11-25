@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId } from "mongodb";
 import { DripShopTable } from "./../../../model/dripShop";
 import {
   GIFTCARDS,
@@ -476,18 +476,17 @@ class ScriptController extends BaseController {
     /**
      * get all the crypto and push in array to insert all together
      */
-    let dripShopData = [];
+    const allCrypto = await CryptoTable.find();
 
-    const getAllCrypto = await CryptoTable.find();
-
-    for await (let crypto of getAllCrypto) {
-      dripShopData.push({
+    let dripShopData = allCrypto.map((crypto) => {
+      return {
         cryptoId: crypto._id,
         assetId: crypto.assetId,
         requiredFuels: 2000,
         cryptoToBeRedeemed: 10,
-      });
-    }
+      };
+    });
+
     await DripShopTable.insertMany(dripShopData);
 
     return this.Ok(ctx, { message: "items added to drip shop" });
@@ -500,7 +499,7 @@ class ScriptController extends BaseController {
    */
   @Route({ path: "/add-quiz-coins", method: HttpMethod.POST })
   public async addQuizCoins(ctx: any) {
-    let getAllQuizCoinData = await QuizResult.aggregate([
+    let allQuizCoinData = await QuizResult.aggregate([
       {
         $group: {
           _id: "$userId",
@@ -516,26 +515,21 @@ class ScriptController extends BaseController {
       },
     ]).exec();
 
-    let mainArray = [];
-
-
-    for await (let quizCoin of getAllQuizCoinData) {
-      let bulWriteOperation = {
+    let mainArray = allQuizCoinData.map((quizCoin) => {
+      return {
         updateOne: {
-          filter: { _id:  quizCoin._id},
+          filter: { _id: quizCoin._id },
           update: {
             $set: {
-              quizCoins:  quizCoin.sum,
+              quizCoins: quizCoin.sum,
             },
           },
         },
       };
+    });
 
-      mainArray.push(bulWriteOperation);
-
-    }
     const updatedData = await UserTable.bulkWrite(mainArray);
-   return this.Ok(ctx, {message: "success", updatedData})
+    return this.Ok(ctx, { message: "success", updatedData });
   }
 }
 
