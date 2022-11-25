@@ -3,7 +3,7 @@ import { DeviceToken } from "../model";
 class DeviceTokenService {
   public async addDeviceTokenIfNeeded(userId: string, deviceToken: string) {
     if (!deviceToken) {
-      return
+      return;
     }
 
     const checkDeviceTokenExists = await DeviceToken.findOne({
@@ -15,11 +15,7 @@ class DeviceTokenService {
         "deviceToken.0": deviceToken,
       });
     } else {
-      if (
-        !checkDeviceTokenExists.deviceToken.includes(
-          deviceToken
-        )
-      ) {
+      if (!checkDeviceTokenExists.deviceToken.includes(deviceToken)) {
         await DeviceToken.updateOne(
           { _id: checkDeviceTokenExists._id },
           {

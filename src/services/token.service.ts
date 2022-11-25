@@ -1,8 +1,4 @@
-
-import {
-  getJwtToken,
-  getRefreshToken,
-} from "../utility";
+import { getJwtToken, getRefreshToken } from "../utility";
 import { AuthService } from "../services";
 
 class TokenService {
@@ -13,7 +9,7 @@ class TokenService {
     await userExists.save();
 
     const token = await getJwtToken(authInfo);
-    return { token, refreshToken }
+    return { token, refreshToken };
   }
 }
 

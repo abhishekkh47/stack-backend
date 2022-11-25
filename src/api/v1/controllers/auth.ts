@@ -676,10 +676,12 @@ class AuthController extends BaseController {
                 PARENT_SIGNUP_FUNNEL.CHILD_INFO,
               ],
               Parent_Number: reqParam.mobile.replace("+", ""),
-              ...(user.type == EUserType.PARENT ) && {Teen_Number: reqParam.childMobile.replace("+", ""),
-              Teen_Name: reqParam.childLastName
-              ? reqParam.childFirstName + " " + reqParam.childLastName
-              : reqParam.childFirstName,}
+              ...(user.type == EUserType.PARENT && {
+                Teen_Number: reqParam.childMobile.replace("+", ""),
+                Teen_Name: reqParam.childLastName
+                  ? reqParam.childFirstName + " " + reqParam.childLastName
+                  : reqParam.childFirstName,
+              }),
             };
           }
           if (user.type == EUserType.TEEN) {
@@ -2326,9 +2328,9 @@ class AuthController extends BaseController {
                */
               let dataSentInCrm: any = {
                 Account_Name:
-                userScreenStatusUpdate.firstName +
-                " " +
-                userScreenStatusUpdate.lastName,
+                  userScreenStatusUpdate.firstName +
+                  " " +
+                  userScreenStatusUpdate.lastName,
                 Birthday: userScreenStatusUpdate.dob,
                 Parent_Signup_Funnel: [
                   ...PARENT_SIGNUP_FUNNEL.SIGNUP,

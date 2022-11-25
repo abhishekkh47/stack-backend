@@ -224,4 +224,4 @@ export const redeemGiftHandler = async () => {
   }
 
   return true;
-}
+};

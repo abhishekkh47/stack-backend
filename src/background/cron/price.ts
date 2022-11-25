@@ -2,7 +2,7 @@ import { getLatestPrice } from "../../utility";
 import { CryptoTable, CryptoPriceTable } from "../../model";
 
 export const priceHandler = async () => {
-  console.log('==========Start Cron for price=============');
+  console.log("==========Start Cron for price=============");
   let cryptos: any = await CryptoTable.find({});
   let symbolList = cryptos.map((x) => x.symbol).toString();
   let latestPrice: any = await getLatestPrice(symbolList);
@@ -40,4 +40,4 @@ export const priceHandler = async () => {
     await CryptoPriceTable.bulkWrite(mainArray);
   }
   return true;
-}
+};

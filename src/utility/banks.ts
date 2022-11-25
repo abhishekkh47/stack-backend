@@ -15,7 +15,7 @@ export const createBank = async (
   processToken: string,
   accessToken: string,
   institutionId: string,
-  userExists: any,
+  userExists: any
 ) => {
   const response = await UserBanksTable.create({
     userId: userExists._id,

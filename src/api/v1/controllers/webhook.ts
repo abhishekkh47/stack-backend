@@ -228,11 +228,12 @@ class WebHookController extends BaseController {
               /**
                * for user referral
                */
-              
-               getReferralSenderId && await userService.getUserReferral(
-                getReferralSenderId.userId,
-                userExists.referralCode
-              );
+
+              getReferralSenderId &&
+                (await userService.getUserReferral(
+                  getReferralSenderId.userId,
+                  userExists.referralCode
+                ));
 
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = await checkAccountIdExists.teens.filter(
@@ -441,10 +442,11 @@ class WebHookController extends BaseController {
                 /**
                  * for user referral
                  */
-                 getReferralSenderId && await userService.getUserReferral(
-                  getReferralSenderId.userId,
-                  userExists.referralCode
-                );
+                getReferralSenderId &&
+                  (await userService.getUserReferral(
+                    getReferralSenderId.userId,
+                    userExists.referralCode
+                  ));
 
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(
@@ -584,7 +586,7 @@ class WebHookController extends BaseController {
                 Email: userExists.email,
                 Funded: true,
               };
-  
+
               await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
                 dataSentInCrm

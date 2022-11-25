@@ -12,4 +12,3 @@ export interface IUserGiftCard {
   recipient_phone: string;
   redeemed: boolean;
 }
-
