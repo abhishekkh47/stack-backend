@@ -6,7 +6,7 @@ class UserDBService {
    * @description This service is used to get the user info for redeemption
    * @param userId
    */
-  public async getUserInfoQuery(userId: any) {
+  public async getUserInfo(userId: any) {
     const queryFindUser = [
       {
         $match: {

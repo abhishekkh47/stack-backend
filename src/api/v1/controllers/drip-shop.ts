@@ -44,7 +44,7 @@ class DripshopController extends BaseController {
           /**
            * get user info
            */
-          const userExists = await UserDBService.getUserInfoQuery(user._id);
+          const userExists = await UserDBService.getUserInfo(user._id);
 
           if (!userExists) {
             return this.BadRequest(ctx, "User does not exist");
