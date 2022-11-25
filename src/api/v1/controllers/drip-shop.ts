@@ -1,3 +1,4 @@
+import { EUSERSTATUS } from "./../../../types/user";
 import { ObjectId } from "mongodb";
 import { UserTable } from "./../../../model/user";
 import { validation } from "./../../../validations/apiValidation";
@@ -117,6 +118,20 @@ class DripShopController extends BaseController {
                 },
                 parentQuizCoins: {
                   $ifNull: ["$parentInfo.quizCoins", 0],
+                },
+              },
+            },
+            {
+              $redact: {
+                $cond: {
+                  if: {
+                    $eq: [
+                      "$parentInfo.status",
+                      EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
+                    ],
+                  },
+                  then: "$$KEEP",
+                  else: "$$PRUNE",
                 },
               },
             },
