@@ -1873,7 +1873,9 @@ class TradingController extends BaseController {
           let stackCoins =
             childExists.type === EUserType.SELF
               ? childTotalCoins
-              : userExistsForQuiz.userId.quizCoins + childTotalCoins;
+              : userExistsForQuiz && userExistsForQuiz.userId
+              ? userExistsForQuiz.userId.quizCoins + childTotalCoins
+              : childTotalCoins;
 
           if (
             childExists.type !== EUserType.SELF &&
