@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
-import type { IDripShop, MongooseModel } from "../types";
+import type { IDripshop, MongooseModel } from "../types";
 
-export type IDripShopSchema = MongooseModel<IDripShop> & mongoose.Document;
+export type IDripShopSchema = MongooseModel<IDripshop> &
+  mongoose.Document;
 
-const schema = new mongoose.Schema<IDripShop>(
+const schema = new mongoose.Schema<IDripshop>(
   {
     cryptoId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -31,4 +32,4 @@ const schema = new mongoose.Schema<IDripShop>(
   { timestamps: true }
 );
 
-export const DripShopTable = mongoose.model<IDripShop>("dripShop", schema);
+export const DripShopTable = mongoose.model<IDripshop>("dripshop", schema);

@@ -1,20 +1,63 @@
-import { EAction, EStatus } from "./../types/useractivity";
-import { NOTIFICATION } from "./../utility/constants";
-import { UserActivityTable } from "./../model/useractivity";
-import { ETransactionStatus, ETransactionType } from "./../types/transaction";
-import { TransactionTable } from "./../model/transactions";
+import { EAction, EStatus } from "../types/useractivity";
+import { NOTIFICATION } from "../utility/constants";
+import { UserActivityTable } from "../model/useractivity";
+import { ETransactionStatus, ETransactionType } from "../types/transaction";
+import { TransactionTable } from "../model/transactions";
 import {
   generateQuote,
   executeQuote,
   internalAssetTransfers,
-} from "./../utility/prime-trust";
-import { ParentChildTable } from "./../model/parentChild";
+} from "../utility/prime-trust";
+import { ParentChildTable } from "../model/parentChild";
 import { ObjectId } from "mongodb";
-import { DripShopTable } from "./../model/dripShop";
+import { DripShopTable } from "../model/dripShop";
 import envData from "../config/index";
 import moment from "moment";
 
-class DripShopService {
+class DripshopDBService {
+  /**
+   * @description get all drip shop data
+   */
+  public async getDripshopQuery() {
+    const queryGet = [
+      {
+        $lookup: {
+          from: "cryptos",
+          localField: "cryptoId",
+          foreignField: "_id",
+          as: "cryptoInfo",
+        },
+      },
+      {
+        $unwind: { path: "$cryptoInfo", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $ne: ["$cryptoInfo.disabled", true],
+            },
+            then: "$$KEEP",
+            else: "$$PRUNE",
+          },
+        },
+      },
+      {
+        $project: {
+          cryptoId: 1,
+          assetId: 1,
+          requiredFuels: 1,
+          cryptoToBeRedeemed: 1,
+          cryptoName: "$cryptoInfo.name",
+          image: { $ifNull: ["$cryptoInfo.image", null] },
+        },
+      },
+    ];
+    let allData = await DripShopTable.aggregate(queryGet).exec();
+
+    return allData;
+  }
+
   /**
    * @description to get the drip shop info for id
    * @param dripShopId
@@ -23,7 +66,7 @@ class DripShopService {
     /**
      * find the info for given dripshop id
      */
-    const findDripShopQuery = [
+    const queryFindDripShop = [
       {
         $match: {
           _id: new ObjectId(dripShopId),
@@ -55,7 +98,7 @@ class DripShopService {
     ];
 
     let findDripShopData: any = await DripShopTable.aggregate(
-      findDripShopQuery
+      queryFindDripShop
     ).exec();
 
     findDripShopData = findDripShopData.length > 0 ? findDripShopData[0] : [];
@@ -203,4 +246,4 @@ class DripShopService {
     return true;
   }
 }
-export default new DripShopService();
+export default new DripshopDBService();

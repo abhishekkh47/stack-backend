@@ -8,4 +8,4 @@ export { default as UserController } from "./user";
 export { default as CMSController } from "./cms";
 export { default as WebHookController } from "./webhook";
 export { default as ScriptController } from "./script";
-export { default as DripShopController } from "./drip-shop";
+export { default as DripshopController } from "./drip-shop";

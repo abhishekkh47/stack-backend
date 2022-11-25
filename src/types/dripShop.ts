@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
-export interface IDripShop {
- cryptoId: mongoose.Schema.Types.ObjectId;
- assetId: string;
- requiredFuels: number;
- cryptoToBeRedeemed: number;
+export interface IDripshop {
+  cryptoId: mongoose.Schema.Types.ObjectId;
+  assetId: string;
+  requiredFuels: number;
+  cryptoToBeRedeemed: number;
 }

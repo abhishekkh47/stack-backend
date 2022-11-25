@@ -9,4 +9,5 @@ export { default as zohoCrmService } from "./zoho-crm.service";
 export { default as quizService } from "./quiz.service";
 export { default as userService } from "./user.service";
 export { default as tradingService } from "./trading.service";
-export { default as dripShopService } from "./drip-shop";
+export { default as DripshopDBService } from "./dripshop.db.service";
+export { default as UserDBService } from "./user.db.service";

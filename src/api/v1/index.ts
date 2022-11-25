@@ -13,7 +13,7 @@ import {
   CMSController,
   WebHookController,
   ScriptController,
-  DripShopController
+  DripshopController,
 } from "./controllers";
 const router = new Router();
 
@@ -82,7 +82,7 @@ setControllerRoutes(router, CryptoController);
 setControllerRoutes(router, UserController);
 setControllerRoutes(router, CMSController);
 setControllerRoutes(router, WebHookController);
-setControllerRoutes(router, DripShopController);
+setControllerRoutes(router, DripshopController);
 // setControllerRoutes(router, ScriptController);
 
 export default Compose([router.routes(), router.allowedMethods()]);
