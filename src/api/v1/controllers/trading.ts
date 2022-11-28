@@ -17,6 +17,7 @@ import {
 import {
   PortfolioService,
   tradingService,
+  UserDBService,
   userService,
   zohoCrmService,
 } from "../../../services";
@@ -3210,13 +3211,13 @@ class TradingController extends BaseController {
   public async unlinkBank(ctx: any) {
     let user = ctx.request.user;
     const { bankId } = ctx.request.body;
-
-    const userBankExists = await UserBanksTable.findOne({
-      userId: user._id,
-      _id: bankId,
-      isDefault: EDEFAULTBANK.TRUE,
-    });
-
+    /**
+     * GET USER BANK INFO AND USER TYPE
+     */
+    const userBankExists: any = await UserDBService.getUserBankInfo(
+      user._id,
+      bankId
+    );
     if (!userBankExists) {
       return this.BadRequest(ctx, "Bank doesn't exist");
     }
