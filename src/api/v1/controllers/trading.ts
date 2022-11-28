@@ -315,6 +315,7 @@ class TradingController extends BaseController {
             ];
             let dataSentInCrm: any = {
               Account_Name: userExists.firstName + " " + userExists.lastName,
+              Email: userExists.email,
               Parent_Signup_Funnel: ParentArray,
               Stack_Coins: admin.stackCoins,
             };
@@ -341,6 +342,7 @@ class TradingController extends BaseController {
           ];
           let dataSentInCrm: any = {
             Account_Name: userExists.firstName + " " + userExists.lastName,
+            Email: userExists.email,
             Parent_Signup_Funnel: ParentArray,
             Stack_Coins: admin.stackCoins,
           };

@@ -419,6 +419,7 @@ class UserController extends BaseController {
      */
     let dataSentInCrm: any = {
       Account_Name: userExists.firstName + " " + userExists.lastName,
+      Email: userExists.email,
       Account_Status: "1",
       Parent_Signup_Funnel: [
         ...PARENT_SIGNUP_FUNNEL.SIGNUP,

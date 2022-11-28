@@ -366,6 +366,7 @@ class AuthController extends BaseController {
                   refferalCodeExists.firstName +
                   " " +
                   refferalCodeExists.lastName,
+                Email: refferalCodeExists.email,
                 Stack_Coins: stackCoins,
               };
               await zohoCrmService.addAccounts(
@@ -621,6 +622,7 @@ class AuthController extends BaseController {
              */
             let dataSentInCrm: any = {
               Account_Name: user.firstName + " " + user.lastName,
+              Email: user.email,
               Stack_Coins: admin.stackCoins,
             };
             await zohoCrmService.addAccounts(
@@ -809,6 +811,7 @@ class AuthController extends BaseController {
                   Account_Name: childExists.lastName
                     ? childExists.firstName + " " + childExists.lastName
                     : childExists.firstName,
+                  Email: childExists.email,
                   Parent_Account: {
                     name: user.lastName
                       ? user.firstName + " " + user.lastName
@@ -2318,6 +2321,7 @@ class AuthController extends BaseController {
                   userScreenStatusUpdate.firstName +
                   " " +
                   userScreenStatusUpdate.lastName,
+                Email: userScreenStatusUpdate.email,
                 Birthday: userScreenStatusUpdate.dob,
                 Account_Type:
                   userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
@@ -2352,6 +2356,7 @@ class AuthController extends BaseController {
                   userScreenStatusUpdate.firstName +
                   " " +
                   userScreenStatusUpdate.lastName,
+                Email: userScreenStatusUpdate.email,
                 Birthday: userScreenStatusUpdate.dob,
               };
               await zohoCrmService.addAccounts(
@@ -2411,6 +2416,7 @@ class AuthController extends BaseController {
                   userTypeScreenUpdate.firstName +
                   " " +
                   userTypeScreenUpdate.lastName,
+                Email: userTypeScreenUpdate.email,
                 Account_Type:
                   reqParam.type == EUserType.PARENT ? "Parent" : "Self",
               };

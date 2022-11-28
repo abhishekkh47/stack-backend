@@ -109,6 +109,7 @@ class WebHookController extends BaseController {
            */
           let dataSentInCrm: any = {
             Account_Name: userExists.firstName + " " + userExists.lastName,
+            Email: userExists.email,
             Account_Status: "2",
           };
           await zohoCrmService.addAccounts(
@@ -179,6 +180,7 @@ class WebHookController extends BaseController {
              */
             let dataSentInCrm: any = {
               Account_Name: userExists.firstName + " " + userExists.lastName,
+              Email: userExists.email,
               Account_Status: "3",
             };
             await zohoCrmService.addAccounts(
@@ -218,6 +220,7 @@ class WebHookController extends BaseController {
                         allTeen.childId.firstName +
                         " " +
                         allTeen.childId.lastName,
+                        Email: allTeen.childId.email,
                       Stack_Coins: admin.stackCoins,
                     };
                     await zohoCrmService.addAccounts(
@@ -299,6 +302,7 @@ class WebHookController extends BaseController {
                */
               let dataSentInCrm: any = {
                 Account_Name: userExists.firstName + " " + userExists.lastName,
+                Email: userExists.email,
                 Account_Status: "3",
               };
               await zohoCrmService.addAccounts(
@@ -406,6 +410,7 @@ class WebHookController extends BaseController {
                           allTeen.childId.firstName +
                           " " +
                           allTeen.childId.lastName,
+                        Email: allTeen.childId.email,
                         Stack_Coins: admin.stackCoins,
                       };
                       await zohoCrmService.addAccounts(
