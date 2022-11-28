@@ -210,15 +210,15 @@ class TradingService {
    * @description This method is used to unlink bank account
    * @param accessToken
    */
-  public async unlinkBankAction(accessToken: string) {
-    const removeBank: any = await unlinkBankAccount(accessToken);
-    console.log("removeBank: ", removeBank);
-
-    if (removeBank.status === 400) {
-      throw Error("Bank account already does not exist");
+  public async unlinkBankService(accessToken: string) {
+    /**
+     * plaid utility function to unlink bank
+     */
+    const unlinkBank: any = await unlinkBankAccount(accessToken);
+    if (unlinkBank.status === 400) {
+      throw Error("No bank account linked");
     }
-
-    return removeBank
+    return unlinkBank;
   }
 }
 

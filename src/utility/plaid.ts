@@ -208,7 +208,6 @@ export const unlinkBankAccount = async (accessToken: string) => {
     config.PLAID_ENV + PLAIDAPIS.unlinkBankAccount,
     request
   );
-  console.log("response: ", response);
 
   return {
     status: response.status,

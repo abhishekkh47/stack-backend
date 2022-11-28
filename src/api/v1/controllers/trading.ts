@@ -1,3 +1,4 @@
+import { EDEFAULTBANK } from "./../../../types/userBanks";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import envData from "../../../config/index";
@@ -3205,18 +3206,16 @@ class TradingController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/unlink-bank", method: HttpMethod.POST })
-  // @Auth()
+  @Auth()
   public async unlinkBank(ctx: any) {
     let user = ctx.request.user;
     const { bankId } = ctx.request.body;
-    console.log("bankId: ", bankId);
 
     const userBankExists = await UserBanksTable.findOne({
-      userId: new ObjectId("637c6c5e325824679a65d5fe"),
-      _id: new ObjectId(bankId),
-      isDefault: 1,
+      userId: user._id,
+      _id: bankId,
+      isDefault: EDEFAULTBANK.TRUE,
     });
-    console.log("userBankExists: ", userBankExists);
 
     if (!userBankExists) {
       return this.BadRequest(ctx, "Bank doesn't exist");
@@ -3226,15 +3225,16 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const bankRemoved = await tradingService.unlinkBankAction(
+          /**
+           * service to unlink bank
+           */
+          const isBankUnlinked = await tradingService.unlinkBankService(
             userBankExists.accessToken
           );
-          console.log("removeBank: ", bankRemoved);
 
-          if (bankRemoved.status == 200 && bankRemoved.data.request_id) {
-            const deleteBankInfo = await UserBanksTable.deleteOne({ _id: new ObjectId(bankId) });
-            console.log('deleteBankInfo: ', deleteBankInfo);
-            return this.Ok(ctx, { message: "successfully unlinked bank", deleteBankInfo });
+          if (isBankUnlinked.status == 200 && isBankUnlinked.data.request_id) {
+            await UserBanksTable.deleteOne({ _id: bankId });
+            return this.Ok(ctx, { message: "Bank unlinked successfully" });
           }
         }
       }
