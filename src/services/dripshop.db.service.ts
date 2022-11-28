@@ -18,7 +18,7 @@ class DripshopDBService {
   /**
    * @description get all drip shop data
    */
-  public async getDripshopQuery() {
+  public async getDripshopData() {
     const queryGet = [
       {
         $lookup: {

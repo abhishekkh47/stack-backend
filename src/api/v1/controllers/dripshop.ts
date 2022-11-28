@@ -13,11 +13,11 @@ class DripshopController extends BaseController {
    */
   @Route({ path: "/dripshops", method: HttpMethod.GET })
   @Auth()
-  public async getDripshopData(ctx: any) {
+  public async getDripshops(ctx: any) {
     /**
      * aggregate with crypto to get crypto image
      */
-    const allData = await DripshopDBService.getDripshopQuery();
+    const allData = await DripshopDBService.getDripshopData();
 
     return this.Ok(ctx, { data: allData });
   }
