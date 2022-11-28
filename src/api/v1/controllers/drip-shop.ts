@@ -1,7 +1,5 @@
-import { ObjectId } from "mongodb";
 import { UserTable } from "./../../../model/user";
 import { validation } from "./../../../validations/apiValidation";
-import { DripShopTable } from "./../../../model/dripShop";
 import BaseController from "./base";
 import { Route } from "../../../utility";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
@@ -15,7 +13,7 @@ class DripshopController extends BaseController {
    */
   @Route({ path: "/dripshops", method: HttpMethod.GET })
   @Auth()
-  public async getDripShopData(ctx: any) {
+  public async getDripshopData(ctx: any) {
     /**
      * aggregate with crypto to get crypto image
      */
@@ -53,7 +51,7 @@ class DripshopController extends BaseController {
           /**
            * get the drip shop information for specific drip shop id
            */
-          let dripShopData = await DripshopDBService.dripShopInfoForId(
+          let dripShopData = await DripshopDBService.dripshopInfoForId(
             reqParam.dripShopId
           );
 
@@ -66,7 +64,7 @@ class DripshopController extends BaseController {
           /**
            * internal transfer for redeeming crypto
            */
-          await DripshopDBService.internalTransforDripShop(
+          await DripshopDBService.internalTransforDripshop(
             userExists._id,
             userExists.type,
             dripShopData,

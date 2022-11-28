@@ -10,7 +10,7 @@ import {
 } from "../utility/prime-trust";
 import { ParentChildTable } from "../model/parentChild";
 import { ObjectId } from "mongodb";
-import { DripShopTable } from "../model/dripShop";
+import { DripshopTable } from "../model/dripShop";
 import envData from "../config/index";
 import moment from "moment";
 
@@ -53,7 +53,7 @@ class DripshopDBService {
         },
       },
     ];
-    let allData = await DripShopTable.aggregate(queryGet).exec();
+    let allData = await DripshopTable.aggregate(queryGet).exec();
 
     return allData;
   }
@@ -62,7 +62,7 @@ class DripshopDBService {
    * @description to get the drip shop info for id
    * @param dripShopId
    */
-  public async dripShopInfoForId(dripShopId: any) {
+  public async dripshopInfoForId(dripShopId: any) {
     /**
      * find the info for given dripshop id
      */
@@ -97,7 +97,7 @@ class DripshopDBService {
       },
     ];
 
-    let findDripShopData: any = await DripShopTable.aggregate(
+    let findDripShopData: any = await DripshopTable.aggregate(
       queryFindDripShop
     ).exec();
 
@@ -112,12 +112,14 @@ class DripshopDBService {
    * @param jwtToken
    * @param type
    */
-  public async internalTransforDripShop(
+  public async internalTransforDripshop(
     userId: any,
     type: number,
     dripShopInfo: any,
     jwtToken: string
   ) {
+    const { assetId, cryptoId, requiredFuels, cryptoName, cryptoToBeRedeemed } =
+      dripShopInfo;
     /**
      * get the account info to get account id
      */
@@ -140,10 +142,10 @@ class DripshopDBService {
         type: "quotes",
         attributes: {
           "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": dripShopInfo.assetId,
+          "asset-id": assetId,
           hot: true,
           "transaction-type": "buy",
-          total_amount: 10,
+          total_amount: cryptoToBeRedeemed,
         },
       },
     };
@@ -163,7 +165,7 @@ class DripshopDBService {
         type: "quotes",
         attributes: {
           "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": dripShopInfo.assetId,
+          "asset-id": assetId,
         },
       },
     };
@@ -188,10 +190,8 @@ class DripshopDBService {
           "unit-count": executeQuoteResponse.data.data.attributes["unit-count"],
           "from-account-id": envData.OPERATIONAL_ACCOUNT,
           "to-account-id": getAccountId.accountId,
-          "asset-id": dripShopInfo.assetId,
-          reference: `Redeemed $${10} ${
-            dripShopInfo.cryptoName
-          } for exchange of fuels`,
+          "asset-id": assetId,
+          reference: `Redeemed $${10} ${cryptoName} for exchange of fuels`,
           "hot-transfer": true,
         },
       },
@@ -215,11 +215,11 @@ class DripshopDBService {
       executedQuoteId: internalTransferResponse.data.data.id,
       unitCount: executeQuoteResponse.data.data.attributes["unit-count"],
       accountId: getAccountId.accountId,
-      amountMod: -dripShopInfo.cryptoToBeRedeemed,
-      amount: dripShopInfo.cryptoToBeRedeemed,
+      amountMod: -cryptoToBeRedeemed,
+      amount: cryptoToBeRedeemed,
       settledTime: moment().unix(),
-      cryptoId: dripShopInfo.cryptoId,
-      assetId: dripShopInfo.assetId,
+      cryptoId: cryptoId,
+      assetId: assetId,
       type: ETransactionType.BUY,
     });
 
@@ -231,16 +231,16 @@ class DripshopDBService {
       userType: type,
       message: NOTIFICATION.DRIP_SHOP_MESSAGE.replace(
         "{cryptoAmount}",
-        dripShopInfo.cryptoToBeRedeemed
+        cryptoToBeRedeemed
       )
-        .replace("{cryptoName}", dripShopInfo.cryptoName)
-        .replace("{fuelAmount}", dripShopInfo.requiredFuels),
+        .replace("{cryptoName}", cryptoName)
+        .replace("{fuelAmount}", requiredFuels),
       currencyType: null,
-      currencyValue: dripShopInfo.cryptoToBeRedeemed,
+      currencyValue: cryptoToBeRedeemed,
       action: EAction.BUY_CRYPTO,
       status: EStatus.PROCESSED,
-      cryptoId: dripShopInfo.cryptoId,
-      assetId: dripShopInfo.assetId,
+      cryptoId: cryptoId,
+      assetId: assetId,
     });
 
     return true;

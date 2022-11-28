@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { DripShopTable } from "./../../../model/dripShop";
+import { DripshopTable } from "./../../../model/dripShop";
 import {
   GIFTCARDS,
   NOTIFICATION,
@@ -472,7 +472,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-dripshop-offers", method: HttpMethod.POST })
-  public async addDripShop(ctx: any) {
+  public async addDripshop(ctx: any) {
     /**
      * get all the crypto and push in array to insert all together
      */
@@ -487,7 +487,7 @@ class ScriptController extends BaseController {
       };
     });
 
-    await DripShopTable.insertMany(dripShopData);
+    await DripshopTable.insertMany(dripShopData);
 
     return this.Ok(ctx, { message: "items added to drip shop" });
   }

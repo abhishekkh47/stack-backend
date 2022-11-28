@@ -76,21 +76,21 @@ class UserDBService {
    * @param dripShopData
    */
   public async getUpdateCoinQuery(userExists: any, dripShopData: any) {
+    const { requiredFuels } = dripShopData;
     let totalChildFuels = userExists.preLoadedCoins + userExists.quizCoins;
 
     let updatedCoinQuery: any = {};
     let updateParentCoinQuery: any = null;
 
-    if (totalChildFuels >= dripShopData.requiredFuels) {
+    if (totalChildFuels >= requiredFuels) {
       /**
        * once true check what to update preloaded or quiz coins or both
        */
-      if (userExists.preLoadedCoins >= dripShopData.requiredFuels) {
+      if (userExists.preLoadedCoins >= requiredFuels) {
         updatedCoinQuery = {
           ...updatedCoinQuery,
           $set: {
-            preLoadedCoins:
-              userExists.preLoadedCoins - dripShopData.requiredFuels,
+            preLoadedCoins: userExists.preLoadedCoins - requiredFuels,
           },
         };
       } else {
@@ -98,7 +98,7 @@ class UserDBService {
          * amountLeftAfterPreloaded - contains amount left after removal of preloaded coins from required fuels
          */
         let amountLeftAfterPreloaded =
-          dripShopData.requiredFuels - userExists.preLoadedCoins;
+          requiredFuels - userExists.preLoadedCoins;
 
         if (amountLeftAfterPreloaded <= userExists.quizCoins) {
           updatedCoinQuery = {
@@ -112,13 +112,12 @@ class UserDBService {
       }
     } else if (
       userExists.parentQuizCoins &&
-      totalChildFuels + userExists.parentQuizCoins >= dripShopData.requiredFuels
+      totalChildFuels + userExists.parentQuizCoins >= requiredFuels
     ) {
       /**
        * amountLeftAfterTotalChildCoins - amount left after removal of preloaded and quiz coins from fuels
        */
-      let amountLeftAfterTotalChildCoins =
-        dripShopData.requiredFuels - totalChildFuels;
+      let amountLeftAfterTotalChildCoins = requiredFuels - totalChildFuels;
 
       if (amountLeftAfterTotalChildCoins <= userExists.parentQuizCoins) {
         updatedCoinQuery = {

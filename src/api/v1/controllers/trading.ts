@@ -2662,7 +2662,7 @@ class TradingController extends BaseController {
               $and: [
                 { isDefault: 1 },
                 {
-                  userId: childId,
+                  userId: ctx.request.user._id,
                 },
               ],
             });
