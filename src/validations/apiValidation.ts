@@ -163,7 +163,7 @@ export const validation = {
     }
     return callback(true);
   },
-  unlinkBankAccountValidation: (req, res, callback) => {
+  unlinkBankValidation: (req, res, callback) => {
     const schema = Joi.object({
       bankId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
@@ -173,7 +173,7 @@ export const validation = {
     if (error) {
       return res.throw(
         400,
-        res.__(validationMessageKey("unlinkBankAccount", error))
+        res.__(validationMessageKey("unlinkBank", error))
       );
     }
     return callback(true);

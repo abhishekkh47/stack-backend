@@ -3205,25 +3205,36 @@ class TradingController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/unlink-bank", method: HttpMethod.POST })
-  @Auth()
+  // @Auth()
   public async unlinkBank(ctx: any) {
-    let user = ctx.request.user
-    const { bankId } = ctx.request.params;
+    let user = ctx.request.user;
+    const { bankId } = ctx.request.body;
+    console.log("bankId: ", bankId);
 
     const userBankExists = await UserBanksTable.findOne({
-      userId: new ObjectId(user._id),
-      bankId: bankId,
-      isDefault: 1
-    })
+      userId: new ObjectId("637c6c5e325824679a65d5fe"),
+      _id: new ObjectId(bankId),
+      isDefault: 1,
+    });
+    console.log("userBankExists: ", userBankExists);
 
-    if(!userBankExists) {
-      return this.BadRequest(ctx, "Bank doesn't exist")
+    if (!userBankExists) {
+      return this.BadRequest(ctx, "Bank doesn't exist");
     }
-    return validation.unlinkBankAccountValidation(
-      ctx.request.params,
+    return validation.unlinkBankValidation(
+      ctx.request.body,
       ctx,
       async (validate) => {
         if (validate) {
+          const bankRemoved = await tradingService.unlinkBankAction(
+            userBankExists.accessToken
+          );
+          console.log("removeBank: ", bankRemoved);
+
+          if (bankRemoved.status == 200 && bankRemoved.request_id) {
+            const deleteBankInfo = await UserBanksTable.deleteOne({ _id: new ObjectId(bankId) });
+            return this.Ok(ctx, { message: "successfully unlinked bank", deleteBankInfo });
+          }
         }
       }
     );
