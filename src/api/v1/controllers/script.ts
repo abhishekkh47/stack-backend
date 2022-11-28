@@ -1,3 +1,4 @@
+import { DripshopTable } from "../../../model/dripshop";
 import {
   GIFTCARDS,
   NOTIFICATION,
@@ -276,8 +277,8 @@ class ScriptController extends BaseController {
      */
     let allGiftCards: any = await getAllGiftCards(
       GIFTCARDS.page,
-      GIFTCARDS.limit,
-      );
+      GIFTCARDS.limit
+    );
 
     /**
      * to get already existing uuids
@@ -462,6 +463,72 @@ class ScriptController extends BaseController {
     return this.Ok(ctx, {
       data: allGiftCards,
     });
+  }
+
+  /**
+   * @description This method is used to add the cryptos in the drip shop
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/add-dripshop-offers", method: HttpMethod.POST })
+  public async addDripshop(ctx: any) {
+    /**
+     * get all the crypto and push in array to insert all together
+     */
+    const allCrypto = await CryptoTable.find();
+
+    let dripshopData = allCrypto.map((crypto) => {
+      return {
+        cryptoId: crypto._id,
+        assetId: crypto.assetId,
+        requiredFuels: 2000,
+        cryptoToBeRedeemed: 10,
+      };
+    });
+
+    await DripshopTable.insertMany(dripshopData);
+
+    return this.Ok(ctx, { message: "items added to drip shop" });
+  }
+
+  /**
+   * @description This method is used to add the total quiz coins to userTable
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/add-quiz-coins", method: HttpMethod.POST })
+  public async addQuizCoins(ctx: any) {
+    let allQuizCoinData = await QuizResult.aggregate([
+      {
+        $group: {
+          _id: "$userId",
+          sum: {
+            $sum: "$pointsEarned",
+          },
+        },
+      },
+      {
+        $project: {
+          sum: 1,
+        },
+      },
+    ]).exec();
+
+    let mainArray = allQuizCoinData.map((quizCoin) => {
+      return {
+        updateOne: {
+          filter: { _id: quizCoin._id },
+          update: {
+            $set: {
+              quizCoins: quizCoin.sum,
+            },
+          },
+        },
+      };
+    });
+
+    const updatedData = await UserTable.bulkWrite(mainArray);
+    return this.Ok(ctx, { message: "success", updatedData });
   }
 }
 

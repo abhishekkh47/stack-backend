@@ -100,6 +100,13 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     preLoadedCoins: { type: mongoose.Schema.Types.Number, default: 0 },
     /**
+     * number of quiz coins used by teen
+     */
+    quizCoins: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+    },
+    /**
      * 0 - not gifted and 1 - gifted
      */
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },

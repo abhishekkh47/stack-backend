@@ -1,6 +1,5 @@
 import moment from "moment";
 import { ObjectId } from "mongodb";
-import mongoose from "mongoose";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -16,7 +15,6 @@ import {
 } from "../../../model";
 import {
   PortfolioService,
-  quizService,
   tradingService,
   userService,
   zohoCrmService,
@@ -56,7 +54,6 @@ import {
   sendNotification,
   wireTransfer,
   getAssets,
-  getPrimeTrustJWTToken,
   getAssetTotalWithId,
 } from "../../../utility";
 import {
@@ -1646,6 +1643,7 @@ class TradingController extends BaseController {
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
           });
+
           if (!childExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
@@ -1661,6 +1659,7 @@ class TradingController extends BaseController {
               "preLoadedCoins",
               "isGiftedCrypto",
               "isParentFirst",
+              "quizCoins",
             ]);
             if (
               userExistsForQuiz &&
@@ -1680,6 +1679,7 @@ class TradingController extends BaseController {
               "preLoadedCoins",
               "isGiftedCrypto",
               "isParentFirst",
+              "quizCoins",
             ]);
             if (userExistsForQuiz && childExists.isParentFirst == true) {
               isTeenPending = true;
@@ -1734,7 +1734,7 @@ class TradingController extends BaseController {
                 ...baseFilter,
                 assetId: { $in: arrayOfIds },
               };
-              
+
           const portFolio = await TransactionTable.aggregate([
             {
               $match: matchRequest,
@@ -1866,29 +1866,16 @@ class TradingController extends BaseController {
               );
             });
           }
-          /**
-           * Get Quiz Stack Coins
-           */
-          const checkQuizExists = await quizService.checkQuizExists({
-            $or: [
-              { userId: new mongoose.Types.ObjectId(childExists._id) },
-              {
-                userId: userExistsForQuiz
-                  ? childExists.type == EUserType.PARENT ||
-                    childExists.type == EUserType.SELF
-                    ? new mongoose.Types.ObjectId(
-                        userExistsForQuiz.firstChildId._id
-                      )
-                    : new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
-                  : null,
-              },
-            ],
-          });
-          let stackCoins = 0;
-          if (checkQuizExists.length > 0) {
-            stackCoins = checkQuizExists[0].sum;
-          }
-          stackCoins = stackCoins + childExists.preLoadedCoins;
+
+          let childTotalCoins =
+            childExists.quizCoins + childExists.preLoadedCoins;
+
+          let stackCoins =
+            childExists.type === EUserType.SELF
+              ? childTotalCoins
+              : userExistsForQuiz && userExistsForQuiz.userId
+              ? userExistsForQuiz.userId.quizCoins + childTotalCoins
+              : childTotalCoins;
 
           if (
             childExists.type !== EUserType.SELF &&
@@ -2675,7 +2662,7 @@ class TradingController extends BaseController {
               $and: [
                 { isDefault: 1 },
                 {
-                  userId: childId,
+                  userId: ctx.request.user._id,
                 },
               ],
             });
