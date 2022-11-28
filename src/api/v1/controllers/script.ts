@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import { DripshopTable } from "./../../../model/dripShop";
+import { DripshopTable } from "../../../model/dripshop";
 import {
   GIFTCARDS,
   NOTIFICATION,
@@ -478,7 +477,7 @@ class ScriptController extends BaseController {
      */
     const allCrypto = await CryptoTable.find();
 
-    let dripShopData = allCrypto.map((crypto) => {
+    let dripshopData = allCrypto.map((crypto) => {
       return {
         cryptoId: crypto._id,
         assetId: crypto.assetId,
@@ -487,7 +486,7 @@ class ScriptController extends BaseController {
       };
     });
 
-    await DripshopTable.insertMany(dripShopData);
+    await DripshopTable.insertMany(dripshopData);
 
     return this.Ok(ctx, { message: "items added to drip shop" });
   }

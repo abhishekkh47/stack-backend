@@ -419,7 +419,7 @@ export const validation = {
       childId: Joi.string()
         .allow("")
         .regex(/^[0-9a-fA-F]{24}$/),
-        isMax: Joi.boolean()
+      isMax: Joi.boolean(),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
@@ -429,12 +429,16 @@ export const validation = {
   },
   nextDepositDateValidation: (req, res, callback) => {
     const schema = Joi.object({
-      userId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),
-     
+      userId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
     const { error } = schema.validate(req, { convert: false });
     if (error) {
-      return res.throw(400, res.__(validationMessageKey("nextDepositDate", error)));
+      return res.throw(
+        400,
+        res.__(validationMessageKey("nextDepositDate", error))
+      );
     }
     return callback(true);
   },
@@ -733,9 +737,9 @@ export const validation = {
   },
   redeemCryptoValidation: (req, res, callback) => {
     const schema = Joi.object({
-      dripShopId: Joi.string()
-      .regex(/^[0-9a-fA-F]{24}$/)
-      .required(),
+      dripshopId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
     });
     const { error } = schema.validate(req);
     if (error)
@@ -744,5 +748,5 @@ export const validation = {
         res.__(validationMessageKey("redeemCrypto", error))
       );
     return callback(true);
-  }
+  },
 };

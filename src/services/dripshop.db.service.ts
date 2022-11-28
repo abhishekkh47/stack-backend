@@ -10,7 +10,7 @@ import {
 } from "../utility/prime-trust";
 import { ParentChildTable } from "../model/parentChild";
 import { ObjectId } from "mongodb";
-import { DripshopTable } from "../model/dripShop";
+import { DripshopTable } from "../model/dripshop";
 import envData from "../config/index";
 import moment from "moment";
 
@@ -60,16 +60,16 @@ class DripshopDBService {
 
   /**
    * @description to get the drip shop info for id
-   * @param dripShopId
+   * @param dripshopId
    */
-  public async dripshopInfoForId(dripShopId: any) {
+  public async dripshopInfoForId(dripshopId: any) {
     /**
      * find the info for given dripshop id
      */
-    const queryFindDripShop = [
+    const queryFindDripshop = [
       {
         $match: {
-          _id: new ObjectId(dripShopId),
+          _id: new ObjectId(dripshopId),
         },
       },
       {
@@ -97,29 +97,29 @@ class DripshopDBService {
       },
     ];
 
-    let findDripShopData: any = await DripshopTable.aggregate(
-      queryFindDripShop
+    let findDripshopData: any = await DripshopTable.aggregate(
+      queryFindDripshop
     ).exec();
 
-    findDripShopData = findDripShopData.length > 0 ? findDripShopData[0] : [];
-    return findDripShopData;
+    findDripshopData = findDripshopData.length > 0 ? findDripshopData[0] : [];
+    return findDripshopData;
   }
 
   /**
    * @description to get internal transfer for drip shop
    * @param userId
-   * @param dripShopInfo
+   * @param dripshopInfo
    * @param jwtToken
    * @param type
    */
   public async internalTransforDripshop(
     userId: any,
     type: number,
-    dripShopInfo: any,
+    dripshopInfo: any,
     jwtToken: string
   ) {
     const { assetId, cryptoId, requiredFuels, cryptoName, cryptoToBeRedeemed } =
-      dripShopInfo;
+      dripshopInfo;
     /**
      * get the account info to get account id
      */
