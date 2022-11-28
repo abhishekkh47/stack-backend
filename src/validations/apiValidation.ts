@@ -163,6 +163,21 @@ export const validation = {
     }
     return callback(true);
   },
+  unlinkBankAccountValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      bankId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("unlinkBankAccount", error))
+      );
+    }
+    return callback(true);
+  },
   changeEmailValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
       email: Joi.string().email().required(),

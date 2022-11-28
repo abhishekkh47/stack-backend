@@ -3198,6 +3198,36 @@ class TradingController extends BaseController {
       }
     );
   }
+
+  /**
+   * @description this method is used to unlink bank account
+   * @params ctx
+   * @return {*}
+   */
+  @Route({ path: "/unlink-bank", method: HttpMethod.POST })
+  @Auth()
+  public async unlinkBank(ctx: any) {
+    let user = ctx.request.user
+    const { bankId } = ctx.request.params;
+
+    const userBankExists = await UserBanksTable.findOne({
+      userId: new ObjectId(user._id),
+      bankId: bankId,
+      isDefault: 1
+    })
+
+    if(!userBankExists) {
+      return this.BadRequest(ctx, "Bank doesn't exist")
+    }
+    return validation.unlinkBankAccountValidation(
+      ctx.request.params,
+      ctx,
+      async (validate) => {
+        if (validate) {
+        }
+      }
+    );
+  }
 }
 
 export default new TradingController();
