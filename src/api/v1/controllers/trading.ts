@@ -3231,8 +3231,9 @@ class TradingController extends BaseController {
           );
           console.log("removeBank: ", bankRemoved);
 
-          if (bankRemoved.status == 200 && bankRemoved.request_id) {
+          if (bankRemoved.status == 200 && bankRemoved.data.request_id) {
             const deleteBankInfo = await UserBanksTable.deleteOne({ _id: new ObjectId(bankId) });
+            console.log('deleteBankInfo: ', deleteBankInfo);
             return this.Ok(ctx, { message: "successfully unlinked bank", deleteBankInfo });
           }
         }
