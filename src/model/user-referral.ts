@@ -42,7 +42,7 @@ const schema = new mongoose.Schema<IUserReferralSchema>(
         receiverName: {
           type: mongoose.Schema.Types.String,
           required: true,
-        }
+        },
       },
     ],
   },

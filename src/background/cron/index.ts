@@ -5,7 +5,7 @@ import { historicalPriceHandler } from "./historical-price";
 import { recurringDepositHandler } from "./recurring-deposit";
 import { redeemGiftHandler } from "./redeem-gift";
 
-const isUAT = config.APP_ENVIRONMENT === "UAT"
+const isUAT = config.APP_ENVIRONMENT === "UAT";
 
 const JOBS = [
   {
@@ -44,10 +44,10 @@ const JOBS = [
     expression: "*/15 * * * *",
     func: redeemGiftHandler,
   },
-]
+];
 
 export const startCron = () => {
-  JOBS.forEach(job => {
+  JOBS.forEach((job) => {
     const { disabled, expression, func } = job;
     if (!disabled) {
       cron.schedule(expression, func);

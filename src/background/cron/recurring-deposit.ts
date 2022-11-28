@@ -22,13 +22,10 @@ import {
   messages,
   ERead,
 } from "../../types";
-import {
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-} from "../../utility/constants";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 
 export const recurringDepositHandler = async () => {
-  console.log('==========Start Cron For Recurring=============');
+  console.log("==========Start Cron For Recurring=============");
   let token = await getPrimeTrustJWTToken();
   let users: any = await UserTable.aggregate([
     {
@@ -83,9 +80,7 @@ export const recurringDepositHandler = async () => {
             ? user.self.userId
             : user.parentChild.userId,
       }).select("deviceToken");
-      let selectedDate = moment(user.selectedDepositDate)
-        .startOf("day")
-        .unix();
+      let selectedDate = moment(user.selectedDepositDate).startOf("day").unix();
       if (selectedDate <= todayDate) {
         const id =
           user.type == EUserType.SELF
@@ -220,4 +215,4 @@ export const recurringDepositHandler = async () => {
     return true;
   }
   return true;
-}
+};
