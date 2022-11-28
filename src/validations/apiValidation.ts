@@ -752,7 +752,7 @@ export const validation = {
   },
   redeemCryptoValidation: (req, res, callback) => {
     const schema = Joi.object({
-      dripShopId: Joi.string()
+      dripshopId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
     });

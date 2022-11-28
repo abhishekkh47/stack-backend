@@ -73,10 +73,10 @@ class UserDBService {
   /**
    * @description This service is used to update the fuels of user
    * @param userExists
-   * @param dripShopData
+   * @param dripshopData
    */
-  public async getUpdateCoinQuery(userExists: any, dripShopData: any) {
-    const { requiredFuels } = dripShopData;
+  public async getUpdateCoinQuery(userExists: any, dripshopData: any) {
+    const { requiredFuels } = dripshopData;
     let totalChildFuels = userExists.preLoadedCoins + userExists.quizCoins;
 
     let updatedCoinQuery: any = {};

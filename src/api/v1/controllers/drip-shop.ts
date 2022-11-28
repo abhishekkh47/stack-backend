@@ -51,15 +51,15 @@ class DripshopController extends BaseController {
           /**
            * get the drip shop information for specific drip shop id
            */
-          let dripShopData = await DripshopDBService.dripshopInfoForId(
-            reqParam.dripShopId
+          let dripshopData = await DripshopDBService.dripshopInfoForId(
+            reqParam.dripshopId
           );
 
           /**
            * service to update coins of user
            */
           const { updatedCoinQuery, updateParentCoinQuery } =
-            await UserDBService.getUpdateCoinQuery(userExists, dripShopData);
+            await UserDBService.getUpdateCoinQuery(userExists, dripshopData);
 
           /**
            * internal transfer for redeeming crypto
@@ -67,7 +67,7 @@ class DripshopController extends BaseController {
           await DripshopDBService.internalTransforDripshop(
             userExists._id,
             userExists.type,
-            dripShopData,
+            dripshopData,
             jwtToken
           );
           await UserTable.updateOne(

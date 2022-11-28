@@ -18,4 +18,4 @@ export * from "./deviceToken";
 export * from "./user-referral";
 export * from "./userBanks";
 export * from "./userGiftCard";
-export * from "./dripShop";
+export * from "./dripshop";
