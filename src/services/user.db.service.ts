@@ -1,8 +1,5 @@
-import { EDEFAULTBANK } from "./../types/userBanks";
-import { UserBanksTable } from "./../model/userBanks";
 import { ObjectId } from "mongodb";
 import { UserTable } from "./../model/user";
-import { EUserType } from "../types";
 
 class UserDBService {
   /**
@@ -141,49 +138,6 @@ class UserDBService {
     }
 
     return { updateParentCoinQuery, updatedCoinQuery };
-  }
-
-  /**
-   * @description This service is used to get the user info and user bank info
-   *  @param userId,
-   * @param bankId
-   */
-  public async getUserBankInfo(userId: any, bankId: any) {
-    const queryFindUserBank = [
-      {
-        $match: {
-          userId: userId,
-          _id: bankId,
-          isDefault: EDEFAULTBANK.TRUE,
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userInfo",
-        },
-      },
-      {
-        $unwind: { path: "$userInfo", preserveNullAndEmptyArrays: true },
-      },
-      {
-        $project: {
-          accessToken: 1,
-          userType: "$userInfo.type",
-        },
-      },
-    ];
-    let userBankExists: any = await UserBanksTable.aggregate(queryFindUserBank);
-
-    userBankExists = userBankExists.length > 0 ? userBankExists[0] : null;
-
-    if (userBankExists.userType === EUserType.TEEN) {
-      throw Error("Not authorised for teen");
-    }
-
-    return userBankExists;
   }
 }
 

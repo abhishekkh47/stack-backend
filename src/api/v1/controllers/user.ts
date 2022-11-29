@@ -537,7 +537,7 @@ class UserController extends BaseController {
         email: getUserType.parentEmail,
       });
     }
-    const userExists = await UserBanksTable.find({
+    const userBankExists = await UserBanksTable.find({
       $or: [
         { userId: parentId ? parentId : user._id },
         {
@@ -545,20 +545,21 @@ class UserController extends BaseController {
         },
       ],
     });
-    if (userExists) {
-      for await (let user of userExists) {
-        account = await getAccounts(user.accessToken);
+    if (userBankExists) {
+      for await (let userBank of userBankExists) {
+        account = await getAccounts(userBank.accessToken);
         array.push({
-          _id: user._id,
-          accessToken: user.accessToken,
-          isDefault: user.isDefault,
-          accounts: [
-            {
-              bankId: account.data.accounts[0].account_id,
-              bankAccountNo: account.data.accounts[0].mask,
-              bankName: account.data.accounts[0].name,
-            },
-          ],
+          _id: userBank._id,
+          accessToken: userBank.accessToken,
+          isDefault: userBank.isDefault,
+          accounts: account.data &&
+            account?.data?.accounts[0] && [
+              {
+                bankId: account.data.accounts[0].account_id,
+                bankAccountNo: account.data.accounts[0].mask,
+                bankName: account.data.accounts[0].name,
+              },
+            ],
         });
       }
       return this.Ok(ctx, { data: array });

@@ -1,4 +1,3 @@
-import { EDEFAULTBANK } from "./../../../types/userBanks";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import envData from "../../../config/index";
@@ -17,7 +16,7 @@ import {
 import {
   PortfolioService,
   tradingService,
-  UserDBService,
+  UserBankDBService,
   userService,
   zohoCrmService,
 } from "../../../services";
@@ -3212,15 +3211,13 @@ class TradingController extends BaseController {
     let user = ctx.request.user;
     const { bankId } = ctx.request.body;
     /**
-     * GET USER BANK INFO AND USER TYPE
+     * get user bank accessToken
      */
-    const userBankExists: any = await UserDBService.getUserBankInfo(
+    const accessToken: any = await UserBankDBService.getUserBankAccessToken(
       user._id,
       bankId
     );
-    if (!userBankExists) {
-      return this.BadRequest(ctx, "Bank doesn't exist");
-    }
+
     return validation.unlinkBankValidation(
       ctx.request.body,
       ctx,
@@ -3229,11 +3226,16 @@ class TradingController extends BaseController {
           /**
            * service to unlink bank
            */
+
           const isBankUnlinked = await tradingService.unlinkBankService(
-            userBankExists.accessToken
+            accessToken
           );
 
-          if (isBankUnlinked.status == 200 && isBankUnlinked.data.request_id) {
+          if (
+            isBankUnlinked.status == 200 &&
+            isBankUnlinked.data &&
+            isBankUnlinked.data.request_id
+          ) {
             await UserBanksTable.deleteOne({ _id: bankId });
             return this.Ok(ctx, { message: "Bank unlinked successfully" });
           }
