@@ -191,7 +191,7 @@ class DripshopDBService {
           "from-account-id": envData.OPERATIONAL_ACCOUNT,
           "to-account-id": getAccountId.accountId,
           "asset-id": assetId,
-          reference: `Redeemed $${10} ${cryptoName} for exchange of fuels`,
+          reference: `Redeemed $${cryptoToBeRedeemed} ${cryptoName} for exchange of fuels`,
           "hot-transfer": true,
         },
       },

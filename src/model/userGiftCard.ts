@@ -43,7 +43,7 @@ const schema = new mongoose.Schema<IUserGiftCardSchema>(
     recipient_phone: {
       type: mongoose.Schema.Types.String,
       required: false,
-      default: null
+      default: null,
     },
     /**
      * false - pending , true - reedemed

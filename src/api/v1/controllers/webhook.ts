@@ -230,10 +230,12 @@ class WebHookController extends BaseController {
               /**
                * for user referral
                */
-              await userService.getUserReferral(
-                getReferralSenderId.userId,
-                userExists.referralCode
-              );
+
+              getReferralSenderId &&
+                (await userService.getUserReferral(
+                  getReferralSenderId.userId,
+                  userExists.referralCode
+                ));
 
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = await checkAccountIdExists.teens.filter(
@@ -250,7 +252,7 @@ class WebHookController extends BaseController {
                         allTeen.childId.firstName +
                         " " +
                         allTeen.childId.lastName,
-                        Email: allTeen.childId.email,
+                      Email: allTeen.childId.email,
                       Stack_Coins: admin.stackCoins,
                     };
                     await zohoCrmService.addAccounts(
@@ -268,6 +270,7 @@ class WebHookController extends BaseController {
                 let dataSentInCrm: any = {
                   Account_Name:
                     userExists.firstName + " " + userExists.lastName,
+                  Email: userExists.email,
                   Stack_Coins: admin.stackCoins,
                 };
                 await zohoCrmService.addAccounts(
@@ -444,10 +447,11 @@ class WebHookController extends BaseController {
                 /**
                  * for user referral
                  */
-                await userService.getUserReferral(
-                  getReferralSenderId.userId,
-                  userExists.referralCode
-                );
+                getReferralSenderId &&
+                  (await userService.getUserReferral(
+                    getReferralSenderId.userId,
+                    userExists.referralCode
+                  ));
 
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(
@@ -482,6 +486,7 @@ class WebHookController extends BaseController {
                   let dataSentInCrm: any = {
                     Account_Name:
                       userExists.firstName + " " + userExists.lastName,
+                    Email: userExists.email,
                     Stack_Coins: admin.stackCoins,
                   };
                   await zohoCrmService.addAccounts(
@@ -588,7 +593,7 @@ class WebHookController extends BaseController {
                 Email: userExists.email,
                 Funded: true,
               };
-  
+
               await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
                 dataSentInCrm

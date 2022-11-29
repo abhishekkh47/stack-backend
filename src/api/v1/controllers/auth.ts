@@ -293,17 +293,6 @@ class AuthController extends BaseController {
 
           await SocialService.verifySocial(reqParam);
 
-          /**
-           * Refferal code present
-           */
-          if (reqParam.refferalCode) {
-            refferalCodeExists = await UserTable.findOne({
-              referralCode: reqParam.refferalCode,
-            });
-            if (!refferalCodeExists) {
-              return this.BadRequest(ctx, "Refferal Code Not Found");
-            }
-          }
           if (reqParam.type == EUserType.TEEN && childExists) {
             let updateQuery: any = {
               username: null,
@@ -559,7 +548,7 @@ class AuthController extends BaseController {
                 },
 
                 $inc: {
-                  preLoadedCoins: isGiftedStackCoins,
+                  preLoadedCoins: admin.stackCoins,
                 },
               },
               { new: true }
@@ -595,9 +584,19 @@ class AuthController extends BaseController {
           }
 
           /**
-           * add referral code number as well
+           * Refferal code present or not
            */
-          if (refferalCodeExists) {
+          if (reqParam.refferalCode) {
+            refferalCodeExists = await UserTable.findOne({
+              referralCode: reqParam.refferalCode,
+            });
+            if (!refferalCodeExists) {
+              return this.BadRequest(ctx, "Refferal Code Not Found");
+            }
+
+            /**
+             * add referral code number as well
+             */
             let senderName = refferalCodeExists.lastName
               ? refferalCodeExists.firstName + " " + refferalCodeExists.lastName
               : refferalCodeExists.firstName;
@@ -668,13 +667,7 @@ class AuthController extends BaseController {
             Birthday: user.dob,
             User_ID: user._id,
           };
-          if (isGiftedStackCoins > 0) {
-            dataSentInCrm = {
-              ...dataSentInCrm,
-              Stack_Coins: isGiftedStackCoins,
-            };
-          }
-          if (user.type == EUserType.PARENT) {
+          if (user.type == EUserType.PARENT || user.type == EUserType.SELF) {
             dataSentInCrm = {
               ...dataSentInCrm,
               Parent_Signup_Funnel: [
@@ -684,10 +677,12 @@ class AuthController extends BaseController {
                 PARENT_SIGNUP_FUNNEL.CHILD_INFO,
               ],
               Parent_Number: reqParam.mobile.replace("+", ""),
-              Teen_Number: reqParam.childMobile.replace("+", ""),
-              Teen_Name: reqParam.childLastName
-                ? reqParam.childFirstName + " " + reqParam.childLastName
-                : reqParam.childFirstName,
+              ...(user.type == EUserType.PARENT && {
+                Teen_Number: reqParam.childMobile.replace("+", ""),
+                Teen_Name: reqParam.childLastName
+                  ? reqParam.childFirstName + " " + reqParam.childLastName
+                  : reqParam.childFirstName,
+              }),
             };
           }
           if (user.type == EUserType.TEEN) {
@@ -705,6 +700,13 @@ class AuthController extends BaseController {
               Teen_Name: reqParam.lastName
                 ? reqParam.firstName + " " + reqParam.lastName
                 : reqParam.firstName,
+              Teen_Signup_Funnel: [
+                TEEN_SIGNUP_FUNNEL.SIGNUP,
+                TEEN_SIGNUP_FUNNEL.DOB,
+                TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+                TEEN_SIGNUP_FUNNEL.PARENT_INFO,
+                TEEN_SIGNUP_FUNNEL.SUCCESS,
+              ],
             };
           }
           await zohoCrmService.addAccounts(
@@ -1191,7 +1193,7 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           let migratedId;
-          let childAlready;
+          let childAlreadyExists;
           const otpExists = await OtpTable.findOne({
             receiverMobile: reqParam.mobile,
           }).sort({ createdAt: -1 });
@@ -1199,26 +1201,26 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "Mobile Number Not Found");
           }
           if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
-            childAlready = await UserTable.findOne({
+            childAlreadyExists = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
             const childInfo = await UserDraftTable.findOne({
               _id: reqParam._id,
             });
-            if (childAlready && childInfo) {
+            if (childAlreadyExists && childInfo) {
               const updateObject = {
                 email: childInfo.email,
                 dob: childInfo.dob,
                 type: childInfo.type,
                 mobile: reqParam.mobile,
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
-                firstName: childAlready.firstName
-                  ? childAlready.firstName
+                firstName: childAlreadyExists.firstName
+                  ? childAlreadyExists.firstName
                   : childInfo.firstName,
-                lastName: childAlready.lastName
-                  ? childAlready.lastName
+                lastName: childAlreadyExists.lastName
+                  ? childAlreadyExists.lastName
                   : childInfo.lastName,
-                referralCode: childAlready.referralCode,
+                referralCode: childAlreadyExists.referralCode,
               };
               await UserTable.findOneAndUpdate(
                 { mobile: reqParam.mobile },
@@ -1228,7 +1230,8 @@ class AuthController extends BaseController {
 
               let dataSentInCrm: any = {
                 Account_Name:
-                  childAlready.firstName + " " + childAlready.lastName,
+                childAlreadyExists.firstName + " " + childAlreadyExists.lastName,
+                Email: childAlreadyExists.email,
                 Teen_Signup_Funnel: [
                   TEEN_SIGNUP_FUNNEL.SIGNUP,
                   TEEN_SIGNUP_FUNNEL.DOB,
@@ -1248,7 +1251,7 @@ class AuthController extends BaseController {
                 { new: true }
               );
 
-              migratedId = childAlready ? childAlready._id : "";
+              migratedId = childAlreadyExists ? childAlreadyExists._id : "";
             } else {
               const createObject = {
                 email: childInfo.email,
@@ -1274,6 +1277,7 @@ class AuthController extends BaseController {
 
             let dataSentInCrm: any = {
               Account_Name: childInfo.firstName + " " + childInfo.lastName,
+              Email: childInfo.email,
               Teen_Signup_Funnel: [
                 TEEN_SIGNUP_FUNNEL.SIGNUP,
                 TEEN_SIGNUP_FUNNEL.DOB,
@@ -1312,27 +1316,44 @@ class AuthController extends BaseController {
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
           if (optVerfidied) {
-            childAlready = await UserTable.findOne({
+            childAlreadyExists = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
             const childInfo = await UserDraftTable.findOne({
               _id: reqParam._id,
             });
-            if (childAlready && childInfo) {
+            if (childAlreadyExists && childInfo) {
               const updateObject = {
                 email: childInfo.email,
                 dob: childInfo.dob,
                 type: childInfo.type,
                 mobile: reqParam.mobile,
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
-                firstName: childAlready.firstName
-                  ? childAlready.firstName
+                firstName: childAlreadyExists.firstName
+                  ? childAlreadyExists.firstName
                   : childInfo.firstName,
-                lastName: childAlready.lastName
-                  ? childAlready.lastName
+                lastName: childAlreadyExists.lastName
+                  ? childAlreadyExists.lastName
                   : childInfo.lastName,
-                referralCode: childAlready.referralCode,
+                referralCode: childAlreadyExists.referralCode,
               };
+
+              let dataSentInCrm: any = {
+                Account_Name:
+                childAlreadyExists.firstName + " " + childAlreadyExists.lastName,
+                Email: childAlreadyExists.email,
+                Teen_Signup_Funnel: [
+                  TEEN_SIGNUP_FUNNEL.SIGNUP,
+                  TEEN_SIGNUP_FUNNEL.DOB,
+                  TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+                ],
+              };
+
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+
               await UserDraftTable.deleteOne({
                 _id: reqParam._id,
               });
@@ -1342,7 +1363,7 @@ class AuthController extends BaseController {
                 { $set: updateObject },
                 { new: true }
               );
-              migratedId = childAlready ? childAlready._id : "";
+              migratedId = childAlreadyExists ? childAlreadyExists._id : "";
             } else {
               const createObject = {
                 email: childInfo.email,
@@ -1359,6 +1380,7 @@ class AuthController extends BaseController {
 
               let dataSentInCrm: any = {
                 Account_Name: childInfo.firstName + " " + childInfo.lastName,
+                Email: childInfo.email,
                 Teen_Signup_Funnel: [
                   TEEN_SIGNUP_FUNNEL.SIGNUP,
                   TEEN_SIGNUP_FUNNEL.DOB,

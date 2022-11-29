@@ -14,7 +14,7 @@ class zohoCrmService {
   ) {
     let mainData = {
       data: isArray ? dataCreateOrUpdateInZoho : [dataCreateOrUpdateInZoho],
-      duplicate_check_fields: ["Email"]
+      duplicate_check_fields: ["Email"],
     };
     const addedData = await addAccountInfoInZohoCrm(zohoAccessToken, mainData);
 
@@ -83,6 +83,7 @@ class zohoCrmService {
             ? checkParentExists.firstName + " " + checkParentExists.lastName
             : checkParentExists.firstName,
         },
+        Email: searchAccountTeen.Email,
         Teen_Signup_Funnel: [
           TEEN_SIGNUP_FUNNEL.SIGNUP,
           TEEN_SIGNUP_FUNNEL.DOB,
@@ -103,6 +104,7 @@ class zohoCrmService {
         TeenAccount: {
           id: searchAccountTeen.id,
         },
+        Email: checkParentExists.email,
         Parent_First: parentFirst,
         Parent_Signup_Funnel: [
           PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,

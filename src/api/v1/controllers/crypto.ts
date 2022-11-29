@@ -54,6 +54,7 @@ class CryptocurrencyController extends BaseController {
         query = { _id: { $eq: null } };
       }
     }
+    
     return this.Ok(ctx, {
       data: await CryptoTable.aggregate([
         {
