@@ -442,6 +442,7 @@ class QuizController extends BaseController {
               Account_Name: userExists.firstName + " " + userExists.lastName,
               Stack_Coins: stackCoins,
               Quiz_Information: quizDataAddInCrm,
+              Email: userExists.email,
             },
           ];
           if (isParentOrChild != 0) {
@@ -452,6 +453,7 @@ class QuizController extends BaseController {
                     " " +
                     userExistsForQuiz.userId.lastName,
                   Stack_Coins: stackCoins,
+                  Email: userExistsForQuiz.userId.email,
                 })
               : dataSentInCrm.push({
                   Account_Name:
@@ -459,6 +461,7 @@ class QuizController extends BaseController {
                     " " +
                     userExistsForQuiz.firstChildId.lastName,
                   Stack_Coins: stackCoins,
+                  Email: userExistsForQuiz.firstChildId.email,
                 });
           }
           await zohoCrmService.addAccounts(
