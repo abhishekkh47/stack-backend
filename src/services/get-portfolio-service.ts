@@ -93,6 +93,7 @@ class PortfolioService {
           as: "transactionData",
         },
       },
+
       {
         $project: {
           _id: 1,

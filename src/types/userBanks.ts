@@ -13,3 +13,8 @@ export enum EBankStatus {
   APPROVED = 2,
   PENDING = 1,
 }
+
+export enum EDEFAULTBANK {
+  TRUE = 1,
+  FALSE = 0,
+}

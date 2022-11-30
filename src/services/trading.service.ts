@@ -1,3 +1,4 @@
+import { unlinkBankAccount } from "./../utility/plaid";
 import { CryptoTable } from "./../model/crypto";
 import { ParentChildTable } from "./../model/parentChild";
 import { PLAID_ITEM_ERROR } from "../utility/constants";
@@ -203,6 +204,21 @@ class TradingService {
       internalTransferId: internalTransferResponse.data.data.id,
       accountId: getAccountId.accountId,
     };
+  }
+
+  /**
+   * @description This method is used to unlink bank account
+   * @param accessToken
+   */
+  public async unlinkBankService(accessToken: string) {
+    /**
+     * plaid utility function to unlink bank
+     */
+    const unlinkBank: any = await unlinkBankAccount(accessToken);
+    if (unlinkBank.status === 400) {
+      throw Error("No bank account linked");
+    }
+    return unlinkBank;
   }
 }
 

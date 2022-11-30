@@ -1,3 +1,4 @@
+
 "use strict";
 export const CONSTANT = Object.freeze({
   VerifyEmailTemplateId: "d-024fedc867e0407ab4971e642354168f",
@@ -51,6 +52,7 @@ export const PLAIDAPIS = {
   getAccounts: "accounts/get",
   getInstitutionById: "institutions/get_by_id",
   institutionsGetById: "institutions/get_by_id",
+  unlinkBankAccount: "/item/remove"
 };
 
 export const GIFTCARDAPIS = {

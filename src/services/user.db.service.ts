@@ -1,3 +1,4 @@
+import { ERECURRING } from "./../types/user";
 import { ObjectId } from "mongodb";
 import { UserTable } from "./../model/user";
 
@@ -138,6 +139,69 @@ class UserDBService {
     }
 
     return { updateParentCoinQuery, updatedCoinQuery };
+  }
+
+  /**
+   * @description This service is used to update all to no recurring
+   * @userId
+   */
+  public async updateUserRecurring(userId: any) {
+    let updateUserArray = [];
+    const queryFindAllTeen = [
+      {
+        $match: {
+          _id: new ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "parentchild",
+          localField: "_id",
+          foreignField: "userId",
+          as: "parentInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$parentInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          allTeens: {
+            $ifNull: ["$parentInfo.teens", null],
+          },
+        },
+      },
+    ];
+
+    let getAllTeens: any = await UserTable.aggregate(queryFindAllTeen);
+
+    getAllTeens = getAllTeens.length > 0 ? getAllTeens[0] : null;
+    updateUserArray.push(userId);
+    if (getAllTeens.allTeens.length > 0) {
+      await getAllTeens.allTeens.map((obj) => {
+        updateUserArray.push(obj.childId.toString());
+      });
+    }
+
+    await UserTable.updateMany(
+      {
+        _id: {
+          $in: updateUserArray,
+        },
+      },
+      {
+        $set: {
+          isRecurring: ERECURRING.NO_BANK,
+          selectedDepositDate: null,
+          selectedDeposit: null,
+        },
+      }
+    );
+
+    return true;
   }
 }
 

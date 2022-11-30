@@ -99,13 +99,14 @@ class UserController extends BaseController {
     if (!ctx.request.query.deviceType) {
       return this.BadRequest(ctx, "Please enter device type");
     }
-    let parentExists = await ParentChildTable.findOne({
+
+    let userBankExists = await UserBanksTable.findOne({
       userId: userExists._id,
     });
     const linkToken: any = await getLinkToken(
       userExists,
-      parentExists && parentExists.accessToken
-        ? parentExists.accessToken
+      userBankExists && userBankExists.accessToken
+        ? userBankExists.accessToken
         : null,
       ctx.request.query.deviceType
     );
@@ -538,7 +539,7 @@ class UserController extends BaseController {
         email: getUserType.parentEmail,
       });
     }
-    const userExists = await UserBanksTable.find({
+    const userBankExists = await UserBanksTable.find({
       $or: [
         { userId: parentId ? parentId : user._id },
         {
@@ -546,20 +547,21 @@ class UserController extends BaseController {
         },
       ],
     });
-    if (userExists) {
-      for await (let user of userExists) {
-        account = await getAccounts(user.accessToken);
+    if (userBankExists) {
+      for await (let userBank of userBankExists) {
+        account = await getAccounts(userBank.accessToken);
         array.push({
-          _id: user._id,
-          accessToken: user.accessToken,
-          isDefault: user.isDefault,
-          accounts: [
-            {
-              bankId: account.data.accounts[0].account_id,
-              bankAccountNo: account.data.accounts[0].mask,
-              bankName: account.data.accounts[0].name,
-            },
-          ],
+          _id: userBank._id,
+          accessToken: userBank.accessToken,
+          isDefault: userBank.isDefault,
+          accounts: account.data &&
+            account?.data?.accounts[0] && [
+              {
+                bankId: account.data.accounts[0].account_id,
+                bankAccountNo: account.data.accounts[0].mask,
+                bankName: account.data.accounts[0].name,
+              },
+            ],
         });
       }
       return this.Ok(ctx, { data: array });

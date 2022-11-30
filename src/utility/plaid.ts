@@ -191,3 +191,26 @@ export const institutionsGetByIdRequest = async (institutionId: string) => {
     });
   return response;
 };
+
+/**
+ * @description THis api is used to unlink bank account
+ * @params accessToken
+ * @returns {*}
+ */
+export const unlinkBankAccount = async (accessToken: string) => {
+  const request = {
+    client_id: config.PLAID_CLIENT_ID,
+    secret: config.PLAID_SECRET,
+    access_token: accessToken,
+  };
+
+  const response: any = await axios.post(
+    config.PLAID_ENV + PLAIDAPIS.unlinkBankAccount,
+    request
+  );
+
+  return {
+    status: response.status,
+    data: response.data,
+  };
+};

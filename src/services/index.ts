@@ -11,3 +11,4 @@ export { default as userService } from "./user.service";
 export { default as tradingService } from "./trading.service";
 export { default as DripshopDBService } from "./dripshop.db.service";
 export { default as UserDBService } from "./user.db.service";
+export { default as UserBankDBService } from "./userbank.db.service";
