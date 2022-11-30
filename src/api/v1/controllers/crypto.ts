@@ -157,14 +157,8 @@ class CryptocurrencyController extends BaseController {
           name: "Cash",
           symbol: "USD",
           image: CASH_USD_ICON,
-          isRecurring:
-            userExists.isRecurring == ERECURRING.WEEKLY ||
-            userExists.isRecurring == ERECURRING.MONTLY ||
-            userExists.isRecurring == ERECURRING.DAILY
-              ? userExists.isRecurring
-              : parentChild.accessToken
-              ? 1
-              : 0,
+        
+          isRecurring: userExists.isRecurring,
           selectedDeposit: userExists.selectedDeposit,
         },
       });

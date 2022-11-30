@@ -17,6 +17,7 @@ import {
   PortfolioService,
   tradingService,
   UserBankDBService,
+  UserDBService,
   userService,
   zohoCrmService,
 } from "../../../services";
@@ -134,19 +135,9 @@ class TradingController extends BaseController {
           }
 
           // to be commented code need to check once :
-          const parentDetails: any = await ParentChildTable.findOneAndUpdate(
-            {
-              _id: parent._id,
-            },
-            {
-              $set: {
-                processorToken: processToken.data.processor_token,
-                accessToken: publicTokenExchange.data.access_token,
-                institutionId: reqParam.institutionId,
-              },
-            },
-            { new: true }
-          );
+          const parentDetails: any = await ParentChildTable.findOne({
+            _id: parent._id,
+          });
           await UserTable.updateOne(
             {
               _id: userExists._id,
@@ -2067,11 +2058,11 @@ class TradingController extends BaseController {
   @Auth()
   public async getAccountsFromPlaid(ctx: any) {
     const user = ctx.request.user;
-    const parentExists = await ParentChildTable.findOne({ userId: user._id });
-    if (!parentExists) {
-      return this.BadRequest(ctx, "User Details Not Found");
+    const userBankExists = await UserBanksTable.findOne({userId: user._id})
+    if (!userBankExists) {
+      return this.BadRequest(ctx, "User Bank Details Not Found");
     }
-    let getAccountDetails: any = await getAccounts(parentExists.accessToken);
+    let getAccountDetails: any = await getAccounts(userBankExists.accessToken);
     if (getAccountDetails.status == 400) {
       return this.BadRequest(
         ctx,
@@ -2080,9 +2071,9 @@ class TradingController extends BaseController {
           : PLAID_ITEM_ERROR
       );
     }
-    if (parentExists.institutionId) {
+    if (userBankExists.insId) {
       const logo: any = await institutionsGetByIdRequest(
-        parentExists.institutionId
+        userBankExists.insId
       );
       if (logo.status === 200) {
         getAccountDetails.data.accounts.forEach((current) => {
@@ -3237,6 +3228,10 @@ class TradingController extends BaseController {
             isBankUnlinked.data.request_id
           ) {
             await UserBanksTable.deleteOne({ _id: bankId });
+            /**
+             * upgrade recurring to no bank added
+             */
+            await UserDBService.updateUserRecurring(user._id);
             return this.Ok(ctx, { message: "Bank unlinked successfully" });
           }
         }

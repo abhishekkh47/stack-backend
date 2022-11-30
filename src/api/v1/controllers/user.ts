@@ -99,13 +99,14 @@ class UserController extends BaseController {
     if (!ctx.request.query.deviceType) {
       return this.BadRequest(ctx, "Please enter device type");
     }
-    let parentExists = await ParentChildTable.findOne({
+
+    let userBankExists = await UserBanksTable.findOne({
       userId: userExists._id,
     });
     const linkToken: any = await getLinkToken(
       userExists,
-      parentExists && parentExists.accessToken
-        ? parentExists.accessToken
+      userBankExists && userBankExists.accessToken
+        ? userBankExists.accessToken
         : null,
       ctx.request.query.deviceType
     );
