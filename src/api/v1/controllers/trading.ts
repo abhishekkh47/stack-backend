@@ -1641,81 +1641,58 @@ class TradingController extends BaseController {
           if (!childExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
-          let userExistsForQuiz = null;
+          let parentChild;
           if (
             childExists.type == EUserType.PARENT ||
             childExists.type == EUserType.SELF
           ) {
-            userExistsForQuiz = await ParentChildTable.findOne({
+            parentChild = await ParentChildTable.findOne({
               userId: childExists._id,
             }).populate("firstChildId", [
               "_id",
-              "preLoadedCoins",
-              "isGiftedCrypto",
               "isParentFirst",
-              "quizCoins",
+            ]).populate("userId", [
+              "_id",
+              "status",
             ]);
-            if (
-              userExistsForQuiz &&
-              userExistsForQuiz.firstChildId.isParentFirst == true
-            ) {
+            if (parentChild?.firstChildId.isParentFirst == true) {
               isTeenPending = true;
             }
           } else {
-            userExistsForQuiz = await ParentChildTable.findOne({
-              teens: {
-                $elemMatch: {
-                  childId: childExists._id,
-                },
-              },
+            parentChild = await ParentChildTable.findOne({
+              "teens.childId": childExists._id,
             }).populate("userId", [
               "_id",
-              "preLoadedCoins",
-              "isGiftedCrypto",
-              "isParentFirst",
               "quizCoins",
+              "status",
             ]);
-            if (userExistsForQuiz && childExists.isParentFirst == true) {
+            if (parentChild && childExists.isParentFirst == true) {
               isTeenPending = true;
             }
           }
 
           const rootAccount =
-            childExists.type == EUserType.SELF
-              ? userExistsForQuiz
-              : userExistsForQuiz &&
-                userExistsForQuiz.teens.find(
-                  (x) => x.childId.toString() == reqParam.childId
-                );
+            childExists.type == EUserType.SELF ? parentChild :
+              parentChild?.teens?.find(
+                (x) => x.childId.toString() == reqParam.childId
+              );
           const arrayOfIds =
             rootAccount?.accountId &&
-            (await PortfolioService.getResentPricePorfolio(
+            (await PortfolioService.getRecentPricePorfolio(
               jwtToken,
               rootAccount.accountId
             ));
-          let parent: any = await ParentChildTable.findOne({
-            $or: [
-              {
-                "teens.childId": childExists._id,
-              },
-              {
-                userId: childExists._id,
-              },
-            ],
-          }).populate("userId", ["status"]);
 
-          let userBankExists =
-            parent &&
-            (await UserBanksTable.find({
-              userId: parent.userId._id,
-              isDefault: 1,
-            }));
+          let userBankExists = parentChild && (await UserBanksTable.find({
+            userId: parentChild.userId._id,
+            isDefault: 1,
+          }));
+
+          const isParentKycVerified = parentChild?.userId?.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
 
           const isKidBeforeParent =
             childExists.type !== EUserType.SELF &&
-            (!parent ||
-              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
-              userBankExists.length === 0);
+            (!isParentKycVerified || userBankExists.length === 0);
 
           let baseFilter = {
             userId: new ObjectId(childExists._id),
@@ -1867,15 +1844,11 @@ class TradingController extends BaseController {
           let stackCoins =
             childExists.type === EUserType.SELF
               ? childTotalCoins
-              : userExistsForQuiz && userExistsForQuiz.userId
-              ? userExistsForQuiz.userId.quizCoins + childTotalCoins
-              : childTotalCoins;
+              : parentChild?.userId
+                ? parentChild.userId.quizCoins + childTotalCoins
+                : childTotalCoins;
 
-          if (
-            childExists.type !== EUserType.SELF &&
-            (!parent ||
-              parent.userId.status != EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-          ) {
+          if (childExists.type !== EUserType.SELF && !isParentKycVerified) {
             intialBalance = totalIntAmount;
             if (childExists.isGiftedCrypto == 1) {
               let totalValueForInvestment =
@@ -1906,8 +1879,8 @@ class TradingController extends BaseController {
           }
           const accountIdDetails =
             childExists.type == EUserType.SELF
-              ? parent
-              : await parent.teens.find(
+              ? parentChild
+              : await parentChild.teens.find(
                   (x: any) => x.childId.toString() == childExists._id.toString()
                 );
 
@@ -1925,11 +1898,10 @@ class TradingController extends BaseController {
             return this.BadRequest(ctx, fetchBalance.message);
           }
           const balance = fetchBalance.data.data[0].attributes.disbursable;
-          const pending =
-            fetchBalance.data.data[0].attributes["pending-transfer"];
+          const pending = fetchBalance.data.data[0].attributes["pending-transfer"];
           totalStackValue = totalStackValue + balance;
 
-          let transactionData = await TransactionTable.aggregate([
+          let pendingInitialDepositTxList = await TransactionTable.aggregate([
             {
               $match: {
                 userId: childExists._id,
@@ -1953,13 +1925,11 @@ class TradingController extends BaseController {
               },
             },
           ]).exec();
-          if (transactionData.length > 0) {
-            intialBalance = transactionData[0].sum;
-            totalStackValue =
-              parent &&
-              parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                ? totalStackValue
-                : totalStackValue + transactionData[0].sum;
+          if (pendingInitialDepositTxList.length > 0) {
+            intialBalance = pendingInitialDepositTxList[0].sum;
+            totalStackValue = isParentKycVerified
+              ? totalStackValue
+              : totalStackValue + pendingInitialDepositTxList[0].sum;
           }
           let otherPendingActivity = await TransactionTable.aggregate([
             {
@@ -1987,11 +1957,9 @@ class TradingController extends BaseController {
           ]).exec();
           if (otherPendingActivity.length > 0) {
             intialBalance = intialBalance + otherPendingActivity[0].sum;
-            totalStackValue =
-              parent &&
-              parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                ? totalStackValue
-                : totalStackValue + otherPendingActivity[0].sum;
+            totalStackValue = isParentKycVerified
+              ? totalStackValue
+              : totalStackValue + otherPendingActivity[0].sum;
           }
           let clearedDeposit = await TransactionTable.findOne({
             userId: childExists._id,
@@ -2005,6 +1973,7 @@ class TradingController extends BaseController {
           if (isTeenPending) {
             totalValue = totalValue - 5;
           }
+
           return this.Ok(ctx, {
             data: {
               portFolio,
@@ -2012,32 +1981,15 @@ class TradingController extends BaseController {
               stackCoins,
               totalGainLoss,
               balance:
-                childExists.type == EUserType.SELF
-                  ? parent &&
-                    parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                    ? balance > 0
-                      ? balance
-                      : clearedDeposit
-                      ? balance
-                      : intialBalance
-                    : intialBalance
-                  : parent &&
-                    parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                  ? balance > 0
-                    ? balance
-                    : clearedDeposit
-                    ? balance
-                    : intialBalance
-                  : intialBalance,
-              parentStatus: parent.userId.status,
+                (isParentKycVerified && (balance > 0 || clearedDeposit)) ? balance : intialBalance,
+              parentStatus: parentChild?.userId?.status,
               pendingBalance: pending,
               intialBalance: intialBalance,
               totalAmountInvested: totalValue,
               // 0 - SKIP , 1 - PENDIGN 2 - DEPOSIT AVAILNA
               isDeposit:
-                parent &&
-                parent.userId.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                  ? transactionData.length > 0
+                isParentKycVerified
+                  ? pendingInitialDepositTxList.length > 0
                     ? 1
                     : clearedDeposit
                     ? 2

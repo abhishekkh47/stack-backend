@@ -292,7 +292,7 @@ class PortfolioService {
     });
   }
 
-  public async getResentPricePorfolio(jwtToken, accountId) {
+  public async getRecentPricePorfolio(jwtToken, accountId) {
     const getIds: any = await getAssetTotals(jwtToken, accountId);
     let arrayId = [];
     for await (let crypto of getIds?.data?.data) {
