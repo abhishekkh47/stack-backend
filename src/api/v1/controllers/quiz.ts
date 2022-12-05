@@ -384,6 +384,7 @@ class QuizController extends BaseController {
               "isParentFirst",
               "firstName",
               "lastName",
+              "email",
             ]);
             isParentOrChild = userExistsForQuiz ? 1 : 0;
             preLoadedCoins = userExistsForQuiz
@@ -391,7 +392,12 @@ class QuizController extends BaseController {
               : 0;
           } else {
             userExistsForQuiz = await ParentChildTable.findOne({
-              firstChildId: userExists._id,
+              $or: [
+                { firstChildId: userExists._id },
+                {
+                  "teens.childId": userExists._id,
+                },
+              ],
             }).populate("userId", [
               "_id",
               "preLoadedCoins",
@@ -399,6 +405,7 @@ class QuizController extends BaseController {
               "lastName",
               "isGiftedCrypto",
               "isParentFirst",
+              "email",
             ]);
             isParentOrChild = userExistsForQuiz ? 2 : 0;
             preLoadedCoins = userExistsForQuiz ? userExists.preLoadedCoins : 0;
