@@ -1,3 +1,4 @@
+import tradingDbService from "@app/services/trading.db.service";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import envData from "../../../config/index";
@@ -1082,7 +1083,7 @@ class TradingController extends BaseController {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
-    return validation.buyCryptoValidation(reqParam, ctx, async (validate) => {
+    return validation.buyCryptoValidation(reqParam, ctx, async () => {
       const { amount, cryptoId } = reqParam;
       const crypto = await CryptoTable.findById({ _id: cryptoId });
       if (!crypto) return this.NotFound(ctx, "Crypto Not Found");
@@ -1625,7 +1626,6 @@ class TradingController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async getPortfolio(ctx: any) {
-    const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
     return validation.getPortFolioValidation(
@@ -1633,7 +1633,6 @@ class TradingController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          let isTeenPending = false;
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
           });
@@ -1641,24 +1640,16 @@ class TradingController extends BaseController {
           if (!childExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
+
+          if (childExists.type == EUserType.PARENT) {
+            return this.BadRequest(ctx, "Should be SELF or TEEN");
+          }
+
           let parentChild;
-          if (
-            childExists.type == EUserType.PARENT ||
-            childExists.type == EUserType.SELF
-          ) {
-            parentChild = await ParentChildTable.findOne({
-              userId: childExists._id,
-            }).populate("firstChildId", [
-              "_id",
-              "isParentFirst",
-            ]).populate("userId", [
-              "_id",
-              "status",
-            ]);
-            if (parentChild?.firstChildId.isParentFirst == true) {
-              isTeenPending = true;
-            }
-          } else {
+          let isTeenPending = false;
+          const isTeen = childExists.type === EUserType.TEEN
+
+          if (isTeen) {
             parentChild = await ParentChildTable.findOne({
               "teens.childId": childExists._id,
             }).populate("userId", [
@@ -1669,14 +1660,20 @@ class TradingController extends BaseController {
             if (parentChild && childExists.isParentFirst == true) {
               isTeenPending = true;
             }
+          } else {
+            parentChild = await ParentChildTable.findOne({
+              "userId": childExists._id,
+            });
           }
 
-          const rootAccount =
-            childExists.type == EUserType.SELF ? parentChild :
-              parentChild?.teens?.find(
-                (x) => x.childId.toString() == reqParam.childId
-              );
-          const arrayOfIds =
+          const rootAccount = !isTeen ? parentChild : parentChild?.teens?.find(
+            (x) => x.childId.toString() == reqParam.childId
+          );
+          if (!rootAccount) {
+            return this.BadRequest(ctx, "Account Details Not Found");
+          }
+
+          const cryptoIds =
             rootAccount?.accountId &&
             (await PortfolioService.getRecentPricePorfolio(
               jwtToken,
@@ -1684,312 +1681,94 @@ class TradingController extends BaseController {
             ));
 
           let userBankExists = parentChild && (await UserBanksTable.find({
-            userId: parentChild.userId._id,
+            userId: isTeen ? parentChild.userId._id : childExists._id,
             isDefault: 1,
           }));
 
           const isParentKycVerified = parentChild?.userId?.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+          const isKidBeforeParent = isTeen && (!isParentKycVerified || userBankExists.length === 0);
 
-          const isKidBeforeParent =
-            childExists.type !== EUserType.SELF &&
-            (!isParentKycVerified || userBankExists.length === 0);
+          const portfolioTransactions = await tradingDbService.getPortfolioTransactions(
+            childExists._id,
+            isKidBeforeParent,
+            cryptoIds,
+          );
 
-          let baseFilter = {
-            userId: new ObjectId(childExists._id),
-            type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
-          };
-
-          const matchRequest = isKidBeforeParent
-            ? baseFilter
-            : {
-                ...baseFilter,
-                assetId: { $in: arrayOfIds },
-              };
-
-          const portFolio = await TransactionTable.aggregate([
-            {
-              $match: matchRequest,
-            },
-            {
-              $group: {
-                _id: "$cryptoId",
-                status: {
-                  $first: "$status",
-                },
-                cryptoId: {
-                  $first: "$cryptoId",
-                },
-                type: {
-                  $first: "$type",
-                },
-                totalSum: {
-                  $sum: "$unitCount",
-                },
-                totalAmount: {
-                  $sum: "$amount",
-                },
-                totalAmountMod: {
-                  $sum: "$amountMod",
-                },
-              },
-            },
-            {
-              $redact: {
-                $cond: {
-                  if: {
-                    $gt: ["$totalSum", 0],
-                  },
-                  then: "$$KEEP",
-                  else: {
-                    $cond: {
-                      if: {
-                        $eq: ["$status", 3],
-                      },
-                      then: "$$KEEP",
-                      else: "$$PRUNE",
-                    },
-                  },
-                },
-              },
-            },
-            {
-              $lookup: {
-                from: "cryptos",
-                localField: "cryptoId",
-                foreignField: "_id",
-                as: "cryptoData",
-              },
-            },
-            {
-              $unwind: {
-                path: "$cryptoData",
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $lookup: {
-                from: "cryptoprices",
-                localField: "cryptoId",
-                foreignField: "cryptoId",
-                as: "currentPriceDetails",
-              },
-            },
-            {
-              $unwind: {
-                path: "$currentPriceDetails",
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $addFields: {
-                value: {
-                  $multiply: ["$currentPriceDetails.currentPrice", "$totalSum"],
-                },
-              },
-            },
-            {
-              $addFields: {
-                totalGainLoss: {
-                  $add: ["$value", "$totalAmountMod"],
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 1,
-                cryptoId: 1,
-                status: 1,
-                totalSum: 1,
-                type: 1,
-                totalAmount: 1,
-                totalAmountMod: 1,
-                cryptoData: 1,
-                currentPrice: "$currentPriceDetails.currentPrice",
-                value: {
-                  $cond: {
-                    if: {
-                      $eq: ["$value", 0],
-                    },
-                    then: "$totalAmount",
-                    else: "$value",
-                  },
-                },
-                investedValue: { $abs: "$totalAmountMod" },
-                totalGainLoss: { $round: ["$totalGainLoss", 2] },
-              },
-            },
-          ]).exec();
-
+          // if price didn't change any all, totalStackValue and totalSpentAmount would have been same
+          // (if we don't consider cash balance)
+          // Note: this totalSpentAmount includes the $5 bonus to the teens
           let totalStackValue: any = 0;
+          let totalSpentAmount = 0;
           let totalGainLoss: any = 0;
-          let intialBalance = 0;
-          let totalIntAmount = 0;
-          if (portFolio.length > 0) {
-            portFolio.map((data) => {
+          let pendingInitialDepositAmount = 0;
+          if (portfolioTransactions.length > 0) {
+            portfolioTransactions.forEach((data) => {
               totalStackValue = parseFloat(
                 parseFloat(totalStackValue + data.value).toFixed(2)
+              );
+              totalSpentAmount = parseFloat(
+                parseFloat(data.totalAmount).toFixed(2)
               );
               totalGainLoss = parseFloat(
                 parseFloat(totalGainLoss + data.totalGainLoss).toFixed(2)
               );
-              totalIntAmount = parseFloat(
-                parseFloat(data.totalAmount).toFixed(2)
-              );
             });
           }
 
-          let childTotalCoins =
-            childExists.quizCoins + childExists.preLoadedCoins;
+          const childTotalCoins = childExists.quizCoins + childExists.preLoadedCoins;
+          const stackCoins = isTeen ? (parentChild?.userId?.quizCoins || 0) + childTotalCoins : childTotalCoins
 
-          let stackCoins =
-            childExists.type === EUserType.SELF
-              ? childTotalCoins
-              : parentChild?.userId
-                ? parentChild.userId.quizCoins + childTotalCoins
-                : childTotalCoins;
-
-          if (childExists.type !== EUserType.SELF && !isParentKycVerified) {
-            intialBalance = totalIntAmount;
-            if (childExists.isGiftedCrypto == 1) {
-              let totalValueForInvestment =
-                totalGainLoss > 0
-                  ? totalStackValue - totalGainLoss
-                  : totalStackValue + Math.abs(totalGainLoss);
-              if (isTeenPending) {
-                totalValueForInvestment = totalValueForInvestment - 5;
-              }
-              return this.Ok(ctx, {
-                data: {
-                  portFolio: portFolio || [],
-                  totalStackValue,
-                  stackCoins,
-                  totalGainLoss,
-                  balance: 0,
-                  pendingBalance: intialBalance,
-                  parentStatus: null,
-                  intialBalance: 0,
-                  totalAmountInvested: totalValueForInvestment,
-                  isDeposit: 0,
-                  isTeenPending,
-                },
-              });
-            } else {
-              return this.BadRequest(ctx, "Invalid User");
-            }
-          }
-          const accountIdDetails =
-            childExists.type == EUserType.SELF
-              ? parentChild
-              : await parentChild.teens.find(
-                  (x: any) => x.childId.toString() == childExists._id.toString()
-                );
-
-          if (!accountIdDetails) {
-            return this.BadRequest(ctx, "Account Details Not Found");
+          if (isTeen && !isParentKycVerified) {
+            return this.Ok(ctx, {
+              data: {
+                portFolio: portfolioTransactions || [],
+                totalStackValue,
+                stackCoins,
+                totalGainLoss,
+                balance: 0,
+                parentStatus: null,
+                totalAmountInvested: totalSpentAmount,
+                isDeposit: 0,
+                isTeenPending,
+              },
+            });
           }
           /**
-           * Fetch Balance
+           * Fetch Cash Balance
            */
-          const fetchBalance: any = await getBalance(
-            jwtToken,
-            accountIdDetails.accountId
-          );
-          if (fetchBalance.status == 400) {
-            return this.BadRequest(ctx, fetchBalance.message);
+          const balanceInfo: any = await getBalance(jwtToken, rootAccount.accountId);
+          if (balanceInfo.status == 400) {
+            return this.BadRequest(ctx, balanceInfo.message);
           }
-          const balance = fetchBalance.data.data[0].attributes.disbursable;
-          const pending = fetchBalance.data.data[0].attributes["pending-transfer"];
+          const balance = balanceInfo.data.data[0].attributes.disbursable;
           totalStackValue = totalStackValue + balance;
 
-          let pendingInitialDepositTxList = await TransactionTable.aggregate([
-            {
-              $match: {
-                userId: childExists._id,
-                type: ETransactionType.DEPOSIT,
-                intialDeposit: true,
-                status: ETransactionStatus.PENDING,
-              },
-            },
-            {
-              $group: {
-                _id: 0,
-                sum: {
-                  $sum: "$amount",
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                sum: 1,
-              },
-            },
-          ]).exec();
-          if (pendingInitialDepositTxList.length > 0) {
-            intialBalance = pendingInitialDepositTxList[0].sum;
-            totalStackValue = isParentKycVerified
-              ? totalStackValue
-              : totalStackValue + pendingInitialDepositTxList[0].sum;
-          }
-          let otherPendingActivity = await TransactionTable.aggregate([
-            {
-              $match: {
-                userId: childExists._id,
-                type: ETransactionType.DEPOSIT,
-                intialDeposit: false,
-                status: ETransactionStatus.PENDING,
-              },
-            },
-            {
-              $group: {
-                _id: 0,
-                sum: {
-                  $sum: "$amount",
-                },
-              },
-            },
-            {
-              $project: {
-                _id: 0,
-                sum: 1,
-              },
-            },
-          ]).exec();
-          if (otherPendingActivity.length > 0) {
-            intialBalance = intialBalance + otherPendingActivity[0].sum;
-            totalStackValue = isParentKycVerified
-              ? totalStackValue
-              : totalStackValue + otherPendingActivity[0].sum;
+          const pendingInitialDeposit = await tradingDbService.getPendingInitialDeposit(childExists._id)
+          if (pendingInitialDeposit.length > 0) {
+            // if initial deposit is pending, we add it to totalStackValue
+            pendingInitialDepositAmount = pendingInitialDeposit[0].sum;
+            totalStackValue = totalStackValue + pendingInitialDeposit[0].sum;
           }
           let clearedDeposit = await TransactionTable.findOne({
             userId: childExists._id,
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
-          let totalValue =
-            totalGainLoss > 0
-              ? totalStackValue - totalGainLoss
-              : totalStackValue + Math.abs(totalGainLoss);
-          if (isTeenPending) {
-            totalValue = totalValue - 5;
-          }
 
           return this.Ok(ctx, {
             data: {
-              portFolio,
+              portFolio: portfolioTransactions,
               totalStackValue,
               stackCoins,
               totalGainLoss,
               balance:
-                (isParentKycVerified && (balance > 0 || clearedDeposit)) ? balance : intialBalance,
+                (isParentKycVerified && (balance > 0 || clearedDeposit)) ? balance : pendingInitialDepositAmount,
               parentStatus: parentChild?.userId?.status,
-              pendingBalance: pending,
-              intialBalance: intialBalance,
-              totalAmountInvested: totalValue,
+              totalAmountInvested: totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),
               // 0 - SKIP , 1 - PENDIGN 2 - DEPOSIT AVAILNA
               isDeposit:
                 isParentKycVerified
-                  ? pendingInitialDepositTxList.length > 0
+                  ? pendingInitialDeposit.length > 0
                     ? 1
                     : clearedDeposit
                     ? 2

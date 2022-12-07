@@ -96,7 +96,9 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     isAcknowledged: { type: mongoose.Schema.Types.Number, default: null },
     /**
-     * 0 coins by default and if top waitlist user, you will get 250 coins.
+     * Rewarded coin value, i.e;
+     * Coins that we reward to signed up users or other users can gift
+     * you will get 1000 coins by signing up.
      */
     preLoadedCoins: { type: mongoose.Schema.Types.Number, default: 0 },
     /**
@@ -111,7 +113,9 @@ const schema = new mongoose.Schema<IUserSchema>(
      */
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
     /**
-     * 0 - not gifted , 1 - gifted and 2 - gifted with pt
+     * 0 - not gifted(won't happen at all) , 1 - gifted and 2 - gifted with pt
+     * isGiftedCrypto = 1, which means $5 is stored in DB, not in PT
+     * isGiftedCrypto = 2, it will be in DB and PT 
      */
     isGiftedCrypto: { type: mongoose.Schema.Types.Number, default: 0 },
     referralCode: { type: mongoose.Schema.Types.String, default: null },

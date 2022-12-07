@@ -1,0 +1,169 @@
+import { ObjectId } from "mongodb";
+import { TransactionTable } from "../model";
+import { ETransactionType, ETransactionStatus } from "../types";
+
+class TradingDBService {
+  // pull all the crypto(fiat excluded) transactions from db
+  public async getPortfolioTransactions(childId: string, isKidBeforeParent: boolean, cryptoIds: string[]): Promise<any[]> {
+    let baseFilter = {
+      userId: new ObjectId(childId),
+      type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
+    };
+
+    // If parent hasn't completed KYC and bank setup yet, we just show $5 onboarding reward for the teen
+    // so we pull it from the transaction table, not from PT cryptoIds.
+    const matchRequest = isKidBeforeParent
+      ? baseFilter
+      : {
+        ...baseFilter,
+        assetId: { $in: cryptoIds },
+      };
+
+    const portfolioTransactions = await TransactionTable.aggregate([
+      {
+        $match: matchRequest,
+      },
+      {
+        $group: {
+          _id: "$cryptoId",
+          status: {
+            $first: "$status",
+          },
+          cryptoId: {
+            $first: "$cryptoId",
+          },
+          type: {
+            $first: "$type",
+          },
+          totalSum: {
+            $sum: "$unitCount",
+          },
+          totalAmount: {
+            $sum: "$amount",
+          },
+          totalAmountMod: {
+            $sum: "$amountMod",
+          },
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $gt: ["$totalSum", 0],
+            },
+            then: "$$KEEP",
+            else: {
+              $cond: {
+                if: {
+                  $eq: ["$status", 3],
+                },
+                then: "$$KEEP",
+                else: "$$PRUNE",
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "cryptos",
+          localField: "cryptoId",
+          foreignField: "_id",
+          as: "cryptoData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$cryptoData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "cryptoprices",
+          localField: "cryptoId",
+          foreignField: "cryptoId",
+          as: "currentPriceDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$currentPriceDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          value: {
+            $multiply: ["$currentPriceDetails.currentPrice", "$totalSum"],
+          },
+        },
+      },
+      {
+        $addFields: {
+          totalGainLoss: {
+            $add: ["$value", "$totalAmountMod"],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          cryptoId: 1,
+          status: 1,
+          totalSum: 1,
+          type: 1,
+          totalAmount: 1,
+          totalAmountMod: 1,
+          cryptoData: 1,
+          currentPrice: "$currentPriceDetails.currentPrice",
+          value: {
+            $cond: {
+              if: {
+                $eq: ["$value", 0],
+              },
+              then: "$totalAmount",
+              else: "$value",
+            },
+          },
+          investedValue: { $abs: "$totalAmountMod" },
+          totalGainLoss: { $round: ["$totalGainLoss", 2] },
+        },
+      },
+    ]).exec();
+
+    return portfolioTransactions
+  }
+
+  // pull all the crypto(fiat excluded) transactions from db
+  public async getPendingInitialDeposit(childId: string): Promise<any[]> {
+    let pendingInitialDeposit = await TransactionTable.aggregate([
+      {
+        $match: {
+          userId: childId,
+          type: ETransactionType.DEPOSIT,
+          intialDeposit: true,
+          status: ETransactionStatus.PENDING,
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          sum: {
+            $sum: "$amount",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sum: 1,
+        },
+      },
+    ]).exec();
+    return pendingInitialDeposit
+  }
+}
+
+export default new TradingDBService();
