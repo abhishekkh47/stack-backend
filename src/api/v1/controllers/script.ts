@@ -530,6 +530,22 @@ class ScriptController extends BaseController {
     const updatedData = await UserTable.bulkWrite(mainArray);
     return this.Ok(ctx, { message: "success", updatedData });
   }
+
+  /**
+   * 1 get user detail
+   * quiz detail
+   * parentchild relation
+   */
+
+  /**
+   * @description This method is used to sunc db and Zoho CRM data
+   * @param ctx
+   * @return  {*}
+   */
+  @Route({ path: "/update-crm", method: HttpMethod.POST })
+  public async updateCrmData(ctx: any) {
+    const userData = await UserTable.aggregate([{ $lookup: {} }]);
+  }
 }
 
 export default new ScriptController();

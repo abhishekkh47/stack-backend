@@ -1230,7 +1230,9 @@ class AuthController extends BaseController {
 
               let dataSentInCrm: any = {
                 Account_Name:
-                childAlreadyExists.firstName + " " + childAlreadyExists.lastName,
+                  childAlreadyExists.firstName +
+                  " " +
+                  childAlreadyExists.lastName,
                 Email: childAlreadyExists.email,
                 Teen_Signup_Funnel: [
                   TEEN_SIGNUP_FUNNEL.SIGNUP,
@@ -1340,7 +1342,9 @@ class AuthController extends BaseController {
 
               let dataSentInCrm: any = {
                 Account_Name:
-                childAlreadyExists.firstName + " " + childAlreadyExists.lastName,
+                  childAlreadyExists.firstName +
+                  " " +
+                  childAlreadyExists.lastName,
                 Email: childAlreadyExists.email,
                 Teen_Signup_Funnel: [
                   TEEN_SIGNUP_FUNNEL.SIGNUP,
@@ -2167,7 +2171,8 @@ class AuthController extends BaseController {
           try {
             const { email, deviceToken } = reqParam;
             let userExists = await UserTable.findOne({ email });
-            if (!userExists) {
+            let userDraftExists = await UserDraftTable.findOne({ email });
+            if (!userExists && !userDraftExists) {
               await SocialService.verifySocial(reqParam);
               const uniqueReferralCode = await makeUniqueReferalCode();
               let createQuery: any = {
