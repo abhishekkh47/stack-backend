@@ -1,8 +1,11 @@
+import { ESCREENSTATUS } from './../../../types/user';
 import { DripshopTable } from "../../../model/dripshop";
 import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
+  TEEN_SIGNUP_FUNNEL,
 } from "./../../../utility/constants";
 import moment from "moment";
 import { PrimeTrustJWT } from "../../../middleware";
@@ -29,6 +32,7 @@ import {
   EStatus,
   ETransactionStatus,
   ETransactionType,
+  EUSERSTATUS,
   EUserType,
   HttpMethod,
 } from "../../../types";
@@ -544,8 +548,168 @@ class ScriptController extends BaseController {
    */
   @Route({ path: "/update-crm", method: HttpMethod.POST })
   public async updateCrmData(ctx: any) {
-    const userData = await UserTable.aggregate([{ $lookup: {} }]);
+    let getUserData = [];
+    let dataSentInCrm = []
+    const userData = await UserTable.aggregate([
+      {
+        $lookup: {
+          from: "quizresults",
+          localField: "_id",
+          foreignField: "userId",
+          as: "quizData",
+        },
+      },
+      {
+        $lookup: {
+          from: "parentchild",
+          let: {
+            id: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ["$userId", "$$id"] },
+                    { $eq: ["$teens.childId", "$$id"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "accountInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$accountInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          let: {
+            childId: "$accountInfo.firstChildId",
+            userId: "$accountInfo.userId",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ["$_id", "$$childId"] },
+                    { $eq: ["$_id", "$$userId"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "childInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$childInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ]).exec();
+    userData.map((user) => {
+      let quizDataAddInCrm =
+        user.quizData.length > 0 &&
+        user.quizData.map((res, index) => {
+          return {
+            Quiz_Number: index + 1,
+
+            Points: res.pointsEarned,
+          };
+        });
+      if (user.email) {
+        if (user.type == EUserType.PARENT || user.type == EUserType.SELF) {
+          dataSentInCrm.push({
+            Account_Name: user.firstName + user.lastName,
+            First_Name: user.firstName,
+            Last_Name: user.lastName,
+            Account_Type:
+              user.type == EUserType.PARENT
+                ? "Parent"
+                : user.type == EUserType.SELF
+                ? "Self"
+                : "Teen",
+            Birthday: user.dob,
+            Mobile: user.mobile,
+            Email: user.email,
+            Parent_Signup_Funnel: user.status ==
+              EUSERSTATUS.KYC_DOCUMENT_VERIFIED && [
+              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+              PARENT_SIGNUP_FUNNEL.DOB,
+              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+              PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+              PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+              PARENT_SIGNUP_FUNNEL.ADD_BANK,
+              PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
+              PARENT_SIGNUP_FUNNEL.SUCCESS,
+            ],
+            User_ID: user._id.toString(),
+            Account_Status: user.status,
+            Parent_First: user.isParentFirst,
+            TeenAccount:
+              user.type == EUserType.PARENT && user.childInfo
+                ? user.childInfo.firstName + " " + user.childInfo.lastName
+                : null,
+            Stack_coins: user.preLoadedCoins + user.quizCoins,
+            Teen_Name:
+              user.type == EUserType.PARENT && user.childInfo
+                ? user.childInfo.firstName + " " + user.childInfo.lastName
+                : null,
+            Teen_Number:
+              user.type == EUserType.PARENT && user.childInfo
+                ? user.childInfo.mobile
+                : null,
+            Quiz_Information: quizDataAddInCrm,
+          });
+        } else {
+          console.log("user.accountInfo  :>> ", user);
+          dataSentInCrm.push({
+            Account_Name: user.firstName + user.lastName,
+            First_Name: user.firstName,
+            Last_Name: user.lastName,
+            Account_Type: "Teen",
+            Birthday: user.dob,
+            Mobile: user.mobile,
+            Email: user.email,
+            Teen_Signup_Funnel: user.screenstatus ==
+              ESCREENSTATUS.SUCCESS_TEEN && [
+              TEEN_SIGNUP_FUNNEL.SIGNUP,
+              TEEN_SIGNUP_FUNNEL.DOB,
+              TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+              TEEN_SIGNUP_FUNNEL.PARENT_INFO,
+              TEEN_SIGNUP_FUNNEL.SUCCESS,
+            ],
+            User_ID: user._id.toString(),
+            Account_Status: user.status,
+            Stack_coins: user.preLoadedCoins + user.quizCoins,
+            Parent_Name:
+              user.childInfo &&
+              user.childInfo.firstName + " " + user.childInfo.lastName,
+            Parent_Number: user.parentMobile,
+            Parent_Account:
+              user.childInfo &&
+              user.childInfo.firstName + " " + user.childInfo.lastName,
+            Quiz_Information: quizDataAddInCrm,
+          });
+        }
+      }
+    });
+    // await zohoCrmService.addAccounts(
+    //   ctx.request.zohoAccessToken,
+    //   dataSentInCrm
+    // );
+
+    return this.Ok(ctx, { message: "Success", dataSentInCrm });
   }
+  
 }
 
 export default new ScriptController();
