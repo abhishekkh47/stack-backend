@@ -1,4 +1,4 @@
-import tradingDbService from "@app/services/trading.db.service";
+import tradingDbService from "../../../services/trading.db.service";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import envData from "../../../config/index";
