@@ -1,3 +1,4 @@
+import { ESCREENSTATUS } from "./../../../types/user";
 import { DripshopTable } from "../../../model/dripshop";
 import {
   GIFTCARDS,
@@ -7,7 +8,6 @@ import {
 import moment from "moment";
 import { PrimeTrustJWT } from "../../../middleware";
 import {
-  AdminTable,
   CryptoPriceTable,
   CryptoTable,
   DeviceToken,
@@ -33,7 +33,6 @@ import {
   HttpMethod,
 } from "../../../types";
 import {
-  countGiftCards,
   getAllGiftCards,
   getAssets,
   getHistoricalDataOfCoins,
@@ -42,6 +41,7 @@ import {
   sendNotification,
 } from "../../../utility";
 import BaseController from "./base";
+import { UserDBService, zohoCrmService } from "../../../services";
 
 class ScriptController extends BaseController {
   /**
@@ -529,6 +529,42 @@ class ScriptController extends BaseController {
 
     const updatedData = await UserTable.bulkWrite(mainArray);
     return this.Ok(ctx, { message: "success", updatedData });
+  }
+
+  /**
+   * 1 get user detail
+   * quiz detail
+   * parentchild relation
+   */
+
+  /**
+   * @description This method is used to sunc db and Zoho CRM data
+   * @param ctx
+   * @return  {*}
+   */
+  @Route({ path: "/add-userdata-to-crm", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
+  public async addUserDataToCrm(ctx: any) {
+    /**
+     * service to find all info of users
+     */
+    let allUsersInfo = await UserDBService.getAllUsersInfo();
+
+    /**
+     * service to get the user data to add in crm
+     */
+    let dataSentInCrm = await zohoCrmService.getDataSentToCrm(allUsersInfo);
+
+    /**
+     * add account to zoho crm
+     */
+    await zohoCrmService.addAccounts(
+      ctx.request.zohoAccessToken,
+      dataSentInCrm,
+      true
+    );
+
+    return this.Ok(ctx, { message: "Success", dataSentInCrm });
   }
 }
 

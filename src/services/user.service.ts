@@ -1,4 +1,3 @@
-import { referralArray } from "./../types/user-referral";
 import { EUserType, EUSERSTATUS } from "./../types/user";
 import {
   DeviceToken,

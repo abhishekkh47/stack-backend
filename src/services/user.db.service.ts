@@ -143,7 +143,7 @@ class UserDBService {
 
   /**
    * @description This service is used to update all to no recurring
-   * @userId
+   * @param userId
    */
   public async updateUserRecurring(userId: any) {
     let updateUserArray = [];
@@ -202,6 +202,104 @@ class UserDBService {
     );
 
     return true;
+  }
+
+  /**
+   * @description This service is used to find all information of a user and it's linked accounts
+   */
+  public async getAllUsersInfo() {
+    const queryFindAllUsersInfo = [
+      {
+        $lookup: {
+          from: "quizresults",
+          localField: "_id",
+          foreignField: "userId",
+          as: "quizData",
+        },
+      },
+      {
+        $lookup: {
+          from: "parentchild",
+          let: {
+            id: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $eq: ["$userId", "$$id"],
+                    },
+                    {
+                      $in: ["$$id", "$teens.childId"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "accountInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$accountInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          let: {
+            childId: "$accountInfo.firstChildId",
+            userId: "$accountInfo.userId",
+            type: "$type",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [
+                        {
+                          $eq: ["$_id", "$$childId"],
+                        },
+                        {
+                          $eq: [2, "$$type"],
+                        },
+                      ],
+                    },
+                    {
+                      $and: [
+                        {
+                          $eq: ["$_id", "$$userId"],
+                        },
+                        {
+                          $eq: [1, "$$type"],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "parentChildInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$parentChildInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ];
+
+    let allUserData = await UserTable.aggregate(queryFindAllUsersInfo).exec();
+
+    return allUserData;
   }
 }
 

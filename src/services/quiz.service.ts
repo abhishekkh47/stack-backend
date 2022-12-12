@@ -1,7 +1,6 @@
-import { CryptoTable, QuizResult, TransactionTable } from "../model";
-import { ETransactionType } from "../types";
+import { QuizResult } from "../model";
 
-class getQuizService {
+class QuizService {
   public async checkQuizExists(matchedCondition: any) {
     const quizExists = await QuizResult.aggregate([
       {
@@ -24,6 +23,21 @@ class getQuizService {
     ]).exec();
     return quizExists.length > 0 ? quizExists : [];
   }
+
+  /**
+   * @description give an array of all the quiz played
+   */
+  public async getQuizInfoOfUser(quizData: any) {
+    let quizDataToAddInCrm = quizData.map((res, index) => {
+      return {
+        Quiz_Number: index + 1,
+
+        Points: res.pointsEarned,
+      };
+    });
+
+    return quizDataToAddInCrm;
+  }
 }
 
-export default new getQuizService();
+export default new QuizService();
