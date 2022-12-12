@@ -1666,18 +1666,15 @@ class TradingController extends BaseController {
             });
           }
 
-          const primeTrustInfo = !isTeen ? parentChild : parentChild?.teens?.find(
+          const primetrustInfo = !isTeen ? parentChild : parentChild?.teens?.find(
             (x) => x.childId.toString() == reqParam.childId
           );
-          if (!primeTrustInfo) {
-            return this.BadRequest(ctx, "Account Details Not Found");
-          }
 
           const cryptoIds =
-            primeTrustInfo?.accountId &&
+            primetrustInfo?.accountId &&
             (await PortfolioService.getRecentPricePorfolio(
               jwtToken,
-              primeTrustInfo.accountId
+              primetrustInfo.accountId
             ));
 
           let userBankIfExists = parentChild && (await UserBanksTable.find({
@@ -1734,10 +1731,14 @@ class TradingController extends BaseController {
               },
             });
           }
+
+          if (!primetrustInfo) {
+            return this.BadRequest(ctx, "Account Details Not Found");
+          }
           /**
            * Fetch Cash Balance
            */
-          const balanceInfo: any = await getBalance(jwtToken, primeTrustInfo.accountId);
+          const balanceInfo: any = await getBalance(jwtToken, primetrustInfo.accountId);
           if (balanceInfo.status == 400) {
             return this.BadRequest(ctx, balanceInfo.message);
           }
