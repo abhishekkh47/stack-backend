@@ -1666,29 +1666,29 @@ class TradingController extends BaseController {
             });
           }
 
-          const rootAccount = !isTeen ? parentChild : parentChild?.teens?.find(
+          const primeTrustInfo = !isTeen ? parentChild : parentChild?.teens?.find(
             (x) => x.childId.toString() == reqParam.childId
           );
-          if (!rootAccount) {
+          if (!primeTrustInfo) {
             return this.BadRequest(ctx, "Account Details Not Found");
           }
 
           const cryptoIds =
-            rootAccount?.accountId &&
+            primeTrustInfo?.accountId &&
             (await PortfolioService.getRecentPricePorfolio(
               jwtToken,
-              rootAccount.accountId
+              primeTrustInfo.accountId
             ));
 
-          let userBankExists = parentChild && (await UserBanksTable.find({
+          let userBankIfExists = parentChild && (await UserBanksTable.find({
             userId: isTeen ? parentChild.userId._id : childExists._id,
             isDefault: 1,
           }));
 
           const isParentKycVerified = parentChild?.userId?.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-          const isKidBeforeParent = isTeen && (!isParentKycVerified || userBankExists.length === 0);
+          const isKidBeforeParent = isTeen && (!isParentKycVerified || userBankIfExists.length === 0);
 
-          const portfolioTransactions = await tradingDbService.getPortfolioTransactions(
+          const buySellTransactions = await tradingDbService.getPortfolioTransactions(
             childExists._id,
             isKidBeforeParent,
             cryptoIds,
@@ -1701,8 +1701,8 @@ class TradingController extends BaseController {
           let totalSpentAmount = 0;
           let totalGainLoss: any = 0;
           let pendingInitialDepositAmount = 0;
-          if (portfolioTransactions.length > 0) {
-            portfolioTransactions.forEach((data) => {
+          if (buySellTransactions.length > 0) {
+            buySellTransactions.forEach((data) => {
               totalStackValue = parseFloat(
                 parseFloat(totalStackValue + data.value).toFixed(2)
               );
@@ -1715,19 +1715,20 @@ class TradingController extends BaseController {
             });
           }
 
-          const childTotalCoins = childExists.quizCoins + childExists.preLoadedCoins;
-          const stackCoins = isTeen ? (parentChild?.userId?.quizCoins || 0) + childTotalCoins : childTotalCoins
+          const myOwnCoins = childExists.quizCoins + childExists.preLoadedCoins;
+          const totalCoins = isTeen ? (parentChild?.userId?.quizCoins || 0) + myOwnCoins : myOwnCoins
 
           if (isTeen && !isParentKycVerified) {
             return this.Ok(ctx, {
               data: {
-                portFolio: portfolioTransactions || [],
+                portFolio: buySellTransactions || [],
                 totalStackValue,
-                stackCoins,
+                stackCoins: totalCoins,
                 totalGainLoss,
                 balance: 0,
                 parentStatus: null,
                 totalAmountInvested: totalSpentAmount,
+                intialBalance: 0,
                 isDeposit: 0,
                 isTeenPending,
               },
@@ -1736,12 +1737,12 @@ class TradingController extends BaseController {
           /**
            * Fetch Cash Balance
            */
-          const balanceInfo: any = await getBalance(jwtToken, rootAccount.accountId);
+          const balanceInfo: any = await getBalance(jwtToken, primeTrustInfo.accountId);
           if (balanceInfo.status == 400) {
             return this.BadRequest(ctx, balanceInfo.message);
           }
-          const balance = balanceInfo.data.data[0].attributes.disbursable;
-          totalStackValue = totalStackValue + balance;
+          const cashBalance = balanceInfo.data.data[0].attributes.disbursable;
+          totalStackValue = totalStackValue + cashBalance;
 
           const pendingInitialDeposit = await tradingDbService.getPendingInitialDeposit(childExists._id)
           if (pendingInitialDeposit.length > 0) {
@@ -1749,7 +1750,7 @@ class TradingController extends BaseController {
             pendingInitialDepositAmount = pendingInitialDeposit[0].sum;
             totalStackValue = totalStackValue + pendingInitialDeposit[0].sum;
           }
-          let clearedDeposit = await TransactionTable.findOne({
+          let hasClearedDeposit = await TransactionTable.findOne({
             userId: childExists._id,
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
@@ -1757,20 +1758,21 @@ class TradingController extends BaseController {
 
           return this.Ok(ctx, {
             data: {
-              portFolio: portfolioTransactions,
+              portFolio: buySellTransactions,
               totalStackValue,
-              stackCoins,
+              stackCoins: totalCoins,
               totalGainLoss,
               balance:
-                (isParentKycVerified && (balance > 0 || clearedDeposit)) ? balance : pendingInitialDepositAmount,
+                (isParentKycVerified && hasClearedDeposit) ? cashBalance : pendingInitialDepositAmount,
               parentStatus: parentChild?.userId?.status,
               totalAmountInvested: totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),
+              intialBalance: pendingInitialDepositAmount,
               // 0 - SKIP , 1 - PENDIGN 2 - DEPOSIT AVAILNA
               isDeposit:
                 isParentKycVerified
                   ? pendingInitialDeposit.length > 0
                     ? 1
-                    : clearedDeposit
+                    : hasClearedDeposit
                     ? 2
                     : 0
                   : 0,
