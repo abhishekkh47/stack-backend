@@ -1647,28 +1647,26 @@ class TradingController extends BaseController {
 
           let parentChild;
           let isTeenPending = false;
-          const isTeen = childExists.type === EUserType.TEEN
+          const isTeen = childExists.type === EUserType.TEEN;
 
           if (isTeen) {
             parentChild = await ParentChildTable.findOne({
               "teens.childId": childExists._id,
-            }).populate("userId", [
-              "_id",
-              "quizCoins",
-              "status",
-            ]);
+            }).populate("userId", ["_id", "quizCoins", "status"]);
             if (parentChild && childExists.isParentFirst == true) {
               isTeenPending = true;
             }
           } else {
             parentChild = await ParentChildTable.findOne({
-              "userId": childExists._id,
-            });
+              userId: childExists._id,
+            }).populate("userId", ["_id", "quizCoins", "status"]);
           }
 
-          const primetrustInfo = !isTeen ? parentChild : parentChild?.teens?.find(
-            (x) => x.childId.toString() == reqParam.childId
-          );
+          const primetrustInfo = !isTeen
+            ? parentChild
+            : parentChild?.teens?.find(
+                (x) => x.childId.toString() == reqParam.childId
+              );
 
           const cryptoIds =
             primetrustInfo?.accountId &&
@@ -1677,19 +1675,24 @@ class TradingController extends BaseController {
               primetrustInfo.accountId
             ));
 
-          let userBankIfExists = parentChild && (await UserBanksTable.find({
-            userId: isTeen ? parentChild.userId._id : childExists._id,
-            isDefault: 1,
-          }));
+          let userBankIfExists =
+            parentChild &&
+            (await UserBanksTable.find({
+              userId: isTeen ? parentChild.userId._id : childExists._id,
+              isDefault: 1,
+            }));
 
-          const isParentKycVerified = parentChild?.userId?.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-          const isKidBeforeParent = isTeen && (!isParentKycVerified || userBankIfExists.length === 0);
+          const isParentKycVerified =
+            parentChild?.userId?.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED;
+          const isKidBeforeParent =
+            isTeen && (!isParentKycVerified || userBankIfExists.length === 0);
 
-          const buySellTransactions = await tradingDbService.getPortfolioTransactions(
-            childExists._id,
-            isKidBeforeParent,
-            cryptoIds,
-          );
+          const buySellTransactions =
+            await tradingDbService.getPortfolioTransactions(
+              childExists._id,
+              isKidBeforeParent,
+              cryptoIds
+            );
 
           // if price didn't change any all, totalStackValue and totalSpentAmount would have been same
           // (if we don't consider cash balance)
@@ -1713,7 +1716,9 @@ class TradingController extends BaseController {
           }
 
           const myOwnCoins = childExists.quizCoins + childExists.preLoadedCoins;
-          const totalCoins = isTeen ? (parentChild?.userId?.quizCoins || 0) + myOwnCoins : myOwnCoins
+          const totalCoins = isTeen
+            ? (parentChild?.userId?.quizCoins || 0) + myOwnCoins
+            : myOwnCoins;
 
           if (isTeen && !isParentKycVerified) {
             return this.Ok(ctx, {
@@ -1738,14 +1743,18 @@ class TradingController extends BaseController {
           /**
            * Fetch Cash Balance
            */
-          const balanceInfo: any = await getBalance(jwtToken, primetrustInfo.accountId);
+          const balanceInfo: any = await getBalance(
+            jwtToken,
+            primetrustInfo.accountId
+          );
           if (balanceInfo.status == 400) {
             return this.BadRequest(ctx, balanceInfo.message);
           }
           const cashBalance = balanceInfo.data.data[0].attributes.disbursable;
           totalStackValue = totalStackValue + cashBalance;
 
-          const pendingInitialDeposit = await tradingDbService.getPendingInitialDeposit(childExists._id)
+          const pendingInitialDeposit =
+            await tradingDbService.getPendingInitialDeposit(childExists._id);
           if (pendingInitialDeposit.length > 0) {
             // if initial deposit is pending, we add it to totalStackValue
             pendingInitialDepositAmount = pendingInitialDeposit[0].sum;
@@ -1764,19 +1773,21 @@ class TradingController extends BaseController {
               stackCoins: totalCoins,
               totalGainLoss,
               balance:
-                (isParentKycVerified && hasClearedDeposit) ? cashBalance : pendingInitialDepositAmount,
+                isParentKycVerified && hasClearedDeposit
+                  ? cashBalance
+                  : pendingInitialDepositAmount,
               parentStatus: parentChild?.userId?.status,
-              totalAmountInvested: totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),
+              totalAmountInvested:
+                totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),
               intialBalance: pendingInitialDepositAmount,
               // 0 - SKIP , 1 - PENDIGN 2 - DEPOSIT AVAILNA
-              isDeposit:
-                isParentKycVerified
-                  ? pendingInitialDeposit.length > 0
-                    ? 1
-                    : hasClearedDeposit
-                    ? 2
-                    : 0
-                  : 0,
+              isDeposit: isParentKycVerified
+                ? hasClearedDeposit
+                  ? 2
+                  : pendingInitialDeposit.length > 0
+                  ? 1
+                  : 0
+                : 0,
               isTeenPending,
             },
           });
@@ -1794,7 +1805,7 @@ class TradingController extends BaseController {
   @Auth()
   public async getAccountsFromPlaid(ctx: any) {
     const user = ctx.request.user;
-    const userBankExists = await UserBanksTable.findOne({userId: user._id})
+    const userBankExists = await UserBanksTable.findOne({ userId: user._id });
     if (!userBankExists) {
       return this.BadRequest(ctx, "User Bank Details Not Found");
     }
@@ -1808,9 +1819,7 @@ class TradingController extends BaseController {
       );
     }
     if (userBankExists.insId) {
-      const logo: any = await institutionsGetByIdRequest(
-        userBankExists.insId
-      );
+      const logo: any = await institutionsGetByIdRequest(userBankExists.insId);
       if (logo.status === 200) {
         getAccountDetails.data.accounts.forEach((current) => {
           current.logo = logo.data.institution.logo;
