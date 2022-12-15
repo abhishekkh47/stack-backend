@@ -384,6 +384,17 @@ class UserService {
       }
     );
 
+    await UserReffaralTable.updateMany(
+      {
+        userId: { $in: userUpdateReferrals },
+      },
+      {
+        $inc: {
+          referralCount: 1,
+        },
+      },
+      { new: true }
+    );
     /**
      *  for sending notification to each user for referring and being referred
      */
@@ -469,7 +480,7 @@ class UserService {
     if (!dataExists) {
       await UserReffaralTable.create({
         userId: senderId,
-        referralCount: 1,
+        referralCount: 0,
         senderName: senderName,
         referralArray: [
           {
@@ -487,7 +498,7 @@ class UserService {
         },
         {
           $set: {
-            referralCount: dataExists.referralCount + 1,
+            referralCount: dataExists.referralCount,
           },
           $push: {
             referralArray: {
