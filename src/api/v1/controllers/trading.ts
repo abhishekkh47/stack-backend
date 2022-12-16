@@ -1,8 +1,7 @@
-import tradingDbService from "../../../services/trading.db.service";
 import moment from "moment";
 import { ObjectId } from "mongodb";
-import envData from "../../../config/index";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -13,7 +12,7 @@ import {
   UserActivityTable,
   UserBanksTable,
   UserTable,
-} from "../../../model";
+} from "@app/model";
 import {
   PortfolioService,
   tradingService,
@@ -21,7 +20,8 @@ import {
   UserDBService,
   userService,
   zohoCrmService,
-} from "../../../services";
+  TradingDBService,
+} from "@app/services";
 import {
   EAction,
   EAUTOAPPROVAL,
@@ -36,7 +36,7 @@ import {
   EUserType,
   HttpMethod,
   messages,
-} from "../../../types";
+} from "@app/types";
 import {
   createBank,
   createContributions,
@@ -58,14 +58,14 @@ import {
   wireTransfer,
   getAssets,
   getAssetTotalWithId,
-} from "../../../utility";
+} from "@app/utility";
 import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
   PLAID_ITEM_ERROR,
-} from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+} from "@app/utility/constants";
+import { validation } from "@app/validations/apiValidation";
 import BaseController from "./base";
 
 class TradingController extends BaseController {
@@ -1688,7 +1688,7 @@ class TradingController extends BaseController {
             isTeen && (!isParentKycVerified || userBankIfExists.length === 0);
 
           const buySellTransactions =
-            await tradingDbService.getPortfolioTransactions(
+            await TradingDBService.getPortfolioTransactions(
               childExists._id,
               isKidBeforeParent,
               cryptoIds
@@ -1754,7 +1754,7 @@ class TradingController extends BaseController {
           totalStackValue = totalStackValue + cashBalance;
 
           const pendingInitialDeposit =
-            await tradingDbService.getPendingInitialDeposit(childExists._id);
+            await TradingDBService.getPendingInitialDeposit(childExists._id);
           if (pendingInitialDeposit.length > 0) {
             // if initial deposit is pending, we add it to totalStackValue
             pendingInitialDepositAmount = pendingInitialDeposit[0].sum;
