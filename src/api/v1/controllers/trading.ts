@@ -1693,7 +1693,8 @@ class TradingController extends BaseController {
               isKidBeforeParent,
               cryptoIds,
               jwtToken,
-              primetrustInfo?.accountId
+              primetrustInfo?.accountId,
+              isParentKycVerified
             );
 
           // if price didn't change any all, totalStackValue and totalSpentAmount would have been same

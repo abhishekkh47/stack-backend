@@ -10,7 +10,8 @@ class TradingDBService {
     isKidBeforeParent: boolean,
     cryptoIds: string[],
     jwtToken: string,
-    accountId: any
+    accountId: any,
+    isParentKycVerified: boolean
   ): Promise<any[]> {
     let portfolioArray = [];
 
@@ -142,7 +143,7 @@ class TradingDBService {
       },
     ]).exec();
 
-    if (!isKidBeforeParent) {
+    if (isParentKycVerified) {
       for await (let cryptoInfo of portfolioTransactions) {
         const getUnitCount: any = await getAssetTotalWithId(
           jwtToken,
@@ -156,14 +157,16 @@ class TradingDBService {
             ? getUnitCount.data.data[0]?.attributes?.disbursable
             : 0;
 
-        portfolioArray.push({
-          ...cryptoInfo,
-          value: cryptoInfo.currentPrice * unitCount,
-        });
+        if (unitCount > 0) {
+          portfolioArray.push({
+            ...cryptoInfo,
+            value: cryptoInfo.currentPrice * unitCount,
+          });
+        }
       }
     }
 
-    return portfolioArray.length > 0 ? portfolioArray : portfolioTransactions;
+    return isParentKycVerified ? portfolioArray : portfolioTransactions;
   }
 
   // pull all the crypto(fiat excluded) transactions from db
