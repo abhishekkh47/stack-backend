@@ -1691,7 +1691,10 @@ class TradingController extends BaseController {
             await TradingDBService.getPortfolioTransactions(
               childExists._id,
               isKidBeforeParent,
-              cryptoIds
+              cryptoIds,
+              jwtToken,
+              primetrustInfo?.accountId,
+              isParentKycVerified
             );
 
           // if price didn't change any all, totalStackValue and totalSpentAmount would have been same

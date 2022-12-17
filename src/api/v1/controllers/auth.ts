@@ -591,7 +591,7 @@ class AuthController extends BaseController {
               referralCode: reqParam.refferalCode,
             });
             if (!refferalCodeExists) {
-              return this.BadRequest(ctx, "Refferal Code Not Found");
+              return this.BadRequest(ctx, "Refferal code not associated with any account");
             }
 
             /**

@@ -1,10 +1,20 @@
+import { getAssetTotalWithId } from "./../utility/prime-trust";
 import { ObjectId } from "mongodb";
 import { TransactionTable } from "../model";
 import { ETransactionType, ETransactionStatus } from "../types";
 
 class TradingDBService {
   // pull all the crypto(fiat excluded) transactions from db
-  public async getPortfolioTransactions(childId: string, isKidBeforeParent: boolean, cryptoIds: string[]): Promise<any[]> {
+  public async getPortfolioTransactions(
+    childId: string,
+    isKidBeforeParent: boolean,
+    cryptoIds: string[],
+    jwtToken: string,
+    accountId: any,
+    isParentKycVerified: boolean
+  ): Promise<any[]> {
+    let portfolioArray = [];
+
     let baseFilter = {
       userId: new ObjectId(childId),
       type: { $in: [ETransactionType.BUY, ETransactionType.SELL] },
@@ -15,9 +25,9 @@ class TradingDBService {
     const matchRequest = isKidBeforeParent
       ? baseFilter
       : {
-        ...baseFilter,
-        assetId: { $in: cryptoIds },
-      };
+          ...baseFilter,
+          assetId: { $in: cryptoIds },
+        };
 
     const portfolioTransactions = await TransactionTable.aggregate([
       {
@@ -133,7 +143,30 @@ class TradingDBService {
       },
     ]).exec();
 
-    return portfolioTransactions
+    if (isParentKycVerified) {
+      for await (let cryptoInfo of portfolioTransactions) {
+        const getUnitCount: any = await getAssetTotalWithId(
+          jwtToken,
+          accountId,
+          cryptoInfo.cryptoData.assetId
+        );
+
+        let unitCount =
+          getUnitCount.data.data[0] &&
+          getUnitCount.data.data[0]?.attributes?.disbursable > 0
+            ? getUnitCount.data.data[0]?.attributes?.disbursable
+            : 0;
+
+        if (unitCount > 0) {
+          portfolioArray.push({
+            ...cryptoInfo,
+            value: cryptoInfo.currentPrice * unitCount,
+          });
+        }
+      }
+    }
+
+    return isParentKycVerified ? portfolioArray : portfolioTransactions;
   }
 
   // pull all the crypto(fiat excluded) transactions from db
@@ -162,7 +195,7 @@ class TradingDBService {
         },
       },
     ]).exec();
-    return pendingInitialDeposit
+    return pendingInitialDeposit;
   }
 }
 
