@@ -234,6 +234,7 @@ class WebHookController extends BaseController {
               getReferralSenderId &&
                 (await userService.getUserReferral(
                   getReferralSenderId.userId,
+                  arrayForReferral,
                   userExists.referralCode
                 ));
 
@@ -450,6 +451,7 @@ class WebHookController extends BaseController {
                 getReferralSenderId &&
                   (await userService.getUserReferral(
                     getReferralSenderId.userId,
+                    arrayForReferral,
                     userExists.referralCode
                   ));
 

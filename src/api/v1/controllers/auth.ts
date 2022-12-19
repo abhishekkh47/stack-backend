@@ -591,7 +591,10 @@ class AuthController extends BaseController {
               referralCode: reqParam.refferalCode,
             });
             if (!refferalCodeExists) {
-              return this.BadRequest(ctx, "Refferal code not associated with any account");
+              return this.BadRequest(
+                ctx,
+                "Refferal code not associated with any account"
+              );
             }
 
             /**
@@ -619,6 +622,7 @@ class AuthController extends BaseController {
             ) {
               await userService.getUserReferral(
                 refferalCodeExists._id,
+                [user._id],
                 reqParam.refferalCode
               );
             } else if (
@@ -629,6 +633,7 @@ class AuthController extends BaseController {
             ) {
               await userService.getUserReferral(
                 refferalCodeExists._id,
+                [user._id],
                 reqParam.refferalCode
               );
             }

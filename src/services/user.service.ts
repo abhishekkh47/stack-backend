@@ -288,7 +288,12 @@ class UserService {
    * @param userId
    * @param userReferral
    */
-  public async getUserReferral(userId: string, userReferral: string) {
+  public async getUserReferral(
+    userId: string,
+    receiverId: any,
+    userReferral: string
+  ) {
+    let arrayOfRecieverId = receiverId.map((x) => x.toString());
     let referralCoins = 0;
     let userUpdateReferrals = [];
     let getReferralCode;
@@ -366,10 +371,12 @@ class UserService {
         referralCoins = referralCoins + config.APP_REFERRAL_COINS;
         await getReferralCode.referralArray.map((obj) => {
           if (!userUpdateReferrals.includes(obj.referredId)) {
-            return userUpdateReferrals.push(obj.referredId);
+            if (arrayOfRecieverId.includes(obj.referredId.toString())) {
+              return userUpdateReferrals.push(obj.referredId.toString());
+            }
           }
         });
-        userUpdateReferrals.push(userId);
+        userUpdateReferrals.push(userId.toString());
       }
     }
 
@@ -381,7 +388,8 @@ class UserService {
         $inc: {
           preLoadedCoins: referralCoins,
         },
-      }
+      },
+      { new: true }
     );
 
     await UserReffaralTable.updateMany(
@@ -401,16 +409,19 @@ class UserService {
     let referredIdsArray = [];
     let allNotifications = [];
     for await (let receiver of getReferralCode.referralArray) {
-      referredIdsArray.push(receiver.referredId.toString());
-      allNotifications.push(
-        await this.sendNotificationForUserReferral(
-          userId,
-          getReferralCode.deviceTokenInfo.deviceToken,
-          NOTIFICATION.REFERRAL_SENDER_MESSAGE,
-          receiver.receiverName
-        )
-      );
+      if (arrayOfRecieverId.includes(receiver.referredId.toString())) {
+        referredIdsArray.push(receiver.referredId.toString());
+        allNotifications.push(
+          await this.sendNotificationForUserReferral(
+            userId,
+            getReferralCode.deviceTokenInfo.deviceToken,
+            NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+            receiver.receiverName
+          )
+        );
+      }
     }
+
     for await (let deviceToken of getReferralCode.recieverDeviceTokenInfo) {
       if (referredIdsArray.includes(deviceToken.userId.toString())) {
         allNotifications.push(
