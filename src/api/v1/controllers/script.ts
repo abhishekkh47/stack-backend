@@ -555,14 +555,20 @@ class ScriptController extends BaseController {
      */
     let dataSentInCrm = await zohoCrmService.getDataSentToCrm(allUsersInfo);
 
-    /**
-     * add account to zoho crm
-     */
-    await zohoCrmService.addAccounts(
-      ctx.request.zohoAccessToken,
-      dataSentInCrm,
-      true
-    );
+    const zohoCrmObjectSize = 90;
+    let crmObject;
+    for (let i = 0; i < dataSentInCrm.length; i += zohoCrmObjectSize) {
+      crmObject = dataSentInCrm.slice(i, i + zohoCrmObjectSize);
+
+      /**
+       * add account to zoho crm
+       */
+      await zohoCrmService.addAccounts(
+        ctx.request.zohoAccessToken,
+        crmObject,
+        true
+      );
+    }
 
     return this.Ok(ctx, { message: "Success", dataSentInCrm });
   }
