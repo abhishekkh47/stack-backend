@@ -577,6 +577,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
+  @PrimeTrustJWT(false)
   public async kycApproveStaging(ctx: any) {
     const reqParam = ctx.params;
     const { userId } = reqParam;
@@ -592,12 +593,6 @@ class ScriptController extends BaseController {
 
     if (!user)
       return this.NotFound(ctx, `User with ID ${userId} was not found`);
-
-    // Get the JWT for PrimeTrust
-    const ptJWTRes = await getPrimeTrustJWTToken();
-
-    if (ptJWTRes.status !== 200) return this.BadRequest(ctx, ptJWTRes);
-    const token = ptJWTRes.data;
 
     if (!user.contactId) return this.BadRequest(ctx, { status: 400, message: "No 'contactId' found..." })
 
@@ -621,7 +616,7 @@ class ScriptController extends BaseController {
             },
           }
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${ctx.request.primeTrustToken}` } }
       )
       .catch((error) => {
         console.log(error);
