@@ -4,6 +4,7 @@ import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
+  PRIMETRUSTAPIS,
 } from "./../../../utility/constants";
 import moment from "moment";
 import { PrimeTrustJWT } from "../../../middleware";
@@ -42,6 +43,9 @@ import {
 } from "../../../utility";
 import BaseController from "./base";
 import { UserDBService, zohoCrmService } from "../../../services";
+import { ObjectId } from "mongodb";
+import axios from "axios";
+import config from "@app/config";
 
 class ScriptController extends BaseController {
   /**
@@ -565,6 +569,92 @@ class ScriptController extends BaseController {
     );
 
     return this.Ok(ctx, { message: "Success", dataSentInCrm });
+  }
+
+  /**
+   * @description KYC Approve a staging account in PrimeTrust sandbox
+   * @param ctx 
+   * @returns {*}
+   */
+  @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
+  public async kycApproveStaging(ctx: any) {
+    const reqParam = ctx.params;
+    const { userId } = reqParam;
+
+    if (!userId)
+      return this.BadRequest(ctx, {
+        message: "Please provide a valid user ID",
+      });
+
+    const user = await ParentChildTable.findOne({
+      userId: new ObjectId(userId),
+    });
+
+    if (!user)
+      return this.NotFound(ctx, `User with ID ${userId} was not found`);
+
+    // Get the JWT for PrimeTrust
+    const ptJWTRes = await getPrimeTrustJWTToken();
+
+    if (ptJWTRes.status !== 200) return this.BadRequest(ctx, ptJWTRes);
+    const token = ptJWTRes.data;
+
+    // First part of Staging KYC Approval
+    const kycDocumentCheckResponse: any = await axios
+      .post(
+        "https://sandbox.primetrust.com/v2/kyc-document-checks",
+        {
+          data: {
+            type: "kyc-document-checks",
+            attributes: {
+              "contact-id": user.contactId,
+              "uploaded-document-id": "a4634951-4fa4-4f81-92a5-b97217692320",
+              "backside-document-id": "c319bffc-c798-4bef-876c-9ae65b23681e",
+              "kyc-document-type": "drivers_license",
+              identity: true,
+              "identity-photo": true,
+              "proof-of-address": true,
+              "kyc-document-country": "US",
+            },
+          },
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .catch((error) => {
+        console.log(error);
+      });
+    
+    if (kycDocumentCheckResponse.status !== 201) return this.BadRequest(ctx, kycDocumentCheckResponse.response)
+
+    const kycDocumentId = kycDocumentCheckResponse.data.data.id;
+    // Second part of Staging KYC Approval
+    const kycDocumentCheckVerifyResponse: any = await axios
+      .post(
+        `https://sandbox.primetrust.com/v2/kyc-document-checks/${kycDocumentId}/sandbox/verify`,
+        {
+          data: {
+            type: "kyc-document-checks",
+            attributes: {
+              "contact-id": user.contactId,
+              "uploaded-document-id": "a4634951-4fa4-4f81-92a5-b97217692320",
+              "backside-document-id": "c319bffc-c798-4bef-876c-9ae65b23681e",
+              "kyc-document-type": "drivers_license",
+              identity: true,
+              "identity-photo": true,
+              "proof-of-address": true,
+              "kyc-document-country": "US",
+            },
+          },
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .catch((error) => {
+        console.log(error);
+      });
+    
+    if (kycDocumentCheckVerifyResponse.status !== 200) return this.BadRequest(ctx, kycDocumentCheckVerifyResponse.response)
+
+    return this.Ok(ctx, { status: 200, message: "Staging KYC Approval Successful" })
   }
 }
 

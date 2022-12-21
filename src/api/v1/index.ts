@@ -83,6 +83,8 @@ setControllerRoutes(router, UserController);
 setControllerRoutes(router, CMSController);
 setControllerRoutes(router, WebHookController);
 setControllerRoutes(router, DripshopController);
-// setControllerRoutes(router, ScriptController);
+
+if (process.env.APP_ENVIRONMENT === 'STAGING')
+  setControllerRoutes(router, ScriptController);
 
 export default Compose([router.routes(), router.allowedMethods()]);
