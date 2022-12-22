@@ -40,7 +40,7 @@ const JOBS = [
      * Logic for redeeming gift card
      * Time: at every 15 mins
      */
-    disabled: isUAT,
+    disabled: true,
     expression: "*/15 * * * *",
     func: redeemGiftHandler,
   },
