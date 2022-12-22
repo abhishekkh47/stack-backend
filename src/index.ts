@@ -1,4 +1,3 @@
-require('module-alias/register') // register our aliases otherwise node cannot find our module aliases
 import cors from "@koa/cors";
 import http from "http";
 import Koa from "koa";
