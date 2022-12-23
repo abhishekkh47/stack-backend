@@ -1,4 +1,4 @@
-import { UserReffaralTable } from "./../../../model/user-referral";
+import { UserReferralTable } from "./../../../model/user-referral";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -89,7 +89,7 @@ class WebHookController extends BaseController {
       arrayForReferral.push(checkAccountIdExists.firstChildId._id);
     }
 
-    let getReferralSenderId = await UserReffaralTable.findOne({
+    let getReferralSenderId = await UserReferralTable.findOne({
       "referralArray.referredId": { $in: arrayForReferral },
     });
 
@@ -232,8 +232,9 @@ class WebHookController extends BaseController {
                */
 
               getReferralSenderId &&
-                (await userService.getUserReferral(
+                (await userService.redeemUserReferral(
                   getReferralSenderId.userId,
+                  arrayForReferral,
                   userExists.referralCode
                 ));
 
@@ -448,8 +449,9 @@ class WebHookController extends BaseController {
                  * for user referral
                  */
                 getReferralSenderId &&
-                  (await userService.getUserReferral(
+                  (await userService.redeemUserReferral(
                     getReferralSenderId.userId,
+                    arrayForReferral,
                     userExists.referralCode
                   ));
 

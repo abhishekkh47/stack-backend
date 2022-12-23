@@ -10,7 +10,6 @@ import {
   Notification,
   NotifyUserTable,
   ParentChildTable,
-  UserReffaralTable,
   UserTable,
 } from "../../../model";
 import { userService, zohoCrmService } from "../../../services";

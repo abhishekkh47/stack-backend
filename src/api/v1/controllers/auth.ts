@@ -13,7 +13,6 @@ import {
   StateTable,
   TransactionTable,
   UserDraftTable,
-  UserReffaralTable,
   UserTable,
 } from "../../../model";
 import {
@@ -591,7 +590,10 @@ class AuthController extends BaseController {
               referralCode: reqParam.refferalCode,
             });
             if (!refferalCodeExists) {
-              return this.BadRequest(ctx, "Refferal code not associated with any account");
+              return this.BadRequest(
+                ctx,
+                "Refferal code not associated with any account"
+              );
             }
 
             /**
@@ -617,8 +619,9 @@ class AuthController extends BaseController {
               (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
               user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
             ) {
-              await userService.getUserReferral(
+              await userService.redeemUserReferral(
                 refferalCodeExists._id,
+                [user._id],
                 reqParam.refferalCode
               );
             } else if (
@@ -627,8 +630,9 @@ class AuthController extends BaseController {
               parentChildInfo &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
             ) {
-              await userService.getUserReferral(
+              await userService.redeemUserReferral(
                 refferalCodeExists._id,
+                [user._id],
                 reqParam.refferalCode
               );
             }

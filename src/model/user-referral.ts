@@ -49,7 +49,7 @@ const schema = new mongoose.Schema<IUserReferralSchema>(
   { timestamps: true }
 );
 
-export const UserReffaralTable = mongoose.model<IUserReferralSchema>(
+export const UserReferralTable = mongoose.model<IUserReferralSchema>(
   "user-refferal",
   schema
 );
