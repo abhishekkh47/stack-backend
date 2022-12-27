@@ -6,8 +6,6 @@ import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   AdminTable,
   CryptoTable,
-  DeviceToken,
-  Notification,
   ParentChildTable,
   TransactionTable,
   UserActivityTable,
@@ -15,6 +13,7 @@ import {
   UserTable,
 } from "../../../model";
 import {
+  DeviceTokenService,
   PortfolioService,
   tradingService,
   UserBankDBService,
@@ -26,7 +25,6 @@ import {
   EAction,
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
-  ERead,
   ERECURRING,
   ESCREENSTATUS,
   EStatus,
@@ -54,7 +52,6 @@ import {
   institutionsGetByIdRequest,
   internalAssetTransfers,
   Route,
-  sendNotification,
   wireTransfer,
   getAssets,
   getAssetTotalWithId,
@@ -448,29 +445,13 @@ class TradingController extends BaseController {
                 unitCount: null,
               });
             } else {
-              let deviceTokenData = await DeviceToken.findOne({
-                userId: parentDetails.userId,
-              }).select("deviceToken");
-              if (deviceTokenData) {
-                let notificationRequest = {
-                  key: NOTIFICATION_KEYS.TRADING,
-                  title: NOTIFICATION.TEEN_REQUEST_MADE,
-                  message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
-                  activityId: activity._id,
-                };
-                await sendNotification(
-                  deviceTokenData.deviceToken,
-                  notificationRequest.title,
-                  notificationRequest
-                );
-                await Notification.create({
-                  title: notificationRequest.title,
-                  userId: parentDetails.userId,
-                  message: notificationRequest.message,
-                  isRead: ERead.UNREAD,
-                  data: JSON.stringify(notificationRequest),
-                });
-              }
+              await DeviceTokenService.sendUserNotification(
+                parentDetails.userId,
+                NOTIFICATION_KEYS.TRADING,
+                NOTIFICATION.TEEN_REQUEST_MADE,
+                NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
+                activity._id
+              );
             }
 
             /*   message:
@@ -835,32 +816,16 @@ class TradingController extends BaseController {
                 unitCount: null,
               });
             } else {
-              let deviceTokenData = await DeviceToken.findOne({
-                userId: parentDetails.userId,
-              }).select("deviceToken");
               /**
                * Notification
                */
-              if (deviceTokenData) {
-                let notificationRequest = {
-                  key: NOTIFICATION_KEYS.TRADING,
-                  title: NOTIFICATION.TEEN_REQUEST_MADE,
-                  message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
-                  activityId: activity._id,
-                };
-                await sendNotification(
-                  deviceTokenData.deviceToken,
-                  notificationRequest.title,
-                  notificationRequest
-                );
-                await Notification.create({
-                  title: notificationRequest.title,
-                  userId: parentDetails.userId,
-                  message: notificationRequest.message,
-                  isRead: ERead.UNREAD,
-                  data: JSON.stringify(notificationRequest),
-                });
-              }
+              await DeviceTokenService.sendUserNotification(
+                parentDetails.userId,
+                NOTIFICATION_KEYS.TRADING,
+                NOTIFICATION.TEEN_REQUEST_MADE,
+                NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
+                activity._id
+              );
             }
 
             /*  message:
@@ -1234,32 +1199,13 @@ class TradingController extends BaseController {
         userType == EUserType.TEEN &&
         userExists.isAutoApproval == EAUTOAPPROVAL.OFF
       ) {
-        let deviceTokenData = await DeviceToken.findOne({
-          userId: parent.userId,
-        });
-        if (deviceTokenData) {
-          let notificationRequest = {
-            key: NOTIFICATION_KEYS.TRADING,
-            title: NOTIFICATION.TEEN_REQUEST_MADE,
-            message: NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO.replace(
-              "@cryto",
-              crypto.name
-            ),
-            activityId: activity._id,
-          };
-          await sendNotification(
-            deviceTokenData.deviceToken,
-            notificationRequest.title,
-            notificationRequest
-          );
-          await Notification.create({
-            title: notificationRequest.title,
-            userId: parent.userId,
-            message: notificationRequest.message,
-            isRead: ERead.UNREAD,
-            data: JSON.stringify(notificationRequest),
-          });
-        }
+        await DeviceTokenService.sendUserNotification(
+          parent.userId,
+          NOTIFICATION_KEYS.TRADING,
+          NOTIFICATION.TEEN_REQUEST_MADE,
+          NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO.replace("@cryto", crypto.name),
+          activity._id
+        );
       }
       /* const message = mainQuery
         ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
@@ -1424,32 +1370,16 @@ class TradingController extends BaseController {
           userExists.type == EUserType.TEEN &&
           userExists.isAutoApproval == EAUTOAPPROVAL.OFF
         ) {
-          let deviceTokenData = await DeviceToken.findOne({
-            userId: parent.userId,
-          });
-          if (deviceTokenData) {
-            let notificationRequest = {
-              key: NOTIFICATION_KEYS.TRADING,
-              title: NOTIFICATION.TEEN_REQUEST_MADE,
-              message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
-                "@cryto",
-                crypto.name
-              ),
-              activityId: activity._id,
-            };
-            await sendNotification(
-              deviceTokenData.deviceToken,
-              notificationRequest.title,
-              notificationRequest
-            );
-            await Notification.create({
-              title: notificationRequest.title,
-              userId: parent.userId,
-              message: notificationRequest.message,
-              isRead: ERead.UNREAD,
-              data: JSON.stringify(notificationRequest),
-            });
-          }
+          await DeviceTokenService.sendUserNotification(
+            parent.userId,
+            NOTIFICATION_KEYS.TRADING,
+            NOTIFICATION.TEEN_REQUEST_MADE,
+            NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
+              "@cryto",
+              crypto.name
+            ),
+            activity._id
+          );
         }
         /* const message = mainQuery
            ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
@@ -1590,29 +1520,13 @@ class TradingController extends BaseController {
     /**
      * Notification
      */
-    let deviceTokenData = await DeviceToken.findOne({
-      userId: activity.userId,
-    });
-    if (deviceTokenData) {
-      let notificationRequest = {
-        key: NOTIFICATION_KEYS.TRADING,
-        title: NOTIFICATION.TEEN_REQUEST_DENIED,
-        message: NOTIFICATION.TEEN_REQUEST_DENIED_DESCRIPTION,
-        activityId: activity._id,
-      };
-      await sendNotification(
-        deviceTokenData.deviceToken,
-        notificationRequest.title,
-        notificationRequest
-      );
-      await Notification.create({
-        title: notificationRequest.title,
-        userId: activity.userId,
-        message: notificationRequest.message,
-        isRead: ERead.UNREAD,
-        data: JSON.stringify(notificationRequest),
-      });
-    }
+    await DeviceTokenService.sendUserNotification(
+      activity.userId,
+      NOTIFICATION_KEYS.TRADING,
+      NOTIFICATION.TEEN_REQUEST_DENIED,
+      NOTIFICATION.TEEN_REQUEST_DENIED_DESCRIPTION,
+      activity._id
+    );
 
     return this.Ok(ctx, { message: "Activity cancelled out successfully" });
   }
@@ -1768,7 +1682,6 @@ class TradingController extends BaseController {
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
-
           return this.Ok(ctx, {
             data: {
               portFolio: buySellTransactions,
@@ -1872,9 +1785,7 @@ class TradingController extends BaseController {
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Account Details Not Found");
     }
-    let deviceTokenData = await DeviceToken.findOne({
-      userId: accountIdDetails.childId,
-    }).select("deviceToken");
+
     const fetchBalance: any = await getBalance(
       jwtToken,
       accountIdDetails.accountId
@@ -1941,26 +1852,14 @@ class TradingController extends BaseController {
           executedQuoteId: contributions.data.included[0].id,
           unitCount: null,
         });
-        if (deviceTokenData) {
-          let notificationRequest = {
-            key: NOTIFICATION_KEYS.TRADING,
-            title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-            message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
-            activityId: activityId,
-          };
-          await sendNotification(
-            deviceTokenData.deviceToken,
-            notificationRequest.title,
-            notificationRequest
-          );
-          await Notification.create({
-            title: notificationRequest.title,
-            userId: accountIdDetails.childId,
-            message: notificationRequest.message,
-            isRead: ERead.UNREAD,
-            data: JSON.stringify(notificationRequest),
-          });
-        }
+
+        await DeviceTokenService.sendUserNotification(
+          accountIdDetails.childId,
+          NOTIFICATION_KEYS.TRADING,
+          NOTIFICATION.TEEN_REQUEST_APPROVED,
+          NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
+          activityId
+        );
 
         return this.Ok(ctx, {
           message: "Transaction Processed!",
@@ -2001,26 +1900,14 @@ class TradingController extends BaseController {
           executedQuoteId: disbursementResponse.data.included[0].id,
           unitCount: null,
         });
-        if (deviceTokenData) {
-          let notificationRequest = {
-            key: NOTIFICATION_KEYS.TRADING,
-            title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-            message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
-            activityId: activityId,
-          };
-          await sendNotification(
-            deviceTokenData.deviceToken,
-            notificationRequest.title,
-            notificationRequest
-          );
-          await Notification.create({
-            title: notificationRequest.title,
-            userId: accountIdDetails.childId,
-            message: notificationRequest.message,
-            isRead: ERead.UNREAD,
-            data: JSON.stringify(notificationRequest),
-          });
-        }
+
+        await DeviceTokenService.sendUserNotification(
+          accountIdDetails.childId,
+          NOTIFICATION_KEYS.TRADING,
+          NOTIFICATION.TEEN_REQUEST_APPROVED,
+          NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
+          activityId
+        );
 
         return this.Ok(ctx, {
           data: disbursementResponse.data,
@@ -2099,29 +1986,17 @@ class TradingController extends BaseController {
             message: `${messages.APPROVE_BUY} ${cryptoData.name} buy request of $${activity.currencyValue}`,
           }
         );
-        if (deviceTokenData) {
-          let notificationRequest = {
-            key: NOTIFICATION_KEYS.TRADING,
-            title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-            message: NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
-              "@crypto",
-              cryptoData.name
-            ),
-            activityId: activityId,
-          };
-          await sendNotification(
-            deviceTokenData.deviceToken,
-            notificationRequest.title,
-            notificationRequest
-          );
-          await Notification.create({
-            title: notificationRequest.title,
-            userId: accountIdDetails.childId,
-            message: notificationRequest.message,
-            isRead: ERead.UNREAD,
-            data: JSON.stringify(notificationRequest),
-          });
-        }
+
+        await DeviceTokenService.sendUserNotification(
+          accountIdDetails.childId,
+          NOTIFICATION_KEYS.TRADING,
+          NOTIFICATION.TEEN_REQUEST_APPROVED,
+          NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
+            "@crypto",
+            cryptoData.name
+          ),
+          activityId
+        );
 
         return this.Ok(ctx, {
           message: "Success",
@@ -2226,29 +2101,17 @@ class TradingController extends BaseController {
             message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
           }
         );
-        if (deviceTokenData) {
-          let notificationRequest = {
-            key: NOTIFICATION_KEYS.TRADING,
-            title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-            message: NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
-              "@crypto",
-              sellCryptoData.name
-            ),
-            activityId: activityId,
-          };
-          await sendNotification(
-            deviceTokenData.deviceToken,
-            notificationRequest.title,
-            notificationRequest
-          );
-          await Notification.create({
-            title: notificationRequest.title,
-            userId: accountIdDetails.childId,
-            message: notificationRequest.message,
-            isRead: ERead.UNREAD,
-            data: JSON.stringify(notificationRequest),
-          });
-        }
+
+        await DeviceTokenService.sendUserNotification(
+          accountIdDetails.childId,
+          NOTIFICATION_KEYS.TRADING,
+          NOTIFICATION.TEEN_REQUEST_APPROVED,
+          NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
+            "@crypto",
+            sellCryptoData.name
+          ),
+          activityId
+        );
 
         return this.Ok(ctx, {
           message: "Success",
@@ -2355,9 +2218,6 @@ class TradingController extends BaseController {
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Child Details Not Found");
     }
-    let deviceTokenData = await DeviceToken.findOne({
-      userId: accountIdDetails.childId,
-    }).select("deviceToken");
     return validation.updateAutoApprovalValidation(
       reqParam,
       ctx,
@@ -2465,26 +2325,14 @@ class TradingController extends BaseController {
                     executedQuoteId: contributions.data.included[0].id,
                     unitCount: null,
                   });
-                  if (deviceTokenData) {
-                    let notificationRequest = {
-                      key: NOTIFICATION_KEYS.TRADING,
-                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-                      message: NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
-                      activityId: activity._id,
-                    };
-                    await sendNotification(
-                      deviceTokenData.deviceToken,
-                      notificationRequest.title,
-                      notificationRequest
-                    );
-                    await Notification.create({
-                      title: notificationRequest.title,
-                      userId: accountIdDetails.childId,
-                      message: notificationRequest.message,
-                      isRead: ERead.UNREAD,
-                      data: JSON.stringify(notificationRequest),
-                    });
-                  }
+
+                  await DeviceTokenService.sendUserNotification(
+                    accountIdDetails.childId,
+                    NOTIFICATION_KEYS.TRADING,
+                    NOTIFICATION.TEEN_REQUEST_APPROVED,
+                    NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
+                    activity._id
+                  );
                   break;
                 case 2:
                   if (!userBankInfo) {
@@ -2532,26 +2380,14 @@ class TradingController extends BaseController {
                     executedQuoteId: disbursementResponse.data.included[0].id,
                     unitCount: null,
                   });
-                  if (deviceTokenData) {
-                    let notificationRequest = {
-                      key: NOTIFICATION_KEYS.TRADING,
-                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-                      message: NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
-                      activityId: activity._id,
-                    };
-                    await sendNotification(
-                      deviceTokenData.deviceToken,
-                      notificationRequest.title,
-                      notificationRequest
-                    );
-                    await Notification.create({
-                      title: notificationRequest.title,
-                      userId: accountIdDetails.childId,
-                      message: notificationRequest.message,
-                      isRead: ERead.UNREAD,
-                      data: JSON.stringify(notificationRequest),
-                    });
-                  }
+
+                  await DeviceTokenService.sendUserNotification(
+                    accountIdDetails.childId,
+                    NOTIFICATION_KEYS.TRADING,
+                    NOTIFICATION.TEEN_REQUEST_APPROVED,
+                    NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
+                    activity._id
+                  );
                   break;
                 case 3:
                   if (!activity.cryptoId) {
@@ -2626,30 +2462,17 @@ class TradingController extends BaseController {
                       },
                     }
                   );
-                  if (deviceTokenData) {
-                    let notificationRequest = {
-                      key: NOTIFICATION_KEYS.TRADING,
-                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-                      message:
-                        NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
-                          "@crypto",
-                          cryptoData.name
-                        ),
-                      activityId: activity._id,
-                    };
-                    await sendNotification(
-                      deviceTokenData.deviceToken,
-                      notificationRequest.title,
-                      notificationRequest
-                    );
-                    await Notification.create({
-                      title: notificationRequest.title,
-                      userId: accountIdDetails.childId,
-                      message: notificationRequest.message,
-                      isRead: ERead.UNREAD,
-                      data: JSON.stringify(notificationRequest),
-                    });
-                  }
+
+                  await DeviceTokenService.sendUserNotification(
+                    accountIdDetails.childId,
+                    NOTIFICATION_KEYS.TRADING,
+                    NOTIFICATION.TEEN_REQUEST_APPROVED,
+                    NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
+                      "@crypto",
+                      cryptoData.name
+                    ),
+                    activity._id
+                  );
                   break;
                 case 4:
                   if (!activity.cryptoId) {
@@ -2730,30 +2553,17 @@ class TradingController extends BaseController {
                       message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
                     }
                   );
-                  if (deviceTokenData) {
-                    let notificationRequest = {
-                      key: NOTIFICATION_KEYS.TRADING,
-                      title: NOTIFICATION.TEEN_REQUEST_APPROVED,
-                      message:
-                        NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
-                          "@crypto",
-                          sellCryptoData.name
-                        ),
-                      activityId: activity._id,
-                    };
-                    await sendNotification(
-                      deviceTokenData.deviceToken,
-                      notificationRequest.title,
-                      notificationRequest
-                    );
-                    await Notification.create({
-                      title: notificationRequest.title,
-                      userId: accountIdDetails.childId,
-                      message: notificationRequest.message,
-                      isRead: ERead.UNREAD,
-                      data: JSON.stringify(notificationRequest),
-                    });
-                  }
+
+                  await DeviceTokenService.sendUserNotification(
+                    accountIdDetails.childId,
+                    NOTIFICATION_KEYS.TRADING,
+                    NOTIFICATION.TEEN_REQUEST_APPROVED,
+                    NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
+                      "@crypto",
+                      sellCryptoData.name
+                    ),
+                    activity._id
+                  );
                   break;
                 default:
                   return this.BadRequest(ctx, "Something went wrong");

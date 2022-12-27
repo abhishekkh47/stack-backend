@@ -1,3 +1,4 @@
+import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -6,15 +7,12 @@ import path from "path";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
-  DeviceToken,
-  Notification,
   NotifyUserTable,
   ParentChildTable,
   UserTable,
 } from "../../../model";
-import { userService, zohoCrmService } from "../../../services";
+import { DeviceTokenService, userService, zohoCrmService } from "../../../services";
 import {
-  ERead,
   ESCREENSTATUS,
   EUSERSTATUS,
   EUserType,
@@ -27,7 +25,6 @@ import {
   getLinkToken,
   kycDocumentChecks,
   Route,
-  sendNotification,
   uploadFilesFetch,
   uploadIdProof,
   uploadImage,
@@ -434,31 +431,17 @@ class UserController extends BaseController {
       ctx.request.zohoAccessToken,
       dataSentInCrm
     );
+
     /**
      * Kyc pending mode call
      */
-    let deviceTokenData = await DeviceToken.findOne({
-      userId: userExists._id,
-    }).select("deviceToken");
-    if (deviceTokenData) {
-      let notificationRequest = {
-        key: NOTIFICATION_KEYS.KYC_PENDING,
-        title: NOTIFICATION.KYC_PENDING_TITLE,
-        message: NOTIFICATION.KYC_PENDING_DESCRIPTION,
-      };
-      await sendNotification(
-        deviceTokenData.deviceToken,
-        notificationRequest.title,
-        notificationRequest
-      );
-      await Notification.create({
-        title: notificationRequest.title,
-        userId: userExists._id,
-        message: notificationRequest.message,
-        isRead: ERead.UNREAD,
-        data: JSON.stringify(notificationRequest),
-      });
-    }
+    await DeviceTokenService.sendUserNotification(
+      userExists._id,
+      NOTIFICATION_KEYS.KYC_PENDING,
+      NOTIFICATION.KYC_PENDING_TITLE,
+      NOTIFICATION.KYC_PENDING_DESCRIPTION
+    );
+
     return this.Ok(ctx, {
       data: kycResponse.data,
       message:
@@ -901,6 +884,108 @@ class UserController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Acknowledged" });
+  }
+
+  /**
+   * @description This method is used for turing on/off notification
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/toggle-notification", method: HttpMethod.POST })
+  @Auth()
+  public async toggleNotificationSettings(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    const checkUserExists = await UserTable.findOne({ _id: user._id });
+    if (!checkUserExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validation.toggleNotificationValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await UserTable.findByIdAndUpdate(
+            { _id: checkUserExists._id },
+            {
+              $set: {
+                isNotificationOn: reqParam.isNotificationOn,
+              },
+            },
+            { new: true }
+          );
+
+          let message =
+            reqParam.isNotificationOn == ENOTIFICATIONSETTINGS.ON
+              ? "Turned on notification"
+              : "Turned off notfication";
+
+          return this.Ok(ctx, { message });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to add/remove device token
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/device-token", method: HttpMethod.POST })
+  @Auth()
+  public async addDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    const checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!checkUserExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validation.addDeviceTokenValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await DeviceTokenService.addDeviceTokenIfNeeded(
+            checkUserExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token added successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to add/remove device token
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/device-token", method: HttpMethod.DELETE })
+  @Auth()
+  public async removeDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    const checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!checkUserExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validation.removeDeviceTokenValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await DeviceTokenService.removeDeviceToken(
+            checkUserExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token removed successfully" });
+        }
+      }
+    );
   }
 }
 

@@ -130,6 +130,7 @@ class UserService {
             isRecurring: 1,
             selectedDeposit: 1,
             selectedDepositDate: 1,
+            isNotificationOn: 1
           },
         },
       ]).exec()

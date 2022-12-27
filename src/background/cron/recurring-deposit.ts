@@ -1,14 +1,10 @@
-import {
-  createContributions,
-  getPrimeTrustJWTToken,
-  sendNotification,
-} from "../../utility";
+import { DeviceTokenService } from "../../services";
+import { createContributions, getPrimeTrustJWTToken } from "../../utility";
 import {
   TransactionTable,
   UserTable,
   UserActivityTable,
   DeviceToken,
-  Notification,
   UserBanksTable,
 } from "../../model";
 import moment from "moment";
@@ -20,7 +16,6 @@ import {
   EAction,
   EStatus,
   messages,
-  ERead,
 } from "../../types";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 
@@ -73,13 +68,6 @@ export const recurringDepositHandler = async () => {
           continue;
         }
       }
-
-      let deviceTokenData = await DeviceToken.findOne({
-        userId:
-          user.type == EUserType.SELF
-            ? user.self.userId
-            : user.parentChild.userId,
-      }).select("deviceToken");
       let selectedDate = moment(user.selectedDepositDate).startOf("day").unix();
       if (selectedDate <= todayDate) {
         const id =
@@ -116,34 +104,18 @@ export const recurringDepositHandler = async () => {
           /**
            * Notification
            */
-          if (deviceTokenData) {
-            let notificationRequest = {
-              key:
-                contributions.code == 25001
-                  ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
-                  : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
-              title: "Recurring Deposit Error",
-              message:
-                contributions.code == 25001
-                  ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
-                  : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE,
-            };
-            await sendNotification(
-              deviceTokenData.deviceToken,
-              notificationRequest.title,
-              notificationRequest
-            );
-            await Notification.create({
-              title: notificationRequest.title,
-              userId:
-                user.type == EUserType.SELF
-                  ? user.self.userId
-                  : user.parentChild.userId,
-              message: null,
-              isRead: ERead.UNREAD,
-              data: JSON.stringify(notificationRequest),
-            });
-          }
+          await DeviceTokenService.sendUserNotification(
+            user.type == EUserType.SELF
+              ? user.self.userId
+              : user.parentChild.userId,
+            contributions.code == 25001
+              ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
+              : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
+            "Recurring Deposit Error",
+            contributions.code == 25001
+              ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
+              : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE
+          );
           continue;
         } else {
           let activityData = {

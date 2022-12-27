@@ -7,13 +7,17 @@ import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
   AdminTable,
-  DeviceToken,
   ParentChildTable,
   TransactionTable,
   UserTable,
   WebhookTable,
 } from "../../../model";
-import { AuthService, userService, zohoCrmService } from "../../../services";
+import {
+  AuthService,
+  DeviceTokenService,
+  userService,
+  zohoCrmService,
+} from "../../../services";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
@@ -26,7 +30,6 @@ import {
   createAccount,
   getAccountStatusByAccountId,
   Route,
-  sendNotification,
   uploadFilesFetch,
 } from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
@@ -93,12 +96,6 @@ class WebHookController extends BaseController {
       "referralArray.referredId": { $in: arrayForReferral },
     });
 
-    /**
-     * Notification Send for kyc fail or success
-     */
-    let deviceTokenData = await DeviceToken.findOne({
-      userId: userExists._id,
-    }).select("deviceToken");
     switch (body.resource_type) {
       /**
        * For kyc success or failure
@@ -137,19 +134,15 @@ class WebHookController extends BaseController {
             ctx.request.zohoAccessToken,
             dataSentInCrm
           );
-          if (deviceTokenData) {
-            let notificationRequest = {
-              key: NOTIFICATION_KEYS.KYC_FAILURE,
-              title: NOTIFICATION.KYC_REJECTED_TITLE,
-              message: null,
-              userId: userExists._id,
-            };
-            const notificationCreated = await sendNotification(
-              deviceTokenData.deviceToken,
-              notificationRequest.title,
-              notificationRequest
-            );
-          }
+
+          await DeviceTokenService.sendUserNotification(
+            userExists._id,
+            NOTIFICATION_KEYS.KYC_FAILURE,
+            NOTIFICATION.KYC_REJECTED_TITLE,
+            null,
+            null,
+            userExists._id
+          );
           return this.Ok(ctx, { message: "User Kyc Failed" });
         }
         /**
@@ -208,19 +201,15 @@ class WebHookController extends BaseController {
               ctx.request.zohoAccessToken,
               dataSentInCrm
             );
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.KYC_SUCCESS,
-                title: NOTIFICATION.KYC_APPROVED_TITLE,
-                message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
-                userId: userExists._id,
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-            }
+
+            await DeviceTokenService.sendUserNotification(
+              userExists._id,
+              NOTIFICATION_KEYS.KYC_SUCCESS,
+              NOTIFICATION.KYC_APPROVED_TITLE,
+              NOTIFICATION.KYC_APPROVED_DESCRIPTION,
+              null,
+              userExists._id
+            );
             /**
              * Gift stack coins to all teens whose parent's kyc is approved
              */
@@ -358,19 +347,15 @@ class WebHookController extends BaseController {
                 ctx.request.zohoAccessToken,
                 dataSentInCrm
               );
-              if (deviceTokenData) {
-                let notificationRequest = {
-                  key: NOTIFICATION_KEYS.KYC_SUCCESS,
-                  title: NOTIFICATION.KYC_APPROVED_TITLE,
-                  message: NOTIFICATION.KYC_APPROVED_DESCRIPTION,
-                  userId: userExists._id,
-                };
-                await sendNotification(
-                  deviceTokenData.deviceToken,
-                  notificationRequest.title,
-                  notificationRequest
-                );
-              }
+
+              await DeviceTokenService.sendUserNotification(
+                userExists._id,
+                NOTIFICATION_KEYS.KYC_SUCCESS,
+                NOTIFICATION.KYC_APPROVED_TITLE,
+                NOTIFICATION.KYC_APPROVED_DESCRIPTION,
+                null,
+                userExists._id
+              );
               if (userExists.type == EUserType.PARENT) {
                 let allChilds: any = await checkAccountIdExists.teens.filter(
                   (x) =>
@@ -524,19 +509,14 @@ class WebHookController extends BaseController {
           body.data["changes"].length > 0 &&
           body.data["changes"].includes("disbursements-frozen")
         ) {
-          if (deviceTokenData) {
-            let notificationRequest = {
-              key: NOTIFICATION_KEYS.ACCOUNT_CLOSED,
-              title: NOTIFICATION.ACCOUNT_CLOSED_TITLE,
-              message: NOTIFICATION.ACCOUNT_CLOSED_DESCRIPTION,
-              userId: userExists._id,
-            };
-            await sendNotification(
-              deviceTokenData.deviceToken,
-              notificationRequest.title,
-              notificationRequest
-            );
-          }
+          await DeviceTokenService.sendUserNotification(
+            userExists._id,
+            NOTIFICATION_KEYS.ACCOUNT_CLOSED,
+            NOTIFICATION.ACCOUNT_CLOSED_TITLE,
+            NOTIFICATION.ACCOUNT_CLOSED_DESCRIPTION,
+            null,
+            userExists._id
+          );
         }
         break;
       /**
