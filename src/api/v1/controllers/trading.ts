@@ -1668,7 +1668,6 @@ class TradingController extends BaseController {
             return this.BadRequest(ctx, balanceInfo.message);
           }
           const cashBalance = balanceInfo.data.data[0].attributes.disbursable;
-          totalStackValue = totalStackValue + cashBalance;
 
           const pendingInitialDeposit =
             await tradingDbService.getPendingInitialDeposit(childExists._id);
@@ -1682,16 +1681,15 @@ class TradingController extends BaseController {
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
+          const isKycVerifiedAndDepositCleared = isParentKycVerified && hasClearedDeposit
+          totalStackValue = totalStackValue + (isKycVerifiedAndDepositCleared ? cashBalance : 0);
           return this.Ok(ctx, {
             data: {
               portFolio: buySellTransactions,
               totalStackValue,
               stackCoins: totalCoins,
               totalGainLoss,
-              balance:
-                isParentKycVerified && hasClearedDeposit
-                  ? cashBalance
-                  : pendingInitialDepositAmount,
+              balance: isKycVerifiedAndDepositCleared ? cashBalance : pendingInitialDepositAmount,
               parentStatus: parentChild?.userId?.status,
               totalAmountInvested:
                 totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),
