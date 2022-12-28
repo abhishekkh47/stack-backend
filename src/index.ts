@@ -12,6 +12,7 @@ import Config from "./config";
 import { logger } from "./utility";
 import { errorHandler, notFoundHandler } from "./middleware";
 import ApiV1 from "./api/v1";
+import ApiV1_1 from "./api/v1.1"
 import i18nTs from "./i18n/i18n";
 import en from "./i18n/en.json";
 import views from "koa-views";
@@ -54,6 +55,7 @@ const server = (async () => {
     startCron();
 
     app.use(Mount("/api/v1", ApiV1));
+    app.use(Mount("/api/v1.1", ApiV1_1));
 
     // Request url not found
     app.use(notFoundHandler);
