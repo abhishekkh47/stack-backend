@@ -431,7 +431,7 @@ class UserService {
 
     let userNotification = referredIdsArray.map(
       (response) => response.notificationObj
-    );
+      );
 
     let receiveDeviceTokenInfo = referrals.receiverDeviceTokenInfo;
     allNotifications = await Promise.all(

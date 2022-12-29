@@ -1,3 +1,4 @@
+import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
 import { request } from "request";
 import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
 import { TEEN_SIGNUP_FUNNEL } from "./../../../utility/constants";
@@ -125,7 +126,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async handleSignup(ctx: any) {
     const reqParam = ctx.request.body;
-    return validation.signupValidation(
+    return validationV1_1.signupValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
@@ -330,6 +331,13 @@ class AuthController extends BaseController {
                     isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
                   isNotificationOn: ENOTIFICATIONSETTINGS.ON,
                   isAutoApproval: EAUTOAPPROVAL.ON,
+                  taxIdNo: reqParam.taxIdNo,
+                  country: reqParam.country,
+                  state: reqParam.state,
+                  city: reqParam.city,
+                  address: reqParam.address,
+                  unitApt: reqParam.unitApt,
+                  postalCode: reqParam.postalCode,
                 },
               },
               { new: true }
@@ -1222,7 +1230,7 @@ class AuthController extends BaseController {
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
           if (optVerfidied) {
-            let updateChild = await UserDraftTable.findByIdAndUpdate(
+            let updateUser = await UserDraftTable.findByIdAndUpdate(
               {
                 _id: ctx.request.user._id,
               },
@@ -1235,14 +1243,31 @@ class AuthController extends BaseController {
             );
 
             let dataSentInCrm: any = {
-              Account_Name: updateChild.firstName + " " + updateChild.lastName,
-              Email: updateChild.email,
-              Teen_Signup_Funnel: [
-                TEEN_SIGNUP_FUNNEL.SIGNUP,
-                TEEN_SIGNUP_FUNNEL.DOB,
-                TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
-              ],
+              Account_Name: updateUser.firstName + " " + updateUser.lastName,
+              Email: updateUser.email,
             };
+
+            if (
+              updateUser.type == EUserType.PARENT ||
+              updateUser.type == EUserType.SELF
+            ) {
+              dataSentInCrm = {
+                ...dataSentInCrm,
+                Parent_Signup_Funnel: [
+                  ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+                  PARENT_SIGNUP_FUNNEL.DOB,
+                ],
+              };
+            } else {
+              dataSentInCrm = {
+                ...dataSentInCrm,
+                Teen_Signup_Funnel: [
+                  TEEN_SIGNUP_FUNNEL.SIGNUP,
+                  TEEN_SIGNUP_FUNNEL.DOB,
+                  TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+                ],
+              };
+            }
 
             await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
@@ -1321,13 +1346,12 @@ class AuthController extends BaseController {
   @Auth()
   public async checkValidMobile(ctx) {
     const input = ctx.request.body;
-    return validation.checkValidMobileValidation(
+    return validationV1_1.checkValidMobileValidation(
       input,
       ctx,
       async (validate) => {
         if (validate) {
           const { mobile, type } = input;
-          let migratedId;
 
           if (type == EUserType.TEEN) {
             let userExists = await UserTable.findOne({
@@ -1351,43 +1375,8 @@ class AuthController extends BaseController {
           } else {
             return this.BadRequest(ctx, "Invalid User Type");
           }
-          const draftUser = await UserDraftTable.findOne({
-            _id: ctx.request.user._id,
-          });
-          if (!draftUser) {
-            return this.BadRequest(ctx, "Account Already Exists");
-          }
-          if (
-            (type == EUserType.PARENT || type == EUserType.SELF) &&
-            draftUser
-          ) {
-            const createObject = {
-              email: draftUser.email,
-              dob: draftUser.dob,
-              type: draftUser.type,
-              mobile: input.mobile,
-              firstName: input.firstName
-                ? input.firstName
-                : draftUser.firstName,
-              lastName: input.lastName ? input.lastName : draftUser.lastName,
-              country: input.country,
-              state: input.state,
-              city: input.city,
-              address: input.address,
-              unitApt: input.unitApt,
-              postalCode: input.postalCode,
-              referralCode: draftUser.referralCode,
-              taxIdNo: input.taxIdNo,
-            };
-            let userResponse = await UserTable.create(createObject);
-            migratedId = userResponse._id;
-          }
-          if (type == EUserType.SELF || type == EUserType.PARENT) {
-            await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
-            return this.Ok(ctx, { message: "Success", migratedId });
-          } else {
-            return this.Ok(ctx, { message: "Success" });
-          }
+
+          return this.Ok(ctx, { message: "Success" });
         }
       }
     );
@@ -1559,6 +1548,7 @@ class AuthController extends BaseController {
    * @returns
    */
   @Route({ path: "/check-account-ready-to-link", method: HttpMethod.POST })
+  @Auth()
   @PrimeTrustJWT(true)
   public async checkAccountReadyToLink(ctx: any) {
     const input = ctx.request.body;
@@ -1580,6 +1570,7 @@ class AuthController extends BaseController {
             mobile: childMobile,
             parentMobile: mobile,
           };
+          let migratedId;
           if (childEmail) {
             query = {
               ...query,
@@ -1608,6 +1599,34 @@ class AuthController extends BaseController {
               }
             );
             let parentRecord = await UserTable.findOne({ mobile: mobile });
+            let parentInUserDraft = await UserDraftTable.findOne({
+              _id: ctx.request.user._id,
+            });
+
+            if (!parentRecord && parentInUserDraft) {
+              if (
+                (parentInUserDraft.type == EUserType.PARENT ||
+                  parentInUserDraft.type == EUserType.SELF) &&
+                parentInUserDraft
+              ) {
+                const createObject = {
+                  email: parentInUserDraft.email,
+                  dob: parentInUserDraft.dob,
+                  type: parentInUserDraft.type,
+                  mobile: input.mobile,
+                  firstName: parentInUserDraft.firstName,
+                  lastName: parentInUserDraft.lastName,
+                  referralCode: parentInUserDraft.referralCode,
+                };
+                let userResponse = await UserTable.create(createObject);
+                await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
+                migratedId = userResponse._id;
+              }
+            }
+
+            if (!parentRecord && !parentInUserDraft) {
+              return this.BadRequest(ctx, "User not found");
+            }
 
             /**
              * Add zoho crm
@@ -1667,6 +1686,34 @@ class AuthController extends BaseController {
           await UserTable.create(createObject);
 
           let parentRecord = await UserTable.findOne({ mobile: mobile });
+          let parentInUserDraft = await UserDraftTable.findOne({
+            _id: ctx.request.user._id,
+          });
+
+          if (!parentRecord && parentInUserDraft) {
+            if (
+              (parentInUserDraft.type == EUserType.PARENT ||
+                parentInUserDraft.type == EUserType.SELF) &&
+              parentInUserDraft
+            ) {
+              const createObject = {
+                email: parentInUserDraft.email,
+                dob: parentInUserDraft.dob,
+                type: parentInUserDraft.type,
+                mobile: input.mobile,
+                firstName: parentInUserDraft.firstName,
+                lastName: parentInUserDraft.lastName,
+                referralCode: parentInUserDraft.referralCode,
+              };
+              let userResponse = await UserTable.create(createObject);
+              await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
+              migratedId = userResponse._id;
+            }
+          }
+
+          if (!parentRecord && !parentInUserDraft) {
+            return this.BadRequest(ctx, "User not found");
+          }
 
           /**
            * Add zoho crm
@@ -1681,6 +1728,7 @@ class AuthController extends BaseController {
           }
           return this.Ok(ctx, {
             message: "Invite sent!",
+            migratedId: migratedId,
             isAccountFound: false,
           });
         }
