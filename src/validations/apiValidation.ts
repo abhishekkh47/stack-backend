@@ -546,47 +546,6 @@ export const validation = {
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
-      taxIdNo: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/^\d{9}$/)
-          .required(),
-      }),
-      country: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      state: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      city: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      address: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z]/)
-          .required(),
-      }),
-      unitApt: Joi.when("type", {
-        is: 2,
-        then: Joi.string().allow(null).allow(""),
-      }),
-      postalCode: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/[A-Za-z0-9]/)
-          .min(4)
-          .required(),
-      }),
       firstName: Joi.string()
         .allow("")
         .regex(/^[A-za-z]*$/)

@@ -5,6 +5,7 @@ import { HttpMethod, IController } from "../../types/index";
 import {
   AuthController,
   UserController,
+  TradingController
 } from "./controllers";
 const router = new Router();
 
@@ -66,6 +67,7 @@ const setControllerRoutes = (router: Router, controller: IController) => {
 };
 setControllerRoutes(router, AuthController);
 setControllerRoutes(router, UserController);
+setControllerRoutes(router, TradingController);
 
 // setControllerRoutes(router, ScriptController);
 

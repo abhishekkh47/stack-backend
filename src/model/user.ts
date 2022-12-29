@@ -36,7 +36,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     /**
      * 1 - teenager,  2 - parent and 3 - Self
      */
-    type: { type: mongoose.Schema.Types.Number, required: false },
+    type: { type: mongoose.Schema.Types.Number, required: false, default: null },
     /**
      * 1 - Kyc document upload , 2 - Kyc failed and reupload document , 3 - Kyc approved
      */

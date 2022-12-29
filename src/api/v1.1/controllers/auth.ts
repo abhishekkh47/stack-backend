@@ -30,8 +30,6 @@ import {
   EGIFTSTACKCOINSSETTING,
   EOTPTYPE,
   EOTPVERIFICATION,
-  ERead,
-  ESCREENSTATUS,
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
@@ -62,7 +60,7 @@ import {
 } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
-import UserController from "./user";
+import UserController from "../../v1/controllers/user";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -298,7 +296,6 @@ class AuthController extends BaseController {
             let updateQuery: any = {
               username: null,
               password: null,
-              screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               isParentFirst: childExists.isParentFirst,
               isNotificationOn: ENOTIFICATIONSETTINGS.ON,
@@ -323,11 +320,6 @@ class AuthController extends BaseController {
                   username: null,
                   password: null,
                   mobile: reqParam.mobile,
-                  screenStatus:
-                    parseInt(reqParam.type) === EUserType.PARENT ||
-                    parseInt(reqParam.type) === EUserType.SELF
-                      ? ESCREENSTATUS.UPLOAD_DOCUMENTS
-                      : ESCREENSTATUS.SIGN_UP,
                   parentEmail: reqParam.parentEmail
                     ? reqParam.parentEmail
                     : null,
@@ -775,7 +767,6 @@ class AuthController extends BaseController {
               const createObject = {
                 email: reqParam.email,
                 refreshToken: reqParam.socialLoginToken,
-                screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName,
                 lastName: reqParam.lastName,
               };
@@ -1386,10 +1377,6 @@ class AuthController extends BaseController {
               unitApt: input.unitApt,
               postalCode: input.postalCode,
               referralCode: draftUser.referralCode,
-              screenStatus:
-                type == EUserType.PARENT
-                  ? ESCREENSTATUS.CHILD_INFO_SCREEN
-                  : ESCREENSTATUS.ENTER_PARENT_INFO,
               taxIdNo: input.taxIdNo,
             };
             let userResponse = await UserTable.create(createObject);
@@ -1615,7 +1602,6 @@ class AuthController extends BaseController {
                   parentEmail: email,
                   parentMobile: mobile,
                   type: EUserType.TEEN,
-                  screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
                   isParentFirst: false,
                   isAutoApproval: EAUTOAPPROVAL.ON,
                 },
@@ -1674,7 +1660,6 @@ class AuthController extends BaseController {
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
-            screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
             referralCode: uniqueReferralCode,
             isParentFirst: true,
             isAutoApproval: EAUTOAPPROVAL.ON,
@@ -2021,20 +2006,6 @@ class AuthController extends BaseController {
         });
         migratedId = userResponse._id;
       }
-
-      await UserTable.updateOne(
-        { mobile: ctx.request.body.mobile },
-        {
-          $set: {
-            screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
-            parentMobile: ctx.request.body.parentMobile,
-            parentEmail:
-              checkParentExists && checkParentExists.type == EUserType.PARENT
-                ? checkParentExists.email
-                : null,
-          },
-        }
-      );
     }
 
     if (checkParentExists) {
@@ -2075,7 +2046,6 @@ class AuthController extends BaseController {
               const uniqueReferralCode = await makeUniqueReferalCode();
               let createQuery: any = {
                 email: reqParam.email,
-                screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
                 referralCode: uniqueReferralCode,
@@ -2196,7 +2166,6 @@ class AuthController extends BaseController {
                 },
                 {
                   $set: {
-                    screenStatus: ESCREENSTATUS.ENTER_PHONE_NO,
                     dob: reqParam.dob,
                     type: 1,
                   },
@@ -2236,7 +2205,6 @@ class AuthController extends BaseController {
                 },
                 {
                   $set: {
-                    screenStatus: ESCREENSTATUS.MYSELF_PARENT_SCREEN,
                     dob: reqParam.dob,
                   },
                 },
@@ -2300,7 +2268,6 @@ class AuthController extends BaseController {
                 },
                 {
                   $set: {
-                    screenStatus: ESCREENSTATUS.DETAIL_SCREEN,
                     type: reqParam.type,
                   },
                 },
