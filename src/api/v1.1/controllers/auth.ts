@@ -1199,6 +1199,7 @@ class AuthController extends BaseController {
       ctx,
       async (validate: boolean) => {
         if (validate) {
+          let migratedId;
           const otpExists = await OtpTable.findOne({
             receiverMobile: reqParam.mobile,
           }).sort({ createdAt: -1 });
@@ -1242,6 +1243,24 @@ class AuthController extends BaseController {
               { new: true }
             );
 
+            if (updateUser.type == EUserType.SELF) {
+              const createObj = {
+                email: updateUser.email,
+                mobile: reqParam.mobile,
+                firstName: updateUser.firstName,
+                lastName: updateUser.lastName,
+                referralCode: updateUser.referralCode,
+                dob: updateUser.dob,
+                type: updateUser.type,
+              };
+
+              let userResponse = await UserTable.create(createObj);
+              migratedId = userResponse._id;
+              await UserDraftTable.deleteOne({
+                _id: ctx.request.user._id,
+              });
+            }
+
             let dataSentInCrm: any = {
               Account_Name: updateUser.firstName + " " + updateUser.lastName,
               Email: updateUser.email,
@@ -1277,6 +1296,7 @@ class AuthController extends BaseController {
 
           return this.Ok(ctx, {
             message: "Your mobile number is verified successfully",
+            migratedId: migratedId ? migratedId : null,
           });
         }
       }
@@ -2097,7 +2117,6 @@ class AuthController extends BaseController {
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
                 referralCode: uniqueReferralCode,
-                // mobile: reqParam.mobile ? reqParam.mobile : null,
               };
               const user = await UserDraftTable.create(createQuery);
               if (user) {
@@ -2202,34 +2221,47 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           try {
-            let userScreenStatusUpdate: any;
-            if (
+            const isUserBelow18 =
               new Date(
                 Date.now() - new Date(reqParam.dob).getTime()
-              ).getFullYear() < 1988
-            ) {
-              userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
+              ).getFullYear() < 1988;
+
+            let baseObject = {
+              dob: reqParam.dob,
+            };
+
+            let updateObject = !isUserBelow18
+              ? baseObject
+              : {
+                  ...baseObject,
+                  type: EUserType.TEEN,
+                };
+
+            const userScreenStatusUpdate =
+              await UserDraftTable.findByIdAndUpdate(
                 {
                   _id: ctx.request.user._id,
                 },
                 {
-                  $set: {
-                    dob: reqParam.dob,
-                    type: 1,
-                  },
+                  $set: updateObject,
                 },
                 { new: true }
               );
-              /**
-               * Zoho crm account addition
-               */
-              let dataSentInCrm: any = {
-                Account_Name:
-                  userScreenStatusUpdate.firstName +
-                  " " +
-                  userScreenStatusUpdate.lastName,
-                Email: userScreenStatusUpdate.email,
-                Birthday: userScreenStatusUpdate.dob,
+            /**
+             * Zoho crm account addition
+             */
+            let dataSentInCrm: any = {
+              Account_Name:
+                userScreenStatusUpdate.firstName +
+                " " +
+                userScreenStatusUpdate.lastName,
+              Email: userScreenStatusUpdate.email,
+              Birthday: userScreenStatusUpdate.dob,
+            };
+
+            if (isUserBelow18) {
+              dataSentInCrm = {
+                ...dataSentInCrm,
                 Account_Type:
                   userScreenStatusUpdate.type == EUserType.TEEN ? "Teen" : "",
                 Teen_Signup_Funnel: [
@@ -2237,51 +2269,24 @@ class AuthController extends BaseController {
                   TEEN_SIGNUP_FUNNEL.DOB,
                 ],
               };
-
-              await zohoCrmService.addAccounts(
-                ctx.request.zohoAccessToken,
-                dataSentInCrm
-              );
-              return this.Ok(ctx, {
-                message: "Dob saved",
-                userScreenStatusUpdate,
-              });
             } else {
-              userScreenStatusUpdate = await UserDraftTable.findByIdAndUpdate(
-                {
-                  _id: ctx.request.user._id,
-                },
-                {
-                  $set: {
-                    dob: reqParam.dob,
-                  },
-                },
-                { new: true }
-              );
-              /**
-               * Zoho crm account addition
-               */
-              let dataSentInCrm: any = {
-                Account_Name:
-                  userScreenStatusUpdate.firstName +
-                  " " +
-                  userScreenStatusUpdate.lastName,
-                Email: userScreenStatusUpdate.email,
-                Birthday: userScreenStatusUpdate.dob,
+              dataSentInCrm = {
+                ...dataSentInCrm,
                 Parent_Signup_Funnel: [
                   ...PARENT_SIGNUP_FUNNEL.SIGNUP,
                   PARENT_SIGNUP_FUNNEL.DOB,
                 ],
               };
-              await zohoCrmService.addAccounts(
-                ctx.request.zohoAccessToken,
-                dataSentInCrm
-              );
-              return this.Ok(ctx, {
-                message: "Dob saved",
-                userScreenStatusUpdate,
-              });
             }
+
+            await zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataSentInCrm
+            );
+            return this.Ok(ctx, {
+              message: "Dob saved",
+              userScreenStatusUpdate,
+            });
           } catch (error) {
             return this.BadRequest(ctx, error.message);
           }
