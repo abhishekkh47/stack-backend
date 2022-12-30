@@ -78,25 +78,25 @@ class AuthController extends BaseController {
               return this.BadRequest(ctx, "Please enter email");
             }
             let userExists = await UserTable.findOne({ email: email });
-            if (!userExists) {
-              userExists = await UserTable.findOne({
-                email: { $regex: `${email}`, $options: "i" },
-              });
-              if (!userExists) {
-                return this.BadRequest(
-                  ctx,
-                  "User not found, please signup first."
-                );
-              }
+            let userDraftExists = await UserDraftTable.findOne({
+              email: email,
+            });
+            if (!userExists && !userDraftExists) {
+              return this.BadRequest(
+                ctx,
+                "User not found, please signup first."
+              );
             }
             const { token, refreshToken } = await TokenService.generateToken(
-              userExists
+              userExists ? userExists : userDraftExists
             );
 
             let getProfileInput: any = {
               request: {
                 query: { token },
-                params: { id: userExists._id },
+                params: {
+                  id: userExists ? userExists._id : userDraftExists._id,
+                },
               },
             };
 
