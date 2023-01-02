@@ -111,7 +111,9 @@ class zohoCrmService {
         Email: checkParentExists.email,
         Parent_First: parentFirst,
         Parent_Signup_Funnel: [
-          PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+          ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+          PARENT_SIGNUP_FUNNEL.DOB,
+          PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
           PARENT_SIGNUP_FUNNEL.CHILD_INFO,
         ],
       };

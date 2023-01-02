@@ -1,3 +1,4 @@
+import { OtpTable } from './../../../model/otp';
 import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
 import { json } from "co-body";
 import fs from "fs";
@@ -400,8 +401,9 @@ class UserController extends BaseController {
       Parent_Signup_Funnel: [
         ...PARENT_SIGNUP_FUNNEL.SIGNUP,
         PARENT_SIGNUP_FUNNEL.DOB,
-        PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+        PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
         PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+        PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
         PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
       ],
     };
@@ -587,6 +589,75 @@ class UserController extends BaseController {
     });
   }
 
+
+   /**
+   * @description This method is used to view profile for both parent and child
+   * @param ctx
+   */
+   @Route({ path: "/get-profile/:id", method: HttpMethod.GET })
+   @Auth()
+   public async getProfile(ctx: any) {
+     const { id } = ctx.request.params;
+     if (!/^[0-9a-fA-F]{24}$/.test(id))
+       return this.BadRequest(ctx, "Enter valid ID.");
+     let { data, userDraft } = await userService.getProfile(id);
+     console.log('userDraft: ', userDraft);
+     console.log('data: ', data);
+     const matchObject = {
+       receiverMobile: data ? data.mobile : userDraft.mobile,
+       isVerified: 1,
+     };
+     console.log('matchObject: ', matchObject);
+ 
+     const checkNumberVerifiedOrNot = await OtpTable.findOne(matchObject);
+ 
+     if (data) {
+       if (checkNumberVerifiedOrNot) {
+         data.isMobileVerified = 1;
+       }
+       const checkParentExists = await UserTable.findOne({
+         mobile: data.parentMobile ? data.parentMobile : data.mobile,
+       });
+       const checkBankExists =
+         checkParentExists?._id &&
+         (await UserBanksTable.find({
+           userId: checkParentExists._id,
+         }));
+       if (
+         !checkParentExists ||
+         (checkParentExists &&
+           checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+       ) {
+         data.isParentApproved = 0;
+       } else {
+         data.isParentApproved = 1;
+       }
+       if (
+         !checkParentExists ||
+         (checkParentExists && checkBankExists.length == 0)
+       ) {
+         data.isRecurring = 0;
+       } else if (checkBankExists.length > 0) {
+         if (data.isRecurring == 1 || data.isRecurring == 0) {
+           data.isRecurring = 1;
+         }
+       }
+     }
+     console.log(checkNumberVerifiedOrNot);
+     if (checkNumberVerifiedOrNot && userDraft) {
+       userDraft.isMobileVerified = 1;
+     }
+ 
+     data = {
+       ...data,
+       terms: CMS_LINKS.TERMS,
+       amcPolicy: CMS_LINKS.AMC_POLICY,
+       privacy: CMS_LINKS.PRIVACY_POLICY,
+       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+     };
+ 
+     return this.Ok(ctx, userDraft ? userDraft : data, true);
+   }
 
 
 }

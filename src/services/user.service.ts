@@ -69,6 +69,15 @@ class UserService {
         { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
+            from: "users",
+            localField: "email",
+            foreignField: "parentEmail",
+            as: "childInfo",
+          },
+        },
+        { $unwind: { path: "$childInfo", preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
             from: "parentchild",
             localField: "_id",
             foreignField: "userId",
@@ -93,6 +102,7 @@ class UserService {
         {
           $addFields: {
             isParentApproved: 0,
+            isMobileVerified: 0,
           },
         },
         {
@@ -116,6 +126,7 @@ class UserService {
             lifeTimeReferralCount: {
               $ifNull: ["$lifeTimeReferral.referralCount", 0],
             },
+            childMobile: "$childInfo.mobile",
             referralCode: 1,
             screenStatus: 1,
             city: 1,
@@ -130,15 +141,43 @@ class UserService {
             isRecurring: 1,
             selectedDeposit: 1,
             selectedDepositDate: 1,
-            isNotificationOn: 1
+            isNotificationOn: 1,
+            isMobileVerified: 1,
           },
         },
       ]).exec()
     )[0];
 
-    let userDraft: any = await UserDraftTable.findOne({
-      _id: new ObjectId(userId),
-    });
+    let userDraft: any = (
+      await UserDraftTable.aggregate([
+        { $match: { _id: new ObjectId(userId) } },
+        {
+          $addFields: {
+            isMobileVerified: 0,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            email: 1,
+            mobile: 1,
+            firstName: 1,
+            lastName: 1,
+            type: 1,
+            parentMobile: 1,
+            parentEmail: 1,
+            lifeTimeReferralCount: {
+              $ifNull: ["$lifeTimeReferral.referralCount", 0],
+            },
+            referralCode: 1,
+            screenStatus: 1,
+            status: 1,
+            dob: 1,
+            isMobileVerified: 1,
+          },
+        },
+      ]).exec()
+    )[0];
 
     if (!data && !userDraft) {
       throw Error("Invalid user ID entered.");
@@ -431,7 +470,7 @@ class UserService {
 
     let userNotification = referredIdsArray.map(
       (response) => response.notificationObj
-      );
+    );
 
     let receiveDeviceTokenInfo = referrals.receiverDeviceTokenInfo;
     allNotifications = await Promise.all(

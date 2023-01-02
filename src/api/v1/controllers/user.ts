@@ -1,3 +1,4 @@
+import { UserDraftTable } from './../../../model/userDraft';
 import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
 import { json } from "co-body";
 import fs from "fs";
@@ -939,7 +940,10 @@ class UserController extends BaseController {
     const checkUserExists = await UserTable.findOne({
       _id: user._id,
     });
-    if (!checkUserExists) {
+    const checkUserDraftExists = await UserDraftTable.findOne({
+      _id: user._id,
+    })
+    if (!checkUserExists && !checkUserDraftExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
     return validation.addDeviceTokenValidation(
@@ -948,7 +952,7 @@ class UserController extends BaseController {
       async (validate) => {
         if (validate) {
           await DeviceTokenService.addDeviceTokenIfNeeded(
-            checkUserExists._id,
+            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
             reqParam.deviceToken
           );
           return this.Ok(ctx, { message: "Device token added successfully" });
@@ -970,7 +974,10 @@ class UserController extends BaseController {
     const checkUserExists = await UserTable.findOne({
       _id: user._id,
     });
-    if (!checkUserExists) {
+    const checkUserDraftExists = await UserDraftTable.findOne({
+      _id: user._id,
+    })
+    if (!checkUserExists && !checkUserDraftExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
     return validation.removeDeviceTokenValidation(
@@ -979,7 +986,7 @@ class UserController extends BaseController {
       async (validate) => {
         if (validate) {
           await DeviceTokenService.removeDeviceToken(
-            checkUserExists._id,
+            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
             reqParam.deviceToken
           );
           return this.Ok(ctx, { message: "Device token removed successfully" });

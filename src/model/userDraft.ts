@@ -41,6 +41,11 @@ const schema = new mongoose.Schema<IUserdraft>(
       type: mongoose.Schema.Types.String,
       required: true,
     },
+    mobile: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
     refreshToken: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }

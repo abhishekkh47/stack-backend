@@ -283,9 +283,9 @@ class TradingController extends BaseController {
             let ParentArray = [
               ...PARENT_SIGNUP_FUNNEL.SIGNUP,
               PARENT_SIGNUP_FUNNEL.DOB,
-              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+              PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
               PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-              PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
               PARENT_SIGNUP_FUNNEL.ADD_BANK,
               PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
               PARENT_SIGNUP_FUNNEL.SUCCESS,

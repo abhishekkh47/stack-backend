@@ -126,6 +126,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async handleSignup(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log("reqParam: ", reqParam);
     return validationV1_1.signupValidation(
       reqParam,
       ctx,
@@ -386,7 +387,7 @@ class AuthController extends BaseController {
           if (
             admin.giftCryptoSetting == 1 &&
             user.isGiftedCrypto == 0 &&
-            user.type !== EUserType.PARENT
+            user.type == EUserType.TEEN
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             let checkTransactionExistsAlready = await TransactionTable.findOne({
@@ -680,8 +681,9 @@ class AuthController extends BaseController {
               Parent_Signup_Funnel: [
                 ...PARENT_SIGNUP_FUNNEL.SIGNUP,
                 PARENT_SIGNUP_FUNNEL.DOB,
-                PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+                PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
                 PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+                PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
               ],
               Parent_Number: reqParam.mobile.replace("+", ""),
               ...(user.type == EUserType.PARENT && {
@@ -1133,6 +1135,7 @@ class AuthController extends BaseController {
   @Auth()
   public verifyOtp(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log("reqParam: ", reqParam);
     const user = ctx.request.user;
     return validation.verifyOtpValidation(
       reqParam,
@@ -1194,12 +1197,14 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public verifyOtpSignUp(ctx: any) {
     const reqParam = ctx.request.body;
+
     return validation.verifyOtpValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
         if (validate) {
           let migratedId;
+          let admin = await AdminTable.findOne({});
           const otpExists = await OtpTable.findOne({
             receiverMobile: reqParam.mobile,
           }).sort({ createdAt: -1 });
@@ -1244,6 +1249,8 @@ class AuthController extends BaseController {
             );
 
             if (updateUser.type == EUserType.SELF) {
+              let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+
               const createObj = {
                 email: updateUser.email,
                 mobile: reqParam.mobile,
@@ -1259,11 +1266,44 @@ class AuthController extends BaseController {
               await UserDraftTable.deleteOne({
                 _id: ctx.request.user._id,
               });
+
+              let checkTransactionExists = await TransactionTable.findOne({
+                userId: userResponse._id,
+              });
+              if (
+                admin.giftCryptoSetting == 1 &&
+                userResponse.isGiftedCrypto == 0 &&
+                !checkTransactionExists
+              ) {
+                await TransactionTable.create({
+                  assetId: crypto.assetId,
+                  cryptoId: crypto._id,
+                  accountId: null,
+                  type: ETransactionType.BUY,
+                  settledTime: moment().unix(),
+                  amount: admin.giftCryptoAmount,
+                  amountMod: 0,
+                  userId: userResponse._id,
+                  parentId: null,
+                  status: ETransactionStatus.GIFTED,
+                  executedQuoteId: null,
+                  unitCount: 0,
+                });
+                await UserTable.updateOne(
+                  { _id: userResponse._id },
+                  {
+                    $set: {
+                      isGiftedCrypto: 1,
+                    },
+                  }
+                );
+              }
             }
 
             let dataSentInCrm: any = {
               Account_Name: updateUser.firstName + " " + updateUser.lastName,
               Email: updateUser.email,
+              Mobile: reqParam.mobile,
             };
 
             if (
@@ -1275,6 +1315,7 @@ class AuthController extends BaseController {
                 Parent_Signup_Funnel: [
                   ...PARENT_SIGNUP_FUNNEL.SIGNUP,
                   PARENT_SIGNUP_FUNNEL.DOB,
+                  PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
                 ],
               };
             } else {
@@ -1366,6 +1407,7 @@ class AuthController extends BaseController {
   @Auth()
   public async checkValidMobile(ctx) {
     const input = ctx.request.body;
+    console.log("input: ", input);
     return validationV1_1.checkValidMobileValidation(
       input,
       ctx,
@@ -1572,6 +1614,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkAccountReadyToLink(ctx: any) {
     const input = ctx.request.body;
+    console.log("input: ", input);
     return validation.checkAccountReadyToLinkValidation(
       input,
       ctx,
@@ -1636,7 +1679,7 @@ class AuthController extends BaseController {
                   mobile: input.mobile,
                   firstName: parentInUserDraft.firstName,
                   lastName: parentInUserDraft.lastName,
-                  referralCode: parentInUserDraft.referralCode,
+                  referralCode: parentInUserDraft.referralCode
                 };
                 let userResponse = await UserTable.create(createObject);
                 await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
@@ -2100,6 +2143,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkSignUp(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log("reqParam: ", reqParam);
     return validation.checkUserSignupValidation(
       reqParam,
       ctx,
@@ -2215,6 +2259,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkDob(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log("reqParam: ", reqParam);
     return validation.dobValidation(
       reqParam,
       ctx,
@@ -2303,6 +2348,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkType(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log("reqParam: ", reqParam);
     return validation.typeValidation(
       reqParam,
       ctx,

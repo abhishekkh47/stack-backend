@@ -74,6 +74,7 @@ export interface IUserdraft {
   type: number;
   refreshToken: string;
   referralCode: string;
+  mobile: string;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
