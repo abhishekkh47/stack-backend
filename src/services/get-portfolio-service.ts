@@ -34,25 +34,30 @@ class PortfolioService {
     if (!accountIdDetails) {
       throw Error("Account ID Details Not Found");
     }
-    const fetchBalance: any = await getBalance(
-      jwtToken,
-      accountIdDetails.accountId
-    );
-    if (fetchBalance.status == 400) {
-      throw Error(fetchBalance.message);
-    }
-    const balance = fetchBalance.data.data[0].attributes.disbursable;
 
+    let balance = 0;
+    let getUnitCount;
     const cryptoInfo = await CryptoTable.findOne({ _id: cryptoId });
+    if (accountIdDetails.accountId) {
+      const fetchBalance: any = await getBalance(
+        jwtToken,
+        accountIdDetails.accountId
+      );
 
-    const getUnitCount: any = await getAssetTotalWithId(
-      jwtToken,
-      accountIdDetails.accountId,
-      cryptoInfo.assetId
-    );
+      if (fetchBalance.status == 400) {
+        throw Error(fetchBalance.message);
+      }
+      balance = fetchBalance.data.data[0].attributes.disbursable;
 
-    if (getUnitCount.status == 400) {
-      throw Error(getUnitCount.message);
+      getUnitCount = await getAssetTotalWithId(
+        jwtToken,
+        accountIdDetails.accountId,
+        cryptoInfo.assetId
+      );
+
+      if (getUnitCount.status == 400) {
+        throw Error(getUnitCount.message);
+      }
     }
 
     const portFolio = await CryptoTable.aggregate([
@@ -112,6 +117,7 @@ class PortfolioService {
           value: {
             $multiply: [
               "$currentPriceDetails.currentPrice",
+              getUnitCount &&
               getUnitCount.data.data[0] &&
               getUnitCount.data.data[0]?.attributes?.disbursable > 0
                 ? getUnitCount.data.data[0]?.attributes?.disbursable

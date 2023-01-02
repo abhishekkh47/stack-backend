@@ -351,9 +351,8 @@ class UserController extends BaseController {
       Parent_Signup_Funnel: [
         ...PARENT_SIGNUP_FUNNEL.SIGNUP,
         PARENT_SIGNUP_FUNNEL.DOB,
-        PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
-        PARENT_SIGNUP_FUNNEL.CHILD_INFO,
         PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+        PARENT_SIGNUP_FUNNEL.CHILD_INFO,
         PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
       ],
     };
@@ -390,13 +389,10 @@ class UserController extends BaseController {
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     let { data, userDraft } = await userService.getProfile(id);
-    console.log("userDraft: ", userDraft);
-    console.log("data: ", data);
     const matchObject = {
       receiverMobile: data ? data.mobile : userDraft.mobile,
       isVerified: 1,
     };
-    console.log("matchObject: ", matchObject);
 
     const checkNumberVerifiedOrNot = await OtpTable.findOne(matchObject);
 
@@ -432,7 +428,6 @@ class UserController extends BaseController {
         }
       }
     }
-    console.log(checkNumberVerifiedOrNot);
     if (checkNumberVerifiedOrNot && userDraft) {
       userDraft.isMobileVerified = 1;
     }

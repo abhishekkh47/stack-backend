@@ -103,6 +103,13 @@ class UserService {
           $addFields: {
             isParentApproved: 0,
             isMobileVerified: 0,
+            isKycDocumentUploaded: {
+              $cond: {
+                if: { $ne: ["$parentchild.kycDocumentId", null] },
+                then: 1,
+                else: 0,
+              },
+            },
           },
         },
         {
@@ -143,6 +150,7 @@ class UserService {
             selectedDepositDate: 1,
             isNotificationOn: 1,
             isMobileVerified: 1,
+            isKycDocumentUploaded: 1,
           },
         },
       ]).exec()

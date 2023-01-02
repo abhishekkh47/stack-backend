@@ -12,7 +12,7 @@ import Config from "./config";
 import { logger } from "./utility";
 import { errorHandler, notFoundHandler } from "./middleware";
 import ApiV1 from "./api/v1";
-import ApiV1_1 from "./api/v1.1"
+import ApiV1_1 from "./api/v1.1";
 import i18nTs from "./i18n/i18n";
 import en from "./i18n/en.json";
 import views from "koa-views";
@@ -34,7 +34,8 @@ const server = (async () => {
       console.log(ctx.path, "path");
       if (
         ctx.path === "/api/v1/upload-id-proof" ||
-        ctx.path === "/api/v1/update-primetrust-data"
+        ctx.path === "/api/v1/update-primetrust-data" ||
+        ctx.path === "/api/v1.1/upload-id-proof"
       )
         ctx.disableBodyParser = true;
       await next();

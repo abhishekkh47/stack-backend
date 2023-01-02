@@ -49,7 +49,7 @@ import {
 import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
-import UserController from "../../v1/controllers/user";
+import UserController from "../../v1.1/controllers/user";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -114,7 +114,6 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async handleSignup(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log("reqParam: ", reqParam);
     return validationV1_1.signupValidation(
       reqParam,
       ctx,
@@ -139,12 +138,7 @@ class AuthController extends BaseController {
             childExists = await UserTable.findOne({
               mobile: reqParam.mobile,
             });
-            // if (childExists && childExists.isParentFirst == false) {
-            //   return this.BadRequest(
-            //     ctx,
-            //     "Your account is already created. Please log in"
-            //   );
-            // }
+
             user = await UserTable.findOne({
               mobile: reqParam.parentMobile,
               type: EUserType.TEEN,
@@ -332,46 +326,27 @@ class AuthController extends BaseController {
               { new: true }
             );
           }
-          if (reqParam.type == EUserType.PARENT) {
-            await ParentChildTable.findOneAndUpdate(
+
+          if (accountId && accountNumber) {
+            /**
+             * TODO
+             */
+            await ParentChildTable.updateOne(
               {
-                userId: user._id,
+                _id: parentChildInfoId,
               },
               {
-                $set: {
-                  contactId: null,
-                  firstChildId: childExists._id,
-                  teens: childArray,
-                },
-              },
-              { upsert: true, new: true }
-            );
-          } else if (reqParam.type == EUserType.SELF) {
-            await ParentChildTable.create({
-              userId: user._id,
-              firstChildId: user._id,
-            });
-          } else {
-            if (accountId && accountNumber) {
-              /**
-               * TODO
-               */
-              await ParentChildTable.updateOne(
-                {
-                  _id: parentChildInfoId,
-                },
-                {
-                  $push: {
-                    teens: {
-                      childId: user._id,
-                      accountId: accountId,
-                      accountNumber: accountNumber,
-                    },
+                $push: {
+                  teens: {
+                    childId: user._id,
+                    accountId: accountId,
+                    accountNumber: accountNumber,
                   },
-                }
-              );
-            }
+                },
+              }
+            );
           }
+
           if (
             admin.giftCryptoSetting == 1 &&
             user.isGiftedCrypto == 0 &&
@@ -858,6 +833,11 @@ class AuthController extends BaseController {
                   }
                 );
               }
+
+              await ParentChildTable.create({
+                userId: userResponse._id,
+                firstChildId: userResponse._id,
+              });
             }
 
             let dataSentInCrm: any = {
@@ -942,7 +922,6 @@ class AuthController extends BaseController {
   @Auth()
   public async checkValidMobile(ctx) {
     const input = ctx.request.body;
-    console.log("input: ", input);
     return validationV1_1.checkValidMobileValidation(
       input,
       ctx,
@@ -989,7 +968,6 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkAccountReadyToLink(ctx: any) {
     const input = ctx.request.body;
-    console.log("input: ", input);
     return validation.checkAccountReadyToLinkValidation(
       input,
       ctx,
@@ -1059,6 +1037,20 @@ class AuthController extends BaseController {
                 let userResponse = await UserTable.create(createObject);
                 await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
                 migratedId = userResponse._id;
+
+                await ParentChildTable.findOneAndUpdate(
+                  {
+                    userId: userResponse._id,
+                  },
+                  {
+                    $set: {
+                      contactId: null,
+                      firstChildId: user._id,
+                      teens: [{ childId: user._id, accountId: null }],
+                    },
+                  },
+                  { upsert: true, new: true }
+                );
               }
             }
 
@@ -1121,7 +1113,7 @@ class AuthController extends BaseController {
             isParentFirst: true,
             isAutoApproval: EAUTOAPPROVAL.ON,
           };
-          await UserTable.create(createObject);
+          let createChild = await UserTable.create(createObject);
 
           let parentRecord = await UserTable.findOne({ mobile: mobile });
           let parentInUserDraft = await UserDraftTable.findOne({
@@ -1146,6 +1138,20 @@ class AuthController extends BaseController {
               let userResponse = await UserTable.create(createObject);
               await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
               migratedId = userResponse._id;
+
+              await ParentChildTable.findOneAndUpdate(
+                {
+                  userId: userResponse._id,
+                },
+                {
+                  $set: {
+                    contactId: null,
+                    firstChildId: createChild._id,
+                    teens: [{ childId: createChild._id, accountId: null }],
+                  },
+                },
+                { upsert: true, new: true }
+              );
             }
           }
 
@@ -1326,7 +1332,6 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkSignUp(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log("reqParam: ", reqParam);
     return validation.checkUserSignupValidation(
       reqParam,
       ctx,
@@ -1442,7 +1447,6 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkDob(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log("reqParam: ", reqParam);
     return validation.dobValidation(
       reqParam,
       ctx,
@@ -1531,7 +1535,6 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkType(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log("reqParam: ", reqParam);
     return validation.typeValidation(
       reqParam,
       ctx,
