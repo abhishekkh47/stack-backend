@@ -1,26 +1,18 @@
-import { OtpTable } from './../../../model/otp';
-import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
+import { OtpTable } from "./../../../model/otp";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
-import { ObjectId } from "mongodb";
 import path from "path";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
+import { ParentChildTable, UserTable } from "../../../model";
 import {
-  NotifyUserTable,
-  ParentChildTable,
-  UserTable,
-} from "../../../model";
-import { DeviceTokenService, userService, zohoCrmService } from "../../../services";
+  DeviceTokenService,
+  userService,
+  zohoCrmService,
+} from "../../../services";
+import { EUSERSTATUS, EUserType, HttpMethod } from "../../../types";
 import {
-  ESCREENSTATUS,
-  EUSERSTATUS,
-  EUserType,
-  HttpMethod,
-} from "../../../types";
-import {
-  agreementPreviews,
   checkValidBase64String,
   createAccount,
   getLinkToken,
@@ -28,7 +20,6 @@ import {
   Route,
   uploadFilesFetch,
   uploadIdProof,
-  uploadImage,
 } from "../../../utility";
 import {
   CMS_LINKS,
@@ -36,51 +27,10 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
 import { UserBanksTable } from "./../../../model/userBanks";
-import { getAccounts } from "./../../../utility/plaid";
 import BaseController from "./base";
 
 class UserController extends BaseController {
-  /**
-   * @description This method is for updating the tax information
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/update-tax-info", method: HttpMethod.POST })
-  @Auth()
-  public async updateTaxInfo(ctx: any) {
-    const input = ctx.request.body;
-    const userExists = await UserTable.findOne({
-      username: ctx.request.user.username,
-    });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User not found");
-    }
-    return validation.updateTaxInfoRequestBodyValidation(
-      input,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          await UserTable.updateOne(
-            { username: ctx.request.user.username },
-            {
-              $set: {
-                taxIdNo: input.taxIdNo,
-                taxState: input.taxState,
-                screenStatus:
-                  userExists.type === EUserType.PARENT
-                    ? ESCREENSTATUS.UPLOAD_DOCUMENTS
-                    : ESCREENSTATUS.SIGN_UP,
-              },
-            }
-          );
-          return this.Ok(ctx, { message: "Tax info updated successfully." });
-        }
-      }
-    );
-  }
-
   /**
    * @description This method is for getting the link token
    * @param ctx
@@ -351,7 +301,7 @@ class UserController extends BaseController {
       },
       {
         $set: {
-          status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD
+          status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
         },
       }
     );
@@ -430,236 +380,73 @@ class UserController extends BaseController {
   }
 
   /**
-   * @description This method is used to handle webhook failures respectively
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/upload-proof-of-address",
-    method: HttpMethod.POST,
-    middleware: [uploadIdProof.single("address_proof_front")],
-  })
-  @Auth()
-  @PrimeTrustJWT()
-  public async uploadProofOfAddress(ctx: any) {
-    const files = ctx.request.file;
-    const user = ctx.request.user;
-    const jwtToken = ctx.request.primeTrustToken;
-    if (!files) {
-      return this.BadRequest(
-        ctx,
-        "Please upload proof of address in order to complete KYC"
-      );
-    }
-    let existingStatus = (
-      await UserTable.findOne(
-        { _id: ctx.request.user._id },
-        { status: 1, _id: 0 }
-      )
-    ).status;
-    if (
-      existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
-      existingStatus === EUSERSTATUS.KYC_DOCUMENT_UPLOAD
-    ) {
-      try {
-        fs.unlinkSync(
-          path.join(__dirname, "../../../../uploads", files.filename)
-        );
-      } catch (err) {}
-      return this.BadRequest(
-        ctx,
-        existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-          ? "User already verified."
-          : "User's data already uploaded."
-      );
-    }
-    /**
-     * Validations to be done
-     */
-    const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
-      "stateId",
-      ["name", "shortName"]
-    );
-    if (!userExists || userExists.type == EUserType.TEEN) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const parentChildExists = await ParentChildTable.findOne({
-      userId: user._id,
-    });
-    if (!parentChildExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const accountIdDetails: any =
-      userExists.type == EUserType.SELF
-        ? parentChildExists
-        : await parentChildExists.teens.find(
-            (x: any) =>
-              x.childId.toString() == parentChildExists.firstChildId.toString()
-          );
-    if (!accountIdDetails) {
-      return this.BadRequest(ctx, "Account Details Not Found");
-    }
-    const fullName = userExists.firstName + " " + userExists.lastName;
-
-    /**
-     * Upload both file
-     */
-    let addressDocumentId = null;
-    let uploadFileError = null;
-    let uploadData = {
-      "contact-id": parentChildExists.contactId,
-      description: "Proof of Address",
-      label: "Proof of Address",
-      public: "true",
-      file: fs.createReadStream(
-        path.join(__dirname, "../../../../uploads", files.filename)
-      ),
-    };
-    let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-    if (uploadFile.status == 400) {
-      uploadFileError = uploadFile.message;
-    }
-    if (uploadFile.status == 200 && uploadFile.message.errors != undefined) {
-      uploadFileError = uploadFile.message;
-    }
-    if (uploadFileError) {
-      /**
-       * Delete image from our server
-       */
-      try {
-        fs.unlinkSync(
-          path.join(__dirname, "../../../../uploads", files.filename)
-        );
-      } catch (err) {
-        console.log("Error in removing image");
-      }
-      return this.BadRequest(ctx, uploadFileError);
-    }
-    addressDocumentId = uploadFile.message.data.id;
-    /**
-     * Checking the kyc document checks
-     */
-    const kycData = {
-      type: "kyc-document-checks",
-      attributes: {
-        "contact-id": parentChildExists.contactId,
-        "uploaded-document-id": addressDocumentId,
-        "kyc-document-type": "residence_permit",
-        identity: true,
-        "identity-photo": true,
-        "proof-of-address": true,
-        "kyc-document-country": "US",
-      },
-    };
-    let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
-    if (kycResponse.status == 400) {
-      return this.BadRequest(ctx, kycResponse.message);
-    }
-    if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
-      return this.BadRequest(ctx, kycResponse.message);
-    }
-    await UserTable.updateOne(
-      {
-        _id: userExists._id,
-      },
-      {
-        $set: {
-          status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
-        },
-      }
-    );
-    /**
-     * Updating the info in parent child table
-     */
-    await ParentChildTable.updateOne(
-      { userId: user._id, "teens.childId": parentChildExists.firstChildId },
-      {
-        $set: {
-          contactId: parentChildExists.contactId,
-          "teens.$.accountId": accountIdDetails.accountId,
-          proofOfAddressId: addressDocumentId,
-          kycDocumentId: kycResponse.data.data.id,
-        },
-      }
-    );
-    return this.Ok(ctx, {
-      data: kycResponse.data,
-      message:
-        "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
-    });
-  }
-
-
-   /**
    * @description This method is used to view profile for both parent and child
    * @param ctx
    */
-   @Route({ path: "/get-profile/:id", method: HttpMethod.GET })
-   @Auth()
-   public async getProfile(ctx: any) {
-     const { id } = ctx.request.params;
-     if (!/^[0-9a-fA-F]{24}$/.test(id))
-       return this.BadRequest(ctx, "Enter valid ID.");
-     let { data, userDraft } = await userService.getProfile(id);
-     console.log('userDraft: ', userDraft);
-     console.log('data: ', data);
-     const matchObject = {
-       receiverMobile: data ? data.mobile : userDraft.mobile,
-       isVerified: 1,
-     };
-     console.log('matchObject: ', matchObject);
- 
-     const checkNumberVerifiedOrNot = await OtpTable.findOne(matchObject);
- 
-     if (data) {
-       if (checkNumberVerifiedOrNot) {
-         data.isMobileVerified = 1;
-       }
-       const checkParentExists = await UserTable.findOne({
-         mobile: data.parentMobile ? data.parentMobile : data.mobile,
-       });
-       const checkBankExists =
-         checkParentExists?._id &&
-         (await UserBanksTable.find({
-           userId: checkParentExists._id,
-         }));
-       if (
-         !checkParentExists ||
-         (checkParentExists &&
-           checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-       ) {
-         data.isParentApproved = 0;
-       } else {
-         data.isParentApproved = 1;
-       }
-       if (
-         !checkParentExists ||
-         (checkParentExists && checkBankExists.length == 0)
-       ) {
-         data.isRecurring = 0;
-       } else if (checkBankExists.length > 0) {
-         if (data.isRecurring == 1 || data.isRecurring == 0) {
-           data.isRecurring = 1;
-         }
-       }
-     }
-     console.log(checkNumberVerifiedOrNot);
-     if (checkNumberVerifiedOrNot && userDraft) {
-       userDraft.isMobileVerified = 1;
-     }
- 
-     data = {
-       ...data,
-       terms: CMS_LINKS.TERMS,
-       amcPolicy: CMS_LINKS.AMC_POLICY,
-       privacy: CMS_LINKS.PRIVACY_POLICY,
-       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
-     };
- 
-     return this.Ok(ctx, userDraft ? userDraft : data, true);
-   }
+  @Route({ path: "/get-profile/:id", method: HttpMethod.GET })
+  @Auth()
+  public async getProfile(ctx: any) {
+    const { id } = ctx.request.params;
+    if (!/^[0-9a-fA-F]{24}$/.test(id))
+      return this.BadRequest(ctx, "Enter valid ID.");
+    let { data, userDraft } = await userService.getProfile(id);
+    console.log("userDraft: ", userDraft);
+    console.log("data: ", data);
+    const matchObject = {
+      receiverMobile: data ? data.mobile : userDraft.mobile,
+      isVerified: 1,
+    };
+    console.log("matchObject: ", matchObject);
 
+    const checkNumberVerifiedOrNot = await OtpTable.findOne(matchObject);
 
+    if (data) {
+      if (checkNumberVerifiedOrNot) {
+        data.isMobileVerified = 1;
+      }
+      const checkParentExists = await UserTable.findOne({
+        mobile: data.parentMobile ? data.parentMobile : data.mobile,
+      });
+      const checkBankExists =
+        checkParentExists?._id &&
+        (await UserBanksTable.find({
+          userId: checkParentExists._id,
+        }));
+      if (
+        !checkParentExists ||
+        (checkParentExists &&
+          checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
+      ) {
+        data.isParentApproved = 0;
+      } else {
+        data.isParentApproved = 1;
+      }
+      if (
+        !checkParentExists ||
+        (checkParentExists && checkBankExists.length == 0)
+      ) {
+        data.isRecurring = 0;
+      } else if (checkBankExists.length > 0) {
+        if (data.isRecurring == 1 || data.isRecurring == 0) {
+          data.isRecurring = 1;
+        }
+      }
+    }
+    console.log(checkNumberVerifiedOrNot);
+    if (checkNumberVerifiedOrNot && userDraft) {
+      userDraft.isMobileVerified = 1;
+    }
+
+    data = {
+      ...data,
+      terms: CMS_LINKS.TERMS,
+      amcPolicy: CMS_LINKS.AMC_POLICY,
+      privacy: CMS_LINKS.PRIVACY_POLICY,
+      ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+    };
+
+    return this.Ok(ctx, userDraft ? userDraft : data, true);
+  }
 }
 
 export default new UserController();
