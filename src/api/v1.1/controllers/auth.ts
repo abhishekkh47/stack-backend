@@ -65,8 +65,8 @@ class AuthController extends BaseController {
             if (!email) {
               return this.BadRequest(ctx, "Please enter email");
             }
-            let userExists = await UserTable.findOne({ email: email });
-            let userDraftExists = await UserDraftTable.findOne({
+            const userExists = await UserTable.findOne({ email: email });
+            const userDraftExists = await UserDraftTable.findOne({
               email: email,
             });
             if (!userExists && !userDraftExists) {
@@ -79,7 +79,7 @@ class AuthController extends BaseController {
               userExists ? userExists : userDraftExists
             );
 
-            let getProfileInput: any = {
+            const getProfileInput: any = {
               request: {
                 query: { token },
                 params: {
@@ -129,7 +129,7 @@ class AuthController extends BaseController {
           const childArray = [];
           let user = null;
           let refferalCodeExists = null;
-          let admin = await AdminTable.findOne({});
+          const admin = await AdminTable.findOne({});
           /* tslint:disable-next-line */
           if (reqParam.type == EUserType.TEEN) {
             /**
@@ -327,7 +327,12 @@ class AuthController extends BaseController {
             );
           }
 
-          if (accountId && accountNumber) {
+          if (
+            accountId &&
+            accountNumber &&
+            user.type != EUserType.PARENT &&
+            user.type != EUserType.SELF
+          ) {
             /**
              * TODO
              */
@@ -739,7 +744,7 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           let migratedId;
-          let admin = await AdminTable.findOne({});
+          const admin = await AdminTable.findOne({});
           const otpExists = await OtpTable.findOne({
             receiverMobile: reqParam.mobile,
           }).sort({ createdAt: -1 });
@@ -840,34 +845,31 @@ class AuthController extends BaseController {
               });
             }
 
+            const isUserNotTeen =
+              updateUser.type == EUserType.PARENT ||
+              updateUser.type == EUserType.SELF;
+
+            const parentSignupFunnel = [
+              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+              PARENT_SIGNUP_FUNNEL.DOB,
+              PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
+            ];
+
+            const teenSignupFunnel = [
+              TEEN_SIGNUP_FUNNEL.SIGNUP,
+              TEEN_SIGNUP_FUNNEL.DOB,
+              TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+            ];
+
             let dataSentInCrm: any = {
               Account_Name: updateUser.firstName + " " + updateUser.lastName,
               Email: updateUser.email,
               Mobile: reqParam.mobile,
+              ...(isUserNotTeen && {
+                Parent_Signup_Funnel: parentSignupFunnel,
+              }),
+              ...(!isUserNotTeen && { Teen_Signup_Funnel: teenSignupFunnel }),
             };
-
-            if (
-              updateUser.type == EUserType.PARENT ||
-              updateUser.type == EUserType.SELF
-            ) {
-              dataSentInCrm = {
-                ...dataSentInCrm,
-                Parent_Signup_Funnel: [
-                  ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-                  PARENT_SIGNUP_FUNNEL.DOB,
-                  PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
-                ],
-              };
-            } else {
-              dataSentInCrm = {
-                ...dataSentInCrm,
-                Teen_Signup_Funnel: [
-                  TEEN_SIGNUP_FUNNEL.SIGNUP,
-                  TEEN_SIGNUP_FUNNEL.DOB,
-                  TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
-                ],
-              };
-            }
 
             await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
@@ -978,7 +980,6 @@ class AuthController extends BaseController {
             childMobile,
             email,
             childEmail,
-            firstName,
             childFirstName,
             childLastName,
           } = input;
@@ -987,72 +988,79 @@ class AuthController extends BaseController {
             parentMobile: mobile,
           };
           let migratedId;
+          let userResponse;
+          let parentRecord = await UserTable.findOne({ mobile: mobile });
+          let parentInUserDraft = await UserDraftTable.findOne({
+            _id: ctx.request.user._id,
+          });
+
+          /**
+           * migrate parent from userdraft to user table
+           */
+          const createObject = {
+            email: parentInUserDraft.email,
+            dob: parentInUserDraft.dob,
+            type: parentInUserDraft.type,
+            mobile: input.mobile,
+            firstName: parentInUserDraft.firstName,
+            lastName: parentInUserDraft.lastName,
+            referralCode: parentInUserDraft.referralCode,
+          };
+
+          if (!parentRecord && parentInUserDraft) {
+            if (
+              (parentInUserDraft.type == EUserType.PARENT ||
+                parentInUserDraft.type == EUserType.SELF) &&
+              parentInUserDraft
+            ) {
+              userResponse = await UserTable.create(createObject);
+              await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
+              migratedId = userResponse._id;
+            }
+          }
+
           if (childEmail) {
             query = {
               ...query,
-              // parentNumber: { $regex: `${email}$`, $options: "i" },
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
 
           let user = await UserTable.findOne(query);
+
+          const baseChildUser = {
+            firstName: childFirstName ? childFirstName : user.firstName,
+            lastName: childLastName ? childLastName : user.lastName,
+            mobile: childMobile ? childMobile : user.mobile,
+            parentEmail: email,
+            parentMobile: mobile,
+            type: EUserType.TEEN,
+            isParentFirst: false,
+            isAutoApproval: EAUTOAPPROVAL.ON,
+          };
           if (user) {
             await UserTable.updateOne(
               {
                 _id: user._id,
               },
               {
-                $set: {
-                  firstName: childFirstName ? childFirstName : user.firstName,
-                  lastName: childLastName ? childLastName : user.lastName,
-                  mobile: childMobile ? childMobile : user.mobile,
-                  parentEmail: email,
-                  parentMobile: mobile,
-                  type: EUserType.TEEN,
-                  isParentFirst: false,
-                  isAutoApproval: EAUTOAPPROVAL.ON,
-                },
+                $set: baseChildUser,
               }
             );
-            let parentRecord = await UserTable.findOne({ mobile: mobile });
-            let parentInUserDraft = await UserDraftTable.findOne({
-              _id: ctx.request.user._id,
-            });
 
-            if (!parentRecord && parentInUserDraft) {
-              if (
-                (parentInUserDraft.type == EUserType.PARENT ||
-                  parentInUserDraft.type == EUserType.SELF) &&
-                parentInUserDraft
-              ) {
-                const createObject = {
-                  email: parentInUserDraft.email,
-                  dob: parentInUserDraft.dob,
-                  type: parentInUserDraft.type,
-                  mobile: input.mobile,
-                  firstName: parentInUserDraft.firstName,
-                  lastName: parentInUserDraft.lastName,
-                  referralCode: parentInUserDraft.referralCode,
-                };
-                let userResponse = await UserTable.create(createObject);
-                await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
-                migratedId = userResponse._id;
-
-                await ParentChildTable.findOneAndUpdate(
-                  {
-                    userId: userResponse._id,
-                  },
-                  {
-                    $set: {
-                      contactId: null,
-                      firstChildId: user._id,
-                      teens: [{ childId: user._id, accountId: null }],
-                    },
-                  },
-                  { upsert: true, new: true }
-                );
-              }
-            }
+            await ParentChildTable.findOneAndUpdate(
+              {
+                userId: userResponse._id,
+              },
+              {
+                $set: {
+                  contactId: null,
+                  firstChildId: user._id,
+                  teens: [{ childId: user._id, accountId: null }],
+                },
+              },
+              { upsert: true, new: true }
+            );
 
             if (!parentRecord && !parentInUserDraft) {
               return this.BadRequest(ctx, "User not found");
@@ -1101,59 +1109,27 @@ class AuthController extends BaseController {
            * Generate referal code when user sign's up.
            */
           const uniqueReferralCode = await makeUniqueReferalCode();
-          const createObject = {
-            firstName: childFirstName ? childFirstName : user.firstName,
-            lastName: childLastName ? childLastName : user.lastName,
-            mobile: childMobile ? childMobile : user.mobile,
+          const createTeenObject = {
+            ...baseChildUser,
             email: childEmail,
-            parentEmail: email,
-            parentMobile: mobile,
-            type: EUserType.TEEN,
             referralCode: uniqueReferralCode,
             isParentFirst: true,
-            isAutoApproval: EAUTOAPPROVAL.ON,
           };
-          let createChild = await UserTable.create(createObject);
+          let createChild = await UserTable.create(createTeenObject);
 
-          let parentRecord = await UserTable.findOne({ mobile: mobile });
-          let parentInUserDraft = await UserDraftTable.findOne({
-            _id: ctx.request.user._id,
-          });
-
-          if (!parentRecord && parentInUserDraft) {
-            if (
-              (parentInUserDraft.type == EUserType.PARENT ||
-                parentInUserDraft.type == EUserType.SELF) &&
-              parentInUserDraft
-            ) {
-              const createObject = {
-                email: parentInUserDraft.email,
-                dob: parentInUserDraft.dob,
-                type: parentInUserDraft.type,
-                mobile: input.mobile,
-                firstName: parentInUserDraft.firstName,
-                lastName: parentInUserDraft.lastName,
-                referralCode: parentInUserDraft.referralCode,
-              };
-              let userResponse = await UserTable.create(createObject);
-              await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
-              migratedId = userResponse._id;
-
-              await ParentChildTable.findOneAndUpdate(
-                {
-                  userId: userResponse._id,
-                },
-                {
-                  $set: {
-                    contactId: null,
-                    firstChildId: createChild._id,
-                    teens: [{ childId: createChild._id, accountId: null }],
-                  },
-                },
-                { upsert: true, new: true }
-              );
-            }
-          }
+          await ParentChildTable.findOneAndUpdate(
+            {
+              userId: userResponse._id,
+            },
+            {
+              $set: {
+                contactId: null,
+                firstChildId: createChild._id,
+                teens: [{ childId: createChild._id, accountId: null }],
+              },
+            },
+            { upsert: true, new: true }
+          );
 
           if (!parentRecord && !parentInUserDraft) {
             return this.BadRequest(ctx, "User not found");
@@ -1193,22 +1169,15 @@ class AuthController extends BaseController {
     if (!user) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const deviceTokens = await DeviceToken.findOne({ userId: user._id });
     return validation.logoutValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
         if (validate) {
-          if (deviceTokens.deviceToken.includes(reqParam.deviceToken)) {
-            await DeviceToken.updateOne(
-              { userId: user._id },
-              {
-                $pull: {
-                  deviceToken: reqParam.deviceToken,
-                },
-              }
-            );
-          }
+          await DeviceTokenService.removeDeviceToken(
+            user._id,
+            reqParam.deviceToken
+          );
           return this.Ok(ctx, { message: "Logout Successfully" });
         }
       }
@@ -1254,58 +1223,44 @@ class AuthController extends BaseController {
       const childInfo = await UserDraftTable.findOne({
         _id: ctx.request.user._id,
       });
+
+      const updateOrCreateObject = {
+        email: childInfo.email,
+        dob: childInfo.dob,
+        type: childInfo.type,
+        mobile: ctx.request.body.mobile,
+        parentMobile: ctx.request.body.parentMobile,
+        parentEmail:
+          checkParentExists && checkParentExists.type == EUserType.PARENT
+            ? checkParentExists.email
+            : null,
+        irstName: childAlreadyExists.firstName
+          ? childAlreadyExists.firstName
+          : childInfo.firstName,
+        lastName: childAlreadyExists.lastName
+          ? childAlreadyExists.lastName
+          : childInfo.lastName,
+        referralCode: childAlreadyExists.referralCode
+          ? childAlreadyExists.referralCode
+          : childInfo.referralCode,
+      };
+
       if (childAlreadyExists && childInfo) {
-        const updateObject = {
-          email: childInfo.email,
-          dob: childInfo.dob,
-          type: childInfo.type,
-          mobile: ctx.request.body.mobile,
-          firstName: childAlreadyExists.firstName
-            ? childAlreadyExists.firstName
-            : childInfo.firstName,
-          lastName: childAlreadyExists.lastName
-            ? childAlreadyExists.lastName
-            : childInfo.lastName,
-          referralCode: childAlreadyExists.referralCode,
-          parentMobile: ctx.request.body.parentMobile,
-          parentEmail:
-            checkParentExists && checkParentExists.type == EUserType.PARENT
-              ? checkParentExists.email
-              : null,
-        };
         await UserTable.findOneAndUpdate(
           { mobile: ctx.request.body.mobile },
-          { $set: updateObject },
+          { $set: updateOrCreateObject },
           { new: true }
         );
 
-        await UserDraftTable.deleteOne({
-          _id: ctx.request.user._id,
-        });
-
         migratedId = childAlreadyExists ? childAlreadyExists._id : "";
       } else {
-        const createObject = {
-          email: childInfo.email,
-          type: childInfo.type,
-          dob: childInfo.dob,
-          mobile: ctx.request.body.mobile,
-          lastName: childInfo.lastName,
-          firstName: childInfo.firstName,
-          referralCode: childInfo.referralCode,
-          parentMobile: ctx.request.body.parentMobile,
-          parentEmail:
-            checkParentExists && checkParentExists.type == EUserType.PARENT
-              ? checkParentExists.email
-              : null,
-        };
-
-        const userResponse = await UserTable.create(createObject);
-        await UserDraftTable.deleteOne({
-          _id: ctx.request.user._id,
-        });
+        const userResponse = await UserTable.create(updateOrCreateObject);
         migratedId = userResponse._id;
       }
+
+      await UserDraftTable.deleteOne({
+        _id: ctx.request.user._id,
+      });
     }
 
     if (checkParentExists) {
@@ -1339,19 +1294,19 @@ class AuthController extends BaseController {
         if (validate) {
           try {
             const { email, deviceToken } = reqParam;
-            let userExists = await UserTable.findOne({ email });
-            let userDraftExists = await UserDraftTable.findOne({ email });
-            if (!userExists && !userDraftExists) {
-              await SocialService.verifySocial(reqParam);
-              const uniqueReferralCode = await makeUniqueReferalCode();
-              let createQuery: any = {
+            const userExists = await UserTable.findOne({ email });
+            let userDraftInfo = await UserDraftTable.findOne({ email });
+            await SocialService.verifySocial(reqParam);
+            const uniqueReferralCode = await makeUniqueReferalCode();
+            if (!userExists && !userDraftInfo) {
+              const createQuery: any = {
                 email: reqParam.email,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
                 referralCode: uniqueReferralCode,
               };
-              const user = await UserDraftTable.create(createQuery);
-              if (user) {
+              userDraftInfo = await UserDraftTable.create(createQuery);
+              if (userDraftInfo) {
                 /**
                  * Zoho crm account addition
                  */
@@ -1366,71 +1321,37 @@ class AuthController extends BaseController {
                   ctx.request.zohoAccessToken,
                   dataSentInCrm
                 );
-
-                let checkUserDraftExists: any = await UserDraftTable.findOne({
-                  email,
-                });
-                const { token, refreshToken } =
-                  await TokenService.generateToken(checkUserDraftExists);
-
-                let getProfileInput: any = {
-                  request: {
-                    query: { token },
-                    params: { id: checkUserDraftExists._id },
-                  },
-                };
-                await UserController.getProfile(getProfileInput);
-
-                if (deviceToken) {
-                  await DeviceTokenService.addDeviceTokenIfNeeded(
-                    checkUserDraftExists._id,
-                    deviceToken
-                  );
-                }
-
-                return this.Ok(ctx, {
-                  token,
-                  refreshToken,
-                  profileData: getProfileInput.body.data,
-                  message: "Success",
-                  isUserExist: false,
-                });
               }
-            } else {
-              await SocialService.verifySocial(reqParam);
-
-              const { token, refreshToken } = await TokenService.generateToken(
-                userExists !== null ? userExists : userDraftExists
-              );
-
-              let getProfileInput: any = {
-                request: {
-                  query: { token },
-                  params: {
-                    id:
-                      userExists !== null
-                        ? userExists._id
-                        : userDraftExists._id,
-                  },
-                },
-              };
-              await UserController.getProfile(getProfileInput);
-
-              if (deviceToken) {
-                await DeviceTokenService.addDeviceTokenIfNeeded(
-                  userExists !== null ? userExists._id : userDraftExists._id,
-                  deviceToken
-                );
-              }
-
-              return this.Ok(ctx, {
-                token,
-                refreshToken,
-                profileData: getProfileInput.body.data,
-                message: "Success",
-                isUserExist: userExists ? true : false,
-              });
             }
+
+            const { token, refreshToken } = await TokenService.generateToken(
+              userExists !== null ? userExists : userDraftInfo
+            );
+
+            let getProfileInput: any = {
+              request: {
+                query: { token },
+                params: {
+                  id: userExists !== null ? userExists._id : userDraftInfo._id,
+                },
+              },
+            };
+            await UserController.getProfile(getProfileInput);
+
+            if (deviceToken) {
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                userExists !== null ? userExists._id : userDraftInfo._id,
+                deviceToken
+              );
+            }
+
+            return this.Ok(ctx, {
+              token,
+              refreshToken,
+              profileData: getProfileInput.body.data,
+              message: "Success",
+              isUserExist: userExists ? true : false,
+            });
           } catch (error) {
             return this.BadRequest(ctx, error.message);
           }

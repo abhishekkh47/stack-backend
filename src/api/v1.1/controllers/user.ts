@@ -1,3 +1,6 @@
+import { getAccounts } from "./../../../utility/plaid";
+import { QuizQuestionResult } from "./../../../model/quizQuestionResult";
+import { QuizResult } from "./../../../model/quizResult";
 import { OtpTable } from "./../../../model/otp";
 import { json } from "co-body";
 import fs from "fs";
@@ -8,6 +11,7 @@ import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { ParentChildTable, UserTable } from "../../../model";
 import {
   DeviceTokenService,
+  quizService,
   userService,
   zohoCrmService,
 } from "../../../services";
@@ -18,7 +22,7 @@ import {
   getLinkToken,
   kycDocumentChecks,
   Route,
-  uploadFilesFetch
+  uploadFilesFetch,
 } from "../../../utility";
 import {
   CMS_LINKS,
@@ -212,7 +216,6 @@ class UserController extends BaseController {
             "postal-code": userExists.postalCode,
             city: userExists.city,
             region: userExists.state,
-            // region: userExists.stateId.shortName,
             country: userExists.country,
           },
         },
@@ -440,6 +443,80 @@ class UserController extends BaseController {
     };
 
     return this.Ok(ctx, userDraft ? userDraft : data, true);
+  }
+
+  /**
+   * @description This method is used to get child of parent
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/get-children", method: HttpMethod.POST })
+  @Auth()
+  public async getChildren(ctx: any) {
+    const checkUserExists = await UserTable.findOne({
+      _id: ctx.request.user._id,
+    });
+    let teens = await userService.getChildren(
+      checkUserExists ? ctx.request.user._id : ctx.request.body.userId
+    );
+    return this.Ok(ctx, teens);
+  }
+
+  /**
+   * @description This method is used to get the bank account info
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/get-bank-info", method: HttpMethod.POST })
+  @Auth()
+  public async getBankInfo(ctx: any) {
+    const user = ctx.request.user;
+    let array = [];
+    let account;
+    let getUserType = await UserTable.findOne({
+      _id: ctx.request.user._id,
+    });
+
+    if (!getUserType) {
+      getUserType = await UserTable.findOne({
+        _id: ctx.request.body.userId,
+      });
+    }
+    let parentId;
+    if (getUserType.type == EUserType.TEEN) {
+      parentId = await UserTable.findOne({
+        email: getUserType.parentEmail,
+      });
+    }
+    const userBankExists = await UserBanksTable.find({
+      $or: [
+        { userId: parentId ? parentId : user._id },
+        {
+          parentId: parentId ? parentId : user._id,
+        },
+      ],
+    });
+    if (userBankExists) {
+      for await (let userBank of userBankExists) {
+        account = await getAccounts(userBank.accessToken);
+        array.push({
+          _id: userBank._id,
+          accessToken: userBank.accessToken,
+          isDefault: userBank.isDefault,
+          accounts: account.data &&
+            account?.data?.accounts[0] && [
+              {
+                bankId: account.data.accounts[0].account_id,
+                bankAccountNo: account.data.accounts[0].mask,
+                bankName: account.data.accounts[0].name,
+              },
+            ],
+        });
+      }
+      return this.Ok(ctx, { data: array });
+    } else {
+      this.BadRequest(ctx, "No bank account added.");
+    }
   }
 }
 

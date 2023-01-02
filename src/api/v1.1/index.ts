@@ -5,7 +5,8 @@ import { HttpMethod, IController } from "../../types/index";
 import {
   AuthController,
   UserController,
-  TradingController
+  TradingController,
+  QuizController
 } from "./controllers";
 const router = new Router();
 
@@ -68,7 +69,6 @@ const setControllerRoutes = (router: Router, controller: IController) => {
 setControllerRoutes(router, AuthController);
 setControllerRoutes(router, UserController);
 setControllerRoutes(router, TradingController);
-
-// setControllerRoutes(router, ScriptController);
+setControllerRoutes(router, QuizController);
 
 export default Compose([router.routes(), router.allowedMethods()]);

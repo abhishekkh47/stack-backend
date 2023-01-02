@@ -21,7 +21,7 @@ import {
   ETransactionType,
   EUSERSTATUS,
   EUserType,
-  HttpMethod
+  HttpMethod,
 } from "../../../types";
 import {
   createBank,
@@ -33,9 +33,7 @@ import {
   internalAssetTransfers,
   Route,
 } from "../../../utility";
-import {
-  PARENT_SIGNUP_FUNNEL,
-} from "../../../utility/constants";
+import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 
@@ -106,7 +104,6 @@ class TradingController extends BaseController {
             });
           }
 
-          // to be commented code need to check once :
           const parentDetails: any = await ParentChildTable.findOne({
             _id: parent._id,
           });
@@ -387,9 +384,12 @@ class TradingController extends BaseController {
               isParentKycVerified
             );
 
-          // if price didn't change any all, totalStackValue and totalSpentAmount would have been same
-          // (if we don't consider cash balance)
-          // Note: this totalSpentAmount includes the $5 bonus to the teens
+          /**
+           * if price didn't change any all, totalStackValue and totalSpentAmount would have been same
+           * (if we don't consider cash balance)
+           * Note: this totalSpentAmount includes the $5 bonus to the teens
+           */
+
           let totalStackValue: any = 0;
           let totalSpentAmount = 0;
           let totalGainLoss: any = 0;
@@ -448,7 +448,9 @@ class TradingController extends BaseController {
           const pendingInitialDeposit =
             await tradingDbService.getPendingInitialDeposit(childExists._id);
           if (pendingInitialDeposit.length > 0) {
-            // if initial deposit is pending, we add it to totalStackValue
+            /**
+             * if initial deposit is pending, we add it to totalStackValue
+             */
             pendingInitialDepositAmount = pendingInitialDeposit[0].sum;
             totalStackValue = totalStackValue + pendingInitialDeposit[0].sum;
           }
@@ -457,20 +459,27 @@ class TradingController extends BaseController {
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
-          const isKycVerifiedAndDepositCleared = isParentKycVerified && hasClearedDeposit
-          totalStackValue = totalStackValue + (isKycVerifiedAndDepositCleared ? cashBalance : 0);
+          const isKycVerifiedAndDepositCleared =
+            isParentKycVerified && hasClearedDeposit;
+          totalStackValue =
+            totalStackValue +
+            (isKycVerifiedAndDepositCleared ? cashBalance : 0);
           return this.Ok(ctx, {
             data: {
               portFolio: buySellTransactions,
               totalStackValue,
               stackCoins: totalCoins,
               totalGainLoss,
-              balance: isKycVerifiedAndDepositCleared ? cashBalance : pendingInitialDepositAmount,
+              balance: isKycVerifiedAndDepositCleared
+                ? cashBalance
+                : pendingInitialDepositAmount,
               parentStatus: parentChild?.userId?.status,
               totalAmountInvested:
                 totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),
               intialBalance: pendingInitialDepositAmount,
-              // 0 - SKIP , 1 - PENDIGN 2 - DEPOSIT AVAILNA
+              /**
+               *  0 - SKIP , 1 - PENDIGN 2 - DEPOSIT AVAILNA
+               */
               isDeposit: isParentKycVerified
                 ? hasClearedDeposit
                   ? 2
