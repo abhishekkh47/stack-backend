@@ -1,6 +1,4 @@
 import tradingDbService from "../../../services/trading.db.service";
-import moment from "moment";
-import { ObjectId } from "mongodb";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -8,59 +6,35 @@ import {
   CryptoTable,
   ParentChildTable,
   TransactionTable,
-  UserActivityTable,
   UserBanksTable,
   UserTable,
 } from "../../../model";
 import {
-  DeviceTokenService,
   PortfolioService,
-  tradingService,
-  UserBankDBService,
-  UserDBService,
   userService,
   zohoCrmService,
 } from "../../../services";
 import {
-  EAction,
-  EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
   ERECURRING,
-  ESCREENSTATUS,
-  EStatus,
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
   EUserType,
-  HttpMethod,
-  messages,
+  HttpMethod
 } from "../../../types";
 import {
   createBank,
-  createContributions,
-  createDisbursements,
   createProcessorToken,
   executeQuote,
   generateQuote,
-  getAccountId,
-  getAccounts,
   getBalance,
-  getContactId,
   getPublicTokenExchange,
-  getPushTransferMethods,
-  getWireTransfer,
-  institutionsGetByIdRequest,
   internalAssetTransfers,
   Route,
-  wireTransfer,
-  getAssets,
-  getAssetTotalWithId,
 } from "../../../utility";
 import {
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
-  PLAID_ITEM_ERROR,
 } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";

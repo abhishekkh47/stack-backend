@@ -7,7 +7,7 @@ import {
   UserTable,
 } from "../../../model";
 import { PortfolioService } from "../../../services";
-import { ERECURRING, EUserType, HttpMethod } from "../../../types";
+import { EUserType, HttpMethod } from "../../../types";
 import { getBalance, Route } from "../../../utility";
 import { CASH_USD_ICON } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";

@@ -18,8 +18,7 @@ import {
   getLinkToken,
   kycDocumentChecks,
   Route,
-  uploadFilesFetch,
-  uploadIdProof,
+  uploadFilesFetch
 } from "../../../utility";
 import {
   CMS_LINKS,

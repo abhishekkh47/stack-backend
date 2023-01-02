@@ -1,4 +1,3 @@
-import { ESCREENSTATUS } from "./../../../types/user";
 import { DripshopTable } from "../../../model/dripshop";
 import {
   GIFTCARDS,

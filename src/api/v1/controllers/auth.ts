@@ -29,7 +29,6 @@ import {
   EGIFTSTACKCOINSSETTING,
   EOTPTYPE,
   EOTPVERIFICATION,
-  ERead,
   ESCREENSTATUS,
   ETransactionStatus,
   ETransactionType,
