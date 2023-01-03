@@ -2,8 +2,6 @@ import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
 import { UserDraftTable } from "./../../../model/userDraft";
 import { TransactionTable } from "./../../../model/transactions";
 import { getAccounts } from "./../../../utility/plaid";
-import { QuizQuestionResult } from "./../../../model/quizQuestionResult";
-import { QuizResult } from "./../../../model/quizResult";
 import { OtpTable } from "./../../../model/otp";
 import { json } from "co-body";
 import fs from "fs";
@@ -14,7 +12,6 @@ import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { ParentChildTable, UserTable } from "../../../model";
 import {
   DeviceTokenService,
-  quizService,
   userService,
   zohoCrmService,
 } from "../../../services";
