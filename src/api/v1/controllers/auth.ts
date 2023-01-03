@@ -64,6 +64,7 @@ import {
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "./base";
 import UserController from "./user";
+import axios from "axios";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -684,6 +685,10 @@ class AuthController extends BaseController {
                   : reqParam.childFirstName,
               }),
             };
+
+            // If in staging environment, we need to manually KYC approve the account
+            if (process.env.APP_ENVIRONMENT === 'STAGING')
+              await axios.post(`${process.env.URL}/api/v1/staging/kyc-approve-user/${user._id}`);
           }
           if (user.type == EUserType.TEEN) {
             dataSentInCrm = {
