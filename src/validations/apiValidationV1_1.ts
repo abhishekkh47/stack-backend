@@ -112,4 +112,47 @@ export const validationV1_1 = {
     }
     return callback(true);
   },
+  redeemCryptoValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      dripshopId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      userId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("redeemCrypto", error))
+      );
+    return callback(true);
+  },
+  addDeviceTokenValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      deviceToken: Joi.string().required(),
+      userId: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("addDeviceToken", error))
+      );
+    return callback(true);
+  },
+  removeDeviceTokenValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      deviceToken: Joi.string().required(),
+      userId: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("removeDeviceToken", error))
+      );
+    return callback(true);
+  },
 };

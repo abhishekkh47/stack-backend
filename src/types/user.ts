@@ -86,7 +86,7 @@ export enum EAUTOAPPROVAL {
 
 export enum ENOTIFICATIONSETTINGS {
   ON = 1,
-  OFF = 0
+  OFF = 0,
 }
 
 export enum ERECURRING {
@@ -117,6 +117,7 @@ export enum EUSERSTATUS {
   KYC_DOCUMENT_UPLOAD = 1,
   KYC_DOCUMENT_UPLOAD_FAILED = 2,
   KYC_DOCUMENT_VERIFIED = 3,
+  ACCOUNT_CLOSED = 4,
 }
 export enum ESCREENSTATUS {
   /**
@@ -143,4 +144,3 @@ export enum ESCREENSTATUS {
   ENTER_PARENT_INFO = 9,
   SUCCESS_TEEN = 10,
 }
-

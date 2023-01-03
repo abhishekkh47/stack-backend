@@ -1,3 +1,6 @@
+import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
+import { UserDraftTable } from "./../../../model/userDraft";
+import { TransactionTable } from "./../../../model/transactions";
 import { getAccounts } from "./../../../utility/plaid";
 import { QuizQuestionResult } from "./../../../model/quizQuestionResult";
 import { QuizResult } from "./../../../model/quizResult";
@@ -397,10 +400,18 @@ class UserController extends BaseController {
     };
 
     const checkNumberVerifiedOrNot = await OtpTable.findOne(matchObject);
+    const checkIntitalDepositDone = await TransactionTable.findOne({
+      $or: [{ parentId: id }, { userId: id }],
+      intialDeposit: true,
+    });
 
     if (data) {
       if (checkNumberVerifiedOrNot) {
         data.isMobileVerified = 1;
+      }
+
+      if (checkIntitalDepositDone) {
+        data.initialDeposit = 1;
       }
       const checkParentExists = await UserTable.findOne({
         mobile: data.parentMobile ? data.parentMobile : data.mobile,
@@ -432,6 +443,9 @@ class UserController extends BaseController {
     }
     if (checkNumberVerifiedOrNot && userDraft) {
       userDraft.isMobileVerified = 1;
+    }
+    if (checkIntitalDepositDone && userDraft) {
+      userDraft.initialDeposit = 1;
     }
 
     data = {
@@ -517,6 +531,99 @@ class UserController extends BaseController {
     } else {
       this.BadRequest(ctx, "No bank account added.");
     }
+  }
+
+  /**
+   * @description This method is used to add/remove device token
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/device-token", method: HttpMethod.POST })
+  @Auth()
+  public async addDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    let checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserExists) {
+      checkUserExists = await UserTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    let checkUserDraftExists = await UserDraftTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserDraftExists) {
+      checkUserDraftExists = await UserDraftTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    if (!checkUserExists && !checkUserDraftExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validationV1_1.addDeviceTokenValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await DeviceTokenService.addDeviceTokenIfNeeded(
+            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token added successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to add/remove device token
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/device-token", method: HttpMethod.DELETE })
+  @Auth()
+  public async removeDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    console.log("reqParam: ", reqParam);
+    let checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserExists) {
+      checkUserExists = await UserTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    let checkUserDraftExists = await UserDraftTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserDraftExists) {
+      checkUserDraftExists = await UserDraftTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    if (!checkUserExists && !checkUserDraftExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validationV1_1.removeDeviceTokenValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await DeviceTokenService.removeDeviceToken(
+            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token removed successfully" });
+        }
+      }
+    );
   }
 }
 

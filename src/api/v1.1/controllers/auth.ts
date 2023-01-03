@@ -23,6 +23,8 @@ import {
   TwilioService,
   zohoCrmService,
   userService,
+  UserDBService,
+  TransactionDBService,
 } from "../../../services";
 import {
   EAUTOAPPROVAL,
@@ -463,27 +465,11 @@ class AuthController extends BaseController {
               /**
                * bitcoin asset id and crypto id
                */
-              await TransactionTable.create({
-                assetId: crypto.assetId,
-                cryptoId: crypto._id,
-                accountId: null,
-                type: ETransactionType.BUY,
-                settledTime: moment().unix(),
-                amount: admin.giftCryptoAmount,
-                amountMod: 0,
-                userId: user._id,
-                parentId: null,
-                status: ETransactionStatus.GIFTED,
-                executedQuoteId: null,
-                unitCount: 0,
-              });
-              await UserTable.updateOne(
-                { _id: user._id },
-                {
-                  $set: {
-                    isGiftedCrypto: 1,
-                  },
-                }
+
+              await TransactionDBService.createBtcGiftedTransaction(
+                user._id,
+                crypto,
+                admin
               );
             }
           }
@@ -737,7 +723,6 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public verifyOtpSignUp(ctx: any) {
     const reqParam = ctx.request.body;
-
     return validation.verifyOtpValidation(
       reqParam,
       ctx,
@@ -789,60 +774,32 @@ class AuthController extends BaseController {
             );
 
             if (updateUser.type == EUserType.SELF) {
-              let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+              const crypto = await CryptoTable.findOne({ symbol: "BTC" });
 
-              const createObj = {
-                email: updateUser.email,
-                mobile: reqParam.mobile,
-                firstName: updateUser.firstName,
-                lastName: updateUser.lastName,
-                referralCode: updateUser.referralCode,
-                dob: updateUser.dob,
-                type: updateUser.type,
-              };
+              const newUserDetail = await UserDBService.createUserAccount(
+                updateUser,
+                reqParam.mobile
+              );
 
-              let userResponse = await UserTable.create(createObj);
-              migratedId = userResponse._id;
+              migratedId = newUserDetail._id;
               await UserDraftTable.deleteOne({
                 _id: ctx.request.user._id,
               });
 
               let checkTransactionExists = await TransactionTable.findOne({
-                userId: userResponse._id,
+                userId: newUserDetail._id,
               });
               if (
                 admin.giftCryptoSetting == 1 &&
-                userResponse.isGiftedCrypto == 0 &&
+                newUserDetail.isGiftedCrypto == 0 &&
                 !checkTransactionExists
               ) {
-                await TransactionTable.create({
-                  assetId: crypto.assetId,
-                  cryptoId: crypto._id,
-                  accountId: null,
-                  type: ETransactionType.BUY,
-                  settledTime: moment().unix(),
-                  amount: admin.giftCryptoAmount,
-                  amountMod: 0,
-                  userId: userResponse._id,
-                  parentId: null,
-                  status: ETransactionStatus.GIFTED,
-                  executedQuoteId: null,
-                  unitCount: 0,
-                });
-                await UserTable.updateOne(
-                  { _id: userResponse._id },
-                  {
-                    $set: {
-                      isGiftedCrypto: 1,
-                    },
-                  }
+                await TransactionDBService.createBtcGiftedTransaction(
+                  newUserDetail._id,
+                  crypto,
+                  admin
                 );
               }
-
-              await ParentChildTable.create({
-                userId: userResponse._id,
-                firstChildId: userResponse._id,
-              });
             }
 
             const isUserNotTeen =
@@ -989,6 +946,8 @@ class AuthController extends BaseController {
           };
           let migratedId;
           let userResponse;
+          const admin = await AdminTable.findOne({});
+          const crypto = await CryptoTable.findOne({ symbol: "BTC" });
           let parentRecord = await UserTable.findOne({ mobile: mobile });
           let parentInUserDraft = await UserDraftTable.findOne({
             _id: ctx.request.user._id,
@@ -1014,8 +973,8 @@ class AuthController extends BaseController {
               parentInUserDraft
             ) {
               userResponse = await UserTable.create(createObject);
+              migratedId = userResponse._id.toString();
               await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
-              migratedId = userResponse._id;
             }
           }
 
@@ -1039,14 +998,28 @@ class AuthController extends BaseController {
             isAutoApproval: EAUTOAPPROVAL.ON,
           };
           if (user) {
-            await UserTable.updateOne(
+            const teenUserInfo = await UserTable.findByIdAndUpdate(
               {
                 _id: user._id,
               },
               {
                 $set: baseChildUser,
-              }
+              },
+              { new: true }
             );
+
+            const transactionExists = await TransactionTable.findOne({
+              userId: teenUserInfo._id,
+              status: ETransactionStatus.GIFTED,
+            });
+
+            if (!transactionExists) {
+              await TransactionDBService.createBtcGiftedTransaction(
+                teenUserInfo._id,
+                crypto,
+                admin
+              );
+            }
 
             await ParentChildTable.findOneAndUpdate(
               {
@@ -1080,6 +1053,7 @@ class AuthController extends BaseController {
 
             return this.Ok(ctx, {
               message: "Account successfully linked!",
+              migratedId: migratedId,
               isAccountFound: true,
             });
           }
@@ -1116,6 +1090,12 @@ class AuthController extends BaseController {
             isParentFirst: true,
           };
           let createChild = await UserTable.create(createTeenObject);
+
+          await TransactionDBService.createBtcGiftedTransaction(
+            createChild._id,
+            crypto,
+            admin
+          );
 
           await ParentChildTable.findOneAndUpdate(
             {
@@ -1234,15 +1214,15 @@ class AuthController extends BaseController {
           checkParentExists && checkParentExists.type == EUserType.PARENT
             ? checkParentExists.email
             : null,
-        irstName: childAlreadyExists.firstName
-          ? childAlreadyExists.firstName
-          : childInfo.firstName,
-        lastName: childAlreadyExists.lastName
-          ? childAlreadyExists.lastName
-          : childInfo.lastName,
-        referralCode: childAlreadyExists.referralCode
-          ? childAlreadyExists.referralCode
-          : childInfo.referralCode,
+        firstName: childInfo.firstName
+          ? childInfo.firstName
+          : childAlreadyExists.firstName,
+        lastName: childInfo.lastName
+          ? childInfo.lastName
+          : childAlreadyExists.lastName,
+        referralCode: childInfo.referralCode
+          ? childInfo.referralCode
+          : childAlreadyExists.referralCode,
       };
 
       if (childAlreadyExists && childInfo) {

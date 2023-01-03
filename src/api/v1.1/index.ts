@@ -6,7 +6,9 @@ import {
   AuthController,
   UserController,
   TradingController,
-  QuizController
+  QuizController,
+  DripshopController,
+  CryptoController,
 } from "./controllers";
 const router = new Router();
 
@@ -70,5 +72,7 @@ setControllerRoutes(router, AuthController);
 setControllerRoutes(router, UserController);
 setControllerRoutes(router, TradingController);
 setControllerRoutes(router, QuizController);
+setControllerRoutes(router, DripshopController);
+setControllerRoutes(router, CryptoController);
 
 export default Compose([router.routes(), router.allowedMethods()]);

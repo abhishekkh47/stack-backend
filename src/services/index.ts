@@ -13,3 +13,4 @@ export { default as DripshopDBService } from "./dripshop.db.service";
 export { default as UserDBService } from "./user.db.service";
 export { default as UserBankDBService } from "./userbank.db.service";
 export { default as DeviceTokenDBService } from "./device-token.db.service";
+export { default as TransactionDBService } from "./transaction.db.service";
