@@ -34,7 +34,7 @@ export const validation = {
   },
   logoutValidation: (req, res, callback) => {
     const schema = Joi.object({
-      deviceToken: Joi.string().required(),
+      deviceToken: Joi.string().optional().allow(""),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -171,10 +171,7 @@ export const validation = {
     });
     const { error } = schema.validate(req);
     if (error) {
-      return res.throw(
-        400,
-        res.__(validationMessageKey("unlinkBank", error))
-      );
+      return res.throw(400, res.__(validationMessageKey("unlinkBank", error)));
     }
     return callback(true);
   },
@@ -212,7 +209,7 @@ export const validation = {
         .required(),
       email: Joi.string().email().optional(),
       refferalCode: Joi.string().optional(),
-
+      deviceToken: Joi.string().optional().allow(""),
       childMobile: Joi.when("type", {
         is: 2,
         then: Joi.string()
@@ -251,6 +248,7 @@ export const validation = {
         .allow("")
         .regex(/^[A-za-z]*$/)
         .optional(),
+      deviceToken: Joi.string().optional().allow(""),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {
@@ -303,16 +301,9 @@ export const validation = {
   },
   loginValidation: (req, res, callback) => {
     const schema = Joi.object({
-      // username: Joi.string()
-      //   .min(5)
-      //   .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/),
-      // password: Joi.string()
-      //   .min(8)
-      //   .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
-      //   .required(),
       loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       email: Joi.string().email().required(),
-      deviceToken: Joi.string(),
+      deviceToken: Joi.string().optional().allow(""),
       socialLoginToken: Joi.string().required(),
       deviceType: Joi.number().valid(1, 2), // 1 - android and 2 - ios
     });
@@ -761,6 +752,43 @@ export const validation = {
       return res.throw(
         400,
         res.__(validationMessageKey("redeemCrypto", error))
+      );
+    return callback(true);
+  },
+  toggleNotificationValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      isNotificationOn: Joi.number().required().valid(0, 1),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("toggleNotification", error))
+      );
+    return callback(true);
+  },
+  addDeviceTokenValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      deviceToken: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("addDeviceToken", error))
+      );
+    return callback(true);
+  },
+  removeDeviceTokenValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      deviceToken: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+
+      return res.throw(
+        400,
+        res.__(validationMessageKey("removeDeviceToken", error))
       );
     return callback(true);
   },

@@ -1,3 +1,4 @@
+import { ENOTIFICATIONSETTINGS } from './../../../types/user';
 import { TEEN_SIGNUP_FUNNEL } from "./../../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
@@ -7,13 +8,11 @@ import {
   AdminTable,
   CryptoTable,
   DeviceToken,
-  Notification,
   OtpTable,
   ParentChildTable,
   StateTable,
   TransactionTable,
   UserDraftTable,
-  UserReffaralTable,
   UserTable,
 } from "../../../model";
 import {
@@ -52,7 +51,6 @@ import {
   makeUniqueReferalCode,
   Route,
   sendEmail,
-  sendNotification,
   verifyToken,
 } from "../../../utility";
 import {
@@ -81,33 +79,35 @@ class AuthController extends BaseController {
               return this.BadRequest(ctx, "Please enter email");
             }
             let userExists = await UserTable.findOne({ email: email });
-            if (!userExists) {
-              userExists = await UserTable.findOne({
-                email: { $regex: `${email}`, $options: "i" },
-              });
-              if (!userExists) {
-                return this.BadRequest(
-                  ctx,
-                  "User not found, please signup first."
-                );
-              }
+            let userDraftExists = await UserDraftTable.findOne({
+              email: email,
+            });
+            if (!userExists && !userDraftExists) {
+              return this.BadRequest(
+                ctx,
+                "User not found, please signup first."
+              );
             }
             const { token, refreshToken } = await TokenService.generateToken(
-              userExists
+              userExists ? userExists : userDraftExists
             );
 
             let getProfileInput: any = {
               request: {
                 query: { token },
-                params: { id: userExists._id },
+                params: {
+                  id: userExists ? userExists._id : userDraftExists._id,
+                },
               },
             };
 
             await UserController.getProfile(getProfileInput);
-            await DeviceTokenService.addDeviceTokenIfNeeded(
-              userExists._id,
-              deviceToken
-            );
+            if (deviceToken) {
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                userExists._id,
+                deviceToken
+              );
+            }
 
             return this.Ok(ctx, {
               token,
@@ -301,6 +301,7 @@ class AuthController extends BaseController {
               screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               isParentFirst: childExists.isParentFirst,
+              isNotificationOn: ENOTIFICATIONSETTINGS.ON,
             };
 
             user = await UserTable.findByIdAndUpdate(
@@ -335,7 +336,7 @@ class AuthController extends BaseController {
                     : null,
                   preLoadedCoins:
                     isGiftedStackCoins > 0 ? isGiftedStackCoins : 0,
-
+                  isNotificationOn: ENOTIFICATIONSETTINGS.ON,
                   isAutoApproval: EAUTOAPPROVAL.ON,
                 },
               },
@@ -592,7 +593,10 @@ class AuthController extends BaseController {
               referralCode: reqParam.refferalCode,
             });
             if (!refferalCodeExists) {
-              return this.BadRequest(ctx, "Refferal code not associated with any account");
+              return this.BadRequest(
+                ctx,
+                "Refferal code not associated with any account"
+              );
             }
 
             /**
@@ -618,8 +622,9 @@ class AuthController extends BaseController {
               (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
               user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
             ) {
-              await userService.getUserReferral(
+              await userService.redeemUserReferral(
                 refferalCodeExists._id,
+                [user._id],
                 reqParam.refferalCode
               );
             } else if (
@@ -628,8 +633,9 @@ class AuthController extends BaseController {
               parentChildInfo &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
             ) {
-              await userService.getUserReferral(
+              await userService.redeemUserReferral(
                 refferalCodeExists._id,
+                [user._id],
                 reqParam.refferalCode
               );
             }
@@ -1932,37 +1938,21 @@ class AuthController extends BaseController {
       if (!parentDetails) {
         return this.BadRequest(ctx, "Parent account is not registered");
       }
-      let deviceTokenData = await DeviceToken.findOne({
-        userId: parentDetails.userId,
-      }).select("deviceToken");
-      if (deviceTokenData) {
-        let notificationRequest = {
-          key:
-            reqParam.type == "NO_BANK"
-              ? NOTIFICATION_KEYS.NO_BANK_REMINDER
-              : NOTIFICATION_KEYS.NO_RECURRING_REMINDER,
-          title: NOTIFICATION.NO_BANK_REMINDER_TITLE,
-          message:
-            reqParam.type == "NO_BANK"
-              ? NOTIFICATION.NO_BANK_REMINDER_MESSAGE
-              : NOTIFICATION.NO_RECURRING_REMINDER_MESSAGE.replace(
-                  "#firstName",
-                  user.firstName
-                ),
-        };
-        await sendNotification(
-          deviceTokenData.deviceToken,
-          notificationRequest.title,
-          notificationRequest
-        );
-        await Notification.create({
-          title: notificationRequest.title,
-          userId: parentDetails.userId,
-          message: notificationRequest.message,
-          isRead: ERead.UNREAD,
-          data: JSON.stringify(notificationRequest),
-        });
-      }
+
+      await DeviceTokenService.sendUserNotification(
+        parentDetails.userId,
+        reqParam.type == "NO_BANK"
+          ? NOTIFICATION_KEYS.NO_BANK_REMINDER
+          : NOTIFICATION_KEYS.NO_RECURRING_REMINDER,
+        NOTIFICATION.NO_BANK_REMINDER_TITLE,
+        reqParam.type == "NO_BANK"
+          ? NOTIFICATION.NO_BANK_REMINDER_MESSAGE
+          : NOTIFICATION.NO_RECURRING_REMINDER_MESSAGE.replace(
+              "#firstName",
+              user.firstName
+            )
+      );
+
       return this.Ok(ctx, { message: "Success" });
     } else if (reqParam.type == "SEND_REMINDER") {
       const parent = await UserTable.findOne({
@@ -2089,10 +2079,8 @@ class AuthController extends BaseController {
                 },
               }
             );
-            return this.Ok(ctx, { message: "Logout Successfully" });
-          } else {
-            return this.BadRequest(ctx, "Device Token Doesn't Match");
           }
+          return this.Ok(ctx, { message: "Logout Successfully" });
         }
       }
     );
@@ -2219,45 +2207,54 @@ class AuthController extends BaseController {
                 };
                 await UserController.getProfile(getProfileInput);
 
-                await DeviceTokenService.addDeviceTokenIfNeeded(
-                  checkUserDraftExists._id,
-                  deviceToken
-                );
+                if (deviceToken) {
+                  await DeviceTokenService.addDeviceTokenIfNeeded(
+                    checkUserDraftExists._id,
+                    deviceToken
+                  );
+                }
 
                 return this.Ok(ctx, {
                   token,
                   refreshToken,
                   profileData: getProfileInput.body.data,
                   message: "Success",
+                  isUserExist: false,
                 });
               }
             } else {
               await SocialService.verifySocial(reqParam);
 
               const { token, refreshToken } = await TokenService.generateToken(
-                userExists !== null && userExists
+                userExists !== null ? userExists : userDraftExists
               );
 
               let getProfileInput: any = {
                 request: {
                   query: { token },
                   params: {
-                    id: userExists !== null && userExists._id,
+                    id:
+                      userExists !== null
+                        ? userExists._id
+                        : userDraftExists._id,
                   },
                 },
               };
               await UserController.getProfile(getProfileInput);
 
-              await DeviceTokenService.addDeviceTokenIfNeeded(
-                userExists !== null && userExists._id,
-                deviceToken
-              );
+              if (deviceToken) {
+                await DeviceTokenService.addDeviceTokenIfNeeded(
+                  userExists !== null ? userExists._id : userDraftExists._id,
+                  deviceToken
+                );
+              }
 
               return this.Ok(ctx, {
                 token,
                 refreshToken,
                 profileData: getProfileInput.body.data,
                 message: "Success",
+                isUserExist: userExists ? true : false,
               });
             }
           } catch (error) {

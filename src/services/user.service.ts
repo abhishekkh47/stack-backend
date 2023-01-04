@@ -4,7 +4,7 @@ import {
   Notification,
   ParentChildTable,
   UserDraftTable,
-  UserReffaralTable,
+  UserReferralTable,
   UserTable,
 } from "../model";
 import { ObjectId } from "mongodb";
@@ -130,6 +130,7 @@ class UserService {
             isRecurring: 1,
             selectedDeposit: 1,
             selectedDepositDate: 1,
+            isNotificationOn: 1
           },
         },
       ]).exec()
@@ -288,10 +289,15 @@ class UserService {
    * @param userId
    * @param userReferral
    */
-  public async getUserReferral(userId: string, userReferral: string) {
+  public async redeemUserReferral(
+    userId: string,
+    receiverIds: any,
+    userReferral: string
+  ) {
+    let arrayOfReceiverIds = receiverIds.map((x) => x.toString());
     let referralCoins = 0;
     let userUpdateReferrals = [];
-    let getReferralCode;
+    let referrals;
     if (userReferral) {
       /**
        * get user referral info along with device token for notification
@@ -321,12 +327,12 @@ class UserService {
             from: "devicetokens",
             localField: "referralArray.referredId",
             foreignField: "userId",
-            as: "recieverDeviceTokenInfo",
+            as: "receiverDeviceTokenInfo",
           },
         },
         {
           $unwind: {
-            path: "$recieverDeviceTokenInfo",
+            path: "$receiverDeviceTokenInfo",
             preserveNullAndEmptyArrays: true,
           },
         },
@@ -348,30 +354,32 @@ class UserService {
             deviceTokenInfo: {
               $first: "$deviceTokenInfo",
             },
-            recieverDeviceTokenInfo: {
-              $push: "$recieverDeviceTokenInfo",
+            receiverDeviceTokenInfo: {
+              $push: "$receiverDeviceTokenInfo",
             },
           },
         },
       ];
-      getReferralCode = await UserReffaralTable.aggregate(
+      referrals = await UserReferralTable.aggregate(
         userReferralAggregate
       ).exec();
-      getReferralCode = getReferralCode.length > 0 ? getReferralCode[0] : null;
+      referrals = referrals.length > 0 ? referrals[0] : null;
 
-      if (getReferralCode) {
+      if (referrals) {
         /**
          * get all ids in an array
          */
         referralCoins = referralCoins + config.APP_REFERRAL_COINS;
-        await getReferralCode.referralArray.map((obj) => {
-          if (!userUpdateReferrals.includes(obj.referredId)) {
-            return userUpdateReferrals.push(obj.referredId);
+        userUpdateReferrals = referrals.referralArray.map((obj) => {
+          if (arrayOfReceiverIds.includes(obj.referredId.toString())) {
+            return obj.referredId.toString();
           }
         });
-        userUpdateReferrals.push(userId);
+        userUpdateReferrals.push(userId.toString());
       }
     }
+
+    userUpdateReferrals = userUpdateReferrals.filter((i) => i);
 
     await UserTable.updateMany(
       {
@@ -381,10 +389,11 @@ class UserService {
         $inc: {
           preLoadedCoins: referralCoins,
         },
-      }
+      },
+      { new: true }
     );
 
-    await UserReffaralTable.updateMany(
+    await UserReferralTable.updateMany(
       {
         userId: { $in: userUpdateReferrals },
       },
@@ -400,30 +409,53 @@ class UserService {
      */
     let referredIdsArray = [];
     let allNotifications = [];
-    for await (let receiver of getReferralCode.referralArray) {
-      referredIdsArray.push(receiver.referredId.toString());
-      allNotifications.push(
-        await this.sendNotificationForUserReferral(
-          userId,
-          getReferralCode.deviceTokenInfo.deviceToken,
-          NOTIFICATION.REFERRAL_SENDER_MESSAGE,
-          receiver.receiverName
-        )
-      );
-    }
-    for await (let deviceToken of getReferralCode.recieverDeviceTokenInfo) {
-      if (referredIdsArray.includes(deviceToken.userId.toString())) {
-        allNotifications.push(
-          await this.sendNotificationForUserReferral(
+
+    referredIdsArray = await Promise.all(
+      referrals.referralArray.map(async (receiver) => {
+        if (arrayOfReceiverIds.includes(receiver.referredId.toString())) {
+          let notification = await this.sendNotificationForUserReferral(
+            userId.toString(),
+            referrals.deviceTokenInfo.deviceToken,
+            NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+            receiver.receiverName
+          );
+          return {
+            idsToReffer: receiver.referredId.toString(),
+            notificationObj: notification,
+          };
+        }
+      })
+    );
+
+    referredIdsArray = referredIdsArray.filter((i) => i);
+
+    let userNotification = referredIdsArray.map(
+      (response) => response.notificationObj
+    );
+
+    let receiveDeviceTokenInfo = referrals.receiverDeviceTokenInfo;
+    allNotifications = await Promise.all(
+      receiveDeviceTokenInfo.map(async (deviceToken) => {
+        if (
+          referredIdsArray.find(
+            (i) => i.idsToReffer === deviceToken.userId.toString()
+          )
+        ) {
+          let notification = await this.sendNotificationForUserReferral(
             deviceToken.userId,
             deviceToken.deviceToken,
             NOTIFICATION.REFERRAL_RECEIVER_MESSAGE,
-            getReferralCode.senderName
-          )
-        );
-      }
-    }
-    await Notification.insertMany(allNotifications);
+            referrals.senderName
+          );
+          userNotification = [...userNotification, notification];
+
+          return userNotification;
+        }
+      })
+    );
+    allNotifications = allNotifications.filter((i) => i);
+
+    await Notification.insertMany(allNotifications[0]);
     return true;
   }
 
@@ -470,7 +502,7 @@ class UserService {
     /**
      * check whether user exist in referral
      */
-    let dataExists = await UserReffaralTable.findOne({
+    let dataExists = await UserReferralTable.findOne({
       userId: senderId,
     });
 
@@ -478,7 +510,7 @@ class UserService {
      * add or update referral
      */
     if (!dataExists) {
-      await UserReffaralTable.create({
+      await UserReferralTable.create({
         userId: senderId,
         referralCount: 0,
         senderName: senderName,
@@ -492,7 +524,7 @@ class UserService {
         ],
       });
     } else {
-      await UserReffaralTable.updateOne(
+      await UserReferralTable.updateOne(
         {
           userId: senderId,
         },

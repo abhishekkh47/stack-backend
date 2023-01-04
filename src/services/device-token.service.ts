@@ -1,4 +1,8 @@
-import { DeviceToken } from "../model";
+import { ENOTIFICATIONSETTINGS } from "./../types/user";
+import { ERead } from "./../types/deviceToken";
+import { sendNotification } from "./../utility/notificationSend";
+import { DeviceToken, Notification } from "../model";
+import { DeviceTokenDBService } from ".";
 
 class DeviceTokenService {
   public async addDeviceTokenIfNeeded(userId: string, deviceToken: string) {
@@ -42,6 +46,53 @@ class DeviceTokenService {
     } else {
       throw new Error("Device Token Doesn't Exist");
     }
+  }
+
+  /**
+   * @description This service is used to send notification
+   * @param id
+   * @param notificationKey
+   * @param notificationTitle
+   * @param notificationMessage
+   */
+  public async sendUserNotification(
+    id: any,
+    notificationKey: any,
+    notificationTitle: any,
+    notificationMessage: any,
+    activityId: any = null,
+    userId: any = null
+  ) {
+    let deviceTokenData = await DeviceTokenDBService.getDeviceTokenDataOfUser(
+      id
+    );
+
+    if (
+      deviceTokenData &&
+      deviceTokenData.deviceToken.length > 0 &&
+      deviceTokenData.isNotificationOn == ENOTIFICATIONSETTINGS.ON
+    ) {
+      let notificationRequest = {
+        key: notificationKey,
+        title: notificationTitle,
+        message: notificationMessage,
+        activityId: activityId,
+        userId: userId,
+      };
+      await sendNotification(
+        deviceTokenData.deviceToken,
+        notificationRequest.title,
+        notificationRequest
+      );
+      await Notification.create({
+        title: notificationRequest.title,
+        userId: id,
+        message: notificationRequest.message,
+        isRead: ERead.UNREAD,
+        data: JSON.stringify(notificationRequest),
+      });
+    }
+    return true;
   }
 }
 

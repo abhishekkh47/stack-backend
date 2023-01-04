@@ -26,7 +26,6 @@ import tradingService from "../../../services/trading.service";
 import userService from "../../../services/user.service";
 import {
   EAction,
-  ERead,
   EStatus,
   ETransactionStatus,
   ETransactionType,
@@ -39,13 +38,12 @@ import {
   getHistoricalDataOfCoins,
   getPrimeTrustJWTToken,
   Route,
-  sendNotification,
 } from "../../../utility";
 import BaseController from "./base";
-import { UserDBService, zohoCrmService } from "../../../services";
 import { ObjectId } from "mongodb";
 import axios from "axios";
 import config from "@app/config";
+import { UserDBService, zohoCrmService, DeviceTokenService } from "../../../services";
 
 class ScriptController extends BaseController {
   /**
@@ -416,31 +414,15 @@ class ScriptController extends BaseController {
               /**
                * for push notification
                */
-              let deviceTokenData = await DeviceToken.findOne({
-                userId: kycApproved.childId,
-              }).select("deviceToken");
-              if (deviceTokenData) {
-                let notificationRequest = {
-                  key: NOTIFICATION_KEYS.GIFT_CARD_ISSUED,
-                  title: NOTIFICATION.GIFT_CARD_REDEEMED,
-                  message: NOTIFICATION.GIFT_CARD_REDEEM_MESSAGE.replace(
-                    "{amount}",
-                    getDate.amount.toString()
-                  ).replace("{sender}", getDate.sender_name),
-                };
-                await sendNotification(
-                  deviceTokenData.deviceToken,
-                  notificationRequest.title,
-                  notificationRequest
-                );
-                notificationArray.push({
-                  title: notificationRequest.title,
-                  userId: kycApproved.childId,
-                  message: notificationRequest.message,
-                  isRead: ERead.UNREAD,
-                  data: JSON.stringify(notificationRequest),
-                });
-              }
+              await DeviceTokenService.sendUserNotification(
+                kycApproved.childId,
+                NOTIFICATION_KEYS.GIFT_CARD_ISSUED,
+                NOTIFICATION.GIFT_CARD_REDEEMED,
+                NOTIFICATION.GIFT_CARD_REDEEM_MESSAGE.replace(
+                  "{amount}",
+                  getDate.amount.toString()
+                ).replace("{sender}", getDate.sender_name)
+              );
             }
             uuidArray.push(getDate.uuid);
           }
@@ -559,14 +541,20 @@ class ScriptController extends BaseController {
      */
     let dataSentInCrm = await zohoCrmService.getDataSentToCrm(allUsersInfo);
 
-    /**
-     * add account to zoho crm
-     */
-    await zohoCrmService.addAccounts(
-      ctx.request.zohoAccessToken,
-      dataSentInCrm,
-      true
-    );
+    const zohoCrmObjectSize = 90;
+    let crmObject;
+    for (let i = 0; i < dataSentInCrm.length; i += zohoCrmObjectSize) {
+      crmObject = dataSentInCrm.slice(i, i + zohoCrmObjectSize);
+
+      /**
+       * add account to zoho crm
+       */
+      await zohoCrmService.addAccounts(
+        ctx.request.zohoAccessToken,
+        crmObject,
+        true
+      );
+    }
 
     return this.Ok(ctx, { message: "Success", dataSentInCrm });
   }

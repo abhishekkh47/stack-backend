@@ -1,14 +1,10 @@
-import {
-  getAllGiftCards,
-  getPrimeTrustJWTToken,
-  sendNotification,
-} from "../../utility";
+import { DeviceTokenService, tradingService,  userService} from "../../services";
+import { getAllGiftCards, getPrimeTrustJWTToken } from "../../utility";
 import {
   CryptoTable,
   TransactionTable,
   UserTable,
   UserActivityTable,
-  DeviceToken,
   Notification,
   UserGiftCardTable,
 } from "../../model";
@@ -25,8 +21,6 @@ import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
 } from "../../utility/constants";
-import userService from "../../services/user.service";
-import tradingService from "../../services/trading.service";
 import config from "../../config";
 
 export const redeemGiftHandler = async () => {
@@ -175,31 +169,16 @@ export const redeemGiftHandler = async () => {
             /**
              * for push notification
              */
-            let deviceTokenData = await DeviceToken.findOne({
-              userId: kycApproved.childId,
-            }).select("deviceToken");
-            if (deviceTokenData) {
-              let notificationRequest = {
-                key: NOTIFICATION_KEYS.GIFT_CARD_ISSUED,
-                title: NOTIFICATION.GIFT_CARD_REDEEMED,
-                message: NOTIFICATION.GIFT_CARD_REDEEM_MESSAGE.replace(
-                  "{amount}",
-                  getDate.amount.toString()
-                ).replace("{sender}", getDate.sender_name),
-              };
-              await sendNotification(
-                deviceTokenData.deviceToken,
-                notificationRequest.title,
-                notificationRequest
-              );
-              notificationArray.push({
-                title: notificationRequest.title,
-                userId: kycApproved.childId,
-                message: notificationRequest.message,
-                isRead: ERead.UNREAD,
-                data: JSON.stringify(notificationRequest),
-              });
-            }
+
+            await DeviceTokenService.sendUserNotification(
+              kycApproved.childId,
+              NOTIFICATION_KEYS.GIFT_CARD_ISSUED,
+              NOTIFICATION.GIFT_CARD_REDEEMED,
+              NOTIFICATION.GIFT_CARD_REDEEM_MESSAGE.replace(
+                "{amount}",
+                getDate.amount.toString()
+              ).replace("{sender}", getDate.sender_name)
+            );
           }
           uuidArray.push(getDate.uuid);
         }

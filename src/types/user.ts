@@ -14,6 +14,7 @@ export interface IUser extends IAccount {
   refreshToken: string;
   isParentFirst: boolean;
   quizCoins: number;
+  isNotificationOn: number;
 }
 
 export interface IAccount {
@@ -80,6 +81,11 @@ export const ALLOWED_LOGIN_ATTEMPTS = 3;
 export enum EAUTOAPPROVAL {
   ON = 1,
   OFF = 0,
+}
+
+export enum ENOTIFICATIONSETTINGS {
+  ON = 1,
+  OFF = 0
 }
 
 export enum ERECURRING {

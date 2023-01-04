@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { ERECURRING, IUser, MongooseModel } from "../types";
+import { ERECURRING, ENOTIFICATIONSETTINGS, IUser, MongooseModel } from "../types";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
@@ -146,6 +146,17 @@ const schema = new mongoose.Schema<IUserSchema>(
         ERECURRING.DAILY,
       ],
       default: 0,
+    },
+    /**
+     * 0-off, 1-on
+     */
+    isNotificationOn: {
+      type: mongoose.Schema.Types.Number,
+      default: 1,
+      isIn:[
+        ENOTIFICATIONSETTINGS.ON,
+        ENOTIFICATIONSETTINGS.OFF
+      ]
     },
     /**
      * If isRecurring done then selectedDeposit else 0
