@@ -1,6 +1,6 @@
 import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
 import { UserTable } from "../../../model/user";
-import BaseController from "./base";
+import BaseController from "../../v1/controllers/base";
 import { Route } from "../../../utility";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { HttpMethod } from "../../../types";

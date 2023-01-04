@@ -50,7 +50,7 @@ import {
 } from "../../../utility";
 import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
-import BaseController from "./base";
+import BaseController from "../../v1/controllers/base";
 import UserController from "../../v1.1/controllers/user";
 
 class AuthController extends BaseController {

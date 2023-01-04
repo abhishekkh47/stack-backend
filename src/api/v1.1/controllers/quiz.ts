@@ -10,7 +10,7 @@ import {
 import { quizService } from "../../../services";
 import { EUserType, HttpMethod } from "../../../types";
 import { Route } from "../../../utility";
-import BaseController from "./base";
+import BaseController from "../../v1/controllers/base";
 
 class QuizController extends BaseController {
   /**

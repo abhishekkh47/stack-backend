@@ -31,7 +31,7 @@ import {
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
 import { UserBanksTable } from "./../../../model/userBanks";
-import BaseController from "./base";
+import BaseController from "../../v1/controllers/base";
 
 class UserController extends BaseController {
   /**

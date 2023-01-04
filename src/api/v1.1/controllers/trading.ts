@@ -43,7 +43,7 @@ import {
 } from "../../../utility";
 import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
-import BaseController from "./base";
+import BaseController from "../../v1/controllers/base";
 
 class TradingController extends BaseController {
   /**

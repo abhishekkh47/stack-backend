@@ -4,7 +4,7 @@ import { PortfolioService } from "../../../services";
 import { EUserType, HttpMethod } from "../../../types";
 import { getBalance, Route } from "../../../utility";
 import { CASH_USD_ICON } from "../../../utility/constants";
-import BaseController from "./base";
+import BaseController from "../../v1/controllers/base";
 
 class CryptocurrencyController extends BaseController {
   /**
