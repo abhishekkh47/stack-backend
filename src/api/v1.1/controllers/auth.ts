@@ -956,27 +956,6 @@ class AuthController extends BaseController {
           /**
            * migrate parent from userdraft to user table
            */
-          const createObject = {
-            email: parentInUserDraft.email,
-            dob: parentInUserDraft.dob,
-            type: parentInUserDraft.type,
-            mobile: input.mobile,
-            firstName: parentInUserDraft.firstName,
-            lastName: parentInUserDraft.lastName,
-            referralCode: parentInUserDraft.referralCode,
-          };
-
-          if (!parentRecord && parentInUserDraft) {
-            if (
-              (parentInUserDraft.type == EUserType.PARENT ||
-                parentInUserDraft.type == EUserType.SELF) &&
-              parentInUserDraft
-            ) {
-              userResponse = await UserTable.create(createObject);
-              migratedId = userResponse._id.toString();
-              await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
-            }
-          }
 
           if (childEmail) {
             query = {
@@ -997,6 +976,7 @@ class AuthController extends BaseController {
             isParentFirst: false,
             isAutoApproval: EAUTOAPPROVAL.ON,
           };
+
           if (user) {
             const teenUserInfo = await UserTable.findByIdAndUpdate(
               {
@@ -1019,6 +999,28 @@ class AuthController extends BaseController {
                 crypto,
                 admin
               );
+            }
+
+            const createObject = {
+              email: parentInUserDraft.email,
+              dob: parentInUserDraft.dob,
+              type: parentInUserDraft.type,
+              mobile: input.mobile,
+              firstName: parentInUserDraft.firstName,
+              lastName: parentInUserDraft.lastName,
+              referralCode: parentInUserDraft.referralCode,
+            };
+
+            if (!parentRecord && parentInUserDraft) {
+              if (
+                (parentInUserDraft.type == EUserType.PARENT ||
+                  parentInUserDraft.type == EUserType.SELF) &&
+                parentInUserDraft
+              ) {
+                userResponse = await UserTable.create(createObject);
+                migratedId = userResponse._id.toString();
+                await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
+              }
             }
 
             await ParentChildTable.findOneAndUpdate(
@@ -1096,6 +1098,28 @@ class AuthController extends BaseController {
             crypto,
             admin
           );
+
+          const createObject = {
+            email: parentInUserDraft.email,
+            dob: parentInUserDraft.dob,
+            type: parentInUserDraft.type,
+            mobile: input.mobile,
+            firstName: parentInUserDraft.firstName,
+            lastName: parentInUserDraft.lastName,
+            referralCode: parentInUserDraft.referralCode,
+          };
+
+          if (!parentRecord && parentInUserDraft) {
+            if (
+              (parentInUserDraft.type == EUserType.PARENT ||
+                parentInUserDraft.type == EUserType.SELF) &&
+              parentInUserDraft
+            ) {
+              userResponse = await UserTable.create(createObject);
+              migratedId = userResponse._id.toString();
+              await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
+            }
+          }
 
           await ParentChildTable.findOneAndUpdate(
             {
