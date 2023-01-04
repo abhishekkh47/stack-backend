@@ -586,7 +586,6 @@ class UserController extends BaseController {
   public async removeDeviceToken(ctx: any) {
     const user = ctx.request.user;
     let reqParam = ctx.request.body;
-    console.log("reqParam: ", reqParam);
     let checkUserExists = await UserTable.findOne({
       _id: user._id,
     });
