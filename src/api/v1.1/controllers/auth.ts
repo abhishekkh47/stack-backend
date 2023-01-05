@@ -1,5 +1,8 @@
 import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
-import { ENOTIFICATIONSETTINGS, EPHONEVERIFIEDSTATUS } from "./../../../types/user";
+import {
+  ENOTIFICATIONSETTINGS,
+  EPHONEVERIFIEDSTATUS,
+} from "./../../../types/user";
 import { TEEN_SIGNUP_FUNNEL } from "./../../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
@@ -770,7 +773,7 @@ class AuthController extends BaseController {
               {
                 $set: {
                   mobile: reqParam.mobile,
-                  isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE
+                  isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
                 },
               },
               { new: true }
@@ -1012,6 +1015,7 @@ class AuthController extends BaseController {
               firstName: parentInUserDraft.firstName,
               lastName: parentInUserDraft.lastName,
               referralCode: parentInUserDraft.referralCode,
+              isPhoneVerified: parentInUserDraft.isPhoneVerified
             };
 
             if (!parentRecord && parentInUserDraft) {
@@ -1110,6 +1114,7 @@ class AuthController extends BaseController {
             firstName: parentInUserDraft.firstName,
             lastName: parentInUserDraft.lastName,
             referralCode: parentInUserDraft.referralCode,
+            isPhoneVerified: parentInUserDraft.isPhoneVerified
           };
 
           if (!parentRecord && parentInUserDraft) {
@@ -1250,6 +1255,9 @@ class AuthController extends BaseController {
         referralCode: childInfo.referralCode
           ? childInfo.referralCode
           : childAlreadyExists.referralCode,
+        isPhoneVerified: childInfo.isPhoneVerified
+          ? childInfo.isPhoneVerified
+          : childAlreadyExists.isPhoneVerified,
       };
 
       if (childAlreadyExists && childInfo) {

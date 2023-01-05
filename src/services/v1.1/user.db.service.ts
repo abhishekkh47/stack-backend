@@ -14,6 +14,7 @@ class UserDBService {
       referralCode: updateUser.referralCode,
       dob: updateUser.dob,
       type: updateUser.type,
+      isPhoneVerified: updateUser.isPhoneVerified
     };
 
     let createUserRecord = await UserTable.create(createObj);
