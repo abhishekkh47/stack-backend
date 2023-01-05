@@ -1,4 +1,4 @@
-import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
+import { validationV1_1 } from "../../../validations/v1.1/apiValidation";
 import {
   ENOTIFICATIONSETTINGS,
   EPHONEVERIFIEDSTATUS,
@@ -50,7 +50,7 @@ import {
   Route,
 } from "../../../utility";
 import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "../../v1/controllers/base";
 import UserController from "../../v1.1/controllers/user";
 import {
@@ -719,6 +719,71 @@ class AuthController extends BaseController {
   }
 
   /**
+   * @description This method is used to verify otp.
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/verify-otp", method: HttpMethod.POST })
+  @Auth()
+  public verifyOtp(ctx: any) {
+    const reqParam = ctx.request.body;
+    const user = ctx.request.user;
+    return validationV1_1.verifyOtpValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          const otpExists = await OtpTable.findOne({
+            receiverMobile: reqParam.mobile,
+          }).sort({ createdAt: -1 });
+          if (!otpExists) {
+            return this.BadRequest(ctx, "Mobile Number Not Found");
+          }
+          if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
+            return this.BadRequest(ctx, "Mobile Number Already Verified");
+          }
+          /**
+           * Check minutes less than 5 or not
+           */
+          const checkMinutes = await getMinutesBetweenDates(
+            new Date(otpExists.createdAt),
+            new Date()
+          );
+          if (checkMinutes > 5) {
+            return this.BadRequest(
+              ctx,
+              "Otp Time Limit Expired. Please resend otp and try to submit it within 5 minutes."
+            );
+          }
+          /* tslint:disable-next-line */
+          if (otpExists.code != reqParam.code) {
+            return this.BadRequest(ctx, "Code Doesn't Match");
+          }
+          /**
+           * All conditions valid
+           */
+          await UserTable.updateOne(
+            { _id: reqParam.userId ? reqParam.userId : user._id },
+            {
+              $set: {
+                mobile: reqParam.mobile,
+                isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
+              },
+            }
+          );
+          await OtpTable.updateOne(
+            { _id: otpExists._id },
+            { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
+          );
+          return this.Ok(ctx, {
+            message: "Your mobile number is changed successfully",
+          });
+        }
+      }
+    );
+  }
+
+  /**
    * @description This method is used to verify otp during sign up.
    * @param ctx
    * @returns {*}
@@ -1015,7 +1080,7 @@ class AuthController extends BaseController {
               firstName: parentInUserDraft.firstName,
               lastName: parentInUserDraft.lastName,
               referralCode: parentInUserDraft.referralCode,
-              isPhoneVerified: parentInUserDraft.isPhoneVerified
+              isPhoneVerified: parentInUserDraft.isPhoneVerified,
             };
 
             if (!parentRecord && parentInUserDraft) {
@@ -1114,7 +1179,7 @@ class AuthController extends BaseController {
             firstName: parentInUserDraft.firstName,
             lastName: parentInUserDraft.lastName,
             referralCode: parentInUserDraft.referralCode,
-            isPhoneVerified: parentInUserDraft.isPhoneVerified
+            isPhoneVerified: parentInUserDraft.isPhoneVerified,
           };
 
           if (!parentRecord && parentInUserDraft) {

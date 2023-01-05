@@ -33,7 +33,7 @@ import {
   uploadFilesFetch,
 } from "../../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "./base";
 
 class WebHookController extends BaseController {

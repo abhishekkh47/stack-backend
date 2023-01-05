@@ -1,3 +1,4 @@
+import { EPHONEVERIFIEDSTATUS } from "./../../../types/user";
 import { DripshopTable } from "../../../model/dripshop";
 import {
   GIFTCARDS,
@@ -41,7 +42,7 @@ import {
   zohoCrmService,
   DeviceTokenService,
   tradingService,
-  userService
+  userService,
 } from "../../../services/v1/index";
 
 class ScriptController extends BaseController {
@@ -556,6 +557,37 @@ class ScriptController extends BaseController {
     }
 
     return this.Ok(ctx, { message: "Success", dataSentInCrm });
+  }
+
+  /**
+   * @description This method is used to add phone verification status
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/add-phone-verification-status", method: HttpMethod.POST })
+  public async addPhoneVerificationStatus(ctx: any) {
+    const allUserInfo = await UserTable.find();
+    let userToUpdateStatus = allUserInfo.map((user) => {
+      if (user.email && user.mobile) {
+        return user._id.toString();
+      }
+    });
+
+    userToUpdateStatus = userToUpdateStatus.filter((i) => i);
+
+    await UserTable.updateMany(
+      {
+        _id: {
+          $in: userToUpdateStatus,
+        },
+      },
+      {
+        $set: {
+          isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
+        },
+      }
+    );
+    return this.Ok(ctx, { allUserInfo });
   }
 }
 

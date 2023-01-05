@@ -36,7 +36,7 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
 } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import { UserBanksTable } from "./../../../model/userBanks";
 import { getAccounts } from "./../../../utility/plaid";
 import BaseController from "./base";

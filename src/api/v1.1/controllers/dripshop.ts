@@ -1,4 +1,4 @@
-import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
+import { validationV1_1 } from "../../../validations/v1.1/apiValidation";
 import { UserTable } from "../../../model/user";
 import BaseController from "../../v1/controllers/base";
 import { Route } from "../../../utility";

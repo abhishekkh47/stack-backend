@@ -1,5 +1,5 @@
 import { UserTable } from "../../../model/user";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "./base";
 import { Route } from "../../../utility";
 import { Auth, PrimeTrustJWT } from "../../../middleware";

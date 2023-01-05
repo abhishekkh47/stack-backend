@@ -1,8 +1,8 @@
-import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
+import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
+import { validationV1_1 } from "../../../validations/v1.1/apiValidation";
 import { UserDraftTable } from "./../../../model/userDraft";
 import { TransactionTable } from "./../../../model/transactions";
 import { getAccounts } from "./../../../utility/plaid";
-import { OtpTable } from "./../../../model/otp";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
@@ -23,6 +23,7 @@ import {
   kycDocumentChecks,
   Route,
   uploadFilesFetch,
+  uploadImage,
 } from "../../../utility";
 import {
   CMS_LINKS,
@@ -574,6 +575,135 @@ class UserController extends BaseController {
             reqParam.deviceToken
           );
           return this.Ok(ctx, { message: "Device token removed successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to update user's date of birth (DOB)
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/update-dob", method: HttpMethod.POST })
+  @Auth()
+  public async updateDob(ctx: any) {
+    const input = ctx.request.body;
+    return validationV1_1.updateDobValidation(input, ctx, async (validate) => {
+      if (validate) {
+        if (
+          (
+            await UserTable.findOne(
+              { _id: input.userId ? input.userId : ctx.request.user._id },
+              { type: 1, _id: 0 }
+            )
+          ).type === 2 &&
+          new Date(Date.now() - new Date(input.dob).getTime()).getFullYear() <
+            1988
+        )
+          return this.BadRequest(ctx, "Parent's age should be 18+");
+
+        await UserTable.updateOne(
+          { _id: ctx.request.user._id },
+          { $set: { dob: input.dob } }
+        );
+        return this.Ok(ctx, {
+          message: "Your Date of Birth updated successfully.",
+        });
+      }
+    });
+  }
+
+  /**
+   * @description This method is for update user's profile picture
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/update-profile-picture",
+    method: HttpMethod.POST,
+  })
+  @Auth()
+  public async updateProfilePicture(ctx: any) {
+    const userExists: any = await UserTable.findOne({
+      _id: ctx.request.body.userId
+        ? ctx.request.body.userId
+        : ctx.request.user._id,
+    });
+    const requestParams = ctx.request.body;
+    if (!requestParams.media) {
+      return this.BadRequest(ctx, "Image is not selected");
+    }
+    let validBase64 = await checkValidBase64String(requestParams.media);
+    if (!validBase64) {
+      return this.BadRequest(ctx, "Please enter valid image");
+    }
+    const extension =
+      requestParams.media && requestParams.media !== ""
+        ? requestParams.media.split(";")[0].split("/")[1]
+        : "";
+    const imageName =
+      requestParams.media && requestParams.media !== ""
+        ? `profile_picture_${moment().unix()}.${extension}`
+        : "";
+    const imageExtArr = ["jpg", "jpeg", "png"];
+    if (imageName && !imageExtArr.includes(extension)) {
+      return this.BadRequest(ctx, "Please add valid extension");
+    }
+    let s3Path = `${userExists._id}`;
+    const uploadImageRequest = await uploadImage(
+      imageName,
+      s3Path,
+      ctx.request.body,
+      ctx.response
+    );
+    // if (uploadImageRequest) {
+    await UserTable.updateOne(
+      { _id: ctx.request.user._id },
+      {
+        $set: { profilePicture: imageName },
+      }
+    );
+    return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is used for turing on/off notification
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/toggle-notification", method: HttpMethod.POST })
+  @Auth()
+  public async toggleNotificationSettings(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    const checkUserExists = await UserTable.findOne({
+      _id: reqParam.userId ? reqParam.userId : user._id,
+    });
+    if (!checkUserExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validationV1_1.toggleNotificationValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await UserTable.findByIdAndUpdate(
+            { _id: checkUserExists._id },
+            {
+              $set: {
+                isNotificationOn: reqParam.isNotificationOn,
+              },
+            },
+            { new: true }
+          );
+
+          let message =
+            reqParam.isNotificationOn == ENOTIFICATIONSETTINGS.ON
+              ? "Turned on notification"
+              : "Turned off notfication";
+
+          return this.Ok(ctx, { message });
         }
       }
     );

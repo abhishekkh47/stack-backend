@@ -1,4 +1,3 @@
-
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import envData from "../../../config/index";
@@ -20,7 +19,7 @@ import {
   UserDBService,
   userService,
   zohoCrmService,
-  TradingDBService
+  TradingDBService,
 } from "../../../services/v1/index";
 import {
   EAction,
@@ -63,7 +62,7 @@ import {
   PARENT_SIGNUP_FUNNEL,
   PLAID_ITEM_ERROR,
 } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "./base";
 
 class TradingController extends BaseController {

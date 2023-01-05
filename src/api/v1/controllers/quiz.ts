@@ -20,7 +20,7 @@ import {
   timeBetweenTwoQuiz,
 } from "../../../types";
 import { get72HoursAhead, Route } from "../../../utility";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "./base";
 
 class QuizController extends BaseController {

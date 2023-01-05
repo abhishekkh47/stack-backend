@@ -3,7 +3,7 @@ import { AdminTable, UserTable } from "../../../model";
 import { HttpMethod } from "../../../types";
 import { Route, sendEmail } from "../../../utility";
 import { CONSTANT } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "./base";
 
 class HelpCenterController extends BaseController {

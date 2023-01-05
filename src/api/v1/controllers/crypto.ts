@@ -10,7 +10,7 @@ import { PortfolioService } from "../../../services/v1/index";
 import { EUserType, HttpMethod } from "../../../types";
 import { getBalance, Route } from "../../../utility";
 import { CASH_USD_ICON } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "./base";
 
 class CryptocurrencyController extends BaseController {

@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { validationMessageKey } from "../utility";
+import { validationMessageKey } from "../../utility";
 export const validation = {
   getUserQuizDataValidation: (req, res, callback) => {
     const schema = Joi.object({
@@ -785,7 +785,6 @@ export const validation = {
     });
     const { error } = schema.validate(req);
     if (error)
-
       return res.throw(
         400,
         res.__(validationMessageKey("removeDeviceToken", error))

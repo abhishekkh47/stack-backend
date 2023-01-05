@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { validationMessageKey } from "../utility";
+import { validationMessageKey } from "../../utility";
 export const validationV1_1 = {
   checkValidMobileValidation: (req, res, callback) => {
     const schema = Joi.object({
@@ -153,6 +153,60 @@ export const validationV1_1 = {
         400,
         res.__(validationMessageKey("removeDeviceToken", error))
       );
+    return callback(true);
+  },
+  updateDobValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      dob: Joi.date()
+        .iso()
+        .max(Date.now() + 60 * 60 * 1000)
+        .required(),
+      userId: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("updateDOB", error)));
+    return callback(true);
+  },
+  verifyOtpValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      mobile: Joi.string()
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+        .required(),
+      code: Joi.number().integer().required(),
+      userId: Joi.string().required(),
+    });
+    const { error } = schema.validate(req, { allowUnknown: true });
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("verifyOtp", error)));
+    }
+    return callback(true);
+  },
+  toggleNotificationValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      isNotificationOn: Joi.number().required().valid(0, 1),
+      userId: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("toggleNotification", error))
+      );
+    return callback(true);
+  },
+  getUserQuizDataValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      topicId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      userId: Joi.string().required(),
+    });
+
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("getUserQuiz", error)));
+    }
     return callback(true);
   },
 };

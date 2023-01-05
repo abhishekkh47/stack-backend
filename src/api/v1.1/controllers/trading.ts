@@ -1,4 +1,12 @@
-import { NOTIFICATION, NOTIFICATION_KEYS } from "./../../../utility/constants";
+import {
+  getAccounts,
+  institutionsGetByIdRequest,
+} from "./../../../utility/plaid";
+import {
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  PLAID_ITEM_ERROR,
+} from "./../../../utility/constants";
 import moment from "moment";
 import { EAction, EStatus, messages } from "./../../../types/useractivity";
 import { ObjectId } from "mongodb";
@@ -19,7 +27,7 @@ import {
   tradingService,
   userService,
   zohoCrmService,
-  TradingDBService
+  TradingDBService,
 } from "../../../services/v1/index";
 import {
   EAUTOAPPROVAL,
@@ -42,7 +50,7 @@ import {
   Route,
 } from "../../../utility";
 import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
-import { validation } from "../../../validations/apiValidation";
+import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "../../v1/controllers/base";
 import { TradingDBServiceV1_1 } from "../../../services/v1.1/index";
 
@@ -874,6 +882,119 @@ class TradingController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used for seeing pending activity for teen and parent both
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/pending-activity", method: HttpMethod.POST })
+  @Auth()
+  public async seePendingActivity(ctx: any) {
+    const user = ctx.request.user;
+    let userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      userExists = await UserTable.findOne({ _id: ctx.request.body.userId });
+    }
+    if (!userExists) {
+      return this.BadRequest(ctx, "User not Found");
+    }
+    let activities = await UserActivityTable.aggregate([
+      {
+        $match: {
+          userId: new ObjectId(user._id),
+          status: { $ne: EStatus.CANCELLED_SELF },
+        },
+      },
+      {
+        $lookup: {
+          from: "cryptos",
+          localField: "cryptoId",
+          foreignField: "_id",
+          as: "crypto",
+        },
+      },
+      {
+        $unwind: { path: "$crypto", preserveNullAndEmptyArrays: true },
+      },
+      {
+        $project: {
+          message: 1,
+          userType: 1,
+          action: 1,
+          status: 1,
+          currencyValue: 1,
+          cryptoId: 1,
+          "crypto._id": 1,
+          "crypto.image": 1,
+          "crypto.name": 1,
+          "crypto.symbol": 1,
+          "crypto.assetId": 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+      {
+        $sort: { updatedAt: -1 },
+      },
+    ]).exec();
+
+    if (activities.length === 0) {
+      return this.BadRequest(ctx, "No Activity Found");
+    }
+    const pendingActivity = [];
+    const processedActivity = [];
+    for await (const activity of activities) {
+      activity.status === EStatus.PENDING
+        ? await pendingActivity.push(activity)
+        : await processedActivity.push(activity);
+    }
+    return this.Ok(ctx, {
+      message: "Success",
+      data: { pending: pendingActivity, processed: processedActivity },
+    });
+  }
+
+  /**
+   * @description This method is used to get account details from plaid
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-accounts", method: HttpMethod.POST })
+  @Auth()
+  public async getAccountsFromPlaid(ctx: any) {
+    const user = ctx.request.user;
+    let userBankExists = await UserBanksTable.findOne({ userId: user._id });
+    if (!userBankExists) {
+      userBankExists = await UserBanksTable.findOne({
+        userId: ctx.request.body.userId,
+      });
+    }
+    if (!userBankExists) {
+      return this.BadRequest(ctx, "User Bank Details Not Found");
+    }
+    let getAccountDetails: any = await getAccounts(userBankExists.accessToken);
+    if (getAccountDetails.status == 400) {
+      return this.BadRequest(
+        ctx,
+        getAccountDetails.error_code !== PLAID_ITEM_ERROR
+          ? getAccountDetails.messsage
+          : PLAID_ITEM_ERROR
+      );
+    }
+    if (userBankExists.insId) {
+      const logo: any = await institutionsGetByIdRequest(userBankExists.insId);
+      if (logo.status === 200) {
+        getAccountDetails.data.accounts.forEach((current) => {
+          current.logo = logo.data.institution.logo;
+        });
+      }
+    }
+    return this.Ok(ctx, {
+      data: getAccountDetails.data.accounts,
+      message: "Success",
+    });
   }
 }
 
