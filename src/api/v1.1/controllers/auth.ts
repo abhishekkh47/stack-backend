@@ -1,4 +1,4 @@
-import { validationV1_1 } from "../../../validations/v1.1/apiValidation";
+import { validations } from "../../../validations/v1.1/apiValidation";
 import {
   ENOTIFICATIONSETTINGS,
   EPHONEVERIFIEDSTATUS,
@@ -54,8 +54,8 @@ import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "../../v1/controllers/base";
 import UserController from "../../v1.1/controllers/user";
 import {
-  UserDBServiceV1_1,
-  TransactionDBServiceV1_1,
+  UserDBService,
+  TransactionDBService,
 } from "../../../services/v1.1/index";
 
 class AuthController extends BaseController {
@@ -121,7 +121,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async handleSignup(ctx: any) {
     const reqParam = ctx.request.body;
-    return validationV1_1.signupValidation(
+    return validations.signupValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
@@ -471,7 +471,7 @@ class AuthController extends BaseController {
                * bitcoin asset id and crypto id
                */
 
-              await TransactionDBServiceV1_1.createBtcGiftedTransaction(
+              await TransactionDBService.createBtcGiftedTransaction(
                 user._id,
                 crypto,
                 admin
@@ -728,7 +728,7 @@ class AuthController extends BaseController {
   public verifyOtp(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
-    return validationV1_1.verifyOtpValidation(
+    return validations.verifyOtpValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
@@ -847,7 +847,7 @@ class AuthController extends BaseController {
             if (updateUser.type == EUserType.SELF) {
               const crypto = await CryptoTable.findOne({ symbol: "BTC" });
 
-              const newUserDetail = await UserDBServiceV1_1.createUserAccount(
+              const newUserDetail = await UserDBService.createUserAccount(
                 updateUser,
                 reqParam.mobile
               );
@@ -865,7 +865,7 @@ class AuthController extends BaseController {
                 newUserDetail.isGiftedCrypto == 0 &&
                 !checkTransactionExists
               ) {
-                await TransactionDBServiceV1_1.createBtcGiftedTransaction(
+                await TransactionDBService.createBtcGiftedTransaction(
                   newUserDetail._id,
                   crypto,
                   admin
@@ -952,7 +952,7 @@ class AuthController extends BaseController {
   @Auth()
   public async checkValidMobile(ctx) {
     const input = ctx.request.body;
-    return validationV1_1.checkValidMobileValidation(
+    return validations.checkValidMobileValidation(
       input,
       ctx,
       async (validate) => {
@@ -1065,7 +1065,7 @@ class AuthController extends BaseController {
             });
 
             if (!transactionExists) {
-              await TransactionDBServiceV1_1.createBtcGiftedTransaction(
+              await TransactionDBService.createBtcGiftedTransaction(
                 teenUserInfo._id,
                 crypto,
                 admin
@@ -1165,7 +1165,7 @@ class AuthController extends BaseController {
           };
           let createChild = await UserTable.create(createTeenObject);
 
-          await TransactionDBServiceV1_1.createBtcGiftedTransaction(
+          await TransactionDBService.createBtcGiftedTransaction(
             createChild._id,
             crypto,
             admin

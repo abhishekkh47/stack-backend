@@ -52,7 +52,7 @@ import {
 import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import { validation } from "../../../validations/v1/apiValidation";
 import BaseController from "../../v1/controllers/base";
-import { TradingDBServiceV1_1 } from "../../../services/v1.1/index";
+import { tradingDBService } from "../../../services/v1.1/index";
 
 class TradingController extends BaseController {
   /**
@@ -493,7 +493,7 @@ class TradingController extends BaseController {
             userTransactionExists == null;
 
           const buySellTransactions =
-            await TradingDBServiceV1_1.getPortfolioTransactions(
+            await tradingDBService.getPortfolioTransactions(
               childExists._id,
               isKidBeforeParent,
               cryptoIds ? cryptoIds : [],

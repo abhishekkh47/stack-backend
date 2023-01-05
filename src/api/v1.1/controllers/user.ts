@@ -1,5 +1,5 @@
 import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
-import { validationV1_1 } from "../../../validations/v1.1/apiValidation";
+import { validations } from "../../../validations/v1.1/apiValidation";
 import { UserDraftTable } from "./../../../model/userDraft";
 import { TransactionTable } from "./../../../model/transactions";
 import { getAccounts } from "./../../../utility/plaid";
@@ -16,7 +16,7 @@ import {
   zohoCrmService,
 } from "../../../services/v1/index";
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../../types";
-import { UserServiceV1_1 } from "../../../services/v1.1/index";
+import { UserService } from "../../../services/v1.1/index";
 import {
   checkValidBase64String,
   createAccount,
@@ -359,7 +359,7 @@ class UserController extends BaseController {
     const { id } = ctx.request.params;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
-    let { data, userDraft } = await UserServiceV1_1.getProfile(id);
+    let { data, userDraft } = await UserService.getProfile(id);
 
     const checkIntitalDepositDone = await TransactionTable.findOne({
       $or: [{ parentId: id }, { userId: id }],
@@ -519,7 +519,7 @@ class UserController extends BaseController {
     if (!checkUserExists && !checkUserDraftExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
-    return validationV1_1.addDeviceTokenValidation(
+    return validations.addDeviceTokenValidation(
       ctx.request.body,
       ctx,
       async (validate) => {
@@ -565,7 +565,7 @@ class UserController extends BaseController {
     if (!checkUserExists && !checkUserDraftExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
-    return validationV1_1.removeDeviceTokenValidation(
+    return validations.removeDeviceTokenValidation(
       ctx.request.body,
       ctx,
       async (validate) => {
@@ -589,7 +589,7 @@ class UserController extends BaseController {
   @Auth()
   public async updateDob(ctx: any) {
     const input = ctx.request.body;
-    return validationV1_1.updateDobValidation(input, ctx, async (validate) => {
+    return validations.updateDobValidation(input, ctx, async (validate) => {
       if (validate) {
         if (
           (
@@ -683,7 +683,7 @@ class UserController extends BaseController {
     if (!checkUserExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
-    return validationV1_1.toggleNotificationValidation(
+    return validations.toggleNotificationValidation(
       ctx.request.body,
       ctx,
       async (validate) => {

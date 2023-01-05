@@ -1,9 +1,8 @@
-import { validationV1_1 } from './../../../validations/v1.1/apiValidation';
+import { validations } from './../../../validations/v1.1/apiValidation';
 import { QuizQuestionTable } from "./../../../model/quizQuestion";
 import { QuizTable } from "./../../../model/quiz";
 import { timeBetweenTwoQuiz } from "./../../../types/quiz";
 import { get72HoursAhead } from "./../../../utility/common";
-import { validation } from "../../../validations/v1/apiValidation";
 import moment from "moment";
 import mongoose from "mongoose";
 import { Auth } from "../../../middleware";
@@ -141,7 +140,7 @@ class QuizController extends BaseController {
   public getQuestionList(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
-    return validationV1_1.getUserQuizDataValidation(
+    return validations.getUserQuizDataValidation(
       reqParam,
       ctx,
       async (validate) => {

@@ -1,6 +1,6 @@
 import Joi from "joi";
 import { validationMessageKey } from "../../utility";
-export const validationV1_1 = {
+export const validations = {
   checkValidMobileValidation: (req, res, callback) => {
     const schema = Joi.object({
       type: Joi.number().valid(1, 2, 3).required(),

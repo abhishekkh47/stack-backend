@@ -1,4 +1,4 @@
-import { validationV1_1 } from "../../../validations/v1.1/apiValidation";
+import { validations } from "../../../validations/v1.1/apiValidation";
 import { UserTable } from "../../../model/user";
 import BaseController from "../../v1/controllers/base";
 import { Route } from "../../../utility";
@@ -19,7 +19,7 @@ class DripshopController extends BaseController {
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
     let reqParam = ctx.request.body;
-    return validationV1_1.redeemCryptoValidation(
+    return validations.redeemCryptoValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
