@@ -1,17 +1,17 @@
-import { EAction, EStatus } from "../types/useractivity";
-import { NOTIFICATION } from "../utility/constants";
-import { UserActivityTable } from "../model/useractivity";
-import { ETransactionStatus, ETransactionType } from "../types/transaction";
-import { TransactionTable } from "../model/transactions";
+import { EAction, EStatus } from "../../types/useractivity";
+import { NOTIFICATION } from "../../utility/constants";
+import { UserActivityTable } from "../../model/useractivity";
+import { ETransactionStatus, ETransactionType } from "../../types/transaction";
+import { TransactionTable } from "../../model/transactions";
 import {
   generateQuote,
   executeQuote,
   internalAssetTransfers,
-} from "../utility/prime-trust";
-import { ParentChildTable } from "../model/parentChild";
+} from "../../utility/prime-trust";
+import { ParentChildTable } from "../../model/parentChild";
 import { ObjectId } from "mongodb";
-import { DripshopTable } from "../model/dripshop";
-import envData from "../config/index";
+import { DripshopTable } from "../../model/dripshop";
+import envData from "../../config/index";
 import moment from "moment";
 
 class DripshopDBService {

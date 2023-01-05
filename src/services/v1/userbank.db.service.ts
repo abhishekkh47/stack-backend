@@ -1,7 +1,7 @@
-import { ObjectId } from 'mongodb';
-import { EDEFAULTBANK } from "./../types/userBanks";
-import { UserBanksTable } from "./../model/userBanks";
-import { EUserType } from "../types";
+import { ObjectId } from "mongodb";
+import { EDEFAULTBANK } from "../../types/userBanks";
+import { UserBanksTable } from "../../model/userBanks";
+import { EUserType } from "../../types";
 
 class UserBankDBService {
   /**

@@ -3,8 +3,8 @@ import {
   createContributions,
   getAssetTotalWithId,
   getAssetTotals,
-} from "../utility";
-import { CryptoTable, TransactionTable, UserActivityTable } from "../model";
+} from "../../utility";
+import { CryptoTable, TransactionTable, UserActivityTable } from "../../model";
 import {
   ETransactionType,
   messages,
@@ -12,7 +12,7 @@ import {
   EStatus,
   ETransactionStatus,
   EUserType,
-} from "../types";
+} from "../../types";
 import moment from "moment";
 class PortfolioService {
   public async getPortfolioBasedOnChildIdWithCurrentMarketPrice(

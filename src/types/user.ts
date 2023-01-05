@@ -15,6 +15,7 @@ export interface IUser extends IAccount {
   isParentFirst: boolean;
   quizCoins: number;
   isNotificationOn: number;
+  isPhoneVerified: number
 }
 
 export interface IAccount {
@@ -75,6 +76,8 @@ export interface IUserdraft {
   refreshToken: string;
   referralCode: string;
   mobile: string;
+  isPhoneVerified: number;
+  
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
@@ -143,4 +146,9 @@ export enum ESCREENSTATUS {
   ENTER_PHONE_NO = 8,
   ENTER_PARENT_INFO = 9,
   SUCCESS_TEEN = 10,
+}
+
+export enum EPHONEVERIFIEDSTATUS {
+  TRUE = 1,
+  FALSE = 0
 }

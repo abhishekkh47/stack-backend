@@ -6,7 +6,7 @@ import {
   ParentChildTable,
   UserTable,
 } from "../../../model";
-import { PortfolioService } from "../../../services";
+import { PortfolioService } from "../../../services/v1/index";
 import { EUserType, HttpMethod } from "../../../types";
 import { getBalance, Route } from "../../../utility";
 import { CASH_USD_ICON } from "../../../utility/constants";
@@ -54,7 +54,7 @@ class CryptocurrencyController extends BaseController {
         query = { _id: { $eq: null } };
       }
     }
-    
+
     return this.Ok(ctx, {
       data: await CryptoTable.aggregate([
         {
@@ -158,7 +158,7 @@ class CryptocurrencyController extends BaseController {
           name: "Cash",
           symbol: "USD",
           image: CASH_USD_ICON,
-        
+
           isRecurring: userExists.isRecurring,
           selectedDeposit: userExists.selectedDeposit,
         },

@@ -1,15 +1,15 @@
-import { unlinkBankAccount } from "./../utility/plaid";
-import { CryptoTable } from "./../model/crypto";
-import { ParentChildTable } from "./../model/parentChild";
-import { PLAID_ITEM_ERROR } from "../utility/constants";
+import { unlinkBankAccount } from "../../utility/plaid";
+import { CryptoTable } from "../../model/crypto";
+import { ParentChildTable } from "../../model/parentChild";
+import { PLAID_ITEM_ERROR } from "../../utility/constants";
 import {
   createContributions,
   createDisbursements,
   executeQuote,
   generateQuote,
   internalAssetTransfers,
-} from "../utility";
-import envData from "../config/index";
+} from "../../utility";
+import envData from "../../config/index";
 class TradingService {
   /**
    * @description This method is used for adding deposit action

@@ -1,4 +1,4 @@
-import { DeviceToken } from "./../model/deviceToken";
+import { DeviceToken } from "../../model/deviceToken";
 
 class DeviceTokenDBService {
   /**

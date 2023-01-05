@@ -17,7 +17,7 @@ import {
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../../services";
+} from "../../../services/v1/index";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,

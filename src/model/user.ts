@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 
-import { ERECURRING, ENOTIFICATIONSETTINGS, IUser, MongooseModel } from "../types";
+import {
+  ERECURRING,
+  ENOTIFICATIONSETTINGS,
+  IUser,
+  MongooseModel,
+  EPHONEVERIFIEDSTATUS,
+} from "../types";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
@@ -36,7 +42,11 @@ const schema = new mongoose.Schema<IUserSchema>(
     /**
      * 1 - teenager,  2 - parent and 3 - Self
      */
-    type: { type: mongoose.Schema.Types.Number, required: false, default: null },
+    type: {
+      type: mongoose.Schema.Types.Number,
+      required: false,
+      default: null,
+    },
     /**
      * 1 - Kyc document upload , 2 - Kyc failed and reupload document , 3 - Kyc approved
      */
@@ -112,10 +122,15 @@ const schema = new mongoose.Schema<IUserSchema>(
      * 0 - not gifted and 1 - gifted
      */
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
+    isPhoneVerified: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+      isIn: [EPHONEVERIFIEDSTATUS.FALSE, EPHONEVERIFIEDSTATUS.TRUE],
+    },
     /**
      * 0 - not gifted(won't happen at all) , 1 - gifted and 2 - gifted with pt
      * isGiftedCrypto = 1, which means $5 is stored in DB, not in PT
-     * isGiftedCrypto = 2, it will be in DB and PT 
+     * isGiftedCrypto = 2, it will be in DB and PT
      */
     isGiftedCrypto: { type: mongoose.Schema.Types.Number, default: 0 },
     referralCode: { type: mongoose.Schema.Types.String, default: null },
@@ -153,10 +168,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     isNotificationOn: {
       type: mongoose.Schema.Types.Number,
       default: 1,
-      isIn:[
-        ENOTIFICATIONSETTINGS.ON,
-        ENOTIFICATIONSETTINGS.OFF
-      ]
+      isIn: [ENOTIFICATIONSETTINGS.ON, ENOTIFICATIONSETTINGS.OFF],
     },
     /**
      * If isRecurring done then selectedDeposit else 0

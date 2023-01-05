@@ -1,54 +1,19 @@
-import { EUserType, EUSERSTATUS } from "./../types/user";
+import { EUserType, EUSERSTATUS } from "../../types/user";
 import {
-  DeviceToken,
   Notification,
   ParentChildTable,
   UserDraftTable,
   UserReferralTable,
   UserTable,
-} from "../model";
+} from "../../model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { ERead, ERECURRING } from "../types";
-import config from "../config/index";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../utility/constants";
-import { sendNotification } from "../utility/notificationSend";
+import { ERead, ERECURRING } from "../../types";
+import config from "../../config/index";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+import { sendNotification } from "../../utility/notificationSend";
 
 class UserService {
-  /**
-   * @description Get Children Data
-   * @param userId
-   */
-  public async getChildren(userId: string) {
-    let teens = await ParentChildTable.aggregate([
-      {
-        $lookup: {
-          from: "users",
-          localField: "teens.childId",
-          foreignField: "_id",
-          as: "teens",
-        },
-      },
-      {
-        $match: {
-          userId: new ObjectId(userId),
-        },
-      },
-      {
-        $project: {
-          "teens.firstName": 1,
-          "teens.lastName": 1,
-          "teens.username": 1,
-          "teens._id": 1,
-          "teens.profilePicture": 1,
-          "teens.isAutoApproval": 1,
-          _id: 0,
-        },
-      },
-    ]).exec();
-    if (teens.length == 0) throw Error("No child found");
-    return teens[0];
-  }
 
   /**
    * @description Get Profile of users
@@ -102,7 +67,6 @@ class UserService {
         {
           $addFields: {
             isParentApproved: 0,
-            isMobileVerified: 0,
             initialDeposit: 0,
             isKycDocumentUploaded: {
               $cond: {
@@ -150,7 +114,7 @@ class UserService {
             selectedDeposit: 1,
             selectedDepositDate: 1,
             isNotificationOn: 1,
-            isMobileVerified: 1,
+            isPhoneVerified: 1,
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
           },
@@ -163,7 +127,6 @@ class UserService {
         { $match: { _id: new ObjectId(userId) } },
         {
           $addFields: {
-            isMobileVerified: 0,
             initialDeposit: 0,
           },
         },
@@ -184,7 +147,7 @@ class UserService {
             screenStatus: 1,
             status: 1,
             dob: 1,
-            isMobileVerified: 1,
+            isPhoneVerified: 1,
             initialDeposit: 1,
           },
         },

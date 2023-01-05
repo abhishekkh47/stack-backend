@@ -1,11 +1,14 @@
-import { quizService } from "../services";
-import { EUserType, ESCREENSTATUS, EUSERSTATUS } from "./../types/user";
-import { PARENT_SIGNUP_FUNNEL, TEEN_SIGNUP_FUNNEL } from "../utility/constants";
+import { quizService } from ".";
+import { EUserType, ESCREENSTATUS, EUSERSTATUS } from "../../types/user";
+import {
+  PARENT_SIGNUP_FUNNEL,
+  TEEN_SIGNUP_FUNNEL,
+} from "../../utility/constants";
 import {
   addAccountInfoInZohoCrm,
   searchAccountInfo,
   updateAccountInfoInZohoCrm,
-} from "../utility";
+} from "../../utility";
 
 class zohoCrmService {
   public async addAccounts(

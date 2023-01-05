@@ -1,5 +1,5 @@
 import { validationV1_1 } from "./../../../validations/apiValidationV1_1";
-import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
+import { ENOTIFICATIONSETTINGS, EPHONEVERIFIEDSTATUS } from "./../../../types/user";
 import { TEEN_SIGNUP_FUNNEL } from "./../../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
@@ -23,9 +23,7 @@ import {
   TwilioService,
   zohoCrmService,
   userService,
-  UserDBService,
-  TransactionDBService,
-} from "../../../services";
+} from "../../../services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
@@ -52,6 +50,10 @@ import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "../../v1/controllers/base";
 import UserController from "../../v1.1/controllers/user";
+import {
+  UserDBServiceV1_1,
+  TransactionDBServiceV1_1,
+} from "../../../services/v1.1/index";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -466,7 +468,7 @@ class AuthController extends BaseController {
                * bitcoin asset id and crypto id
                */
 
-              await TransactionDBService.createBtcGiftedTransaction(
+              await TransactionDBServiceV1_1.createBtcGiftedTransaction(
                 user._id,
                 crypto,
                 admin
@@ -768,6 +770,7 @@ class AuthController extends BaseController {
               {
                 $set: {
                   mobile: reqParam.mobile,
+                  isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE
                 },
               },
               { new: true }
@@ -776,7 +779,7 @@ class AuthController extends BaseController {
             if (updateUser.type == EUserType.SELF) {
               const crypto = await CryptoTable.findOne({ symbol: "BTC" });
 
-              const newUserDetail = await UserDBService.createUserAccount(
+              const newUserDetail = await UserDBServiceV1_1.createUserAccount(
                 updateUser,
                 reqParam.mobile
               );
@@ -794,7 +797,7 @@ class AuthController extends BaseController {
                 newUserDetail.isGiftedCrypto == 0 &&
                 !checkTransactionExists
               ) {
-                await TransactionDBService.createBtcGiftedTransaction(
+                await TransactionDBServiceV1_1.createBtcGiftedTransaction(
                   newUserDetail._id,
                   crypto,
                   admin
@@ -994,7 +997,7 @@ class AuthController extends BaseController {
             });
 
             if (!transactionExists) {
-              await TransactionDBService.createBtcGiftedTransaction(
+              await TransactionDBServiceV1_1.createBtcGiftedTransaction(
                 teenUserInfo._id,
                 crypto,
                 admin
@@ -1093,7 +1096,7 @@ class AuthController extends BaseController {
           };
           let createChild = await UserTable.create(createTeenObject);
 
-          await TransactionDBService.createBtcGiftedTransaction(
+          await TransactionDBServiceV1_1.createBtcGiftedTransaction(
             createChild._id,
             crypto,
             admin

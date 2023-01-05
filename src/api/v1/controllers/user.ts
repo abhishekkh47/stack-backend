@@ -1,4 +1,4 @@
-import { UserDraftTable } from './../../../model/userDraft';
+import { UserDraftTable } from "./../../../model/userDraft";
 import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
 import { json } from "co-body";
 import fs from "fs";
@@ -7,12 +7,12 @@ import { ObjectId } from "mongodb";
 import path from "path";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
+import { NotifyUserTable, ParentChildTable, UserTable } from "../../../model";
 import {
-  NotifyUserTable,
-  ParentChildTable,
-  UserTable,
-} from "../../../model";
-import { DeviceTokenService, userService, zohoCrmService } from "../../../services";
+  DeviceTokenService,
+  userService,
+  zohoCrmService,
+} from "../../../services/v1/index";
 import {
   ESCREENSTATUS,
   EUSERSTATUS,
@@ -942,7 +942,7 @@ class UserController extends BaseController {
     });
     const checkUserDraftExists = await UserDraftTable.findOne({
       _id: user._id,
-    })
+    });
     if (!checkUserExists && !checkUserDraftExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
@@ -976,7 +976,7 @@ class UserController extends BaseController {
     });
     const checkUserDraftExists = await UserDraftTable.findOne({
       _id: user._id,
-    })
+    });
     if (!checkUserExists && !checkUserDraftExists) {
       return this.BadRequest(ctx, "User does not exist");
     }

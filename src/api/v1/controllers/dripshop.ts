@@ -4,7 +4,7 @@ import BaseController from "./base";
 import { Route } from "../../../utility";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import { HttpMethod } from "../../../types";
-import { DripshopDBService, UserDBService } from "../../../services/index";
+import { DripshopDBService, UserDBService } from "../../../services/v1/index";
 
 class DripshopController extends BaseController {
   /**

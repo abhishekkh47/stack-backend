@@ -1,4 +1,4 @@
-import { ENOTIFICATIONSETTINGS } from './../../../types/user';
+import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
 import { TEEN_SIGNUP_FUNNEL } from "./../../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
@@ -23,7 +23,7 @@ import {
   TwilioService,
   zohoCrmService,
   userService,
-} from "../../../services";
+} from "../../../services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,

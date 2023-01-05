@@ -3,7 +3,6 @@ import moment from "moment";
 import { EAction, EStatus, messages } from "./../../../types/useractivity";
 import { ObjectId } from "mongodb";
 import { UserActivityTable } from "./../../../model/useractivity";
-import tradingDbService from "../../../services/trading.db.service";
 import envData from "../../../config/index";
 import { Auth, PrimeTrustJWT } from "../../../middleware";
 import {
@@ -20,7 +19,8 @@ import {
   tradingService,
   userService,
   zohoCrmService,
-} from "../../../services";
+  TradingDBService
+} from "../../../services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
@@ -44,6 +44,7 @@ import {
 import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
 import { validation } from "../../../validations/apiValidation";
 import BaseController from "../../v1/controllers/base";
+import { TradingDBServiceV1_1 } from "../../../services/v1.1/index";
 
 class TradingController extends BaseController {
   /**
@@ -484,7 +485,7 @@ class TradingController extends BaseController {
             userTransactionExists == null;
 
           const buySellTransactions =
-            await tradingDbService.getPortfolioTransactionsV1_1(
+            await TradingDBServiceV1_1.getPortfolioTransactions(
               childExists._id,
               isKidBeforeParent,
               cryptoIds ? cryptoIds : [],
@@ -560,7 +561,7 @@ class TradingController extends BaseController {
           }
 
           const pendingInitialDeposit =
-            await tradingDbService.getPendingInitialDeposit(childExists._id);
+            await TradingDBService.getPendingInitialDeposit(childExists._id);
           if (pendingInitialDeposit.length > 0) {
             /**
              * if initial deposit is pending, we add it to totalStackValue

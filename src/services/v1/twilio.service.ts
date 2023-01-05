@@ -1,8 +1,8 @@
-import { OtpTable } from "../model";
-import { EOTPTYPE } from "../types";
-import { generateRandom6DigitCode } from "../utility";
+import { OtpTable } from "../../model";
+import { EOTPTYPE } from "../../types";
+import { generateRandom6DigitCode } from "../../utility";
 
-import config from "../config";
+import config from "../../config";
 
 class TwilioService {
   /**

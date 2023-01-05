@@ -14,12 +14,12 @@ import {
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../../services";
+} from "../../../services/v1/index";
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../../types";
+import { UserServiceV1_1 } from "../../../services/v1.1/index";
 import {
   checkValidBase64String,
   createAccount,
-  getLinkToken,
   kycDocumentChecks,
   Route,
   uploadFilesFetch,
@@ -34,38 +34,6 @@ import { UserBanksTable } from "./../../../model/userBanks";
 import BaseController from "../../v1/controllers/base";
 
 class UserController extends BaseController {
-  /**
-   * @description This method is for getting the link token
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/get-link-token", method: HttpMethod.GET })
-  @Auth()
-  public async getLinkToken(ctx: any) {
-    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    if (!ctx.request.query.deviceType) {
-      return this.BadRequest(ctx, "Please enter device type");
-    }
-
-    let userBankExists = await UserBanksTable.findOne({
-      userId: userExists._id,
-    });
-    const linkToken: any = await getLinkToken(
-      userExists,
-      userBankExists && userBankExists.accessToken
-        ? userBankExists.accessToken
-        : null,
-      ctx.request.query.deviceType
-    );
-    if (linkToken.status == 400) {
-      return this.BadRequest(ctx, linkToken.message);
-    }
-    return this.Ok(ctx, { data: linkToken.data });
-  }
-
   /**
    * @description This method is used to upload files
    * @param ctx
@@ -390,23 +358,14 @@ class UserController extends BaseController {
     const { id } = ctx.request.params;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
-    let { data, userDraft } = await userService.getProfile(id);
-    const matchObject = {
-      receiverMobile: data ? data.mobile : userDraft.mobile,
-      isVerified: 1,
-    };
+    let { data, userDraft } = await UserServiceV1_1.getProfile(id);
 
-    const checkNumberVerifiedOrNot = await OtpTable.findOne(matchObject);
     const checkIntitalDepositDone = await TransactionTable.findOne({
       $or: [{ parentId: id }, { userId: id }],
       intialDeposit: true,
     });
 
     if (data) {
-      if (checkNumberVerifiedOrNot) {
-        data.isMobileVerified = 1;
-      }
-
       if (checkIntitalDepositDone) {
         data.initialDeposit = 1;
       }
@@ -438,9 +397,7 @@ class UserController extends BaseController {
         }
       }
     }
-    if (checkNumberVerifiedOrNot && userDraft) {
-      userDraft.isMobileVerified = 1;
-    }
+
     if (checkIntitalDepositDone && userDraft) {
       userDraft.initialDeposit = 1;
     }

@@ -1,4 +1,4 @@
-import tradingDbService from "../../../services/trading.db.service";
+
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import envData from "../../../config/index";
@@ -20,7 +20,8 @@ import {
   UserDBService,
   userService,
   zohoCrmService,
-} from "../../../services";
+  TradingDBService
+} from "../../../services/v1/index";
 import {
   EAction,
   EAUTOAPPROVAL,
@@ -1602,7 +1603,7 @@ class TradingController extends BaseController {
             isTeen && (!isParentKycVerified || userBankIfExists.length === 0);
 
           const buySellTransactions =
-            await tradingDbService.getPortfolioTransactions(
+            await TradingDBService.getPortfolioTransactions(
               childExists._id,
               isKidBeforeParent,
               cryptoIds,
@@ -1670,7 +1671,7 @@ class TradingController extends BaseController {
           const cashBalance = balanceInfo.data.data[0].attributes.disbursable;
 
           const pendingInitialDeposit =
-            await tradingDbService.getPendingInitialDeposit(childExists._id);
+            await TradingDBService.getPendingInitialDeposit(childExists._id);
           if (pendingInitialDeposit.length > 0) {
             // if initial deposit is pending, we add it to totalStackValue
             pendingInitialDepositAmount = pendingInitialDeposit[0].sum;
@@ -1681,15 +1682,20 @@ class TradingController extends BaseController {
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
-          const isKycVerifiedAndDepositCleared = isParentKycVerified && hasClearedDeposit
-          totalStackValue = totalStackValue + (isKycVerifiedAndDepositCleared ? cashBalance : 0);
+          const isKycVerifiedAndDepositCleared =
+            isParentKycVerified && hasClearedDeposit;
+          totalStackValue =
+            totalStackValue +
+            (isKycVerifiedAndDepositCleared ? cashBalance : 0);
           return this.Ok(ctx, {
             data: {
               portFolio: buySellTransactions,
               totalStackValue,
               stackCoins: totalCoins,
               totalGainLoss,
-              balance: isKycVerifiedAndDepositCleared ? cashBalance : pendingInitialDepositAmount,
+              balance: isKycVerifiedAndDepositCleared
+                ? cashBalance
+                : pendingInitialDepositAmount,
               parentStatus: parentChild?.userId?.status,
               totalAmountInvested:
                 totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),

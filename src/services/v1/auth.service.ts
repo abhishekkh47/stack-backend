@@ -1,7 +1,12 @@
-import { UserTable, IUserSchema, StateTable, ParentChildTable } from "../model";
-import { EUSERSTATUS, IUser } from "../types";
+import {
+  UserTable,
+  IUserSchema,
+  StateTable,
+  ParentChildTable,
+} from "../../model";
+import { EUSERSTATUS, IUser } from "../../types";
 import bcrypt from "bcrypt";
-import { getContactId, updateContacts, kycDocumentChecks } from "../utility";
+import { getContactId, updateContacts, kycDocumentChecks } from "../../utility";
 
 class AuthService {
   async findUserByEmail(email: string) {

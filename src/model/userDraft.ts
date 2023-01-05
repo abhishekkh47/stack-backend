@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+import { EPHONEVERIFIEDSTATUS } from "./../types/user";
 import type { IUserdraft, MongooseModel } from "../types";
 
 export type IChilddraftSchema = MongooseModel<IUserdraft> & mongoose.Document;
@@ -45,6 +46,11 @@ const schema = new mongoose.Schema<IUserdraft>(
       type: mongoose.Schema.Types.String,
       required: false,
       default: null,
+    },
+    isPhoneVerified: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+      isIn: [EPHONEVERIFIEDSTATUS.FALSE, EPHONEVERIFIEDSTATUS.TRUE],
     },
     refreshToken: { type: mongoose.Schema.Types.String, default: null },
   },

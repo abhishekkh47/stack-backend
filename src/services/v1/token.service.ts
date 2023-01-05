@@ -1,5 +1,5 @@
-import { getJwtToken, getRefreshToken } from "../utility";
-import { AuthService } from "../services";
+import { getJwtToken, getRefreshToken } from "../../utility";
+import { AuthService } from ".";
 
 class TokenService {
   public async generateToken(userExists: any) {

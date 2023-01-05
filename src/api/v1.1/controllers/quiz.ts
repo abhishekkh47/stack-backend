@@ -7,7 +7,7 @@ import {
   QuizResult,
   UserTable,
 } from "../../../model";
-import { quizService } from "../../../services";
+import { quizService } from "../../../services/v1/index";
 import { EUserType, HttpMethod } from "../../../types";
 import { Route } from "../../../utility";
 import BaseController from "../../v1/controllers/base";

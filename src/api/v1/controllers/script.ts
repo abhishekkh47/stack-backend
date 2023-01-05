@@ -20,8 +20,6 @@ import {
   TransactionTable,
   ParentChildTable,
 } from "../../../model";
-import tradingService from "../../../services/trading.service";
-import userService from "../../../services/user.service";
 import {
   EAction,
   EStatus,
@@ -38,7 +36,13 @@ import {
   Route,
 } from "../../../utility";
 import BaseController from "./base";
-import { UserDBService, zohoCrmService, DeviceTokenService } from "../../../services";
+import {
+  UserDBService,
+  zohoCrmService,
+  DeviceTokenService,
+  tradingService,
+  userService
+} from "../../../services/v1/index";
 
 class ScriptController extends BaseController {
   /**

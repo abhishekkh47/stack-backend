@@ -1,7 +1,7 @@
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
 
-import envData from "../config/index";
+import envData from "../../config/index";
 
 const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
 const apple_client: any = new AppleSignIn({
