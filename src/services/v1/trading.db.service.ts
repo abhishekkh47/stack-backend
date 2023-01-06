@@ -161,6 +161,7 @@ class TradingDBService {
           portfolioArray.push({
             ...cryptoInfo,
             value: cryptoInfo.currentPrice * unitCount,
+            totalGainLoss: cryptoInfo.currentPrice * unitCount + cryptoInfo.totalAmountMod
           });
         }
       }
