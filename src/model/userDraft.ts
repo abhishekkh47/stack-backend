@@ -40,7 +40,8 @@ const schema = new mongoose.Schema<IUserdraft>(
     },
     referralCode: {
       type: mongoose.Schema.Types.String,
-      required: true,
+      required: false,
+      default: null,
     },
     mobile: {
       type: mongoose.Schema.Types.String,

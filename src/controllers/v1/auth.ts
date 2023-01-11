@@ -1205,6 +1205,7 @@ class AuthController extends BaseController {
           if (!otpExists) {
             return this.BadRequest(ctx, "Mobile Number Not Found");
           }
+          const uniqueReferralCode = await makeUniqueReferalCode();
           if (otpExists.isVerified === EOTPVERIFICATION.VERIFIED) {
             childAlreadyExists = await UserTable.findOne({
               mobile: reqParam.mobile,
@@ -1268,7 +1269,9 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
-                referralCode: childInfo.referralCode,
+                referralCode: childInfo.referralCode
+                  ? childInfo.referralCode
+                  : uniqueReferralCode,
               };
 
               const userResponse = await UserTable.create(createObject);
@@ -1382,7 +1385,9 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
-                referralCode: childInfo.referralCode,
+                referralCode: childInfo.referralCode
+                  ? childInfo.referralCode
+                  : uniqueReferralCode,
               };
 
               const userResponse: any = await UserTable.create(createObject);
@@ -1520,6 +1525,7 @@ class AuthController extends BaseController {
             (type == EUserType.PARENT || type == EUserType.SELF) &&
             draftUser
           ) {
+            const uniqueReferralCode = await makeUniqueReferalCode();
             const createObject = {
               email: draftUser.email,
               dob: draftUser.dob,
@@ -1535,7 +1541,9 @@ class AuthController extends BaseController {
               address: input.address,
               unitApt: input.unitApt,
               postalCode: input.postalCode,
-              referralCode: draftUser.referralCode,
+              referralCode: draftUser.referralCode
+                ? draftUser.referralCode
+                : uniqueReferralCode,
               screenStatus:
                 type == EUserType.PARENT
                   ? ESCREENSTATUS.CHILD_INFO_SCREEN
@@ -2161,13 +2169,12 @@ class AuthController extends BaseController {
             let userDraftExists = await UserDraftTable.findOne({ email });
             if (!userExists && !userDraftExists) {
               await SocialService.verifySocial(reqParam);
-              const uniqueReferralCode = await makeUniqueReferalCode();
               let createQuery: any = {
                 email: reqParam.email,
                 screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
-                referralCode: uniqueReferralCode,
+                referralCode: null,
                 // mobile: reqParam.mobile ? reqParam.mobile : null,
               };
               const user = await UserDraftTable.create(createQuery);
