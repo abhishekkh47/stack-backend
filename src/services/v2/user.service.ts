@@ -14,7 +14,6 @@ import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 import { sendNotification } from "../../utility/notificationSend";
 
 class UserService {
-
   /**
    * @description Get Profile of users
    * @param userId
@@ -98,7 +97,9 @@ class UserService {
             lifeTimeReferralCount: {
               $ifNull: ["$lifeTimeReferral.referralCount", 0],
             },
-            childMobile: "$childInfo.mobile",
+            childMobile: {
+              $ifNull: ["$childInfo.mobile", null],
+            },
             referralCode: 1,
             screenStatus: 1,
             city: 1,
