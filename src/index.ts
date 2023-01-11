@@ -30,7 +30,11 @@ const server = (async () => {
     // app.use(bodyParser());
     app.use(async (ctx, next) => {
       console.log(ctx.path, "path");
-      if (['/upload-id-proof', "/update-primetrust-data"].filter(item => ctx.path.includes(item)).length > 0) {
+      if (
+        ["/upload-id-proof", "/update-primetrust-data"].filter((item) =>
+          ctx.path.includes(item)
+        ).length > 0
+      ) {
         ctx.disableBodyParser = true;
       }
       await next();
@@ -58,6 +62,7 @@ const server = (async () => {
     const port = Config.PORT;
 
     appServer.listen(port);
+
     logger.log("info", `Server running on port ${port}`);
   } catch (e) {
     logger.log("error", `Server startup failed: ${e.message}`);
