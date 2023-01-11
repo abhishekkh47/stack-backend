@@ -1,8 +1,5 @@
 import { validations } from "../../validations/v2/apiValidation";
-import {
-  ENOTIFICATIONSETTINGS,
-  EPHONEVERIFIEDSTATUS,
-} from "../../types/user";
+import { ENOTIFICATIONSETTINGS, EPHONEVERIFIEDSTATUS } from "../../types/user";
 import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
@@ -53,10 +50,7 @@ import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 import UserController from "./user";
-import {
-  UserDBService,
-  TransactionDBService,
-} from "../../services/v2";
+import { UserDBService, TransactionDBService } from "../../services/v2";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -1300,32 +1294,38 @@ class AuthController extends BaseController {
       const childInfo = await UserDraftTable.findOne({
         _id: ctx.request.user._id,
       });
+      console.log(childInfo);
+      console.log(ctx.request.user);
 
       const updateOrCreateObject = {
-        email: childInfo.email,
-        dob: childInfo.dob,
-        type: childInfo.type,
+        email: childInfo ? childInfo.email : childAlreadyExists.email,
+        dob: childInfo ? childInfo.dob : childAlreadyExists.dob,
+        type: childInfo ? childInfo.type : childAlreadyExists.type,
         mobile: ctx.request.body.mobile,
         parentMobile: ctx.request.body.parentMobile,
         parentEmail:
           checkParentExists && checkParentExists.type == EUserType.PARENT
             ? checkParentExists.email
             : null,
-        firstName: childInfo.firstName
-          ? childInfo.firstName
-          : childAlreadyExists.firstName,
-        lastName: childInfo.lastName
-          ? childInfo.lastName
-          : childAlreadyExists.lastName,
-        referralCode: childInfo.referralCode
-          ? childInfo.referralCode
-          : childAlreadyExists.referralCode,
-        isPhoneVerified: childInfo.isPhoneVerified
-          ? childInfo.isPhoneVerified
-          : childAlreadyExists.isPhoneVerified,
+        firstName:
+          childInfo && childInfo.firstName
+            ? childInfo.firstName
+            : childAlreadyExists.firstName,
+        lastName:
+          childInfo && childInfo.lastName
+            ? childInfo.lastName
+            : childAlreadyExists.lastName,
+        referralCode:
+          childInfo && childInfo.referralCode
+            ? childInfo.referralCode
+            : childAlreadyExists.referralCode,
+        isPhoneVerified:
+          childInfo && childInfo.isPhoneVerified
+            ? childInfo.isPhoneVerified
+            : childAlreadyExists.isPhoneVerified,
       };
 
-      if (childAlreadyExists && childInfo) {
+      if (childAlreadyExists) {
         await UserTable.findOneAndUpdate(
           { mobile: ctx.request.body.mobile },
           { $set: updateOrCreateObject },
