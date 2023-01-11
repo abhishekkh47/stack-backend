@@ -1,12 +1,12 @@
-import { EPHONEVERIFIEDSTATUS } from "./../../../types/user";
-import { DripshopTable } from "../../../model/dripshop";
+import { EPHONEVERIFIEDSTATUS } from "../../types/user";
+import { DripshopTable } from "../../model/dripshop";
 import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
-} from "./../../../utility/constants";
+} from "../../utility/constants";
 import moment from "moment";
-import { PrimeTrustJWT } from "../../../middleware";
+import { PrimeTrustJWT } from "../../middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
@@ -20,7 +20,7 @@ import {
   UserTable,
   TransactionTable,
   ParentChildTable,
-} from "../../../model";
+} from "../../model";
 import {
   EAction,
   EStatus,
@@ -28,22 +28,22 @@ import {
   ETransactionType,
   EUserType,
   HttpMethod,
-} from "../../../types";
+} from "../../types";
 import {
   getAllGiftCards,
   getAssets,
   getHistoricalDataOfCoins,
   getPrimeTrustJWTToken,
   Route,
-} from "../../../utility";
-import BaseController from "./base";
+} from "../../utility";
+import BaseController from "../base";
 import {
   UserDBService,
   zohoCrmService,
   DeviceTokenService,
   tradingService,
   userService,
-} from "../../../services/v1/index";
+} from "../../services/v1/index";
 
 class ScriptController extends BaseController {
   /**

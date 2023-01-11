@@ -1,139 +1,40 @@
-import { UserDraftTable } from "./../../../model/userDraft";
-import { ENOTIFICATIONSETTINGS } from "./../../../types/user";
+import { ENOTIFICATIONSETTINGS } from "../../types/user";
+import { validations } from "../../validations/v2/apiValidation";
+import { UserDraftTable } from "../../model/userDraft";
+import { TransactionTable } from "../../model/transactions";
+import { getAccounts } from "../../utility/plaid";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
-import { ObjectId } from "mongodb";
 import path from "path";
-import envData from "../../../config/index";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
-import { NotifyUserTable, ParentChildTable, UserTable } from "../../../model";
+import envData from "../../config/index";
+import { Auth, PrimeTrustJWT } from "../../middleware";
+import { ParentChildTable, UserTable } from "../../model";
 import {
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../../services/v1/index";
+} from "../../services/v1/index";
+import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
+import { UserService } from "../../services/v2";
 import {
-  ESCREENSTATUS,
-  EUSERSTATUS,
-  EUserType,
-  HttpMethod,
-} from "../../../types";
-import {
-  agreementPreviews,
   checkValidBase64String,
   createAccount,
-  getLinkToken,
   kycDocumentChecks,
   Route,
   uploadFilesFetch,
-  uploadIdProof,
   uploadImage,
-} from "../../../utility";
+} from "../../utility";
 import {
   CMS_LINKS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
-} from "../../../utility/constants";
-import { validation } from "../../../validations/v1/apiValidation";
-import { UserBanksTable } from "./../../../model/userBanks";
-import { getAccounts } from "./../../../utility/plaid";
-import BaseController from "./base";
+} from "../../utility/constants";
+import { UserBanksTable } from "../../model/userBanks";
+import BaseController from "../base";
 
 class UserController extends BaseController {
-  /**
-   * @description This method is for updating the tax information
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/update-tax-info", method: HttpMethod.POST })
-  @Auth()
-  public async updateTaxInfo(ctx: any) {
-    const input = ctx.request.body;
-    const userExists = await UserTable.findOne({
-      username: ctx.request.user.username,
-    });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User not found");
-    }
-    return validation.updateTaxInfoRequestBodyValidation(
-      input,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          await UserTable.updateOne(
-            { username: ctx.request.user.username },
-            {
-              $set: {
-                taxIdNo: input.taxIdNo,
-                taxState: input.taxState,
-                screenStatus:
-                  userExists.type === EUserType.PARENT
-                    ? ESCREENSTATUS.UPLOAD_DOCUMENTS
-                    : ESCREENSTATUS.SIGN_UP,
-              },
-            }
-          );
-          return this.Ok(ctx, { message: "Tax info updated successfully." });
-        }
-      }
-    );
-  }
-
-  /**
-   * @description This method is for getting the link token
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/get-link-token", method: HttpMethod.GET })
-  @Auth()
-  public async getLinkToken(ctx: any) {
-    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    if (!ctx.request.query.deviceType) {
-      return this.BadRequest(ctx, "Please enter device type");
-    }
-
-    let userBankExists = await UserBanksTable.findOne({
-      userId: userExists._id,
-    });
-    const linkToken: any = await getLinkToken(
-      userExists,
-      userBankExists && userBankExists.accessToken
-        ? userBankExists.accessToken
-        : null,
-      ctx.request.query.deviceType
-    );
-    if (linkToken.status == 400) {
-      return this.BadRequest(ctx, linkToken.message);
-    }
-    return this.Ok(ctx, { data: linkToken.data });
-  }
-
-  /**
-   * @description This method is used to send agreement previews to user
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/agreement-preview", method: HttpMethod.POST })
-  @PrimeTrustJWT()
-  public async sendAgreementPreview(ctx: any) {
-    const reqParam = ctx.request.body;
-    const jwtToken = ctx.request.primeTrustToken;
-    const fullName = reqParam.firstName + " " + reqParam.lastName;
-    const data = await userService.getAgreementPreview(fullName);
-    /**
-     * Send Agreement Previews
-     */
-    const sendAgreementPreview: any = await agreementPreviews(jwtToken, data);
-    if (sendAgreementPreview.status == 400) {
-      return this.BadRequest(ctx, sendAgreementPreview.message);
-    }
-    return this.Ok(ctx, { data: sendAgreementPreview.data.data });
-  }
   /**
    * @description This method is used to upload files
    * @param ctx
@@ -227,11 +128,11 @@ class UserController extends BaseController {
             ),
         "base64"
       );
-      if (!fs.existsSync(path.join(__dirname, "../../../../uploads"))) {
-        fs.mkdirSync(path.join(__dirname, "../../../../uploads"));
+      if (!fs.existsSync(path.join(__dirname, "../../../uploads"))) {
+        fs.mkdirSync(path.join(__dirname, "../../../uploads"));
       }
       fs.writeFileSync(
-        path.join(__dirname, "../../../../uploads", imageName),
+        path.join(__dirname, "../../../uploads", imageName),
         decodedImage,
         "base64"
       );
@@ -284,7 +185,6 @@ class UserController extends BaseController {
             "postal-code": userExists.postalCode,
             city: userExists.city,
             region: userExists.state,
-            // region: userExists.stateId.shortName,
             country: userExists.country,
           },
         },
@@ -314,7 +214,7 @@ class UserController extends BaseController {
             : "Front Side Driving License",
         public: "true",
         file: fs.createReadStream(
-          path.join(__dirname, "../../../../uploads", fileData.filename)
+          path.join(__dirname, "../../../uploads", fileData.filename)
         ),
       };
       let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
@@ -334,7 +234,7 @@ class UserController extends BaseController {
        */
       try {
         fs.unlinkSync(
-          path.join(__dirname, "../../../../uploads", fileData.filename)
+          path.join(__dirname, "../../../uploads", fileData.filename)
         );
       } catch (err) {
         console.log("Error in removing image");
@@ -373,7 +273,6 @@ class UserController extends BaseController {
       {
         $set: {
           status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
-          screenStatus: ESCREENSTATUS.ADD_BANK_ACCOUNT,
         },
       }
     );
@@ -460,8 +359,17 @@ class UserController extends BaseController {
     const { id } = ctx.request.params;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
-    let { data, userDraft } = await userService.getProfile(id);
+    let { data, userDraft } = await UserService.getProfile(id);
+
+    const checkIntitalDepositDone = await TransactionTable.findOne({
+      $or: [{ parentId: id }, { userId: id }],
+      intialDeposit: true,
+    });
+
     if (data) {
+      if (checkIntitalDepositDone) {
+        data.initialDeposit = 1;
+      }
       const checkParentExists = await UserTable.findOne({
         mobile: data.parentMobile ? data.parentMobile : data.mobile,
       });
@@ -491,6 +399,10 @@ class UserController extends BaseController {
       }
     }
 
+    if (checkIntitalDepositDone && userDraft) {
+      userDraft.initialDeposit = 1;
+    }
+
     data = {
       ...data,
       terms: CMS_LINKS.TERMS,
@@ -499,7 +411,24 @@ class UserController extends BaseController {
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
     };
 
-    return this.Ok(ctx, userDraft ? userDraft._doc : data, true);
+    return this.Ok(ctx, userDraft ? userDraft : data, true);
+  }
+
+  /**
+   * @description This method is used to get child of parent
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/get-children", method: HttpMethod.POST })
+  @Auth()
+  public async getChildren(ctx: any) {
+    const checkUserExists = await UserTable.findOne({
+      _id: ctx.request.user._id,
+    });
+    let teens = await userService.getChildren(
+      checkUserExists ? ctx.request.user._id : ctx.request.body.userId
+    );
+    return this.Ok(ctx, teens);
   }
 
   /**
@@ -507,15 +436,21 @@ class UserController extends BaseController {
    * @param ctx
    * @returns
    */
-  @Route({ path: "/get-bank-info", method: HttpMethod.GET })
+  @Route({ path: "/get-bank-info", method: HttpMethod.POST })
   @Auth()
   public async getBankInfo(ctx: any) {
     const user = ctx.request.user;
     let array = [];
     let account;
-    const getUserType = await UserTable.findOne({
+    let getUserType = await UserTable.findOne({
       _id: ctx.request.user._id,
     });
+
+    if (!getUserType) {
+      getUserType = await UserTable.findOne({
+        _id: ctx.request.body.userId,
+      });
+    }
     let parentId;
     if (getUserType.type == EUserType.TEEN) {
       parentId = await UserTable.findOne({
@@ -554,28 +489,92 @@ class UserController extends BaseController {
   }
 
   /**
-   * @description This method is used to get the bank account info
+   * @description This method is used to add/remove device token
    * @param ctx
-   * @returns
+   * @returns {*}
    */
-  @Route({ path: "/get-next-deposit-date/:userId", method: HttpMethod.GET })
+  @Route({ path: "/device-token", method: HttpMethod.POST })
   @Auth()
-  public async getNextDepositDate(ctx: any) {
-    const { userId } = ctx.request.params;
-    return validation.nextDepositDateValidation(
-      ctx.request.params,
+  public async addDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    let checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserExists) {
+      checkUserExists = await UserTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    let checkUserDraftExists = await UserDraftTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserDraftExists) {
+      checkUserDraftExists = await UserDraftTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    if (!checkUserExists && !checkUserDraftExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validations.addDeviceTokenValidation(
+      ctx.request.body,
       ctx,
       async (validate) => {
         if (validate) {
-          const foundUser = await UserTable.findOne({
-            _id: userId,
-          });
+          await DeviceTokenService.addDeviceTokenIfNeeded(
+            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token added successfully" });
+        }
+      }
+    );
+  }
 
-          return this.Ok(ctx, {
-            nextDepositDate: foundUser.selectedDepositDate
-              ? moment(foundUser.selectedDepositDate).format("DD/MM/YYYY")
-              : null,
-          });
+  /**
+   * @description This method is used to add/remove device token
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/device-token", method: HttpMethod.DELETE })
+  @Auth()
+  public async removeDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    let checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserExists) {
+      checkUserExists = await UserTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    let checkUserDraftExists = await UserDraftTable.findOne({
+      _id: user._id,
+    });
+
+    if (!checkUserDraftExists) {
+      checkUserDraftExists = await UserDraftTable.findOne({
+        _id: reqParam.userId,
+      });
+    }
+    if (!checkUserExists && !checkUserDraftExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validations.removeDeviceTokenValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await DeviceTokenService.removeDeviceToken(
+            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token removed successfully" });
         }
       }
     );
@@ -590,12 +589,12 @@ class UserController extends BaseController {
   @Auth()
   public async updateDob(ctx: any) {
     const input = ctx.request.body;
-    return validation.updateDobValidation(input, ctx, async (validate) => {
+    return validations.updateDobValidation(input, ctx, async (validate) => {
       if (validate) {
         if (
           (
             await UserTable.findOne(
-              { _id: ctx.request.user._id },
+              { _id: input.userId ? input.userId : ctx.request.user._id },
               { type: 1, _id: 0 }
             )
           ).type === 2 &&
@@ -627,7 +626,9 @@ class UserController extends BaseController {
   @Auth()
   public async updateProfilePicture(ctx: any) {
     const userExists: any = await UserTable.findOne({
-      _id: ctx.request.user._id,
+      _id: ctx.request.body.userId
+        ? ctx.request.body.userId
+        : ctx.request.user._id,
     });
     const requestParams = ctx.request.body;
     if (!requestParams.media) {
@@ -667,227 +668,6 @@ class UserController extends BaseController {
   }
 
   /**
-   * @description This method is used to get child of parent
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/get-children", method: HttpMethod.GET })
-  @Auth()
-  public async getChildren(ctx: any) {
-    let teens = await userService.getChildren(ctx.request.user._id);
-    return this.Ok(ctx, teens);
-  }
-
-  /**
-   * @description This method is used to handle webhook failures respectively
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/upload-proof-of-address",
-    method: HttpMethod.POST,
-    middleware: [uploadIdProof.single("address_proof_front")],
-  })
-  @Auth()
-  @PrimeTrustJWT()
-  public async uploadProofOfAddress(ctx: any) {
-    const files = ctx.request.file;
-    const user = ctx.request.user;
-    const jwtToken = ctx.request.primeTrustToken;
-    if (!files) {
-      return this.BadRequest(
-        ctx,
-        "Please upload proof of address in order to complete KYC"
-      );
-    }
-    let existingStatus = (
-      await UserTable.findOne(
-        { _id: ctx.request.user._id },
-        { status: 1, _id: 0 }
-      )
-    ).status;
-    if (
-      existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
-      existingStatus === EUSERSTATUS.KYC_DOCUMENT_UPLOAD
-    ) {
-      try {
-        fs.unlinkSync(
-          path.join(__dirname, "../../../../uploads", files.filename)
-        );
-      } catch (err) {}
-      return this.BadRequest(
-        ctx,
-        existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-          ? "User already verified."
-          : "User's data already uploaded."
-      );
-    }
-    /**
-     * Validations to be done
-     */
-    const userExists: any = await UserTable.findOne({ _id: user._id }).populate(
-      "stateId",
-      ["name", "shortName"]
-    );
-    if (!userExists || userExists.type == EUserType.TEEN) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const parentChildExists = await ParentChildTable.findOne({
-      userId: user._id,
-    });
-    if (!parentChildExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const accountIdDetails: any =
-      userExists.type == EUserType.SELF
-        ? parentChildExists
-        : await parentChildExists.teens.find(
-            (x: any) =>
-              x.childId.toString() == parentChildExists.firstChildId.toString()
-          );
-    if (!accountIdDetails) {
-      return this.BadRequest(ctx, "Account Details Not Found");
-    }
-    const fullName = userExists.firstName + " " + userExists.lastName;
-
-    /**
-     * Upload both file
-     */
-    let addressDocumentId = null;
-    let uploadFileError = null;
-    let uploadData = {
-      "contact-id": parentChildExists.contactId,
-      description: "Proof of Address",
-      label: "Proof of Address",
-      public: "true",
-      file: fs.createReadStream(
-        path.join(__dirname, "../../../../uploads", files.filename)
-      ),
-    };
-    let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-    if (uploadFile.status == 400) {
-      uploadFileError = uploadFile.message;
-    }
-    if (uploadFile.status == 200 && uploadFile.message.errors != undefined) {
-      uploadFileError = uploadFile.message;
-    }
-    if (uploadFileError) {
-      /**
-       * Delete image from our server
-       */
-      try {
-        fs.unlinkSync(
-          path.join(__dirname, "../../../../uploads", files.filename)
-        );
-      } catch (err) {
-        console.log("Error in removing image");
-      }
-      return this.BadRequest(ctx, uploadFileError);
-    }
-    addressDocumentId = uploadFile.message.data.id;
-    /**
-     * Checking the kyc document checks
-     */
-    const kycData = {
-      type: "kyc-document-checks",
-      attributes: {
-        "contact-id": parentChildExists.contactId,
-        "uploaded-document-id": addressDocumentId,
-        "kyc-document-type": "residence_permit",
-        identity: true,
-        "identity-photo": true,
-        "proof-of-address": true,
-        "kyc-document-country": "US",
-      },
-    };
-    let kycResponse: any = await kycDocumentChecks(jwtToken, kycData);
-    if (kycResponse.status == 400) {
-      return this.BadRequest(ctx, kycResponse.message);
-    }
-    if (kycResponse.status == 200 && kycResponse.data.errors != undefined) {
-      return this.BadRequest(ctx, kycResponse.message);
-    }
-    await UserTable.updateOne(
-      {
-        _id: userExists._id,
-      },
-      {
-        $set: {
-          status: EUSERSTATUS.KYC_DOCUMENT_UPLOAD,
-        },
-      }
-    );
-    /**
-     * Updating the info in parent child table
-     */
-    await ParentChildTable.updateOne(
-      { userId: user._id, "teens.childId": parentChildExists.firstChildId },
-      {
-        $set: {
-          contactId: parentChildExists.contactId,
-          "teens.$.accountId": accountIdDetails.accountId,
-          proofOfAddressId: addressDocumentId,
-          kycDocumentId: kycResponse.data.data.id,
-        },
-      }
-    );
-    return this.Ok(ctx, {
-      data: kycResponse.data,
-      message:
-        "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
-    });
-  }
-
-  /**
-   * @description This method is used to notify user.
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/notify-user", method: HttpMethod.POST })
-  public async notifyUsers(ctx: any) {
-    const input = ctx.request.body;
-    return validation.notifyUserInputValidation(
-      input,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          await NotifyUserTable.create(input);
-          return this.Ok(ctx, { message: "Notified successfully." });
-        }
-      }
-    );
-  }
-
-  /**
-   * @description This method is used for acknowelegement of user
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/acknowledge", method: HttpMethod.POST })
-  @Auth()
-  public async consent(ctx: any) {
-    if (
-      (
-        await UserTable.findOne(
-          { _id: new ObjectId(ctx.request.user._id) },
-          { type: 1, _id: 0 }
-        )
-      ).type === 1
-    )
-      return this.BadRequest(ctx, "Requested user is Teen");
-    await UserTable.updateOne(
-      { _id: new ObjectId(ctx.request.user._id) },
-      {
-        $set: {
-          isAcknowledged: 1,
-          screenStatus: ESCREENSTATUS.UPLOAD_DOCUMENTS,
-        },
-      }
-    );
-    return this.Ok(ctx, { message: "Acknowledged" });
-  }
-
-  /**
    * @description This method is used for turing on/off notification
    * @param ctx
    * @returns {*}
@@ -897,11 +677,13 @@ class UserController extends BaseController {
   public async toggleNotificationSettings(ctx: any) {
     const user = ctx.request.user;
     let reqParam = ctx.request.body;
-    const checkUserExists = await UserTable.findOne({ _id: user._id });
+    const checkUserExists = await UserTable.findOne({
+      _id: reqParam.userId ? reqParam.userId : user._id,
+    });
     if (!checkUserExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
-    return validation.toggleNotificationValidation(
+    return validations.toggleNotificationValidation(
       ctx.request.body,
       ctx,
       async (validate) => {
@@ -922,74 +704,6 @@ class UserController extends BaseController {
               : "Turned off notfication";
 
           return this.Ok(ctx, { message });
-        }
-      }
-    );
-  }
-
-  /**
-   * @description This method is used to add/remove device token
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/device-token", method: HttpMethod.POST })
-  @Auth()
-  public async addDeviceToken(ctx: any) {
-    const user = ctx.request.user;
-    let reqParam = ctx.request.body;
-    const checkUserExists = await UserTable.findOne({
-      _id: user._id,
-    });
-    const checkUserDraftExists = await UserDraftTable.findOne({
-      _id: user._id,
-    });
-    if (!checkUserExists && !checkUserDraftExists) {
-      return this.BadRequest(ctx, "User does not exist");
-    }
-    return validation.addDeviceTokenValidation(
-      ctx.request.body,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          await DeviceTokenService.addDeviceTokenIfNeeded(
-            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
-            reqParam.deviceToken
-          );
-          return this.Ok(ctx, { message: "Device token added successfully" });
-        }
-      }
-    );
-  }
-
-  /**
-   * @description This method is used to add/remove device token
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/device-token", method: HttpMethod.DELETE })
-  @Auth()
-  public async removeDeviceToken(ctx: any) {
-    const user = ctx.request.user;
-    let reqParam = ctx.request.body;
-    const checkUserExists = await UserTable.findOne({
-      _id: user._id,
-    });
-    const checkUserDraftExists = await UserDraftTable.findOne({
-      _id: user._id,
-    });
-    if (!checkUserExists && !checkUserDraftExists) {
-      return this.BadRequest(ctx, "User does not exist");
-    }
-    return validation.removeDeviceTokenValidation(
-      ctx.request.body,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          await DeviceTokenService.removeDeviceToken(
-            checkUserExists ? checkUserExists._id : checkUserDraftExists._id,
-            reqParam.deviceToken
-          );
-          return this.Ok(ctx, { message: "Device token removed successfully" });
         }
       }
     );

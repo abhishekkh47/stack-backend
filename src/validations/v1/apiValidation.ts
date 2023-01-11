@@ -1,4 +1,8 @@
-import Joi from "joi";
+let Joi = require("joi")
+Joi = Joi.defaults((schema) => schema.options({
+  allowUnknown: true 
+}));
+
 import { validationMessageKey } from "../../utility";
 export const validation = {
   getUserQuizDataValidation: (req, res, callback) => {

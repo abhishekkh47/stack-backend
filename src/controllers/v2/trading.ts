@@ -1,18 +1,18 @@
 import {
   getAccounts,
   institutionsGetByIdRequest,
-} from "./../../../utility/plaid";
+} from "../../utility/plaid";
 import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PLAID_ITEM_ERROR,
-} from "./../../../utility/constants";
+} from "../../utility/constants";
 import moment from "moment";
-import { EAction, EStatus, messages } from "./../../../types/useractivity";
+import { EAction, EStatus, messages } from "../../types/useractivity";
 import { ObjectId } from "mongodb";
-import { UserActivityTable } from "./../../../model/useractivity";
-import envData from "../../../config/index";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
+import { UserActivityTable } from "../../model/useractivity";
+import envData from "../../config/index";
+import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -20,7 +20,7 @@ import {
   TransactionTable,
   UserBanksTable,
   UserTable,
-} from "../../../model";
+} from "../../model";
 import {
   DeviceTokenService,
   PortfolioService,
@@ -28,7 +28,7 @@ import {
   userService,
   zohoCrmService,
   TradingDBService,
-} from "../../../services/v1/index";
+} from "../../services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
@@ -38,7 +38,7 @@ import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../../types";
+} from "../../types";
 import {
   createBank,
   createProcessorToken,
@@ -48,11 +48,11 @@ import {
   getPublicTokenExchange,
   internalAssetTransfers,
   Route,
-} from "../../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
-import { validation } from "../../../validations/v1/apiValidation";
-import BaseController from "../../v1/controllers/base";
-import { tradingDBService } from "../../../services/v1.1/index";
+} from "../../utility";
+import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
+import { validation } from "../../validations/v1/apiValidation";
+import BaseController from "../base";
+import { tradingDBService } from "../../services/v2";
 
 class TradingController extends BaseController {
   /**
@@ -417,6 +417,7 @@ class TradingController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async getPortfolio(ctx: any) {
+    console.log('----getPortfolio v2----');
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
     return validation.getPortFolioValidation(

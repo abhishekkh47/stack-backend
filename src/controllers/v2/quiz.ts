@@ -1,21 +1,21 @@
-import { validations } from './../../../validations/v1.1/apiValidation';
-import { QuizQuestionTable } from "./../../../model/quizQuestion";
-import { QuizTable } from "./../../../model/quiz";
-import { timeBetweenTwoQuiz } from "./../../../types/quiz";
-import { get72HoursAhead } from "./../../../utility/common";
+import { validations } from '../../validations/v2/apiValidation';
+import { QuizQuestionTable } from "../../model/quizQuestion";
+import { QuizTable } from "../../model/quiz";
+import { timeBetweenTwoQuiz } from "../../types/quiz";
+import { get72HoursAhead } from "../../utility/common";
 import moment from "moment";
 import mongoose from "mongoose";
-import { Auth } from "../../../middleware";
+import { Auth } from "../../middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
   QuizResult,
   UserTable,
-} from "../../../model";
-import { quizService } from "../../../services/v1/index";
-import { EUserType, HttpMethod } from "../../../types";
-import { Route } from "../../../utility";
-import BaseController from "../../v1/controllers/base";
+} from "../../model";
+import { quizService } from "../../services/v1/index";
+import { EUserType, HttpMethod } from "../../types";
+import { Route } from "../../utility";
+import BaseController from "../base";
 
 class QuizController extends BaseController {
   /**

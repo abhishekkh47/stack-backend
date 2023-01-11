@@ -268,5 +268,7 @@
 	"recurringDepositValidationChildidPattern": "Please enter child details",
 	"unlinkBankBankidRequired": "Bank id is required",
 	"removeDeviceTokenDevicetokenEmpty": "Device Token is required",
-	"addDeviceTokenDevicetokenEmpty": "Device Token is required"
+	"addDeviceTokenDevicetokenEmpty": "Device Token is required",
+	"getPortFolioVersionUnknown": "getPortFolioVersionUnknown",
+	"nextDepositDateVersionUnknown": "nextDepositDateVersionUnknown"
 }

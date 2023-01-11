@@ -1,40 +1,40 @@
-import { UserReferralTable } from "./../../../model/user-referral";
+import { UserReferralTable } from "../../model/user-referral";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
-import envData from "../../../config/index";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
+import envData from "../../config/index";
+import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
   AdminTable,
   ParentChildTable,
   TransactionTable,
   UserTable,
   WebhookTable,
-} from "../../../model";
+} from "../../model";
 import {
   AuthService,
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../../services/v1/index";
+} from "../../services/v1/index";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../../types";
+} from "../../types";
 import {
   checkValidBase64String,
   createAccount,
   getAccountStatusByAccountId,
   Route,
   uploadFilesFetch,
-} from "../../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../../utility/constants";
-import { validation } from "../../../validations/v1/apiValidation";
-import BaseController from "./base";
+} from "../../utility";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+import { validation } from "../../validations/v1/apiValidation";
+import BaseController from "../base";
 
 class WebHookController extends BaseController {
   /**
@@ -682,10 +682,10 @@ class WebHookController extends BaseController {
               "base64"
             );
 
-            if (!fs.existsSync(path.join(__dirname, "../../../../uploads")))
-              fs.mkdirSync(path.join(__dirname, "../../../../uploads"));
+            if (!fs.existsSync(path.join(__dirname, "../../../uploads")))
+              fs.mkdirSync(path.join(__dirname, "../../../uploads"));
             fs.writeFileSync(
-              path.join(__dirname, "../../../../uploads", imageName),
+              path.join(__dirname, "../../../uploads", imageName),
               decodedImage,
               "base64"
             );
@@ -710,7 +710,7 @@ class WebHookController extends BaseController {
               label: "Proof of Address",
               public: "true",
               file: fs.createReadStream(
-                path.join(__dirname, "../../../../uploads", imageName)
+                path.join(__dirname, "../../../uploads", imageName)
               ),
             };
             let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
@@ -799,11 +799,11 @@ class WebHookController extends BaseController {
                     ),
                 "base64"
               );
-              if (!fs.existsSync(path.join(__dirname, "../../../../uploads"))) {
-                fs.mkdirSync(path.join(__dirname, "../../../../uploads"));
+              if (!fs.existsSync(path.join(__dirname, "../../../uploads"))) {
+                fs.mkdirSync(path.join(__dirname, "../../../uploads"));
               }
               fs.writeFileSync(
-                path.join(__dirname, "../../../../uploads", imageName),
+                path.join(__dirname, "../../../uploads", imageName),
                 decodedImage,
                 "base64"
               );
@@ -836,7 +836,7 @@ class WebHookController extends BaseController {
                     : "Back Side Driving License",
                 public: "true",
                 file: fs.createReadStream(
-                  path.join(__dirname, "../../../../uploads", fileData.filename)
+                  path.join(__dirname, "../../../uploads", fileData.filename)
                 ),
               };
               let uploadFile: any = await uploadFilesFetch(

@@ -1,7 +1,7 @@
 import moment from "moment";
 import { ObjectId } from "mongodb";
-import envData from "../../../config/index";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
+import envData from "../../config/index";
+import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -10,7 +10,7 @@ import {
   UserActivityTable,
   UserBanksTable,
   UserTable,
-} from "../../../model";
+} from "../../model";
 import {
   DeviceTokenService,
   PortfolioService,
@@ -20,7 +20,7 @@ import {
   userService,
   zohoCrmService,
   TradingDBService,
-} from "../../../services/v1/index";
+} from "../../services/v1/index";
 import {
   EAction,
   EAUTOAPPROVAL,
@@ -34,7 +34,7 @@ import {
   EUserType,
   HttpMethod,
   messages,
-} from "../../../types";
+} from "../../types";
 import {
   createBank,
   createContributions,
@@ -55,15 +55,15 @@ import {
   wireTransfer,
   getAssets,
   getAssetTotalWithId,
-} from "../../../utility";
+} from "../../utility";
 import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
   PLAID_ITEM_ERROR,
-} from "../../../utility/constants";
-import { validation } from "../../../validations/v1/apiValidation";
-import BaseController from "./base";
+} from "../../utility/constants";
+import { validation } from "../../validations/v1/apiValidation";
+import BaseController from "../base";
 
 class TradingController extends BaseController {
   /**
@@ -1542,14 +1542,17 @@ class TradingController extends BaseController {
   public async getPortfolio(ctx: any) {
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
+    console.log('----getPortfolio v1----', reqParam);
     return validation.getPortFolioValidation(
       reqParam,
       ctx,
       async (validate) => {
+        console.log('----validate----', validate);
         if (validate) {
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
           });
+          console.log('----childExists----', childExists);
 
           if (!childExists) {
             return this.BadRequest(ctx, "User Not Found");
