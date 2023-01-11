@@ -13,7 +13,7 @@ import {
   StateTable,
   TransactionTable,
   UserDraftTable,
-  UserReferralTable,
+  UserReffaralTable,
   UserTable,
 } from "../../../model";
 import {
