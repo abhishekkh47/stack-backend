@@ -1,12 +1,27 @@
-import { validations } from "../../../validations/v1.1/apiValidation";
-import { UserTable } from "../../../model/user";
-import BaseController from "../../v1/controllers/base";
-import { Route } from "../../../utility";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
-import { HttpMethod } from "../../../types";
-import { DripshopDBService, UserDBService } from "../../../services/v1/index";
+import { UserTable } from "../../model/user";
+import { validation } from "../../validations/v1/apiValidation";
+import BaseController from "../base";
+import { Route } from "../../utility";
+import { Auth, PrimeTrustJWT } from "../../middleware";
+import { HttpMethod } from "../../types";
+import { DripshopDBService, UserDBService } from "../../services/v1/index";
 
 class DripshopController extends BaseController {
+  /**
+   * @description THis method is used to get list of all products in drip shop
+   * @param ctx
+   */
+  @Route({ path: "/dripshops", method: HttpMethod.GET })
+  @Auth()
+  public async getDripshops(ctx: any) {
+    /**
+     * aggregate with crypto to get crypto image
+     */
+    const allData = await DripshopDBService.getDripshopData();
+
+    return this.Ok(ctx, { data: allData });
+  }
+
   /**
    * @description This method is used to redeem crypto for fuels
    * @param ctx
@@ -19,7 +34,7 @@ class DripshopController extends BaseController {
     const user = ctx.request.user;
     const jwtToken = ctx.request.primeTrustToken;
     let reqParam = ctx.request.body;
-    return validations.redeemCryptoValidation(
+    return validation.redeemCryptoValidation(
       reqParam,
       ctx,
       async (validate: boolean) => {
@@ -27,11 +42,8 @@ class DripshopController extends BaseController {
           /**
            * get user info
            */
-          let userExists = await UserDBService.getUserInfo(user._id);
+          const userExists = await UserDBService.getUserInfo(user._id);
 
-          if (!userExists) {
-            userExists = await UserDBService.getUserInfo(reqParam.userId);
-          }
           if (!userExists) {
             return this.BadRequest(ctx, "User does not exist");
           }

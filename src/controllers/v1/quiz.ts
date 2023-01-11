@@ -1,7 +1,7 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
+import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -10,18 +10,18 @@ import {
   QuizTable,
   QuizTopicTable,
   UserTable,
-} from "../../../model";
-import { quizService, zohoCrmService } from "../../../services/v1/index";
+} from "../../model";
+import { quizService, zohoCrmService } from "../../services/v1/index";
 import {
   EQuizTopicStatus,
   EUserType,
   everyCorrectAnswerPoints,
   HttpMethod,
   timeBetweenTwoQuiz,
-} from "../../../types";
-import { get72HoursAhead, Route } from "../../../utility";
-import { validation } from "../../../validations/v1/apiValidation";
-import BaseController from "./base";
+} from "../../types";
+import { get72HoursAhead, Route } from "../../utility";
+import { validation } from "../../validations/v1/apiValidation";
+import BaseController from "../base";
 
 class QuizController extends BaseController {
   /**

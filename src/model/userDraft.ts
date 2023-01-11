@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { EPHONEVERIFIEDSTATUS } from "./../types/user";
+import { EPHONEVERIFIEDSTATUS } from "../types/user";
 import type { IUserdraft, MongooseModel } from "../types";
 
 export type IChilddraftSchema = MongooseModel<IUserdraft> & mongoose.Document;

@@ -1,4 +1,4 @@
-import { UserDraftTable } from "./../model/userDraft";
+import { UserDraftTable } from "../model/userDraft";
 import config from "../config";
 import crypto from "crypto";
 import bcrypt from "bcrypt";

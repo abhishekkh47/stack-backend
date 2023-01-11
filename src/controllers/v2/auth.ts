@@ -1,13 +1,13 @@
-import { validations } from "../../../validations/v1.1/apiValidation";
+import { validations } from "../../validations/v2/apiValidation";
 import {
   ENOTIFICATIONSETTINGS,
   EPHONEVERIFIEDSTATUS,
-} from "./../../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "./../../../utility/constants";
+} from "../../types/user";
+import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
-import envData from "../../../config/index";
-import { Auth, PrimeTrustJWT } from "../../../middleware";
+import envData from "../../config/index";
+import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -17,7 +17,7 @@ import {
   TransactionTable,
   UserDraftTable,
   UserTable,
-} from "../../../model";
+} from "../../model";
 import {
   AuthService,
   DeviceTokenService,
@@ -26,7 +26,7 @@ import {
   TwilioService,
   zohoCrmService,
   userService,
-} from "../../../services/v1/index";
+} from "../../services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
@@ -37,7 +37,7 @@ import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../../types";
+} from "../../types";
 import {
   createAccount,
   executeQuote,
@@ -48,15 +48,15 @@ import {
   internalAssetTransfers,
   makeUniqueReferalCode,
   Route,
-} from "../../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../../utility/constants";
-import { validation } from "../../../validations/v1/apiValidation";
-import BaseController from "../../v1/controllers/base";
-import UserController from "../../v1.1/controllers/user";
+} from "../../utility";
+import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
+import { validation } from "../../validations/v1/apiValidation";
+import BaseController from "../base";
+import UserController from "./user";
 import {
   UserDBService,
   TransactionDBService,
-} from "../../../services/v1.1/index";
+} from "../../services/v2";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
