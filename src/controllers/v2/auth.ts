@@ -1021,7 +1021,7 @@ class AuthController extends BaseController {
           /**
            * migrate parent from userdraft to user table
            */
-
+          const uniqueReferralCode = await makeUniqueReferalCode();
           if (childEmail) {
             query = {
               ...query,
@@ -1073,7 +1073,9 @@ class AuthController extends BaseController {
               mobile: input.mobile,
               firstName: parentInUserDraft.firstName,
               lastName: parentInUserDraft.lastName,
-              referralCode: parentInUserDraft.referralCode,
+              referralCode: parentInUserDraft.referralCode
+                ? parentInUserDraft.referralCode
+                : uniqueReferralCode,
               isPhoneVerified: parentInUserDraft.isPhoneVerified,
             };
 
@@ -1150,7 +1152,6 @@ class AuthController extends BaseController {
           /**
            * Generate referal code when user sign's up.
            */
-          const uniqueReferralCode = await makeUniqueReferalCode();
           const createTeenObject = {
             ...baseChildUser,
             email: childEmail,
@@ -1172,7 +1173,9 @@ class AuthController extends BaseController {
             mobile: input.mobile,
             firstName: parentInUserDraft.firstName,
             lastName: parentInUserDraft.lastName,
-            referralCode: parentInUserDraft.referralCode,
+            referralCode: parentInUserDraft.referralCode
+              ? parentInUserDraft.referralCode
+              : uniqueReferralCode,
             isPhoneVerified: parentInUserDraft.isPhoneVerified,
           };
 
@@ -1377,13 +1380,12 @@ class AuthController extends BaseController {
             const userExists = await UserTable.findOne({ email });
             let userDraftInfo = await UserDraftTable.findOne({ email });
             await SocialService.verifySocial(reqParam);
-            const uniqueReferralCode = await makeUniqueReferalCode();
             if (!userExists && !userDraftInfo) {
               const createQuery: any = {
                 email: reqParam.email,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
-                referralCode: uniqueReferralCode,
+                referralCode: null,
               };
               userDraftInfo = await UserDraftTable.create(createQuery);
               if (userDraftInfo) {
