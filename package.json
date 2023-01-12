@@ -50,6 +50,7 @@
     "koa-bodyparser": "^4.3.0",
     "koa-mount": "^4.0.0",
     "koa-router": "^10.1.1",
+    "koa-router-version": "^1.2.0",
     "koa-send": "^5.0.1",
     "koa-views": "^8.0.0",
     "module-alias": "^2.2.2",
