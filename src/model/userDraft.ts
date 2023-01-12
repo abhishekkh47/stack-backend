@@ -39,7 +39,8 @@ const schema = new mongoose.Schema<IUserdraft>(
     },
     referralCode: {
       type: mongoose.Schema.Types.String,
-      required: true,
+      required: false,
+      default: null,
     },
     refreshToken: { type: mongoose.Schema.Types.String, default: null },
   },
