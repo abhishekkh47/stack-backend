@@ -15,6 +15,7 @@ export interface IUser extends IAccount {
   isParentFirst: boolean;
   quizCoins: number;
   isNotificationOn: number;
+  isPhoneVerified: number
 }
 
 export interface IAccount {
@@ -74,6 +75,9 @@ export interface IUserdraft {
   type: number;
   refreshToken: string;
   referralCode: string;
+  mobile: string;
+  isPhoneVerified: number;
+  
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
@@ -85,7 +89,7 @@ export enum EAUTOAPPROVAL {
 
 export enum ENOTIFICATIONSETTINGS {
   ON = 1,
-  OFF = 0
+  OFF = 0,
 }
 
 export enum ERECURRING {
@@ -116,6 +120,7 @@ export enum EUSERSTATUS {
   KYC_DOCUMENT_UPLOAD = 1,
   KYC_DOCUMENT_UPLOAD_FAILED = 2,
   KYC_DOCUMENT_VERIFIED = 3,
+  ACCOUNT_CLOSED = 4,
 }
 export enum ESCREENSTATUS {
   /**
@@ -143,3 +148,7 @@ export enum ESCREENSTATUS {
   SUCCESS_TEEN = 10,
 }
 
+export enum EPHONEVERIFIEDSTATUS {
+  TRUE = 1,
+  FALSE = 0
+}

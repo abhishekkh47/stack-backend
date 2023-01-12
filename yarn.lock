@@ -3284,6 +3284,13 @@ koa-mount@^4.0.0:
     debug "^4.0.1"
     koa-compose "^4.1.0"
 
+koa-router-version@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/koa-router-version/-/koa-router-version-1.2.0.tgz#a44c819c3667d7f43ce113e0aced7ad63d1a17d3"
+  integrity sha512-TSikIrM1DXDedDodJ/BKuOFYJj9zOVcWGUVoGkNO7dBTjgPW2+6eCCGHbZ0/nbN3rL+O8e6pKttvMIkZ73RAtQ==
+  dependencies:
+    semver "^5.4.1"
+
 koa-router@^10.1.1:
   version "10.1.1"
   resolved "https://registry.npmjs.org/koa-router/-/koa-router-10.1.1.tgz"
@@ -4616,7 +4623,7 @@ semver-diff@^3.1.1:
   dependencies:
     semver "^6.3.0"
 
-semver@^5.3.0, semver@^5.6.0, semver@^5.7.1:
+semver@^5.3.0, semver@^5.4.1, semver@^5.6.0, semver@^5.7.1:
   version "5.7.1"
   resolved "https://registry.npmjs.org/semver/-/semver-5.7.1.tgz"
   integrity sha512-sauaDf/PZdVgrLTNYHRtpXa1iRiKcaebiKQ1BJdpQlWH2lCvexQdX55snPFyK7QzpudqbCI0qXFfOasHdyNDGQ==
