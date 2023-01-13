@@ -1297,9 +1297,7 @@ class AuthController extends BaseController {
       const childInfo = await UserDraftTable.findOne({
         _id: ctx.request.user._id,
       });
-      console.log(childInfo);
-      console.log(ctx.request.user);
-
+      let uniqueReferralCode = await makeUniqueReferalCode();
       const updateOrCreateObject = {
         email: childInfo ? childInfo.email : childAlreadyExists.email,
         dob: childInfo ? childInfo.dob : childAlreadyExists.dob,
@@ -1321,7 +1319,9 @@ class AuthController extends BaseController {
         referralCode:
           childInfo && childInfo.referralCode
             ? childInfo.referralCode
-            : childAlreadyExists.referralCode,
+            : childAlreadyExists
+            ? childAlreadyExists.referralCode
+            : uniqueReferralCode,
         isPhoneVerified:
           childInfo && childInfo.isPhoneVerified
             ? childInfo.isPhoneVerified
