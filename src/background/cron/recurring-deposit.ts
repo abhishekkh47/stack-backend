@@ -1,10 +1,9 @@
-import { DeviceTokenService } from "../../services";
+import { DeviceTokenService } from "../../services/v1/index";
 import { createContributions, getPrimeTrustJWTToken } from "../../utility";
 import {
   TransactionTable,
   UserTable,
   UserActivityTable,
-  DeviceToken,
   UserBanksTable,
 } from "../../model";
 import moment from "moment";

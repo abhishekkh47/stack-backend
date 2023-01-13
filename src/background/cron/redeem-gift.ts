@@ -1,4 +1,8 @@
-import { DeviceTokenService, tradingService,  userService} from "../../services";
+import {
+  DeviceTokenService,
+  tradingService,
+  userService,
+} from "../../services/v1/index";
 import { getAllGiftCards, getPrimeTrustJWTToken } from "../../utility";
 import {
   CryptoTable,
@@ -14,14 +18,12 @@ import {
   ETransactionType,
   EAction,
   EStatus,
-  ERead,
 } from "../../types";
 import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
 } from "../../utility/constants";
-import config from "../../config";
 
 export const redeemGiftHandler = async () => {
   console.log(`
