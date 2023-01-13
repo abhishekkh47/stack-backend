@@ -4,10 +4,7 @@ import axios from "axios";
 import { ObjectId } from 'mongodb';
 
 class ScriptService {
-    public async sandboxApproveKYC(ctx: any): Promise<any> {
-      const reqParam = ctx.params;
-      const { userId } = reqParam;
-  
+    public async sandboxApproveKYC(userId: string, primeTrustToken: string): Promise<any> {
       if (!userId)
         return {
           status: 400,
@@ -18,10 +15,19 @@ class ScriptService {
         userId: new ObjectId(userId),
       });
   
-      if (!user)
-        return {status: 404, message: `User with ID ${userId} was not found`};
+      if (!user) {
+        return {
+          status: 404, 
+          message: `User with ID ${userId} was not found`
+        };
+      }
   
-      if (!user.contactId) return { status: 400, message: "No 'contactId' found..." };
+      if (!user.contactId) {
+        return {
+          status: 400,
+          message: "No 'contactId' found..."
+        };
+      }
 
     // Make this a function since we send this exact request twice, just with different URLs
     const sendRequest = async (url: string) => {
@@ -43,7 +49,11 @@ class ScriptService {
               },
             }
           },
-          { headers: { Authorization: `Bearer ${ctx.request.primeTrustToken}` } }
+          { 
+            headers: {
+              Authorization: `Bearer ${primeTrustToken}`
+            }
+          }
         )
         .catch((error) => {
           console.log(error);
@@ -53,13 +63,23 @@ class ScriptService {
       // First part of Staging KYC Approval
       const kycDocumentCheckResponse: any = await sendRequest("https://sandbox.primetrust.com/v2/kyc-document-checks")
       
-      if (kycDocumentCheckResponse.status !== 201) return { status: kycDocumentCheckResponse.status, message: kycDocumentCheckResponse.response }
+      if (kycDocumentCheckResponse.status !== 201) {
+        return {
+          status: kycDocumentCheckResponse.status,
+          message: kycDocumentCheckResponse.response
+        };
+      }
   
       const kycDocumentId = kycDocumentCheckResponse.data.data.id;
       // Second part of Staging KYC Approval
       const kycDocumentCheckVerifyResponse: any = await sendRequest(`https://sandbox.primetrust.com/v2/kyc-document-checks/${kycDocumentId}/sandbox/verify`);
       
-      if (kycDocumentCheckVerifyResponse.status !== 200) return { status: kycDocumentCheckVerifyResponse.status, message: kycDocumentCheckVerifyResponse.response }
+      if (kycDocumentCheckVerifyResponse.status !== 200) {
+        return {
+          status: kycDocumentCheckVerifyResponse.status,
+          message: kycDocumentCheckVerifyResponse.response
+        };
+      }
 
       return { status: 200, response: "Staging KYC Approval Successful" };
     }

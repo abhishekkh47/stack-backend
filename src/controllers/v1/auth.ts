@@ -690,17 +690,9 @@ class AuthController extends BaseController {
                   : reqParam.childFirstName,
               }),
             };
-
-            // TODO SERVICE
-
             // If in staging environment, we need to manually KYC approve the account
             if (process.env.APP_ENVIRONMENT === 'STAGING') {
-              const resp = await ScriptService.sandboxApproveKYC(ctx = {
-                ...ctx,
-                reqParam: {
-                  userId: user._id,
-                }
-              });
+              const resp = await ScriptService.sandboxApproveKYC(user._id, ctx.request.primeTrustToken);
             }
           }
           if (user.type == EUserType.TEEN) {
