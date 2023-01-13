@@ -23,6 +23,7 @@ import {
   TwilioService,
   zohoCrmService,
   userService,
+  ScriptService,
 } from "../../services/v1/index";
 import {
   EAUTOAPPROVAL,
@@ -61,8 +62,6 @@ import {
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 import UserController from "./user";
-import axios from "axios";
-import { ScriptController } from '.';
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -695,8 +694,14 @@ class AuthController extends BaseController {
             // TODO SERVICE
 
             // If in staging environment, we need to manually KYC approve the account
-            if (process.env.APP_ENVIRONMENT === 'STAGING')
-              ScriptController.kycApproveStaging(ctx);
+            if (process.env.APP_ENVIRONMENT === 'STAGING') {
+              const resp = await ScriptService.sandboxApproveKYC(ctx = {
+                ...ctx,
+                reqParam: {
+                  userId: user._id,
+                }
+              });
+            }
           }
           if (user.type == EUserType.TEEN) {
             dataSentInCrm = {

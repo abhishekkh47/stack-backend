@@ -1,9 +1,29 @@
+import { ParentChildTable } from './../../model/parentChild';
 import { IParentChild, MongooseBaseType } from "@app/types";
 import axios from "axios";
+import { ObjectId } from 'mongodb';
 
 class ScriptService {
-    public async sandboxApproveKYC(user: IParentChild & MongooseBaseType, ctx: any): Promise<any> {
-            // Make this a function since we send this exact request twice, just with different URLs
+    public async sandboxApproveKYC(ctx: any): Promise<any> {
+      const reqParam = ctx.params;
+      const { userId } = reqParam;
+  
+      if (!userId)
+        return {
+          status: 400,
+          message: "Please provide a valid user ID",
+        };
+  
+      const user = await ParentChildTable.findOne({
+        userId: new ObjectId(userId),
+      });
+  
+      if (!user)
+        return {status: 404, message: `User with ID ${userId} was not found`};
+  
+      if (!user.contactId) return { status: 400, message: "No 'contactId' found..." };
+
+    // Make this a function since we send this exact request twice, just with different URLs
     const sendRequest = async (url: string) => {
         return await axios
         .post(
@@ -33,13 +53,13 @@ class ScriptService {
       // First part of Staging KYC Approval
       const kycDocumentCheckResponse: any = await sendRequest("https://sandbox.primetrust.com/v2/kyc-document-checks")
       
-      if (kycDocumentCheckResponse.status !== 201) return { code: kycDocumentCheckResponse.status, response: kycDocumentCheckResponse.response }
+      if (kycDocumentCheckResponse.status !== 201) return { status: kycDocumentCheckResponse.status, message: kycDocumentCheckResponse.response }
   
       const kycDocumentId = kycDocumentCheckResponse.data.data.id;
       // Second part of Staging KYC Approval
       const kycDocumentCheckVerifyResponse: any = await sendRequest(`https://sandbox.primetrust.com/v2/kyc-document-checks/${kycDocumentId}/sandbox/verify`);
       
-      if (kycDocumentCheckVerifyResponse.status !== 200) return { code: kycDocumentCheckVerifyResponse.status, response: kycDocumentCheckVerifyResponse.response }
+      if (kycDocumentCheckVerifyResponse.status !== 200) return { status: kycDocumentCheckVerifyResponse.status, message: kycDocumentCheckVerifyResponse.response }
 
       return { status: 200, response: "Staging KYC Approval Successful" };
     }
