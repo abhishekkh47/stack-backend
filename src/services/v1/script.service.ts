@@ -61,23 +61,23 @@ class ScriptService {
       }
   
       // First part of Staging KYC Approval
-      const kycDocumentCheckResponse: any = await sendRequest("https://sandbox.primetrust.com/v2/kyc-document-checks")
+      const checkResonse: any = await sendRequest("https://sandbox.primetrust.com/v2/kyc-document-checks")
       
-      if (kycDocumentCheckResponse.status !== 201) {
+      if (checkResonse.status !== 201) {
         return {
-          status: kycDocumentCheckResponse.status,
-          message: kycDocumentCheckResponse.response
+          status: checkResonse.status,
+          message: checkResonse.response
         };
       }
   
-      const kycDocumentId = kycDocumentCheckResponse.data.data.id;
+      const kycDocumentId = checkResonse.data.data.id;
       // Second part of Staging KYC Approval
-      const kycDocumentCheckVerifyResponse: any = await sendRequest(`https://sandbox.primetrust.com/v2/kyc-document-checks/${kycDocumentId}/sandbox/verify`);
+      const verifyResponse: any = await sendRequest(`https://sandbox.primetrust.com/v2/kyc-document-checks/${kycDocumentId}/sandbox/verify`);
       
-      if (kycDocumentCheckVerifyResponse.status !== 200) {
+      if (verifyResponse.status !== 200) {
         return {
-          status: kycDocumentCheckVerifyResponse.status,
-          message: kycDocumentCheckVerifyResponse.response
+          status: verifyResponse.status,
+          message: verifyResponse.response
         };
       }
 
