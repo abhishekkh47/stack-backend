@@ -1891,6 +1891,9 @@ class AuthController extends BaseController {
       return this.UnAuthorized(ctx, "Refresh Token Expired");
     }
     user = await UserTable.findOne({ _id: user._id });
+    if (!user) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     let token = getJwtToken(await AuthService.getJwtAuthInfo(user));
     return this.Ok(ctx, { token });
   }

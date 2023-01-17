@@ -13,12 +13,7 @@ import {
   userService,
   zohoCrmService,
 } from "../../services/v1/index";
-import {
-  ESCREENSTATUS,
-  EUSERSTATUS,
-  EUserType,
-  HttpMethod,
-} from "../../types";
+import { ESCREENSTATUS, EUSERSTATUS, EUserType, HttpMethod } from "../../types";
 import {
   agreementPreviews,
   checkValidBase64String,
@@ -516,6 +511,9 @@ class UserController extends BaseController {
     const getUserType = await UserTable.findOne({
       _id: ctx.request.user._id,
     });
+    if (!getUserType) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     let parentId;
     if (getUserType.type == EUserType.TEEN) {
       parentId = await UserTable.findOne({
@@ -711,9 +709,7 @@ class UserController extends BaseController {
       existingStatus === EUSERSTATUS.KYC_DOCUMENT_UPLOAD
     ) {
       try {
-        fs.unlinkSync(
-          path.join(__dirname, "../../../uploads", files.filename)
-        );
+        fs.unlinkSync(path.join(__dirname, "../../../uploads", files.filename));
       } catch (err) {}
       return this.BadRequest(
         ctx,
@@ -776,9 +772,7 @@ class UserController extends BaseController {
        * Delete image from our server
        */
       try {
-        fs.unlinkSync(
-          path.join(__dirname, "../../../uploads", files.filename)
-        );
+        fs.unlinkSync(path.join(__dirname, "../../../uploads", files.filename));
       } catch (err) {
         console.log("Error in removing image");
       }

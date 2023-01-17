@@ -122,6 +122,9 @@ class QuizController extends BaseController {
     const user = ctx.request.user;
     let userExists = await UserTable.findOne({ _id: user._id });
     let childExists = null;
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     if (userExists.type == EUserType.PARENT) {
       childExists = await ParentChildTable.findOne({
         userId: userExists._id,
