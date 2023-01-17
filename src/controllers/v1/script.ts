@@ -563,10 +563,12 @@ class ScriptController extends BaseController {
   @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
   @PrimeTrustJWT(false)
   public async kycApproveStaging(ctx: any) {
-    const kycApprove = await ScriptService.sandboxApproveKYC(ctx);
-    if (kycApprove.status !== 200) return this.BadRequest(ctx, { status: kycApprove, message: kycApprove.message });
+    const { primeTrustToken } = ctx.request;
+    const { userId } = ctx.request.params;
+    const kycApprove = await ScriptService.sandboxApproveKYC(userId, primeTrustToken);
+    if (kycApprove.status !== 200) return this.BadRequest(ctx, kycApprove.message);
 
-    return this.Ok(ctx, { status: kycApprove.status, message: kycApprove.response} );
+    return this.Ok(ctx, { status: kycApprove.status, message: kycApprove.message });
   }
   /*
    * @description This method is used to add phone verification status
