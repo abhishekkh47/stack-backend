@@ -137,39 +137,26 @@ class UserController extends BaseController {
   @Route({
     path: "/upload-id-proof",
     method: HttpMethod.POST,
+    middleware: [
+      uploadIdProof.fields([
+        {
+          name: "id_proof_front",
+          maxCount: 1,
+        },
+        { name: "id_proof_back", maxCount: 1 },
+      ]),
+    ],
   })
   @Auth()
   @PrimeTrustJWT(true)
   public async uploadFilesData(ctx: any) {
-    const body = await json(ctx, { limit: "150mb" });
+    const files = ctx.request.files;
     const jwtToken = ctx.request.primeTrustToken;
     const userExists: any = await UserTable.findOne({
       _id: ctx.request.user._id,
     }).populate("stateId", ["name", "shortName"]);
-    const requestParams = body;
-    if (!requestParams.id_proof_front) {
-      return this.BadRequest(
-        ctx,
-        "Please select front image of driving license"
-      );
-    }
-    if (!requestParams.id_proof_back) {
-      return this.BadRequest(
-        ctx,
-        "Please select back image of driving license"
-      );
-    }
-    let validBase64Front = await checkValidBase64String(
-      requestParams.id_proof_front
-    );
-    if (!validBase64Front) {
-      return this.BadRequest(ctx, "Please enter valid image");
-    }
-    let validBase64Back = await checkValidBase64String(
-      requestParams.id_proof_back
-    );
-    if (!validBase64Back) {
-      return this.BadRequest(ctx, "Please enter valid image");
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
     }
     const parentChildExists = await ParentChildTable.findOne({
       userId: userExists._id,
@@ -182,64 +169,17 @@ class UserController extends BaseController {
     let firstChildExists = await UserTable.findOne({
       _id: parentChildExists.firstChildId,
     });
-    let files = [
-      { id_proof_front: requestParams.id_proof_front },
-      { id_proof_back: requestParams.id_proof_back },
-    ];
-    /**
-     * Upload image front and back accordingly
-     */
-    let validExtensionExists = false;
+    if (!firstChildExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     let newArrayFiles = [];
-    for await (let identificationFile of files) {
-      const extension =
-        identificationFile.id_proof_front &&
-        identificationFile.id_proof_front !== ""
-          ? identificationFile.id_proof_front.split(";")[0].split("/")[1]
-          : identificationFile.id_proof_back &&
-            identificationFile.id_proof_back !== ""
-          ? identificationFile.id_proof_back.split(";")[0].split("/")[1]
-          : "";
-      const imageName =
-        identificationFile.id_proof_front &&
-        identificationFile.id_proof_front !== ""
-          ? `id_proof_front_${moment().unix()}.${extension}`
-          : `id_proof_back_${moment().unix()}.${extension}`;
-      const imageExtArr = ["jpg", "jpeg", "png"];
-      if (imageName && !imageExtArr.includes(extension)) {
-        validExtensionExists = true;
-        break;
-      }
-      const decodedImage = Buffer.from(
-        identificationFile.id_proof_front
-          ? identificationFile.id_proof_front.replace(
-              /^data:image\/\w+;base64,/,
-              ""
-            )
-          : identificationFile.id_proof_back.replace(
-              /^data:image\/\w+;base64,/,
-              ""
-            ),
-        "base64"
+    if (!files.id_proof_front || !files.id_proof_back) {
+      return this.BadRequest(
+        ctx,
+        "You need to upload front and back side of driver's license"
       );
-      if (!fs.existsSync(path.join(__dirname, "../../../uploads"))) {
-        fs.mkdirSync(path.join(__dirname, "../../../uploads"));
-      }
-      fs.writeFileSync(
-        path.join(__dirname, "../../../uploads", imageName),
-        decodedImage,
-        "base64"
-      );
-      newArrayFiles.push({
-        fieldname: identificationFile.id_proof_front
-          ? "id_proof_front"
-          : "id_proof_back",
-        filename: imageName,
-      });
     }
-    if (validExtensionExists) {
-      return this.BadRequest(ctx, "Please add valid extension");
-    }
+    newArrayFiles = [...files.id_proof_front, ...files.id_proof_back];
     const fullName = userExists.lastName
       ? userExists.firstName + " " + userExists.lastName
       : userExists.firstName;

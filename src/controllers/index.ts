@@ -17,37 +17,75 @@ const methodToRouter = {
   [HttpMethod.PATCH]: router.patch,
   [HttpMethod.POST]: router.post,
   [HttpMethod.DELETE]: router.delete,
-}
+};
 
 const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
-  // Get all of the route keys. 
-  let routeKeys: string[] = [].concat.apply([], routeDicts.map((dict) => Object.keys(dict)));
-  routeKeys = [...new Set(routeKeys)]
+  // Get all of the route keys.
+  let routeKeys: string[] = [].concat.apply(
+    [],
+    routeDicts.map((dict) => Object.keys(dict))
+  );
+  routeKeys = [...new Set(routeKeys)];
 
   routeKeys.forEach((routeKey: string) => {
     // Get the routes for this key for all of the versions
-    const routesForKey = routeDicts.map((routeDict) => routeDict[routeKey]).filter(Boolean);
+    const routesForKey = routeDicts
+      .map((routeDict) => routeDict[routeKey])
+      .filter(Boolean);
     if (!routesForKey.length) {
       return;
     }
 
-    const mergedRoutesForKey = routesForKey.reduce((acc, cur) => ({
-      ...acc,
-      [cur.version]: cur.handler,
-    }), {});
-
-    const firstRouteForKey = routesForKey[0]
-    const routeRegisterHandler = methodToRouter[firstRouteForKey.method]
+    const mergedRoutesForKey = routesForKey.reduce(
+      (acc, cur) => ({
+        ...acc,
+        [cur.version]: cur.handler,
+      }),
+      {}
+    );
+    const firstRouteForKey =
+      routesForKey.filter((x) => x.version === "2.0.0").length > 0
+        ? routesForKey.filter((x) => x.version === "2.0.0")[0]
+        : routesForKey.filter((x) => x.version === "1.0.0")[0];
+    const routeRegisterHandler = methodToRouter[firstRouteForKey.method];
 
     // Use this line to dump the merged routes
-    console.log('-------------', firstRouteForKey.method, firstRouteForKey.path, mergedRoutesForKey)
-
-    routeRegisterHandler.call(
-      router,
-      '/:version(v\\d)?' + firstRouteForKey.path,
-      KoaRouterVersion.version(mergedRoutesForKey, { fallbackLatest: true }),
+    console.log(
+      "-------------",
+      firstRouteForKey.method,
+      firstRouteForKey.path,
+      mergedRoutesForKey
     );
-  })
+    if (firstRouteForKey.middleware) {
+      if (Array.isArray(firstRouteForKey.middleware)) {
+        routeRegisterHandler.call(
+          router,
+          "/:version(v\\d)?" + firstRouteForKey.path,
+          ...firstRouteForKey.middleware,
+          KoaRouterVersion.version(mergedRoutesForKey, {
+            fallbackLatest: true,
+          })
+        );
+      } else {
+        routeRegisterHandler.call(
+          router,
+          "/:version(v\\d)?" + firstRouteForKey.path,
+          firstRouteForKey.middleware,
+          KoaRouterVersion.version(mergedRoutesForKey, {
+            fallbackLatest: true,
+          })
+        );
+      }
+    } else {
+      routeRegisterHandler.call(
+        router,
+        "/:version(v\\d)?" + firstRouteForKey.path,
+        KoaRouterVersion.version(mergedRoutesForKey, {
+          fallbackLatest: true,
+        })
+      );
+    }
+  });
 };
 
 setRoutes(router, [routerDictV1, routerDictV1_1]);
