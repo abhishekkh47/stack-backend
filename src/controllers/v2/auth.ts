@@ -1087,7 +1087,6 @@ class AuthController extends BaseController {
               ) {
                 userResponse = await UserTable.create(createObject);
                 migratedId = userResponse._id.toString();
-                await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
               }
             }
 
@@ -1120,7 +1119,7 @@ class AuthController extends BaseController {
                 "false"
               );
             }
-
+            await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
             return this.Ok(ctx, {
               message: "Account successfully linked!",
               migratedId: migratedId,
@@ -1187,7 +1186,6 @@ class AuthController extends BaseController {
             ) {
               userResponse = await UserTable.create(createObject);
               migratedId = userResponse._id.toString();
-              await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
             }
           }
 
@@ -1220,6 +1218,7 @@ class AuthController extends BaseController {
               "true"
             );
           }
+          await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
           return this.Ok(ctx, {
             message: "Invite sent!",
             migratedId: migratedId,
