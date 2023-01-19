@@ -1053,19 +1053,6 @@ class AuthController extends BaseController {
               { new: true }
             );
 
-            const transactionExists = await TransactionTable.findOne({
-              userId: teenUserInfo._id,
-              status: ETransactionStatus.GIFTED,
-            });
-
-            if (!transactionExists) {
-              await TransactionDBService.createBtcGiftedTransaction(
-                teenUserInfo._id,
-                crypto,
-                admin
-              );
-            }
-
             const createObject = {
               email: parentInUserDraft.email,
               dob: parentInUserDraft.dob,
@@ -1158,12 +1145,6 @@ class AuthController extends BaseController {
             isParentFirst: true,
           };
           let createChild = await UserTable.create(createTeenObject);
-
-          await TransactionDBService.createBtcGiftedTransaction(
-            createChild._id,
-            crypto,
-            admin
-          );
 
           const createObject = {
             email: parentInUserDraft.email,
