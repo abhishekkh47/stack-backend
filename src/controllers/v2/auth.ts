@@ -1053,19 +1053,6 @@ class AuthController extends BaseController {
               { new: true }
             );
 
-            const transactionExists = await TransactionTable.findOne({
-              userId: teenUserInfo._id,
-              status: ETransactionStatus.GIFTED,
-            });
-
-            if (!transactionExists) {
-              await TransactionDBService.createBtcGiftedTransaction(
-                teenUserInfo._id,
-                crypto,
-                admin
-              );
-            }
-
             const createObject = {
               email: parentInUserDraft.email,
               dob: parentInUserDraft.dob,
@@ -1087,7 +1074,6 @@ class AuthController extends BaseController {
               ) {
                 userResponse = await UserTable.create(createObject);
                 migratedId = userResponse._id.toString();
-                await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
               }
             }
 
@@ -1120,7 +1106,7 @@ class AuthController extends BaseController {
                 "false"
               );
             }
-
+            await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
             return this.Ok(ctx, {
               message: "Account successfully linked!",
               migratedId: migratedId,
@@ -1160,12 +1146,6 @@ class AuthController extends BaseController {
           };
           let createChild = await UserTable.create(createTeenObject);
 
-          await TransactionDBService.createBtcGiftedTransaction(
-            createChild._id,
-            crypto,
-            admin
-          );
-
           const createObject = {
             email: parentInUserDraft.email,
             dob: parentInUserDraft.dob,
@@ -1187,7 +1167,6 @@ class AuthController extends BaseController {
             ) {
               userResponse = await UserTable.create(createObject);
               migratedId = userResponse._id.toString();
-              await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
             }
           }
 
@@ -1220,6 +1199,7 @@ class AuthController extends BaseController {
               "true"
             );
           }
+          await UserDraftTable.deleteOne({ _id: ctx.request.user._id });
           return this.Ok(ctx, {
             message: "Invite sent!",
             migratedId: migratedId,
