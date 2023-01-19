@@ -4,7 +4,8 @@ import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
-} from "../../utility/constants";
+  PRIMETRUSTAPIS,
+} from "./../../utility/constants";
 import moment from "moment";
 import { PrimeTrustJWT } from "../../middleware";
 import {
@@ -36,14 +37,9 @@ import {
   getPrimeTrustJWTToken,
   Route,
 } from "../../utility";
-import BaseController from "../base";
-import {
-  UserDBService,
-  zohoCrmService,
-  DeviceTokenService,
-  tradingService,
-  userService,
-} from "../../services/v1/index";
+import BaseController from ".././base";
+import { ObjectId } from "mongodb";
+import { UserDBService, zohoCrmService, DeviceTokenService, ScriptService, userService, tradingService } from "../../services/v1";
 
 class ScriptController extends BaseController {
   /**
@@ -560,6 +556,21 @@ class ScriptController extends BaseController {
   }
 
   /**
+   * @description KYC Approve a staging account in PrimeTrust sandbox
+   * @param ctx 
+   * @returns {*}
+   */
+  @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
+  @PrimeTrustJWT(false)
+  public async kycApproveStaging(ctx: any) {
+    const { primeTrustToken } = ctx.request;
+    const { userId } = ctx.request.params;
+    const kycApprove = await ScriptService.sandboxApproveKYC(userId, primeTrustToken);
+    if (kycApprove.status !== 200) return this.BadRequest(ctx, kycApprove.message);
+
+    return this.Ok(ctx, { status: kycApprove.status, message: kycApprove.message });
+  }
+  /*
    * @description This method is used to add phone verification status
    * @param ctx
    * @return {*}

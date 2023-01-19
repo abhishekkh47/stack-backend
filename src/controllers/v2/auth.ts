@@ -23,6 +23,7 @@ import {
   TwilioService,
   zohoCrmService,
   userService,
+  ScriptService,
 } from "../../services/v1/index";
 import {
   EAUTOAPPROVAL,
@@ -646,6 +647,10 @@ class AuthController extends BaseController {
                   : reqParam.childFirstName,
               }),
             };
+            // If in staging environment, we need to manually KYC approve the account
+            if (process.env.APP_ENVIRONMENT === 'STAGING') {
+              const resp = await ScriptService.sandboxApproveKYC(user._id, ctx.request.primeTrustToken);
+            }
           }
           if (user.type == EUserType.TEEN) {
             dataSentInCrm = {
