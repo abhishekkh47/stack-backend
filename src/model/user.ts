@@ -17,12 +17,12 @@ const schema = new mongoose.Schema<IUserSchema>(
       required: false,
       default: null,
     },
-    password: {
+    password: { // TODO: let's remove for now in v1.7
       type: mongoose.Schema.Types.String,
       required: false,
       default: null,
     },
-    username: {
+    username: { // TODO: let's remove for now in v1.7
       type: mongoose.Schema.Types.String,
       required: false,
       default: null,
@@ -58,27 +58,27 @@ const schema = new mongoose.Schema<IUserSchema>(
     /**
      * 0 - Sign up , 1 - change address , 2 - upload document field , 3 - acknowledge screen , 4 - add bank account
      */
-    screenStatus: { type: mongoose.Schema.Types.Number, default: 0 },
+    screenStatus: { type: mongoose.Schema.Types.Number, default: 0 }, // TODO: let's remove this in v1.7
     parentEmail: { type: mongoose.Schema.Types.String, default: null },
     parentMobile: { type: mongoose.Schema.Types.String, default: null },
     kycMessages: {
       type: mongoose.Schema.Types.Array,
       default: null,
     },
-    verificationEmailExpireAt: {
+    verificationEmailExpireAt: { // TODO: let's remove this in v1.7
       type: mongoose.Schema.Types.String,
       description: "verification email expiry time",
       example: 1502844074211,
     },
-    verificationCode: {
+    verificationCode: { // TODO: let's remove this in v1.7
       type: mongoose.Schema.Types.String,
       description: "Email verification code",
       default: null,
       required: false,
     },
-    tempPassword: { type: mongoose.Schema.Types.String, default: null },
-    loginAttempts: { type: mongoose.Schema.Types.Number, default: 0 },
-    refreshToken: { type: mongoose.Schema.Types.String, default: null },
+    tempPassword: { type: mongoose.Schema.Types.String, default: null }, // TODO: let's remove this in v1.7
+    loginAttempts: { type: mongoose.Schema.Types.Number, default: 0 }, // TODO: let's remove this in v1.7
+    refreshToken: { type: mongoose.Schema.Types.String, default: null }, // TODO: do we need this? yes but...
     country: { type: mongoose.Schema.Types.String, default: null },
     state: { type: mongoose.Schema.Types.String, default: null },
     city: { type: mongoose.Schema.Types.String, default: null },
@@ -92,7 +92,7 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: null,
       ref: "state",
     },
-    liquidAsset: { type: mongoose.Schema.Types.Number, default: null },
+    liquidAsset: { type: mongoose.Schema.Types.Number, default: null }, // TODO: let's remove this in v1.7
     taxIdNo: { type: mongoose.Schema.Types.String, default: null },
     taxState: {
       type: mongoose.Schema.Types.ObjectId,
