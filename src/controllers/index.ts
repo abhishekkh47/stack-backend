@@ -42,11 +42,35 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
     // Use this line to dump the merged routes
     console.log('-------------', firstRouteForKey.method, firstRouteForKey.path, mergedRoutesForKey)
 
-    routeRegisterHandler.call(
-      router,
-      '/:version(v\\d)?' + firstRouteForKey.path,
-      KoaRouterVersion.version(mergedRoutesForKey, { fallbackLatest: true }),
-    );
+    const { middleware } = firstRouteForKey
+    const path = '/:version(v\\d)?' + firstRouteForKey.path
+    const versionedRoutes = KoaRouterVersion.version(mergedRoutesForKey, {
+      fallbackLatest: true,
+    })
+
+    if (middleware) {
+      if (Array.isArray(middleware)) {
+        routeRegisterHandler.call(
+          router,
+          path,
+          ...middleware,
+          versionedRoutes,
+        );
+      } else {
+        routeRegisterHandler.call(
+          router,
+          path,
+          middleware,
+          versionedRoutes,
+        );
+      }
+    } else {
+      routeRegisterHandler.call(
+        router,
+        path,
+        versionedRoutes,
+      );
+    }
   })
 };
 
