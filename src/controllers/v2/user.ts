@@ -58,6 +58,9 @@ class UserController extends BaseController {
   @PrimeTrustJWT(true)
   public async uploadFilesData(ctx: any) {
     const files = ctx.request.files;
+    if (!files) {
+      return this.BadRequest(ctx, "File not found");
+    }
     const jwtToken = ctx.request.primeTrustToken;
     const userExists: any = await UserTable.findOne({
       _id: ctx.request.user._id,
