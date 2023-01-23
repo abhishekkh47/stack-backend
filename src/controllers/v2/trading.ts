@@ -467,12 +467,10 @@ class TradingController extends BaseController {
               primetrustInfo.accountId
             ));
 
-          let userBankIfExists =
-            parentChild &&
-            (await UserBanksTable.find({
-              userId: isTeen ? parentChild.userId._id : childExists._id,
-              isDefault: 1,
-            }));
+          const userIdForBankCheck = isTeen ? parentChild?.userId?._id : childExists?._id
+          
+          let userBankIfExists = userIdForBankCheck &&
+            (await UserBanksTable.find({ userId: userIdForBankCheck, isDefault: 1 }));
 
           const isParentKycVerified =
             parentChild?.userId?.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED;

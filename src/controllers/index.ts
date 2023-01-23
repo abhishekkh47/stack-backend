@@ -56,34 +56,21 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
       firstRouteForKey.path,
       mergedRoutesForKey
     );
-    if (firstRouteForKey.middleware) {
-      if (Array.isArray(firstRouteForKey.middleware)) {
-        routeRegisterHandler.call(
-          router,
-          "/:version(v\\d)?" + firstRouteForKey.path,
-          ...firstRouteForKey.middleware,
-          KoaRouterVersion.version(mergedRoutesForKey, {
-            fallbackLatest: true,
-          })
-        );
+
+    const { middleware } = firstRouteForKey;
+    const path = "/:version(v\\d)?" + firstRouteForKey.path;
+    const versionedRoutes = KoaRouterVersion.version(mergedRoutesForKey, {
+      fallbackLatest: true,
+    });
+
+    if (middleware) {
+      if (Array.isArray(middleware)) {
+        routeRegisterHandler.call(router, path, ...middleware, versionedRoutes);
       } else {
-        routeRegisterHandler.call(
-          router,
-          "/:version(v\\d)?" + firstRouteForKey.path,
-          firstRouteForKey.middleware,
-          KoaRouterVersion.version(mergedRoutesForKey, {
-            fallbackLatest: true,
-          })
-        );
+        routeRegisterHandler.call(router, path, middleware, versionedRoutes);
       }
     } else {
-      routeRegisterHandler.call(
-        router,
-        "/:version(v\\d)?" + firstRouteForKey.path,
-        KoaRouterVersion.version(mergedRoutesForKey, {
-          fallbackLatest: true,
-        })
-      );
+      routeRegisterHandler.call(router, path, versionedRoutes);
     }
   });
 };
