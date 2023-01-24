@@ -21,6 +21,7 @@ import {
   checkValidBase64String,
   createAccount,
   kycDocumentChecks,
+  removeImage,
   Route,
   uploadFileS3,
   uploadFilesFetch,
@@ -586,6 +587,9 @@ class UserController extends BaseController {
           ? file.key.split("/")[1]
           : null
         : null;
+    if (userExists.profilePicture) {
+      await removeImage(userExists._id, userExists.profilePicture);
+    }
     await UserTable.updateOne(
       { _id: userExists._id },
       {

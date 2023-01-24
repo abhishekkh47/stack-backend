@@ -15,11 +15,13 @@ export const uploadFileS3 = multer({
     s3,
     bucket: "stack-users",
     key: async (req, file, cb) => {
+      const folder = await verifyToken(req.headers["x-access-token"]);
+      console.log(folder._id);
       return cb(
         null,
-        `${(await verifyToken(req.headers["x-access-token"]))._id}/${
-          file.fieldname
-        }_${Date.now().toString()}.${file.originalname.split(".")[1]}`
+        `${folder._id}/${file.fieldname}_${Date.now().toString()}.${
+          file.originalname.split(".")[1]
+        }`
       );
     },
   }),
@@ -60,3 +62,15 @@ export const uploadIdProof = multer({
     cb(null, true);
   },
 });
+export const removeImage = (userId: string, imageName: string) => {
+  return s3.deleteObject(
+    {
+      Bucket: "stack-users",
+      Key: `${userId}/${imageName}`,
+    },
+    (err, data) => {
+      if (err) return false;
+      return true;
+    }
+  );
+};
