@@ -17,7 +17,7 @@ export const uploadFileS3 = multer({
     key: async (req, file, cb) => {
       return cb(
         null,
-        `${(await verifyToken(req.rawHeaders[1]))._id}/${
+        `${(await verifyToken(req.headers["x-access-token"]))._id}/${
           file.fieldname
         }_${Date.now().toString()}.${file.originalname.split(".")[1]}`
       );

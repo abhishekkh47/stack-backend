@@ -566,6 +566,7 @@ class UserController extends BaseController {
   })
   @Auth()
   public async updateProfilePicture(ctx: any) {
+    console.log(ctx.request.body);
     const userExists: any = await UserTable.findOne({
       _id: ctx.request.body.userId
         ? ctx.request.body.userId
