@@ -16,7 +16,6 @@ export const uploadFileS3 = multer({
     bucket: "stack-users",
     key: async (req, file, cb) => {
       const folder = await verifyToken(req.headers["x-access-token"]);
-      console.log(folder._id);
       return cb(
         null,
         `${folder._id}/${file.fieldname}_${Date.now().toString()}.${
