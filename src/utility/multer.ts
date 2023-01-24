@@ -47,7 +47,7 @@ export const uploadIdProof = multer({
     },
   }),
   limits: {
-    fileSize: 5000000, // 1000000 Bytes = 1 MB
+    fileSize: 7000000, // 1000000 Bytes = 1 MB
   },
   fileFilter(req, file, cb) {
     if (!checkValidImageExtension(file)) {
