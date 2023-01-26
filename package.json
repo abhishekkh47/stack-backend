@@ -48,6 +48,7 @@
     "koa": "^2.13.1",
     "koa-body": "^4.2.0",
     "koa-bodyparser": "^4.3.0",
+    "koa-monitor": "^0.3.0",
     "koa-mount": "^4.0.0",
     "koa-router": "^10.1.1",
     "koa-router-version": "^1.2.0",
