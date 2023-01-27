@@ -28,7 +28,6 @@ export interface IAccount {
   parentEmail: string;
   parentMobile: string;
   tempPassword: string;
-  loginAttempts: number;
   country: string;
   stateId: mongoose.Schema.Types.ObjectId;
   state: string;
@@ -36,7 +35,6 @@ export interface IAccount {
   address: string;
   postalCode: string;
   unitApt: string;
-  liquidAsset: number;
   taxIdNo: string;
   dob: string;
   taxState: mongoose.Schema.Types.ObjectId;
@@ -67,17 +65,12 @@ export interface IAdmin extends IUser {
 export interface IUserdraft {
   email: string;
   dob: string;
-  phoneNumber: string;
-  parentNumber: string;
   screenStatus: number;
   firstName: string;
   lastName: string;
   type: number;
-  refreshToken: string;
-  referralCode: string;
   mobile: string;
   isPhoneVerified: number;
-  
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;

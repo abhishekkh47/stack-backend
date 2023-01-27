@@ -12,16 +12,6 @@ const schema = new mongoose.Schema<IUserdraft>(
       required: true,
     },
     dob: { type: mongoose.Schema.Types.String, default: null },
-    phoneNumber: { // TODO: let's remove this in v1.7
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
-    parentNumber: { // TODO: let's remove this in v1.7
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
     screenStatus: { type: mongoose.Schema.Types.Number, default: 0 }, // TODO: let's remove this in v1.7
     firstName: {
       type: mongoose.Schema.Types.String,
@@ -38,11 +28,6 @@ const schema = new mongoose.Schema<IUserdraft>(
       required: false,
       default: null,
     },
-    referralCode: { // TODO: let's remove this in v1.7
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
     mobile: {
       type: mongoose.Schema.Types.String,
       required: false,
@@ -52,9 +37,7 @@ const schema = new mongoose.Schema<IUserdraft>(
       type: mongoose.Schema.Types.Number,
       default: 0,
       isIn: [EPHONEVERIFIEDSTATUS.FALSE, EPHONEVERIFIEDSTATUS.TRUE],
-    },
-    refreshToken: { type: mongoose.Schema.Types.String, default: null },  // TODO: let's remove this in v1.7
-  },
+    },  },
   { timestamps: true }
 );
 

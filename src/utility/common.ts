@@ -96,8 +96,7 @@ export const makeUniqueReferalCode = async (length = 7) => {
 
     let findQuery = { referralCode: result };
     const checkReferralCodeExists = await UserTable.findOne(findQuery);
-    const checkReferralUserDraft = await UserDraftTable.findOne(findQuery);
-    if (!checkReferralCodeExists && !checkReferralUserDraft) {
+    if (!checkReferralCodeExists) {
       flag = false;
     } else {
       result = "";

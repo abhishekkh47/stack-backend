@@ -77,7 +77,6 @@ const schema = new mongoose.Schema<IUserSchema>(
       required: false,
     },
     tempPassword: { type: mongoose.Schema.Types.String, default: null }, // TODO: let's remove this in v1.7
-    loginAttempts: { type: mongoose.Schema.Types.Number, default: 0 }, // TODO: let's remove this in v1.7
     refreshToken: { type: mongoose.Schema.Types.String, default: null }, // TODO: do we need this? yes but...
     country: { type: mongoose.Schema.Types.String, default: null },
     state: { type: mongoose.Schema.Types.String, default: null },
@@ -92,7 +91,6 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: null,
       ref: "state",
     },
-    liquidAsset: { type: mongoose.Schema.Types.Number, default: null }, // TODO: let's remove this in v1.7
     taxIdNo: { type: mongoose.Schema.Types.String, default: null },
     taxState: {
       type: mongoose.Schema.Types.ObjectId,

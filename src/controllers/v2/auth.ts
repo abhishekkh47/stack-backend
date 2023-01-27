@@ -1065,9 +1065,7 @@ class AuthController extends BaseController {
               mobile: input.mobile,
               firstName: parentInUserDraft.firstName,
               lastName: parentInUserDraft.lastName,
-              referralCode: parentInUserDraft.referralCode
-                ? parentInUserDraft.referralCode
-                : uniqueReferralCode,
+              referralCode: uniqueReferralCode,
               isPhoneVerified: parentInUserDraft.isPhoneVerified,
             };
 
@@ -1158,9 +1156,7 @@ class AuthController extends BaseController {
             mobile: input.mobile,
             firstName: parentInUserDraft.firstName,
             lastName: parentInUserDraft.lastName,
-            referralCode: parentInUserDraft.referralCode
-              ? parentInUserDraft.referralCode
-              : uniqueReferralCode,
+            referralCode: uniqueReferralCode,
             isPhoneVerified: parentInUserDraft.isPhoneVerified,
           };
 
@@ -1302,9 +1298,7 @@ class AuthController extends BaseController {
             ? childInfo.lastName
             : childAlreadyExists.lastName,
         referralCode:
-          childInfo && childInfo.referralCode
-            ? childInfo.referralCode
-            : childAlreadyExists
+          childAlreadyExists
             ? childAlreadyExists.referralCode
             : uniqueReferralCode,
         isPhoneVerified:
@@ -1370,7 +1364,6 @@ class AuthController extends BaseController {
                 email: reqParam.email,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
-                referralCode: null,
               };
               userDraftInfo = await UserDraftTable.create(createQuery);
               if (userDraftInfo) {

@@ -777,7 +777,6 @@ class AuthController extends BaseController {
             if (!userExists) {
               const createObject = {
                 email: reqParam.email,
-                refreshToken: reqParam.socialLoginToken,
                 screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName,
                 lastName: reqParam.lastName,
@@ -1274,9 +1273,7 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
-                referralCode: childInfo.referralCode
-                  ? childInfo.referralCode
-                  : uniqueReferralCode,
+                referralCode: uniqueReferralCode,
               };
 
               const userResponse = await UserTable.create(createObject);
@@ -1390,9 +1387,7 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
-                referralCode: childInfo.referralCode
-                  ? childInfo.referralCode
-                  : uniqueReferralCode,
+                referralCode: uniqueReferralCode,
               };
 
               const userResponse: any = await UserTable.create(createObject);
@@ -1546,9 +1541,7 @@ class AuthController extends BaseController {
               address: input.address,
               unitApt: input.unitApt,
               postalCode: input.postalCode,
-              referralCode: draftUser.referralCode
-                ? draftUser.referralCode
-                : uniqueReferralCode,
+              referralCode: uniqueReferralCode,
               screenStatus:
                 type == EUserType.PARENT
                   ? ESCREENSTATUS.CHILD_INFO_SCREEN
@@ -1719,7 +1712,6 @@ class AuthController extends BaseController {
               $set: {
                 password: newPassword,
                 tempPassword: null,
-                loginAttempts: 0,
               },
             }
           );
@@ -1759,7 +1751,6 @@ class AuthController extends BaseController {
           if (childEmail) {
             query = {
               ...query,
-              // parentNumber: { $regex: `${email}$`, $options: "i" },
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
@@ -2182,8 +2173,6 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
-                referralCode: null,
-                // mobile: reqParam.mobile ? reqParam.mobile : null,
               };
               const user = await UserDraftTable.create(createQuery);
               if (user) {
