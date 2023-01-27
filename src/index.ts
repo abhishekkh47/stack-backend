@@ -28,13 +28,11 @@ const server = (async () => {
     // Enable cors
     app.use(cors());
     app.use(i18nTs);
-    // app.use(bodyParser());
     app.use(async (ctx, next) => {
       console.log(ctx.path, "path");
       if (
-        ["/upload-id-proof", "/update-primetrust-data"].filter((item) =>
-          ctx.path.includes(item)
-        ).length > 0
+        ["/update-primetrust-data"].filter((item) => ctx.path.includes(item))
+          .length > 0
       ) {
         ctx.disableBodyParser = true;
       }
