@@ -637,7 +637,6 @@ class AuthController extends BaseController {
 
           const authInfo = await AuthService.getJwtAuthInfo(user);
           const refreshToken = await getRefreshToken(authInfo);
-          user.refreshToken = refreshToken;
           await user.save();
           const token = await getJwtToken(authInfo);
           let getProfileInput: any = {

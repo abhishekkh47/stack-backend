@@ -8,7 +8,6 @@ export interface IUser extends IAccount {
   funded: boolean;
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
-  refreshToken: string;
   isParentFirst: boolean;
   quizCoins: number;
   isNotificationOn: number;

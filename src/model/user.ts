@@ -55,7 +55,6 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Array,
       default: null,
     },
-    refreshToken: { type: mongoose.Schema.Types.String, default: null }, // TODO: do we need this? yes but...
     country: { type: mongoose.Schema.Types.String, default: null },
     state: { type: mongoose.Schema.Types.String, default: null },
     city: { type: mongoose.Schema.Types.String, default: null },
