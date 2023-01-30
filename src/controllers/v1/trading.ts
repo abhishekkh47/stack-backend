@@ -1090,10 +1090,7 @@ class TradingController extends BaseController {
         return this.BadRequest(ctx, "ERROR: Insufficient Funds");
 
       const userType = (
-        await UserTable.findOne(
-          { username: user.username },
-          { type: 1, _id: -1 }
-        )
+        await UserTable.findOne({ _id: user._id }, { type: 1, _id: -1 })
       ).type;
       const pendingTransactions = await UserActivityTable.aggregate([
         {
@@ -1542,17 +1539,17 @@ class TradingController extends BaseController {
   public async getPortfolio(ctx: any) {
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
-    console.log('----getPortfolio v1----', reqParam);
+    console.log("----getPortfolio v1----", reqParam);
     return validation.getPortFolioValidation(
       reqParam,
       ctx,
       async (validate) => {
-        console.log('----validate----', validate);
+        console.log("----validate----", validate);
         if (validate) {
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
           });
-          console.log('----childExists----', childExists);
+          console.log("----childExists----", childExists);
 
           if (!childExists) {
             return this.BadRequest(ctx, "User Not Found");

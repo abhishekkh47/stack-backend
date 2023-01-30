@@ -81,7 +81,6 @@ class UserService {
             _id: 1,
             email: 1,
             kycMessages: 1,
-            username: 1,
             mobile: 1,
             address: 1,
             firstName: 1,

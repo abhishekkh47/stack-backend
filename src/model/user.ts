@@ -17,16 +17,6 @@ const schema = new mongoose.Schema<IUserSchema>(
       required: false,
       default: null,
     },
-    password: { // TODO: let's remove for now in v1.7
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
-    username: { // TODO: let's remove for now in v1.7
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
     mobile: { type: mongoose.Schema.Types.String, required: false },
     address: { type: mongoose.Schema.Types.String, default: null },
     firstName: {
@@ -65,18 +55,6 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Array,
       default: null,
     },
-    verificationEmailExpireAt: { // TODO: let's remove this in v1.7
-      type: mongoose.Schema.Types.String,
-      description: "verification email expiry time",
-      example: 1502844074211,
-    },
-    verificationCode: { // TODO: let's remove this in v1.7
-      type: mongoose.Schema.Types.String,
-      description: "Email verification code",
-      default: null,
-      required: false,
-    },
-    tempPassword: { type: mongoose.Schema.Types.String, default: null }, // TODO: let's remove this in v1.7
     refreshToken: { type: mongoose.Schema.Types.String, default: null }, // TODO: do we need this? yes but...
     country: { type: mongoose.Schema.Types.String, default: null },
     state: { type: mongoose.Schema.Types.String, default: null },

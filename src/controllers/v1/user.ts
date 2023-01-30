@@ -38,45 +38,6 @@ import BaseController from "../base";
 
 class UserController extends BaseController {
   /**
-   * @description This method is for updating the tax information
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/update-tax-info", method: HttpMethod.POST })
-  @Auth()
-  public async updateTaxInfo(ctx: any) {
-    const input = ctx.request.body;
-    const userExists = await UserTable.findOne({
-      username: ctx.request.user.username,
-    });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User not found");
-    }
-    return validation.updateTaxInfoRequestBodyValidation(
-      input,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          await UserTable.updateOne(
-            { username: ctx.request.user.username },
-            {
-              $set: {
-                taxIdNo: input.taxIdNo,
-                taxState: input.taxState,
-                screenStatus:
-                  userExists.type === EUserType.PARENT
-                    ? ESCREENSTATUS.UPLOAD_DOCUMENTS
-                    : ESCREENSTATUS.SIGN_UP,
-              },
-            }
-          );
-          return this.Ok(ctx, { message: "Tax info updated successfully." });
-        }
-      }
-    );
-  }
-
-  /**
    * @description This method is for getting the link token
    * @param ctx
    * @returns

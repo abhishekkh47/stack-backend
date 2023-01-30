@@ -19,10 +19,6 @@ export const generateRandom6DigitCode = (isLive) => {
   return isLive ? Math.floor(100000 + Math.random() * 900000) : 123456;
 };
 
-export const generateTempPassword = (username) => {
-  return `STACK_${username}_${(Math.random() + 1).toString(36).substring(7)}`;
-};
-
 export const get72HoursAhead = (DateTime: any) => {
   const diff = new Date().valueOf() - new Date(DateTime).valueOf();
   return diff / 1000 / 60 / 60;

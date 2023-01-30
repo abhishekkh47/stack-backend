@@ -280,8 +280,6 @@ class AuthController extends BaseController {
 
           if (reqParam.type == EUserType.TEEN && childExists) {
             let updateQuery: any = {
-              username: null,
-              password: null,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               isParentFirst: childExists.isParentFirst,
               isNotificationOn: ENOTIFICATIONSETTINGS.ON,
@@ -303,8 +301,6 @@ class AuthController extends BaseController {
               { email: reqParam.email },
               {
                 $set: {
-                  username: null,
-                  password: null,
                   mobile: reqParam.mobile,
                   parentEmail: reqParam.parentEmail
                     ? reqParam.parentEmail
@@ -648,8 +644,11 @@ class AuthController extends BaseController {
               }),
             };
             // If in staging environment, we need to manually KYC approve the account
-            if (process.env.APP_ENVIRONMENT === 'STAGING') {
-              const resp = await ScriptService.sandboxApproveKYC(user._id, ctx.request.primeTrustToken);
+            if (process.env.APP_ENVIRONMENT === "STAGING") {
+              const resp = await ScriptService.sandboxApproveKYC(
+                user._id,
+                ctx.request.primeTrustToken
+              );
             }
           }
           if (user.type == EUserType.TEEN) {
@@ -1297,10 +1296,9 @@ class AuthController extends BaseController {
           childInfo && childInfo.lastName
             ? childInfo.lastName
             : childAlreadyExists.lastName,
-        referralCode:
-          childAlreadyExists
-            ? childAlreadyExists.referralCode
-            : uniqueReferralCode,
+        referralCode: childAlreadyExists
+          ? childAlreadyExists.referralCode
+          : uniqueReferralCode,
         isPhoneVerified:
           childInfo && childInfo.isPhoneVerified
             ? childInfo.isPhoneVerified

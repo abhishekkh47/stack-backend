@@ -13,24 +13,8 @@ class AuthService {
     return await UserTable.findOne({ email });
   }
 
-  public comparePassword(password: string, input: string) {
-    return bcrypt.compareSync(password, input);
-  }
-
-  public encryptPassword(password: string) {
-    return bcrypt.hashSync(password, 10);
-  }
-
   public async updateUserInfo(id: string, body: Partial<IUser>) {
     return await UserTable.updateOne({ _id: id }, { $set: body });
-  }
-
-  public async signupUser(body: IUser) {
-    return await UserTable.create({
-      email: body.email,
-      password: this.encryptPassword(body.password),
-      username: body.username,
-    });
   }
 
   public async getJwtAuthInfo(user: IUserSchema) {
@@ -41,7 +25,6 @@ class AuthService {
       issuedOn: Date.now(),
       expiredOn,
       email: user.email,
-      username: user.username,
     };
   }
 
