@@ -81,7 +81,6 @@ class UserService {
             _id: 1,
             email: 1,
             kycMessages: 1,
-            username: 1,
             mobile: 1,
             address: 1,
             firstName: 1,
@@ -105,7 +104,6 @@ class UserService {
             city: 1,
             postalCode: 1,
             unitApt: 1,
-            liquidAsset: 1,
             taxIdNo: 1,
             taxState: 1,
             status: 1,
@@ -144,7 +142,6 @@ class UserService {
             lifeTimeReferralCount: {
               $ifNull: ["$lifeTimeReferral.referralCount", 0],
             },
-            referralCode: 1,
             screenStatus: 1,
             status: 1,
             dob: 1,

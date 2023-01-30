@@ -42,7 +42,6 @@ import {
   decodeJwtToken,
   executeQuote,
   generateQuote,
-  generateTempPassword,
   getJwtToken,
   getMinutesBetweenDates,
   getRefreshToken,
@@ -295,8 +294,6 @@ class AuthController extends BaseController {
 
           if (reqParam.type == EUserType.TEEN && childExists) {
             let updateQuery: any = {
-              username: null,
-              password: null,
               screenStatus: ESCREENSTATUS.SUCCESS_TEEN,
               taxIdNo: reqParam.taxIdNo ? reqParam.taxIdNo : null,
               isParentFirst: childExists.isParentFirst,
@@ -319,8 +316,6 @@ class AuthController extends BaseController {
               { email: reqParam.email },
               {
                 $set: {
-                  username: null,
-                  password: null,
                   mobile: reqParam.mobile,
                   screenStatus:
                     parseInt(reqParam.type) === EUserType.PARENT ||
@@ -642,7 +637,6 @@ class AuthController extends BaseController {
 
           const authInfo = await AuthService.getJwtAuthInfo(user);
           const refreshToken = await getRefreshToken(authInfo);
-          user.refreshToken = refreshToken;
           await user.save();
           const token = await getJwtToken(authInfo);
           let getProfileInput: any = {
@@ -691,8 +685,11 @@ class AuthController extends BaseController {
               }),
             };
             // If in staging environment, we need to manually KYC approve the account
-            if (process.env.APP_ENVIRONMENT === 'STAGING') {
-              const resp = await ScriptService.sandboxApproveKYC(user._id, ctx.request.primeTrustToken);
+            if (process.env.APP_ENVIRONMENT === "STAGING") {
+              const resp = await ScriptService.sandboxApproveKYC(
+                user._id,
+                ctx.request.primeTrustToken
+              );
             }
           }
           if (user.type == EUserType.TEEN) {
@@ -777,7 +774,6 @@ class AuthController extends BaseController {
             if (!userExists) {
               const createObject = {
                 email: reqParam.email,
-                refreshToken: reqParam.socialLoginToken,
                 screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName,
                 lastName: reqParam.lastName,
@@ -865,72 +861,6 @@ class AuthController extends BaseController {
   }
 
   /**
-   * This method is used to change password of user
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/change-password", method: HttpMethod.POST })
-  @Auth()
-  public async changePassword(ctx: any) {
-    const user = ctx.request.user;
-    const reqParam = ctx.request.body;
-    const userExists = await UserTable.findOne({ _id: user._id });
-    if (!reqParam.old_password) {
-      return this.BadRequest(ctx, "Please enter old password");
-    }
-    const checkOldPassword = await AuthService.comparePassword(
-      reqParam.old_password,
-      userExists.password
-    );
-    if (checkOldPassword === false) {
-      return this.BadRequest(ctx, "Old Password is Incorrect");
-    }
-    return validation.changePasswordValidation(
-      reqParam,
-      ctx,
-      async (validate: boolean) => {
-        if (validate) {
-          /**
-           * #Conditions to check
-           * 1) check old password is correct
-           * 2) check old password not equal to new password
-           */
-          return UserTable.findOne({ _id: user._id }).then(
-            async (userData: any) => {
-              if (!userData) {
-                return this.NotFound(ctx, "User Not Found");
-              }
-              const compareNewPasswordWithOld =
-                await AuthService.comparePassword(
-                  reqParam.new_password,
-                  userData.password
-                );
-              if (compareNewPasswordWithOld === true) {
-                return this.BadRequest(
-                  ctx,
-                  "New Password should not be similiar to Old Password"
-                );
-              }
-              const newPassword = await AuthService.encryptPassword(
-                reqParam.new_password
-              );
-              await UserTable.updateOne(
-                { _id: user._id },
-                {
-                  $set: {
-                    password: newPassword,
-                  },
-                }
-              );
-              return this.Ok(ctx, { message: "Password Changed Successfully" });
-            }
-          );
-        }
-      }
-    );
-  }
-
-  /**
    * This method is used to change address of user
    * @param ctx
    * @returns {*}
@@ -965,121 +895,6 @@ class AuthController extends BaseController {
         }
       }
     );
-  }
-
-  /**
-   * This method is used to change email of user
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/change-email", method: HttpMethod.POST })
-  @Auth()
-  public async changeEmail(ctx: any) {
-    const user = ctx.request.user;
-    const reqParam = ctx.request.body;
-    const userExists = await UserTable.findOne({ id: user.id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User not found");
-    }
-    const userData = await UserTable.findOne({ email: reqParam.email });
-    if (userData !== null) {
-      return this.BadRequest(ctx, "You cannot add same email address");
-    }
-    if (userExists.type === EUserType.TEEN) {
-      const parentEmailExists = await UserTable.findOne({
-        parentMobile: reqParam.email,
-      });
-      if (parentEmailExists) {
-        return this.BadRequest(
-          ctx,
-          "You cannot add same email address as in parent"
-        );
-      }
-    }
-    return validation.changeEmailValidation(
-      reqParam,
-      ctx,
-      async (validate: boolean) => {
-        if (validate) {
-          try {
-            const verificationCode = await hashString(10);
-
-            const expiryTime = moment().add(24, "hours").unix();
-
-            const data: any = {
-              subject: "Verify Email",
-              verificationCode,
-              link: `${process.env.URL}/api/v1/verify-email?verificationCode=${verificationCode}&email=${reqParam.email}`,
-            };
-            await sendEmail(
-              reqParam.email,
-              CONSTANT.VerifyEmailTemplateId,
-              data
-            );
-            await UserTable.updateOne(
-              { _id: user._id },
-              {
-                $set: {
-                  verificationEmailExpireAt: expiryTime,
-                  verificationCode,
-                },
-              }
-            );
-            return this.Ok(ctx, {
-              message:
-                "Verification email is sent to you. Please check the email.",
-            });
-          } catch (e) {
-            throw new Error(e.message);
-          }
-        }
-      }
-    );
-  }
-
-  /**
-   *
-   * This method is used to verify email of user
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/verify-email", method: HttpMethod.GET })
-  public async verifyEmail(ctx: any) {
-    const verificationCode: string = ctx.query.verificationCode;
-    try {
-      const userData = await UserTable.findOne({ verificationCode });
-      if (userData) {
-        if (userData.verificationEmailExpireAt > moment().unix().toString()) {
-          await UserTable.updateOne(
-            { _id: userData._id },
-            {
-              $set: {
-                verificationEmailExpireAt: null,
-                verificationCode: "",
-                email: ctx.query.email,
-              },
-            }
-          );
-
-          await ctx.render("message.pug", {
-            message: "Email has been verified successfully",
-            type: "Success",
-          });
-        } else {
-          await ctx.render("message.pug", {
-            message: "Link has Expired.",
-            type: "Error",
-          });
-        }
-      } else {
-        await ctx.render("message.pug", {
-          message: "Link has Expired.",
-          type: "Error",
-        });
-      }
-    } catch (e) {
-      throw new Error(e.message);
-    }
   }
 
   /**
@@ -1274,9 +1089,7 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
-                referralCode: childInfo.referralCode
-                  ? childInfo.referralCode
-                  : uniqueReferralCode,
+                referralCode: uniqueReferralCode,
               };
 
               const userResponse = await UserTable.create(createObject);
@@ -1390,9 +1203,7 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.ENTER_PARENT_INFO,
                 lastName: childInfo.lastName,
                 firstName: childInfo.firstName,
-                referralCode: childInfo.referralCode
-                  ? childInfo.referralCode
-                  : uniqueReferralCode,
+                referralCode: uniqueReferralCode,
               };
 
               const userResponse: any = await UserTable.create(createObject);
@@ -1546,9 +1357,7 @@ class AuthController extends BaseController {
               address: input.address,
               unitApt: input.unitApt,
               postalCode: input.postalCode,
-              referralCode: draftUser.referralCode
-                ? draftUser.referralCode
-                : uniqueReferralCode,
+              referralCode: uniqueReferralCode,
               screenStatus:
                 type == EUserType.PARENT
                   ? ESCREENSTATUS.CHILD_INFO_SCREEN
@@ -1590,146 +1399,6 @@ class AuthController extends BaseController {
   }
 
   /**
-   * @description This method is used to check unique email
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/check-username/:username", method: HttpMethod.GET })
-  public async checkUserNameExistsInDb(ctx: any) {
-    const reqParam = ctx.params;
-    return validation.checkUniqueUserNameValidation(
-      reqParam,
-      ctx,
-      async (validate: boolean) => {
-        if (validate) {
-          const usernameExists = await UserTable.findOne({
-            username: { $regex: `${reqParam.username}$`, $options: "i" },
-          });
-          if (usernameExists) {
-            return this.BadRequest(ctx, "UserName already Exists");
-          }
-          return this.Ok(ctx, { message: "UserName is available" });
-        }
-      }
-    );
-  }
-
-  /**
-   * @description This method is used to send reset password request to email and sms
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/reset-password", method: HttpMethod.POST })
-  public async resetPassword(ctx: any) {
-    const reqParam = ctx.request.body;
-    return validation.checkUniqueUserNameValidation(
-      reqParam,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          const userExists = await UserTable.findOne({
-            username: { $regex: `${reqParam.username}$`, $options: "i" },
-          });
-          if (!userExists) {
-            return this.BadRequest(ctx, "User not found");
-          }
-          const tempPassword = generateTempPassword(userExists.username);
-          const message: string = `Your temporary password is ${tempPassword}. Please don't share it with anyone.`;
-          const data = {
-            message: tempPassword,
-            subject: "Reset Password",
-          };
-          /**
-           * send sms for temporary password
-           */
-          if (userExists.mobile) {
-            const twilioResponse: any = await TwilioService.sendSMS(
-              userExists.mobile,
-              message
-            );
-            if (twilioResponse.code === 400) {
-              return this.BadRequest(
-                ctx,
-                "Error in sending temporary password"
-              );
-            }
-          }
-          /**
-           * send email for temporary password
-           */
-          if (userExists.email) {
-            await sendEmail(
-              userExists.email,
-              CONSTANT.ResetPasswordTemplateId,
-              data
-            );
-          }
-          const newPassword = await AuthService.encryptPassword(tempPassword);
-          await UserTable.updateOne(
-            { _id: userExists._id },
-            { $set: { tempPassword: newPassword } }
-          );
-          return this.Ok(ctx, {
-            message: "Please check your email/sms for temporary password.",
-          });
-        }
-      }
-    );
-  }
-
-  /**
-   * @description This method is used to verify temporary password and update new password
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/update-new-password", method: HttpMethod.POST })
-  public async updateNewPassword(ctx: any) {
-    const reqParam = ctx.request.body;
-    return validation.updateNewPasswordValidation(
-      reqParam,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          const userExists = await UserTable.findOne({
-            username: { $regex: reqParam.username, $options: "i" },
-          });
-          if (!userExists) {
-            return this.BadRequest(ctx, "User not found");
-          }
-          /**
-           * check temp password is correct or not
-           */
-          if (
-            !AuthService.comparePassword(
-              reqParam.tempPassword,
-              userExists.tempPassword
-            )
-          ) {
-            return this.BadRequest(ctx, "Incorrect Temporary Password");
-          }
-          /**
-           *  Update new password
-           */
-          const newPassword = await AuthService.encryptPassword(
-            reqParam.new_password
-          );
-          await UserTable.updateOne(
-            { _id: userExists._id },
-            {
-              $set: {
-                password: newPassword,
-                tempPassword: null,
-                loginAttempts: 0,
-              },
-            }
-          );
-          return this.Ok(ctx, { message: "Password Changed Successfully." });
-        }
-      }
-    );
-  }
-
-  /**
    * @description This method is used to check whether parent and child exists.
    * @param ctx
    * @returns
@@ -1759,7 +1428,6 @@ class AuthController extends BaseController {
           if (childEmail) {
             query = {
               ...query,
-              // parentNumber: { $regex: `${email}$`, $options: "i" },
               email: { $regex: `${childEmail}$`, $options: "i" },
             };
           }
@@ -2182,8 +1850,6 @@ class AuthController extends BaseController {
                 screenStatus: ESCREENSTATUS.DOB_SCREEN,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
                 lastName: reqParam.lastName ? reqParam.lastName : null,
-                referralCode: null,
-                // mobile: reqParam.mobile ? reqParam.mobile : null,
               };
               const user = await UserDraftTable.create(createQuery);
               if (user) {

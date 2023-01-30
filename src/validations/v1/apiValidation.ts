@@ -1,7 +1,9 @@
-let Joi = require("joi")
-Joi = Joi.defaults((schema) => schema.options({
-  allowUnknown: true 
-}));
+let Joi = require("joi");
+Joi = Joi.defaults((schema) =>
+  schema.options({
+    allowUnknown: true,
+  })
+);
 
 import { validationMessageKey } from "../../utility";
 export const validation = {
@@ -115,20 +117,6 @@ export const validation = {
     }
     return callback(true);
   },
-  changePasswordValidation: (req, res, callback) => {
-    const schema = Joi.object().keys({
-      old_password: Joi.string().required(),
-      new_password: Joi.string()
-        .min(8)
-        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
-        .required(),
-    });
-    const { error } = schema.validate(req);
-    if (error) {
-      return res.throw(400, res.__(validationMessageKey("changePwd", error)));
-    }
-    return callback(true);
-  },
   changeAddressValidation: (req, res, callback) => {
     const schema = Joi.object().keys({
       address: Joi.string()
@@ -186,22 +174,6 @@ export const validation = {
     const { error } = schema.validate(req);
     if (error) {
       return res.throw(400, res.__(validationMessageKey("changeEmail", error)));
-    }
-    return callback(true);
-  },
-  checkUniqueUserNameValidation: (req, res, callback) => {
-    const schema = Joi.object().keys({
-      username: Joi.string()
-        .min(5)
-        .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/)
-        .required(),
-    });
-    const { error } = schema.validate(req);
-    if (error) {
-      return res.throw(
-        400,
-        res.__(validationMessageKey("checkUserName", error))
-      );
     }
     return callback(true);
   },
@@ -315,28 +287,6 @@ export const validation = {
     const { error } = schema.validate(req);
     if (error)
       return res.throw(400, res.__(validationMessageKey("login", error)));
-    return callback(true);
-  },
-  updateNewPasswordValidation: (req, res, callback) => {
-    const schema = Joi.object({
-      username: Joi.string()
-        .min(5)
-        .regex(/^[A-Za-z0-9][A-Za-z0-9_@.-]+$/)
-        .required(),
-      tempPassword: Joi.string().required(),
-      new_password: Joi.string()
-        .min(8)
-        .regex(/^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$/)
-        .disallow(Joi.ref("tempPassword"))
-        .required(),
-    });
-
-    const { error } = schema.validate(req);
-    if (error)
-      return res.throw(
-        400,
-        res.__(validationMessageKey("updateNewPassword", error))
-      );
     return callback(true);
   },
   addDepositValidation: (req, res, type, callback) => {

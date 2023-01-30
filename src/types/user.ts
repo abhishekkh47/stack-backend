@@ -2,20 +2,16 @@ import mongoose from "mongoose";
 
 export interface IUser extends IAccount {
   email: string;
-  password: string;
   username: string;
   mobile: string;
-  verificationEmailExpireAt: string;
-  verificationCode: string;
   status: EUSERSTATUS;
   funded: boolean;
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
-  refreshToken: string;
   isParentFirst: boolean;
   quizCoins: number;
   isNotificationOn: number;
-  isPhoneVerified: number
+  isPhoneVerified: number;
 }
 
 export interface IAccount {
@@ -27,8 +23,6 @@ export interface IAccount {
   type: EUserType;
   parentEmail: string;
   parentMobile: string;
-  tempPassword: string;
-  loginAttempts: number;
   country: string;
   stateId: mongoose.Schema.Types.ObjectId;
   state: string;
@@ -36,7 +30,6 @@ export interface IAccount {
   address: string;
   postalCode: string;
   unitApt: string;
-  liquidAsset: number;
   taxIdNo: string;
   dob: string;
   taxState: mongoose.Schema.Types.ObjectId;
@@ -67,17 +60,12 @@ export interface IAdmin extends IUser {
 export interface IUserdraft {
   email: string;
   dob: string;
-  phoneNumber: string;
-  parentNumber: string;
   screenStatus: number;
   firstName: string;
   lastName: string;
   type: number;
-  refreshToken: string;
-  referralCode: string;
   mobile: string;
   isPhoneVerified: number;
-  
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
@@ -150,5 +138,5 @@ export enum ESCREENSTATUS {
 
 export enum EPHONEVERIFIEDSTATUS {
   TRUE = 1,
-  FALSE = 0
+  FALSE = 0,
 }
