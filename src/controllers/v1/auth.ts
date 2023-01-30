@@ -45,15 +45,12 @@ import {
   getJwtToken,
   getMinutesBetweenDates,
   getRefreshToken,
-  hashString,
   internalAssetTransfers,
   makeUniqueReferalCode,
   Route,
-  sendEmail,
   verifyToken,
 } from "../../utility";
 import {
-  CONSTANT,
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,

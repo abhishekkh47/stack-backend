@@ -1,8 +1,10 @@
-import { UserDraftTable } from "../model/userDraft";
 import config from "../config";
 import crypto from "crypto";
-import bcrypt from "bcrypt";
 import { UserTable } from "../model";
+import ShortUniqueId from "short-unique-id";
+
+const getUid = new ShortUniqueId({ length: 7 });
+
 export const generateHash = (value: string) => {
   return crypto.createHash("md5").update(value).digest("hex");
 };
@@ -43,7 +45,7 @@ export const validationMessageKey = (apiTag: string, error: any) => {
   return key;
 };
 
-export const toUpperCase = (str) => {
+const toUpperCase = (str) => {
   if (str.length > 0) {
     const newStr = str
       .toLowerCase()
@@ -52,16 +54,6 @@ export const toUpperCase = (str) => {
     return str.charAt(0).toUpperCase() + newStr.slice(1);
   }
   return "";
-};
-export const hashString = (length = 10) => {
-  let result = "";
-  const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i += 1) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  result += bcrypt.hashSync(result, 10);
-  return result;
 };
 export const checkValidImageExtension = (file) => {
   let fileArray = ["image/jpeg", "image/jpg", "application/pdf"];
@@ -79,17 +71,11 @@ export const checkValidBase64String = (text) => {
   return true;
 };
 
-export const makeUniqueReferalCode = async (length = 7) => {
+export const makeUniqueReferalCode = async () => {
   let flag = true;
   let result = "";
   do {
-    const characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i += 1) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-
+    result = getUid();
     let findQuery = { referralCode: result };
     const checkReferralCodeExists = await UserTable.findOne(findQuery);
     if (!checkReferralCodeExists) {
