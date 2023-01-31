@@ -17,6 +17,12 @@ export const createBank = async (
   institutionId: string,
   userExists: any
 ) => {
+  const bankExists = await UserBanksTable.findOne({
+    userId: userExists._id,
+    isDefault: 1,
+    accessToken: accessToken,
+  });
+  if (bankExists) return bankExists;
   const response = await UserBanksTable.create({
     userId: userExists._id,
     parentId: userExists._id,
