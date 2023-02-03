@@ -1,7 +1,4 @@
-import {
-  getAccounts,
-  institutionsGetByIdRequest,
-} from "../../utility/plaid";
+import { getAccounts, institutionsGetByIdRequest } from "../../utility/plaid";
 import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
@@ -417,7 +414,7 @@ class TradingController extends BaseController {
   @Auth()
   @PrimeTrustJWT()
   public async getPortfolio(ctx: any) {
-    console.log('----getPortfolio v2----');
+    console.log("----getPortfolio v2----");
     const jwtToken = ctx.request.primeTrustToken;
     const reqParam = ctx.request.params;
     return validation.getPortFolioValidation(
@@ -467,10 +464,16 @@ class TradingController extends BaseController {
               primetrustInfo.accountId
             ));
 
-          const userIdForBankCheck = isTeen ? parentChild?.userId?._id : childExists?._id
-          
-          let userBankIfExists = userIdForBankCheck &&
-            (await UserBanksTable.find({ userId: userIdForBankCheck, isDefault: 1 }));
+          const userIdForBankCheck = isTeen
+            ? parentChild?.userId?._id
+            : childExists?._id;
+
+          let userBankIfExists =
+            userIdForBankCheck &&
+            (await UserBanksTable.find({
+              userId: userIdForBankCheck,
+              isDefault: 1,
+            }));
 
           const isParentKycVerified =
             parentChild?.userId?.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED;
@@ -963,13 +966,12 @@ class TradingController extends BaseController {
   @Route({ path: "/get-accounts", method: HttpMethod.POST })
   @Auth()
   public async getAccountsFromPlaid(ctx: any) {
-    const user = ctx.request.user;
-    let userBankExists = await UserBanksTable.findOne({ userId: user._id });
-    if (!userBankExists) {
-      userBankExists = await UserBanksTable.findOne({
-        userId: ctx.request.body.userId,
-      });
+    if (!ctx.request.body.userId) {
+      return this.BadRequest(ctx, "User Details Not Found");
     }
+    let userBankExists = await UserBanksTable.findOne({
+      userId: ctx.request.body.userId,
+    });
     if (!userBankExists) {
       return this.BadRequest(ctx, "User Bank Details Not Found");
     }
