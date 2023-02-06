@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 export interface IUser extends IAccount {
   email: string;
-  username: string;
   mobile: string;
   status: EUSERSTATUS;
   funded: boolean;

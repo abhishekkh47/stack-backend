@@ -63,8 +63,6 @@ class TradingController extends BaseController {
   public async addBankDetails(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
-    const jwtToken = ctx.request.primeTrustToken;
-    const userBanksFound = await UserBanksTable.find({ userId: user._id });
     const userExists = await UserTable.findOne({ _id: user._id });
     let admin = await AdminTable.findOne({});
     if (!userExists) {
@@ -112,184 +110,7 @@ class TradingController extends BaseController {
             reqParam.institutionId,
             userExists
           );
-          if (userBanksFound.length > 0) {
-            return this.Ok(ctx, {
-              message: "Bank account linked successfully",
-            });
-          }
 
-          const parentDetails: any = await ParentChildTable.findOne({
-            _id: parent._id,
-          });
-          /**
-           * if deposit amount is greater than 0
-           */
-          if (reqParam.depositAmount && reqParam.depositAmount > 0) {
-            let scheduleDate = userService.getScheduleDate(
-              reqParam.isRecurring
-            );
-
-            await UserTable.updateOne(
-              {
-                _id: userExists._id,
-              },
-              {
-                $set: {
-                  isRecurring: reqParam.isRecurring,
-                  selectedDeposit:
-                    reqParam.isRecurring == ERECURRING.NO_BANK ||
-                    reqParam.isRecurring == ERECURRING.NO_RECURRING
-                      ? 0
-                      : reqParam.depositAmount,
-                  selectedDepositDate:
-                    reqParam.isRecurring == ERECURRING.NO_BANK ||
-                    reqParam.isRecurring == ERECURRING.NO_RECURRING
-                      ? null
-                      : scheduleDate,
-                },
-              }
-            );
-
-            const accountIdDetails =
-              userExists.type == EUserType.PARENT
-                ? await parentDetails.teens.find(
-                    (x: any) =>
-                      x.childId.toString() ==
-                      parentDetails.firstChildId.toString()
-                  )
-                : parent.accountId;
-            await PortfolioService.addIntialDeposit(
-              reqParam,
-              parentDetails,
-              jwtToken,
-              userExists,
-              accountIdDetails,
-              processToken.data.processor_token
-            );
-            /**
-             * Gift Crypto to to teen who had pending 5btc
-             */
-            if (
-              admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
-              parent.firstChildId.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
-            ) {
-              let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-              const requestQuoteDay: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                    hot: true,
-                    "transaction-type": "buy",
-                    total_amount: "5",
-                  },
-                },
-              };
-              const generateQuoteResponse: any = await generateQuote(
-                jwtToken,
-                requestQuoteDay
-              );
-              if (generateQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, generateQuoteResponse.message);
-              }
-              /**
-               * Execute a quote
-               */
-              const requestExecuteQuote: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                  },
-                },
-              };
-              const executeQuoteResponse: any = await executeQuote(
-                jwtToken,
-                generateQuoteResponse.data.data.id,
-                requestExecuteQuote
-              );
-              if (executeQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, executeQuoteResponse.message);
-              }
-              let internalTransferRequest = {
-                data: {
-                  type: "internal-asset-transfers",
-                  attributes: {
-                    "unit-count":
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                    "to-account-id":
-                      userExists.type == EUserType.PARENT
-                        ? accountIdDetails.accountId
-                        : accountIdDetails,
-                    "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
-                    "hot-transfer": true,
-                  },
-                },
-              };
-              const internalTransferResponse: any =
-                await internalAssetTransfers(jwtToken, internalTransferRequest);
-              if (internalTransferResponse.status == 400) {
-                return this.BadRequest(ctx, internalTransferResponse.message);
-              }
-              await TransactionTable.updateOne(
-                {
-                  status: ETransactionStatus.GIFTED,
-                  userId: parent.firstChildId,
-                },
-                {
-                  $set: {
-                    unitCount:
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                    status: ETransactionStatus.SETTLED,
-                    executedQuoteId: internalTransferResponse.data.data.id,
-                    accountId: accountIdDetails.accountId,
-                    amountMod: -admin.giftCryptoAmount,
-                  },
-                }
-              );
-              await UserTable.updateOne(
-                {
-                  _id: parent.firstChildId,
-                },
-                {
-                  $set: {
-                    isGiftedCrypto: 2,
-                  },
-                }
-              );
-            }
-            /**
-             * added bank successfully
-             */
-            let ParentArray = [
-              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-              PARENT_SIGNUP_FUNNEL.DOB,
-              PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
-              PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
-              PARENT_SIGNUP_FUNNEL.ADD_BANK,
-              PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
-              PARENT_SIGNUP_FUNNEL.SUCCESS,
-            ];
-            let dataSentInCrm: any = {
-              Account_Name: userExists.firstName + " " + userExists.lastName,
-              Email: userExists.email,
-              Parent_Signup_Funnel: ParentArray,
-              Stack_Coins: admin.stackCoins,
-            };
-            await zohoCrmService.addAccounts(
-              ctx.request.zohoAccessToken,
-              dataSentInCrm
-            );
-            return this.Ok(ctx, {
-              message:
-                "We will proceed your request surely in some amount of time.",
-            });
-          }
           /**
            * added bank successfully
            */
@@ -966,13 +787,20 @@ class TradingController extends BaseController {
   @Route({ path: "/get-accounts", method: HttpMethod.POST })
   @Auth()
   public async getAccountsFromPlaid(ctx: any) {
-    const user = ctx.request.user;
-    let userBankExists = await UserBanksTable.findOne({ userId: user._id });
-    if (!userBankExists) {
-      userBankExists = await UserBanksTable.findOne({
-        userId: ctx.request.body.userId,
-      });
+    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Details Not Found");
     }
+    let id = userExists._id;
+    if (userExists.type === EUserType.TEEN) {
+      const parentDetails = await ParentChildTable.findOne({
+        "teens.childId": userExists._id,
+      });
+      id = parentDetails.userId;
+    }
+    let userBankExists = await UserBanksTable.findOne({
+      userId: id,
+    });
     if (!userBankExists) {
       return this.BadRequest(ctx, "User Bank Details Not Found");
     }

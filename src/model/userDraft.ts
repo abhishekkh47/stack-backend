@@ -37,7 +37,8 @@ const schema = new mongoose.Schema<IUserdraft>(
       type: mongoose.Schema.Types.Number,
       default: 0,
       isIn: [EPHONEVERIFIEDSTATUS.FALSE, EPHONEVERIFIEDSTATUS.TRUE],
-    },  },
+    },
+  },
   { timestamps: true }
 );
 
