@@ -89,7 +89,6 @@ class UserService {
             isParentApproved: 1,
             parentMobile: 1,
             parentEmail: 1,
-            parentId: "$parentchild.userId",
             country: 1,
             "state._id": 1,
             "state.name": 1,
@@ -121,12 +120,6 @@ class UserService {
         },
       ]).exec()
     )[0];
-    if (data && data.type == EUserType.TEEN) {
-      let parentRecord = await ParentChildTable.findOne({
-        "teens.childId": userId,
-      });
-      data = { ...data, parentId: parentRecord ? parentRecord.userId : null };
-    }
 
     let userDraft: any = (
       await UserDraftTable.aggregate([
