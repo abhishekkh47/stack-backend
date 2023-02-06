@@ -14,8 +14,8 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
     },
     quizId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
       ref: "quiz",
+      default: null
     },
     points: {
       type: mongoose.Schema.Types.Number,
@@ -52,8 +52,19 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
           type: mongoose.Schema.Types.Number,
           required: true,
         },
+        statement: {
+          type: mongoose.Schema.Types.String,
+          default: null,
+        },
       },
     ],
+    /**
+     * False: not onboarding, True: on boarding
+     */
+    isOnboardingFlowQuiz: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 );

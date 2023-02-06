@@ -1,3 +1,4 @@
+import { QuizQuestionTable } from "./../../model/quizQuestion";
 import { EPHONEVERIFIEDSTATUS } from "../../types/user";
 import { DripshopTable } from "../../model/dripshop";
 import {
@@ -39,7 +40,14 @@ import {
 } from "../../utility";
 import BaseController from ".././base";
 import { ObjectId } from "mongodb";
-import { UserDBService, zohoCrmService, DeviceTokenService, ScriptService, userService, tradingService } from "../../services/v1";
+import {
+  UserDBService,
+  zohoCrmService,
+  DeviceTokenService,
+  ScriptService,
+  userService,
+  tradingService,
+} from "../../services/v1";
 
 class ScriptController extends BaseController {
   /**
@@ -557,7 +565,7 @@ class ScriptController extends BaseController {
 
   /**
    * @description KYC Approve a staging account in PrimeTrust sandbox
-   * @param ctx 
+   * @param ctx
    * @returns {*}
    */
   @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
@@ -565,12 +573,20 @@ class ScriptController extends BaseController {
   public async kycApproveStaging(ctx: any) {
     const { primeTrustToken } = ctx.request;
     const { userId } = ctx.request.params;
-    const kycApprove = await ScriptService.sandboxApproveKYC(userId, primeTrustToken);
-    if (kycApprove.status !== 200) return this.BadRequest(ctx, kycApprove.message);
+    const kycApprove = await ScriptService.sandboxApproveKYC(
+      userId,
+      primeTrustToken
+    );
+    if (kycApprove.status !== 200)
+      return this.BadRequest(ctx, kycApprove.message);
 
-    return this.Ok(ctx, { status: kycApprove.status, message: kycApprove.message });
+    return this.Ok(ctx, {
+      status: kycApprove.status,
+      message: kycApprove.message,
+    });
   }
-  /*
+
+  /**
    * @description This method is used to add phone verification status
    * @param ctx
    * @return {*}
@@ -599,6 +615,18 @@ class ScriptController extends BaseController {
       }
     );
     return this.Ok(ctx, { allUserInfo });
+  }
+
+  /**
+   * @description This script is used to add questions for the on boarding quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/add-onboarding-quiz", method: HttpMethod.POST })
+  public async addOnboardingQuiz(ctx: any) {
+    const  reqParam  = ctx.request.body;
+    await QuizQuestionTable.insertMany(reqParam.onboardingQuizData)
+    return this.Ok(ctx, {quizData: reqParam.onboardingQuizData});
   }
 }
 
