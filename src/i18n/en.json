@@ -266,5 +266,6 @@
 	"removeDeviceTokenDevicetokenEmpty": "Device Token is required",
 	"addDeviceTokenDevicetokenEmpty": "Device Token is required",
 	"getPortFolioVersionUnknown": "getPortFolioVersionUnknown",
-	"nextDepositDateVersionUnknown": "nextDepositDateVersionUnknown"
+	"nextDepositDateVersionUnknown": "nextDepositDateVersionUnknown",
+	"checkUserSignupValidationDobFormat": "checkUserSignupValidationDobFormat"
 }
