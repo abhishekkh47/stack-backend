@@ -1,6 +1,6 @@
 import BaseController from "../base";
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
-import { TransactionDBService, UserService } from "../../services/v2";
+import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
   ParentChildTable,
@@ -104,7 +104,9 @@ class UserController extends BaseController {
           crypto,
           admin
         );
+        return this.Ok(ctx, { message: "Reward Claimed Successfully" });
       }
+      return this.BadRequest(ctx, "Reward Not Claimed");
     } catch (error) {
       return this.BadRequest(ctx, "Something went wrong");
     }

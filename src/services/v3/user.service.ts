@@ -88,6 +88,7 @@ class UserService {
               $ifNull: ["$childInfo.mobile", null],
             },
             referralCode: 1,
+            unlockRewardTime: 1,
             screenStatus: 1,
             city: 1,
             postalCode: 1,
