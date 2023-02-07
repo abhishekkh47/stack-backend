@@ -18,7 +18,7 @@ class QuizController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/onboarding-quiz-question", method: HttpMethod.GET })
-  @Auth()
+  // @Auth()
   public async getOnboardingQuestionList(ctx: any) {
     const onboardingQuestionData = await QuizQuestionTable.find(
       { isOnboardingFlowQuiz: true },
@@ -29,6 +29,9 @@ class QuizController extends BaseController {
         text: 1,
         question_type: 1,
         answer_type: 1,
+        question_image: 1,
+        question_image_title: 1,
+        quizId: 1
       }
     );
 

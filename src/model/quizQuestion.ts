@@ -64,6 +64,10 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
     isOnboardingFlowQuiz: {
       type: mongoose.Schema.Types.Boolean,
       default: false
+    },
+    question_image_title: {
+      type: mongoose.Schema.Types.String,
+      default: null,
     }
   },
   { timestamps: true }
