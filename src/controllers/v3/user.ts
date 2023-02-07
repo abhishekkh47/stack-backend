@@ -22,7 +22,7 @@ class UserController extends BaseController {
     const { id } = ctx.request.params;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
-    let { data, userDraft } = await UserService.getProfile(id);
+    let { data } = await UserService.getProfile(id);
 
     const checkIntitalDepositDone = await TransactionTable.findOne({
       $or: [{ parentId: id }, { userId: id }],
@@ -62,10 +62,6 @@ class UserController extends BaseController {
       }
     }
 
-    if (checkIntitalDepositDone && userDraft) {
-      userDraft.initialDeposit = 1;
-    }
-
     data = {
       ...data,
       terms: CMS_LINKS.TERMS,
@@ -74,7 +70,7 @@ class UserController extends BaseController {
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
     };
 
-    return this.Ok(ctx, userDraft ? userDraft : data, true);
+    return this.Ok(ctx, data, true);
   }
 }
 

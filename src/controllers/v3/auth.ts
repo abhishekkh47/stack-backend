@@ -9,7 +9,6 @@ import {
   OtpTable,
   ParentChildTable,
   TransactionTable,
-  UserDraftTable,
   UserTable,
 } from "../../model";
 import {
@@ -108,9 +107,6 @@ class AuthController extends BaseController {
               );
 
               migratedId = newUserDetail._id;
-              await UserDraftTable.deleteOne({
-                _id: ctx.request.user._id,
-              });
 
               let checkTransactionExists = await TransactionTable.findOne({
                 userId: newUserDetail._id,
@@ -508,6 +504,7 @@ class AuthController extends BaseController {
         if (validate) {
           try {
             const { email, deviceToken } = reqParam;
+            let accountCreated = false;
             let userExists = await UserTable.findOne({ email });
             await SocialService.verifySocial(reqParam);
             if (!userExists) {
@@ -546,6 +543,7 @@ class AuthController extends BaseController {
                 referralCode: uniqueReferralCode,
               };
               userExists = await UserTable.create(createQuery);
+              accountCreated = true;
               if (userExists) {
                 /**
                  * Zoho crm account addition
@@ -611,6 +609,7 @@ class AuthController extends BaseController {
               refreshToken,
               profileData: getProfileInput.body.data,
               message: "Success",
+              accountCreated: accountCreated,
               isUserExist: userExists ? true : false,
             });
           } catch (error) {
