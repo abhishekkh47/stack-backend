@@ -10,7 +10,7 @@ export interface IUser extends IAccount {
   isParentFirst: boolean;
   quizCoins: number;
   isNotificationOn: number;
-  unlockRewardTime:string;
+  unlockRewardTime: string;
   isPhoneVerified: number;
 }
 
@@ -48,6 +48,7 @@ export interface IAccount {
 
 export interface IAdmin extends IUser {
   jwtToken: string;
+  username: string;
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;
