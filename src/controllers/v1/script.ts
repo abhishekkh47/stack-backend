@@ -21,6 +21,7 @@ import {
   UserTable,
   TransactionTable,
   ParentChildTable,
+  UserDraftTable,
 } from "../../model";
 import {
   EAction,
@@ -39,7 +40,14 @@ import {
 } from "../../utility";
 import BaseController from ".././base";
 import { ObjectId } from "mongodb";
-import { UserDBService, zohoCrmService, DeviceTokenService, ScriptService, userService, tradingService } from "../../services/v1";
+import {
+  UserDBService,
+  zohoCrmService,
+  DeviceTokenService,
+  ScriptService,
+  userService,
+  tradingService,
+} from "../../services/v1";
 
 class ScriptController extends BaseController {
   /**
@@ -111,35 +119,6 @@ class ScriptController extends BaseController {
       updatedCountParent4,
       updatedCountTeen1,
     });
-  }
-
-  /**
-   * @description This method is for updating user banks by script for migration into production
-   * @param ctx
-   * @returns
-   */
-  @Route({ path: "/migrate-userbanks", method: HttpMethod.POST })
-  public async updateUserBanksDataScript(ctx: any) {
-    let banksArray = [];
-    let query = {};
-    if (ctx.request.body.userId) {
-      query = { ...query, userId: ctx.request.body.userId };
-    }
-    let BanksData = await ParentChildTable.find(query);
-    for await (let bankInfo of BanksData) {
-      banksArray.push({
-        userId: bankInfo.userId,
-        parentId: bankInfo.userId,
-        status: 2,
-        processorToken: bankInfo.processorToken,
-        insId: bankInfo.institutionId,
-        accessToken: bankInfo.accessToken,
-        isDefault: 1,
-      });
-    }
-    const response = await UserBanksTable.insertMany(banksArray);
-
-    return this.Ok(ctx, { message: "Successfull Migration", data: response });
   }
 
   /**
@@ -557,7 +536,7 @@ class ScriptController extends BaseController {
 
   /**
    * @description KYC Approve a staging account in PrimeTrust sandbox
-   * @param ctx 
+   * @param ctx
    * @returns {*}
    */
   @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
@@ -565,10 +544,17 @@ class ScriptController extends BaseController {
   public async kycApproveStaging(ctx: any) {
     const { primeTrustToken } = ctx.request;
     const { userId } = ctx.request.params;
-    const kycApprove = await ScriptService.sandboxApproveKYC(userId, primeTrustToken);
-    if (kycApprove.status !== 200) return this.BadRequest(ctx, kycApprove.message);
+    const kycApprove = await ScriptService.sandboxApproveKYC(
+      userId,
+      primeTrustToken
+    );
+    if (kycApprove.status !== 200)
+      return this.BadRequest(ctx, kycApprove.message);
 
-    return this.Ok(ctx, { status: kycApprove.status, message: kycApprove.message });
+    return this.Ok(ctx, {
+      status: kycApprove.status,
+      message: kycApprove.message,
+    });
   }
   /*
    * @description This method is used to add phone verification status
@@ -599,6 +585,55 @@ class ScriptController extends BaseController {
       }
     );
     return this.Ok(ctx, { allUserInfo });
+  }
+
+  /*
+   * @description This method is used to unset fields in db
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/unset-fields-in-db", method: HttpMethod.POST })
+  public async unsetFieldsInDb(ctx: any) {
+    /**
+     * Clean up user fields , userdraft fields and  parent child table
+     */
+    await UserTable.updateMany(
+      {},
+      {
+        $unset: {
+          username: 1,
+          password: 1,
+          tempPassword: 1,
+          loginAttempts: 1,
+          liquidAsset: 1,
+          verificationCode: 1,
+          verificationEmailExpireAt: 1,
+        },
+      }
+    );
+
+    await UserDraftTable.updateMany(
+      {},
+      {
+        $unset: {
+          referralCode: 1,
+          phoneNumber: 1,
+          refreshToken: 1,
+          parentNumber: 1,
+        },
+      }
+    );
+    await ParentChildTable.updateMany(
+      {},
+      {
+        $unset: {
+          accessToken: 1,
+          processorToken: 1,
+          institutionId: 1,
+        },
+      }
+    );
+    return this.Ok(ctx, { message: "Fields removed successfully" });
   }
 }
 
