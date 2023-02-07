@@ -1,12 +1,13 @@
 import BaseController from "../base";
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
-import { UserService } from "../../services/v2";
+import { TransactionDBService, UserService } from "../../services/v2";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
   ParentChildTable,
   UserTable,
   TransactionTable,
   UserBanksTable,
+  AdminTable,
 } from "../../model";
 import { CMS_LINKS } from "../../utility/constants";
 import { Route } from "../../utility";
@@ -71,6 +72,42 @@ class UserController extends BaseController {
     };
 
     return this.Ok(ctx, data, true);
+  }
+
+  /**
+   * @description This method is used to view profile for both parent and child
+   * @param ctx
+   */
+  @Route({ path: "/claim-reward", method: HttpMethod.POST })
+  @Auth()
+  public async claimYourReward(ctx: any) {
+    try {
+      const user = ctx.request.user;
+      const admin = await AdminTable.findOne({});
+      const userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      if (userExists.unlockRewardTime) {
+        return this.BadRequest(ctx, "You already unlocked the reward");
+      }
+      let transactionExists = await TransactionTable.findOne({
+        userId: userExists._id,
+      });
+      if (
+        admin.giftCryptoSetting == 1 &&
+        userExists.isGiftedCrypto == 0 &&
+        !transactionExists
+      ) {
+        await TransactionDBService.createBtcGiftedTransaction(
+          userExists._id,
+          crypto,
+          admin
+        );
+      }
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
   }
 }
 

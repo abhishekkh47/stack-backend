@@ -10,6 +10,7 @@ export interface IUser extends IAccount {
   isParentFirst: boolean;
   quizCoins: number;
   isNotificationOn: number;
+  unlockRewardTime:string;
   isPhoneVerified: number;
 }
 
