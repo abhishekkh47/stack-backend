@@ -421,66 +421,6 @@ class AuthController extends BaseController {
         },
       }
     );
-    /**
-     * TO DO : Remove this bunch of code
-     * if (ctx.request.body.parentMobile) {
-      let childAlreadyExists = await UserTable.findOne({
-        mobile: ctx.request.body.mobile,
-      });
-      const childInfo = await UserDraftTable.findOne({
-        _id: ctx.request.user._id,
-      });
-      let uniqueReferralCode = await makeUniqueReferalCode();
-      const updateOrCreateObject = {
-        email: childInfo ? childInfo.email : childAlreadyExists.email,
-        dob: childInfo ? childInfo.dob : childAlreadyExists.dob,
-        type: childInfo ? childInfo.type : childAlreadyExists.type,
-        mobile: ctx.request.body.mobile,
-        parentMobile: ctx.request.body.parentMobile,
-        parentEmail:
-          checkParentExists && checkParentExists.type == EUserType.PARENT
-            ? checkParentExists.email
-            : null,
-        firstName:
-          childInfo && childInfo.firstName
-            ? childInfo.firstName
-            : childAlreadyExists.firstName,
-        lastName:
-          childInfo && childInfo.lastName
-            ? childInfo.lastName
-            : childAlreadyExists.lastName,
-        referralCode: childAlreadyExists
-          ? childAlreadyExists.referralCode
-          : uniqueReferralCode,
-        isPhoneVerified:
-          childInfo && childInfo.isPhoneVerified
-            ? childInfo.isPhoneVerified
-            : childAlreadyExists.isPhoneVerified,
-      };
-      if (childAlreadyExists) {
-        await UserTable.findOneAndUpdate(
-          { mobile: ctx.request.body.mobile },
-          { $set: updateOrCreateObject },
-          { new: true }
-        );
-        migratedId = childAlreadyExists ? childAlreadyExists._id : "";
-      } else {
-        const userResponse = await UserTable.create(updateOrCreateObject);
-        migratedId = userResponse._id;
-      }
-      await UserDraftTable.deleteOne({
-        _id: ctx.request.user._id,
-      });
-    }
-    if (checkParentExists) {
-      await zohoCrmService.searchAccountsAndUpdateDataInCrm(
-        ctx.request.zohoAccessToken,
-        ctx.request.body.mobile,
-        checkParentExists,
-        "true"
-      );
-    }
-     */
 
     return this.Ok(
       ctx,

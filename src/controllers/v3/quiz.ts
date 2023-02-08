@@ -48,7 +48,6 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public async getOnboardingQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log("reqParam: ", reqParam);
     const checkUserExists = await UserTable.findOne({
       _id: ctx.request.user._id,
     });
