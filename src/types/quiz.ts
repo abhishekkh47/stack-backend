@@ -18,6 +18,8 @@ export interface IQuizQuestion {
   answer_type: EQuizAnswerType;
   points: number;
   answer_array: IAnswerArray[];
+  isOnboardingFlowQuiz: boolean;
+  question_image_title: string;
 }
 
 export enum EQuizQuestionType {
@@ -44,6 +46,7 @@ export interface IAnswerArray {
   name: string;
   image: string;
   correct_answer: ECorrectAnswer;
+  statement: string
 }
 export interface IQuiz {
   quizName: string;

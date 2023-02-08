@@ -33,15 +33,6 @@ class UserService {
         { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
-            from: "users",
-            localField: "email",
-            foreignField: "parentEmail",
-            as: "childInfo",
-          },
-        },
-        { $unwind: { path: "$childInfo", preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
             from: "parentchild",
             localField: "_id",
             foreignField: "userId",
