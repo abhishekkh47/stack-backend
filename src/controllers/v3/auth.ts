@@ -33,7 +33,7 @@ import {
 import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
-import UserController from "../v2/user";
+import UserController from "../v3/user";
 import { UserDBService, TransactionDBService } from "../../services/v2";
 
 class AuthController extends BaseController {
@@ -610,7 +610,6 @@ class AuthController extends BaseController {
               profileData: getProfileInput.body.data,
               message: "Success",
               accountCreated: accountCreated,
-              isUserExist: userExists ? true : false,
             });
           } catch (error) {
             return this.BadRequest(ctx, error.message);
