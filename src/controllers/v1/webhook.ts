@@ -1,3 +1,4 @@
+import { UserBanksTable } from './../../model/userBanks';
 import { UserReferralTable } from "../../model/user-referral";
 import { json } from "co-body";
 import fs from "fs";
@@ -96,6 +97,10 @@ class WebHookController extends BaseController {
       "referralArray.referredId": { $in: arrayForReferral },
     });
 
+    const userBankInfo = await UserBanksTable.findOne({
+      userId: userExists._id
+    })
+
     switch (body.resource_type) {
       /**
        * For kyc success or failure
@@ -189,6 +194,14 @@ class WebHookController extends BaseController {
                 },
               }
             );
+
+            if(userBankInfo.accessToken && userBankInfo.processorToken) {
+                 const getTransactionInfo = await TransactionTable.findOne({
+                  userId: userExists._id,
+                  status: ETransactionStatus.GIFTED
+                 })
+                
+            }
             /**
              * Update the status to zoho crm
              */
