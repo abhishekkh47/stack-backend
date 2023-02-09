@@ -5,6 +5,7 @@ const KoaRouterVersion = require("koa-router-version");
 import { IRouteDict } from "../utility";
 import routerDictV1 from "./v1";
 import routerDictV1_1 from "./v2";
+import routerDictV3 from "./v3";
 import { HttpMethod } from "../types";
 
 const router = new Router();
@@ -44,7 +45,9 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
       {}
     );
     const firstRouteForKey =
-      routesForKey.filter((x) => x.version === "2.0.0").length > 0
+      routesForKey.filter((x) => x.version === "3.0.0").length > 0
+        ? routesForKey.filter((x) => x.version === "3.0.0")[0]
+        : routesForKey.filter((x) => x.version === "2.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "2.0.0")[0]
         : routesForKey.filter((x) => x.version === "1.0.0")[0];
     const routeRegisterHandler = methodToRouter[firstRouteForKey.method];
@@ -75,6 +78,6 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
   });
 };
 
-setRoutes(router, [routerDictV1, routerDictV1_1]);
+setRoutes(router, [routerDictV1, routerDictV1_1, routerDictV3]);
 
 export default Compose([router.routes(), router.allowedMethods()]);
