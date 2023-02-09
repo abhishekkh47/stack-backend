@@ -111,6 +111,8 @@ class TradingController extends BaseController {
             userExists
           );
 
+          // quit (for now) to avoid zoho tracking that takes huge amount of time
+          return;
           /**
            * added bank successfully
            */
