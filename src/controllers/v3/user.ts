@@ -1,5 +1,14 @@
+import { TradingService } from "../../services/v3/index";
+import { EGIFTSTACKCOINSSETTING } from "./../../types/user";
+import moment from "moment";
 import BaseController from "../base";
-import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
+import {
+  ETransactionStatus,
+  ETransactionType,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+} from "../../types";
 import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
@@ -81,11 +90,13 @@ class UserController extends BaseController {
    */
   @Route({ path: "/claim-reward", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async claimYourReward(ctx: any) {
     try {
       const user = ctx.request.user;
       const admin = await AdminTable.findOne({});
       const userExists = await UserTable.findOne({ _id: user._id });
+      const jwtToken = ctx.request.primeTrustToken;
       if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
         return this.BadRequest(ctx, "User Not Found");
       }
@@ -94,6 +105,20 @@ class UserController extends BaseController {
       }
       let transactionExists = await TransactionTable.findOne({
         userId: userExists._id,
+      });
+
+      const parentChildDetails = await UserService.getParentChildInfo(
+        userExists._id
+      );
+      const checkParentInfo = await UserTable.findOne({
+        _id: parentChildDetails.userId,
+      });
+
+      const checkParentBankExists = await UserBanksTable.findOne({
+        $or: [
+          { userId: parentChildDetails.userId },
+          { parentId: parentChildDetails.userId },
+        ],
       });
       if (
         admin.giftCryptoSetting == 1 &&
@@ -107,10 +132,63 @@ class UserController extends BaseController {
           admin
         );
         return this.Ok(ctx, { message: "Reward Claimed Successfully" });
+      } else if (
+        checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+        checkParentBankExists &&
+        admin.giftCryptoSetting == 1 &&
+        userExists.isGiftedCrypto == 0
+      ) {
+        const accountIdDetails =
+          userExists.type == EUserType.PARENT && parentChildDetails
+            ? await parentChildDetails.teens.find(
+                (x: any) =>
+                  x.childId.toString() ==
+                  parentChildDetails.firstChildId.toString()
+              )
+            : parentChildDetails.accountId;
+
+        /**
+         * difference of 72 hours
+         */
+        const current = moment().unix();
+        const difference = Math.ceil(
+          moment
+            .duration(
+              moment
+                .unix(current)
+                .diff(moment.unix(parentChildDetails.unlockRewardTime))
+            )
+            .asMinutes()
+        );
+
+        if (Math.abs(difference) <= 4320) {
+          if (
+            admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+            parentChildDetails &&
+            parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+          ) {
+            let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+            await TransactionDBService.createBtcGiftedTransaction(
+              userExists._id,
+              crypto,
+              admin
+            );
+
+            await TradingService.internalTransfer(
+              parentChildDetails,
+              jwtToken,
+              accountIdDetails,
+              userExists.type,
+              admin
+            );
+          }
+        }
+
+        return this.Ok(ctx, { message: "Reward Claimed Successfully" });
       }
       return this.BadRequest(ctx, "Reward Not Claimed");
     } catch (error) {
-      console.log('error: ', error);
+      console.log("error: ", error);
       return this.BadRequest(ctx, "Something went wrong");
     }
   }

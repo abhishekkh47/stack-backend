@@ -1,21 +1,9 @@
-import { ETransactionType } from "./../../types/transaction";
 import moment from "moment";
-import {
-  executeQuote,
-  generateQuote,
-  internalAssetTransfers,
-} from "./../../utility/prime-trust";
-import { TransactionTable } from "./../../model/transactions";
 import { EGIFTSTACKCOINSSETTING, EUSERSTATUS } from "./../../types/user";
 import { Auth, PrimeTrustJWT } from "../../middleware";
-import {
-  AdminTable,
-  CryptoTable,
-  ParentChildTable,
-  UserTable,
-} from "../../model";
-import { tradingService, zohoCrmService } from "../../services/v1/index";
-import { ETransactionStatus, EUserType, HttpMethod } from "../../types";
+import { AdminTable, ParentChildTable, UserTable } from "../../model";
+import { zohoCrmService } from "../../services/v1/index";
+import { EUserType, HttpMethod } from "../../types";
 import {
   createBank,
   createProcessorToken,
@@ -25,7 +13,7 @@ import {
 import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
-import envData from "../../config/index";
+import { TradingService, UserService } from "../../services/v3/index";
 
 class TradingController extends BaseController {
   /**
@@ -87,152 +75,50 @@ class TradingController extends BaseController {
             reqParam.institutionId,
             userExists
           );
-
           if (
             userExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
             userBankInfo
           ) {
-            let difference = Math.ceil(
+            const parentChildDetails = await UserService.getParentChildInfo(
+              userExists._id
+            );
+
+            const accountIdDetails =
+              userExists.type == EUserType.PARENT && parentChildDetails
+                ? await parentChildDetails.teens.find(
+                    (x: any) =>
+                      x.childId.toString() ==
+                      parentChildDetails.firstChildId.toString()
+                  )
+                : parent.accountId;
+
+            /**
+             * difference of 72 hours
+             */
+            const current = moment().unix();
+            const difference = Math.ceil(
               moment
                 .duration(
-                  moment(moment().valueOf()).diff(
-                    moment(userExists.unlockRewardTime)
-                  )
+                  moment
+                    .unix(current)
+                    .diff(moment.unix(parentChildDetails.unlockRewardTime))
                 )
                 .asMinutes()
             );
-            console.log("difference: ", difference);
 
-            if (difference >= 4320) {
-              const parentDetails: any = await ParentChildTable.findOne({
-                _id: parent._id,
-              });
-              console.log("parentDetails: ", parentDetails);
-
-              const accountIdDetails =
-                userExists.type == EUserType.PARENT
-                  ? await parentDetails.teens.find(
-                      (x: any) =>
-                        x.childId.toString() ==
-                        parentDetails.firstChildId.toString()
-                    )
-                  : parent.accountId;
-
-              console.log("accountIdDetails: ", accountIdDetails);
+            if (Math.abs(difference) <= 4320) {
               if (
                 admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
-                parent.firstChildId.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+                parentChildDetails &&
+                parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
               ) {
-                let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-
-                let checkTransactionExistsAlready =
-                  await TransactionTable.findOne({
-                    $or: [
-                      { userId: userExists._id },
-                      { parentId: userExists._id },
-                    ],
-                    intialDeposit: true,
-                    type: ETransactionType.DEPOSIT,
-                  });
-                if (checkTransactionExistsAlready) {
-                  const requestQuoteDay: any = {
-                    data: {
-                      type: "quotes",
-                      attributes: {
-                        "account-id": envData.OPERATIONAL_ACCOUNT,
-                        "asset-id": crypto.assetId,
-                        hot: true,
-                        "transaction-type": "buy",
-                        total_amount: "5",
-                      },
-                    },
-                  };
-                  const generateQuoteResponse: any = await generateQuote(
-                    jwtToken,
-                    requestQuoteDay
-                  );
-                  if (generateQuoteResponse.status == 400) {
-                    return this.BadRequest(ctx, generateQuoteResponse.message);
-                  }
-                  /**
-                   * Execute a quote
-                   */
-                  const requestExecuteQuote: any = {
-                    data: {
-                      type: "quotes",
-                      attributes: {
-                        "account-id": envData.OPERATIONAL_ACCOUNT,
-                        "asset-id": crypto.assetId,
-                      },
-                    },
-                  };
-                  const executeQuoteResponse: any = await executeQuote(
-                    jwtToken,
-                    generateQuoteResponse.data.data.id,
-                    requestExecuteQuote
-                  );
-                  if (executeQuoteResponse.status == 400) {
-                    return this.BadRequest(ctx, executeQuoteResponse.message);
-                  }
-                  let internalTransferRequest = {
-                    data: {
-                      type: "internal-asset-transfers",
-                      attributes: {
-                        "unit-count":
-                          executeQuoteResponse.data.data.attributes[
-                            "unit-count"
-                          ],
-                        "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                        "to-account-id":
-                          userExists.type == EUserType.PARENT
-                            ? accountIdDetails.accountId
-                            : accountIdDetails,
-                        "asset-id": crypto.assetId,
-                        reference: "$5 BTC gift from Stack",
-                        "hot-transfer": true,
-                      },
-                    },
-                  };
-                  const internalTransferResponse: any =
-                    await internalAssetTransfers(
-                      jwtToken,
-                      internalTransferRequest
-                    );
-                  if (internalTransferResponse.status == 400) {
-                    return this.BadRequest(
-                      ctx,
-                      internalTransferResponse.message
-                    );
-                  }
-                  await TransactionTable.updateOne(
-                    {
-                      status: ETransactionStatus.GIFTED,
-                      userId: parent.firstChildId,
-                    },
-                    {
-                      $set: {
-                        unitCount:
-                          executeQuoteResponse.data.data.attributes[
-                            "unit-count"
-                          ],
-                        status: ETransactionStatus.SETTLED,
-                        executedQuoteId: internalTransferResponse.data.data.id,
-                        accountId: accountIdDetails.accountId,
-                        amountMod: -admin.giftCryptoAmount,
-                      },
-                    }
-                  );
-                  await UserTable.updateOne(
-                    {
-                      _id: parent.firstChildId,
-                    },
-                    {
-                      $set: {
-                        isGiftedCrypto: 2,
-                      },
-                    }
-                  );
-                }
+                await TradingService.internalTransfer(
+                  parentChildDetails,
+                  jwtToken,
+                  accountIdDetails,
+                  userExists.type,
+                  admin
+                );
               }
             }
           }
