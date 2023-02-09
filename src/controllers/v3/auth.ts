@@ -449,7 +449,6 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkSignUp(ctx: any) {
     const reqParam = ctx.request.body;
-    console.log('reqParam: ', reqParam);
     return validationsV3.checkUserSignupValidation(
       reqParam,
       ctx,
