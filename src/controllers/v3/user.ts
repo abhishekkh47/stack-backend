@@ -8,6 +8,7 @@ import {
   TransactionTable,
   UserBanksTable,
   AdminTable,
+  CryptoTable,
 } from "../../model";
 import { CMS_LINKS } from "../../utility/constants";
 import { Route } from "../../utility";
@@ -99,6 +100,7 @@ class UserController extends BaseController {
         userExists.isGiftedCrypto == 0 &&
         !transactionExists
       ) {
+        let crypto = await CryptoTable.findOne({ symbol: "BTC" });
         await TransactionDBService.createBtcGiftedTransaction(
           userExists._id,
           crypto,
@@ -108,6 +110,7 @@ class UserController extends BaseController {
       }
       return this.BadRequest(ctx, "Reward Not Claimed");
     } catch (error) {
+      console.log('error: ', error);
       return this.BadRequest(ctx, "Something went wrong");
     }
   }

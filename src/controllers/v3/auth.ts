@@ -234,11 +234,11 @@ class AuthController extends BaseController {
             mobile: childMobile
           })
 
-          if(checkChildMobileAlreadyExists.type != EUserType.TEEN) {
+          if(checkChildMobileAlreadyExists && checkChildMobileAlreadyExists.type != EUserType.TEEN) {
             return this.BadRequest(ctx, "The mobile no. already belongs to a parent");
           }
 
-          if(checkChildMobileAlreadyExists.type == EUserType.TEEN && checkChildMobileAlreadyExists.parentMobile !== mobile) {
+          if(checkChildMobileAlreadyExists && checkChildMobileAlreadyExists.type == EUserType.TEEN && checkChildMobileAlreadyExists.parentMobile !== mobile) {
             return this.BadRequest(ctx, "The mobile is already linked to another parent");
           }
 
@@ -509,6 +509,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public async checkSignUp(ctx: any) {
     const reqParam = ctx.request.body;
+    console.log('reqParam: ', reqParam);
     return validationsV3.checkUserSignupValidation(
       reqParam,
       ctx,
@@ -615,7 +616,6 @@ class AuthController extends BaseController {
                 deviceToken
               );
             }
-
             return this.Ok(ctx, {
               token,
               refreshToken,
