@@ -1,3 +1,4 @@
+import { QuizQuestionTable } from "./../../model/quizQuestion";
 import { EPHONEVERIFIEDSTATUS } from "../../types/user";
 import { DripshopTable } from "../../model/dripshop";
 import {
@@ -556,7 +557,8 @@ class ScriptController extends BaseController {
       message: kycApprove.message,
     });
   }
-  /*
+
+  /**
    * @description This method is used to add phone verification status
    * @param ctx
    * @return {*}
@@ -587,6 +589,17 @@ class ScriptController extends BaseController {
     return this.Ok(ctx, { allUserInfo });
   }
 
+  /**
+   * @description This script is used to add questions for the on boarding quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/add-onboarding-quiz", method: HttpMethod.POST })
+  public async addOnboardingQuiz(ctx: any) {
+    const  reqParam  = ctx.request.body;
+    await QuizQuestionTable.insertMany(reqParam.onboardingQuizData)
+    return this.Ok(ctx, {quizData: reqParam.onboardingQuizData});
+  }
   /*
    * @description This method is used to unset fields in db
    * @param ctx

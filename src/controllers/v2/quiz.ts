@@ -1,4 +1,4 @@
-import { validations } from '../../validations/v2/apiValidation';
+import { validations } from "../../validations/v2/apiValidation";
 import { QuizQuestionTable } from "../../model/quizQuestion";
 import { QuizTable } from "../../model/quiz";
 import { timeBetweenTwoQuiz } from "../../types/quiz";
@@ -193,6 +193,22 @@ class QuizController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to get the list of onBoarding quiz questions
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/onboarding-quiz-question", method: HttpMethod.GET })
+  @Auth()
+  public async getOnboardingQuestionList(ctx: any) {
+    const onboardingQuestionData = await QuizQuestionTable.find(
+      { isOnboardingFlowQuiz: true },
+      { _id: 0, points: 1, answer_array: 1, text: 1 }
+    );
+
+    return this.Ok(ctx, { data: onboardingQuestionData });
   }
 }
 

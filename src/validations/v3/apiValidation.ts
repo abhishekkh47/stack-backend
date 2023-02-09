@@ -36,4 +36,20 @@ export const validationsV3 = {
     }
     return callback(true);
   },
+  addQuizResultValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      quizId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      pointsEarned: Joi.number().integer().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("addQuizResult", error))
+      );
+    }
+    return callback(true);
+  },
 };
