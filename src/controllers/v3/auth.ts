@@ -421,6 +421,35 @@ class AuthController extends BaseController {
         },
       }
     );
+    /**
+     * check if parent exists then parent have firstChild, then link secondTeen to parent
+     * Else only update the mobile number of parent to that teen
+     */
+    if (checkParentExists) {
+      const parentChild: any = await ParentChildTable.findOne({
+        userId: checkParentExists._id,
+      });
+      if (parentChild) {
+        const checkteenExists = parentChild.teens.find(
+          (x) => x.childId.toString() === ctx.request.user._id.toString()
+        );
+        if (!checkteenExists && parentChild.teens.length >= 1) {
+          const abc = await ParentChildTable.findOneAndUpdate(
+            { userId: checkParentExists._id },
+            {
+              $push: {
+                teens: {
+                  childId: ctx.request.user._id,
+                  accountId: null,
+                  accountNumber: null,
+                  pushTransferId: null,
+                },
+              },
+            }
+          );
+        }
+      }
+    }
 
     return this.Ok(
       ctx,
