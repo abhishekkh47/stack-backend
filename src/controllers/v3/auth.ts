@@ -230,6 +230,18 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "User not found");
           }
 
+          let checkChildMobileAlreadyExists = await UserTable.findOne({
+            mobile: childMobile
+          })
+
+          if(checkChildMobileAlreadyExists && checkChildMobileAlreadyExists.type != EUserType.TEEN) {
+            return this.BadRequest(ctx, "The mobile no. already belongs to a parent");
+          }
+
+          if(checkChildMobileAlreadyExists && checkChildMobileAlreadyExists.type == EUserType.TEEN && checkChildMobileAlreadyExists.parentMobile !== mobile) {
+            return this.BadRequest(ctx, "The mobile is already linked to another parent");
+          }
+
           /**
            * migrate parent from userdraft to user table
            */
@@ -572,7 +584,6 @@ class AuthController extends BaseController {
                 deviceToken
               );
             }
-
             return this.Ok(ctx, {
               token,
               refreshToken,

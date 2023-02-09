@@ -1,3 +1,4 @@
+import { UserBanksTable } from "./../../model/userBanks";
 import { UserReferralTable } from "../../model/user-referral";
 import { json } from "co-body";
 import fs from "fs";
@@ -35,6 +36,7 @@ import {
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
+import { TradingService, UserService } from "../../services/v3/index";
 
 class WebHookController extends BaseController {
   /**
@@ -47,6 +49,7 @@ class WebHookController extends BaseController {
   public async getWebhookData(ctx: any) {
     console.log(`++++++START WEBHOOK DATA+++++++++`);
     let body: any = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
     let admin = await AdminTable.findOne({});
     await WebhookTable.create({
       title: body.resource_type,
@@ -94,6 +97,10 @@ class WebHookController extends BaseController {
 
     let getReferralSenderId = await UserReferralTable.findOne({
       "referralArray.referredId": { $in: arrayForReferral },
+    });
+
+    const userBankInfo = await UserBanksTable.findOne({
+      userId: userExists._id,
     });
 
     switch (body.resource_type) {
@@ -189,6 +196,51 @@ class WebHookController extends BaseController {
                 },
               }
             );
+
+            if (userBankInfo) {
+              const parentChildDetails = await UserService.getParentChildInfo(
+                userExists._id
+              );
+
+              const accountIdDetails =
+                userExists.type == EUserType.PARENT && parentChildDetails
+                  ? await parentChildDetails.teens.find(
+                      (x: any) =>
+                        x.childId.toString() ==
+                        parentChildDetails.firstChildId.toString()
+                    )
+                  : parentChildDetails.accountId;
+
+              /**
+               * difference of 72 hours
+               */
+              const current = moment().unix();
+              const difference = Math.ceil(
+                moment
+                  .duration(
+                    moment
+                      .unix(current)
+                      .diff(moment.unix(parentChildDetails.unlockRewardTime))
+                  )
+                  .asMinutes()
+              );
+
+              if (Math.abs(difference) <= 4320) {
+                if (
+                  admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+                  parentChildDetails &&
+                  parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+                ) {
+                  await TradingService.internalTransfer(
+                    parentChildDetails,
+                    jwtToken,
+                    accountIdDetails,
+                    userExists.type,
+                    admin
+                  );
+                }
+              }
+            }
             /**
              * Update the status to zoho crm
              */
@@ -335,6 +387,53 @@ class WebHookController extends BaseController {
                   },
                 }
               );
+
+              if (userBankInfo) {
+                const parentChildDetails = await UserService.getParentChildInfo(
+                  userExists._id
+                );
+
+                const accountIdDetails =
+                  userExists.type == EUserType.PARENT && parentChildDetails
+                    ? await parentChildDetails.teens.find(
+                        (x: any) =>
+                          x.childId.toString() ==
+                          parentChildDetails.firstChildId.toString()
+                      )
+                    : parentChildDetails.accountId;
+
+                /**
+                 * difference of 72 hours
+                 */
+                const current = moment().unix();
+                const difference = Math.ceil(
+                  moment
+                    .duration(
+                      moment
+                        .unix(current)
+                        .diff(moment.unix(parentChildDetails.unlockRewardTime))
+                    )
+                    .asMinutes()
+                );
+
+                if (Math.abs(difference) <= 4320) {
+                  if (
+                    admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+                    parentChildDetails &&
+                    parentChildDetails.isGiftedCrypto ==
+                      EGIFTSTACKCOINSSETTING.ON
+                  ) {
+                    await TradingService.internalTransfer(
+                      parentChildDetails,
+                      jwtToken,
+                      accountIdDetails,
+                      userExists.type,
+                      admin
+                    );
+                  }
+                }
+              }
+
               /**
                * Update the status to zoho crm
                */
