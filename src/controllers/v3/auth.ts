@@ -231,15 +231,28 @@ class AuthController extends BaseController {
           }
 
           let checkChildMobileAlreadyExists = await UserTable.findOne({
-            mobile: childMobile
-          })
+            mobile: childMobile,
+          });
 
-          if(checkChildMobileAlreadyExists && checkChildMobileAlreadyExists.type != EUserType.TEEN) {
-            return this.BadRequest(ctx, "The mobile no. already belongs to a parent");
+          if (
+            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.type != EUserType.TEEN
+          ) {
+            return this.BadRequest(
+              ctx,
+              "The mobile no. already belongs to a parent"
+            );
           }
 
-          if(checkChildMobileAlreadyExists && checkChildMobileAlreadyExists.type == EUserType.TEEN && checkChildMobileAlreadyExists.parentMobile !== mobile) {
-            return this.BadRequest(ctx, "The mobile is already linked to another parent");
+          if (
+            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.type == EUserType.TEEN &&
+            checkChildMobileAlreadyExists.parentMobile !== mobile
+          ) {
+            return this.BadRequest(
+              ctx,
+              "The mobile is already linked to another parent"
+            );
           }
 
           /**

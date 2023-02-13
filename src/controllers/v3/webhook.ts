@@ -2,7 +2,7 @@ import { UserBanksTable } from "./../../model/userBanks";
 import { UserReferralTable } from "../../model/user-referral";
 import moment from "moment";
 import envData from "../../config/index";
-import {  PrimeTrustJWT } from "../../middleware";
+import { PrimeTrustJWT } from "../../middleware";
 import {
   AdminTable,
   ParentChildTable,
@@ -28,7 +28,6 @@ import {
   Route,
 } from "../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 import { TradingService, UserService } from "../../services/v3/index";
 
@@ -209,21 +208,26 @@ class WebHookController extends BaseController {
                * difference of 72 hours
                */
               const current = moment().unix();
-              const difference = Math.ceil(
-                moment
-                  .duration(
-                    moment
-                      .unix(current)
-                      .diff(moment.unix(parentChildDetails.unlockRewardTime))
-                  )
-                  .asMinutes()
-              );
+              const difference =
+                parentChildDetails &&
+                parentChildDetails.unlockRewardTime &&
+                Math.ceil(
+                  moment
+                    .duration(
+                      moment
+                        .unix(current)
+                        .diff(moment.unix(parentChildDetails.unlockRewardTime))
+                    )
+                    .asMinutes()
+                );
 
               if (Math.abs(difference) <= 4320) {
                 if (
                   admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
                   parentChildDetails &&
-                  parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+                  parentChildDetails.isGiftedCrypto ==
+                    EGIFTSTACKCOINSSETTING.ON &&
+                  parentChildDetails.unlockRewardTime
                 ) {
                   await TradingService.internalTransfer(
                     parentChildDetails,
@@ -400,22 +404,28 @@ class WebHookController extends BaseController {
                  * difference of 72 hours
                  */
                 const current = moment().unix();
-                const difference = Math.ceil(
-                  moment
-                    .duration(
-                      moment
-                        .unix(current)
-                        .diff(moment.unix(parentChildDetails.unlockRewardTime))
-                    )
-                    .asMinutes()
-                );
+                const difference =
+                  parentChildDetails &&
+                  parentChildDetails.unlockRewardTime &&
+                  Math.ceil(
+                    moment
+                      .duration(
+                        moment
+                          .unix(current)
+                          .diff(
+                            moment.unix(parentChildDetails.unlockRewardTime)
+                          )
+                      )
+                      .asMinutes()
+                  );
 
                 if (Math.abs(difference) <= 4320) {
                   if (
                     admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
                     parentChildDetails &&
                     parentChildDetails.isGiftedCrypto ==
-                      EGIFTSTACKCOINSSETTING.ON
+                      EGIFTSTACKCOINSSETTING.ON &&
+                    parentChildDetails.unlockRewardTime
                   ) {
                     await TradingService.internalTransfer(
                       parentChildDetails,

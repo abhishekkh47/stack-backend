@@ -108,21 +108,26 @@ class TradingController extends BaseController {
              * difference of 72 hours
              */
             const current = moment().unix();
-            const difference = Math.ceil(
-              moment
-                .duration(
-                  moment
-                    .unix(current)
-                    .diff(moment.unix(parentChildDetails.unlockRewardTime))
-                )
-                .asMinutes()
-            );
+            const difference =
+              parentChildDetails &&
+              parentChildDetails.unlockRewardTime &&
+              Math.ceil(
+                moment
+                  .duration(
+                    moment
+                      .unix(current)
+                      .diff(moment.unix(parentChildDetails.unlockRewardTime))
+                  )
+                  .asMinutes()
+              );
 
             if (Math.abs(difference) <= 4320) {
               if (
                 admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
                 parentChildDetails &&
-                parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+                parentChildDetails.isGiftedCrypto ==
+                  EGIFTSTACKCOINSSETTING.ON &&
+                parentChildDetails.unlockRewardTime
               ) {
                 await TradingService.internalTransfer(
                   parentChildDetails,
