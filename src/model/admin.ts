@@ -33,6 +33,10 @@ const schema = new mongoose.Schema<IAdminSchema>(
       isIn: [0, 1],
       default: 0,
     },
+    rewardHours: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+    },
   },
   { timestamps: true }
 );

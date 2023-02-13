@@ -8,8 +8,10 @@ export interface IUser extends IAccount {
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
   isParentFirst: boolean;
+  isEnteredParentNumber: boolean;
   quizCoins: number;
   isNotificationOn: number;
+  unlockRewardTime: string;
   isPhoneVerified: number;
 }
 
@@ -48,6 +50,7 @@ export interface IAccount {
 export interface IAdmin extends IUser {
   jwtToken: string;
   username: string;
+  rewardHours: number;
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;

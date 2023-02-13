@@ -33,7 +33,7 @@ import {
 import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
-import UserController from "../v2/user";
+import UserController from "../v3/user";
 import { UserDBService, TransactionDBService } from "../../services/v2";
 
 class AuthController extends BaseController {
@@ -230,6 +230,31 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "User not found");
           }
 
+          let checkChildMobileAlreadyExists = await UserTable.findOne({
+            mobile: childMobile,
+          });
+
+          if (
+            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.type != EUserType.TEEN
+          ) {
+            return this.BadRequest(
+              ctx,
+              "The mobile no. already belongs to a parent"
+            );
+          }
+
+          if (
+            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.type == EUserType.TEEN &&
+            checkChildMobileAlreadyExists.parentMobile !== mobile
+          ) {
+            return this.BadRequest(
+              ctx,
+              "The mobile is already linked to another parent"
+            );
+          }
+
           /**
            * migrate parent from userdraft to user table
            */
@@ -418,9 +443,39 @@ class AuthController extends BaseController {
       {
         $set: {
           parentMobile: ctx.request.body.parentMobile,
+          isEnteredParentNumber: true,
         },
       }
     );
+    /**
+     * check if parent exists then parent have firstChild, then link secondTeen to parent
+     * Else only update the mobile number of parent to that teen
+     */
+    if (checkParentExists) {
+      const parentChild: any = await ParentChildTable.findOne({
+        userId: checkParentExists._id,
+      });
+      if (parentChild) {
+        const checkteenExists = parentChild.teens.find(
+          (x) => x.childId.toString() === ctx.request.user._id.toString()
+        );
+        if (!checkteenExists && parentChild.teens.length >= 1) {
+          const abc = await ParentChildTable.findOneAndUpdate(
+            { userId: checkParentExists._id },
+            {
+              $push: {
+                teens: {
+                  childId: ctx.request.user._id,
+                  accountId: null,
+                  accountNumber: null,
+                  pushTransferId: null,
+                },
+              },
+            }
+          );
+        }
+      }
+    }
 
     return this.Ok(
       ctx,
@@ -543,14 +598,12 @@ class AuthController extends BaseController {
                 deviceToken
               );
             }
-
             return this.Ok(ctx, {
               token,
               refreshToken,
               profileData: getProfileInput.body.data,
               message: "Success",
               accountCreated: accountCreated,
-              isUserExist: userExists ? true : false,
             });
           } catch (error) {
             return this.BadRequest(ctx, error.message);

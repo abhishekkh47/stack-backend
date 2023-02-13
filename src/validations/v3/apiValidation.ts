@@ -52,4 +52,17 @@ export const validationsV3 = {
     }
     return callback(true);
   },
+  unlockRewardValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      action: Joi.number().valid(1, 2).required(), // 1 - unlock and 2 - no thanks
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("unlockReward", error))
+      );
+    }
+    return callback(true);
+  },
 };

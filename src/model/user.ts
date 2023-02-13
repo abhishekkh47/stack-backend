@@ -63,6 +63,10 @@ const schema = new mongoose.Schema<IUserSchema>(
     cipCleared: { type: mongoose.Schema.Types.Boolean, default: false },
     amlCleared: { type: mongoose.Schema.Types.Boolean, default: false },
     identityConfirmed: { type: mongoose.Schema.Types.Boolean, default: false },
+    unlockRewardTime: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     stateId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
@@ -158,6 +162,10 @@ const schema = new mongoose.Schema<IUserSchema>(
     selectedDepositDate: {
       type: mongoose.Schema.Types.Date,
       default: null,
+    },
+    isEnteredParentNumber: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
     },
   },
   { timestamps: true }

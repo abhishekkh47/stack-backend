@@ -1,11 +1,8 @@
 import { UserBanksTable } from "./../../model/userBanks";
 import { UserReferralTable } from "../../model/user-referral";
-import { json } from "co-body";
-import fs from "fs";
 import moment from "moment";
-import path from "path";
 import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import { PrimeTrustJWT } from "../../middleware";
 import {
   AdminTable,
   ParentChildTable,
@@ -14,7 +11,6 @@ import {
   WebhookTable,
 } from "../../model";
 import {
-  AuthService,
   DeviceTokenService,
   userService,
   zohoCrmService,
@@ -27,15 +23,13 @@ import {
   HttpMethod,
 } from "../../types";
 import {
-  checkValidBase64String,
   createAccount,
   getAccountStatusByAccountId,
   Route,
-  uploadFilesFetch,
 } from "../../utility";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
+import { TradingService, UserService } from "../../services/v3/index";
 
 class WebHookController extends BaseController {
   /**
@@ -48,6 +42,7 @@ class WebHookController extends BaseController {
   public async getWebhookData(ctx: any) {
     console.log(`++++++START WEBHOOK DATA+++++++++`);
     let body: any = ctx.request.body;
+    const jwtToken = ctx.request.primeTrustToken;
     let admin = await AdminTable.findOne({});
     await WebhookTable.create({
       title: body.resource_type,
@@ -95,6 +90,10 @@ class WebHookController extends BaseController {
 
     let getReferralSenderId = await UserReferralTable.findOne({
       "referralArray.referredId": { $in: arrayForReferral },
+    });
+
+    const userBankInfo = await UserBanksTable.findOne({
+      userId: userExists._id,
     });
 
     switch (body.resource_type) {
@@ -191,6 +190,47 @@ class WebHookController extends BaseController {
               }
             );
 
+            if (userBankInfo) {
+              const parentChildDetails = await UserService.getParentChildInfo(
+                userExists._id
+              );
+
+              const accountIdDetails =
+                userExists.type == EUserType.PARENT && parentChildDetails
+                  ? await parentChildDetails.teens.find(
+                      (x: any) =>
+                        x.childId.toString() ==
+                        parentChildDetails.firstChildId.toString()
+                    )
+                  : parentChildDetails.accountId;
+
+              /**
+               * difference of 72 hours
+               */
+              const current = moment().unix();
+
+              if (
+                parentChildDetails &&
+                parentChildDetails.unlockRewardTime &&
+                current <= parentChildDetails.unlockRewardTime
+              ) {
+                if (
+                  admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+                  parentChildDetails &&
+                  parentChildDetails.isGiftedCrypto ==
+                    EGIFTSTACKCOINSSETTING.ON &&
+                  parentChildDetails.unlockRewardTime
+                ) {
+                  await TradingService.internalTransfer(
+                    parentChildDetails,
+                    jwtToken,
+                    accountIdDetails,
+                    userExists.type,
+                    admin
+                  );
+                }
+              }
+            }
             /**
              * Update the status to zoho crm
              */
@@ -337,6 +377,48 @@ class WebHookController extends BaseController {
                   },
                 }
               );
+
+              if (userBankInfo) {
+                const parentChildDetails = await UserService.getParentChildInfo(
+                  userExists._id
+                );
+
+                const accountIdDetails =
+                  userExists.type == EUserType.PARENT && parentChildDetails
+                    ? await parentChildDetails.teens.find(
+                        (x: any) =>
+                          x.childId.toString() ==
+                          parentChildDetails.firstChildId.toString()
+                      )
+                    : parentChildDetails.accountId;
+
+                /**
+                 * difference of 72 hours
+                 */
+                const current = moment().unix();
+
+                if (
+                  parentChildDetails &&
+                  parentChildDetails.unlockRewardTime &&
+                  current <= parentChildDetails.unlockRewardTime
+                ) {
+                  if (
+                    admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+                    parentChildDetails &&
+                    parentChildDetails.isGiftedCrypto ==
+                      EGIFTSTACKCOINSSETTING.ON &&
+                    parentChildDetails.unlockRewardTime
+                  ) {
+                    await TradingService.internalTransfer(
+                      parentChildDetails,
+                      jwtToken,
+                      accountIdDetails,
+                      userExists.type,
+                      admin
+                    );
+                  }
+                }
+              }
 
               /**
                * Update the status to zoho crm
@@ -595,295 +677,6 @@ class WebHookController extends BaseController {
     }
     console.log(`++++++END WEBHOOK DATA+++++++++`);
     return this.Ok(ctx, { message: "Success" });
-  }
-
-  /**
-   * @description This method is update the error related information in prime trust as well as our database
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/update-primetrust-data",
-    method: HttpMethod.POST,
-  })
-  @Auth()
-  @PrimeTrustJWT()
-  public async changeDataIntoPrimeTrust(ctx: any) {
-    const body = await json(ctx, { limit: "150mb" });
-    if (!Object.keys(body).length)
-      return this.BadRequest(ctx, "Invalid Request.");
-
-    const input = body;
-
-    if (input["primary-address"]) {
-      input["primary-address"] = JSON.parse(input["primary-address"]);
-    } else {
-      input["primary-address"] = {};
-    }
-
-    return validation.changePrimeTrustValidation(
-      input,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          const jwtToken = ctx.request.primeTrustToken;
-          const user = ctx.request.user;
-
-          /**
-           * Validations to be done
-           */
-          const userExists: any = await UserTable.findOne({
-            _id: user._id,
-          }).populate("stateId", ["name", "shortName"]);
-          if (!userExists || userExists.type == EUserType.TEEN) {
-            return this.BadRequest(ctx, "User Not Found");
-          }
-          const parentChildExists = await ParentChildTable.findOne({
-            userId: user._id,
-          });
-          if (!parentChildExists) {
-            return this.BadRequest(ctx, "User Not Found");
-          }
-          let existingStatus = (
-            await UserTable.findOne(
-              { _id: ctx.request.user._id },
-              { status: 1, _id: 0 }
-            )
-          ).status;
-          if (
-            existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED ||
-            existingStatus === EUSERSTATUS.KYC_DOCUMENT_UPLOAD
-          )
-            return this.BadRequest(
-              ctx,
-              existingStatus === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-                ? "User already verified."
-                : "User's data already uploaded."
-            );
-
-          let successResponse: any = {};
-
-          // in case of proof of address file upload
-          if (input.media) {
-            let validBase64 = checkValidBase64String(input.media);
-            if (!validBase64)
-              return this.BadRequest(ctx, "Please enter valid image");
-            const extension =
-              input.media && input.media !== ""
-                ? input.media.split(";")[0].split("/")[1]
-                : "";
-            const imageName =
-              input.media && input.media !== ""
-                ? `address_proof_front_${moment().unix()}.${extension}`
-                : "";
-            const imageExtArr = ["jpg", "jpeg", "png"];
-            if (imageName && !imageExtArr.includes(extension))
-              return this.BadRequest(ctx, "Please add valid extension");
-
-            const decodedImage = Buffer.from(
-              input.media.replace(/^data:image\/\w+;base64,/, ""),
-              "base64"
-            );
-
-            if (!fs.existsSync(path.join(__dirname, "../../../uploads")))
-              fs.mkdirSync(path.join(__dirname, "../../../uploads"));
-            fs.writeFileSync(
-              path.join(__dirname, "../../../uploads", imageName),
-              decodedImage,
-              "base64"
-            );
-            const accountIdDetails: any =
-              userExists.type === EUserType.SELF
-                ? parentChildExists
-                : await parentChildExists.teens.find(
-                    (x: any) =>
-                      x.childId.toString() ==
-                      parentChildExists.firstChildId.toString()
-                  );
-            if (!accountIdDetails) {
-              return this.BadRequest(ctx, "Account Details Not Found");
-            }
-            const fullName = userExists.firstName + " " + userExists.lastName;
-
-            let addressDocumentId = null;
-            let uploadFileError = null;
-            let uploadData = {
-              "contact-id": parentChildExists.contactId,
-              description: "Proof of Address",
-              label: "Proof of Address",
-              public: "true",
-              file: fs.createReadStream(
-                path.join(__dirname, "../../../uploads", imageName)
-              ),
-            };
-            let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-            if (uploadFile.status == 400) uploadFileError = uploadFile.message;
-            if (
-              uploadFile.status == 200 &&
-              uploadFile.message.errors != undefined
-            )
-              uploadFileError = uploadFile.message;
-            if (uploadFileError) return this.BadRequest(ctx, uploadFileError);
-
-            addressDocumentId = uploadFile.message.data.id;
-            /**
-             * Updating the info in parent child table
-             */
-            await ParentChildTable.updateOne(
-              {
-                userId: user._id,
-                "teens.childId": parentChildExists.firstChildId,
-              },
-              {
-                $set: {
-                  proofOfAddressId: addressDocumentId,
-                },
-              }
-            );
-            successResponse.uploadAddressProofReponse = {
-              message:
-                "Your documents are uploaded successfully. We are currently verifying your documents. Please wait for 24 hours.",
-            };
-          }
-
-          // in case of driving license file upload
-          if (input.id_proof_front && input.id_proof_back) {
-            let validBase64Front = await checkValidBase64String(
-              input.id_proof_front
-            );
-            if (!validBase64Front) {
-              return this.BadRequest(ctx, "Please enter valid front image");
-            }
-            let validBase64Back = await checkValidBase64String(
-              input.id_proof_back
-            );
-            if (!validBase64Back) {
-              return this.BadRequest(ctx, "Please enter valid back image");
-            }
-            let files = [
-              { id_proof_front: input.id_proof_front },
-              { id_proof_back: input.id_proof_back },
-            ];
-            /**
-             * Upload image front and back accordingly
-             */
-            let validExtensionExists = false;
-            let newArrayFiles = [];
-            for await (let identificationFile of files) {
-              const extension =
-                identificationFile.id_proof_front &&
-                identificationFile.id_proof_front !== ""
-                  ? identificationFile.id_proof_front
-                      .split(";")[0]
-                      .split("/")[1]
-                  : identificationFile.id_proof_back &&
-                    identificationFile.id_proof_back !== ""
-                  ? identificationFile.id_proof_back.split(";")[0].split("/")[1]
-                  : "";
-              const imageName =
-                identificationFile.id_proof_front &&
-                identificationFile.id_proof_front !== ""
-                  ? `id_proof_front_${moment().unix()}.${extension}`
-                  : `id_proof_back_${moment().unix()}.${extension}`;
-              const imageExtArr = ["jpg", "jpeg", "png"];
-              if (imageName && !imageExtArr.includes(extension)) {
-                validExtensionExists = true;
-                break;
-              }
-              const decodedImage = Buffer.from(
-                identificationFile.id_proof_front
-                  ? identificationFile.id_proof_front.replace(
-                      /^data:image\/\w+;base64,/,
-                      ""
-                    )
-                  : identificationFile.id_proof_back.replace(
-                      /^data:image\/\w+;base64,/,
-                      ""
-                    ),
-                "base64"
-              );
-              if (!fs.existsSync(path.join(__dirname, "../../../uploads"))) {
-                fs.mkdirSync(path.join(__dirname, "../../../uploads"));
-              }
-              fs.writeFileSync(
-                path.join(__dirname, "../../../uploads", imageName),
-                decodedImage,
-                "base64"
-              );
-              newArrayFiles.push({
-                fieldname: identificationFile.id_proof_front
-                  ? "id_proof_front"
-                  : "id_proof_back",
-                filename: imageName,
-              });
-            }
-            if (validExtensionExists) {
-              return this.BadRequest(ctx, "Please add valid extension");
-            }
-            /**
-             * Upload both file
-             */
-            let frontDocumentId = null;
-            let backDocumentId = null;
-            let uploadFileError = null;
-            for await (let fileData of newArrayFiles) {
-              let uploadData = {
-                "contact-id": parentChildExists.contactId,
-                description:
-                  fileData.fieldname == "id_proof_front"
-                    ? "Front Side Driving License"
-                    : "Back Side Driving License",
-                label:
-                  fileData.fieldname == "id_proof_back"
-                    ? "Front Side Driving License"
-                    : "Back Side Driving License",
-                public: "true",
-                file: fs.createReadStream(
-                  path.join(__dirname, "../../../uploads", fileData.filename)
-                ),
-              };
-              let uploadFile: any = await uploadFilesFetch(
-                jwtToken,
-                uploadData
-              );
-              if (uploadFile.status == 400) {
-                uploadFileError = uploadFile.message;
-                break;
-              }
-              if (
-                uploadFile.status == 200 &&
-                uploadFile.message.errors != undefined
-              ) {
-                uploadFileError = uploadFile.message;
-                break;
-              }
-              fileData.fieldname == "id_proof_front"
-                ? (frontDocumentId = uploadFile.message.data.id)
-                : (backDocumentId = uploadFile.message.data.id);
-            }
-            if (uploadFileError) {
-              return this.BadRequest(ctx, uploadFileError);
-            }
-
-            await AuthService.updateKycDocumentChecks(
-              parentChildExists,
-              jwtToken,
-              frontDocumentId,
-              backDocumentId,
-              userExists
-            );
-          }
-
-          await AuthService.updatePrimeTrustData(
-            input,
-            userExists,
-            ctx.request.primeTrustToken
-          );
-
-          return this.Ok(ctx, { message: "Info updated successfully." });
-        }
-      }
-    );
   }
 }
 
