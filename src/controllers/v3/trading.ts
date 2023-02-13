@@ -263,7 +263,7 @@ class TradingController extends BaseController {
             status: ETransactionStatus.GIFTED,
           });
           let isUnlockRewardTimeExpired = false;
-          if (checkTransactionExistsAlready && isTeen) {
+          if (checkTransactionExistsAlready && isTeen && childExists.unlockRewardTime) {
             const current = moment().unix();
             const difference = Math.ceil(
               moment
