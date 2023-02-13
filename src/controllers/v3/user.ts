@@ -110,16 +110,20 @@ class UserController extends BaseController {
       const parentChildDetails = await UserService.getParentChildInfo(
         userExists._id
       );
-      const checkParentInfo = await UserTable.findOne({
-        _id: parentChildDetails.userId,
-      });
+      const checkParentInfo =
+        parentChildDetails &&
+        (await UserTable.findOne({
+          _id: parentChildDetails.userId,
+        }));
 
-      const checkParentBankExists = await UserBanksTable.findOne({
-        $or: [
-          { userId: parentChildDetails.userId },
-          { parentId: parentChildDetails.userId },
-        ],
-      });
+      const checkParentBankExists =
+        parentChildDetails &&
+        (await UserBanksTable.findOne({
+          $or: [
+            { userId: parentChildDetails.userId },
+            { parentId: parentChildDetails.userId },
+          ],
+        }));
       if (
         admin.giftCryptoSetting == 1 &&
         userExists.isGiftedCrypto == 0 &&
