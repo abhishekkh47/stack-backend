@@ -2,17 +2,10 @@ import { TradingService } from "../../services/v3/index";
 import { EGIFTSTACKCOINSSETTING } from "./../../types/user";
 import moment from "moment";
 import BaseController from "../base";
-import {
-  ETransactionStatus,
-  ETransactionType,
-  EUSERSTATUS,
-  EUserType,
-  HttpMethod,
-} from "../../types";
+import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
 import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
-  ParentChildTable,
   UserTable,
   TransactionTable,
   UserBanksTable,
@@ -159,11 +152,16 @@ class UserController extends BaseController {
          */
         const current = moment().unix();
 
-        if (current <= parentChildDetails.unlockRewardTime) {
+        if (
+          parentChildDetails &&
+          parentChildDetails.unlockRewardTime &&
+          current <= parentChildDetails.unlockRewardTime
+        ) {
           if (
             admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
             parentChildDetails &&
-            parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON
+            parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON &&
+            parentChildDetails.unlockRewardTime
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             await TransactionDBService.createBtcGiftedTransaction(

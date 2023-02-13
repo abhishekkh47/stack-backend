@@ -22,14 +22,12 @@ import {
   DeviceTokenService,
   PortfolioService,
   tradingService,
-  userService,
   zohoCrmService,
   TradingDBService,
 } from "../../services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
-  ERECURRING,
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
