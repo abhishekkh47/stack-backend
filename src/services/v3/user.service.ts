@@ -115,6 +115,8 @@ class UserService {
             },
             referralCode: 1,
             unlockRewardTime: 1,
+            isGiftedCrypto: 1,
+            isEnteredParentNumber: 1,
             screenStatus: 1,
             city: 1,
             postalCode: 1,

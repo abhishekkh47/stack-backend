@@ -798,7 +798,7 @@ class TradingController extends BaseController {
       const parentDetails = await ParentChildTable.findOne({
         "teens.childId": userExists._id,
       });
-      id = parentDetails.userId;
+      id = parentDetails ? parentDetails.userId : userExists._id;
     }
     let userBankExists = await UserBanksTable.findOne({
       userId: id,

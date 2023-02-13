@@ -163,6 +163,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Date,
       default: null,
     },
+    isEnteredParentNumber: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

@@ -21,6 +21,11 @@ const schema = new mongoose.Schema<IQuizResultSchema>(
       ref: "quiz",
       required: true,
     },
+    isOnBoardingQuiz: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+      required: true,
+    },
     pointsEarned: {
       type: mongoose.Schema.Types.Number,
       required: true,
