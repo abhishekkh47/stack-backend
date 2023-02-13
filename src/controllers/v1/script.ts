@@ -596,9 +596,9 @@ class ScriptController extends BaseController {
    */
   @Route({ path: "/add-onboarding-quiz", method: HttpMethod.POST })
   public async addOnboardingQuiz(ctx: any) {
-    const  reqParam  = ctx.request.body;
-    await QuizQuestionTable.insertMany(reqParam.onboardingQuizData)
-    return this.Ok(ctx, {quizData: reqParam.onboardingQuizData});
+    const reqParam = ctx.request.body;
+    await QuizQuestionTable.insertMany(reqParam.onboardingQuizData);
+    return this.Ok(ctx, { quizData: reqParam.onboardingQuizData });
   }
   /*
    * @description This method is used to unset fields in db
@@ -647,6 +647,51 @@ class ScriptController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Fields removed successfully" });
+  }
+
+  /**
+   * @description This script is used to delete the data for self users and false entries in userdraft
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/delete-userdraft-self-data", method: HttpMethod.DELETE })
+  public async deleteUserdraftSelfData(ctx: any) {
+    const deleteDataQuery = {
+      $or: [{ type: { $in: [null, 3] } }, { email: null }, { dob: null }],
+    };
+    const getUserData = await UserDraftTable.aggregate([
+      {
+        $match: deleteDataQuery,
+      },
+    ]);
+
+    await UserDraftTable.deleteMany(deleteDataQuery);
+    return this.Ok(ctx, { data: getUserData });
+  }
+
+  /**
+   * @description script to migrate valid data from userdraft to user table
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/migrate-userdraft-to-users", method: HttpMethod.POST })
+  public async migrateUserdraftDataToUsers(ctx: any) {
+    const getAllUserdraftData = await UserDraftTable.find({});
+
+    const getDataToMigrate = getAllUserdraftData.map((user) => {
+      return {
+        email: user?.email,
+        type: user?.type,
+        dob: user?.dob,
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        isPhoneVerified: user?.isPhoneVerified,
+        mobile: user?.mobile ? user.mobile : null,
+      };
+    });
+
+    console.log("getDataToMigrate", getDataToMigrate);
+    return this.Ok(ctx, { data: getAllUserdraftData });
   }
 }
 
