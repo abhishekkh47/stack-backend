@@ -47,6 +47,7 @@ export interface IAccount {
 
 export interface IAdmin extends IUser {
   jwtToken: string;
+  username: string;
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;
