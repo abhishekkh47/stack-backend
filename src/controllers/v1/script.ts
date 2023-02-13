@@ -5,7 +5,6 @@ import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
-  PRIMETRUSTAPIS,
 } from "./../../utility/constants";
 import moment from "moment";
 import { PrimeTrustJWT } from "../../middleware";
@@ -40,7 +39,6 @@ import {
   Route,
 } from "../../utility";
 import BaseController from ".././base";
-import { ObjectId } from "mongodb";
 import {
   UserDBService,
   zohoCrmService,
@@ -674,23 +672,78 @@ class ScriptController extends BaseController {
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/migrate-userdraft-to-users", method: HttpMethod.POST })
+  @Route({
+    path: "/migrate-teen-from-userdraft-to-users",
+    method: HttpMethod.POST,
+  })
   public async migrateUserdraftDataToUsers(ctx: any) {
-    const getAllUserdraftData = await UserDraftTable.find({});
-
-    const getDataToMigrate = getAllUserdraftData.map((user) => {
-      return {
-        email: user?.email,
-        type: user?.type,
-        dob: user?.dob,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        isPhoneVerified: user?.isPhoneVerified,
-        mobile: user?.mobile ? user.mobile : null,
-      };
+    const getAllUserdraftData = await UserDraftTable.find({
+      type: EUserType.TEEN,
     });
 
-    console.log("getDataToMigrate", getDataToMigrate);
+    const getDataToMigrateOrUpdate = await Promise.all(
+      getAllUserdraftData.map(async (user) => {
+        const checkUserAlreadyExists: any = await UserTable.findOne({
+          $or: [
+            {
+              mobile: user?.mobile,
+            },
+          ],
+        });
+
+        if (
+          checkUserAlreadyExists &&
+          checkUserAlreadyExists.email == null &&
+          checkUserAlreadyExists.mobile == user.mobile
+        ) {
+          return {
+            dataToUpdate: {
+              email: user?.email,
+              mobile: user?.mobile ? user.mobile : null,
+            },
+          };
+        } else if (!checkUserAlreadyExists) {
+          return {
+            dataToInsert: {
+              email: user?.email,
+              type: user?.type,
+              dob: user?.dob,
+              firstName: user?.firstName,
+              lastName: user?.lastName,
+              isPhoneVerified: user?.isPhoneVerified,
+              mobile: user?.mobile ? user.mobile : null,
+            },
+          };
+        }
+      })
+    );
+
+    const dataToUpdate = getDataToMigrateOrUpdate
+      .map((item) => item.dataToUpdate)
+      .filter((i) => i);
+    const dataToInsert = getDataToMigrateOrUpdate
+      .map((item) => item.dataToInsert)
+      .filter((i) => i);
+
+    dataToUpdate.map(async (item) => {
+      await UserTable.updateOne(
+        {
+          mobile: item?.mobile,
+        },
+        {
+          $set: {
+            email: item.email,
+          },
+        }
+      );
+    });
+
+    await UserTable.insertMany(dataToInsert);
+
+    await UserDraftTable.deleteMany({
+      type: EUserType.TEEN,
+    });
+
     return this.Ok(ctx, { data: getAllUserdraftData });
   }
 
