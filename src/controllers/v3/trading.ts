@@ -269,7 +269,6 @@ class TradingController extends BaseController {
               isUnlockRewardTimeExpired = false;
             }
           }
-          console.log(isUnlockRewardTimeExpired, "isUnlockRewardTimeExpired");
 
           const buySellTransactions =
             await tradingDBService.getPortfolioTransactions(
