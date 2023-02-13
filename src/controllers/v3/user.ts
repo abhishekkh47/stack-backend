@@ -14,6 +14,7 @@ import {
 } from "../../model";
 import { CMS_LINKS } from "../../utility/constants";
 import { Route } from "../../utility";
+import { validationsV3 } from "../../validations/v3/apiValidation";
 
 class UserController extends BaseController {
   /**
@@ -188,6 +189,44 @@ class UserController extends BaseController {
       return this.BadRequest(ctx, "Reward Not Claimed");
     } catch (error) {
       console.log("error: ", error);
+      return this.BadRequest(ctx, "Something went wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to view profile for both parent and child
+   * @param ctx
+   */
+  @Route({ path: "/unlock-reward", method: HttpMethod.POST })
+  @Auth()
+  public async unlockReward(ctx: any) {
+    try {
+      const reqParam = ctx.request.body;
+      return validationsV3.unlockRewardValidation(
+        reqParam,
+        ctx,
+        async (validate: boolean) => {
+          if (validate) {
+            let updateQuery = {};
+            /**
+             * action 2 means no thanks and 1 means
+             */
+            if (reqParam.action == 2) {
+              updateQuery = { ...updateQuery, unlockRewardTime: null };
+            } else {
+              updateQuery = { ...updateQuery, isGiftedCrypto: 1 };
+            }
+            await UserTable.updateOne(
+              { _id: ctx.request.user._id },
+              {
+                $set: updateQuery,
+              }
+            );
+            return this.Ok(ctx, { message: "Success" });
+          }
+        }
+      );
+    } catch (error) {
       return this.BadRequest(ctx, "Something went wrong");
     }
   }
