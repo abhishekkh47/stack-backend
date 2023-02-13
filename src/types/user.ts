@@ -50,6 +50,7 @@ export interface IAccount {
 export interface IAdmin extends IUser {
   jwtToken: string;
   username: string;
+  rewardHours: number;
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;

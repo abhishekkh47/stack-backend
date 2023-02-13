@@ -32,7 +32,7 @@ class TransactionDBService {
       {
         $set: {
           isGiftedCrypto: 1,
-          unlockRewardTime: moment().unix(),
+          unlockRewardTime: moment().add(admin.rewardHours, "hours").unix(),
         },
       }
     );

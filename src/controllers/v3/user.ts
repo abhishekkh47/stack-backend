@@ -135,7 +135,10 @@ class UserController extends BaseController {
           crypto,
           admin
         );
-        return this.Ok(ctx, { message: "Reward Claimed Successfully" });
+        return this.Ok(ctx, {
+          message: "Reward Claimed Successfully",
+          data: { rewardHours: admin.rewardHours },
+        });
       } else if (
         checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
         checkParentBankExists &&
@@ -155,17 +158,8 @@ class UserController extends BaseController {
          * difference of 72 hours
          */
         const current = moment().unix();
-        const difference = Math.ceil(
-          moment
-            .duration(
-              moment
-                .unix(current)
-                .diff(moment.unix(parentChildDetails.unlockRewardTime))
-            )
-            .asMinutes()
-        );
 
-        if (Math.abs(difference) <= 4320) {
+        if (current <= parentChildDetails.unlockRewardTime) {
           if (
             admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
             parentChildDetails &&
@@ -188,7 +182,10 @@ class UserController extends BaseController {
           }
         }
 
-        return this.Ok(ctx, { message: "Reward Claimed Successfully" });
+        return this.Ok(ctx, {
+          message: "Reward Claimed Successfully",
+          data: { rewardHours: admin.rewardHours },
+        });
       }
       return this.BadRequest(ctx, "Reward Not Claimed");
     } catch (error) {
