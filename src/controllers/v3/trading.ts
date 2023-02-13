@@ -108,20 +108,12 @@ class TradingController extends BaseController {
              * difference of 72 hours
              */
             const current = moment().unix();
-            const difference =
+
+            if (
               parentChildDetails &&
               parentChildDetails.unlockRewardTime &&
-              Math.ceil(
-                moment
-                  .duration(
-                    moment
-                      .unix(current)
-                      .diff(moment.unix(parentChildDetails.unlockRewardTime))
-                  )
-                  .asMinutes()
-              );
-
-            if (Math.abs(difference) <= 4320) {
+              current <= parentChildDetails.unlockRewardTime
+            ) {
               if (
                 admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
                 parentChildDetails &&
@@ -263,7 +255,11 @@ class TradingController extends BaseController {
             status: ETransactionStatus.GIFTED,
           });
           let isUnlockRewardTimeExpired = false;
-          if (checkTransactionExistsAlready && isTeen && childExists.unlockRewardTime) {
+          if (
+            checkTransactionExistsAlready &&
+            isTeen &&
+            childExists.unlockRewardTime
+          ) {
             const current = moment().unix();
             const difference = Math.ceil(
               moment
@@ -275,7 +271,10 @@ class TradingController extends BaseController {
                 .asMinutes()
             );
 
-            if (Math.abs(difference) > 4320) {
+            if (
+              childExists.unlockRewardTime &&
+              current <= childExists.unlockRewardTime
+            ) {
               isUnlockRewardTimeExpired = true;
             }
           }

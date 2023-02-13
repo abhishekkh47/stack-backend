@@ -208,20 +208,12 @@ class WebHookController extends BaseController {
                * difference of 72 hours
                */
               const current = moment().unix();
-              const difference =
+
+              if (
                 parentChildDetails &&
                 parentChildDetails.unlockRewardTime &&
-                Math.ceil(
-                  moment
-                    .duration(
-                      moment
-                        .unix(current)
-                        .diff(moment.unix(parentChildDetails.unlockRewardTime))
-                    )
-                    .asMinutes()
-                );
-
-              if (Math.abs(difference) <= 4320) {
+                current <= parentChildDetails.unlockRewardTime
+              ) {
                 if (
                   admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
                   parentChildDetails &&
@@ -404,22 +396,12 @@ class WebHookController extends BaseController {
                  * difference of 72 hours
                  */
                 const current = moment().unix();
-                const difference =
+
+                if (
                   parentChildDetails &&
                   parentChildDetails.unlockRewardTime &&
-                  Math.ceil(
-                    moment
-                      .duration(
-                        moment
-                          .unix(current)
-                          .diff(
-                            moment.unix(parentChildDetails.unlockRewardTime)
-                          )
-                      )
-                      .asMinutes()
-                  );
-
-                if (Math.abs(difference) <= 4320) {
+                  current <= parentChildDetails.unlockRewardTime
+                ) {
                   if (
                     admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
                     parentChildDetails &&
