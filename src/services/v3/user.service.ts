@@ -114,7 +114,6 @@ class UserService {
         },
       ]).exec()
     )[0];
-    console.log(data, "data");
 
     if (!data) {
       throw Error("Invalid user ID entered.");

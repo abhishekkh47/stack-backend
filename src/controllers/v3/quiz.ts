@@ -162,7 +162,6 @@ class QuizController extends BaseController {
         firstChildId: userExists._id,
       }).populate("userId", ["_id", "preLoadedCoins"]);
     }
-    console.log(childExists, "childExists");
     const checkQuizExists = await quizService.checkQuizExists({
       $or: [
         { userId: new mongoose.Types.ObjectId(user._id) },

@@ -204,7 +204,6 @@ class UserController extends BaseController {
         data: { rewardHours: userData.unlockRewardTime },
       });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, "Something went wrong");
     }
   }
