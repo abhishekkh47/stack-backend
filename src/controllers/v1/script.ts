@@ -896,9 +896,9 @@ class ScriptController extends BaseController {
       );
     });
 
-    // await UserDraftTable.deleteMany({
-    //   type: EUserType.PARENT
-    // })
+    await UserDraftTable.deleteMany({
+      type: EUserType.PARENT
+    })
 
     return this.Ok(ctx, { data: dataToMigrate });
   }
