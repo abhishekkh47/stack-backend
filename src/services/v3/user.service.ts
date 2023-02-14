@@ -53,22 +53,6 @@ class UserService {
           },
         },
         {
-          $lookup: {
-            from: "quizresults",
-            localField: "_id",
-            foreignField: "userId",
-            as: "quizResults",
-          },
-        },
-        {
-          $lookup: {
-            from: "quizquestions",
-            localField: "quizResults.quizId",
-            foreignField: "quizId",
-            as: "quizQuestions",
-          },
-        },
-        {
           $addFields: {
             isParentApproved: 0,
             initialDeposit: 0,
@@ -78,15 +62,6 @@ class UserService {
                 then: 1,
                 else: 0,
               },
-            },
-            isOnBoardingQuizCompleted: {
-              $cond: [
-                {
-                  $setIsSubset: [[true], "$quizQuestions.isOnboardingFlowQuiz"],
-                },
-                true,
-                false,
-              ],
             },
           },
         },
@@ -124,7 +99,7 @@ class UserService {
             taxIdNo: 1,
             taxState: 1,
             status: 1,
-            isOnBoardingQuizCompleted: 1,
+            isOnboardingQuizCompleted: 1,
             dob: 1,
             profilePicture: 1,
             isRecurring: 1,
@@ -134,6 +109,7 @@ class UserService {
             isPhoneVerified: 1,
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
+            isRewardDeclined: 1,
           },
         },
       ]).exec()
@@ -173,6 +149,7 @@ class UserService {
           unlockRewardTime: "$childInfo.unlockRewardTime",
           childId: "$childInfo._id",
           isGiftedCrypto: "$childInfo.isGiftedCrypto",
+          isRewardDeclined: "$childInfo.isRewardDeclined",
         },
       },
       {
@@ -182,6 +159,7 @@ class UserService {
           firstChildId: 1,
           accountId: 1,
           unlockRewardTime: 1,
+          isRewardDeclined: 1,
           childId: 1,
           isGiftedCrypto: 1,
         },

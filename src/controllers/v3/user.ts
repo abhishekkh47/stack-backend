@@ -2,7 +2,12 @@ import { TradingService } from "../../services/v3/index";
 import { EGIFTSTACKCOINSSETTING } from "./../../types/user";
 import moment from "moment";
 import BaseController from "../base";
-import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
+import {
+  ETransactionStatus,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+} from "../../types";
 import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
@@ -82,10 +87,10 @@ class UserController extends BaseController {
    * @description This method is used to view profile for both parent and child
    * @param ctx
    */
-  @Route({ path: "/claim-reward", method: HttpMethod.POST })
+  @Route({ path: "/start-reward-timer", method: HttpMethod.POST })
   @Auth()
   @PrimeTrustJWT(true)
-  public async claimYourReward(ctx: any) {
+  public async startRewardTimer(ctx: any) {
     try {
       const user = ctx.request.user;
       const admin = await AdminTable.findOne({});
@@ -129,12 +134,8 @@ class UserController extends BaseController {
           crypto,
           admin
         );
-        const userData = await UserTable.findOne({ _id: userExists._id });
-        return this.Ok(ctx, {
-          message: "Reward Claimed Successfully",
-          data: { rewardHours: userData.unlockRewardTime },
-        });
       } else if (
+        checkParentInfo &&
         checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
         checkParentBankExists &&
         admin.giftCryptoSetting == 1 &&
@@ -187,10 +188,22 @@ class UserController extends BaseController {
           message: "Reward Claimed Successfully",
           data: { rewardHours: userData.unlockRewardTime },
         });
+      } else if (transactionExists) {
+        await UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          {
+            $set: {
+              unlockRewardTime: moment().add(admin.rewardHours, "hours").unix(),
+            },
+          }
+        );
       }
-      return this.BadRequest(ctx, "Reward Not Claimed");
+      const userData = await UserTable.findOne({ _id: userExists._id });
+      return this.Ok(ctx, {
+        message: "Reward Claimed Successfully",
+        data: { rewardHours: userData.unlockRewardTime },
+      });
     } catch (error) {
-      console.log("error: ", error);
       return this.BadRequest(ctx, "Something went wrong");
     }
   }
@@ -214,7 +227,11 @@ class UserController extends BaseController {
              * action 2 means no thanks and 1 means
              */
             if (reqParam.action == 2) {
-              updateQuery = { ...updateQuery, unlockRewardTime: null };
+              updateQuery = { ...updateQuery, isRewardDeclined: true };
+              await TransactionTable.deleteOne({
+                userId: ctx.request.user._id,
+                status: ETransactionStatus.GIFTED,
+              });
             } else {
               updateQuery = { ...updateQuery, isGiftedCrypto: 1 };
             }

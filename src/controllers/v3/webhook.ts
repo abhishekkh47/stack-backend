@@ -212,6 +212,7 @@ class WebHookController extends BaseController {
               if (
                 parentChildDetails &&
                 parentChildDetails.unlockRewardTime &&
+                parentChildDetails.isRewardDeclined == false &&
                 current <= parentChildDetails.unlockRewardTime
               ) {
                 if (

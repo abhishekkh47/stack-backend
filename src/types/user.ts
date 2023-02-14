@@ -13,6 +13,8 @@ export interface IUser extends IAccount {
   isNotificationOn: number;
   unlockRewardTime: string;
   isPhoneVerified: number;
+  isRewardDeclined: boolean;
+  isOnboardingQuizCompleted: boolean;
 }
 
 export interface IAccount {
