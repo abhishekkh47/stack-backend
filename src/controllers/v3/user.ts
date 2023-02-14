@@ -82,10 +82,10 @@ class UserController extends BaseController {
    * @description This method is used to view profile for both parent and child
    * @param ctx
    */
-  @Route({ path: "/claim-reward", method: HttpMethod.POST })
+  @Route({ path: "/start-reward-timer", method: HttpMethod.POST })
   @Auth()
   @PrimeTrustJWT(true)
-  public async claimYourReward(ctx: any) {
+  public async startRewardTimer(ctx: any) {
     try {
       const user = ctx.request.user;
       const admin = await AdminTable.findOne({});
@@ -129,12 +129,8 @@ class UserController extends BaseController {
           crypto,
           admin
         );
-        const userData = await UserTable.findOne({ _id: userExists._id });
-        return this.Ok(ctx, {
-          message: "Reward Claimed Successfully",
-          data: { rewardHours: userData.unlockRewardTime },
-        });
       } else if (
+        checkParentInfo &&
         checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
         checkParentBankExists &&
         admin.giftCryptoSetting == 1 &&
@@ -187,7 +183,21 @@ class UserController extends BaseController {
           message: "Reward Claimed Successfully",
           data: { rewardHours: userData.unlockRewardTime },
         });
+      } else if (transactionExists) {
+        await UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          {
+            $set: {
+              unlockRewardTime: moment().add(admin.rewardHours, "hours").unix(),
+            },
+          }
+        );
       }
+      const userData = await UserTable.findOne({ _id: userExists._id });
+      return this.Ok(ctx, {
+        message: "Reward Claimed Successfully",
+        data: { rewardHours: userData.unlockRewardTime },
+      });
       return this.BadRequest(ctx, "Reward Not Claimed");
     } catch (error) {
       console.log("error: ", error);
@@ -214,7 +224,7 @@ class UserController extends BaseController {
              * action 2 means no thanks and 1 means
              */
             if (reqParam.action == 2) {
-              updateQuery = { ...updateQuery, unlockRewardTime: null };
+              updateQuery = { ...updateQuery, isRewardDeclined: true };
             } else {
               updateQuery = { ...updateQuery, isGiftedCrypto: 1 };
             }

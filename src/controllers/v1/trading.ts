@@ -1549,7 +1549,6 @@ class TradingController extends BaseController {
           const childExists: any = await UserTable.findOne({
             _id: reqParam.childId,
           });
-          console.log("----childExists----", childExists);
 
           if (!childExists) {
             return this.BadRequest(ctx, "User Not Found");
