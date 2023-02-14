@@ -596,9 +596,9 @@ class ScriptController extends BaseController {
    */
   @Route({ path: "/add-onboarding-quiz", method: HttpMethod.POST })
   public async addOnboardingQuiz(ctx: any) {
-    const  reqParam  = ctx.request.body;
-    await QuizQuestionTable.insertMany(reqParam.onboardingQuizData)
-    return this.Ok(ctx, {quizData: reqParam.onboardingQuizData});
+    const reqParam = ctx.request.body;
+    await QuizQuestionTable.insertMany(reqParam.onboardingQuizData);
+    return this.Ok(ctx, { quizData: reqParam.onboardingQuizData });
   }
   /*
    * @description This method is used to unset fields in db
@@ -711,6 +711,33 @@ class ScriptController extends BaseController {
     await ParentChildTable.deleteMany(otherRecordsQuery);
 
     return this.Ok(ctx, { message: "Data removed successfully" });
+  }
+
+  /**
+   * @description This script is used to update the isOnboardingQuizCompleted for old users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-onboardingquiz-status", method: HttpMethod.POST })
+  public async updateOnboardingQuizStatus(ctx: any) {
+    const getAllTeenUsers = await UserTable.find(
+      {
+        type: EUserType.TEEN,
+      },
+      { _id: 1 }
+    );
+    const getAllIds = getAllTeenUsers.map((i) => i._id);
+    await UserTable.updateMany(
+      {
+        _id: { $in: getAllIds },
+      },
+      {
+        $set: {
+          isOnboardingQuizCompleted: true,
+        },
+      }
+    );
+    return this.Ok(ctx, { data: getAllIds });
   }
 }
 

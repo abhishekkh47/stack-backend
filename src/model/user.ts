@@ -71,6 +71,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    isOnboardingQuizCompleted: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false
+    },
     stateId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
