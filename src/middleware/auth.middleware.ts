@@ -8,7 +8,6 @@ export const Auth = () => {
         (<string>ctx.request.headers &&
           ctx.request.headers["x-access-token"]) ||
         (ctx.request.query.token as string);
-      console.log(token);
       if (!token) {
         return this.UnAuthorized(ctx, "Invalid JWT Token");
       }

@@ -2,7 +2,12 @@ import { TradingService } from "../../services/v3/index";
 import { EGIFTSTACKCOINSSETTING } from "./../../types/user";
 import moment from "moment";
 import BaseController from "../base";
-import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
+import {
+  ETransactionStatus,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+} from "../../types";
 import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
@@ -198,9 +203,7 @@ class UserController extends BaseController {
         message: "Reward Claimed Successfully",
         data: { rewardHours: userData.unlockRewardTime },
       });
-      return this.BadRequest(ctx, "Reward Not Claimed");
     } catch (error) {
-      console.log("error: ", error);
       return this.BadRequest(ctx, "Something went wrong");
     }
   }
@@ -225,6 +228,10 @@ class UserController extends BaseController {
              */
             if (reqParam.action == 2) {
               updateQuery = { ...updateQuery, isRewardDeclined: true };
+              await TransactionTable.deleteOne({
+                userId: ctx.request.user._id,
+                status: ETransactionStatus.GIFTED,
+              });
             } else {
               updateQuery = { ...updateQuery, isGiftedCrypto: 1 };
             }

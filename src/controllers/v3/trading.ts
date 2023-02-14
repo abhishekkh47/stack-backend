@@ -284,6 +284,7 @@ class TradingController extends BaseController {
               userTransactionExists,
               isUnlockRewardTimeExpired
             );
+          console.log(!isUnlockRewardTimeExpired);
 
           /**
            * if price didn't change any all, totalStackValue and totalSpentAmount would have been same
