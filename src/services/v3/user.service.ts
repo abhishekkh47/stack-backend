@@ -99,7 +99,7 @@ class UserService {
             taxIdNo: 1,
             taxState: 1,
             status: 1,
-            isOnBoardingQuizCompleted: 1,
+            isOnboardingQuizCompleted: 1,
             dob: 1,
             profilePicture: 1,
             isRecurring: 1,
@@ -114,6 +114,7 @@ class UserService {
         },
       ]).exec()
     )[0];
+    console.log(data, "data");
 
     if (!data) {
       throw Error("Invalid user ID entered.");
