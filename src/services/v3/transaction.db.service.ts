@@ -31,7 +31,6 @@ class TransactionDBService {
       { _id: userId },
       {
         $set: {
-          isGiftedCrypto: 1,
           unlockRewardTime: moment().add(admin.rewardHours, "hours").unix(),
         },
       }

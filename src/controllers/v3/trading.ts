@@ -254,28 +254,19 @@ class TradingController extends BaseController {
             type: ETransactionType.BUY,
             status: ETransactionStatus.GIFTED,
           });
-          let isUnlockRewardTimeExpired = false;
+          let isUnlockRewardTimeExpired = true;
           if (
             checkTransactionExistsAlready &&
             isTeen &&
             childExists.unlockRewardTime
           ) {
             const current = moment().unix();
-            const difference = Math.ceil(
-              moment
-                .duration(
-                  moment
-                    .unix(current)
-                    .diff(moment.unix(childExists.unlockRewardTime))
-                )
-                .asMinutes()
-            );
 
             if (
               childExists.unlockRewardTime &&
               current <= childExists.unlockRewardTime
             ) {
-              isUnlockRewardTimeExpired = true;
+              isUnlockRewardTimeExpired = false;
             }
           }
 

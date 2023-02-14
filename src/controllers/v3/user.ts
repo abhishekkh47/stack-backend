@@ -129,9 +129,10 @@ class UserController extends BaseController {
           crypto,
           admin
         );
+        const userData = await UserTable.findOne({ _id: userExists._id });
         return this.Ok(ctx, {
           message: "Reward Claimed Successfully",
-          data: { rewardHours: admin.rewardHours },
+          data: { rewardHours: userData.unlockRewardTime },
         });
       } else if (
         checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
@@ -180,10 +181,11 @@ class UserController extends BaseController {
             );
           }
         }
+        const userData = await UserTable.findOne({ _id: userExists._id });
 
         return this.Ok(ctx, {
           message: "Reward Claimed Successfully",
-          data: { rewardHours: admin.rewardHours },
+          data: { rewardHours: userData.unlockRewardTime },
         });
       }
       return this.BadRequest(ctx, "Reward Not Claimed");
