@@ -14,6 +14,7 @@ export interface IUser extends IAccount {
   unlockRewardTime: string;
   isPhoneVerified: number;
   isRewardDeclined: boolean;
+  isOnboardingQuizCompleted: boolean;
 }
 
 export interface IAccount {
