@@ -748,6 +748,162 @@ class ScriptController extends BaseController {
   }
 
   /**
+   * @description script to migrate parent record from userdraft to user
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/migrate-parent-data", method: HttpMethod.POST })
+  public async migrateParentDatatoUser(ctx: any) {
+    const getAllParentData = await UserDraftTable.find({
+      type: EUserType.PARENT,
+    });
+
+    let dataToMigrate = await Promise.all(
+      getAllParentData.map(async (user) => {
+        const checkChildExists = await UserTable.find({
+          parentEmail: user.email,
+        });
+        const checkParentExists = await UserTable.findOne({
+          email: user.email,
+        });
+        if (
+          checkChildExists &&
+          checkChildExists.length > 0 &&
+          !checkParentExists
+        ) {
+          return {
+            dataToInsert: {
+              email: user?.email,
+              type: user?.type,
+              dob: user?.dob,
+              firstName: user?.firstName,
+              lastName: user?.lastName,
+              isPhoneVerified: user?.isPhoneVerified,
+              mobile: user?.mobile ? user.mobile : null,
+            },
+            dataForParentChild: {
+              ids: checkChildExists.map((item) => item._id),
+              mobile: user.mobile,
+            },
+          };
+        } else if (
+          checkChildExists &&
+          checkChildExists.length > 0 &&
+          checkParentExists
+        ) {
+          if (checkParentExists.mobile == user.mobile) {
+            return {
+              dataToUpdateByMobile: {
+                email: user.email,
+                mobile: user.mobile,
+              },
+            };
+          } else if (
+            checkParentExists.mobile != user.mobile &&
+            checkParentExists.email == user.email
+          ) {
+            return {
+              dataToUpdateByEmail: {
+                email: user.email,
+                mobile: user.mobile,
+              },
+            };
+          }
+        } else if (checkChildExists.length <= 0 && checkParentExists == null) {
+          return {
+            dataToInsert: {
+              email: user?.email,
+              type: user?.type,
+              dob: user?.dob,
+              firstName: user?.firstName,
+              lastName: user?.lastName,
+              isPhoneVerified: user?.isPhoneVerified,
+              mobile: user?.mobile ? user.mobile : null,
+            },
+          };
+        }
+      })
+    );
+
+    const dataToInsert = await dataToMigrate
+      .map((user) => user.dataToInsert)
+      .filter((i) => i);
+    const dataToInsertInParentChild = await dataToMigrate
+      .map((user) => user.dataForParentChild)
+      .filter((i) => i);
+    const dataToUpdateByEmail = await dataToMigrate
+      .map((user) => user.dataToUpdateByEmail)
+      .filter((i) => i);
+    const dataToUpdateByPhone = await dataToMigrate
+      .map((user) => user.dataToUpdateByMobile)
+      .filter((i) => i);
+
+    await UserTable.insertMany(dataToInsert);
+    dataToUpdateByEmail.map(async (item) => {
+      await UserTable.updateOne(
+        {
+          email: item?.email,
+        },
+        {
+          $set: {
+            mobile: item.mobile,
+          },
+        }
+      );
+    });
+
+    dataToUpdateByPhone.map(async (item) => {
+      await UserTable.updateOne(
+        {
+          mobile: item?.mobile,
+        },
+        {
+          $set: {
+            email: item.email,
+          },
+        }
+      );
+    });
+    let childInfo = [];
+    await Promise.all(
+      dataToInsertInParentChild.map(async (child) => {
+        for await (let id of child.ids) {
+          childInfo.push({
+            mobile: child.mobile,
+            childId: id,
+            accountId: null,
+          });
+        }
+      })
+    );
+
+    childInfo.map(async (user) => {
+      const findUserId = await UserTable.findOne({
+        mobile: user.mobile
+      })
+      await ParentChildTable.findOneAndUpdate(
+        {
+          userId: findUserId._id,
+        },
+        {
+          $set: {
+            contactId: null,
+            firstChildId: user.childId,
+            teens: [{ childId: user.childId, accountId: null }],
+          },
+        },
+        { upsert: true, new: true }
+      );
+    });
+
+    // await UserDraftTable.deleteMany({
+    //   type: EUserType.PARENT
+    // })
+
+    return this.Ok(ctx, { data: dataToMigrate });
+  }
+
+  /**
    * @description This script is used to delete whole data by taking userId as input
    * @param ctx
    * @returns
