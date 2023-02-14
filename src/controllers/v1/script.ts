@@ -720,16 +720,9 @@ class ScriptController extends BaseController {
    */
   @Route({ path: "/update-onboardingquiz-status", method: HttpMethod.POST })
   public async updateOnboardingQuizStatus(ctx: any) {
-    const getAllTeenUsers = await UserTable.find(
-      {
-        type: EUserType.TEEN,
-      },
-      { _id: 1 }
-    );
-    const getAllIds = getAllTeenUsers.map((i) => i._id);
     await UserTable.updateMany(
       {
-        _id: { $in: getAllIds },
+        type: EUserType.TEEN,
       },
       {
         $set: {
@@ -737,7 +730,7 @@ class ScriptController extends BaseController {
         },
       }
     );
-    return this.Ok(ctx, { data: getAllIds });
+    return this.Ok(ctx, { message: "Success" });
   }
 }
 

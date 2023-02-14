@@ -53,22 +53,6 @@ class UserService {
           },
         },
         {
-          $lookup: {
-            from: "quizresults",
-            localField: "_id",
-            foreignField: "userId",
-            as: "quizResults",
-          },
-        },
-        {
-          $lookup: {
-            from: "quizquestions",
-            localField: "quizResults.quizId",
-            foreignField: "quizId",
-            as: "quizQuestions",
-          },
-        },
-        {
           $addFields: {
             isParentApproved: 0,
             initialDeposit: 0,
@@ -78,15 +62,6 @@ class UserService {
                 then: 1,
                 else: 0,
               },
-            },
-            isOnBoardingQuizCompleted: {
-              $cond: [
-                {
-                  $setIsSubset: [[true], "$quizQuestions.isOnboardingFlowQuiz"],
-                },
-                true,
-                false,
-              ],
             },
           },
         },

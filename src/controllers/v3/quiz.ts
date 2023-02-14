@@ -91,6 +91,7 @@ class QuizController extends BaseController {
               {
                 $inc: {
                   quizCoins: reqParam.pointsEarned,
+                  isOnboardingQuizCompleted: true,
                 },
               }
             );
