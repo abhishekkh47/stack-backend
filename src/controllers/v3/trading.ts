@@ -112,6 +112,7 @@ class TradingController extends BaseController {
             if (
               parentChildDetails &&
               parentChildDetails.unlockRewardTime &&
+              parentChildDetails.isRewardDeclined == false &&
               current <= parentChildDetails.unlockRewardTime
             ) {
               if (
@@ -263,6 +264,7 @@ class TradingController extends BaseController {
             const current = moment().unix();
 
             if (
+              childExists.isRewardDeclined == false &&
               childExists.unlockRewardTime &&
               current <= childExists.unlockRewardTime
             ) {
@@ -325,6 +327,7 @@ class TradingController extends BaseController {
                 intialBalance: 0,
                 isDeposit: 0,
                 isTeenPending,
+                showPendingMessage: !isUnlockRewardTimeExpired,
               },
             });
           }
@@ -390,6 +393,7 @@ class TradingController extends BaseController {
                   : 0
                 : 0,
               isTeenPending,
+              showPendingMessage: !isUnlockRewardTimeExpired,
             },
           });
         }

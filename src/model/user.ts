@@ -175,6 +175,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    isRewardDeclined: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

@@ -134,6 +134,7 @@ class UserService {
             isPhoneVerified: 1,
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
+            isRewardDeclined: 1,
           },
         },
       ]).exec()
@@ -173,6 +174,7 @@ class UserService {
           unlockRewardTime: "$childInfo.unlockRewardTime",
           childId: "$childInfo._id",
           isGiftedCrypto: "$childInfo.isGiftedCrypto",
+          isRewardDeclined: "$childInfo.isRewardDeclined",
         },
       },
       {
@@ -182,6 +184,7 @@ class UserService {
           firstChildId: 1,
           accountId: 1,
           unlockRewardTime: 1,
+          isRewardDeclined: 1,
           childId: 1,
           isGiftedCrypto: 1,
         },
