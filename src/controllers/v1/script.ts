@@ -738,11 +738,11 @@ class ScriptController extends BaseController {
         isOnboardingQuizCompleted: user.isOnboardingQuizCompleted,
         firstName: user.firstName,
         lastName: user.lastName,
-        isPhoneVerified: user.isPhoneVerified ? user.isPhoneVerified : 0,
+        isPhoneVerified: user.mobile ? 1 : 0,
       };
     });
 
-    // await UserTable.insertMany(teenArray);
+    await UserTable.insertMany(teenArray);
 
     return this.Ok(ctx, {
       data: teenArray,
@@ -831,11 +831,11 @@ class ScriptController extends BaseController {
         isOnboardingQuizCompleted: user.isOnboardingQuizCompleted,
         firstName: user.firstName,
         lastName: user.lastName,
-        isPhoneVerified: user.isPhoneVerified ? user.isPhoneVerified : 0,
+        isPhoneVerified: user.mobile ? 1 : 0,
       };
     });
 
-    // await UserTable.insertMany(teenArray);
+    await UserTable.insertMany(parentArray);
 
     return this.Ok(ctx, {
       data: parentArray,
