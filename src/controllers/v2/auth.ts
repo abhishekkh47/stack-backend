@@ -457,16 +457,6 @@ class AuthController extends BaseController {
                   },
                 }
               );
-            } else {
-              /**
-               * bitcoin asset id and crypto id
-               */
-
-              await TransactionDBService.createBtcGiftedTransaction(
-                user._id,
-                crypto,
-                admin
-              );
             }
           }
           /**
