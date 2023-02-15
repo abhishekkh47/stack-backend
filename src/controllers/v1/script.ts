@@ -648,11 +648,11 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This script is used to delete the data for self users and false entries in userdraft
+   * @description This script is used to delete the data for self users and remove the data containing email, dob, type or any one of these entities as null
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/delete-userdraft-self-data", method: HttpMethod.DELETE })
+  @Route({ path: "/delete-userdraft-data", method: HttpMethod.DELETE })
   public async deleteUserdraftSelfData(ctx: any) {
     const deleteDataQuery = {
       $or: [{ type: { $in: [null, 3] } }, { email: null }, { dob: null }],
@@ -668,83 +668,87 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description script to migrate valid data from userdraft to user table
+   * @description script to migrate teen data from userdraft to user table
    * @param ctx
    * @return {*}
    */
   @Route({
-    path: "/migrate-teen-from-userdraft-to-users",
+    path: "/migrate-teen-data",
     method: HttpMethod.POST,
   })
-  public async migrateUserdraftDataToUsers(ctx: any) {
-    const getAllUserdraftData = await UserDraftTable.find({
+  public async migrateTeenDatatoUser(ctx: any) {
+    const getTeenUserdraftData = await UserDraftTable.find({
       type: EUserType.TEEN,
     });
 
-    const getDataToMigrateOrUpdate = await Promise.all(
-      getAllUserdraftData.map(async (user) => {
-        const checkUserAlreadyExists: any = await UserTable.findOne({
-          $or: [
-            {
-              mobile: user?.mobile,
-            },
-          ],
-        });
+    const allUserDraftEmails = getTeenUserdraftData
+      .map((i) => i.email)
+      .filter((i) => i);
+    const allUserDraftMobile = getTeenUserdraftData
+      .map((i) => i.mobile)
+      .filter((i) => i);
 
+    const getAllUserDataForEmail = await UserTable.find({
+      email: { $in: allUserDraftEmails },
+    });
+
+    const getAllUserDataForMobile = await UserTable.find({
+      mobile: { $in: allUserDraftMobile },
+    });
+
+    getTeenUserdraftData.map((m: any, index: number) => {
+      getTeenUserdraftData[index] = {
+        ...m._doc,
+        isOnboardingQuizCompleted: false,
+      };
+    });
+
+    let teenArray: any = getTeenUserdraftData;
+    if (getAllUserDataForEmail && getAllUserDataForEmail.length > 0) {
+      teenArray = getTeenUserdraftData.filter((teenUser: any) => {
+        if (teenUser.email) {
+          if (
+            !getAllUserDataForEmail.some((user) => user.email == teenUser.email)
+          ) {
+            return teenUser;
+          }
+        }
+      });
+    }
+
+    if (getAllUserDataForMobile && getAllUserDataForMobile.length > 0) {
+      const teenData = teenArray.length > 0 ? teenArray : getTeenUserdraftData;
+      teenArray = teenData.filter((teenUser: any) => {
         if (
-          checkUserAlreadyExists &&
-          checkUserAlreadyExists.email == null &&
-          checkUserAlreadyExists.mobile == user.mobile
+          !getAllUserDataForMobile.some(
+            (user) => user.mobile == teenUser.mobile
+          )
         ) {
-          return {
-            dataToUpdate: {
-              email: user?.email,
-              mobile: user?.mobile ? user.mobile : null,
-            },
-          };
-        } else if (!checkUserAlreadyExists) {
-          return {
-            dataToInsert: {
-              email: user?.email,
-              type: user?.type,
-              dob: user?.dob,
-              firstName: user?.firstName,
-              lastName: user?.lastName,
-              isPhoneVerified: user?.isPhoneVerified,
-              mobile: user?.mobile ? user.mobile : null,
-            },
-          };
+          return teenUser;
         }
-      })
-    );
+      });
+    }
 
-    const dataToUpdate = getDataToMigrateOrUpdate
-      .map((item) => item.dataToUpdate)
-      .filter((i) => i);
-    const dataToInsert = getDataToMigrateOrUpdate
-      .map((item) => item.dataToInsert)
-      .filter((i) => i);
-
-    dataToUpdate.map(async (item) => {
-      await UserTable.updateOne(
-        {
-          mobile: item?.mobile,
-        },
-        {
-          $set: {
-            email: item.email,
-          },
-        }
-      );
+    teenArray = teenArray.map((user) => {
+      return {
+        email: user.email,
+        mobile: user.mobile,
+        type: user.type,
+        dob: user.dob,
+        isOnboardingQuizCompleted: user.isOnboardingQuizCompleted,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isPhoneVerified: user.isPhoneVerified ? user.isPhoneVerified : 0,
+      };
     });
 
-    await UserTable.insertMany(dataToInsert);
+    // await UserTable.insertMany(teenArray);
 
-    await UserDraftTable.deleteMany({
-      type: EUserType.TEEN,
+    return this.Ok(ctx, {
+      data: teenArray,
+      emailData: getAllUserDataForEmail,
+      mobileData: getAllUserDataForMobile,
     });
-
-    return this.Ok(ctx, { data: getAllUserdraftData });
   }
 
   /**
@@ -752,155 +756,92 @@ class ScriptController extends BaseController {
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/migrate-parent-data", method: HttpMethod.POST })
+  @Route({
+    path: "/migrate-parent-data",
+    method: HttpMethod.POST,
+  })
   public async migrateParentDatatoUser(ctx: any) {
     const getAllParentData = await UserDraftTable.find({
       type: EUserType.PARENT,
     });
 
-    let dataToMigrate = await Promise.all(
-      getAllParentData.map(async (user) => {
-        const checkChildExists = await UserTable.find({
-          parentEmail: user.email,
-        });
-        const checkParentExists = await UserTable.findOne({
-          email: user.email,
-        });
-        if (
-          checkChildExists &&
-          checkChildExists.length > 0 &&
-          !checkParentExists
-        ) {
-          return {
-            dataToInsert: {
-              email: user?.email,
-              type: user?.type,
-              dob: user?.dob,
-              firstName: user?.firstName,
-              lastName: user?.lastName,
-              isPhoneVerified: user?.isPhoneVerified,
-              mobile: user?.mobile ? user.mobile : null,
-            },
-            dataForParentChild: {
-              ids: checkChildExists.map((item) => item._id),
-              mobile: user.mobile,
-            },
-          };
-        } else if (
-          checkChildExists &&
-          checkChildExists.length > 0 &&
-          checkParentExists
-        ) {
-          if (checkParentExists.mobile == user.mobile) {
-            return {
-              dataToUpdateByMobile: {
-                email: user.email,
-                mobile: user.mobile,
-              },
-            };
-          } else if (
-            checkParentExists.mobile != user.mobile &&
-            checkParentExists.email == user.email
+    const allUserDraftEmails = getAllParentData
+      .map((i) => i.email)
+      .filter((i) => i);
+    const allUserDraftMobile = getAllParentData
+      .map((i) => i.mobile)
+      .filter((i) => i);
+
+    const getAllUserDataForEmail = await UserTable.find({
+      $or: [
+        { email: { $in: allUserDraftEmails } },
+        {
+          parentEmail: { $in: allUserDraftEmails },
+        },
+      ],
+    });
+
+    const getAllUserDataForMobile = await UserTable.find({
+      $or: [
+        {
+          mobile: { $in: allUserDraftMobile },
+        },
+        { parentMobile: { $in: allUserDraftMobile } },
+      ],
+    });
+
+    let parentArray: any = getAllParentData;
+    if (getAllUserDataForEmail && getAllUserDataForEmail.length > 0) {
+      parentArray = getAllParentData.filter((parentUser: any) => {
+        if (parentUser.email) {
+          if (
+            !getAllUserDataForEmail.some(
+              (user) =>
+                user.email == parentUser.email ||
+                user.parentEmail == parentUser.email
+            )
           ) {
-            return {
-              dataToUpdateByEmail: {
-                email: user.email,
-                mobile: user.mobile,
-              },
-            };
+            return parentUser;
           }
-        } else if (checkChildExists.length <= 0 && checkParentExists == null) {
-          return {
-            dataToInsert: {
-              email: user?.email,
-              type: user?.type,
-              dob: user?.dob,
-              firstName: user?.firstName,
-              lastName: user?.lastName,
-              isPhoneVerified: user?.isPhoneVerified,
-              mobile: user?.mobile ? user.mobile : null,
-            },
-          };
         }
-      })
-    );
+      });
+    }
 
-    const dataToInsert = await dataToMigrate
-      .map((user) => user.dataToInsert)
-      .filter((i) => i);
-    const dataToInsertInParentChild = await dataToMigrate
-      .map((user) => user.dataForParentChild)
-      .filter((i) => i);
-    const dataToUpdateByEmail = await dataToMigrate
-      .map((user) => user.dataToUpdateByEmail)
-      .filter((i) => i);
-    const dataToUpdateByPhone = await dataToMigrate
-      .map((user) => user.dataToUpdateByMobile)
-      .filter((i) => i);
-
-    await UserTable.insertMany(dataToInsert);
-    dataToUpdateByEmail.map(async (item) => {
-      await UserTable.updateOne(
-        {
-          email: item?.email,
-        },
-        {
-          $set: {
-            mobile: item.mobile,
-          },
+    if (getAllUserDataForMobile && getAllUserDataForMobile.length > 0) {
+      const parentData =
+        parentArray.length > 0 ? parentArray : getAllParentData;
+      parentArray = parentData.filter((parentUser: any) => {
+        if (
+          !getAllUserDataForMobile.some(
+            (user) =>
+              user.mobile == parentUser.mobile ||
+              user.parentMobile == parentUser.mobile
+          )
+        ) {
+          return parentUser;
         }
-      );
+      });
+    }
+    parentArray = parentArray.map((user) => {
+      return {
+        email: user.email,
+        mobile: user.mobile,
+        type: user.type,
+        dob: user.dob,
+        isOnboardingQuizCompleted: user.isOnboardingQuizCompleted,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isPhoneVerified: user.isPhoneVerified ? user.isPhoneVerified : 0,
+      };
     });
 
-    dataToUpdateByPhone.map(async (item) => {
-      await UserTable.updateOne(
-        {
-          mobile: item?.mobile,
-        },
-        {
-          $set: {
-            email: item.email,
-          },
-        }
-      );
+    // await UserTable.insertMany(teenArray);
+
+    return this.Ok(ctx, {
+      data: parentArray,
+      emailData: getAllUserDataForEmail,
+      mobileData: getAllUserDataForMobile,
     });
-    let childInfo = [];
-    await Promise.all(
-      dataToInsertInParentChild.map(async (child) => {
-        for await (let id of child.ids) {
-          childInfo.push({
-            mobile: child.mobile,
-            childId: id,
-            accountId: null,
-          });
-        }
-      })
-    );
-
-    childInfo.map(async (user) => {
-      const findUserId = await UserTable.findOne({
-        mobile: user.mobile
-      })
-      await ParentChildTable.findOneAndUpdate(
-        {
-          userId: findUserId._id,
-        },
-        {
-          $set: {
-            contactId: null,
-            firstChildId: user.childId,
-            teens: [{ childId: user.childId, accountId: null }],
-          },
-        },
-        { upsert: true, new: true }
-      );
-    });
-
-    await UserDraftTable.deleteMany({
-      type: EUserType.PARENT
-    })
-
-    return this.Ok(ctx, { data: dataToMigrate });
   }
 
   /**
