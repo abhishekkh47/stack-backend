@@ -4,6 +4,7 @@ import moment from "moment";
 import BaseController from "../base";
 import {
   ETransactionStatus,
+  ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
@@ -94,7 +95,10 @@ class UserController extends BaseController {
     try {
       const user = ctx.request.user;
       const admin = await AdminTable.findOne({});
-      const userExists = await UserTable.findOne({ _id: user._id });
+      let userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists) {
+        userExists = await UserTable.findOne({ _id: ctx.request.body.userId });
+      }
       const jwtToken = ctx.request.primeTrustToken;
       if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
         return this.BadRequest(ctx, "User Not Found");
@@ -104,6 +108,8 @@ class UserController extends BaseController {
       }
       let transactionExists = await TransactionTable.findOne({
         userId: userExists._id,
+        type: ETransactionType.BUY,
+        status: ETransactionStatus.GIFTED,
       });
 
       const parentChildDetails = await UserService.getParentChildInfo(
@@ -214,9 +220,19 @@ class UserController extends BaseController {
    */
   @Route({ path: "/unlock-reward", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async unlockReward(ctx: any) {
     try {
       const reqParam = ctx.request.body;
+      const jwtToken = ctx.request.primeTrustToken;
+      const admin = await AdminTable.findOne({});
+      let userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!userExists) {
+        userExists = await UserTable.findOne({ _id: reqParam.userId });
+        if (!userExists) {
+          return this.BadRequest(ctx, "User Not Found");
+        }
+      }
       return validationsV3.unlockRewardValidation(
         reqParam,
         ctx,
@@ -224,19 +240,79 @@ class UserController extends BaseController {
           if (validate) {
             let updateQuery = {};
             /**
-             * action 2 means no thanks and 1 means
+             * action 2 means no thanks and 1 means unlock
              */
             if (reqParam.action == 2) {
               updateQuery = { ...updateQuery, isRewardDeclined: true };
               await TransactionTable.deleteOne({
-                userId: ctx.request.user._id,
+                userId: userExists._id,
                 status: ETransactionStatus.GIFTED,
               });
             } else {
-              updateQuery = { ...updateQuery, isGiftedCrypto: 1 };
+              await UserTable.updateOne(
+                { _id: userExists._id },
+                {
+                  $set: { isGiftedCrypto: 1 },
+                }
+              );
+              const parentChildDetails = await UserService.getParentChildInfo(
+                userExists._id
+              );
+              const checkParentInfo =
+                parentChildDetails &&
+                (await UserTable.findOne({
+                  _id: parentChildDetails.userId,
+                }));
+
+              const checkParentBankExists =
+                parentChildDetails &&
+                (await UserBanksTable.findOne({
+                  $or: [
+                    { userId: parentChildDetails.userId },
+                    { parentId: parentChildDetails.userId },
+                  ],
+                }));
+              if (
+                checkParentInfo &&
+                checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+                checkParentBankExists &&
+                admin.giftCryptoSetting == 1 &&
+                userExists.isGiftedCrypto == 0
+              ) {
+                const accountIdDetails = await parentChildDetails.teens.find(
+                  (x: any) => x.childId.toString() == userExists._id.toString()
+                ).accountId;
+
+                /**
+                 * difference of 72 hours
+                 */
+                const current = moment().unix();
+
+                if (
+                  parentChildDetails &&
+                  parentChildDetails.unlockRewardTime &&
+                  current <= parentChildDetails.unlockRewardTime
+                ) {
+                  if (
+                    admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+                    parentChildDetails &&
+                    parentChildDetails.isGiftedCrypto ==
+                      EGIFTSTACKCOINSSETTING.ON &&
+                    parentChildDetails.unlockRewardTime
+                  ) {
+                    await TradingService.internalTransfer(
+                      parentChildDetails,
+                      jwtToken,
+                      accountIdDetails,
+                      userExists.type,
+                      admin
+                    );
+                  }
+                }
+              }
             }
             await UserTable.updateOne(
-              { _id: ctx.request.user._id },
+              { _id: userExists._id },
               {
                 $set: updateQuery,
               }
