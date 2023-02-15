@@ -907,6 +907,26 @@ class ScriptController extends BaseController {
 
     return this.Ok(ctx, { message: "Data removed successfully" });
   }
+
+  /**
+   * @description This script is used to update the isOnboardingQuizCompleted for old users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-onboardingquiz-status", method: HttpMethod.POST })
+  public async updateOnboardingQuizStatus(ctx: any) {
+    await UserTable.updateMany(
+      {
+        type: EUserType.TEEN,
+      },
+      {
+        $set: {
+          isOnboardingQuizCompleted: true,
+        },
+      }
+    );
+    return this.Ok(ctx, { message: "Success" });
+  }
 }
 
 export default new ScriptController();

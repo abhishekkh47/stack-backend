@@ -46,7 +46,7 @@ export interface IAnswerArray {
   name: string;
   image: string;
   correct_answer: ECorrectAnswer;
-  statement: string
+  statement: string;
 }
 export interface IQuiz {
   quizName: string;
@@ -59,6 +59,7 @@ export interface IQuizResult {
   userId: mongoose.Schema.Types.ObjectId;
   quizId: mongoose.Schema.Types.ObjectId;
   pointsEarned: number;
+  isOnBoardingQuiz: boolean;
 }
 
 export interface IQuizQuestionResult extends IQuizResult {

@@ -1,3 +1,4 @@
+import { ParentChildTable } from "./../../model/parentChild";
 import { UserTable } from "../../model";
 import { ObjectId } from "mongodb";
 
@@ -88,6 +89,9 @@ class UserService {
               $ifNull: ["$childInfo.mobile", null],
             },
             referralCode: 1,
+            unlockRewardTime: 1,
+            isGiftedCrypto: 1,
+            isEnteredParentNumber: 1,
             screenStatus: 1,
             city: 1,
             postalCode: 1,
@@ -95,6 +99,7 @@ class UserService {
             taxIdNo: 1,
             taxState: 1,
             status: 1,
+            isOnboardingQuizCompleted: 1,
             dob: 1,
             profilePicture: 1,
             isRecurring: 1,
@@ -104,6 +109,7 @@ class UserService {
             isPhoneVerified: 1,
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
+            isRewardDeclined: 1,
           },
         },
       ]).exec()
@@ -113,6 +119,60 @@ class UserService {
       throw Error("Invalid user ID entered.");
     }
     return { data };
+  }
+
+  /**
+   * @description get parent and child info
+   * @param userId
+   */
+  public async getParentChildInfo(userId: string) {
+    const queryFindParentChildData = [
+      {
+        $match: { $or: [{ userId: userId }, { "teens.childId": userId }] },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "teens.childId",
+          foreignField: "_id",
+          as: "childInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$childInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          unlockRewardTime: "$childInfo.unlockRewardTime",
+          childId: "$childInfo._id",
+          isGiftedCrypto: "$childInfo.isGiftedCrypto",
+          isRewardDeclined: "$childInfo.isRewardDeclined",
+        },
+      },
+      {
+        $project: {
+          userId: 1,
+          teens: 1,
+          firstChildId: 1,
+          accountId: 1,
+          unlockRewardTime: 1,
+          isRewardDeclined: 1,
+          childId: 1,
+          isGiftedCrypto: 1,
+        },
+      },
+    ];
+    let parentChildDetails: any = await ParentChildTable.aggregate(
+      queryFindParentChildData
+    ).exec();
+
+    parentChildDetails =
+      parentChildDetails.length > 0 ? parentChildDetails[0] : null;
+
+    return parentChildDetails;
   }
 }
 

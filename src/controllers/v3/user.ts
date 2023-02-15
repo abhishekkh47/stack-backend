@@ -1,15 +1,25 @@
+import { TradingService } from "../../services/v3/index";
+import { EGIFTSTACKCOINSSETTING } from "./../../types/user";
+import moment from "moment";
 import BaseController from "../base";
-import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
-import { UserService } from "../../services/v2";
+import {
+  ETransactionStatus,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+} from "../../types";
+import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import {
-  ParentChildTable,
   UserTable,
   TransactionTable,
   UserBanksTable,
+  AdminTable,
+  CryptoTable,
 } from "../../model";
 import { CMS_LINKS } from "../../utility/constants";
 import { Route } from "../../utility";
+import { validationsV3 } from "../../validations/v3/apiValidation";
 
 class UserController extends BaseController {
   /**
@@ -71,6 +81,173 @@ class UserController extends BaseController {
     };
 
     return this.Ok(ctx, data, true);
+  }
+
+  /**
+   * @description This method is used to view profile for both parent and child
+   * @param ctx
+   */
+  @Route({ path: "/start-reward-timer", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT(true)
+  public async startRewardTimer(ctx: any) {
+    try {
+      const user = ctx.request.user;
+      const admin = await AdminTable.findOne({});
+      const userExists = await UserTable.findOne({ _id: user._id });
+      const jwtToken = ctx.request.primeTrustToken;
+      if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      if (userExists.unlockRewardTime) {
+        return this.BadRequest(ctx, "You already unlocked the reward");
+      }
+      let transactionExists = await TransactionTable.findOne({
+        userId: userExists._id,
+      });
+
+      const parentChildDetails = await UserService.getParentChildInfo(
+        userExists._id
+      );
+      const checkParentInfo =
+        parentChildDetails &&
+        (await UserTable.findOne({
+          _id: parentChildDetails.userId,
+        }));
+
+      const checkParentBankExists =
+        parentChildDetails &&
+        (await UserBanksTable.findOne({
+          $or: [
+            { userId: parentChildDetails.userId },
+            { parentId: parentChildDetails.userId },
+          ],
+        }));
+      if (
+        admin.giftCryptoSetting == 1 &&
+        userExists.isGiftedCrypto == 0 &&
+        !transactionExists
+      ) {
+        let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+        await TransactionDBService.createBtcGiftedTransaction(
+          userExists._id,
+          crypto,
+          admin
+        );
+      } else if (
+        checkParentInfo &&
+        checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+        checkParentBankExists &&
+        admin.giftCryptoSetting == 1 &&
+        userExists.isGiftedCrypto == 0
+      ) {
+        const accountIdDetails =
+          userExists.type == EUserType.PARENT && parentChildDetails
+            ? await parentChildDetails.teens.find(
+                (x: any) =>
+                  x.childId.toString() ==
+                  parentChildDetails.firstChildId.toString()
+              )
+            : parentChildDetails.accountId;
+
+        /**
+         * difference of 72 hours
+         */
+        const current = moment().unix();
+
+        if (
+          parentChildDetails &&
+          parentChildDetails.unlockRewardTime &&
+          current <= parentChildDetails.unlockRewardTime
+        ) {
+          if (
+            admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
+            parentChildDetails &&
+            parentChildDetails.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON &&
+            parentChildDetails.unlockRewardTime
+          ) {
+            let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+            await TransactionDBService.createBtcGiftedTransaction(
+              userExists._id,
+              crypto,
+              admin
+            );
+
+            await TradingService.internalTransfer(
+              parentChildDetails,
+              jwtToken,
+              accountIdDetails,
+              userExists.type,
+              admin
+            );
+          }
+        }
+        const userData = await UserTable.findOne({ _id: userExists._id });
+
+        return this.Ok(ctx, {
+          message: "Reward Claimed Successfully",
+          data: { rewardHours: userData.unlockRewardTime },
+        });
+      } else if (transactionExists) {
+        await UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          {
+            $set: {
+              unlockRewardTime: moment().add(admin.rewardHours, "hours").unix(),
+            },
+          }
+        );
+      }
+      const userData = await UserTable.findOne({ _id: userExists._id });
+      return this.Ok(ctx, {
+        message: "Reward Claimed Successfully",
+        data: { rewardHours: userData.unlockRewardTime },
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to view profile for both parent and child
+   * @param ctx
+   */
+  @Route({ path: "/unlock-reward", method: HttpMethod.POST })
+  @Auth()
+  public async unlockReward(ctx: any) {
+    try {
+      const reqParam = ctx.request.body;
+      return validationsV3.unlockRewardValidation(
+        reqParam,
+        ctx,
+        async (validate: boolean) => {
+          if (validate) {
+            let updateQuery = {};
+            /**
+             * action 2 means no thanks and 1 means
+             */
+            if (reqParam.action == 2) {
+              updateQuery = { ...updateQuery, isRewardDeclined: true };
+              await TransactionTable.deleteOne({
+                userId: ctx.request.user._id,
+                status: ETransactionStatus.GIFTED,
+              });
+            } else {
+              updateQuery = { ...updateQuery, isGiftedCrypto: 1 };
+            }
+            await UserTable.updateOne(
+              { _id: ctx.request.user._id },
+              {
+                $set: updateQuery,
+              }
+            );
+            return this.Ok(ctx, { message: "Success" });
+          }
+        }
+      );
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
   }
 }
 

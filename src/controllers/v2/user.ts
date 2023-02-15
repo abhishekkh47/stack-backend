@@ -3,9 +3,7 @@ import { validations } from "../../validations/v2/apiValidation";
 import { UserDraftTable } from "../../model/userDraft";
 import { TransactionTable } from "../../model/transactions";
 import { getAccounts } from "../../utility/plaid";
-import { json } from "co-body";
 import fs from "fs";
-import moment from "moment";
 import path from "path";
 import envData from "../../config/index";
 import { Auth, PrimeTrustJWT } from "../../middleware";
@@ -18,7 +16,6 @@ import {
 import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
 import { UserService } from "../../services/v2";
 import {
-  checkValidBase64String,
   createAccount,
   kycDocumentChecks,
   removeImage,
@@ -26,7 +23,6 @@ import {
   uploadFileS3,
   uploadFilesFetch,
   uploadIdProof,
-  uploadImage,
 } from "../../utility";
 import {
   CMS_LINKS,

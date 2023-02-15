@@ -22,14 +22,12 @@ import {
   DeviceTokenService,
   PortfolioService,
   tradingService,
-  userService,
   zohoCrmService,
   TradingDBService,
 } from "../../services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
-  ERECURRING,
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
@@ -798,7 +796,7 @@ class TradingController extends BaseController {
       const parentDetails = await ParentChildTable.findOne({
         "teens.childId": userExists._id,
       });
-      id = parentDetails.userId;
+      id = parentDetails ? parentDetails.userId : userExists._id;
     }
     let userBankExists = await UserBanksTable.findOne({
       userId: id,
