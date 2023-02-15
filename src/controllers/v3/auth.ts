@@ -80,49 +80,47 @@ class AuthController extends BaseController {
           if (otpExists.code != reqParam.code) {
             return this.BadRequest(ctx, "Code Doesn't Match");
           }
-          const optVerfidied = await OtpTable.updateOne(
+          let userExists = await UserTable.findOne({
+            _id: ctx.request.user._id,
+          });
+          if (!userExists) {
+            return this.BadRequest(ctx, "User Not Found");
+          }
+          const isOtpVerified = await OtpTable.updateOne(
             { _id: otpExists._id },
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
-          if (optVerfidied) {
-            let updateUser = await UserTable.findByIdAndUpdate(
+          let updateUser = null;
+          if (isOtpVerified) {
+            let teenExists = await UserTable.findOne({
+              mobile: reqParam.mobile,
+              isParentFirst: true,
+            });
+            let findQuery = {};
+            let setQuery = {};
+            if (teenExists) {
+              findQuery = { ...findQuery, _id: teenExists._id };
+              setQuery = {
+                ...setQuery,
+                isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
+                email: userExists.email,
+              };
+              migratedId = teenExists._id;
+            } else {
+              findQuery = { ...findQuery, _id: ctx.request.user._id };
+              setQuery = {
+                ...setQuery,
+                mobile: reqParam.mobile,
+                isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
+              };
+            }
+            updateUser = await UserTable.findOneAndUpdate(
+              findQuery,
               {
-                _id: ctx.request.user._id,
-              },
-              {
-                $set: {
-                  mobile: reqParam.mobile,
-                  isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
-                },
+                $set: setQuery,
               },
               { new: true }
             );
-
-            if (updateUser.type == EUserType.SELF) {
-              const crypto = await CryptoTable.findOne({ symbol: "BTC" });
-
-              const newUserDetail = await UserDBService.createUserAccount(
-                updateUser,
-                reqParam.mobile
-              );
-
-              migratedId = newUserDetail._id;
-
-              let checkTransactionExists = await TransactionTable.findOne({
-                userId: newUserDetail._id,
-              });
-              if (
-                admin.giftCryptoSetting == 1 &&
-                newUserDetail.isGiftedCrypto == 0 &&
-                !checkTransactionExists
-              ) {
-                await TransactionDBService.createBtcGiftedTransaction(
-                  newUserDetail._id,
-                  crypto,
-                  admin
-                );
-              }
-            }
 
             const isUserNotTeen =
               updateUser.type == EUserType.PARENT ||
@@ -154,6 +152,11 @@ class AuthController extends BaseController {
               ctx.request.zohoAccessToken,
               dataSentInCrm
             );
+          }
+          if (migratedId) {
+            await UserTable.deleteOne({
+              _id: ctx.request.user._id,
+            });
           }
 
           return this.Ok(ctx, {
