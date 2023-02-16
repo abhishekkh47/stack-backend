@@ -40,6 +40,15 @@ class UserService {
         { $unwind: { path: "$childInfo", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
+            from: "userbanks",
+            localField: "_id",
+            foreignField: "userId",
+            as: "bankDetails",
+          },
+        },
+        { $unwind: { path: "$bankDetails", preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
             from: "user-refferals",
             localField: "_id",
             foreignField: "userId",
@@ -56,6 +65,13 @@ class UserService {
           $addFields: {
             isParentApproved: 0,
             initialDeposit: 0,
+            isKycSuccess: {
+              $cond: {
+                if: { $ne: ["$parentchild.status", 3] },
+                then: true,
+                else: false,
+              },
+            },
             isKycDocumentUploaded: {
               $cond: {
                 if: { $ne: ["$parentchild.kycDocumentId", null] },
@@ -72,12 +88,14 @@ class UserService {
             kycMessages: 1,
             mobile: 1,
             address: 1,
+            isKycSuccess: 1,
             firstName: 1,
             lastName: 1,
             type: 1,
             isParentApproved: 1,
             parentMobile: 1,
             parentEmail: 1,
+            bankDetails: 1,
             country: 1,
             "state._id": 1,
             "state.name": 1,
