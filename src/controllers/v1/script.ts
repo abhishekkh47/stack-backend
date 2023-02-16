@@ -699,7 +699,7 @@ class ScriptController extends BaseController {
     getTeenUserdraftData.map((m: any, index: number) => {
       getTeenUserdraftData[index] = {
         ...m._doc,
-        isOnboardingQuizCompleted: false,
+        isOnboardingQuizCompleted: true,
       };
     });
 
@@ -743,9 +743,169 @@ class ScriptController extends BaseController {
     });
 
     await UserTable.insertMany(teenArray);
+    await UserTable.deleteMany({
+      type: EUserType.TEEN,
+    });
 
     return this.Ok(ctx, {
       data: teenArray,
+      emailData: getAllUserDataForEmail,
+      mobileData: getAllUserDataForMobile,
+    });
+  }
+
+  /**
+   * @description script to migrate parent record from userdraft to user
+   * @param ctx
+   * @return {*}
+   */
+  @Route({
+    path: "/migrate-parent-data",
+    method: HttpMethod.POST,
+  })
+  public async migrateParentDatatoUser(ctx: any) {
+    const getAllParentData = await UserDraftTable.find({
+      type: EUserType.PARENT,
+    });
+
+    const allUserDraftEmails = getAllParentData
+      .map((i) => i.email)
+      .filter((i) => i);
+    const allUserDraftMobile = getAllParentData
+      .map((i) => i.mobile)
+      .filter((i) => i);
+
+    const getAllUserDataForEmail = await UserTable.find({
+      email: { $in: allUserDraftEmails },
+    });
+
+    const getAllUserDataForMobile = await UserTable.find({
+      mobile: { $in: allUserDraftMobile },
+    });
+
+    const checkTeenExists = await UserTable.find({
+      $and: [
+        { parentEmail: { $in: allUserDraftEmails } },
+        {
+          parentMobile: { $in: allUserDraftMobile },
+        },
+      ],
+    });
+
+    let parentArray: any = getAllParentData;
+
+    if (getAllUserDataForEmail && getAllUserDataForEmail.length > 0) {
+      parentArray = getAllParentData.filter((parentUser: any) => {
+        if (parentUser.email) {
+          if (
+            !getAllUserDataForEmail.some(
+              (user) => user.email == parentUser.email
+            )
+          ) {
+            return parentUser;
+          }
+        }
+      });
+    }
+
+    if (getAllUserDataForMobile && getAllUserDataForMobile.length > 0) {
+      const parentData =
+        parentArray.length > 0 ? parentArray : getAllParentData;
+      parentArray = parentData.filter((parentUser: any) => {
+        if (
+          !getAllUserDataForMobile.some(
+            (user) => user.mobile == parentUser.mobile
+          )
+        ) {
+          return parentUser;
+        }
+      });
+    }
+
+    if (checkTeenExists && checkTeenExists.length > 0) {
+      for await (let getParents of getAllParentData) {
+        for await (let teens of checkTeenExists) {
+          if (
+            teens.parentEmail === getParents.email &&
+            teens.parentMobile === getParents.mobile
+          ) {
+            let teenExistsInParentChild = await ParentChildTable.findOne({
+              "teens.childId": teens._id,
+            });
+            if (!teenExistsInParentChild) {
+              const getParentsId: any = await UserTable.create({
+                email: getParents.email,
+                mobile: getParents.mobile,
+                type: getParents.type,
+                dob: getParents.dob,
+                firstName: getParents.firstName,
+                lastName: getParents.lastName,
+                isPhoneVerified: getParents.mobile ? 1 : 0,
+              });
+              const parentExistsInParentChild = await ParentChildTable.findOne({
+                userId: getParentsId._id,
+              });
+
+              parentArray = parentArray.filter(
+                (user) => user.email != getParents.email
+              );
+
+              if (parentExistsInParentChild) {
+                await ParentChildTable.updateOne(
+                  {
+                    _id: parentExistsInParentChild._id,
+                  },
+                  {
+                    $push: {
+                      teens: {
+                        childId: teens._id,
+                        accountId: null,
+                      },
+                    },
+                  }
+                );
+              } else {
+                await ParentChildTable.findOneAndUpdate(
+                  {
+                    userId: getParentsId._id,
+                  },
+                  {
+                    $set: {
+                      contactId: null,
+                      firstChildId: teens._id,
+                      teens: [{ childId: teens._id, accountId: null }],
+                    },
+                  },
+                  { upsert: true, new: true }
+                );
+              }
+            } else {
+              continue;
+            }
+          }
+        }
+      }
+    }
+
+    parentArray = parentArray.map((user) => {
+      return {
+        email: user.email,
+        mobile: user.mobile,
+        type: user.type,
+        dob: user.dob,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isPhoneVerified: user.mobile ? 1 : 0,
+      };
+    });
+
+    await UserTable.insertMany(parentArray);
+    await UserTable.deleteMany({
+      type: EUserType.PARENT,
+    });
+
+    return this.Ok(ctx, {
+      data: parentArray,
       emailData: getAllUserDataForEmail,
       mobileData: getAllUserDataForMobile,
     });
