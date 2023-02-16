@@ -67,7 +67,7 @@ class UserService {
             initialDeposit: 0,
             isKycSuccess: {
               $cond: {
-                if: { $ne: ["$parentchild.status", 3] },
+                if: { $eq: ["$parentchild.status", 3] },
                 then: true,
                 else: false,
               },
@@ -77,6 +77,13 @@ class UserService {
                 if: { $ne: ["$parentchild.kycDocumentId", null] },
                 then: 1,
                 else: 0,
+              },
+            },
+            isBankDetail: {
+              $cond: {
+                if: { $eq: ["$bankDetails", null] },
+                then: true,
+                else: false,
               },
             },
           },
@@ -128,6 +135,7 @@ class UserService {
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
             isRewardDeclined: 1,
+            isBankDetail: 1,
           },
         },
       ]).exec()
