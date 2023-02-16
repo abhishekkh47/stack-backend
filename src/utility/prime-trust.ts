@@ -732,3 +732,24 @@ export const getPushTransferMethods = async (token, id) => {
     });
   return response;
 };
+
+/**
+ * @description This api is for getting quote information
+ * @param token
+ * @param accountId
+ * @returns {*}
+ */
+export const getQuoteInformation = async (token, quoteId) => {
+  const response = await axios
+    .get(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.getQuoteInformation(quoteId),
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+    .then((res) => res.data)
+    .catch((error) => {
+      return { status: 400, message: error.response.data };
+    });
+  return response;
+};

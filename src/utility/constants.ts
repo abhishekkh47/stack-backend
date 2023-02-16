@@ -1,4 +1,3 @@
-
 "use strict";
 export const CONSTANT = Object.freeze({
   VerifyEmailTemplateId: "d-024fedc867e0407ab4971e642354168f",
@@ -37,6 +36,7 @@ export const PRIMETRUSTAPIS = {
     `v2/account-asset-totals?account.id=${accountId}`,
   pushTransferMethodGet: (id) => `v2/push-transfer-methods/${id}`,
   getAccountByAccountId: (accountId) => `v2/accounts/${accountId}`,
+  getQuoteInformation: (quoteId) => `v2/quotes/${quoteId}`,
   internalAssetTransfers: `v2/internal-asset-transfers`,
 };
 export const COINMARKETCAPAPIS = {
@@ -52,7 +52,7 @@ export const PLAIDAPIS = {
   getAccounts: "accounts/get",
   getInstitutionById: "institutions/get_by_id",
   institutionsGetById: "institutions/get_by_id",
-  unlinkBankAccount: "/item/remove"
+  unlinkBankAccount: "/item/remove",
 };
 
 export const GIFTCARDAPIS = {

@@ -38,6 +38,7 @@ import {
   getHistoricalDataOfCoins,
   getPrimeTrustJWTToken,
   Route,
+  getQuoteInformation,
 } from "../../utility";
 import BaseController from ".././base";
 import { ObjectId } from "mongodb";
@@ -731,6 +732,48 @@ class ScriptController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is used
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/portfolio-asset-fix", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
+  public async fixPortfolioAssetBalance(ctx: any) {
+    let jwtToken = ctx.request.primeTrustToken;
+    const userExists = await UserTable.findOne({
+      email: "nataliezx2010@gmail.com",
+    });
+    const parentChildExists: any = await ParentChildTable.findOne({
+      "teens.childId": userExists._id,
+    });
+    if (!userExists || parentChildExists) {
+      return this.BadRequest(ctx, "User not found");
+    }
+    let accountDetails = parentChildExists.teens.find(
+      (x) => x.childId.toString() === userExists._id.toString()
+    );
+    if (!accountDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    const accountId = accountDetails.accountId;
+    let transactionDetails = await TransactionTable.find({
+      userId: userExists._id,
+      executedQuoteId: "101ce92d-ce3b-44c1-b47c-17760c78b9d6",
+      // type: {
+      //   $in: [ETransactionType.BUY, ETransactionType.SELL],
+      // },
+    });
+    for await (let transactions of transactionDetails) {
+      console.log(transactions, "transaction");
+      let quoteDetails = await getQuoteInformation(
+        jwtToken,
+        transactions.executedQuoteId
+      );
+      console.log(quoteDetails);
+    }
   }
 }
 
