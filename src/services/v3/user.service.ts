@@ -1,6 +1,7 @@
 import { ParentChildTable } from "./../../model/parentChild";
-import { UserTable } from "../../model";
+import { UserBanksTable, UserTable } from "../../model";
 import { ObjectId } from "mongodb";
+import { EUserType } from "@app/types";
 
 class UserService {
   /**
@@ -63,6 +64,8 @@ class UserService {
                 else: 0,
               },
             },
+            isKycSuccess: false,
+            isBankDetail: false,
           },
         },
         {
@@ -71,6 +74,8 @@ class UserService {
             email: 1,
             kycMessages: 1,
             mobile: 1,
+            isKycSuccess: 1,
+            isBankDetail: 1,
             address: 1,
             firstName: 1,
             lastName: 1,
@@ -117,6 +122,32 @@ class UserService {
 
     if (!data) {
       throw Error("Invalid user ID entered.");
+    }
+    let bankUserIds: any = [];
+    bankUserIds.push(data._id);
+    if (data.type == EUserType.TEEN) {
+      const parentChildTable = await ParentChildTable.findOne({
+        "teens.childId": data._id,
+      });
+      if (parentChildTable) {
+        bankUserIds.push(parentChildTable.userId);
+        const parentUser = await UserTable.findOne({
+          _id: parentChildTable.userId,
+        });
+        if (parentUser && parentUser.status === 3) {
+          data.isKycSuccess = true;
+        }
+      }
+    } else {
+      if (data.status === 3) {
+        data.isKycSuccess = true;
+      }
+    }
+    let userBankExists = await UserBanksTable.findOne({
+      userId: { $in: bankUserIds },
+    });
+    if (userBankExists) {
+      data.isBankDetail = true;
     }
     return { data };
   }

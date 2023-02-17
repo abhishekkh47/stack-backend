@@ -104,6 +104,7 @@ class AuthController extends BaseController {
                 ...setQuery,
                 isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
                 email: userExists.email,
+                dob: userExists.dob,
               };
               migratedId = teenExists._id;
             } else {
