@@ -244,7 +244,7 @@ class UserController extends BaseController {
    * @description This method is used to delete the user information
    * @param ctx
    */
-  @Route({ path: "/delete-user", method: HttpMethod.POST })
+  @Route({ path: "/delete-user", method: HttpMethod.DELETE })
   @Auth()
   public async deleteUserDetails(ctx: any) {
     try {

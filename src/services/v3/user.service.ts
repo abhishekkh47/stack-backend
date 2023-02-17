@@ -252,6 +252,27 @@ class UserService {
           teenIds.push(parentChildRecord.userId);
           userQuery = { ...userQuery, _id: { $in: teenIds } };
         } else {
+          if (
+            parentChildRecord.firstChildId.toString() ===
+            userDetails._id.toString()
+          ) {
+            let otherTeen = parentChildRecord.teens.find(
+              (x) =>
+                x.childId.toString() !==
+                parentChildRecord.firstChildId.toString()
+            );
+            console.log(otherTeen, "otherTeen");
+            if (otherTeen) {
+              await ParentChildTable.findOneAndUpdate(
+                { _id: parentChildRecord._id },
+                {
+                  $set: {
+                    firstChildId: otherTeen.childId,
+                  },
+                }
+              );
+            }
+          }
           otherRecordsQuery = { ...otherRecordsQuery, userId: userDetails._id };
           userQuery = { ...userQuery, _id: userDetails._id };
           await ParentChildTable.findOneAndUpdate(
@@ -262,7 +283,8 @@ class UserService {
                   childId: userDetails._id,
                 },
               },
-            }
+            },
+            { new: true }
           );
         }
       }
