@@ -1,7 +1,7 @@
 import { ParentChildTable } from "./../../model/parentChild";
 import { UserBanksTable, UserTable } from "../../model";
 import { ObjectId } from "mongodb";
-import { EUserType } from "@app/types";
+import { EUserType } from "../../types";
 
 class UserService {
   /**
