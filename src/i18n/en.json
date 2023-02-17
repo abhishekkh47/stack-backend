@@ -267,5 +267,6 @@
 	"addDeviceTokenDevicetokenEmpty": "Device Token is required",
 	"getPortFolioVersionUnknown": "getPortFolioVersionUnknown",
 	"nextDepositDateVersionUnknown": "nextDepositDateVersionUnknown",
-	"checkUserSignupValidationDobFormat": "checkUserSignupValidationDobFormat"
+	"checkUserSignupValidationDobFormat": "checkUserSignupValidationDobFormat",
+	"unlockRewardActionRequired": "unlockRewardActionRequired"
 }

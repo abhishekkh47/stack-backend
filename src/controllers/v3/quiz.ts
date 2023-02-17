@@ -70,6 +70,9 @@ class QuizController extends BaseController {
         return this.BadRequest(ctx, "User not found");
       }
     }
+    if (checkUserExists.isOnboardingQuizCompleted === true) {
+      return this.BadRequest(ctx, "Onboaring quiz already played");
+    }
     const checkQuizExists = await QuizTable.findOne({
       _id: reqParam.quizId,
     });

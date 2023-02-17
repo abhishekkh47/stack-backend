@@ -160,63 +160,46 @@ class UserController extends BaseController {
           return this.BadRequest(ctx, "User Not Found");
         }
       }
-      return validationsV3.unlockRewardValidation(
-        reqParam,
-        ctx,
-        async (validate: boolean) => {
-          if (validate) {
-            const parentChildDetails = await UserService.getParentChildInfo(
-              userExists._id
-            );
-            const checkParentInfo =
-              parentChildDetails &&
-              (await UserTable.findOne({
-                _id: parentChildDetails.userId,
-              }));
-
-            const checkParentBankExists =
-              parentChildDetails &&
-              (await UserBanksTable.findOne({
-                $or: [
-                  { userId: parentChildDetails.userId },
-                  { parentId: parentChildDetails.userId },
-                ],
-              }));
-            if (
-              checkParentInfo &&
-              checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-              checkParentBankExists &&
-              admin.giftCryptoSetting == 1 &&
-              userExists.isGiftedCrypto == 1
-            ) {
-              const accountIdDetails = await parentChildDetails.teens.find(
-                (x: any) => x.childId.toString() == userExists._id.toString()
-              ).accountId;
-
-              /**
-               * difference of 72 hours
-               */
-              const current = moment().unix();
-
-              if (
-                parentChildDetails &&
-                parentChildDetails.unlockRewardTime &&
-                current <= parentChildDetails.unlockRewardTime &&
-                userExists.isRewardDeclined == false
-              ) {
-                await TradingService.internalTransfer(
-                  parentChildDetails,
-                  jwtToken,
-                  accountIdDetails,
-                  userExists.type,
-                  admin
-                );
-              }
-            }
-            return this.Ok(ctx, { message: "Success" });
-          }
-        }
+      const parentChildDetails = await UserService.getParentChildInfo(
+        userExists._id
       );
+      const checkParentInfo =
+        parentChildDetails &&
+        (await UserTable.findOne({
+          _id: parentChildDetails.userId,
+        }));
+
+      const checkParentBankExists =
+        parentChildDetails &&
+        (await UserBanksTable.findOne({
+          $or: [
+            { userId: parentChildDetails.userId },
+            { parentId: parentChildDetails.userId },
+          ],
+        }));
+      if (
+        checkParentInfo &&
+        checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+        checkParentBankExists &&
+        admin.giftCryptoSetting == 1 &&
+        userExists.isGiftedCrypto !== 2
+      ) {
+        const accountIdDetails = await parentChildDetails.teens.find(
+          (x: any) => x.childId.toString() == userExists._id.toString()
+        ).accountId;
+
+        if (parentChildDetails && userExists.isRewardDeclined == false) {
+          await TradingService.internalTransfer(
+            parentChildDetails,
+            jwtToken,
+            accountIdDetails,
+            userExists.type,
+            admin,
+            true
+          );
+        }
+      }
+      return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, "Something went wrong");
     }

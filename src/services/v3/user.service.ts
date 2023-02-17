@@ -1,6 +1,7 @@
 import { ParentChildTable } from "./../../model/parentChild";
-import { UserTable } from "../../model";
+import { UserBanksTable, UserTable } from "../../model";
 import { ObjectId } from "mongodb";
+import { EUserType } from "@app/types";
 
 class UserService {
   /**
@@ -40,15 +41,6 @@ class UserService {
         { $unwind: { path: "$childInfo", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
-            from: "userbanks",
-            localField: "_id",
-            foreignField: "userId",
-            as: "bankDetails",
-          },
-        },
-        { $unwind: { path: "$bankDetails", preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
             from: "user-refferals",
             localField: "_id",
             foreignField: "userId",
@@ -65,13 +57,6 @@ class UserService {
           $addFields: {
             isParentApproved: 0,
             initialDeposit: 0,
-            isKycSuccess: {
-              $cond: {
-                if: { $eq: ["$parentchild.status", 3] },
-                then: true,
-                else: false,
-              },
-            },
             isKycDocumentUploaded: {
               $cond: {
                 if: { $ne: ["$parentchild.kycDocumentId", null] },
@@ -79,13 +64,8 @@ class UserService {
                 else: 0,
               },
             },
-            isBankDetail: {
-              $cond: {
-                if: { $eq: ["$bankDetails", null] },
-                then: true,
-                else: false,
-              },
-            },
+            isKycSuccess: false,
+            isBankDetail: false,
           },
         },
         {
@@ -94,15 +74,15 @@ class UserService {
             email: 1,
             kycMessages: 1,
             mobile: 1,
-            address: 1,
             isKycSuccess: 1,
+            isBankDetail: 1,
+            address: 1,
             firstName: 1,
             lastName: 1,
             type: 1,
             isParentApproved: 1,
             parentMobile: 1,
             parentEmail: 1,
-            bankDetails: 1,
             country: 1,
             "state._id": 1,
             "state.name": 1,
@@ -135,7 +115,6 @@ class UserService {
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
             isRewardDeclined: 1,
-            isBankDetail: 1,
           },
         },
       ]).exec()
@@ -143,6 +122,32 @@ class UserService {
 
     if (!data) {
       throw Error("Invalid user ID entered.");
+    }
+    let bankUserIds: any = [];
+    bankUserIds.push(data._id);
+    if (data.type == EUserType.TEEN) {
+      const parentChildTable = await ParentChildTable.findOne({
+        "teens.childId": data._id,
+      });
+      if (parentChildTable) {
+        bankUserIds.push(parentChildTable.userId);
+        const parentUser = await UserTable.findOne({
+          _id: parentChildTable.userId,
+        });
+        if (parentUser && parentUser.status === 3) {
+          data.isKycSuccess = true;
+        }
+      }
+    } else {
+      if (data.status === 3) {
+        data.isKycSuccess = true;
+      }
+    }
+    let userBankExists = await UserBanksTable.findOne({
+      userId: { $in: bankUserIds },
+    });
+    if (userBankExists) {
+      data.isBankDetail = true;
     }
     return { data };
   }
