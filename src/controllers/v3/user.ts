@@ -21,6 +21,7 @@ import {
 import { CMS_LINKS } from "../../utility/constants";
 import { Route } from "../../utility";
 import { validationsV3 } from "../../validations/v3/apiValidation";
+import userService from "@app/services/v3/user.service";
 
 class UserController extends BaseController {
   /**
@@ -236,6 +237,29 @@ class UserController extends BaseController {
       return this.Ok(ctx, { message: "Reward Declined Successfully" });
     } catch (error) {
       return this.BadRequest(ctx, "Something went wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to delete the user information
+   * @param ctx
+   */
+  @Route({ path: "/delete-user", method: HttpMethod.DELETE })
+  @Auth()
+  public async deleteUserDetails(ctx: any) {
+    try {
+      let user = ctx.request.user;
+      let userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      const isDetailsDeleted = await userService.deleteUserData(userExists);
+      if (!isDetailsDeleted) {
+        return this.BadRequest(ctx, "Error in deleting account");
+      }
+      return this.Ok(ctx, { message: "User Deleted Successfully" });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
 }
