@@ -47,6 +47,7 @@ import {
   userService,
   tradingService,
 } from "../../services/v1";
+import { UserService } from "@app/services/v3";
 
 class ScriptController extends BaseController {
   /**
@@ -923,54 +924,10 @@ class ScriptController extends BaseController {
     if (!userId || !userExists) {
       return this.BadRequest(ctx, "User Details Not Found");
     }
-    let parentChildRecord: any = await ParentChildTable.findOne({
-      $or: [{ userId: userExists._id }, { "teens.childId": userExists._id }],
-    });
-    const teenIds = parentChildRecord
-      ? parentChildRecord.teens.map((x) => x.childId)
-      : [];
-    /**
-     * Consider Teen Flow first
-     */
-    let otherRecordsQuery = {};
-    let userQuery = {};
-
-    if (userExists.type == EUserType.PARENT) {
-      if (!parentChildRecord) {
-        return this.BadRequest(ctx, "User Details Not Found");
-      }
-      otherRecordsQuery = { ...otherRecordsQuery, userId: { $in: teenIds } };
-      teenIds.push(userExists._id);
-      userQuery = { ...userQuery, _id: { $in: teenIds } };
-    } else {
-      if (parentChildRecord.teens.length === 1) {
-        otherRecordsQuery = { ...otherRecordsQuery, userId: { $in: teenIds } };
-        teenIds.push(parentChildRecord.userId);
-        userQuery = { ...userQuery, _id: { $in: teenIds } };
-      } else {
-        otherRecordsQuery = { ...otherRecordsQuery, userId: userExists._id };
-        userQuery = { ...userQuery, _id: userExists._id };
-        await ParentChildTable.findOneAndUpdate(
-          { _id: parentChildRecord._id },
-          {
-            $pull: {
-              teens: {
-                childId: userExists._id,
-              },
-            },
-          }
-        );
-      }
+    const isDetailsDeleted = await UserService.deleteUserData(userExists);
+    if (!isDetailsDeleted) {
+      return this.BadRequest(ctx, "Error in deleting account");
     }
-    await UserBanksTable.deleteMany(otherRecordsQuery);
-    await DeviceToken.deleteMany(otherRecordsQuery);
-    await Notification.deleteMany(otherRecordsQuery);
-    await QuizQuestionResult.deleteMany(otherRecordsQuery);
-    await QuizResult.deleteMany(otherRecordsQuery);
-    await TransactionTable.deleteMany(otherRecordsQuery);
-    await UserActivityTable.deleteMany(otherRecordsQuery);
-    await UserTable.deleteMany(userQuery);
-    await ParentChildTable.deleteMany(otherRecordsQuery);
 
     return this.Ok(ctx, { message: "Data removed successfully" });
   }
