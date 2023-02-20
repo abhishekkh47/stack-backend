@@ -21,7 +21,7 @@ import {
 import { CMS_LINKS } from "../../utility/constants";
 import { Route } from "../../utility";
 import { validationsV3 } from "../../validations/v3/apiValidation";
-import userService from "@app/services/v3/user.service";
+import userService from "../../services/v3/user.service";
 
 class UserController extends BaseController {
   /**

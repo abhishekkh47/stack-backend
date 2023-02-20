@@ -47,7 +47,7 @@ import {
   userService,
   tradingService,
 } from "../../services/v1";
-import { UserService } from "@app/services/v3";
+import { UserService } from "../../services/v3";
 
 class ScriptController extends BaseController {
   /**

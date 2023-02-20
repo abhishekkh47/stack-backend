@@ -1,5 +1,4 @@
 import { ParentChildTable } from './../../model/parentChild';
-import { IParentChild, MongooseBaseType } from "@app/types";
 import axios from "axios";
 import { ObjectId } from 'mongodb';
 
