@@ -446,6 +446,10 @@ class AuthController extends BaseController {
       { _id: ctx.request.user._id },
       {
         $set: {
+          parentEmail:
+            checkParentExists && checkParentExists.email
+              ? checkParentExists.email
+              : null,
           parentMobile: ctx.request.body.parentMobile,
           isEnteredParentNumber: true,
         },

@@ -2660,7 +2660,14 @@ class TradingController extends BaseController {
           /**
            * TODO:- Notification to be send
            */
-          return this.Ok(ctx, { message: "Transaction Processed!" });
+          let message = "Auto deposit enabled!";
+          if (
+            reqParam.isRecurring == ERECURRING.NO_BANK ||
+            reqParam.isRecurring == ERECURRING.NO_RECURRING
+          ) {
+            message = "Auto deposit disabled!";
+          }
+          return this.Ok(ctx, { message: message });
         }
       }
     );
