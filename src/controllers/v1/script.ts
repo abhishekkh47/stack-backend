@@ -991,8 +991,11 @@ class ScriptController extends BaseController {
         jwtToken,
         transactions.executedQuoteId
       );
-      console.log(quoteDetails);
+      let quoteDetailsResponse =
+        quoteDetails.data.relationships["initiator-account"].links.related;
+      console.log(quoteDetailsResponse, "quoteDetailsResponse");
     }
+    return this.Ok(ctx, { message: "Success" });
   }
 }
 
