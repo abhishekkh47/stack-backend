@@ -968,7 +968,7 @@ class ScriptController extends BaseController {
     const parentChildExists: any = await ParentChildTable.findOne({
       "teens.childId": userExists._id,
     });
-    if (!userExists || parentChildExists) {
+    if (!userExists || !parentChildExists) {
       return this.BadRequest(ctx, "User not found");
     }
     let accountDetails = parentChildExists.teens.find(
@@ -980,22 +980,51 @@ class ScriptController extends BaseController {
     const accountId = accountDetails.accountId;
     let transactionDetails = await TransactionTable.find({
       userId: userExists._id,
-      executedQuoteId: "101ce92d-ce3b-44c1-b47c-17760c78b9d6",
-      // type: {
-      //   $in: [ETransactionType.BUY, ETransactionType.SELL],
-      // },
+      type: {
+        $in: [ETransactionType.BUY, ETransactionType.SELL],
+      },
     });
+    let transactionIdsToBeRemoved = [];
+    let validTransactions = [];
     for await (let transactions of transactionDetails) {
       console.log(transactions, "transaction");
       let quoteDetails = await getQuoteInformation(
         jwtToken,
         transactions.executedQuoteId
       );
-      let quoteDetailsResponse =
-        quoteDetails.data.relationships["initiator-account"].links.related;
-      console.log(quoteDetailsResponse, "quoteDetailsResponse");
+      if (
+        quoteDetails &&
+        quoteDetails.data &&
+        quoteDetails.data.relationships["initiator-account"] &&
+        quoteDetails.data.relationships["initiator-account"].links &&
+        quoteDetails.data.relationships["initiator-account"].links.related
+      ) {
+        let accountIdExtractFromPt =
+          quoteDetails.data.relationships[
+            "initiator-account"
+          ].links.related.split("/v2/accounts/").length > 1
+            ? quoteDetails.data.relationships[
+                "initiator-account"
+              ].links.related.split("/v2/accounts/")[1]
+            : "";
+        if (accountIdExtractFromPt !== accountId) {
+          transactionIdsToBeRemoved.push(transactions._id);
+        } else {
+          validTransactions.push(transactions._id);
+        }
+      }
     }
-    return this.Ok(ctx, { message: "Success" });
+    /**
+     * await TransactionTable.deleteMany({
+     *  _id: { $in: transactionIdsToBeRemoved },
+     * });
+     */
+    return this.Ok(ctx, {
+      message: "Success",
+      data: transactionIdsToBeRemoved,
+      validData: validTransactions,
+      unsuedDataLength: transactionIdsToBeRemoved.length,
+    });
   }
 }
 
