@@ -11,7 +11,7 @@ import ScriptController from "./script";
 import DripshopController from "./dripshop";
 import { getRouteDict } from "../../utility";
 
-const routeDict = getRouteDict('1.0.0', [
+const routeDict = getRouteDict("1.0.0", [
   AuthController,
   QuizController,
   VideoController,
@@ -22,7 +22,7 @@ const routeDict = getRouteDict('1.0.0', [
   CMSController,
   WebHookController,
   DripshopController,
-  ScriptController,
-])
+  // ScriptController,
+]);
 
 export default routeDict;

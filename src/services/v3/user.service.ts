@@ -1,6 +1,16 @@
 import { ParentChildTable } from "./../../model/parentChild";
-import { UserTable } from "../../model";
+import {
+  DeviceToken,
+  Notification,
+  QuizQuestionResult,
+  QuizResult,
+  TransactionTable,
+  UserActivityTable,
+  UserBanksTable,
+  UserTable,
+} from "../../model";
 import { ObjectId } from "mongodb";
+import { EUserType } from "../../types";
 
 class UserService {
   /**
@@ -63,6 +73,8 @@ class UserService {
                 else: 0,
               },
             },
+            isKycSuccess: false,
+            isBankDetail: false,
           },
         },
         {
@@ -71,6 +83,8 @@ class UserService {
             email: 1,
             kycMessages: 1,
             mobile: 1,
+            isKycSuccess: 1,
+            isBankDetail: 1,
             address: 1,
             firstName: 1,
             lastName: 1,
@@ -117,6 +131,32 @@ class UserService {
 
     if (!data) {
       throw Error("Invalid user ID entered.");
+    }
+    let bankUserIds: any = [];
+    bankUserIds.push(data._id);
+    if (data.type == EUserType.TEEN) {
+      const parentChildTable = await ParentChildTable.findOne({
+        "teens.childId": data._id,
+      });
+      if (parentChildTable) {
+        bankUserIds.push(parentChildTable.userId);
+        const parentUser = await UserTable.findOne({
+          _id: parentChildTable.userId,
+        });
+        if (parentUser && parentUser.status === 3) {
+          data.isKycSuccess = true;
+        }
+      }
+    } else {
+      if (data.status === 3) {
+        data.isKycSuccess = true;
+      }
+    }
+    let userBankExists = await UserBanksTable.findOne({
+      userId: { $in: bankUserIds },
+    });
+    if (userBankExists) {
+      data.isBankDetail = true;
     }
     return { data };
   }
@@ -173,6 +213,103 @@ class UserService {
       parentChildDetails.length > 0 ? parentChildDetails[0] : null;
 
     return parentChildDetails;
+  }
+
+  /**
+   * @description This service is used to delete all the user related information
+   * @param userId
+   */
+  public async deleteUserData(userDetails: any) {
+    try {
+      let parentChildRecord: any = await ParentChildTable.findOne({
+        $or: [
+          { userId: userDetails._id },
+          { "teens.childId": userDetails._id },
+        ],
+      });
+      const teenIds = parentChildRecord
+        ? parentChildRecord.teens.map((x) => x.childId)
+        : [];
+      /**
+       * Consider Teen Flow first
+       */
+      let otherRecordsQuery = {};
+      let userQuery = {};
+
+      if (userDetails.type == EUserType.PARENT) {
+        otherRecordsQuery = { ...otherRecordsQuery, userId: { $in: teenIds } };
+        teenIds.push(userDetails._id);
+        userQuery = { ...userQuery, _id: { $in: teenIds } };
+      } else {
+        if (parentChildRecord) {
+          if (parentChildRecord.teens.length === 1) {
+            otherRecordsQuery = {
+              ...otherRecordsQuery,
+              userId: { $in: teenIds },
+            };
+            teenIds.push(parentChildRecord.userId);
+            userQuery = { ...userQuery, _id: { $in: teenIds } };
+          } else {
+            if (
+              parentChildRecord.firstChildId.toString() ===
+              userDetails._id.toString()
+            ) {
+              let otherTeen = parentChildRecord.teens.find(
+                (x) =>
+                  x.childId.toString() !==
+                  parentChildRecord.firstChildId.toString()
+              );
+              console.log(otherTeen, "otherTeen");
+              if (otherTeen) {
+                await ParentChildTable.findOneAndUpdate(
+                  { _id: parentChildRecord._id },
+                  {
+                    $set: {
+                      firstChildId: otherTeen.childId,
+                    },
+                  }
+                );
+              }
+            }
+            otherRecordsQuery = {
+              ...otherRecordsQuery,
+              userId: userDetails._id,
+            };
+            userQuery = { ...userQuery, _id: userDetails._id };
+            await ParentChildTable.findOneAndUpdate(
+              { _id: parentChildRecord._id },
+              {
+                $pull: {
+                  teens: {
+                    childId: userDetails._id,
+                  },
+                },
+              },
+              { new: true }
+            );
+          }
+        } else {
+          teenIds.push(userDetails._id);
+          otherRecordsQuery = {
+            ...otherRecordsQuery,
+            userId: { $in: teenIds },
+          };
+          userQuery = { ...userQuery, _id: { $in: teenIds } };
+        }
+      }
+      await UserBanksTable.deleteMany(otherRecordsQuery);
+      await DeviceToken.deleteMany(otherRecordsQuery);
+      await Notification.deleteMany(otherRecordsQuery);
+      await QuizQuestionResult.deleteMany(otherRecordsQuery);
+      await QuizResult.deleteMany(otherRecordsQuery);
+      await TransactionTable.deleteMany(otherRecordsQuery);
+      await UserActivityTable.deleteMany(otherRecordsQuery);
+      await UserTable.deleteMany(userQuery);
+      await ParentChildTable.deleteMany(otherRecordsQuery);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
 

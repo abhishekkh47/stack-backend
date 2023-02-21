@@ -104,6 +104,7 @@ class AuthController extends BaseController {
                 ...setQuery,
                 isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
                 email: userExists.email,
+                dob: userExists.dob,
               };
               migratedId = teenExists._id;
             } else {
@@ -445,6 +446,10 @@ class AuthController extends BaseController {
       { _id: ctx.request.user._id },
       {
         $set: {
+          parentEmail:
+            checkParentExists && checkParentExists.email
+              ? checkParentExists.email
+              : null,
           parentMobile: ctx.request.body.parentMobile,
           isEnteredParentNumber: true,
         },
