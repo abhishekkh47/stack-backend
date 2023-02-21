@@ -254,6 +254,7 @@ class UserController extends BaseController {
         return this.BadRequest(ctx, "User not found");
       }
       const isDetailsDeleted = await userService.deleteUserData(userExists);
+      console.log(isDetailsDeleted, "isDetailsDeleted");
       if (!isDetailsDeleted) {
         return this.BadRequest(ctx, "Error in deleting account");
       }
