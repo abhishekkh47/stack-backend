@@ -22,7 +22,7 @@ const routeDict = getRouteDict('1.0.0', [
   CMSController,
   WebHookController,
   DripshopController,
-  ScriptController,
+  // ScriptController,
 ])
 
 export default routeDict;
