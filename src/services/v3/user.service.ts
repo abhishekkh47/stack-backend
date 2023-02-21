@@ -237,55 +237,64 @@ class UserService {
       let userQuery = {};
 
       if (userDetails.type == EUserType.PARENT) {
-        if (!parentChildRecord) {
-          return false;
-        }
         otherRecordsQuery = { ...otherRecordsQuery, userId: { $in: teenIds } };
         teenIds.push(userDetails._id);
         userQuery = { ...userQuery, _id: { $in: teenIds } };
       } else {
-        if (parentChildRecord.teens.length === 1) {
+        if (parentChildRecord) {
+          if (parentChildRecord.teens.length === 1) {
+            otherRecordsQuery = {
+              ...otherRecordsQuery,
+              userId: { $in: teenIds },
+            };
+            teenIds.push(parentChildRecord.userId);
+            userQuery = { ...userQuery, _id: { $in: teenIds } };
+          } else {
+            if (
+              parentChildRecord.firstChildId.toString() ===
+              userDetails._id.toString()
+            ) {
+              let otherTeen = parentChildRecord.teens.find(
+                (x) =>
+                  x.childId.toString() !==
+                  parentChildRecord.firstChildId.toString()
+              );
+              console.log(otherTeen, "otherTeen");
+              if (otherTeen) {
+                await ParentChildTable.findOneAndUpdate(
+                  { _id: parentChildRecord._id },
+                  {
+                    $set: {
+                      firstChildId: otherTeen.childId,
+                    },
+                  }
+                );
+              }
+            }
+            otherRecordsQuery = {
+              ...otherRecordsQuery,
+              userId: userDetails._id,
+            };
+            userQuery = { ...userQuery, _id: userDetails._id };
+            await ParentChildTable.findOneAndUpdate(
+              { _id: parentChildRecord._id },
+              {
+                $pull: {
+                  teens: {
+                    childId: userDetails._id,
+                  },
+                },
+              },
+              { new: true }
+            );
+          }
+        } else {
+          teenIds.push(userDetails._id);
           otherRecordsQuery = {
             ...otherRecordsQuery,
             userId: { $in: teenIds },
           };
-          teenIds.push(parentChildRecord.userId);
           userQuery = { ...userQuery, _id: { $in: teenIds } };
-        } else {
-          if (
-            parentChildRecord.firstChildId.toString() ===
-            userDetails._id.toString()
-          ) {
-            let otherTeen = parentChildRecord.teens.find(
-              (x) =>
-                x.childId.toString() !==
-                parentChildRecord.firstChildId.toString()
-            );
-            console.log(otherTeen, "otherTeen");
-            if (otherTeen) {
-              await ParentChildTable.findOneAndUpdate(
-                { _id: parentChildRecord._id },
-                {
-                  $set: {
-                    firstChildId: otherTeen.childId,
-                  },
-                }
-              );
-            }
-          }
-          otherRecordsQuery = { ...otherRecordsQuery, userId: userDetails._id };
-          userQuery = { ...userQuery, _id: userDetails._id };
-          await ParentChildTable.findOneAndUpdate(
-            { _id: parentChildRecord._id },
-            {
-              $pull: {
-                teens: {
-                  childId: userDetails._id,
-                },
-              },
-            },
-            { new: true }
-          );
         }
       }
       await UserBanksTable.deleteMany(otherRecordsQuery);
