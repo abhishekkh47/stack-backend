@@ -393,6 +393,18 @@ class AuthController extends BaseController {
             },
             { upsert: true, new: true }
           );
+          let preTreenAccountExists = await UserTable.find({
+            _id: { $ne: createChild._id },
+            parentMobile: mobile,
+            isParentFirst: true,
+          });
+          if (preTreenAccountExists.length > 0) {
+            await UserTable.deleteMany({
+              _id: { $ne: createChild._id },
+              parentMobile: mobile,
+              isParentFirst: true,
+            });
+          }
 
           /**
            * Add zoho crm
