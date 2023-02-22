@@ -224,7 +224,6 @@ class AuthController extends BaseController {
             childFirstName,
             childLastName,
           } = input;
-          console.log(input, "input");
           let query: any = {
             mobile: childMobile,
           };
