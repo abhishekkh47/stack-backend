@@ -13,14 +13,8 @@ export const validationsV3 = {
       loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       socialLoginToken: Joi.string().required(),
       deviceType: Joi.number().valid(1, 2),
-      firstName: Joi.string()
-        .allow("")
-        .regex(/^[A-za-z]*$/)
-        .optional(),
-      lastName: Joi.string()
-        .allow("")
-        .regex(/^[A-za-z]*$/)
-        .optional(),
+      firstName: Joi.string().allow("").optional(),
+      lastName: Joi.string().allow("").optional(),
       deviceToken: Joi.string().optional().allow(""),
       dob: Joi.date()
         .iso()

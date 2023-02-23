@@ -301,6 +301,12 @@ class AuthController extends BaseController {
               { email: reqParam.email },
               {
                 $set: {
+                  firstName: reqParam.firstName
+                    ? reqParam.firstName
+                    : user.firstName,
+                  lastName: reqParam.lastName
+                    ? reqParam.lastName
+                    : user.lastName,
                   mobile: reqParam.mobile,
                   parentEmail: reqParam.parentEmail
                     ? reqParam.parentEmail
