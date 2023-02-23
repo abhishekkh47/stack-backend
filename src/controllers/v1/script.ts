@@ -987,7 +987,6 @@ class ScriptController extends BaseController {
     let transactionIdsToBeRemoved = [];
     let validTransactions = [];
     for await (let transactions of transactionDetails) {
-      console.log(transactions, "transaction");
       let quoteDetails = await getQuoteInformation(
         jwtToken,
         transactions.executedQuoteId
@@ -1014,11 +1013,9 @@ class ScriptController extends BaseController {
         }
       }
     }
-    /**
-     * await TransactionTable.deleteMany({
-     *  _id: { $in: transactionIdsToBeRemoved },
-     * });
-     */
+    await TransactionTable.deleteMany({
+      _id: { $in: transactionIdsToBeRemoved },
+    });
     return this.Ok(ctx, {
       message: "Success",
       data: transactionIdsToBeRemoved,
