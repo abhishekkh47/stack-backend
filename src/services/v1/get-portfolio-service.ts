@@ -28,17 +28,14 @@ class PortfolioService {
     const accountIdDetails: any =
       userExists && userExists.type == EUserType.SELF
         ? parentChild
-        : await parentChild.teens.find(
+        : await parentChild?.teens?.find(
             (x: any) => x.childId.toString() == childId.toString()
           );
-    if (!accountIdDetails) {
-      throw Error("Account ID Details Not Found");
-    }
 
     let balance = 0;
     let getUnitCount;
     const cryptoInfo = await CryptoTable.findOne({ _id: cryptoId });
-    if (accountIdDetails.accountId) {
+    if (accountIdDetails?.accountId) {
       const fetchBalance: any = await getBalance(
         jwtToken,
         accountIdDetails.accountId
