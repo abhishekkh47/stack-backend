@@ -54,7 +54,7 @@ export const uploadIdProof = multer({
     if (!checkValidImageExtension(file)) {
       return cb(
         new Error(
-          "Please upload a Image of valid extension of jpg or pdf format only."
+          "Please upload a Image of valid extension of jpg, png, or pdf format only."
         )
       );
     }
