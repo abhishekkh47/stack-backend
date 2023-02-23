@@ -37,6 +37,8 @@ export const PRIMETRUSTAPIS = {
   pushTransferMethodGet: (id) => `v2/push-transfer-methods/${id}`,
   getAccountByAccountId: (accountId) => `v2/accounts/${accountId}`,
   getQuoteInformation: (quoteId) => `v2/quotes/${quoteId}`,
+  getInternalTransferInformation: (quoteId) =>
+    `v2/internal-asset-transfers/${quoteId}`,
   internalAssetTransfers: `v2/internal-asset-transfers`,
 };
 export const COINMARKETCAPAPIS = {

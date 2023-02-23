@@ -38,6 +38,7 @@ import {
   getPrimeTrustJWTToken,
   Route,
   getQuoteInformation,
+  getInternalTransferInformation,
 } from "../../utility";
 import BaseController from ".././base";
 import {
@@ -1013,28 +1014,27 @@ class ScriptController extends BaseController {
           validTransactions.push(transactions._id);
         }
       } else {
-        resouceNotFoundTransactions.push(transactions._id);
+        resouceNotFoundTransactions.push(transactions);
       }
     }
     for await (let resouceNotFoundTransaction of resouceNotFoundTransactions) {
-      let internalTransferDetails = await getQuoteInformation(
+      let internalTransferDetails = await getInternalTransferInformation(
         jwtToken,
         resouceNotFoundTransaction.executedQuoteId
       );
       if (
         internalTransferDetails &&
         internalTransferDetails.data &&
-        internalTransferDetails.data.relationships["initiator-account"] &&
-        internalTransferDetails.data.relationships["initiator-account"].links &&
-        internalTransferDetails.data.relationships["initiator-account"].links
-          .related
+        internalTransferDetails.data.relationships["to-account"] &&
+        internalTransferDetails.data.relationships["to-account"].links &&
+        internalTransferDetails.data.relationships["to-account"].links.related
       ) {
         let accountIdExtractFromPt =
           internalTransferDetails.data.relationships[
-            "initiator-account"
+            "to-account"
           ].links.related.split("/v2/accounts/").length > 1
             ? internalTransferDetails.data.relationships[
-                "initiator-account"
+                "to-account"
               ].links.related.split("/v2/accounts/")[1]
             : "";
         if (accountIdExtractFromPt !== accountId) {
@@ -1042,20 +1042,16 @@ class ScriptController extends BaseController {
         } else {
           validTransactions.push(resouceNotFoundTransaction._id);
         }
-      } else {
-        resouceNotFoundTransactions.push(resouceNotFoundTransaction._id);
       }
     }
-    // await TransactionTable.deleteMany({
-    //   _id: { $in: transactionIdsToBeRemoved },
-    // });
+    await TransactionTable.deleteMany({
+      _id: { $in: transactionIdsToBeRemoved },
+    });
     return this.Ok(ctx, {
       message: "Success",
       data: transactionIdsToBeRemoved,
       validData: validTransactions,
       unsuedDataLength: transactionIdsToBeRemoved.length,
-      resouceNotFoundTransactions: resouceNotFoundTransactions,
-      resouceNotFoundTransactionsLength: resouceNotFoundTransactions.length,
     });
   }
 }
