@@ -46,11 +46,11 @@ export const validations = {
         .required(),
       firstName: Joi.string()
         .allow("")
-        .regex(/^[A-za-z]*$/)
+        .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
         .optional(),
       lastName: Joi.string()
         .allow("")
-        .regex(/^[A-za-z]*$/)
+        .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
         .optional(),
       email: Joi.string().email().optional(),
       refferalCode: Joi.string().optional(),

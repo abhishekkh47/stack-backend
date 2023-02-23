@@ -68,11 +68,11 @@ export const validationsV3 = {
       email: Joi.string().email().optional(),
       firstName: Joi.string()
         .allow("")
-        .regex(/^[A-za-z]*$/)
+        .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
         .optional(),
       lastName: Joi.string()
         .allow("")
-        .regex(/^[A-za-z]*$/)
+        .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
         .optional(),
       refferalCode: Joi.string().optional(),
       deviceToken: Joi.string().optional().allow(""),
