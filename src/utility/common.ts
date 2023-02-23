@@ -56,7 +56,7 @@ const toUpperCase = (str) => {
   return "";
 };
 export const checkValidImageExtension = (file) => {
-  let fileArray = ["image/jpeg", "image/jpg", "application/pdf"];
+  let fileArray = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
   if (file.fieldname === "profile_picture")
     fileArray = ["image/jpeg", "image/jpg", "image/png"];
   if (file && fileArray.includes(file.mimetype)) return true;
