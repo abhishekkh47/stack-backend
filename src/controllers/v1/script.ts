@@ -37,6 +37,8 @@ import {
   getHistoricalDataOfCoins,
   getPrimeTrustJWTToken,
   Route,
+  getQuoteInformation,
+  getInternalTransferInformation,
 } from "../../utility";
 import BaseController from ".././base";
 import {
@@ -950,6 +952,107 @@ class ScriptController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is used
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/portfolio-asset-fix", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
+  public async fixPortfolioAssetBalance(ctx: any) {
+    let jwtToken = ctx.request.primeTrustToken;
+    const userExists = await UserTable.findOne({
+      email: "nataliezx2010@gmail.com",
+    });
+    const parentChildExists: any = await ParentChildTable.findOne({
+      "teens.childId": userExists._id,
+    });
+    if (!userExists || !parentChildExists) {
+      return this.BadRequest(ctx, "User not found");
+    }
+    let accountDetails = parentChildExists.teens.find(
+      (x) => x.childId.toString() === userExists._id.toString()
+    );
+    if (!accountDetails) {
+      return this.BadRequest(ctx, "Account Details Not Found");
+    }
+    const accountId = accountDetails.accountId;
+    let transactionDetails = await TransactionTable.find({
+      userId: userExists._id,
+      type: {
+        $in: [ETransactionType.BUY, ETransactionType.SELL],
+      },
+    });
+    let transactionIdsToBeRemoved = [];
+    let validTransactions = [];
+    let resouceNotFoundTransactions = [];
+    for await (let transactions of transactionDetails) {
+      let quoteDetails = await getQuoteInformation(
+        jwtToken,
+        transactions.executedQuoteId
+      );
+      if (
+        quoteDetails &&
+        quoteDetails.data &&
+        quoteDetails.data.relationships["initiator-account"] &&
+        quoteDetails.data.relationships["initiator-account"].links &&
+        quoteDetails.data.relationships["initiator-account"].links.related
+      ) {
+        let accountIdExtractFromPt =
+          quoteDetails.data.relationships[
+            "initiator-account"
+          ].links.related.split("/v2/accounts/").length > 1
+            ? quoteDetails.data.relationships[
+                "initiator-account"
+              ].links.related.split("/v2/accounts/")[1]
+            : "";
+        if (accountIdExtractFromPt !== accountId) {
+          transactionIdsToBeRemoved.push(transactions._id);
+        } else {
+          validTransactions.push(transactions._id);
+        }
+      } else {
+        resouceNotFoundTransactions.push(transactions);
+      }
+    }
+    for await (let resouceNotFoundTransaction of resouceNotFoundTransactions) {
+      let internalTransferDetails = await getInternalTransferInformation(
+        jwtToken,
+        resouceNotFoundTransaction.executedQuoteId
+      );
+      if (
+        internalTransferDetails &&
+        internalTransferDetails.data &&
+        internalTransferDetails.data.relationships["to-account"] &&
+        internalTransferDetails.data.relationships["to-account"].links &&
+        internalTransferDetails.data.relationships["to-account"].links.related
+      ) {
+        let accountIdExtractFromPt =
+          internalTransferDetails.data.relationships[
+            "to-account"
+          ].links.related.split("/v2/accounts/").length > 1
+            ? internalTransferDetails.data.relationships[
+                "to-account"
+              ].links.related.split("/v2/accounts/")[1]
+            : "";
+        if (accountIdExtractFromPt !== accountId) {
+          transactionIdsToBeRemoved.push(resouceNotFoundTransaction._id);
+        } else {
+          validTransactions.push(resouceNotFoundTransaction._id);
+        }
+      }
+    }
+    await TransactionTable.deleteMany({
+      _id: { $in: transactionIdsToBeRemoved },
+    });
+    return this.Ok(ctx, {
+      message: "Success",
+      data: transactionIdsToBeRemoved,
+      validData: validTransactions,
+      unsuedDataLength: transactionIdsToBeRemoved.length,
+    });
   }
 }
 
