@@ -3,14 +3,7 @@ import { validationsV3 } from "../../validations/v3/apiValidation";
 import { EPHONEVERIFIEDSTATUS } from "../../types/user";
 import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import { Auth, PrimeTrustJWT } from "../../middleware";
-import {
-  AdminTable,
-  CryptoTable,
-  OtpTable,
-  ParentChildTable,
-  TransactionTable,
-  UserTable,
-} from "../../model";
+import { AdminTable, OtpTable, ParentChildTable, UserTable } from "../../model";
 import {
   DeviceTokenService,
   SocialService,
@@ -25,8 +18,6 @@ import {
 } from "../../types";
 import {
   getMinutesBetweenDates,
-  getRefreshToken,
-  internalAssetTransfers,
   makeUniqueReferalCode,
   Route,
 } from "../../utility";
