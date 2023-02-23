@@ -986,6 +986,7 @@ class ScriptController extends BaseController {
     });
     let transactionIdsToBeRemoved = [];
     let validTransactions = [];
+    let resouceNotFoundTransactions = [];
     for await (let transactions of transactionDetails) {
       let quoteDetails = await getQuoteInformation(
         jwtToken,
@@ -1011,16 +1012,50 @@ class ScriptController extends BaseController {
         } else {
           validTransactions.push(transactions._id);
         }
+      } else {
+        resouceNotFoundTransactions.push(transactions._id);
       }
     }
-    await TransactionTable.deleteMany({
-      _id: { $in: transactionIdsToBeRemoved },
-    });
+    for await (let resouceNotFoundTransaction of resouceNotFoundTransactions) {
+      let internalTransferDetails = await getQuoteInformation(
+        jwtToken,
+        resouceNotFoundTransaction.executedQuoteId
+      );
+      if (
+        internalTransferDetails &&
+        internalTransferDetails.data &&
+        internalTransferDetails.data.relationships["initiator-account"] &&
+        internalTransferDetails.data.relationships["initiator-account"].links &&
+        internalTransferDetails.data.relationships["initiator-account"].links
+          .related
+      ) {
+        let accountIdExtractFromPt =
+          internalTransferDetails.data.relationships[
+            "initiator-account"
+          ].links.related.split("/v2/accounts/").length > 1
+            ? internalTransferDetails.data.relationships[
+                "initiator-account"
+              ].links.related.split("/v2/accounts/")[1]
+            : "";
+        if (accountIdExtractFromPt !== accountId) {
+          transactionIdsToBeRemoved.push(resouceNotFoundTransaction._id);
+        } else {
+          validTransactions.push(resouceNotFoundTransaction._id);
+        }
+      } else {
+        resouceNotFoundTransactions.push(resouceNotFoundTransaction._id);
+      }
+    }
+    // await TransactionTable.deleteMany({
+    //   _id: { $in: transactionIdsToBeRemoved },
+    // });
     return this.Ok(ctx, {
       message: "Success",
       data: transactionIdsToBeRemoved,
       validData: validTransactions,
       unsuedDataLength: transactionIdsToBeRemoved.length,
+      resouceNotFoundTransactions: resouceNotFoundTransactions,
+      resouceNotFoundTransactionsLength: resouceNotFoundTransactions.length,
     });
   }
 }
