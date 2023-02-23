@@ -1,7 +1,9 @@
-let Joi = require("joi")
-Joi = Joi.defaults((schema) => schema.options({
-  allowUnknown: true 
-}));
+let Joi = require("joi");
+Joi = Joi.defaults((schema) =>
+  schema.options({
+    allowUnknown: true,
+  })
+);
 
 import { validationMessageKey } from "../../utility";
 export const validations = {
@@ -42,6 +44,14 @@ export const validations = {
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
+      firstName: Joi.string()
+        .allow("")
+        .regex(/^[A-za-z]*$/)
+        .optional(),
+      lastName: Joi.string()
+        .allow("")
+        .regex(/^[A-za-z]*$/)
+        .optional(),
       email: Joi.string().email().optional(),
       refferalCode: Joi.string().optional(),
       deviceToken: Joi.string().optional().allow(""),
@@ -213,5 +223,4 @@ export const validations = {
     }
     return callback(true);
   },
-  
 };

@@ -13,14 +13,8 @@ export const validationsV3 = {
       loginType: Joi.number().valid(1, 2).required(), // 1 - google and 2 - apple
       socialLoginToken: Joi.string().required(),
       deviceType: Joi.number().valid(1, 2),
-      firstName: Joi.string()
-        .allow("")
-        .regex(/^[A-za-z]*$/)
-        .optional(),
-      lastName: Joi.string()
-        .allow("")
-        .regex(/^[A-za-z]*$/)
-        .optional(),
+      firstName: Joi.string().allow("").optional(),
+      lastName: Joi.string().allow("").optional(),
       deviceToken: Joi.string().optional().allow(""),
       dob: Joi.date()
         .iso()
@@ -61,6 +55,94 @@ export const validationsV3 = {
       return res.throw(
         400,
         res.__(validationMessageKey("unlockReward", error))
+      );
+    }
+    return callback(true);
+  },
+  signupValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      type: Joi.number().optional().valid(1, 2, 3),
+      mobile: Joi.string()
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+        .required(),
+      email: Joi.string().email().optional(),
+      firstName: Joi.string()
+        .allow("")
+        .regex(/^[A-za-z]*$/)
+        .optional(),
+      lastName: Joi.string()
+        .allow("")
+        .regex(/^[A-za-z]*$/)
+        .optional(),
+      refferalCode: Joi.string().optional(),
+      deviceToken: Joi.string().optional().allow(""),
+      childMobile: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+          .disallow(Joi.ref("mobile"))
+          .required(),
+      }),
+      parentMobile: Joi.when("type", {
+        is: 1,
+        then: Joi.string()
+          .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+          .disallow(Joi.ref("mobile"))
+          .required(),
+      }),
+      taxIdNo: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/^\d{9}$/)
+          .optional()
+          .allow(""),
+      }),
+      country: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .optional()
+          .allow(""),
+      }),
+      state: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .optional()
+          .allow(""),
+      }),
+      city: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .optional()
+          .allow(""),
+      }),
+      address: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z]/)
+          .optional()
+          .allow(""),
+      }),
+      unitApt: Joi.when("type", {
+        is: 2,
+        then: Joi.string().allow(null).allow(""),
+      }),
+      postalCode: Joi.when("type", {
+        is: 2,
+        then: Joi.string()
+          .regex(/[A-Za-z0-9]/)
+          .min(4)
+          .optional()
+          .allow(""),
+      }),
+    });
+    const { error } = schema.validate(req, { allowUnknown: true });
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("signupValidation", error))
       );
     }
     return callback(true);
