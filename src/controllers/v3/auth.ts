@@ -62,10 +62,11 @@ class AuthController extends BaseController {
             new Date()
           );
           if (checkMinutes > 5) {
-            return this.BadRequest(
-              ctx,
-              "Otp Time Limit Expired. Please resend otp and try to submit it within 5 minutes."
-            );
+            return this.BadRequest(ctx, {
+              error_code: "code_expired",
+              message:
+                "Otp Time Limit Expired. Please resend otp and try to submit it within 5 minutes.",
+            });
           }
           /* tslint:disable-next-line */
           if (otpExists.code != reqParam.code) {
