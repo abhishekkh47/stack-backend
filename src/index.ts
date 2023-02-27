@@ -20,7 +20,7 @@ const server = (async () => {
   try {
     const app = new Koa();
     const appServer = http.createServer(app.callback());
-    app.use(monitor(appServer, { path: '/status' }))
+    app.use(monitor(appServer, { path: "/status" }));
 
     const render = views(__dirname + "/views", { extension: "pug" });
 
@@ -31,8 +31,11 @@ const server = (async () => {
     app.use(async (ctx, next) => {
       console.log(ctx.path, "path");
       if (
-        ["/update-primetrust-data"].filter((item) => ctx.path.includes(item))
-          .length > 0
+        [
+          "/update-primetrust-data",
+          "/api/v2/upload-id-proof",
+          "/api/v1/upload-id-proof",
+        ].filter((item) => ctx.path.includes(item)).length > 0
       ) {
         ctx.disableBodyParser = true;
       }
