@@ -42,6 +42,15 @@ class UserService {
         { $unwind: { path: "$parentchild", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
+            from: "users",
+            localField: "parentchild.firstChildId",
+            foreignField: "_id",
+            as: "childInfo",
+          },
+        },
+        { $unwind: { path: "$childInfo", preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
             from: "user-refferals",
             localField: "_id",
             foreignField: "userId",
