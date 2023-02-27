@@ -20,9 +20,7 @@ import {
   createAccount,
   getLinkToken,
   kycDocumentChecks,
-  removeImage,
   Route,
-  uploadFileS3,
   uploadFilesFetch,
   uploadIdProof,
   uploadImage,
@@ -524,30 +522,41 @@ class UserController extends BaseController {
   @Route({
     path: "/update-profile-picture",
     method: HttpMethod.POST,
-    middleware: [uploadFileS3.single("profile_picture")],
   })
   @Auth()
   public async updateProfilePicture(ctx: any) {
     const userExists: any = await UserTable.findOne({
-      _id: ctx.request.body.userId
-        ? ctx.request.body.userId
-        : ctx.request.user._id,
+      _id: ctx.request.user._id,
     });
-    const file = ctx.request.file;
-    if (!file) {
+    const requestParams = ctx.request.body;
+    if (!requestParams.media) {
       return this.BadRequest(ctx, "Image is not selected");
     }
-    const imageName =
-      file && file.key
-        ? file.key.split("/").length > 0
-          ? file.key.split("/")[1]
-          : null
-        : null;
-    if (userExists.profilePicture) {
-      await removeImage(userExists._id, userExists.profilePicture);
+    let validBase64 = await checkValidBase64String(requestParams.media);
+    if (!validBase64) {
+      return this.BadRequest(ctx, "Please enter valid image");
     }
+    const extension =
+      requestParams.media && requestParams.media !== ""
+        ? requestParams.media.split(";")[0].split("/")[1]
+        : "";
+    const imageName =
+      requestParams.media && requestParams.media !== ""
+        ? `profile_picture_${moment().unix()}.${extension}`
+        : "";
+    const imageExtArr = ["jpg", "jpeg", "png"];
+    if (imageName && !imageExtArr.includes(extension)) {
+      return this.BadRequest(ctx, "Please add valid extension");
+    }
+    let s3Path = `${userExists._id}`;
+    const uploadImageRequest = await uploadImage(
+      imageName,
+      s3Path,
+      ctx.request.body,
+      ctx.response
+    );
     await UserTable.updateOne(
-      { _id: userExists._id },
+      { _id: ctx.request.user._id },
       {
         $set: { profilePicture: imageName },
       }
