@@ -2243,7 +2243,15 @@ class TradingController extends BaseController {
               },
             }
           );
-          if (reqParam.isAutoApproval == EAUTOAPPROVAL.OFF) {
+          let pendingActivities = await UserActivityTable.find({
+            userId: childId,
+            status: EStatus.PENDING,
+          });
+          if (
+            reqParam.isAutoApproval == EAUTOAPPROVAL.OFF ||
+            (pendingActivities.length === 0 &&
+              reqParam.isAutoApproval == EAUTOAPPROVAL.ON)
+          ) {
             return this.Ok(ctx, { message: "Success" });
           }
           const fetchBalance: any = await getBalance(
@@ -2257,10 +2265,7 @@ class TradingController extends BaseController {
           /**
            * is auto approval if 1 then make all request as approved
            */
-          let pendingActivities = await UserActivityTable.find({
-            userId: childId,
-            status: EStatus.PENDING,
-          });
+
           let insufficentBalance = false;
           if (pendingActivities.length > 0) {
             const userBankInfo = await UserBanksTable.findOne({
