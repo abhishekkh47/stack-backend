@@ -2243,6 +2243,9 @@ class TradingController extends BaseController {
               },
             }
           );
+          if (reqParam.isAutoApproval == EAUTOAPPROVAL.OFF) {
+            return this.Ok(ctx, { message: "Success" });
+          }
           const fetchBalance: any = await getBalance(
             jwtToken,
             accountIdDetails.accountId
