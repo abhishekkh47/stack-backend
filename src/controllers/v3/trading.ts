@@ -224,7 +224,6 @@ class TradingController extends BaseController {
           const userIdForBankCheck = isTeen
             ? parentChild?.userId?._id
             : childExists?._id;
-
           let userBankIfExists =
             userIdForBankCheck &&
             (await UserBanksTable.find({
@@ -365,20 +364,18 @@ class TradingController extends BaseController {
             type: ETransactionType.DEPOSIT,
             status: ETransactionStatus.SETTLED,
           });
-          const isKycVerifiedAndDepositCleared =
-            isParentKycVerified && hasClearedDeposit;
           totalStackValue =
-            totalStackValue +
-            (isKycVerifiedAndDepositCleared ? cashBalance : 0);
+            totalStackValue + (isParentKycVerified ? cashBalance : 0);
           return this.Ok(ctx, {
             data: {
               portFolio: buySellTransactions,
               totalStackValue,
               stackCoins: totalCoins,
               totalGainLoss,
-              balance: isKycVerifiedAndDepositCleared
-                ? cashBalance
-                : pendingInitialDepositAmount,
+              balance:
+                isParentKycVerified && userBankIfExists
+                  ? cashBalance
+                  : pendingInitialDepositAmount,
               parentStatus: parentChild?.userId?.status,
               totalAmountInvested:
                 totalStackValue - totalGainLoss - (isTeenPending ? 5 : 0),
