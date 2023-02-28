@@ -2243,6 +2243,17 @@ class TradingController extends BaseController {
               },
             }
           );
+          let pendingActivities = await UserActivityTable.find({
+            userId: childId,
+            status: EStatus.PENDING,
+          });
+          if (
+            reqParam.isAutoApproval == EAUTOAPPROVAL.OFF ||
+            (pendingActivities.length === 0 &&
+              reqParam.isAutoApproval == EAUTOAPPROVAL.ON)
+          ) {
+            return this.Ok(ctx, { message: "Success" });
+          }
           const fetchBalance: any = await getBalance(
             jwtToken,
             accountIdDetails.accountId
@@ -2254,10 +2265,7 @@ class TradingController extends BaseController {
           /**
            * is auto approval if 1 then make all request as approved
            */
-          let pendingActivities = await UserActivityTable.find({
-            userId: childId,
-            status: EStatus.PENDING,
-          });
+
           let insufficentBalance = false;
           if (pendingActivities.length > 0) {
             const userBankInfo = await UserBanksTable.findOne({
