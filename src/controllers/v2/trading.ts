@@ -787,9 +787,12 @@ class TradingController extends BaseController {
   @Route({ path: "/get-accounts", method: HttpMethod.POST })
   @Auth()
   public async getAccountsFromPlaid(ctx: any) {
-    const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Details Not Found");
+    let userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!userExists && ctx.request.body.userId) {
+      userExists = await UserTable.findOne({ _id: ctx.request.body.userId });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Details Not Found");
+      }
     }
     let id = userExists._id;
     if (userExists.type === EUserType.TEEN) {
