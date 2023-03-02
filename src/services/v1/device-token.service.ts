@@ -34,6 +34,9 @@ class DeviceTokenService {
 
   public async removeDeviceToken(userId: string, deviceToken: string) {
     const deviceTokens = await DeviceToken.findOne({ userId });
+    if (!deviceTokens) {
+      return false;
+    }
     if (deviceTokens.deviceToken.includes(deviceToken)) {
       await DeviceToken.updateOne(
         { userId },
