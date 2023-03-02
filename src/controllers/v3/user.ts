@@ -39,7 +39,7 @@ import {
 } from "../../utility";
 import { validationsV3 } from "../../validations/v3/apiValidation";
 import userService from "../../services/v3/user.service";
-import { DeviceTokenService, zohoCrmService } from "@app/services/v1";
+import { DeviceTokenService, zohoCrmService } from "../../services/v1";
 
 class UserController extends BaseController {
   /**
