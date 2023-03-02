@@ -277,7 +277,13 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const userExists = await UserTable.findOne({ _id: user._id });
+          let userExists = await UserTable.findOne({ _id: user._id });
+          if (!userExists && reqParam.userId) {
+            userExists = await UserTable.findOne({ _id: reqParam.userId });
+            if (!userExists) {
+              return this.BadRequest(ctx, "User Not Found");
+            }
+          }
           const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
           if (!quizExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
