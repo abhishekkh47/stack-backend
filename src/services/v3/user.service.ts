@@ -1,5 +1,6 @@
 import { ParentChildTable } from "./../../model/parentChild";
 import {
+  DeletedUserTable,
   DeviceToken,
   Notification,
   QuizQuestionResult,
@@ -306,6 +307,17 @@ class UserService {
       await UserActivityTable.deleteMany(otherRecordsQuery);
       await UserTable.deleteMany(userQuery);
       await ParentChildTable.deleteMany(otherRecordsQuery);
+      /**
+       * Store Deleted Users in a separate document
+       */
+      await DeletedUserTable.create({
+        email: userDetails.email,
+        type: userDetails.type,
+        fullName: userDetails.lastName
+          ? userDetails.firstName + " " + userDetails.lastName
+          : userDetails.firstName,
+        mobile: userDetails.mobile ? userDetails.mobile : null,
+      });
       return true;
     } catch (error) {
       return false;
