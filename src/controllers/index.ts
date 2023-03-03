@@ -45,7 +45,9 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
       {}
     );
     const firstRouteForKey =
-      routesForKey.filter((x) => x.version === "3.0.0").length > 0
+      routesForKey.filter((x) => x.version === "4.0.0").length > 0
+        ? routesForKey.filter((x) => x.version === "4.0.0")[0]
+        : routesForKey.filter((x) => x.version === "3.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "3.0.0")[0]
         : routesForKey.filter((x) => x.version === "2.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "2.0.0")[0]
