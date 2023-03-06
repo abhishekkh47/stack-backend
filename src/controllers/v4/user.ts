@@ -1,0 +1,276 @@
+import { TradingService } from "../../services/v3/index";
+import moment from "moment";
+import BaseController from "../base";
+import {
+  ENOTIFICATIONSETTINGS,
+  ETransactionStatus,
+  ETransactionType,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+} from "../../types";
+import { DeviceTokenService } from "../../services/v1/index";
+import { TransactionDBService, UserService } from "../../services/v3";
+import { Auth, PrimeTrustJWT } from "../../middleware";
+import { validationsV4 } from "../../validations/v4/apiValidation";
+import { validations } from "../../validations/v2/apiValidation";
+import {
+  UserTable,
+  TransactionTable,
+  UserBanksTable,
+  AdminTable,
+  CryptoTable,
+} from "../../model";
+import { Route } from "../../utility";
+
+class UserController extends BaseController {
+  /**
+   * @description This method is start reward time , make intial transaction and set isGiftedCrypto to 1
+   * @param ctx
+   */
+  @Route({ path: "/start-reward-timer", method: HttpMethod.POST })
+  @Auth()
+  public async startRewardTimer(ctx: any) {
+    try {
+      const user = ctx.request.user;
+      const admin = await AdminTable.findOne({});
+      const userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      if (userExists.unlockRewardTime) {
+        return this.BadRequest(ctx, "You already unlocked the reward");
+      }
+      let transactionExists = await TransactionTable.findOne({
+        userId: userExists._id,
+        type: ETransactionType.BUY,
+        status: ETransactionStatus.GIFTED,
+      });
+      if (
+        admin.giftCryptoSetting == 1 &&
+        userExists.isGiftedCrypto == 0 &&
+        !transactionExists
+      ) {
+        let crypto = await CryptoTable.findOne({ symbol: "BTC" });
+        await TransactionDBService.createBtcGiftedTransaction(
+          userExists._id,
+          crypto,
+          admin
+        );
+      } else if (transactionExists) {
+        await UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          {
+            $set: {
+              unlockRewardTime: moment().add(admin.rewardHours, "hours").unix(),
+              isGiftedCrypto: 1,
+            },
+          }
+        );
+      }
+      const userData = await UserTable.findOne({ _id: userExists._id });
+      return this.Ok(ctx, {
+        message: "Reward Claimed Successfully",
+        data: { rewardHours: userData.unlockRewardTime },
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to reward crypto when parent is completed with kyc + bank details
+   * @param ctx
+   */
+  @Route({ path: "/reward-crypto", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT(true)
+  public async rewardCrypto(ctx: any) {
+    try {
+      const jwtToken = ctx.request.primeTrustToken;
+      const admin = await AdminTable.findOne({});
+      const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      const parentChildDetails = await UserService.getParentChildInfo(
+        userExists._id
+      );
+      const checkParentInfo =
+        parentChildDetails &&
+        (await UserTable.findOne({
+          _id: parentChildDetails.userId,
+        }));
+
+      const checkParentBankExists =
+        parentChildDetails &&
+        (await UserBanksTable.findOne({
+          $or: [
+            { userId: parentChildDetails.userId },
+            { parentId: parentChildDetails.userId },
+          ],
+        }));
+      if (
+        checkParentInfo &&
+        checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
+        checkParentBankExists &&
+        admin.giftCryptoSetting == 1 &&
+        userExists.isGiftedCrypto !== 2
+      ) {
+        const accountIdDetails = await parentChildDetails.teens.find(
+          (x: any) => x.childId.toString() == userExists._id.toString()
+        ).accountId;
+
+        if (parentChildDetails && userExists.isRewardDeclined == false) {
+          await TradingService.internalTransfer(
+            parentChildDetails,
+            jwtToken,
+            accountIdDetails,
+            userExists.type,
+            admin,
+            true
+          );
+        }
+      }
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to decline the reward
+   * @param ctx
+   */
+  @Route({ path: "/decline-reward", method: HttpMethod.POST })
+  @Auth()
+  public async declineReward(ctx: any) {
+    try {
+      const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      await UserTable.findOneAndUpdate(
+        { userId: userExists._id },
+        {
+          $set: {
+            isRewardDeclined: true,
+          },
+        }
+      );
+      await TransactionTable.deleteOne({
+        userId: userExists._id,
+        status: ETransactionStatus.GIFTED,
+      });
+      return this.Ok(ctx, { message: "Reward Declined Successfully" });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to add/remove device token
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/device-token", method: HttpMethod.POST })
+  @Auth()
+  public async addDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    const checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!checkUserExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validationsV4.addDeviceTokenValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await DeviceTokenService.addDeviceTokenIfNeeded(
+            checkUserExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token added successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to add/remove device token
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/device-token", method: HttpMethod.DELETE })
+  @Auth()
+  public async removeDeviceToken(ctx: any) {
+    const user = ctx.request.user;
+    const reqParam = ctx.request.body;
+    const checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!checkUserExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validationsV4.removeDeviceTokenValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await DeviceTokenService.removeDeviceToken(
+            checkUserExists._id,
+            reqParam.deviceToken
+          );
+          return this.Ok(ctx, { message: "Device token removed successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used for turing on/off notification
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/toggle-notification", method: HttpMethod.POST })
+  @Auth()
+  public async toggleNotificationSettings(ctx: any) {
+    const user = ctx.request.user;
+    let reqParam = ctx.request.body;
+    const checkUserExists = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!checkUserExists) {
+      return this.BadRequest(ctx, "User does not exist");
+    }
+    return validationsV4.toggleNotificationValidation(
+      ctx.request.body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          await UserTable.findByIdAndUpdate(
+            { _id: checkUserExists._id },
+            {
+              $set: {
+                isNotificationOn: reqParam.isNotificationOn,
+              },
+            },
+            { new: true }
+          );
+
+          let message =
+            reqParam.isNotificationOn == ENOTIFICATIONSETTINGS.ON
+              ? "Turned on notification"
+              : "Turned off notfication";
+
+          return this.Ok(ctx, { message });
+        }
+      }
+    );
+  }
+}
+
+export default new UserController();
