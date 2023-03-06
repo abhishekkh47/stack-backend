@@ -6,6 +6,7 @@ import { IRouteDict } from "../utility";
 import routerDictV1 from "./v1";
 import routerDictV1_1 from "./v2";
 import routerDictV3 from "./v3";
+import routerDictV4 from "./v4";
 import { HttpMethod } from "../types";
 
 const router = new Router();
@@ -80,6 +81,6 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
   });
 };
 
-setRoutes(router, [routerDictV1, routerDictV1_1, routerDictV3]);
+setRoutes(router, [routerDictV1, routerDictV1_1, routerDictV3, routerDictV4]);
 
 export default Compose([router.routes(), router.allowedMethods()]);

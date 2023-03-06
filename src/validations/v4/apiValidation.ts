@@ -31,4 +31,16 @@ export const validationsV4 = {
       );
     return callback(true);
   },
+  toggleNotificationValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      isNotificationOn: Joi.number().required().valid(0, 1),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("toggleNotification", error))
+      );
+    return callback(true);
+  },
 };

@@ -246,7 +246,7 @@ class UserController extends BaseController {
     if (!checkUserExists) {
       return this.BadRequest(ctx, "User does not exist");
     }
-    return validations.toggleNotificationValidation(
+    return validationsV4.toggleNotificationValidation(
       ctx.request.body,
       ctx,
       async (validate) => {
