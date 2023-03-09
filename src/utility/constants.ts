@@ -1,4 +1,3 @@
-
 "use strict";
 export const CONSTANT = Object.freeze({
   VerifyEmailTemplateId: "d-024fedc867e0407ab4971e642354168f",
@@ -37,6 +36,9 @@ export const PRIMETRUSTAPIS = {
     `v2/account-asset-totals?account.id=${accountId}`,
   pushTransferMethodGet: (id) => `v2/push-transfer-methods/${id}`,
   getAccountByAccountId: (accountId) => `v2/accounts/${accountId}`,
+  getQuoteInformation: (quoteId) => `v2/quotes/${quoteId}`,
+  getInternalTransferInformation: (quoteId) =>
+    `v2/internal-asset-transfers/${quoteId}`,
   internalAssetTransfers: `v2/internal-asset-transfers`,
 };
 export const COINMARKETCAPAPIS = {
@@ -52,7 +54,7 @@ export const PLAIDAPIS = {
   getAccounts: "accounts/get",
   getInstitutionById: "institutions/get_by_id",
   institutionsGetById: "institutions/get_by_id",
-  unlinkBankAccount: "/item/remove"
+  unlinkBankAccount: "/item/remove",
 };
 
 export const GIFTCARDAPIS = {
@@ -163,9 +165,9 @@ export const PARENT_SIGNUP_FUNNEL = {
     // "Enter name, birth, SSN",
   ],
   DOB: "Enter DOB",
+  MOBILE_NUMBER: "Enter mobile",
+  CHILD_INFO: "Enter child's information",
   CONFIRM_DETAILS: "Confirm user details",
-  CHILD_INFO: "Enter child's info",
-  ADDRESS: "Enter address",
   UPLOAD_DOCUMENT: "Upload ID",
   ADD_BANK: "Add a bank",
   FUND_ACCOUNT: "Fund account",

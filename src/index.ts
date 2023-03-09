@@ -5,37 +5,40 @@ import bodyParser from "koa-bodyparser";
 import Mount from "koa-mount";
 import DotEnv from "dotenv";
 import mongoose from "mongoose";
-
+import monitor from "koa-monitor";
 DotEnv.config();
 
 import Config from "./config";
 import { logger } from "./utility";
 import { errorHandler, notFoundHandler } from "./middleware";
-import ApiV1 from "./api/v1";
+import Api from "./controllers";
 import i18nTs from "./i18n/i18n";
 import en from "./i18n/en.json";
 import views from "koa-views";
 import { startCron } from "./background";
-const koaBody = require("koa-body");
 const server = (async () => {
   try {
     const app = new Koa();
+    const appServer = http.createServer(app.callback());
+    app.use(monitor(appServer, { path: "/status" }));
+
     const render = views(__dirname + "/views", { extension: "pug" });
 
     app.use(render);
     // Enable cors
     app.use(cors());
-
-    const appServer = http.createServer(app.callback());
     app.use(i18nTs);
-    // app.use(bodyParser());
     app.use(async (ctx, next) => {
       console.log(ctx.path, "path");
       if (
-        ctx.path === "/api/v1/upload-id-proof" ||
-        ctx.path === "/api/v1/update-primetrust-data"
-      )
+        [
+          "/update-primetrust-data",
+          "/api/v2/upload-id-proof",
+          "/api/v1/upload-id-proof",
+        ].filter((item) => ctx.path.includes(item)).length > 0
+      ) {
         ctx.disableBodyParser = true;
+      }
       await next();
     });
     // app.use(bodyparser());
@@ -53,7 +56,7 @@ const server = (async () => {
     //Background
     startCron();
 
-    app.use(Mount("/api/v1", ApiV1));
+    app.use(Mount("/api", Api));
 
     // Request url not found
     app.use(notFoundHandler);
@@ -61,6 +64,7 @@ const server = (async () => {
     const port = Config.PORT;
 
     appServer.listen(port);
+
     logger.log("info", `Server running on port ${port}`);
   } catch (e) {
     logger.log("error", `Server startup failed: ${e.message}`);

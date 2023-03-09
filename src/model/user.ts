@@ -1,22 +1,18 @@
 import mongoose from "mongoose";
 
-import { ERECURRING, IUser, MongooseModel } from "../types";
+import {
+  ERECURRING,
+  ENOTIFICATIONSETTINGS,
+  IUser,
+  MongooseModel,
+  EPHONEVERIFIEDSTATUS,
+} from "../types";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
 const schema = new mongoose.Schema<IUserSchema>(
   {
     email: {
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
-    password: {
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
-    username: {
       type: mongoose.Schema.Types.String,
       required: false,
       default: null,
@@ -36,7 +32,11 @@ const schema = new mongoose.Schema<IUserSchema>(
     /**
      * 1 - teenager,  2 - parent and 3 - Self
      */
-    type: { type: mongoose.Schema.Types.Number, required: false },
+    type: {
+      type: mongoose.Schema.Types.Number,
+      required: false,
+      default: null,
+    },
     /**
      * 1 - Kyc document upload , 2 - Kyc failed and reupload document , 3 - Kyc approved
      */
@@ -48,27 +48,13 @@ const schema = new mongoose.Schema<IUserSchema>(
     /**
      * 0 - Sign up , 1 - change address , 2 - upload document field , 3 - acknowledge screen , 4 - add bank account
      */
-    screenStatus: { type: mongoose.Schema.Types.Number, default: 0 },
+    screenStatus: { type: mongoose.Schema.Types.Number, default: 0 }, // TODO: let's remove this in v1.7
     parentEmail: { type: mongoose.Schema.Types.String, default: null },
     parentMobile: { type: mongoose.Schema.Types.String, default: null },
     kycMessages: {
       type: mongoose.Schema.Types.Array,
       default: null,
     },
-    verificationEmailExpireAt: {
-      type: mongoose.Schema.Types.String,
-      description: "verification email expiry time",
-      example: 1502844074211,
-    },
-    verificationCode: {
-      type: mongoose.Schema.Types.String,
-      description: "Email verification code",
-      default: null,
-      required: false,
-    },
-    tempPassword: { type: mongoose.Schema.Types.String, default: null },
-    loginAttempts: { type: mongoose.Schema.Types.Number, default: 0 },
-    refreshToken: { type: mongoose.Schema.Types.String, default: null },
     country: { type: mongoose.Schema.Types.String, default: null },
     state: { type: mongoose.Schema.Types.String, default: null },
     city: { type: mongoose.Schema.Types.String, default: null },
@@ -77,12 +63,23 @@ const schema = new mongoose.Schema<IUserSchema>(
     cipCleared: { type: mongoose.Schema.Types.Boolean, default: false },
     amlCleared: { type: mongoose.Schema.Types.Boolean, default: false },
     identityConfirmed: { type: mongoose.Schema.Types.Boolean, default: false },
+    unlockRewardTime: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    isRewardDeclined: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    isOnboardingQuizCompleted: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false
+    },
     stateId: {
       type: mongoose.Schema.Types.ObjectId,
       default: null,
       ref: "state",
     },
-    liquidAsset: { type: mongoose.Schema.Types.Number, default: null },
     taxIdNo: { type: mongoose.Schema.Types.String, default: null },
     taxState: {
       type: mongoose.Schema.Types.ObjectId,
@@ -112,10 +109,15 @@ const schema = new mongoose.Schema<IUserSchema>(
      * 0 - not gifted and 1 - gifted
      */
     isGifted: { type: mongoose.Schema.Types.Number, default: 0 },
+    isPhoneVerified: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+      isIn: [EPHONEVERIFIEDSTATUS.FALSE, EPHONEVERIFIEDSTATUS.TRUE],
+    },
     /**
      * 0 - not gifted(won't happen at all) , 1 - gifted and 2 - gifted with pt
      * isGiftedCrypto = 1, which means $5 is stored in DB, not in PT
-     * isGiftedCrypto = 2, it will be in DB and PT 
+     * isGiftedCrypto = 2, it will be in DB and PT
      */
     isGiftedCrypto: { type: mongoose.Schema.Types.Number, default: 0 },
     referralCode: { type: mongoose.Schema.Types.String, default: null },
@@ -148,6 +150,14 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: 0,
     },
     /**
+     * 0-off, 1-on
+     */
+    isNotificationOn: {
+      type: mongoose.Schema.Types.Number,
+      default: 1,
+      isIn: [ENOTIFICATIONSETTINGS.ON, ENOTIFICATIONSETTINGS.OFF],
+    },
+    /**
      * If isRecurring done then selectedDeposit else 0
      */
     selectedDeposit: {
@@ -160,6 +170,10 @@ const schema = new mongoose.Schema<IUserSchema>(
     selectedDepositDate: {
       type: mongoose.Schema.Types.Date,
       default: null,
+    },
+    isEnteredParentNumber: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
     },
   },
   { timestamps: true }

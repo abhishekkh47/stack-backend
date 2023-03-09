@@ -11,7 +11,6 @@ const schema = new mongoose.Schema<IAdminSchema>(
       required: false,
       default: null,
     },
-    username: { type: mongoose.Schema.Types.String, required: true },
     jwtToken: { type: mongoose.Schema.Types.String, default: null },
     zohoRefreshToken: { type: mongoose.Schema.Types.String, default: null },
     zohoAccessToken: { type: mongoose.Schema.Types.String, default: null },
@@ -33,6 +32,10 @@ const schema = new mongoose.Schema<IAdminSchema>(
       type: mongoose.Schema.Types.Number,
       isIn: [0, 1],
       default: 0,
+    },
+    rewardHours: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
     },
   },
   { timestamps: true }

@@ -2,18 +2,19 @@ import mongoose from "mongoose";
 
 export interface IUser extends IAccount {
   email: string;
-  password: string;
-  username: string;
   mobile: string;
-  verificationEmailExpireAt: string;
-  verificationCode: string;
   status: EUSERSTATUS;
   funded: boolean;
   screenStatus: ESCREENSTATUS;
   kycMessages: string[];
-  refreshToken: string;
   isParentFirst: boolean;
+  isEnteredParentNumber: boolean;
   quizCoins: number;
+  isNotificationOn: number;
+  unlockRewardTime: string;
+  isPhoneVerified: number;
+  isRewardDeclined: boolean;
+  isOnboardingQuizCompleted: boolean;
 }
 
 export interface IAccount {
@@ -25,8 +26,6 @@ export interface IAccount {
   type: EUserType;
   parentEmail: string;
   parentMobile: string;
-  tempPassword: string;
-  loginAttempts: number;
   country: string;
   stateId: mongoose.Schema.Types.ObjectId;
   state: string;
@@ -34,7 +33,6 @@ export interface IAccount {
   address: string;
   postalCode: string;
   unitApt: string;
-  liquidAsset: number;
   taxIdNo: string;
   dob: string;
   taxState: mongoose.Schema.Types.ObjectId;
@@ -53,6 +51,8 @@ export interface IAccount {
 
 export interface IAdmin extends IUser {
   jwtToken: string;
+  username: string;
+  rewardHours: number;
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;
@@ -65,19 +65,22 @@ export interface IAdmin extends IUser {
 export interface IUserdraft {
   email: string;
   dob: string;
-  phoneNumber: string;
-  parentNumber: string;
   screenStatus: number;
   firstName: string;
   lastName: string;
   type: number;
-  refreshToken: string;
-  referralCode: string;
+  mobile: string;
+  isPhoneVerified: number;
 }
 
 export const ALLOWED_LOGIN_ATTEMPTS = 3;
 
 export enum EAUTOAPPROVAL {
+  ON = 1,
+  OFF = 0,
+}
+
+export enum ENOTIFICATIONSETTINGS {
   ON = 1,
   OFF = 0,
 }
@@ -110,6 +113,7 @@ export enum EUSERSTATUS {
   KYC_DOCUMENT_UPLOAD = 1,
   KYC_DOCUMENT_UPLOAD_FAILED = 2,
   KYC_DOCUMENT_VERIFIED = 3,
+  ACCOUNT_CLOSED = 4,
 }
 export enum ESCREENSTATUS {
   /**
@@ -137,3 +141,7 @@ export enum ESCREENSTATUS {
   SUCCESS_TEEN = 10,
 }
 
+export enum EPHONEVERIFIEDSTATUS {
+  TRUE = 1,
+  FALSE = 0,
+}

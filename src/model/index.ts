@@ -24,3 +24,4 @@ export * from "./userDraft";
 export * from "./userBanks";
 export * from "./userGiftCard";
 export * from "./dripshop";
+export * from "./deletedUser";
