@@ -13,21 +13,6 @@ export const validations = {
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
-      firstName: Joi.string()
-        .allow("")
-        .regex(/^[A-za-z]*$/)
-        .optional(),
-      lastName: Joi.when("type", {
-        is: 2,
-        then: Joi.string()
-          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
-          .optional()
-          .allow(""),
-        otherwise: Joi.string()
-          .allow("")
-          .regex(/^[a-zA-Z]([\w -]*[a-zA-Z])?$/)
-          .optional(),
-      }),
     });
     const { error } = schema.validate(req);
 
