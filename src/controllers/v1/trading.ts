@@ -2215,7 +2215,7 @@ class TradingController extends BaseController {
       return this.BadRequest(ctx, "Child Details Not Found");
     }
     let accountIdDetails = parent.teens.find(
-      (x) => x.childId._id.toString() == childId.toString()
+      (x) => x.childId && x.childId._id.toString() == childId.toString()
     );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Child Details Not Found");
