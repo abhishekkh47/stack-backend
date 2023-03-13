@@ -11,3 +11,6 @@
 *.zip
 yarn.lock
 .DS_Store
+.env.uat
+.env.staging
+.env.prod

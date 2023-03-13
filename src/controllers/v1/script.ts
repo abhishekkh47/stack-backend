@@ -746,7 +746,7 @@ class ScriptController extends BaseController {
     });
 
     await UserTable.insertMany(teenArray);
-    await UserTable.deleteMany({
+    await UserDraftTable.deleteMany({
       type: EUserType.TEEN,
     });
 
@@ -903,7 +903,7 @@ class ScriptController extends BaseController {
     });
 
     await UserTable.insertMany(parentArray);
-    await UserTable.deleteMany({
+    await UserDraftTable.deleteMany({
       type: EUserType.PARENT,
     });
 
