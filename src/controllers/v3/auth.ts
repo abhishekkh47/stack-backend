@@ -562,7 +562,11 @@ class AuthController extends BaseController {
                   Email: reqParam.email,
                   Birthday: reqParam.dob,
                   Account_Type:
-                    reqParam.type == EUserType.PARENT ? "Parent" : "Self",
+                    reqParam.type == EUserType.PARENT
+                      ? "Parent"
+                      : reqParam.type == EUserType.TEEN
+                      ? "Teen"
+                      : "Self",
                 };
                 if (isUserBelow18) {
                   dataSentInCrm = {
