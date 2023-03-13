@@ -741,7 +741,7 @@ class TradingController extends BaseController {
               {
                 $match: {
                   userId: userExists._id,
-                  action: EAction.WITHDRAW,
+                  action: { $in: [EAction.WITHDRAW, EAction.BUY_CRYPTO] },
                   status: EStatus.PENDING,
                 },
               },
