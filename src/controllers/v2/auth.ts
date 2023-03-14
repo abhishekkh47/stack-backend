@@ -387,13 +387,14 @@ class AuthController extends BaseController {
               status: ETransactionStatus.GIFTED,
               type: ETransactionType.BUY,
             });
-            if (checkTransactionExistsAlready) {
-              let parentChildTableExists = await ParentChildTable.findOne({
-                "teens.childId": user._id,
-              });
-              const accountIdDetails: any = parentChildTableExists.teens.find(
+            let childExistsInParentChild = await ParentChildTable.findOne({
+              "teens.childId": user._id,
+            });
+            if (checkTransactionExistsAlready && childExistsInParentChild) {
+              const accountIdDetails: any = childExistsInParentChild.teens.find(
                 (x: any) => x.childId.toString() == user._id.toString()
               );
+
               const requestQuoteDay: any = {
                 data: {
                   type: "quotes",
@@ -469,7 +470,7 @@ class AuthController extends BaseController {
                     amount: admin.giftCryptoAmount,
                     amountMod: -admin.giftCryptoAmount,
                     userId: user._id,
-                    parentId: parentChildTableExists.userId,
+                    parentId: childExistsInParentChild.userId,
                     status: ETransactionStatus.SETTLED,
                     executedQuoteId: internalTransferResponse.data.data.id,
                     unitCount:
