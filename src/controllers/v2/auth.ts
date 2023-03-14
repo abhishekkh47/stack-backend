@@ -160,13 +160,17 @@ class AuthController extends BaseController {
                 userId: checkParentExists._id,
               }));
 
-            const checkCondition = (parentChildInfo?.teens || []).filter(
+            const checkTeenLinkedWithParent = (
+              parentChildInfo?.teens || []
+            ).filter(
               (x: any) => x.childId.toString() == childExists.id.toString()
             );
             if (
               checkParentExists &&
               checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-              checkCondition.length == 0
+              (checkTeenLinkedWithParent.length == 0 ||
+                (checkTeenLinkedWithParent.length > 0 &&
+                  checkTeenLinkedWithParent[0].accountId == null))
             ) {
               if (!parentChildInfo) {
                 return this.BadRequest(ctx, "Account Details Not Found");
@@ -337,38 +341,51 @@ class AuthController extends BaseController {
             user.type != EUserType.PARENT &&
             user.type != EUserType.SELF
           ) {
-            /**
-             * TODO
-             */
-            await ParentChildTable.updateOne(
-              {
-                _id: parentChildInfoId,
-              },
-              {
-                $push: {
-                  teens: {
-                    childId: user._id,
-                    accountId: accountId,
-                    accountNumber: accountNumber,
-                  },
+            let childExistsInParent = await ParentChildTable.findOne({
+              _id: parentChildInfoId,
+              "teens.childId": user._id,
+            });
+            if (childExistsInParent) {
+              await ParentChildTable.updateOne(
+                {
+                  _id: parentChildInfoId,
+                  "teens.childId": user._id,
                 },
-              }
-            );
+                {
+                  $set: {
+                    "teens.$.accountId": accountId,
+                    "teens.$.accountNumber": accountNumber,
+                  },
+                }
+              );
+            } else {
+              await ParentChildTable.updateOne(
+                {
+                  _id: parentChildInfoId,
+                },
+                {
+                  $push: {
+                    teens: {
+                      childId: user._id,
+                      accountId: accountId,
+                      accountNumber: accountNumber,
+                    },
+                  },
+                }
+              );
+            }
           }
 
           if (
             admin.giftCryptoSetting == 1 &&
-            user.isGiftedCrypto == 0 &&
+            user.isGiftedCrypto !== 2 &&
             user.type == EUserType.TEEN
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             let checkTransactionExistsAlready = await TransactionTable.findOne({
-              userId:
-                checkParentExists && parentChildInfo
-                  ? parentChildInfo.firstChildId
-                  : user._id,
-              intialDeposit: true,
-              type: ETransactionType.DEPOSIT,
+              userId: user._id,
+              status: ETransactionStatus.GIFTED,
+              type: ETransactionType.BUY,
             });
             if (checkTransactionExistsAlready) {
               let parentChildTableExists = await ParentChildTable.findOne({
@@ -438,21 +455,28 @@ class AuthController extends BaseController {
               if (internalTransferResponse.status == 400) {
                 return this.BadRequest(ctx, internalTransferResponse.message);
               }
-              await TransactionTable.create({
-                assetId: crypto.assetId,
-                cryptoId: crypto._id,
-                accountId: accountIdDetails.accountId,
-                type: ETransactionType.BUY,
-                settledTime: moment().unix(),
-                amount: admin.giftCryptoAmount,
-                amountMod: -admin.giftCryptoAmount,
-                userId: user._id,
-                parentId: parentChildTableExists.userId,
-                status: ETransactionStatus.SETTLED,
-                executedQuoteId: internalTransferResponse.data.data.id,
-                unitCount:
-                  executeQuoteResponse.data.data.attributes["unit-count"],
-              });
+              await TransactionTable.findOneAndUpdate(
+                {
+                  _id: checkTransactionExistsAlready._id,
+                },
+                {
+                  $set: {
+                    assetId: crypto.assetId,
+                    cryptoId: crypto._id,
+                    accountId: accountIdDetails.accountId,
+                    type: ETransactionType.BUY,
+                    settledTime: moment().unix(),
+                    amount: admin.giftCryptoAmount,
+                    amountMod: -admin.giftCryptoAmount,
+                    userId: user._id,
+                    parentId: parentChildTableExists.userId,
+                    status: ETransactionStatus.SETTLED,
+                    executedQuoteId: internalTransferResponse.data.data.id,
+                    unitCount:
+                      executeQuoteResponse.data.data.attributes["unit-count"],
+                  },
+                }
+              );
               await UserTable.updateOne(
                 {
                   _id: user._id,

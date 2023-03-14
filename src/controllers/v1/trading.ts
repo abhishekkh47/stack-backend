@@ -741,7 +741,7 @@ class TradingController extends BaseController {
               {
                 $match: {
                   userId: userExists._id,
-                  action: EAction.WITHDRAW,
+                  action: { $in: [EAction.WITHDRAW, EAction.BUY_CRYPTO] },
                   status: EStatus.PENDING,
                 },
               },
@@ -2030,7 +2030,7 @@ class TradingController extends BaseController {
         const getUnitCount: any = await getAssetTotalWithId(
           jwtToken,
           accountIdDetails.accountId,
-          transactionExists.assetId
+          sellCryptoData.assetId
         );
 
         if (getUnitCount.status == 400) {
@@ -2215,7 +2215,7 @@ class TradingController extends BaseController {
       return this.BadRequest(ctx, "Child Details Not Found");
     }
     let accountIdDetails = parent.teens.find(
-      (x) => x.childId._id.toString() == childId.toString()
+      (x) => x.childId && x.childId._id.toString() == childId.toString()
     );
     if (!accountIdDetails) {
       return this.BadRequest(ctx, "Child Details Not Found");
