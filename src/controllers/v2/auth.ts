@@ -387,10 +387,10 @@ class AuthController extends BaseController {
               status: ETransactionStatus.GIFTED,
               type: ETransactionType.BUY,
             });
-            if (checkTransactionExistsAlready) {
-              let parentChildTableExists = await ParentChildTable.findOne({
-                "teens.childId": user._id,
-              });
+            let parentChildTableExists = await ParentChildTable.findOne({
+              "teens.childId": user._id,
+            });
+            if (checkTransactionExistsAlready && parentChildTableExists) {
               const accountIdDetails: any = parentChildTableExists.teens.find(
                 (x: any) => x.childId.toString() == user._id.toString()
               );
