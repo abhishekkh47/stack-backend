@@ -394,6 +394,7 @@ class AuthController extends BaseController {
               const accountIdDetails: any = parentChildTableExists.teens.find(
                 (x: any) => x.childId.toString() == user._id.toString()
               );
+
               const requestQuoteDay: any = {
                 data: {
                   type: "quotes",
