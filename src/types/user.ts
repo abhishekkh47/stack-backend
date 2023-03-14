@@ -15,6 +15,7 @@ export interface IUser extends IAccount {
   isPhoneVerified: number;
   isRewardDeclined: boolean;
   isOnboardingQuizCompleted: boolean;
+  isNotificationScreenVisited: boolean;
 }
 
 export interface IAccount {

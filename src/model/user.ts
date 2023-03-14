@@ -73,7 +73,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     },
     isOnboardingQuizCompleted: {
       type: mongoose.Schema.Types.Boolean,
-      default: false
+      default: false,
     },
     stateId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -113,6 +113,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Number,
       default: 0,
       isIn: [EPHONEVERIFIEDSTATUS.FALSE, EPHONEVERIFIEDSTATUS.TRUE],
+    },
+    isNotificationScreenVisited: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
     },
     /**
      * 0 - not gifted(won't happen at all) , 1 - gifted and 2 - gifted with pt
