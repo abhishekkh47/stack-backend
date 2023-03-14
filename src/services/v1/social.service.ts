@@ -21,6 +21,11 @@ class SocialService {
     /**
      * Sign in type 1 - google and 2 - apple
      */
+    
+    if (![1, 2].includes(loginType)) {
+      return;
+    }
+
     switch (loginType) {
       case 1:
         const googleTicket: any = await google_client

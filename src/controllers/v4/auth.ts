@@ -1,14 +1,13 @@
 import { EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
+import { ANALYTICS_EVENTS, TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import { AdminTable, OtpTable, UserTable } from "../../model";
-import { zohoCrmService, TokenService } from "../../services/v1/index";
+import { zohoCrmService, TokenService, AnalyticsService } from "../../services/v1";
 import { EOTPVERIFICATION, EUserType, HttpMethod } from "../../types";
 import { getMinutesBetweenDates, Route } from "../../utility";
 import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
-import UserController from "../v3/user";
 
 class AuthController extends BaseController {
   /**
@@ -21,6 +20,7 @@ class AuthController extends BaseController {
   @PrimeTrustJWT(true)
   public verifyOtpSignUp(ctx: any) {
     const reqParam = ctx.request.body;
+    const user = ctx.request.user;
     return validation.verifyOtpValidation(
       reqParam,
       ctx,
@@ -40,7 +40,7 @@ class AuthController extends BaseController {
           /**
            * Check minutes less than 5 or not
            */
-          const checkMinutes = await getMinutesBetweenDates(
+          const checkMinutes = getMinutesBetweenDates(
             new Date(otpExists.createdAt),
             new Date()
           );
@@ -56,7 +56,7 @@ class AuthController extends BaseController {
             return this.BadRequest(ctx, "Code Doesn't Match");
           }
           let userExists = await UserTable.findOne({
-            _id: ctx.request.user._id,
+            _id: user._id,
           });
           if (!userExists) {
             return this.BadRequest(ctx, "User Not Found");
@@ -71,6 +71,8 @@ class AuthController extends BaseController {
             isParentFirst: true,
           });
           if (isOtpVerified) {
+            AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED, { user_id: user._id });
+
             let findQuery = {};
             let setQuery = {};
             if (teenExists) {
@@ -83,7 +85,7 @@ class AuthController extends BaseController {
               };
               migratedId = teenExists._id;
             } else {
-              findQuery = { ...findQuery, _id: ctx.request.user._id };
+              findQuery = { ...findQuery, _id: user._id };
               setQuery = {
                 ...setQuery,
                 mobile: reqParam.mobile,
@@ -134,7 +136,7 @@ class AuthController extends BaseController {
           };
           if (migratedId) {
             await UserTable.deleteOne({
-              _id: ctx.request.user._id,
+              _id: user._id,
             });
             /**
              * Give new auth token instead of migratedId which will be used for other apis.
