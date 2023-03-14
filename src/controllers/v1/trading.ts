@@ -2030,7 +2030,7 @@ class TradingController extends BaseController {
         const getUnitCount: any = await getAssetTotalWithId(
           jwtToken,
           accountIdDetails.accountId,
-          transactionExists.assetId
+          sellCryptoData.assetId
         );
 
         if (getUnitCount.status == 400) {
