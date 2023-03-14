@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@amplitude/analytics-node": "^1.1.0",
     "@koa/multer": "^3.0.0",
     "@openpgp/web-stream-tools": "^0.0.10",
     "@paypal/checkout-server-sdk": "^1.0.2",
