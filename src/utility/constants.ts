@@ -189,3 +189,20 @@ export const CMS_LINKS = {
   PRIME_TRUST_USER_AGREEMENT:
     "https://www.primetrust.com/legal/terms-of-service",
 };
+
+export const ANALYTICS_EVENTS = {
+  BANK_CONNECTED: "Bank Connected",
+  BUY_ORDER_INITIATED: "Buy Order Initiated",
+  DEPOSIT_INITIATED: "Deposit Initiated",
+  SELL_ORDER_INITIATED: "Sell Order Initiated",
+  CHILD_INFO_SUBMITTED: "Child Info Submitted",
+  CONFIRM_DETAILS_SUBMITTED: "Confirm Details Submitted", // front-end?
+  DOB_SUBMITTED: "DOB Submitted",
+  PHONE_NUMBER_SUBMITTED: "Phone Number Submitted",
+  PHONE_NUMBER_VERIFIED: "Phone Number Verified",
+  SIGNED_UP_SSO: "Signed Up with SSO",
+  UPLOAD_DL_SUBMITTED: "Upload DL Submitted",
+  CHALLENGE_COMPLETED: "Challenge Completed",
+
+  REWARD_UNLOCKED: "Reward Unlocked",
+}

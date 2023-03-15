@@ -9,11 +9,14 @@ import {
   EUserType,
   HttpMethod,
 } from "../../types";
-import { DeviceTokenService, userService } from "../../services/v1/index";
+import {
+  DeviceTokenService,
+  userService,
+  AnalyticsService,
+} from "../../services/v1/index";
 import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import { validationsV4 } from "../../validations/v4/apiValidation";
-import { validations } from "../../validations/v2/apiValidation";
 import {
   UserTable,
   TransactionTable,
@@ -22,6 +25,7 @@ import {
   CryptoTable,
 } from "../../model";
 import { Route, removeImage, uploadFileS3 } from "../../utility";
+import { ANALYTICS_EVENTS } from "../../utility/constants";
 
 class UserController extends BaseController {
   /**
@@ -69,8 +73,13 @@ class UserController extends BaseController {
         );
       }
       const userData = await UserTable.findOne({ _id: userExists._id });
+
+      AnalyticsService.sendEvent(ANALYTICS_EVENTS.REWARD_UNLOCKED, {
+        user_id: user._id,
+      });
+
       return this.Ok(ctx, {
-        message: "Reward Claimed Successfully",
+        message: "Reward Unlocked Successfully",
         data: { rewardHours: userData.unlockRewardTime },
       });
     } catch (error) {

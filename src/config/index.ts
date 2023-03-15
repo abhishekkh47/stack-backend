@@ -134,4 +134,7 @@ export default {
   get APP_REFERRAL_COINS() {
     return parseInt(process.env.APP_REFERRAL_COINS);
   },
+  get AMPLITUDE_KEY() {
+    return process.env.AMPLITUDE_KEY;
+  }
 };
