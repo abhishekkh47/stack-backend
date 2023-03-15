@@ -379,7 +379,9 @@ class AuthController extends BaseController {
           if (
             admin.giftCryptoSetting == 1 &&
             user.isGiftedCrypto !== 2 &&
-            user.type == EUserType.TEEN
+            user.type == EUserType.TEEN &&
+            checkParentExists &&
+            checkParentExists.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
           ) {
             let crypto = await CryptoTable.findOne({ symbol: "BTC" });
             let checkTransactionExistsAlready = await TransactionTable.findOne({
