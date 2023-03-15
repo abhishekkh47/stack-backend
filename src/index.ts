@@ -16,6 +16,8 @@ import i18nTs from "./i18n/i18n";
 import en from "./i18n/en.json";
 import views from "koa-views";
 import { startCron } from "./background";
+import { AnalyticsService } from "./services/v1";
+
 const server = (async () => {
   try {
     const app = new Koa();
@@ -55,6 +57,8 @@ const server = (async () => {
 
     //Background
     startCron();
+
+    AnalyticsService.init();
 
     app.use(Mount("/api", Api));
 
