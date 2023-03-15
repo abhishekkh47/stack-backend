@@ -43,4 +43,56 @@ export const validationsV4 = {
       );
     return callback(true);
   },
+  redeemCryptoValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      dripshopId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(
+        400,
+        res.__(validationMessageKey("redeemCrypto", error))
+      );
+    return callback(true);
+  },
+  updateDobValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      dob: Joi.date()
+        .iso()
+        .max(Date.now() + 60 * 60 * 1000)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error)
+      return res.throw(400, res.__(validationMessageKey("updateDOB", error)));
+    return callback(true);
+  },
+  verifyOtpValidation: (req, res, callback) => {
+    const schema = Joi.object().keys({
+      mobile: Joi.string()
+        .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
+        .required(),
+      code: Joi.number().integer().required(),
+    });
+    const { error } = schema.validate(req, { allowUnknown: true });
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("verifyOtp", error)));
+    }
+    return callback(true);
+  },
+  getUserQuizDataValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      topicId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(400, res.__(validationMessageKey("getUserQuiz", error)));
+    }
+    return callback(true);
+  },
 };
