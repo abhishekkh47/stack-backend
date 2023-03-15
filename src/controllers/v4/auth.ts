@@ -2,7 +2,11 @@ import { EPHONEVERIFIEDSTATUS } from "../../types/user";
 import { ANALYTICS_EVENTS, TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import { AdminTable, OtpTable, UserTable } from "../../model";
-import { zohoCrmService, TokenService, AnalyticsService } from "../../services/v1";
+import {
+  zohoCrmService,
+  TokenService,
+  AnalyticsService,
+} from "../../services/v1";
 import { EOTPVERIFICATION, EUserType, HttpMethod } from "../../types";
 import { getMinutesBetweenDates, Route } from "../../utility";
 import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
@@ -72,7 +76,9 @@ class AuthController extends BaseController {
             isParentFirst: true,
           });
           if (isOtpVerified) {
-            AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED, { user_id: user._id });
+            AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED, {
+              user_id: user._id,
+            });
 
             let findQuery = {};
             let setQuery = {};
@@ -145,6 +151,7 @@ class AuthController extends BaseController {
             const { token, refreshToken } = await TokenService.generateToken(
               teenExists
             );
+            console.log(token, "token");
             response = { ...response, token, refreshToken };
           }
 
