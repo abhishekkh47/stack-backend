@@ -178,7 +178,10 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, type, deviceId } = input;
-          AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED, { device_id: deviceId, user_id: user._id })
+          AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED, {
+            device_id: deviceId,
+            user_id: user._id,
+          });
 
           let userExists = await UserTable.findOne({
             mobile: mobile,
@@ -558,7 +561,10 @@ class AuthController extends BaseController {
 
               accountCreated = true;
 
-              AnalyticsService.sendEvent(ANALYTICS_EVENTS.SIGNED_UP_SSO, { device_id: deviceId, user_id: userExists._id })
+              AnalyticsService.sendEvent(ANALYTICS_EVENTS.SIGNED_UP_SSO, {
+                device_id: deviceId,
+                user_id: userExists._id,
+              });
 
               if (userExists) {
                 /**
@@ -599,7 +605,7 @@ class AuthController extends BaseController {
                   ctx.request.zohoAccessToken,
                   dataSentInCrm
                 );
-              } {
+              } else {
                 return this.BadRequest(ctx, "User Not Found");
               }
             }
