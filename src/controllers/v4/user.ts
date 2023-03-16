@@ -334,28 +334,6 @@ class UserController extends BaseController {
   }
 
   /**
-   * @description This method is used for notification visited status to true
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/set-notification-screen-status", method: HttpMethod.PATCH })
-  @Auth()
-  public async setNotificationVisistedStatus(ctx: any) {
-    const user = ctx.request.user;
-    const checkUserExists = await UserTable.findOne({
-      _id: user._id,
-    });
-    if (!checkUserExists) {
-      return this.BadRequest(ctx, "User does not exist");
-    }
-    await UserTable.updateOne(
-      { _id: checkUserExists._id },
-      { $set: { isNotificationScreenVisited: true } }
-    );
-    return this.Ok(ctx, { message: "Success" });
-  }
-
-  /**
    * @description This method is for update user's profile picture
    * @param ctx
    * @returns
