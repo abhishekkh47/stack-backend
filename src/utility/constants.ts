@@ -203,6 +203,4 @@ export const ANALYTICS_EVENTS = {
   SIGNED_UP_SSO: "Signed Up with SSO",
   UPLOAD_DL_SUBMITTED: "Upload DL Submitted",
   CHALLENGE_COMPLETED: "Challenge Completed",
-
-  REWARD_UNLOCKED: "Reward Unlocked",
 }

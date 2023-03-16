@@ -12,7 +12,6 @@ import {
 import {
   DeviceTokenService,
   userService,
-  AnalyticsService,
 } from "../../services/v1/index";
 import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
@@ -25,7 +24,6 @@ import {
   CryptoTable,
 } from "../../model";
 import { Route, removeImage, uploadFileS3 } from "../../utility";
-import { ANALYTICS_EVENTS } from "../../utility/constants";
 
 class UserController extends BaseController {
   /**
@@ -73,10 +71,6 @@ class UserController extends BaseController {
         );
       }
       const userData = await UserTable.findOne({ _id: userExists._id });
-
-      AnalyticsService.sendEvent(ANALYTICS_EVENTS.REWARD_UNLOCKED, {
-        user_id: user._id,
-      });
 
       return this.Ok(ctx, {
         message: "Reward Unlocked Successfully",
