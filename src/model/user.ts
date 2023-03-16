@@ -114,10 +114,6 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: 0,
       isIn: [EPHONEVERIFIEDSTATUS.FALSE, EPHONEVERIFIEDSTATUS.TRUE],
     },
-    isNotificationScreenVisited: {
-      type: mongoose.Schema.Types.Boolean,
-      default: false,
-    },
     /**
      * 0 - not gifted(won't happen at all) , 1 - gifted and 2 - gifted with pt
      * isGiftedCrypto = 1, which means $5 is stored in DB, not in PT

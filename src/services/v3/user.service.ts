@@ -103,7 +103,6 @@ class UserService {
             childMobile: {
               $ifNull: ["$childInfo.mobile", null],
             },
-            isNotificationScreenVisited: 1,
             referralCode: 1,
             unlockRewardTime: 1,
             isGiftedCrypto: 1,

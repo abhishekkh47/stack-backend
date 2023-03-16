@@ -955,29 +955,6 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This script is used to update the isNotificationScreenVisited for old users
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/update-notification-screen-status",
-    method: HttpMethod.POST,
-  })
-  public async updateisNotificationScreenVisitedStatus(ctx: any) {
-    await UserTable.updateMany(
-      {
-        type: EUserType.TEEN,
-      },
-      {
-        $set: {
-          isNotificationScreenVisited: true,
-        },
-      }
-    );
-    return this.Ok(ctx, { message: "Success" });
-  }
-
-  /**
    * @description This method is used
    * @param ctx
    * @returns {*}
