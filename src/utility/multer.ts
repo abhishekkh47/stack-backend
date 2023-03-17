@@ -4,6 +4,7 @@ import aws from "aws-sdk";
 import path from "path";
 import { verifyToken, checkValidImageExtension } from ".";
 import fs from "fs";
+import { NetworkError } from "../middleware/error.middleware";
 const s3 = new aws.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY,
   secretAccessKey: process.env.AWS_SECRET_KEY,
@@ -17,7 +18,7 @@ export const uploadFileS3 = multer({
     key: async (req, file, cb) => {
       const response = await verifyToken(req.headers["x-access-token"]);
       if (response && response.status && response.status === 401) {
-        return cb(new Error("Unauthorised User."));
+        return cb(new NetworkError("Unauthorised User", 401));
       }
       return cb(
         null,
