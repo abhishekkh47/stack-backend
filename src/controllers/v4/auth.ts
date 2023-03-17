@@ -151,7 +151,6 @@ class AuthController extends BaseController {
             const { token, refreshToken } = await TokenService.generateToken(
               teenExists
             );
-            console.log(token, "token");
             response = { ...response, token, refreshToken };
           }
 

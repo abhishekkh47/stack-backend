@@ -7,8 +7,18 @@ export const getJwtToken = (body: any) => {
 };
 
 export const verifyToken = (token: string) => {
-  const response = Jwt.verify(token, process.env.JWT_SECRET ?? "secret") as any;
-  return response;
+  try {
+    const response = Jwt.verify(
+      token,
+      process.env.JWT_SECRET ?? "secret"
+    ) as any;
+    return response;
+  } catch (error) {
+    return {
+      status: 401,
+      message: "Unauthorised User",
+    };
+  }
 };
 
 export const getRefreshToken = (body: any) => {
