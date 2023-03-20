@@ -10,6 +10,7 @@ import {
   QuizTable,
   QuizResult,
   ParentChildTable,
+  QuizTopicTable,
 } from "../../model";
 import { Auth } from "../../middleware";
 import {
@@ -497,6 +498,61 @@ class QuizController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to give quiz topics available or disabled based on user's last quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/get-quiz-topics", method: HttpMethod.GET })
+  @Auth()
+  public async getQuizTopics(ctx: any) {
+    try {
+      const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      const quizResult = await QuizResult.find({
+        userId: userExists._id,
+      });
+      let alreadyPlayerTopicIds = [];
+      if (quizResult.length > 0) {
+        alreadyPlayerTopicIds = quizResult.map((x) => x.topicId);
+      }
+      const quizTopics = await QuizTopicTable.aggregate([
+        {
+          $match: {
+            type: 2,
+            status: 1,
+          },
+        },
+        {
+          $addFields: {
+            isCompleted: {
+              $cond: {
+                if: {
+                  $in: ["$_id", alreadyPlayerTopicIds],
+                },
+                then: true,
+                else: false,
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            isCompleted: 1,
+            image: 1,
+            topic: 1,
+          },
+        },
+      ]).exec();
+      return this.Ok(ctx, { data: quizTopics });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
   }
 }
 

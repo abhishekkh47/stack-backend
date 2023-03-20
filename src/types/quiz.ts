@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 export interface IQuizTopic {
   topic: string;
   status: number;
+  type: number;
+  image: string;
 }
 
 export enum EQuizTopicStatus {
