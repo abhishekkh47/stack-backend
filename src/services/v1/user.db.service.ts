@@ -2,6 +2,7 @@ import { ParentChildTable } from "../../model/parentChild";
 import { ERECURRING } from "../../types/user";
 import { ObjectId } from "mongodb";
 import { UserTable } from "../../model/user";
+import { NetworkError } from "../../middleware/error.middleware";
 
 class UserDBService {
   /**
@@ -136,7 +137,7 @@ class UserDBService {
         };
       }
     } else {
-      throw Error("ERROR: Insufficient Funds.");
+      throw new NetworkError("ERROR: Insufficient Funds.", 400);
     }
 
     return { updateParentCoinQuery, updatedCoinQuery };
