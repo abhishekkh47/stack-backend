@@ -53,6 +53,7 @@ export interface IAdmin extends IUser {
   jwtToken: string;
   username: string;
   rewardHours: number;
+  quizImageAspectRatio: object;
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;

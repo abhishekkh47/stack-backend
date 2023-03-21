@@ -37,6 +37,10 @@ const schema = new mongoose.Schema<IAdminSchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
+    quizImageAspectRatio: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+    },
   },
   { timestamps: true }
 );

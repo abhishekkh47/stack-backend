@@ -42,7 +42,7 @@ export enum EQuizAnswerType {
 
 export const everyCorrectAnswerPoints = 10;
 
-export const timeBetweenTwoQuiz = 72.0;
+export const timeBetweenTwoQuiz = 4.0;
 
 export interface IAnswerArray {
   name: string;

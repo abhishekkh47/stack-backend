@@ -157,7 +157,7 @@ class QuizController extends BaseController {
             if (Time < timeBetweenTwoQuiz) {
               return this.BadRequest(
                 ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+                `Quiz is locked. Please wait for ${timeBetweenTwoQuiz} hours to unlock this quiz`
               );
             }
           }
