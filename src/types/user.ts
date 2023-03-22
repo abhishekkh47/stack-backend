@@ -61,6 +61,7 @@ export interface IAdmin extends IUser {
   stackCoins: number;
   giftCryptoSetting: EGIFTSTACKCOINSSETTING;
   giftCryptoAmount: number;
+  quizCooldown: object;
 }
 
 export interface IUserdraft {

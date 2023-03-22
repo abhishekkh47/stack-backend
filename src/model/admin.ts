@@ -41,6 +41,10 @@ const schema = new mongoose.Schema<IAdminSchema>(
       type: mongoose.Schema.Types.Mixed,
       required: true,
     },
+    quizCooldown: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+    },
   },
   { timestamps: true }
 );

@@ -1,8 +1,7 @@
 import { validations } from "../../validations/v2/apiValidation";
 import { QuizQuestionTable } from "../../model/quizQuestion";
 import { QuizTable } from "../../model/quiz";
-import { timeBetweenTwoQuiz } from "../../types/quiz";
-import { get72HoursAhead } from "../../utility/common";
+import { get72HoursAhead, getQuizHours } from "../../utility/common";
 import moment from "moment";
 import mongoose from "mongoose";
 import { Auth } from "../../middleware";
@@ -140,6 +139,7 @@ class QuizController extends BaseController {
   public getQuestionList(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     return validations.getUserQuizDataValidation(
       reqParam,
       ctx,
@@ -154,6 +154,7 @@ class QuizController extends BaseController {
           const quizIds: any = [];
           if (quizCheck !== null) {
             const Time = await get72HoursAhead(quizCheck.createdAt);
+            const timeBetweenTwoQuiz = await getQuizHours(headers);
             if (Time < timeBetweenTwoQuiz) {
               return this.BadRequest(
                 ctx,

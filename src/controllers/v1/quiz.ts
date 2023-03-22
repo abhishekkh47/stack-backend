@@ -17,9 +17,8 @@ import {
   EUserType,
   everyCorrectAnswerPoints,
   HttpMethod,
-  timeBetweenTwoQuiz,
 } from "../../types";
-import { get72HoursAhead, Route } from "../../utility";
+import { get72HoursAhead, getQuizHours, Route } from "../../utility";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 
@@ -231,6 +230,7 @@ class QuizController extends BaseController {
   public getQuestionList(ctx: any) {
     const reqParam = ctx.params;
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     return validation.getUserQuizDataValidation(
       reqParam,
       ctx,
@@ -243,6 +243,7 @@ class QuizController extends BaseController {
           const quizIds: any = [];
           if (quizCheck !== null) {
             const Time = await get72HoursAhead(quizCheck.createdAt);
+            const timeBetweenTwoQuiz = await getQuizHours(headers);
             if (Time < timeBetweenTwoQuiz) {
               return this.BadRequest(
                 ctx,
@@ -295,6 +296,7 @@ class QuizController extends BaseController {
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -320,6 +322,7 @@ class QuizController extends BaseController {
           }).sort({ createdAt: -1 });
           if (lastQuizPlayed) {
             const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
+            const timeBetweenTwoQuiz = await getQuizHours(headers);
             if (timeDiff <= timeBetweenTwoQuiz) {
               return this.BadRequest(
                 ctx,
@@ -495,6 +498,7 @@ class QuizController extends BaseController {
   public getQuizList(ctx: any) {
     const reqParam = ctx.params;
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     return validation.getQuizListValidation(reqParam, ctx, async (validate) => {
       if (validate) {
         const quizCheck: any = await QuizResult.findOne({
@@ -504,6 +508,7 @@ class QuizController extends BaseController {
         const QuizIds = [];
         if (quizCheck !== null) {
           const Time = await get72HoursAhead(quizCheck.createdAt);
+          const timeBetweenTwoQuiz = await getQuizHours(headers);
           if (Time < timeBetweenTwoQuiz) {
             return this.BadRequest(
               ctx,

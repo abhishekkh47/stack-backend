@@ -11,12 +11,8 @@ import {
   ParentChildTable,
 } from "../../model";
 import { Auth } from "../../middleware";
-import {
-  everyCorrectAnswerPoints,
-  HttpMethod,
-  timeBetweenTwoQuiz,
-} from "../../types";
-import { get72HoursAhead, Route } from "../../utility";
+import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
+import { get72HoursAhead, getQuizHours, Route } from "../../utility";
 import BaseController from "../base";
 import { quizService, zohoCrmService } from "../../services/v1";
 import mongoose from "mongoose";
@@ -272,6 +268,7 @@ class QuizController extends BaseController {
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -304,6 +301,7 @@ class QuizController extends BaseController {
           }).sort({ createdAt: -1 });
           if (lastQuizPlayed) {
             const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
+            const timeBetweenTwoQuiz = await getQuizHours(headers);
             if (timeDiff <= timeBetweenTwoQuiz) {
               return this.BadRequest(
                 ctx,

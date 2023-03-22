@@ -11,14 +11,16 @@ import {
   QuizResult,
   ParentChildTable,
   QuizTopicTable,
+  AdminTable,
 } from "../../model";
 import { Auth } from "../../middleware";
+import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
 import {
-  everyCorrectAnswerPoints,
-  HttpMethod,
-  timeBetweenTwoQuiz,
-} from "../../types";
-import { get72HoursAhead, Route } from "../../utility";
+  get72HoursAhead,
+  getQuizHours,
+  Route,
+  getQuizImageAspectRatio,
+} from "../../utility";
 import BaseController from "../base";
 import { quizService, zohoCrmService } from "../../services/v1";
 import mongoose from "mongoose";
@@ -125,6 +127,7 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuizInformation(ctx: any) {
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User not found");
@@ -153,6 +156,7 @@ class QuizController extends BaseController {
       isOnBoardingQuiz: false,
     });
     const dataToSent = {
+      timeBetweenTwoQuiz: 0,
       lastQuizTime: null,
       totalQuestionSolved: 0,
       totalStackPointsEarned: 0,
@@ -224,6 +228,7 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
+    dataToSent.timeBetweenTwoQuiz = await getQuizHours(headers);
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
@@ -241,6 +246,7 @@ class QuizController extends BaseController {
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -268,6 +274,7 @@ class QuizController extends BaseController {
             userId: user._id,
             isOnBoardingQuiz: false,
           }).sort({ createdAt: -1 });
+          const timeBetweenTwoQuiz = await getQuizHours(headers);
           if (lastQuizPlayed) {
             const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
             if (timeDiff <= timeBetweenTwoQuiz) {
@@ -447,6 +454,7 @@ class QuizController extends BaseController {
   public getQuestionList(ctx: any) {
     const reqParam = ctx.request.body;
     const user = ctx.request.user;
+    const headers = ctx.request.headers;
     return validationsV4.getUserQuizDataValidation(
       reqParam,
       ctx,
@@ -459,6 +467,7 @@ class QuizController extends BaseController {
           const quizIds: any = [];
           if (quizCheck !== null) {
             const Time = await get72HoursAhead(quizCheck.createdAt);
+            const timeBetweenTwoQuiz = await getQuizHours(headers);
             if (Time < timeBetweenTwoQuiz) {
               return this.BadRequest(
                 ctx,
@@ -494,7 +503,12 @@ class QuizController extends BaseController {
           }).select(
             "_id quizId text answer_array points question_image question_type answer_type"
           );
-          return this.Ok(ctx, { quizQuestionList, message: "Success" });
+          const quizImageAspectRatio = await getQuizImageAspectRatio(headers);
+          return this.Ok(ctx, {
+            quizQuestionList,
+            message: "Success",
+            quizImageAspectRatio,
+          });
         }
       }
     );
@@ -521,6 +535,9 @@ class QuizController extends BaseController {
         alreadyPlayerTopicIds = quizResult.map((x) => x.topicId);
       }
       const quizTopics = await QuizTopicTable.aggregate([
+        {
+          $sort: { createdAt: 1 },
+        },
         {
           $match: {
             type: 2,

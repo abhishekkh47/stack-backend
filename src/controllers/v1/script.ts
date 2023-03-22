@@ -41,6 +41,7 @@ import {
   Route,
   getQuoteInformation,
   getInternalTransferInformation,
+  getQuizHours,
 } from "../../utility";
 import BaseController from ".././base";
 import {
