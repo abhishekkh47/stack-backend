@@ -87,32 +87,29 @@ export const makeUniqueReferalCode = async () => {
   return result;
 };
 
-export const getQuizHours = async (headers) => {
+export const getQuizCooldown = async (headers) => {
   let admin = await AdminTable.findOne({});
-  if (headers["buildversion"]) {
-    let hours = admin.quizCooldown["default"];
-    for (const [key, value] of Object.entries(admin.quizCooldown)) {
-      if (key == headers["buildversion"]) {
-        hours = value;
-        break;
-      }
-    }
+  let hours = admin.quizCooldown["default"];
+  if (!headers["build-version"]) {
     return hours;
   }
-  return admin.quizCooldown["default"];
+  let key = Object.keys(admin.quizCooldown).find((x) => {
+    if (x == headers["build-version"]) {
+      return x;
+    }
+  });
+  return admin.quizCooldown[key] ? admin.quizCooldown[key] : hours;
 };
 
 export const getQuizImageAspectRatio = async (headers) => {
   let admin = await AdminTable.findOne({});
-  if (headers["buildversion"]) {
-    let aspectRatio = null;
-    for (const [key, value] of Object.entries(admin.quizImageAspectRatio)) {
-      if (key == headers["buildversion"]) {
-        aspectRatio = value;
-        break;
-      }
-    }
-    return aspectRatio;
+  if (!headers["build-version"]) {
+    return null;
   }
-  return null;
+  let key = Object.keys(admin.quizImageAspectRatio).find((x) => {
+    if (x == headers["build-version"]) {
+      return x;
+    }
+  });
+  return admin.quizImageAspectRatio[key];
 };

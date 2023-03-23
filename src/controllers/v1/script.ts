@@ -41,7 +41,7 @@ import {
   Route,
   getQuoteInformation,
   getInternalTransferInformation,
-  getQuizHours,
+  getQuizImageAspectRatio,
 } from "../../utility";
 import BaseController from ".././base";
 import {
@@ -1070,24 +1070,26 @@ class ScriptController extends BaseController {
       if (!isFieldsAdded) {
         return this.BadRequest(ctx, "Request Body not valid");
       }
-      const quizTopicsData = await reqBody.data.map(async (items) => {
-        const quizTopicObject = {
-          topic: items.topic,
-          type: 2,
-          image: items.image,
-          status: 1,
-        };
-        const createdQuizTopicData = await QuizTopicTable.create(
-          quizTopicObject
-        );
-        const quizObject = {
-          quizName: items.quizTitle,
-          topicId: createdQuizTopicData._id,
-          videoUrl: null,
-        };
-        const createdQuizData = await QuizTable.create(quizObject);
-        return items;
-      });
+      const quizTopicsData = await Promise.all(
+        await reqBody.data.map(async (items) => {
+          const quizTopicObject = {
+            topic: items.topic,
+            type: 2,
+            image: items.image,
+            status: 1,
+          };
+          const createdQuizTopicData = await QuizTopicTable.create(
+            quizTopicObject
+          );
+          const quizObject = {
+            quizName: items.quizTitle,
+            topicId: createdQuizTopicData._id,
+            videoUrl: null,
+          };
+          const createdQuizData = await QuizTable.create(quizObject);
+          return items;
+        })
+      );
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
