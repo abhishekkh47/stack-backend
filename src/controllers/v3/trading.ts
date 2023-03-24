@@ -10,6 +10,7 @@ import { EGIFTSTACKCOINSSETTING, EUSERSTATUS } from "./../../types/user";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import { AdminTable, ParentChildTable, UserTable } from "../../model";
 import {
+  DeviceTokenService,
   PortfolioService,
   TradingDBService,
   zohoCrmService,
@@ -21,7 +22,11 @@ import {
   getPublicTokenExchange,
   Route,
 } from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
+import {
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
+} from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 import { TradingService, UserService } from "../../services/v3/index";
@@ -37,7 +42,7 @@ class TradingController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async addBankDetails(ctx: any) {
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     const reqParam = ctx.request.body;
     const jwtToken = ctx.request.primeTrustToken;
     const userExists = await UserTable.findOne({ _id: user._id });
@@ -130,6 +135,16 @@ class TradingController extends BaseController {
                   admin,
                   false
                 );
+                if (headers["build-number"]) {
+                  await DeviceTokenService.sendUserNotification(
+                    parentChildDetails.firstChildId,
+                    NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
+                    NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
+                    NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+                    null,
+                    parentChildDetails.firstChildId
+                  );
+                }
               }
             }
           }
