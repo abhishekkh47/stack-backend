@@ -17,9 +17,8 @@ import {
   EUserType,
   everyCorrectAnswerPoints,
   HttpMethod,
-  timeBetweenTwoQuiz,
 } from "../../types";
-import { get72HoursAhead, Route } from "../../utility";
+import { get72HoursAhead, getQuizCooldown, Route } from "../../utility";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 
@@ -230,7 +229,7 @@ class QuizController extends BaseController {
   @Auth()
   public getQuestionList(ctx: any) {
     const reqParam = ctx.params;
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     return validation.getUserQuizDataValidation(
       reqParam,
       ctx,
@@ -243,10 +242,11 @@ class QuizController extends BaseController {
           const quizIds: any = [];
           if (quizCheck !== null) {
             const Time = await get72HoursAhead(quizCheck.createdAt);
-            if (Time < timeBetweenTwoQuiz) {
+            const quizCooldown = await getQuizCooldown(headers);
+            if (Time < quizCooldown) {
               return this.BadRequest(
                 ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
               );
             }
           }
@@ -294,7 +294,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -320,10 +320,11 @@ class QuizController extends BaseController {
           }).sort({ createdAt: -1 });
           if (lastQuizPlayed) {
             const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            if (timeDiff <= timeBetweenTwoQuiz) {
+            const quizCooldown = await getQuizCooldown(headers);
+            if (timeDiff <= quizCooldown) {
               return this.BadRequest(
                 ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz"
+                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
               );
             }
           }
@@ -494,7 +495,7 @@ class QuizController extends BaseController {
   @Auth()
   public getQuizList(ctx: any) {
     const reqParam = ctx.params;
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     return validation.getQuizListValidation(reqParam, ctx, async (validate) => {
       if (validate) {
         const quizCheck: any = await QuizResult.findOne({
@@ -504,10 +505,11 @@ class QuizController extends BaseController {
         const QuizIds = [];
         if (quizCheck !== null) {
           const Time = await get72HoursAhead(quizCheck.createdAt);
-          if (Time < timeBetweenTwoQuiz) {
+          const quizCooldown = await getQuizCooldown(headers);
+          if (Time < quizCooldown) {
             return this.BadRequest(
               ctx,
-              "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+              `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
             );
           } else {
             const quizCheckCompleted = await QuizResult.find(

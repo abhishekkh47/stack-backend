@@ -1,6 +1,6 @@
 import config from "../config";
 import crypto from "crypto";
-import { UserTable } from "../model";
+import { AdminTable, UserTable } from "../model";
 import ShortUniqueId from "short-unique-id";
 
 const getUid = new ShortUniqueId({ length: 7 });
@@ -85,4 +85,31 @@ export const makeUniqueReferalCode = async () => {
     }
   } while (flag);
   return result;
+};
+
+export const getQuizCooldown = async (headers) => {
+  let admin = await AdminTable.findOne({});
+  let hours = admin.quizCooldown["default"];
+  if (!headers["build-version"]) {
+    return hours;
+  }
+  let key = Object.keys(admin.quizCooldown).find((x) => {
+    if (x == headers["build-version"]) {
+      return x;
+    }
+  });
+  return admin.quizCooldown[key] ? admin.quizCooldown[key] : hours;
+};
+
+export const getQuizImageAspectRatio = async (headers) => {
+  let admin = await AdminTable.findOne({});
+  if (!headers["build-version"]) {
+    return null;
+  }
+  let key = Object.keys(admin.quizImageAspectRatio).find((x) => {
+    if (x == headers["build-version"]) {
+      return x;
+    }
+  });
+  return admin.quizImageAspectRatio[key];
 };

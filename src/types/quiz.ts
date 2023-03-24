@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 export interface IQuizTopic {
   topic: string;
   status: number;
+  type: number;
+  image: string;
 }
 
 export enum EQuizTopicStatus {
@@ -39,8 +41,6 @@ export enum EQuizAnswerType {
 }
 
 export const everyCorrectAnswerPoints = 10;
-
-export const timeBetweenTwoQuiz = 72.0;
 
 export interface IAnswerArray {
   name: string;

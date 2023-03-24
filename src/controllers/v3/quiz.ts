@@ -11,12 +11,8 @@ import {
   ParentChildTable,
 } from "../../model";
 import { Auth } from "../../middleware";
-import {
-  everyCorrectAnswerPoints,
-  HttpMethod,
-  timeBetweenTwoQuiz,
-} from "../../types";
-import { get72HoursAhead, Route } from "../../utility";
+import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
+import { get72HoursAhead, getQuizCooldown, Route } from "../../utility";
 import BaseController from "../base";
 import { quizService, zohoCrmService } from "../../services/v1";
 import mongoose from "mongoose";
@@ -271,7 +267,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -304,10 +300,11 @@ class QuizController extends BaseController {
           }).sort({ createdAt: -1 });
           if (lastQuizPlayed) {
             const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            if (timeDiff <= timeBetweenTwoQuiz) {
+            const quizCooldown = await getQuizCooldown(headers);
+            if (timeDiff <= quizCooldown) {
               return this.BadRequest(
                 ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz"
+                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
               );
             }
           }

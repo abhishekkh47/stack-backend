@@ -10,18 +10,22 @@ import {
   QuizTable,
   QuizResult,
   ParentChildTable,
+  QuizTopicTable,
+  AdminTable,
 } from "../../model";
 import { Auth } from "../../middleware";
+import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
 import {
-  everyCorrectAnswerPoints,
-  HttpMethod,
-  timeBetweenTwoQuiz,
-} from "../../types";
-import { get72HoursAhead, Route } from "../../utility";
+  get72HoursAhead,
+  getQuizCooldown,
+  Route,
+  getQuizImageAspectRatio,
+} from "../../utility";
 import BaseController from "../base";
 import { quizService, zohoCrmService } from "../../services/v1";
 import mongoose from "mongoose";
 import moment from "moment";
+import { QuizDBService } from "@app/services/v4";
 
 class QuizController extends BaseController {
   /**
@@ -123,7 +127,7 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-result", method: HttpMethod.POST })
   @Auth()
   public async getQuizInformation(ctx: any) {
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User not found");
@@ -152,6 +156,7 @@ class QuizController extends BaseController {
       isOnBoardingQuiz: false,
     });
     const dataToSent = {
+      quizCooldown: 0,
       lastQuizTime: null,
       totalQuestionSolved: 0,
       totalStackPointsEarned: 0,
@@ -223,6 +228,7 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
+    dataToSent.quizCooldown = await getQuizCooldown(headers);
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
@@ -239,7 +245,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -267,12 +273,13 @@ class QuizController extends BaseController {
             userId: user._id,
             isOnBoardingQuiz: false,
           }).sort({ createdAt: -1 });
+          const quizCooldown = await getQuizCooldown(headers);
           if (lastQuizPlayed) {
             const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            if (timeDiff <= timeBetweenTwoQuiz) {
+            if (timeDiff <= quizCooldown) {
               return this.BadRequest(
                 ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz"
+                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
               );
             }
           }
@@ -445,58 +452,53 @@ class QuizController extends BaseController {
   @Auth()
   public getQuestionList(ctx: any) {
     const reqParam = ctx.request.body;
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     return validationsV4.getUserQuizDataValidation(
       reqParam,
       ctx,
       async (validate) => {
         if (validate) {
-          const quizCheck: any = await QuizResult.findOne({
-            userId: user._id,
-            topicId: reqParam.topicId,
-          }).sort({ createdAt: -1 });
-          const quizIds: any = [];
-          if (quizCheck !== null) {
-            const Time = await get72HoursAhead(quizCheck.createdAt);
-            if (Time < timeBetweenTwoQuiz) {
-              return this.BadRequest(
-                ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz."
-              );
-            }
-          }
-          const quizCheckCompleted = await QuizResult.find(
-            {
-              userId: user._id,
-              topicId: reqParam.topicId,
-            },
-            {
-              _id: 0,
-              quizId: 1,
-            }
-          ).select("quizId");
-          if (quizCheckCompleted.length == 0) {
-          } else {
-            for (const quizId of quizCheckCompleted) {
-              quizIds.push(quizId.quizId);
-            }
-          }
-          const data = await QuizTable.findOne({
-            topicId: reqParam.topicId,
-            _id: { $nin: quizIds },
-          }).sort({ createdAt: 1 });
-          if (!data) {
-            return this.BadRequest(ctx, "Quiz Not Found");
-          }
-          const quizQuestionList = await QuizQuestionTable.find({
-            quizId: data._id,
-          }).select(
-            "_id quizId text answer_array points question_image question_type answer_type"
+          const quizQuestionList = await QuizDBService.getQuizQuestionList(
+            user,
+            reqParam.topicId,
+            headers
           );
-          return this.Ok(ctx, { quizQuestionList, message: "Success" });
+          const quizImageAspectRatio = await getQuizImageAspectRatio(headers);
+          return this.Ok(ctx, {
+            quizQuestionList,
+            message: "Success",
+            quizImageAspectRatio,
+          });
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to give quiz topics available or disabled based on user's last quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/get-quiz-topics", method: HttpMethod.GET })
+  @Auth()
+  public async getQuizTopics(ctx: any) {
+    try {
+      const user = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!user) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      const quizResult = await QuizResult.find({
+        userId: user._id,
+      });
+      let topicIds = [];
+      if (quizResult.length > 0) {
+        topicIds = quizResult.map((x) => x.topicId);
+      }
+      const quizTopics = await QuizDBService.getQuizTopics(topicIds);
+      return this.Ok(ctx, { data: quizTopics });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
   }
 }
 
