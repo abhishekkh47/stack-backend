@@ -130,20 +130,23 @@ class zohoCrmService {
   public async getDataSentToCrm(allUsersInfo: any) {
     let dataSentInCrm = [];
 
-    await allUsersInfo.map(async (user) => {
-      /**
-       * service to get the quiz info of specific user
-       */
-      let quizDataToAddInCrm = await quizService.getQuizInfoOfUser(
-        user.quizData
-      );
+    await Promise.all(
+      await allUsersInfo.map(async (user) => {
+        /**
+         * service to get the quiz info of specific user
+         */
+        let quizDataToAddInCrm = await quizService.getQuizInfoOfUser(
+          user.quizData
+        );
 
-      let checkUserRegistered =
-        user.type == EUserType.PARENT || user.type == EUserType.SELF
-          ? user.screenStatus == ESCREENSTATUS.SUCCESS
-          : user.screenStatus == ESCREENSTATUS.SUCCESS_TEEN;
+        let checkUserRegistered =
+          user.type == EUserType.PARENT || user.type == EUserType.SELF
+            ? user.screenStatus == ESCREENSTATUS.SUCCESS
+            : user.screenStatus == ESCREENSTATUS.SUCCESS_TEEN;
 
-      if (user.email) {
+        if (!user.email) {
+          return null;
+        }
         let usertObj = {
           Account_Name: user.firstName + " " + user.lastName,
           First_Name: user.firstName,
@@ -234,8 +237,8 @@ class zohoCrmService {
                 user.parentChildInfo.lastName,
           });
         }
-      }
-    });
+      })
+    );
 
     return dataSentInCrm;
   }

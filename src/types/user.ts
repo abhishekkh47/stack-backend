@@ -53,6 +53,7 @@ export interface IAdmin extends IUser {
   jwtToken: string;
   username: string;
   rewardHours: number;
+  quizImageAspectRatio: object;
   zohoRefreshToken: string;
   zohoExpiryTime: string;
   zohoAccessToken: string;
@@ -60,6 +61,7 @@ export interface IAdmin extends IUser {
   stackCoins: number;
   giftCryptoSetting: EGIFTSTACKCOINSSETTING;
   giftCryptoAmount: number;
+  quizCooldown: object;
 }
 
 export interface IUserdraft {
