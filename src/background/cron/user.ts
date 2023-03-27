@@ -17,9 +17,11 @@ export const kycReminderHandler = async () => {
         status: 0,
         mobile: { $ne: null },
         referralCode: { $ne: null },
+        isParentOnboardingReminderSent: false,
       },
     },
   ]).exec();
+  let userIds = [];
   if (user.length === 0) return false;
   await Promise.all(
     user.map(async (data: any) => {
@@ -33,9 +35,18 @@ export const kycReminderHandler = async () => {
           null,
           data._id
         );
+        userIds.push(data._id);
       }
       return true;
     })
+  );
+  await UserTable.updateMany(
+    { _id: { $in: userIds } },
+    {
+      $set: {
+        isParentOnboardingReminderSent: true,
+      },
+    }
   );
   return true;
 };

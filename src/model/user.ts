@@ -175,6 +175,20 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    /**
+     * isParentOnboardingReminderSent then true else false
+     */
+    isParentOnboardingReminderSent: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    /**
+     * isQuizReminderNotificationSent then true else false
+     */
+    isQuizReminderNotificationSent: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

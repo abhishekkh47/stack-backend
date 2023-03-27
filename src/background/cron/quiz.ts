@@ -1,4 +1,4 @@
-import { AdminTable, QuizResult } from "../../model";
+import { AdminTable, QuizResult, UserTable } from "../../model";
 import moment from "moment";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 import { DeviceTokenService } from "../../services/v1";
@@ -32,7 +32,14 @@ export const challengeAvailableHandler = async () => {
       $redact: {
         $cond: {
           if: {
-            $eq: ["$users.type", 1],
+            $and: [
+              {
+                $eq: ["$users.type", 1],
+              },
+              {
+                $eq: ["$users.isQuizReminderNotificationSent", false],
+              },
+            ],
           },
           then: "$$KEEP",
           else: "$$PRUNE",
@@ -51,6 +58,7 @@ export const challengeAvailableHandler = async () => {
       },
     },
   ]).exec();
+  let userIds = [];
   if (quizResults.length === 0) return false;
   await Promise.all(
     quizResults.map(async (data: any) => {
@@ -64,9 +72,18 @@ export const challengeAvailableHandler = async () => {
           null,
           data._id
         );
+        userIds.push(data._id);
       }
       return true;
     })
+  );
+  await UserTable.updateMany(
+    { _id: { $in: userIds } },
+    {
+      $set: {
+        isQuizReminderNotificationSent: true,
+      },
+    }
   );
   return true;
 };
