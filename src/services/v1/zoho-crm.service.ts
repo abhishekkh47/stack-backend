@@ -144,97 +144,98 @@ class zohoCrmService {
             ? user.screenStatus == ESCREENSTATUS.SUCCESS
             : user.screenStatus == ESCREENSTATUS.SUCCESS_TEEN;
 
-        if (user.email) {
-          let usertObj = {
-            Account_Name: user.firstName + " " + user.lastName,
-            First_Name: user.firstName,
-            Last_Name: user.lastName,
-            Birthday: user.dob,
-            Mobile: user.mobile,
-            Email: user.email,
-            User_ID: user._id.toString(),
-            Account_Status: String(user.status),
-            Stack_Coins: user.preLoadedCoins + user.quizCoins,
-            Quiz_Information: quizDataToAddInCrm,
-          };
-          if (user.type == EUserType.PARENT || user.type == EUserType.SELF) {
-            let setParentSignupFunnel = [
-              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-              PARENT_SIGNUP_FUNNEL.DOB,
-              PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
-              PARENT_SIGNUP_FUNNEL.CHILD_INFO,
-            ];
+        if (!user.email) {
+          return null;
+        }
+        let usertObj = {
+          Account_Name: user.firstName + " " + user.lastName,
+          First_Name: user.firstName,
+          Last_Name: user.lastName,
+          Birthday: user.dob,
+          Mobile: user.mobile,
+          Email: user.email,
+          User_ID: user._id.toString(),
+          Account_Status: String(user.status),
+          Stack_Coins: user.preLoadedCoins + user.quizCoins,
+          Quiz_Information: quizDataToAddInCrm,
+        };
+        if (user.type == EUserType.PARENT || user.type == EUserType.SELF) {
+          let setParentSignupFunnel = [
+            ...PARENT_SIGNUP_FUNNEL.SIGNUP,
+            PARENT_SIGNUP_FUNNEL.DOB,
+            PARENT_SIGNUP_FUNNEL.CONFIRM_DETAILS,
+            PARENT_SIGNUP_FUNNEL.CHILD_INFO,
+          ];
 
-            let checkKycApproved =
-              user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED;
+          let checkKycApproved =
+            user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED;
 
-            let checkBankAccountAdded =
-              user.screenStatus == ESCREENSTATUS.ADD_BANK_ACCOUNT;
+          let checkBankAccountAdded =
+            user.screenStatus == ESCREENSTATUS.ADD_BANK_ACCOUNT;
 
-            dataSentInCrm.push({
-              ...usertObj,
-              Account_Type: user.type == EUserType.PARENT ? "Parent" : "Self",
-              Parent_Signup_Funnel:
-                checkKycApproved && checkUserRegistered
-                  ? [
-                      ...setParentSignupFunnel,
-                      PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-                      PARENT_SIGNUP_FUNNEL.ADD_BANK,
-                      PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
-                      PARENT_SIGNUP_FUNNEL.SUCCESS,
-                    ]
-                  : (checkKycApproved && checkBankAccountAdded) ||
-                    (!checkKycApproved && checkBankAccountAdded)
-                  ? [
-                      ...setParentSignupFunnel,
-                      PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
-                    ]
-                  : [...setParentSignupFunnel],
-              Parent_First: String(user.isParentFirst),
-              Parent_Number: user.mobile,
-
-              Teen_Name:
-                user.type == EUserType.PARENT && user.parentChildInfo
-                  ? user.parentChildInfo.firstName +
-                    " " +
-                    user.parentChildInfo.lastName
-                  : null,
-              Teen_Number:
-                user.type == EUserType.PARENT && user.parentChildInfo
-                  ? user.parentChildInfo.mobile
-                  : null,
-            });
-          } else {
-            let setTeenSignupFunnel = [
-              TEEN_SIGNUP_FUNNEL.SIGNUP,
-              TEEN_SIGNUP_FUNNEL.DOB,
-              TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
-            ];
-
-            dataSentInCrm.push({
-              ...usertObj,
-              Account_Type: "Teen",
-              Teen_Signup_Funnel: checkUserRegistered
+          dataSentInCrm.push({
+            ...usertObj,
+            Account_Type: user.type == EUserType.PARENT ? "Parent" : "Self",
+            Parent_Signup_Funnel:
+              checkKycApproved && checkUserRegistered
                 ? [
-                    ...setTeenSignupFunnel,
-                    TEEN_SIGNUP_FUNNEL.PARENT_INFO,
-                    TEEN_SIGNUP_FUNNEL.SUCCESS,
+                    ...setParentSignupFunnel,
+                    PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+                    PARENT_SIGNUP_FUNNEL.ADD_BANK,
+                    PARENT_SIGNUP_FUNNEL.FUND_ACCOUNT,
+                    PARENT_SIGNUP_FUNNEL.SUCCESS,
                   ]
-                : [...setTeenSignupFunnel],
+                : (checkKycApproved && checkBankAccountAdded) ||
+                  (!checkKycApproved && checkBankAccountAdded)
+                ? [
+                    ...setParentSignupFunnel,
+                    PARENT_SIGNUP_FUNNEL.UPLOAD_DOCUMENT,
+                  ]
+                : [...setParentSignupFunnel],
+            Parent_First: String(user.isParentFirst),
+            Parent_Number: user.mobile,
 
-              Parent_Name:
-                user.parentChildInfo &&
-                user.parentChildInfo.firstName +
+            Teen_Name:
+              user.type == EUserType.PARENT && user.parentChildInfo
+                ? user.parentChildInfo.firstName +
                   " " +
-                  user.parentChildInfo.lastName,
-              Parent_Number: user.parentMobile,
-              Parent_Account:
-                user.parentChildInfo &&
-                user.parentChildInfo.firstName +
-                  " " +
-                  user.parentChildInfo.lastName,
-            });
-          }
+                  user.parentChildInfo.lastName
+                : null,
+            Teen_Number:
+              user.type == EUserType.PARENT && user.parentChildInfo
+                ? user.parentChildInfo.mobile
+                : null,
+          });
+        } else {
+          let setTeenSignupFunnel = [
+            TEEN_SIGNUP_FUNNEL.SIGNUP,
+            TEEN_SIGNUP_FUNNEL.DOB,
+            TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
+          ];
+
+          dataSentInCrm.push({
+            ...usertObj,
+            Account_Type: "Teen",
+            Teen_Signup_Funnel: checkUserRegistered
+              ? [
+                  ...setTeenSignupFunnel,
+                  TEEN_SIGNUP_FUNNEL.PARENT_INFO,
+                  TEEN_SIGNUP_FUNNEL.SUCCESS,
+                ]
+              : [...setTeenSignupFunnel],
+
+            Parent_Name:
+              user.parentChildInfo &&
+              user.parentChildInfo.firstName +
+                " " +
+                user.parentChildInfo.lastName,
+            Parent_Number: user.parentMobile,
+            Parent_Account:
+              user.parentChildInfo &&
+              user.parentChildInfo.firstName +
+                " " +
+                user.parentChildInfo.lastName,
+          });
         }
       })
     );

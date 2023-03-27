@@ -128,18 +128,18 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuizInformation(ctx: any) {
     const { user, headers } = ctx.request;
-    const userExists = await UserTable.findOne({ _id: user._id });
-    if (!userExists) {
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
     }
     let childExists = null;
-    if (userExists.type == EUserType.PARENT) {
+    if (userIfExists.type == EUserType.PARENT) {
       childExists = await ParentChildTable.findOne({
-        userId: userExists._id,
+        userId: userIfExists._id,
       }).populate("firstChildId", ["_id", "preLoadedCoins"]);
     } else {
       childExists = await ParentChildTable.findOne({
-        firstChildId: userExists._id,
+        firstChildId: userIfExists._id,
       }).populate("userId", ["_id", "preLoadedCoins"]);
     }
     const checkQuizExists = await quizService.checkQuizExists({
@@ -147,7 +147,7 @@ class QuizController extends BaseController {
         { userId: new mongoose.Types.ObjectId(user._id) },
         {
           userId: childExists
-            ? userExists.type == EUserType.PARENT
+            ? userIfExists.type == EUserType.PARENT
               ? new mongoose.Types.ObjectId(childExists.userId._id)
               : new mongoose.Types.ObjectId(childExists.firstChildId._id)
             : null,
@@ -161,14 +161,14 @@ class QuizController extends BaseController {
       totalQuestionSolved: 0,
       totalStackPointsEarned: 0,
       totalStackPointsEarnedTop:
-        userExists.type == EUserType.PARENT && childExists
+        userIfExists.type == EUserType.PARENT && childExists
           ? childExists.firstChildId
             ? childExists.firstChildId.preLoadedCoins
               ? childExists.firstChildId.preLoadedCoins
               : 0
             : 0
-          : userExists.type == EUserType.TEEN
-          ? userExists.preLoadedCoins
+          : userIfExists.type == EUserType.TEEN
+          ? userIfExists.preLoadedCoins
           : 0,
     };
     /**
@@ -184,7 +184,7 @@ class QuizController extends BaseController {
             { userId: new mongoose.Types.ObjectId(user._id) },
             {
               userId: childExists
-                ? userExists.type == EUserType.PARENT
+                ? userIfExists.type == EUserType.PARENT
                   ? new mongoose.Types.ObjectId(childExists.firstChildId._id)
                   : new mongoose.Types.ObjectId(childExists.userId._id)
                 : null,
@@ -251,8 +251,8 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          let userExists = await UserTable.findOne({ _id: user._id });
-          if (!userExists) {
+          let userIfExists = await UserTable.findOne({ _id: user._id });
+          if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
           const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
@@ -334,9 +334,9 @@ class QuizController extends BaseController {
           let userExistsForQuiz = null;
           let preLoadedCoins = 0;
           let isParentOrChild = 0;
-          if (userExists.type == EUserType.PARENT) {
+          if (userIfExists.type == EUserType.PARENT) {
             userExistsForQuiz = await ParentChildTable.findOne({
-              userId: userExists._id,
+              userId: userIfExists._id,
             }).populate("firstChildId", [
               "_id",
               "preLoadedCoins",
@@ -353,9 +353,9 @@ class QuizController extends BaseController {
           } else {
             userExistsForQuiz = await ParentChildTable.findOne({
               $or: [
-                { firstChildId: userExists._id },
+                { firstChildId: userIfExists._id },
                 {
-                  "teens.childId": userExists._id,
+                  "teens.childId": userIfExists._id,
                 },
               ],
             }).populate("userId", [
@@ -368,14 +368,16 @@ class QuizController extends BaseController {
               "email",
             ]);
             isParentOrChild = userExistsForQuiz ? 2 : 0;
-            preLoadedCoins = userExistsForQuiz ? userExists.preLoadedCoins : 0;
+            preLoadedCoins = userExistsForQuiz
+              ? userIfExists.preLoadedCoins
+              : 0;
           }
           const checkQuizExists = await quizService.checkQuizExists({
             $or: [
-              { userId: new mongoose.Types.ObjectId(userExists._id) },
+              { userId: new mongoose.Types.ObjectId(userIfExists._id) },
               {
                 userId: userExistsForQuiz
-                  ? userExists.type == EUserType.PARENT
+                  ? userIfExists.type == EUserType.PARENT
                     ? new mongoose.Types.ObjectId(
                         userExistsForQuiz.firstChildId._id
                       )
@@ -407,10 +409,11 @@ class QuizController extends BaseController {
           }
           let dataSentInCrm: any = [
             {
-              Account_Name: userExists.firstName + " " + userExists.lastName,
+              Account_Name:
+                userIfExists.firstName + " " + userIfExists.lastName,
               Stack_Coins: stackCoins,
               Quiz_Information: quizDataAddInCrm,
-              Email: userExists.email,
+              Email: userIfExists.email,
             },
           ];
           if (isParentOrChild != 0) {
