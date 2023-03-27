@@ -14,3 +14,4 @@ yarn.lock
 .env.uat
 .env.staging
 .env.prod
+.env.stg
