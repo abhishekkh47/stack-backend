@@ -121,6 +121,41 @@ class QuizDBService {
     );
     return quizQuestionList;
   }
+
+  /**
+   * @description get quiz questions
+   * @param userId
+   * @param topicId
+   * @param headers
+   */
+  public async getQuizQuestions(
+    userId: string,
+    quizId: string,
+    headers: object
+  ) {
+    const query = {
+      userId: userId,
+    };
+    const quizCheck: any = await QuizResult.findOne(query).sort({
+      createdAt: -1,
+    });
+    if (quizCheck !== null) {
+      const Time = await get72HoursAhead(quizCheck.createdAt);
+      const quizCooldown = await getQuizCooldown(headers);
+      if (Time < quizCooldown) {
+        throw new NetworkError(
+          `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`,
+          400
+        );
+      }
+    }
+    const quizQuestionList = await QuizQuestionTable.find({
+      quizId: quizId,
+    }).select(
+      "_id quizId text answer_array points question_image question_type answer_type"
+    );
+    return quizQuestionList;
+  }
 }
 
 export default new QuizDBService();
