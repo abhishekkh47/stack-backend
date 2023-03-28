@@ -1,11 +1,17 @@
 import { NetworkError } from "../../middleware/error.middleware";
 import { get72HoursAhead, getQuizCooldown } from "../../utility";
 import {
+  ParentChildTable,
+  QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
   QuizTable,
   QuizTopicTable,
+  UserTable,
 } from "../../model";
+import mongoose from "mongoose";
+import { EUserType, everyCorrectAnswerPoints } from "../../types";
+import { quizService } from "../v1";
 class QuizDBService {
   /**
    * @description get quiz data
@@ -155,6 +161,233 @@ class QuizDBService {
       "_id quizId text answer_array points question_image question_type answer_type"
     );
     return quizQuestionList;
+  }
+
+  /**
+   * @description get total coins from quiz
+   * @param userId
+   * @param childExists
+   * @param userIfExists
+   */
+  public async getTotalCoinsFromQuiz(
+    userId: string,
+    childExists: any,
+    userIfExists: any
+  ) {
+    const newQuizData = await QuizResult.aggregate([
+      {
+        $match: {
+          $or: [
+            { userId: new mongoose.Types.ObjectId(userId) },
+            {
+              userId: childExists
+                ? userIfExists.type == EUserType.PARENT
+                  ? new mongoose.Types.ObjectId(childExists.firstChildId._id)
+                  : new mongoose.Types.ObjectId(childExists.userId._id)
+                : null,
+            },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          sum: {
+            $sum: "$pointsEarned",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sum: 1,
+        },
+      },
+    ]).exec();
+    return newQuizData.length > 0 ? newQuizData[0].sum : 0;
+  }
+
+  /**
+   * @description store quiz results data
+   * @param userId
+   * @param childExists
+   * @param userIfExists
+   */
+  public async storeQuizInformation(
+    userId: string,
+    headers: object,
+    reqParam: any,
+    quizExists: any
+  ) {
+    const lastQuizPlayed = await QuizResult.findOne({
+      userId: userId,
+      isOnBoardingQuiz: false,
+    }).sort({ createdAt: -1 });
+    const quizCooldown = await getQuizCooldown(headers);
+    if (lastQuizPlayed) {
+      const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
+      if (timeDiff <= quizCooldown) {
+        throw new NetworkError(
+          `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`,
+          400
+        );
+      }
+    }
+    /**
+     * Check question acutally exists in that quiz
+     */
+    const quizQuestions = [];
+    let queExistsFlag = true;
+    if (reqParam.solvedQuestions.length > 0) {
+      for (const solvedQue of reqParam.solvedQuestions) {
+        const queExists = await QuizQuestionTable.findOne({
+          _id: solvedQue,
+        });
+        if (!queExists) {
+          queExistsFlag = false;
+          break;
+        }
+        quizQuestions.push({
+          topicId: quizExists.topicId,
+          quizId: quizExists._id,
+          userId: userId,
+          quizQuestionId: solvedQue,
+          pointsEarned: queExists.points,
+        });
+      }
+    }
+    if (queExistsFlag === false) {
+      throw new NetworkError("Question Doesn't Exists in db", 400);
+    }
+    /**
+     * Add Question Result and Quiz Result
+     */
+    await QuizQuestionResult.insertMany(quizQuestions);
+    const dataToCreate = {
+      topicId: quizExists.topicId,
+      quizId: quizExists._id,
+      userId: userId,
+      isOnBoardingQuiz: false,
+      pointsEarned: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+    };
+    await QuizResult.create(dataToCreate);
+    await UserTable.updateOne(
+      { _id: userId },
+      {
+        $inc: {
+          quizCoins: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+        },
+      }
+    );
+    return true;
+  }
+
+  /**
+   * @description get quizinformation to sent in crm
+   * @param userIfExists
+   * @param userId
+   */
+  public async getQuizDataToSentInCrm(userIfExists: any, userId: string) {
+    let userExistsForQuiz = null;
+    let preLoadedCoins = 0;
+    let isParentOrChild = 0;
+    if (userIfExists.type == EUserType.PARENT) {
+      userExistsForQuiz = await ParentChildTable.findOne({
+        userId: userIfExists._id,
+      }).populate("firstChildId", [
+        "_id",
+        "preLoadedCoins",
+        "isGiftedCrypto",
+        "isParentFirst",
+        "firstName",
+        "lastName",
+        "email",
+      ]);
+      isParentOrChild = userExistsForQuiz ? 1 : 0;
+      preLoadedCoins = userExistsForQuiz
+        ? userExistsForQuiz.firstChildId.preLoadedCoins
+        : 0;
+    } else {
+      userExistsForQuiz = await ParentChildTable.findOne({
+        $or: [
+          { firstChildId: userIfExists._id },
+          {
+            "teens.childId": userIfExists._id,
+          },
+        ],
+      }).populate("userId", [
+        "_id",
+        "preLoadedCoins",
+        "firstName",
+        "lastName",
+        "isGiftedCrypto",
+        "isParentFirst",
+        "email",
+      ]);
+      isParentOrChild = userExistsForQuiz ? 2 : 0;
+      preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
+    }
+    const checkQuizExists = await quizService.checkQuizExists({
+      $or: [
+        { userId: new mongoose.Types.ObjectId(userIfExists._id) },
+        {
+          userId: userExistsForQuiz
+            ? userIfExists.type == EUserType.PARENT
+              ? new mongoose.Types.ObjectId(userExistsForQuiz.firstChildId._id)
+              : new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
+            : null,
+        },
+      ],
+      isOnBoardingQuiz: false,
+    });
+    let stackCoins = 0;
+    if (checkQuizExists.length > 0) {
+      stackCoins = checkQuizExists[0].sum;
+    }
+    stackCoins = stackCoins + preLoadedCoins;
+    /**
+     * Added Quiz information to zoho crm
+     */
+    let allQuizData: any = await QuizResult.find({
+      userId: userId,
+    }).populate("quizId");
+    let quizDataAddInCrm = [];
+    if (allQuizData.length > 0) {
+      quizDataAddInCrm = allQuizData.map((res) => {
+        return {
+          Quiz_Number: parseInt(res.quizId.quizName.split(" ")[1]),
+          Points: res.pointsEarned,
+        };
+      });
+    }
+    let dataSentInCrm: any = [
+      {
+        Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
+        Stack_Coins: stackCoins,
+        Quiz_Information: quizDataAddInCrm,
+        Email: userIfExists.email,
+      },
+    ];
+    if (isParentOrChild != 0) {
+      isParentOrChild == 2
+        ? dataSentInCrm.push({
+            Account_Name:
+              userExistsForQuiz.userId.firstName +
+              " " +
+              userExistsForQuiz.userId.lastName,
+            Stack_Coins: stackCoins,
+            Email: userExistsForQuiz.userId.email,
+          })
+        : dataSentInCrm.push({
+            Account_Name:
+              userExistsForQuiz.firstChildId.firstName +
+              " " +
+              userExistsForQuiz.firstChildId.lastName,
+            Stack_Coins: stackCoins,
+            Email: userExistsForQuiz.firstChildId.email,
+          });
+    }
+    return dataSentInCrm;
   }
 }
 
