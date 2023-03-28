@@ -8,11 +8,11 @@ import {
 } from "../../model";
 class QuizDBService {
   /**
-   * @description get quiz topics
-   * @param topicIds
+   * @description get quiz data
+   * @param quizIds
    */
-  public async getQuizTopics(topicIds: string[]) {
-    const quizTopics = await QuizTopicTable.aggregate([
+  public async getQuizData(quizIds: string[]) {
+    const quizData = await QuizTopicTable.aggregate([
       {
         $sort: { createdAt: 1 },
       },
@@ -23,11 +23,25 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiz",
+          localField: "_id",
+          foreignField: "topicId",
+          as: "quizData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $addFields: {
           isCompleted: {
             $cond: {
               if: {
-                $in: ["$_id", topicIds],
+                $in: ["$quizData._id", quizIds],
               },
               then: true,
               else: false,
@@ -37,17 +51,18 @@ class QuizDBService {
       },
       {
         $project: {
-          _id: 1,
+          _id: "$quizData._id",
+          image: "$quizData.image",
+          name: "$quizData.quizName",
           isCompleted: 1,
-          image: 1,
-          topic: 1,
+          topicId: "$_id",
         },
       },
     ]).exec();
-    if (quizTopics.length === 0) {
-      throw Error("Quiz Topics Not Found");
+    if (quizData.length === 0) {
+      throw Error("Quiz Not Found");
     }
-    return quizTopics;
+    return quizData;
   }
 
   /**

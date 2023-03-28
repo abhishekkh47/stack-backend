@@ -482,9 +482,9 @@ class QuizController extends BaseController {
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/get-quiz-topics", method: HttpMethod.GET })
+  @Route({ path: "/get-quiz", method: HttpMethod.GET })
   @Auth()
-  public async getQuizTopics(ctx: any) {
+  public async getQuiz(ctx: any) {
     try {
       const user = await UserTable.findOne({ _id: ctx.request.user._id });
       if (!user) {
@@ -493,12 +493,12 @@ class QuizController extends BaseController {
       const quizResult = await QuizResult.find({
         userId: user._id,
       });
-      let topicIds = [];
+      let quizIds = [];
       if (quizResult.length > 0) {
-        topicIds = quizResult.map((x) => x.topicId);
+        quizIds = quizResult.map((x) => x.quizId);
       }
-      const quizTopics = await QuizDBService.getQuizTopics(topicIds);
-      return this.Ok(ctx, { data: quizTopics });
+      const quizInformation = await QuizDBService.getQuizData(quizIds);
+      return this.Ok(ctx, { data: quizInformation });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
     }

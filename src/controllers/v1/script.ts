@@ -1085,6 +1085,7 @@ class ScriptController extends BaseController {
             quizName: items.quizTitle,
             topicId: createdQuizTopicData._id,
             videoUrl: null,
+            image: items.quizImage,
           };
           const createdQuizData = await QuizTable.create(quizObject);
           return items;
