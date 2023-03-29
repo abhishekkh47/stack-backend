@@ -392,6 +392,63 @@ class QuizDBService {
     }
     return dataSentInCrm;
   }
+
+  /**
+   * @description get last quiz records
+   */
+  public async getLastQuizRecord() {
+    const quizResults = await QuizResult.aggregate([
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+      {
+        $unwind: {
+          path: "$users",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $and: [
+                {
+                  $eq: ["$users.type", 1],
+                },
+                {
+                  $eq: ["$users.isQuizReminderNotificationSent", false],
+                },
+              ],
+            },
+            then: "$$KEEP",
+            else: "$$PRUNE",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          pointsEarned: {
+            $first: "$pointsEarned",
+          },
+          createdAt: {
+            $first: "$createdAt",
+          },
+        },
+      },
+    ]).exec();
+    return quizResults;
+  }
 }
 
 export default new QuizDBService();

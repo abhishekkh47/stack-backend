@@ -2,66 +2,18 @@ import { AdminTable, QuizResult, UserTable } from "../../model";
 import moment from "moment";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 import { DeviceTokenService } from "../../services/v1";
+import quizDbService from "../../services/v4/quiz.db.service";
 
 export const challengeAvailableHandler = async () => {
   console.log("==========Start Cron For Challenge Available=============");
   const currentTime = moment().unix();
   const admin = await AdminTable.findOne({});
   const hoursToAdd = admin.quizCooldown[1.9];
-  const quizResults = await QuizResult.aggregate([
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "userId",
-        foreignField: "_id",
-        as: "users",
-      },
-    },
-    {
-      $unwind: {
-        path: "$users",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $redact: {
-        $cond: {
-          if: {
-            $and: [
-              {
-                $eq: ["$users.type", 1],
-              },
-              {
-                $eq: ["$users.isQuizReminderNotificationSent", false],
-              },
-            ],
-          },
-          then: "$$KEEP",
-          else: "$$PRUNE",
-        },
-      },
-    },
-    {
-      $group: {
-        _id: "$userId",
-        pointsEarned: {
-          $first: "$pointsEarned",
-        },
-        createdAt: {
-          $first: "$createdAt",
-        },
-      },
-    },
-  ]).exec();
+  const lastQuizResult: any = await quizDbService.getLastQuizRecord();
   let userIds = [];
-  if (quizResults.length === 0) return false;
+  if (lastQuizResult.length === 0) return false;
   await Promise.all(
-    quizResults.map(async (data: any) => {
+    lastQuizResult.map(async (data: any) => {
       let createdAt = moment(data.createdAt).add(hoursToAdd, "hours").unix();
       if (createdAt <= currentTime) {
         await DeviceTokenService.sendUserNotification(

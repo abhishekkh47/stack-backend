@@ -21,7 +21,7 @@ import {
   CryptoTable,
 } from "../../model";
 import { Route, removeImage, uploadFileS3 } from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "@app/utility/constants";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 
 class UserController extends BaseController {
   /**

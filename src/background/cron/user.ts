@@ -2,29 +2,16 @@ import { UserTable } from "../../model";
 import moment from "moment";
 import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 import { DeviceTokenService } from "../../services/v1";
+import userDbService from "../../services/v4/user.db.service";
 
 export const kycReminderHandler = async () => {
-  let currentTime = moment().unix();
-  let user = await UserTable.aggregate([
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    },
-    {
-      $match: {
-        type: 2,
-        status: 0,
-        mobile: { $ne: null },
-        referralCode: { $ne: null },
-        isParentOnboardingReminderSent: false,
-      },
-    },
-  ]).exec();
-  let userIds = [];
-  if (user.length === 0) return false;
+  console.log("==========Start Cron For Kyc Reminder=============");
+  const currentTime = moment().unix();
+  const onboardedParents = await userDbService.getLatestOnBoardedParents();
+  const userIds = [];
+  if (onboardedParents.length === 0) return false;
   await Promise.all(
-    user.map(async (data: any) => {
+    onboardedParents.map(async (data: any) => {
       let createdAt = moment(data.createdAt).add(3, "hours").unix();
       if (createdAt <= currentTime) {
         await DeviceTokenService.sendUserNotification(
