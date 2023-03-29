@@ -141,6 +141,7 @@ class QuizDBService {
   ) {
     const query = {
       userId: userId,
+      isOnBoardingQuiz: false,
     };
     const quizCheck: any = await QuizResult.findOne(query).sort({
       createdAt: -1,
@@ -217,7 +218,8 @@ class QuizDBService {
     userId: string,
     headers: object,
     reqParam: any,
-    quizExists: any
+    quizExists: any,
+    isTeen: boolean
   ) {
     const lastQuizPlayed = await QuizResult.findOne({
       userId: userId,
@@ -271,14 +273,15 @@ class QuizDBService {
       pointsEarned: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
     };
     await QuizResult.create(dataToCreate);
-    await UserTable.updateOne(
-      { _id: userId },
-      {
-        $inc: {
-          quizCoins: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
-        },
-      }
-    );
+    let query: any = {
+      $inc: {
+        quizCoins: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+      },
+    };
+    if (isTeen) {
+      query = { ...query, $set: { isQuizReminderNotificationSent: false } };
+    }
+    await UserTable.updateOne({ _id: userId }, query);
     return true;
   }
 
