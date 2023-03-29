@@ -25,7 +25,7 @@ import BaseController from "../base";
 import { quizService, zohoCrmService } from "../../services/v1";
 import mongoose from "mongoose";
 import moment from "moment";
-import { QuizDBService } from "@app/services/v4";
+import { QuizDBService } from "../../services/v4";
 
 class QuizController extends BaseController {
   /**
