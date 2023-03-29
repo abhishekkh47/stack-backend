@@ -230,6 +230,14 @@ class WebHookController extends BaseController {
                     admin,
                     false
                   );
+                  await DeviceTokenService.sendUserNotification(
+                    parentChildDetails.firstChildId,
+                    NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
+                    NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
+                    NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+                    null,
+                    parentChildDetails.firstChildId
+                  );
                 }
               }
             }
@@ -418,6 +426,14 @@ class WebHookController extends BaseController {
                       userExists.type,
                       admin,
                       false
+                    );
+                    await DeviceTokenService.sendUserNotification(
+                      parentChildDetails.firstChildId,
+                      NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
+                      NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
+                      NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+                      null,
+                      parentChildDetails.firstChildId
                     );
                   }
                 }

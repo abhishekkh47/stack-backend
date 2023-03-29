@@ -15,6 +15,8 @@ export interface IUser extends IAccount {
   isPhoneVerified: number;
   isRewardDeclined: boolean;
   isOnboardingQuizCompleted: boolean;
+  isParentOnboardingReminderSent: boolean;
+  isQuizReminderNotificationSent: boolean;
 }
 
 export interface IAccount {

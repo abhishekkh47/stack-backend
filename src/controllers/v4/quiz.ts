@@ -569,11 +569,13 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
+          const isTeen = userIfExists.type === EUserType.TEEN ? true : false;
           await QuizDBService.storeQuizInformation(
             user._id,
             headers,
             reqParam,
-            quizExists
+            quizExists,
+            isTeen
           );
           const dataSentInCrm = await QuizDBService.getQuizDataToSentInCrm(
             userIfExists,

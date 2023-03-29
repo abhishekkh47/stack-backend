@@ -9,10 +9,7 @@ import {
   EUserType,
   HttpMethod,
 } from "../../types";
-import {
-  DeviceTokenService,
-  userService,
-} from "../../services/v1/index";
+import { DeviceTokenService, userService } from "../../services/v1/index";
 import { TransactionDBService, UserService } from "../../services/v3";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import { validationsV4 } from "../../validations/v4/apiValidation";
@@ -24,6 +21,7 @@ import {
   CryptoTable,
 } from "../../model";
 import { Route, removeImage, uploadFileS3 } from "../../utility";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
 
 class UserController extends BaseController {
   /**
@@ -92,7 +90,8 @@ class UserController extends BaseController {
     try {
       const jwtToken = ctx.request.primeTrustToken;
       const admin = await AdminTable.findOne({});
-      const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
+      const { user, headers } = ctx.request;
+      const userExists = await UserTable.findOne({ _id: user._id });
       if (!userExists) {
         return this.BadRequest(ctx, "User Not Found");
       }
@@ -133,6 +132,16 @@ class UserController extends BaseController {
             admin,
             true
           );
+          if (headers["build-number"]) {
+            await DeviceTokenService.sendUserNotification(
+              userExists._id,
+              NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
+              NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
+              NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+              null,
+              userExists._id
+            );
+          }
         }
       }
       return this.Ok(ctx, { message: "Success" });

@@ -1116,6 +1116,28 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
+
+  /**
+   * @description This method is used to add default reminder status
+   * @param ctx
+   */
+  @Route({ path: "/add-default-reminder-status", method: HttpMethod.POST })
+  public async addDefaultReminderStatus(ctx: any) {
+    try {
+      const updatedData = await UserTable.updateMany(
+        {},
+        {
+          $set: {
+            isParentOnboardingReminderSent: false,
+            isQuizReminderNotificationSent: false,
+          },
+        }
+      );
+      return this.Ok(ctx, { data: updatedData });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
 }
 
 export default new ScriptController();

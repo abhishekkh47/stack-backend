@@ -218,7 +218,8 @@ class QuizDBService {
     userId: string,
     headers: object,
     reqParam: any,
-    quizExists: any
+    quizExists: any,
+    isTeen: boolean
   ) {
     const lastQuizPlayed = await QuizResult.findOne({
       userId: userId,
@@ -272,14 +273,15 @@ class QuizDBService {
       pointsEarned: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
     };
     await QuizResult.create(dataToCreate);
-    await UserTable.updateOne(
-      { _id: userId },
-      {
-        $inc: {
-          quizCoins: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
-        },
-      }
-    );
+    let query: any = {
+      $inc: {
+        quizCoins: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+      },
+    };
+    if (isTeen) {
+      query = { ...query, $set: { isQuizReminderNotificationSent: false } };
+    }
+    await UserTable.updateOne({ _id: userId }, query);
     return true;
   }
 
@@ -389,6 +391,63 @@ class QuizDBService {
           });
     }
     return dataSentInCrm;
+  }
+
+  /**
+   * @description get last quiz records
+   */
+  public async getLastQuizRecord() {
+    const quizResults = await QuizResult.aggregate([
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+      {
+        $unwind: {
+          path: "$users",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $and: [
+                {
+                  $eq: ["$users.type", 1],
+                },
+                {
+                  $eq: ["$users.isQuizReminderNotificationSent", false],
+                },
+              ],
+            },
+            then: "$$KEEP",
+            else: "$$PRUNE",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          pointsEarned: {
+            $first: "$pointsEarned",
+          },
+          createdAt: {
+            $first: "$createdAt",
+          },
+        },
+      },
+    ]).exec();
+    return quizResults;
   }
 }
 
