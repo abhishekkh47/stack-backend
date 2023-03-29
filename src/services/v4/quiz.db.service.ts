@@ -141,6 +141,7 @@ class QuizDBService {
   ) {
     const query = {
       userId: userId,
+      isOnBoardingQuiz: false,
     };
     const quizCheck: any = await QuizResult.findOne(query).sort({
       createdAt: -1,
