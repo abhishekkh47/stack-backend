@@ -152,7 +152,7 @@ class UserController extends BaseController {
       }
       const userData = await UserTable.findOne({ _id: userExists._id });
       return this.Ok(ctx, {
-        message: "Reward Claimed Successfully",
+        message: "Reward Unlocked Successfully",
         data: { rewardHours: userData.unlockRewardTime },
       });
     } catch (error) {

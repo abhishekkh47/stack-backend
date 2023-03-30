@@ -1,5 +1,6 @@
 import { PrimeTrustJWT } from "./../../middleware/primeTrust.middleware";
 import { validationsV3 } from "./../../validations/v3/apiValidation";
+import { validationsV4 } from "./../../validations/v4/apiValidation";
 import { validation } from "./../../validations/v1/apiValidation";
 import { EUserType } from "./../../types/user";
 import {
@@ -9,42 +10,24 @@ import {
   QuizTable,
   QuizResult,
   ParentChildTable,
+  QuizTopicTable,
+  AdminTable,
 } from "../../model";
 import { Auth } from "../../middleware";
 import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
-import { get72HoursAhead, getQuizCooldown, Route } from "../../utility";
+import {
+  get72HoursAhead,
+  getQuizCooldown,
+  Route,
+  getQuizImageAspectRatio,
+} from "../../utility";
 import BaseController from "../base";
 import { quizService, zohoCrmService } from "../../services/v1";
 import mongoose from "mongoose";
 import moment from "moment";
+import { QuizDBService } from "../../services/v4";
 
 class QuizController extends BaseController {
-  /**
-   * @description This method is used to get the list of onBoarding quiz questions
-   * @param ctx
-   * @return {*}
-   */
-  @Route({ path: "/onboarding-quiz-question", method: HttpMethod.GET })
-  @Auth()
-  public async getOnboardingQuestionList(ctx: any) {
-    const onboardingQuestionData = await QuizQuestionTable.find(
-      { isOnboardingFlowQuiz: true },
-      {
-        _id: 1,
-        points: 1,
-        answer_array: 1,
-        text: 1,
-        question_type: 1,
-        answer_type: 1,
-        question_image: 1,
-        question_image_title: 1,
-        quizId: 1,
-      }
-    );
-
-    return this.Ok(ctx, { data: onboardingQuestionData });
-  }
-
   /**
    * @description This method is used to store quiz result
    * @param ctx
@@ -55,16 +38,11 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public async getOnboardingQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    let checkUserExists = await UserTable.findOne({
+    const checkUserExists = await UserTable.findOne({
       _id: ctx.request.user._id,
     });
     if (!checkUserExists) {
-      checkUserExists = await UserTable.findOne({
-        _id: ctx.request.body.userId,
-      });
-      if (!checkUserExists) {
-        return this.BadRequest(ctx, "User not found");
-      }
+      return this.BadRequest(ctx, "User not found");
     }
     if (checkUserExists.isOnboardingQuizCompleted === true) {
       return this.BadRequest(ctx, "Onboaring quiz already played");
@@ -149,21 +127,19 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-result", method: HttpMethod.POST })
   @Auth()
   public async getQuizInformation(ctx: any) {
-    const user = ctx.request.user;
-    let userExists = await UserTable.findOne({ _id: user._id });
-    if (!userExists) {
-      userExists = await UserTable.findOne({
-        _id: ctx.request.body.userId,
-      });
+    const { user, headers } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User not found");
     }
     let childExists = null;
-    if (userExists.type == EUserType.PARENT) {
+    if (userIfExists.type == EUserType.PARENT) {
       childExists = await ParentChildTable.findOne({
-        userId: userExists._id,
+        userId: userIfExists._id,
       }).populate("firstChildId", ["_id", "preLoadedCoins"]);
     } else {
       childExists = await ParentChildTable.findOne({
-        firstChildId: userExists._id,
+        firstChildId: userIfExists._id,
       }).populate("userId", ["_id", "preLoadedCoins"]);
     }
     const checkQuizExists = await quizService.checkQuizExists({
@@ -171,7 +147,7 @@ class QuizController extends BaseController {
         { userId: new mongoose.Types.ObjectId(user._id) },
         {
           userId: childExists
-            ? userExists.type == EUserType.PARENT
+            ? userIfExists.type == EUserType.PARENT
               ? new mongoose.Types.ObjectId(childExists.userId._id)
               : new mongoose.Types.ObjectId(childExists.firstChildId._id)
             : null,
@@ -180,18 +156,19 @@ class QuizController extends BaseController {
       isOnBoardingQuiz: false,
     });
     const dataToSent = {
+      quizCooldown: 0,
       lastQuizTime: null,
       totalQuestionSolved: 0,
       totalStackPointsEarned: 0,
       totalStackPointsEarnedTop:
-        userExists.type == EUserType.PARENT && childExists
+        userIfExists.type == EUserType.PARENT && childExists
           ? childExists.firstChildId
             ? childExists.firstChildId.preLoadedCoins
               ? childExists.firstChildId.preLoadedCoins
               : 0
             : 0
-          : userExists.type == EUserType.TEEN
-          ? userExists.preLoadedCoins
+          : userIfExists.type == EUserType.TEEN
+          ? userIfExists.preLoadedCoins
           : 0,
     };
     /**
@@ -207,7 +184,7 @@ class QuizController extends BaseController {
             { userId: new mongoose.Types.ObjectId(user._id) },
             {
               userId: childExists
-                ? userExists.type == EUserType.PARENT
+                ? userIfExists.type == EUserType.PARENT
                   ? new mongoose.Types.ObjectId(childExists.firstChildId._id)
                   : new mongoose.Types.ObjectId(childExists.userId._id)
                 : null,
@@ -251,6 +228,7 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
+    dataToSent.quizCooldown = await getQuizCooldown(headers);
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
@@ -273,12 +251,9 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          let userExists = await UserTable.findOne({ _id: user._id });
-          if (!userExists && reqParam.userId) {
-            userExists = await UserTable.findOne({ _id: reqParam.userId });
-            if (!userExists) {
-              return this.BadRequest(ctx, "User Not Found");
-            }
+          let userIfExists = await UserTable.findOne({ _id: user._id });
+          if (!userIfExists) {
+            return this.BadRequest(ctx, "User Not Found");
           }
           const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
           if (!quizExists) {
@@ -298,9 +273,9 @@ class QuizController extends BaseController {
             userId: user._id,
             isOnBoardingQuiz: false,
           }).sort({ createdAt: -1 });
+          const quizCooldown = await getQuizCooldown(headers);
           if (lastQuizPlayed) {
             const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            const quizCooldown = await getQuizCooldown(headers);
             if (timeDiff <= quizCooldown) {
               return this.BadRequest(
                 ctx,
@@ -359,9 +334,9 @@ class QuizController extends BaseController {
           let userExistsForQuiz = null;
           let preLoadedCoins = 0;
           let isParentOrChild = 0;
-          if (userExists.type == EUserType.PARENT) {
+          if (userIfExists.type == EUserType.PARENT) {
             userExistsForQuiz = await ParentChildTable.findOne({
-              userId: userExists._id,
+              userId: userIfExists._id,
             }).populate("firstChildId", [
               "_id",
               "preLoadedCoins",
@@ -378,9 +353,9 @@ class QuizController extends BaseController {
           } else {
             userExistsForQuiz = await ParentChildTable.findOne({
               $or: [
-                { firstChildId: userExists._id },
+                { firstChildId: userIfExists._id },
                 {
-                  "teens.childId": userExists._id,
+                  "teens.childId": userIfExists._id,
                 },
               ],
             }).populate("userId", [
@@ -393,14 +368,16 @@ class QuizController extends BaseController {
               "email",
             ]);
             isParentOrChild = userExistsForQuiz ? 2 : 0;
-            preLoadedCoins = userExistsForQuiz ? userExists.preLoadedCoins : 0;
+            preLoadedCoins = userExistsForQuiz
+              ? userIfExists.preLoadedCoins
+              : 0;
           }
           const checkQuizExists = await quizService.checkQuizExists({
             $or: [
-              { userId: new mongoose.Types.ObjectId(userExists._id) },
+              { userId: new mongoose.Types.ObjectId(userIfExists._id) },
               {
                 userId: userExistsForQuiz
-                  ? userExists.type == EUserType.PARENT
+                  ? userIfExists.type == EUserType.PARENT
                     ? new mongoose.Types.ObjectId(
                         userExistsForQuiz.firstChildId._id
                       )
@@ -432,10 +409,11 @@ class QuizController extends BaseController {
           }
           let dataSentInCrm: any = [
             {
-              Account_Name: userExists.firstName + " " + userExists.lastName,
+              Account_Name:
+                userIfExists.firstName + " " + userIfExists.lastName,
               Stack_Coins: stackCoins,
               Quiz_Information: quizDataAddInCrm,
-              Email: userExists.email,
+              Email: userIfExists.email,
             },
           ];
           if (isParentOrChild != 0) {
@@ -466,6 +444,235 @@ class QuizController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to get user's quiz data
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-result/me", method: HttpMethod.GET })
+  @Auth()
+  public async getQuizResultsInformation(ctx: any) {
+    const { user, headers } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User not found");
+    }
+    let childExists = null;
+    if (userIfExists.type == EUserType.PARENT) {
+      childExists = await ParentChildTable.findOne({
+        userId: userIfExists._id,
+      }).populate("firstChildId", ["_id", "preLoadedCoins"]);
+    } else {
+      childExists = await ParentChildTable.findOne({
+        firstChildId: userIfExists._id,
+      }).populate("userId", ["_id", "preLoadedCoins"]);
+    }
+    const checkQuizExists = await quizService.checkQuizExists({
+      $or: [
+        { userId: new mongoose.Types.ObjectId(user._id) },
+        {
+          userId: childExists
+            ? userIfExists.type == EUserType.PARENT
+              ? new mongoose.Types.ObjectId(childExists.userId._id)
+              : new mongoose.Types.ObjectId(childExists.firstChildId._id)
+            : null,
+        },
+      ],
+      isOnBoardingQuiz: false,
+    });
+    const dataToSent = {
+      quizCooldown: 0,
+      lastQuizTime: null,
+      totalQuestionSolved: 0,
+      totalStackPointsEarned: 0,
+      totalStackPointsEarnedTop:
+        userIfExists.type == EUserType.PARENT && childExists
+          ? childExists.firstChildId
+            ? childExists.firstChildId.preLoadedCoins
+              ? childExists.firstChildId.preLoadedCoins
+              : 0
+            : 0
+          : userIfExists.type == EUserType.TEEN
+          ? userIfExists.preLoadedCoins
+          : 0,
+    };
+    /**
+     * Get Stack Point Earned
+     */
+    if (checkQuizExists.length > 0) {
+      dataToSent.totalStackPointsEarned += checkQuizExists[0].sum;
+    }
+    const totalStackCoins = await QuizDBService.getTotalCoinsFromQuiz(
+      user._id,
+      childExists,
+      userIfExists
+    );
+    dataToSent.totalStackPointsEarnedTop += totalStackCoins;
+
+    /**
+     * Get Quiz Question Count
+     */
+    const getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
+      userId: user._id,
+    });
+    dataToSent.totalQuestionSolved =
+      checkQuizExists.length > 0 ? getQuizQuestionsCount : 0;
+    /**
+     * Get Latest Quiz Time
+     */
+    const latestQuiz = await QuizResult.findOne({
+      userId: user._id,
+      isOnBoardingQuiz: false,
+    }).sort({
+      createdAt: -1,
+    });
+    dataToSent.quizCooldown = await getQuizCooldown(headers);
+    dataToSent.lastQuizTime = latestQuiz
+      ? moment(latestQuiz.createdAt).unix()
+      : null;
+    return this.Ok(ctx, dataToSent);
+  }
+
+  /**
+   * @description This method is used to post current quiz results
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-results", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT(true)
+  public storeQuizResults(ctx: any) {
+    const reqParam = ctx.request.body;
+    const { user, headers } = ctx.request;
+    return validation.addQuizResultValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          let userIfExists = await UserTable.findOne({ _id: user._id });
+          if (!userIfExists) {
+            return this.BadRequest(ctx, "User Not Found");
+          }
+          const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
+          if (!quizExists) {
+            return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
+          }
+          const quizResultExists = await QuizResult.findOne({
+            userId: user._id,
+            quizId: reqParam.quizId,
+          });
+          if (quizResultExists) {
+            return this.BadRequest(
+              ctx,
+              "You cannot submit the same quiz again"
+            );
+          }
+          const isTeen = userIfExists.type === EUserType.TEEN ? true : false;
+          await QuizDBService.storeQuizInformation(
+            user._id,
+            headers,
+            reqParam,
+            quizExists,
+            isTeen
+          );
+          const dataSentInCrm = await QuizDBService.getQuizDataToSentInCrm(
+            userIfExists,
+            user._id
+          );
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataSentInCrm,
+            true
+          );
+          return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to give question list based on quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/question-list", method: HttpMethod.POST })
+  @Auth()
+  public getQuestionList(ctx: any) {
+    const reqParam = ctx.request.body;
+    const { user, headers } = ctx.request;
+    return validationsV4.getUserQuizDataValidation(
+      reqParam,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const quizQuestionList = await QuizDBService.getQuizQuestionList(
+            user,
+            reqParam.topicId,
+            headers
+          );
+          const quizImageAspectRatio = await getQuizImageAspectRatio(headers);
+          return this.Ok(ctx, {
+            quizQuestionList,
+            message: "Success",
+            quizImageAspectRatio,
+          });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to give quiz questions based on quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-questions/:quizId", method: HttpMethod.GET })
+  @Auth()
+  public async getQuizQuestions(ctx: any) {
+    const { user, headers, params } = ctx.request;
+    if (!params.quizId) {
+      return this.BadRequest(ctx, "Quiz not found");
+    }
+    const quizQuestionList = await QuizDBService.getQuizQuestions(
+      user,
+      params.quizId,
+      headers
+    );
+    const quizImageAspectRatio = await getQuizImageAspectRatio(headers);
+    return this.Ok(ctx, {
+      quizQuestionList,
+      message: "Success",
+      quizImageAspectRatio,
+    });
+  }
+
+  /**
+   * @description This method is used to give quiz topics available or disabled based on user's last quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quizzes", method: HttpMethod.GET })
+  @Auth()
+  public async getQuiz(ctx: any) {
+    try {
+      const user = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!user) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      const quizResult = await QuizResult.find({
+        userId: user._id,
+      });
+      let quizIds = [];
+      if (quizResult.length > 0) {
+        quizIds = quizResult.map((x) => x.quizId);
+      }
+      const quizInformation = await QuizDBService.getQuizData(quizIds);
+      return this.Ok(ctx, { data: quizInformation });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
   }
 }
 

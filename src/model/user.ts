@@ -73,7 +73,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     },
     isOnboardingQuizCompleted: {
       type: mongoose.Schema.Types.Boolean,
-      default: false
+      default: false,
     },
     stateId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -172,6 +172,20 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: null,
     },
     isEnteredParentNumber: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    /**
+     * isParentOnboardingReminderSent then true else false
+     */
+    isParentOnboardingReminderSent: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    /**
+     * isQuizReminderNotificationSent then true else false
+     */
+    isQuizReminderNotificationSent: {
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },

@@ -1,8 +1,7 @@
 import { validations } from "../../validations/v2/apiValidation";
 import { QuizQuestionTable } from "../../model/quizQuestion";
 import { QuizTable } from "../../model/quiz";
-import { timeBetweenTwoQuiz } from "../../types/quiz";
-import { get72HoursAhead } from "../../utility/common";
+import { get72HoursAhead, getQuizCooldown } from "../../utility/common";
 import moment from "moment";
 import mongoose from "mongoose";
 import { Auth } from "../../middleware";
@@ -139,7 +138,7 @@ class QuizController extends BaseController {
   @Auth()
   public getQuestionList(ctx: any) {
     const reqParam = ctx.request.body;
-    const user = ctx.request.user;
+    const { user, headers } = ctx.request;
     return validations.getUserQuizDataValidation(
       reqParam,
       ctx,
@@ -154,10 +153,11 @@ class QuizController extends BaseController {
           const quizIds: any = [];
           if (quizCheck !== null) {
             const Time = await get72HoursAhead(quizCheck.createdAt);
-            if (Time < timeBetweenTwoQuiz) {
+            const quizCooldown = await getQuizCooldown(headers);
+            if (Time < quizCooldown) {
               return this.BadRequest(
                 ctx,
-                "Quiz is locked. Please wait for 72 hours to unlock this quiz."
+                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
               );
             }
           }

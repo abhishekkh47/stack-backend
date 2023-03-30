@@ -42,3 +42,11 @@ export const errorHandler = async (ctx: Koa.Context, next: Koa.Next) => {
     return ctx;
   }
 };
+
+export class NetworkError extends Error {
+  status: number;
+  constructor(message: any, status: number) {
+    super(message);
+    this.status = status;
+  }
+}

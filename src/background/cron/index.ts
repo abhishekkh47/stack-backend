@@ -4,6 +4,8 @@ import { priceHandler } from "./price";
 import { historicalPriceHandler } from "./historical-price";
 import { recurringDepositHandler } from "./recurring-deposit";
 import { redeemGiftHandler } from "./redeem-gift";
+import { challengeAvailableHandler } from "./quiz";
+import { kycReminderHandler } from "./user";
 
 const isUAT = config.APP_ENVIRONMENT === "UAT";
 
@@ -43,6 +45,24 @@ const JOBS = [
     disabled: true,
     expression: "*/15 * * * *",
     func: redeemGiftHandler,
+  },
+  {
+    /**
+     * Logic for challenge available reminder
+     * Time: at every 30 mins
+     */
+    disabled: false,
+    expression: "*/30 * * * *",
+    func: challengeAvailableHandler,
+  },
+  {
+    /**
+     * Logic for kyc reminder
+     * Time: at every 30 mins
+     */
+    disabled: false,
+    expression: "*/30 * * * *",
+    func: kycReminderHandler,
   },
 ];
 

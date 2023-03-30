@@ -11,9 +11,11 @@ export const Auth = () => {
       if (!token) {
         return this.UnAuthorized(ctx, "Invalid JWT Token");
       }
-
       try {
         const response = await verifyToken(token);
+        if (response && response.status && response.status === 401) {
+          return this.UnAuthorized(ctx, "Invalid JWT Token");
+        }
         ctx.request.user = response;
       } catch (err) {
         return this.UnAuthorized(ctx, "Invalid JWT Token");

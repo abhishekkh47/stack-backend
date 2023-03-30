@@ -5,11 +5,12 @@ import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import { Auth, PrimeTrustJWT } from "../../middleware";
 import { AdminTable, OtpTable, ParentChildTable, UserTable } from "../../model";
 import {
+  AnalyticsService,
   DeviceTokenService,
   SocialService,
   TokenService,
   zohoCrmService,
-} from "../../services/v1/index";
+} from "../../services/v1";
 import {
   EAUTOAPPROVAL,
   EOTPVERIFICATION,
@@ -25,7 +26,7 @@ import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 import UserController from "../v3/user";
-import { UserDBService, TransactionDBService } from "../../services/v2";
+import { ANALYTICS_EVENTS } from "../../utility/constants";
 
 class AuthController extends BaseController {
   /**
@@ -170,12 +171,18 @@ class AuthController extends BaseController {
   @Auth()
   public async checkValidMobile(ctx) {
     const input = ctx.request.body;
+    const user = ctx.request.user;
     return validations.checkValidMobileValidation(
       input,
       ctx,
       async (validate) => {
         if (validate) {
-          const { mobile, type } = input;
+          const { mobile, type, deviceId } = input;
+          AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED, {
+            device_id: deviceId,
+            user_id: user._id,
+          });
+
           let userExists = await UserTable.findOne({
             mobile: mobile,
           });
@@ -243,6 +250,7 @@ class AuthController extends BaseController {
           if (
             checkChildMobileAlreadyExists &&
             checkChildMobileAlreadyExists.type == EUserType.TEEN &&
+            checkChildMobileAlreadyExists &&
             checkChildMobileAlreadyExists.parentMobile !== mobile
           ) {
             return this.BadRequest(
@@ -510,10 +518,11 @@ class AuthController extends BaseController {
       async (validate: boolean) => {
         if (validate) {
           try {
-            const { email, deviceToken } = reqParam;
+            const { email, deviceToken, deviceId } = reqParam;
             let accountCreated = false;
             let userExists = await UserTable.findOne({ email });
             await SocialService.verifySocial(reqParam);
+
             if (!userExists) {
               if (!reqParam.type) {
                 return this.BadRequest(ctx, "Please enter user type");
@@ -550,7 +559,14 @@ class AuthController extends BaseController {
                 referralCode: uniqueReferralCode,
               };
               userExists = await UserTable.create(createQuery);
+
               accountCreated = true;
+
+              AnalyticsService.sendEvent(ANALYTICS_EVENTS.SIGNED_UP_SSO, {
+                device_id: deviceId,
+                user_id: userExists._id,
+              });
+
               if (userExists) {
                 /**
                  * Zoho crm account addition
@@ -590,9 +606,10 @@ class AuthController extends BaseController {
                   ctx.request.zohoAccessToken,
                   dataSentInCrm
                 );
+              } else {
+                return this.BadRequest(ctx, "User Not Found");
               }
             }
-            if (!userExists) return this.BadRequest(ctx, "User Not Found");
 
             const { token, refreshToken } = await TokenService.generateToken(
               userExists
@@ -619,7 +636,7 @@ class AuthController extends BaseController {
               refreshToken,
               profileData: getProfileInput.body.data,
               message: "Success",
-              accountCreated: accountCreated,
+              accountCreated,
             });
           } catch (error) {
             return this.BadRequest(ctx, error.message);

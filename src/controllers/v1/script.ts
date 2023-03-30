@@ -1,4 +1,3 @@
-import { QuizQuestionTable } from "./../../model/quizQuestion";
 import { EPHONEVERIFIEDSTATUS } from "../../types/user";
 import { DripshopTable } from "../../model/dripshop";
 import {
@@ -13,6 +12,7 @@ import {
   CryptoTable,
   DeviceToken,
   Notification,
+  QuizQuestionTable,
   QuizQuestionResult,
   QuizResult,
   UserActivityTable,
@@ -22,6 +22,8 @@ import {
   TransactionTable,
   ParentChildTable,
   UserDraftTable,
+  QuizTopicTable,
+  QuizTable,
 } from "../../model";
 import {
   EAction,
@@ -39,6 +41,7 @@ import {
   Route,
   getQuoteInformation,
   getInternalTransferInformation,
+  getQuizImageAspectRatio,
 } from "../../utility";
 import BaseController from ".././base";
 import {
@@ -1053,6 +1056,87 @@ class ScriptController extends BaseController {
       validData: validTransactions,
       unsuedDataLength: transactionIdsToBeRemoved.length,
     });
+  }
+
+  /**
+   * @description This method is used to add new 1.9 quiz topics
+   * @param ctx
+   */
+  @Route({ path: "/add-quiz-topics", method: HttpMethod.POST })
+  public async addQuizTopics(ctx: any) {
+    try {
+      const reqBody = ctx.request.body;
+      const isFieldsAdded = reqBody.data.every((x) => x.topic && x.image);
+      if (!isFieldsAdded) {
+        return this.BadRequest(ctx, "Request Body not valid");
+      }
+      const quizTopicsData = await Promise.all(
+        await reqBody.data.map(async (items) => {
+          const quizTopicObject = {
+            topic: items.topic,
+            type: 2,
+            image: items.image,
+            status: 1,
+          };
+          const createdQuizTopicData = await QuizTopicTable.create(
+            quizTopicObject
+          );
+          const quizObject = {
+            quizName: items.quizTitle,
+            topicId: createdQuizTopicData._id,
+            videoUrl: null,
+            image: items.quizImage,
+          };
+          const createdQuizData = await QuizTable.create(quizObject);
+          return items;
+        })
+      );
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to add new 1.9 quiz topics
+   * @param ctx
+   */
+  @Route({ path: "/add-quiz-content", method: HttpMethod.POST })
+  public async addQuizContent(ctx: any) {
+    try {
+      /**
+       * Make sure quiz question request body is valid in postman
+       */
+      const reqBody = ctx.request.body;
+      const createQuizContentData = await QuizQuestionTable.insertMany(
+        reqBody.data
+      );
+      return this.Ok(ctx, { message: "Success", data: createQuizContentData });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to add default reminder status
+   * @param ctx
+   */
+  @Route({ path: "/add-default-reminder-status", method: HttpMethod.POST })
+  public async addDefaultReminderStatus(ctx: any) {
+    try {
+      const updatedData = await UserTable.updateMany(
+        {},
+        {
+          $set: {
+            isParentOnboardingReminderSent: false,
+            isQuizReminderNotificationSent: false,
+          },
+        }
+      );
+      return this.Ok(ctx, { data: updatedData });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
   }
 }
 

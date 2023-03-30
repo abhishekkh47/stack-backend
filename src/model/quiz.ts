@@ -11,6 +11,10 @@ const schema = new mongoose.Schema<IQuizSchema>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "quizTopic",
     },
+    image: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     videoUrl: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
