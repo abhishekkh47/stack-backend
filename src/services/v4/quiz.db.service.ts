@@ -158,9 +158,11 @@ class QuizDBService {
     }
     const quizQuestionList = await QuizQuestionTable.find({
       quizId: quizId,
-    }).select(
-      "_id quizId text answer_array points question_image question_type answer_type"
-    );
+    })
+      .select(
+        "_id order quizId text answer_array points question_image question_type answer_type"
+      )
+      .sort({ order: 1 });
     return quizQuestionList;
   }
 
