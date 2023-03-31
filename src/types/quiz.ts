@@ -22,6 +22,7 @@ export interface IQuizQuestion {
   answer_array: IAnswerArray[];
   isOnboardingFlowQuiz: boolean;
   question_image_title: string;
+  order: number;
 }
 
 export enum EQuizQuestionType {

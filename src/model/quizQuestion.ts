@@ -15,7 +15,7 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
     quizId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "quiz",
-      default: null
+      default: null,
     },
     points: {
       type: mongoose.Schema.Types.Number,
@@ -63,12 +63,16 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
      */
     isOnboardingFlowQuiz: {
       type: mongoose.Schema.Types.Boolean,
-      default: false
+      default: false,
     },
     question_image_title: {
       type: mongoose.Schema.Types.String,
       default: null,
-    }
+    },
+    order: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
