@@ -1181,7 +1181,6 @@ class ScriptController extends BaseController {
       const questions = await QuizQuestionTable.insertMany(questionData);
       return this.Ok(ctx, { message: "Success", data: { questions, quiz } });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
