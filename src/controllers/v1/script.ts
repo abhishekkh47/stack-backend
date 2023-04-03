@@ -1138,6 +1138,53 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
+
+  /**
+   * @description This method is used to store new 1.10 new quiz content
+   * @param ctx
+   */
+  @Route({ path: "/quiz-content", method: HttpMethod.POST })
+  public async storQuizContent(ctx: any) {
+    try {
+      let { topicId, quizName, quizImage, questionData } = ctx.request.body;
+      if (!topicId) {
+        return this.BadRequest(ctx, "Quiz Topic is Required");
+      }
+      if (!quizName) {
+        return this.BadRequest(ctx, "Quiz Name is Required");
+      }
+      if (!quizImage) {
+        return this.BadRequest(ctx, "Quiz Image is Required");
+      }
+      if (!questionData || questionData.length == 0) {
+        return this.BadRequest(ctx, "Quiz Question is Required");
+      }
+      const topics = await QuizTopicTable.findOne({ _id: topicId });
+      if (!topics) {
+        return this.BadRequest(ctx, "Quiz Topic Not Found");
+      }
+      /**
+       * Create Quiz Data
+       */
+      const quiz = await QuizTable.create({
+        quizName: quizName,
+        topicId: topicId,
+        image: quizImage,
+      });
+      questionData = await questionData.map((data) => {
+        data.quizId = quiz._id;
+        return data;
+      });
+      /**
+       * Create Quiz Question
+       */
+      const questions = await QuizQuestionTable.insertMany(questionData);
+      return this.Ok(ctx, { message: "Success", data: { questions, quiz } });
+    } catch (error) {
+      console.log(error);
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
 }
 
 export default new ScriptController();
