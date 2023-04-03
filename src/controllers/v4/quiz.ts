@@ -10,8 +10,6 @@ import {
   QuizTable,
   QuizResult,
   ParentChildTable,
-  QuizTopicTable,
-  AdminTable,
 } from "../../model";
 import { Auth } from "../../middleware";
 import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
