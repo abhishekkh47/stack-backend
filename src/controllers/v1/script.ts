@@ -42,6 +42,7 @@ import {
   getQuoteInformation,
   getInternalTransferInformation,
   getQuizImageAspectRatio,
+  getBalance,
 } from "../../utility";
 import BaseController from ".././base";
 import {
@@ -1188,6 +1189,87 @@ class ScriptController extends BaseController {
       return this.Ok(ctx, { message: "Success", data: { questions } });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to store new 1.10 new quiz content
+   * @param ctx
+   */
+  @Route({ path: "/get-prime-trust-balance", method: HttpMethod.POST })
+  @PrimeTrustJWT()
+  public async getBalancePT(ctx: any) {
+    try {
+      const jwtToken = ctx.request.primeTrustToken;
+      let { emails } = ctx.request.body;
+      console.log(emails, "emails");
+      if (!emails || emails.length === 0) {
+        return this.BadRequest(ctx, "Please enter emails");
+      }
+      const users = await UserTable.aggregate([
+        {
+          $match: {
+            type: 1,
+            email: { $in: emails },
+          },
+        },
+        {
+          $lookup: {
+            from: "parentchild",
+            localField: "_id",
+            foreignField: "teens.childId",
+            as: "teenUser",
+          },
+        },
+        {
+          $unwind: {
+            path: "$teenUser",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            email: 1,
+            accountDetails: {
+              $filter: {
+                input: "$teenUser.teens",
+                as: "list",
+                cond: {
+                  $eq: ["$$list.childId", "$_id"],
+                },
+              },
+            },
+          },
+        },
+      ]).exec();
+      if (users.length == 0) {
+        return this.BadRequest(ctx, "Users not found");
+      }
+      let dataToSend = [];
+      await Promise.all(
+        users.map(async (user: any) => {
+          const fetchBalance: any = await getBalance(
+            jwtToken,
+            user.accountDetails[0].accountId
+          );
+          if (fetchBalance.status == 400) {
+            dataToSend.push({
+              email: user.email,
+              balance: 0,
+            });
+            return null;
+          }
+          dataToSend.push({
+            email: user.email,
+            balance: fetchBalance.data.data[0].attributes.disbursable,
+          });
+        })
+      );
+      return this.Ok(ctx, { message: "Success", data: dataToSend });
+    } catch (error) {
+      console.log(error);
+      return this.BadRequest(ctx, error.message);
     }
   }
 }
