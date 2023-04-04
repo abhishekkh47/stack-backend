@@ -53,6 +53,7 @@ import {
   tradingService,
 } from "../../services/v1";
 import { UserService } from "../../services/v3";
+import quizContentData from "../../static/quizContent.json";
 
 class ScriptController extends BaseController {
   /**
@@ -1134,6 +1135,57 @@ class ScriptController extends BaseController {
         }
       );
       return this.Ok(ctx, { data: updatedData });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to store new 1.10 new quiz content
+   * @param ctx
+   */
+  @Route({ path: "/quiz-content", method: HttpMethod.POST })
+  public async storeQuizContent(ctx: any) {
+    try {
+      if (!quizContentData || quizContentData.length == 0) {
+        return this.BadRequest(ctx, "Please add Quiz Content");
+      }
+      const topicIdIfExists = quizContentData.every((x) => x.topicId);
+      if (!topicIdIfExists) {
+        return this.BadRequest(ctx, "Quiz Topic is Required");
+      }
+      const quizNameIfExists = quizContentData.every((x) => x.quizName);
+      if (!quizNameIfExists) {
+        return this.BadRequest(ctx, "Quiz Image is Required");
+      }
+      const quizImageIfExists = quizContentData.every((x) => x.quizImage);
+      if (!quizImageIfExists) {
+        return this.BadRequest(ctx, "Quiz Image is Required");
+      }
+      const questionDataIfExists = quizContentData.every((x) => x.questionData);
+      if (!questionDataIfExists) {
+        return this.BadRequest(ctx, "Quiz Question is Required");
+      }
+      let quizQuestions = [];
+      await Promise.all(
+        quizContentData.map(async (data: any, index) => {
+          const quiz = await QuizTable.create({
+            quizName: data.quizName,
+            topicId: data.topicId,
+            image: data.quizImage,
+          });
+          data.questionData = data.questionData.map((x) => ({
+            ...x,
+            quizId: quiz._id,
+          }));
+          quizQuestions = quizQuestions.concat(data.questionData);
+        })
+      );
+      // /**
+      //  * Create Quiz Question
+      //  */
+      const questions = await QuizQuestionTable.insertMany(quizQuestions);
+      return this.Ok(ctx, { message: "Success", data: { questions } });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
