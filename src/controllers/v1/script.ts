@@ -1178,7 +1178,6 @@ class ScriptController extends BaseController {
             ...x,
             quizId: quiz._id,
           }));
-          console.log(data.questionData, "aa");
           quizQuestions = quizQuestions.concat(data.questionData);
         })
       );
