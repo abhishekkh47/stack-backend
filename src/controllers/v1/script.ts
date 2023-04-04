@@ -1174,9 +1174,11 @@ class ScriptController extends BaseController {
             topicId: data.topicId,
             image: data.quizImage,
           });
-          data.questionData.map((x) => {
-            x.quizId = quiz._id;
-          });
+          data.questionData = data.questionData.map((x) => ({
+            ...x,
+            quizId: quiz._id,
+          }));
+          console.log(data.questionData, "aa");
           quizQuestions = quizQuestions.concat(data.questionData);
         })
       );
