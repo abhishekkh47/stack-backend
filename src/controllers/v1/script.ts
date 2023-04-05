@@ -42,6 +42,7 @@ import {
   getQuoteInformation,
   getInternalTransferInformation,
   getQuizImageAspectRatio,
+  getBalance,
 } from "../../utility";
 import BaseController from ".././base";
 import {
@@ -54,6 +55,7 @@ import {
 } from "../../services/v1";
 import { UserService } from "../../services/v3";
 import quizContentData from "../../static/quizContent.json";
+import userDbService from "../../services/v4/user.db.service";
 
 class ScriptController extends BaseController {
   /**
@@ -1188,6 +1190,44 @@ class ScriptController extends BaseController {
       return this.Ok(ctx, { message: "Success", data: { questions } });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to get prime trust balance from user emails
+   * @param ctx
+   */
+  @Route({ path: "/get-prime-trust-balance", method: HttpMethod.POST })
+  @PrimeTrustJWT()
+  public async getBalancePT(ctx: any) {
+    try {
+      const jwtToken = ctx.request.primeTrustToken;
+      let { emails } = ctx.request.body;
+      if (!emails || emails.length === 0) {
+        return this.BadRequest(ctx, "Please enter emails");
+      }
+      const users = await userDbService.getUserDetails(emails);
+      let dataToSend = await Promise.all(
+        users.map(async (user: any) => {
+          const fetchBalance: any = await getBalance(
+            jwtToken,
+            user.accountDetails[0].accountId
+          );
+          if (fetchBalance.status == 400) {
+            return {
+              email: user.email,
+              balance: 0,
+            };
+          }
+          return {
+            email: user.email,
+            balance: fetchBalance.data.data[0].attributes.disbursable,
+          };
+        })
+      );
+      return this.Ok(ctx, { message: "Success", data: dataToSend });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
     }
   }
 }
