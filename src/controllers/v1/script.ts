@@ -1194,7 +1194,7 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to store new 1.10 new quiz content
+   * @description This method is used to get prime trust balance from user emails
    * @param ctx
    */
   @Route({ path: "/get-prime-trust-balance", method: HttpMethod.POST })
@@ -1207,24 +1207,22 @@ class ScriptController extends BaseController {
         return this.BadRequest(ctx, "Please enter emails");
       }
       const users = await userDbService.getUserDetails(emails);
-      let dataToSend = [];
-      await Promise.all(
+      let dataToSend = await Promise.all(
         users.map(async (user: any) => {
           const fetchBalance: any = await getBalance(
             jwtToken,
             user.accountDetails[0].accountId
           );
           if (fetchBalance.status == 400) {
-            dataToSend.push({
+            return {
               email: user.email,
               balance: 0,
-            });
-            return null;
+            };
           }
-          dataToSend.push({
+          return {
             email: user.email,
             balance: fetchBalance.data.data[0].attributes.disbursable,
-          });
+          };
         })
       );
       return this.Ok(ctx, { message: "Success", data: dataToSend });
