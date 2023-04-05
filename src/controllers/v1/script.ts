@@ -55,6 +55,7 @@ import {
 } from "../../services/v1";
 import { UserService } from "../../services/v3";
 import quizContentData from "../../static/quizContent.json";
+import userDbService from "../../services/v4/user.db.service";
 
 class ScriptController extends BaseController {
   /**
@@ -1202,50 +1203,10 @@ class ScriptController extends BaseController {
     try {
       const jwtToken = ctx.request.primeTrustToken;
       let { emails } = ctx.request.body;
-      console.log(emails, "emails");
       if (!emails || emails.length === 0) {
         return this.BadRequest(ctx, "Please enter emails");
       }
-      const users = await UserTable.aggregate([
-        {
-          $match: {
-            type: 1,
-            email: { $in: emails },
-          },
-        },
-        {
-          $lookup: {
-            from: "parentchild",
-            localField: "_id",
-            foreignField: "teens.childId",
-            as: "teenUser",
-          },
-        },
-        {
-          $unwind: {
-            path: "$teenUser",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            _id: 1,
-            email: 1,
-            accountDetails: {
-              $filter: {
-                input: "$teenUser.teens",
-                as: "list",
-                cond: {
-                  $eq: ["$$list.childId", "$_id"],
-                },
-              },
-            },
-          },
-        },
-      ]).exec();
-      if (users.length == 0) {
-        return this.BadRequest(ctx, "Users not found");
-      }
+      const users = await userDbService.getUserDetails(emails);
       let dataToSend = [];
       await Promise.all(
         users.map(async (user: any) => {
@@ -1268,7 +1229,6 @@ class ScriptController extends BaseController {
       );
       return this.Ok(ctx, { message: "Success", data: dataToSend });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, error.message);
     }
   }
