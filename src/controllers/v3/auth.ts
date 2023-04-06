@@ -405,18 +405,6 @@ class AuthController extends BaseController {
               isParentFirst: true,
             });
           }
-
-          /**
-           * Add zoho crm
-           */
-          if (parentInUserDraft) {
-            await zohoCrmService.searchAccountsAndUpdateDataInCrm(
-              ctx.request.zohoAccessToken,
-              childMobile ? childMobile : user.mobile,
-              parentInUserDraft,
-              "true"
-            );
-          }
           return this.Ok(ctx, {
             message: "Invite sent!",
             isAccountFound: false,
