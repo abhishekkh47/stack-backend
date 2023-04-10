@@ -264,14 +264,19 @@ class UserController extends BaseController {
    */
   @Route({ path: "/delete-user", method: HttpMethod.DELETE })
   @Auth()
+  @PrimeTrustJWT(true)
   public async deleteUserDetails(ctx: any) {
     try {
       let user = ctx.request.user;
+      const zohoAccessToken = ctx.request.zohoAccessToken;
       let userExists = await UserTable.findOne({ _id: user._id });
       if (!userExists) {
         return this.BadRequest(ctx, "User not found");
       }
-      const isDetailsDeleted = await userService.deleteUserData(userExists);
+      const isDetailsDeleted = await userService.deleteUserData(
+        userExists,
+        zohoAccessToken
+      );
       if (!isDetailsDeleted) {
         return this.BadRequest(ctx, "Error in deleting account");
       }

@@ -1,3 +1,7 @@
+import {
+  deleteAccountInformationInZoho,
+  searchAccountInfoByEmail,
+} from "../../utility/index";
 import { NetworkError } from "../../middleware/error.middleware";
 import { UserTable } from "../../model";
 
@@ -71,6 +75,34 @@ class UserDBService {
       throw new NetworkError("Users not found", 400);
     }
     return users;
+  }
+
+  /**
+   * @description search zoho data and delete it
+   * @param emails
+   * @param zohoAccessToken
+   */
+  public async searchAndDeleteZohoAccounts(emails, zohoAccessToken) {
+    const zohoCrmAccounts = await Promise.all(
+      await emails.map(async (data: any) => {
+        let crmAccount: any = await searchAccountInfoByEmail(
+          zohoAccessToken,
+          data
+        );
+        if (
+          crmAccount.status == 200 &&
+          crmAccount.data &&
+          crmAccount.data.data.length > 0
+        ) {
+          await deleteAccountInformationInZoho(
+            zohoAccessToken,
+            crmAccount.data.data[0].id
+          );
+          return data;
+        }
+      })
+    );
+    return zohoCrmAccounts;
   }
 }
 

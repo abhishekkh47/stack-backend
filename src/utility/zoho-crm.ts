@@ -158,3 +158,69 @@ export const searchAccountInfo = async (accessToken, phone) => {
     });
   return response;
 };
+
+/**
+ * @description This api is used to search account information by email
+ * @param accessToken
+ * @param email
+ */
+export const searchAccountInfoByEmail = async (accessToken, email) => {
+  const url =
+    config.APP_ENVIRONMENT == "STAGING"
+      ? config.ZOHO_STAGING_DOMAIN
+      : config.ZOHO_DOMAIN;
+  const response = await axios
+    .get(url + ZOHOAPIS.searchAccountsByEmail(email), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      if (error) {
+        return {
+          status: error.response.status,
+          message: error.response.data,
+        };
+      }
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to delete account information in zoho crm
+ * @param accessToken
+ * @param email
+ */
+export const deleteAccountInformationInZoho = async (accessToken, id) => {
+  const url =
+    config.APP_ENVIRONMENT == "STAGING"
+      ? config.ZOHO_STAGING_DOMAIN
+      : config.ZOHO_DOMAIN;
+  const response = await axios
+    .delete(url + ZOHOAPIS.deleteAccounts(id), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      if (error) {
+        return {
+          status: error.response.status,
+          message: error.response.data,
+        };
+      }
+    });
+  return response;
+};
