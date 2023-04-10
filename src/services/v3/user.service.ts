@@ -12,6 +12,7 @@ import {
 } from "../../model";
 import { ObjectId } from "mongodb";
 import { EUserType } from "../../types";
+import { UserDBService } from "../v4";
 
 class UserService {
   /**
@@ -219,8 +220,9 @@ class UserService {
   /**
    * @description This service is used to delete all the user related information
    * @param userId
+   * @param zohoAccessToken
    */
-  public async deleteUserData(userDetails: any) {
+  public async deleteUserData(userDetails: any, zohoAccessToken: string) {
     try {
       let parentChildRecord: any = await ParentChildTable.findOne({
         $or: [
@@ -298,6 +300,13 @@ class UserService {
           userQuery = { ...userQuery, _id: { $in: teenIds } };
         }
       }
+      /**
+       * Find the user query and get emails
+       */
+      const users = await UserTable.find(userQuery);
+      let emails = users.map((x) => x.email);
+      emails = [...new Set(emails)];
+      await UserDBService.searchAndDeleteZohoAccounts(emails, zohoAccessToken);
       await UserBanksTable.deleteMany(otherRecordsQuery);
       await DeviceToken.deleteMany(otherRecordsQuery);
       await Notification.deleteMany(otherRecordsQuery);

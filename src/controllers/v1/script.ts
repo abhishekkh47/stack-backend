@@ -24,6 +24,7 @@ import {
   UserDraftTable,
   QuizTopicTable,
   QuizTable,
+  DeletedUserTable,
 } from "../../model";
 import {
   EAction,
@@ -926,13 +927,18 @@ class ScriptController extends BaseController {
    * @returns
    */
   @Route({ path: "/delete-data", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public async deleteDataFromDB(ctx: any) {
     const userId = ctx.request.body.userId;
+    const zohoAccessToken = ctx.request.zohoAccessToken;
     let userExists = await UserTable.findOne({ _id: userId });
     if (!userId || !userExists) {
       return this.BadRequest(ctx, "User Details Not Found");
     }
-    const isDetailsDeleted = await UserService.deleteUserData(userExists);
+    const isDetailsDeleted = await UserService.deleteUserData(
+      userExists,
+      zohoAccessToken
+    );
     if (!isDetailsDeleted) {
       return this.BadRequest(ctx, "Error in deleting account");
     }
@@ -1226,6 +1232,29 @@ class ScriptController extends BaseController {
         })
       );
       return this.Ok(ctx, { message: "Success", data: dataToSend });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to get prime trust balance from user emails
+   * @param ctx
+   */
+  @Route({ path: "/delete-crm-users", method: HttpMethod.DELETE })
+  @PrimeTrustJWT(true)
+  public async deleteCRMUsers(ctx: any) {
+    try {
+      const zohoAccessToken = ctx.request.zohoAccessToken;
+      const deletedUsersData = await DeletedUserTable.find({});
+      let deletedUsers: any = deletedUsersData.map((x) => x.email);
+      deletedUsers = [...new Set(deletedUsers)];
+
+      const zohoCrmAccounts = await userDbService.searchAndDeleteZohoAccounts(
+        deletedUsers,
+        zohoAccessToken
+      );
+      return this.Ok(ctx, { data: zohoCrmAccounts });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
