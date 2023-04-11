@@ -318,7 +318,7 @@ class UserService {
           userQuery = { ...userQuery, _id: { $in: teenIds } };
         }
       }
-      accountIds = accountIds.filter((x) => x);
+      accountIds = accountIds.filter((data) => data);
       if (accountIds.length > 0) {
         if (
           userDetails.type !== EUserType.TEEN &&
