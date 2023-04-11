@@ -268,14 +268,15 @@ class UserController extends BaseController {
   public async deleteUserDetails(ctx: any) {
     try {
       let user = ctx.request.user;
-      const zohoAccessToken = ctx.request.zohoAccessToken;
+      const { zohoAccessToken, primeTrustToken } = ctx.request;
       let userExists = await UserTable.findOne({ _id: user._id });
       if (!userExists) {
         return this.BadRequest(ctx, "User not found");
       }
       const isDetailsDeleted = await userService.deleteUserData(
         userExists,
-        zohoAccessToken
+        zohoAccessToken,
+        primeTrustToken
       );
       if (!isDetailsDeleted) {
         return this.BadRequest(ctx, "Error in deleting account");

@@ -11,8 +11,9 @@ import {
   UserTable,
 } from "../../model";
 import { ObjectId } from "mongodb";
-import { EUserType } from "../../types";
+import { EUSERSTATUS, EUserType } from "../../types";
 import { UserDBService } from "../v4";
+import userDbService from "../v4/user.db.service";
 
 class UserService {
   /**
@@ -221,8 +222,13 @@ class UserService {
    * @description This service is used to delete all the user related information
    * @param userId
    * @param zohoAccessToken
+   * @param primeTrustToken
    */
-  public async deleteUserData(userDetails: any, zohoAccessToken: string) {
+  public async deleteUserData(
+    userDetails: any,
+    zohoAccessToken: string,
+    primeTrustToken: string
+  ) {
     try {
       let parentChildRecord: any = await ParentChildTable.findOne({
         $or: [
@@ -232,6 +238,9 @@ class UserService {
       });
       const teenIds = parentChildRecord
         ? parentChildRecord.teens.map((x) => x.childId)
+        : [];
+      let accountIds = parentChildRecord
+        ? parentChildRecord.teens.map((x) => x.accountId)
         : [];
       /**
        * Consider Teen Flow first
@@ -274,10 +283,19 @@ class UserService {
                 );
               }
             }
+            let filteredAccount = parentChildRecord.teens.find(
+              (x) => x.childId.toString() === userDetails._id.toString()
+            );
             otherRecordsQuery = {
               ...otherRecordsQuery,
               userId: userDetails._id,
             };
+            accountIds =
+              userDetails.type == EUserType.TEEN
+                ? filteredAccount
+                  ? [filteredAccount.accountId]
+                  : null
+                : [parentChildRecord.accountId];
             userQuery = { ...userQuery, _id: userDetails._id };
             await ParentChildTable.findOneAndUpdate(
               { _id: parentChildRecord._id },
@@ -298,6 +316,28 @@ class UserService {
             userId: { $in: teenIds },
           };
           userQuery = { ...userQuery, _id: { $in: teenIds } };
+        }
+      }
+      accountIds = accountIds.filter((x) => x);
+      if (accountIds.length > 0) {
+        if (
+          userDetails.type !== EUserType.TEEN &&
+          userDetails.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
+        ) {
+          await userDbService.updatePTAccountsToPendingClosure(
+            primeTrustToken,
+            accountIds
+          );
+        } else {
+          let parentAccount = await UserTable.findOne({
+            _id: parentChildRecord.userId,
+          });
+          if (parentAccount.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED) {
+            await userDbService.updatePTAccountsToPendingClosure(
+              primeTrustToken,
+              accountIds
+            );
+          }
         }
       }
       /**

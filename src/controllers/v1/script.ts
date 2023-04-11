@@ -930,14 +930,15 @@ class ScriptController extends BaseController {
   @PrimeTrustJWT(true)
   public async deleteDataFromDB(ctx: any) {
     const userId = ctx.request.body.userId;
-    const zohoAccessToken = ctx.request.zohoAccessToken;
+    const { zohoAccessToken, primeTrustToken } = ctx.request;
     let userExists = await UserTable.findOne({ _id: userId });
     if (!userId || !userExists) {
       return this.BadRequest(ctx, "User Details Not Found");
     }
     const isDetailsDeleted = await UserService.deleteUserData(
       userExists,
-      zohoAccessToken
+      zohoAccessToken,
+      primeTrustToken
     );
     if (!isDetailsDeleted) {
       return this.BadRequest(ctx, "Error in deleting account");

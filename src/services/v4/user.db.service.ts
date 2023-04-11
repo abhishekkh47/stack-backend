@@ -1,6 +1,7 @@
 import {
   deleteAccountInformationInZoho,
   searchAccountInfoByEmail,
+  updateAccountToPendingClosure,
 } from "../../utility/index";
 import { NetworkError } from "../../middleware/error.middleware";
 import { UserTable } from "../../model";
@@ -103,6 +104,23 @@ class UserDBService {
       })
     );
     return zohoCrmAccounts;
+  }
+
+  /**
+   * @description search zoho data and delete it
+   * @param token
+   * @param accountIds
+   */
+  public async updatePTAccountsToPendingClosure(token, accountIds) {
+    const pendingClosedAccounts = await Promise.all(
+      await accountIds.map(async (data: any) => {
+        let accountData = await updateAccountToPendingClosure(token, data);
+        if (accountData.status == 200) {
+          return accountIds;
+        }
+      })
+    );
+    return pendingClosedAccounts;
   }
 }
 
