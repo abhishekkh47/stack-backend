@@ -24,6 +24,7 @@ import {
   UserDraftTable,
   QuizTopicTable,
   QuizTable,
+  DeletedUserTable,
 } from "../../model";
 import {
   EAction,
@@ -42,6 +43,7 @@ import {
   getQuoteInformation,
   getInternalTransferInformation,
   getQuizImageAspectRatio,
+  getBalance,
 } from "../../utility";
 import BaseController from ".././base";
 import {
@@ -53,6 +55,8 @@ import {
   tradingService,
 } from "../../services/v1";
 import { UserService } from "../../services/v3";
+import quizContentData from "../../static/quizContent.json";
+import userDbService from "../../services/v4/user.db.service";
 
 class ScriptController extends BaseController {
   /**
@@ -923,13 +927,18 @@ class ScriptController extends BaseController {
    * @returns
    */
   @Route({ path: "/delete-data", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   public async deleteDataFromDB(ctx: any) {
     const userId = ctx.request.body.userId;
+    const zohoAccessToken = ctx.request.zohoAccessToken;
     let userExists = await UserTable.findOne({ _id: userId });
     if (!userId || !userExists) {
       return this.BadRequest(ctx, "User Details Not Found");
     }
-    const isDetailsDeleted = await UserService.deleteUserData(userExists);
+    const isDetailsDeleted = await UserService.deleteUserData(
+      userExists,
+      zohoAccessToken
+    );
     if (!isDetailsDeleted) {
       return this.BadRequest(ctx, "Error in deleting account");
     }
@@ -1136,6 +1145,118 @@ class ScriptController extends BaseController {
       return this.Ok(ctx, { data: updatedData });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to store new 1.10 new quiz content
+   * @param ctx
+   */
+  @Route({ path: "/quiz-content", method: HttpMethod.POST })
+  public async storeQuizContent(ctx: any) {
+    try {
+      if (!quizContentData || quizContentData.length == 0) {
+        return this.BadRequest(ctx, "Please add Quiz Content");
+      }
+      const topicIdIfExists = quizContentData.every((x) => x.topicId);
+      if (!topicIdIfExists) {
+        return this.BadRequest(ctx, "Quiz Topic is Required");
+      }
+      const quizNameIfExists = quizContentData.every((x) => x.quizName);
+      if (!quizNameIfExists) {
+        return this.BadRequest(ctx, "Quiz Image is Required");
+      }
+      const quizImageIfExists = quizContentData.every((x) => x.quizImage);
+      if (!quizImageIfExists) {
+        return this.BadRequest(ctx, "Quiz Image is Required");
+      }
+      const questionDataIfExists = quizContentData.every((x) => x.questionData);
+      if (!questionDataIfExists) {
+        return this.BadRequest(ctx, "Quiz Question is Required");
+      }
+      let quizQuestions = [];
+      await Promise.all(
+        quizContentData.map(async (data: any, index) => {
+          const quiz = await QuizTable.create({
+            quizName: data.quizName,
+            topicId: data.topicId,
+            image: data.quizImage,
+          });
+          data.questionData = data.questionData.map((x) => ({
+            ...x,
+            quizId: quiz._id,
+          }));
+          quizQuestions = quizQuestions.concat(data.questionData);
+        })
+      );
+      // /**
+      //  * Create Quiz Question
+      //  */
+      const questions = await QuizQuestionTable.insertMany(quizQuestions);
+      return this.Ok(ctx, { message: "Success", data: { questions } });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to get prime trust balance from user emails
+   * @param ctx
+   */
+  @Route({ path: "/get-prime-trust-balance", method: HttpMethod.POST })
+  @PrimeTrustJWT()
+  public async getBalancePT(ctx: any) {
+    try {
+      const jwtToken = ctx.request.primeTrustToken;
+      let { emails } = ctx.request.body;
+      if (!emails || emails.length === 0) {
+        return this.BadRequest(ctx, "Please enter emails");
+      }
+      const users = await userDbService.getUserDetails(emails);
+      let dataToSend = await Promise.all(
+        users.map(async (user: any) => {
+          const fetchBalance: any = await getBalance(
+            jwtToken,
+            user.accountDetails[0].accountId
+          );
+          if (fetchBalance.status == 400) {
+            return {
+              email: user.email,
+              balance: 0,
+            };
+          }
+          return {
+            email: user.email,
+            balance: fetchBalance.data.data[0].attributes.disbursable,
+          };
+        })
+      );
+      return this.Ok(ctx, { message: "Success", data: dataToSend });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to get prime trust balance from user emails
+   * @param ctx
+   */
+  @Route({ path: "/delete-crm-users", method: HttpMethod.DELETE })
+  @PrimeTrustJWT(true)
+  public async deleteCRMUsers(ctx: any) {
+    try {
+      const zohoAccessToken = ctx.request.zohoAccessToken;
+      const deletedUsersData = await DeletedUserTable.find({});
+      let deletedUsers: any = deletedUsersData.map((x) => x.email);
+      deletedUsers = [...new Set(deletedUsers)];
+
+      const zohoCrmAccounts = await userDbService.searchAndDeleteZohoAccounts(
+        deletedUsers,
+        zohoAccessToken
+      );
+      return this.Ok(ctx, { data: zohoCrmAccounts });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
     }
   }
 }

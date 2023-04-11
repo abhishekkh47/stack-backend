@@ -5,8 +5,8 @@ import { AdminTable, OtpTable, UserTable } from "../../model";
 import {
   zohoCrmService,
   TokenService,
-  AnalyticsService,
 } from "../../services/v1";
+import { AnalyticsService } from "../../services/v4";
 import { EOTPVERIFICATION, EUserType, HttpMethod } from "../../types";
 import { getMinutesBetweenDates, Route } from "../../utility";
 import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
@@ -76,7 +76,8 @@ class AuthController extends BaseController {
             isParentFirst: true,
           });
           if (isOtpVerified) {
-            AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED, {
+            AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED, undefined, {
+              device_id: reqParam.deviceId,
               user_id: user._id,
             });
 

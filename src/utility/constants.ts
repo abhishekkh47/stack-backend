@@ -68,6 +68,8 @@ export const ZOHOAPIS = {
   getAccounts: "crm/v2/Accounts",
   updateAccountInfo: (id) => `crm/v2/Accounts/${id}`,
   searchAccounts: (phone) => `crm/v2/Accounts/search?phone=${phone}`,
+  searchAccountsByEmail: (email) => `crm/v2/Accounts/search?email=${email}`,
+  deleteAccounts: (id) => `crm/v2/Accounts/${id}`,
 };
 
 export const DROPDOWNLIST = {

@@ -12,6 +12,9 @@ import {
 import mongoose from "mongoose";
 import { EUserType, everyCorrectAnswerPoints } from "../../types";
 import { quizService } from "../v1";
+import { AnalyticsService } from "../../services/v4";
+import { ANALYTICS_EVENTS } from "../../utility/constants";
+
 class QuizDBService {
   /**
    * @description get quiz data
@@ -158,9 +161,11 @@ class QuizDBService {
     }
     const quizQuestionList = await QuizQuestionTable.find({
       quizId: quizId,
-    }).select(
-      "_id quizId text answer_array points question_image question_type answer_type"
-    );
+    })
+      .select(
+        "_id order quizId text answer_array points question_image question_type answer_type"
+      )
+      .sort({ order: 1 });
     return quizQuestionList;
   }
 
@@ -265,23 +270,38 @@ class QuizDBService {
      * Add Question Result and Quiz Result
      */
     await QuizQuestionResult.insertMany(quizQuestions);
+
+    const pointsEarnedFromQuiz = everyCorrectAnswerPoints * reqParam.solvedQuestions.length
     const dataToCreate = {
       topicId: quizExists.topicId,
       quizId: quizExists._id,
       userId: userId,
       isOnBoardingQuiz: false,
-      pointsEarned: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+      pointsEarned: pointsEarnedFromQuiz,
     };
     await QuizResult.create(dataToCreate);
     let query: any = {
       $inc: {
-        quizCoins: everyCorrectAnswerPoints * reqParam.solvedQuestions.length,
+        quizCoins: pointsEarnedFromQuiz,
       },
     };
     if (isTeen) {
       query = { ...query, $set: { isQuizReminderNotificationSent: false } };
     }
     await UserTable.updateOne({ _id: userId }, query);
+
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
+      {
+        'Challenge Name': quizExists.quizName,
+        'Challenge Score': pointsEarnedFromQuiz,
+      },
+      {
+        device_id: reqParam.deviceId,
+        user_id: userId
+      }
+    );
+
     return true;
   }
 
