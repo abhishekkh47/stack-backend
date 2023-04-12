@@ -1,33 +1,27 @@
-import { TradingService } from "../../services/v3/index";
-import { EGIFTSTACKCOINSSETTING } from "./../../types/user";
-import moment from "moment";
-import BaseController from "../base";
 import fs from "fs";
+import moment from "moment";
 import path from "path";
-import envData from "../../config/index";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  AdminTable,
+  CryptoTable,
+  ParentChildTable,
+  TransactionTable,
+  UserBanksTable,
+  UserTable,
+} from "@app/model";
+import { DeviceTokenService, zohoCrmService } from "@app/services/v1";
+import { TransactionDBService, UserService } from "@app/services/v3";
+import { TradingService } from "@app/services/v3/index";
+import userService from "@app/services/v3/user.service";
 import {
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
-import { TransactionDBService, UserService } from "../../services/v3";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import {
-  UserTable,
-  TransactionTable,
-  UserBanksTable,
-  AdminTable,
-  CryptoTable,
-  ParentChildTable,
-} from "../../model";
-import {
-  CMS_LINKS,
-  PARENT_SIGNUP_FUNNEL,
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-} from "../../utility/constants";
+} from "@app/types";
 import {
   createAccount,
   kycDocumentChecks,
@@ -36,10 +30,12 @@ import {
   uploadFileS3,
   uploadFilesFetch,
   uploadIdProof,
-} from "../../utility";
-import { validationsV3 } from "../../validations/v3/apiValidation";
-import userService from "../../services/v3/user.service";
-import { DeviceTokenService, zohoCrmService } from "../../services/v1";
+  CMS_LINKS,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
+} from "@app/utility";
+import BaseController from "@app/controllers/base";
 
 class UserController extends BaseController {
   /**

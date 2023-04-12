@@ -1,3 +1,4 @@
+import "module-alias/register";
 import cors from "@koa/cors";
 import http from "http";
 import Koa from "koa";
@@ -8,15 +9,15 @@ import mongoose from "mongoose";
 import monitor from "koa-monitor";
 DotEnv.config();
 
-import Config from "./config";
-import { logger } from "./utility";
-import { errorHandler, notFoundHandler } from "./middleware";
-import Api from "./controllers";
-import i18nTs from "./i18n/i18n";
+import Config from "@app/config";
+import { logger } from "@app/utility";
+import { errorHandler, notFoundHandler } from "@app/middleware";
+import Api from "@app/controllers";
+import i18nTs from "@app/i18n/i18n";
 import en from "./i18n/en.json";
 import views from "koa-views";
-import { startCron } from "./background";
-import { AnalyticsService } from "./services/v1";
+import { startCron } from "@app/background";
+import { AnalyticsService } from "@app/services/v1";
 
 const server = (async () => {
   try {

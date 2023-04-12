@@ -1,10 +1,5 @@
-import { validations } from "../../validations/v2/apiValidation";
-import { ENOTIFICATIONSETTINGS, EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
-import Koa from "koa";
-import moment from "moment";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -14,28 +9,31 @@ import {
   TransactionTable,
   UserDraftTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import {
   AuthService,
   DeviceTokenService,
+  ScriptService,
   SocialService,
   TokenService,
   TwilioService,
-  zohoCrmService,
   userService,
-  ScriptService,
-} from "../../services/v1/index";
+  zohoCrmService,
+} from "@app/services/v1/index";
+import { TransactionDBService, UserDBService } from "@app/services/v2";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
+  ENOTIFICATIONSETTINGS,
   EOTPTYPE,
   EOTPVERIFICATION,
+  EPHONEVERIFIEDSTATUS,
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   createAccount,
   executeQuote,
@@ -45,13 +43,16 @@ import {
   getRefreshToken,
   internalAssetTransfers,
   makeUniqueReferalCode,
+  PARENT_SIGNUP_FUNNEL,
   Route,
-} from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+  TEEN_SIGNUP_FUNNEL,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import { validations } from "@app/validations/v2/apiValidation";
+import Koa from "koa";
+import moment from "moment";
+import BaseController from "@app/controllers/base";
 import UserController from "./user";
-import { UserDBService, TransactionDBService } from "../../services/v2";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })

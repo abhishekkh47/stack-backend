@@ -1,35 +1,36 @@
-import { UserBanksTable } from "./../../model/userBanks";
-import { UserReferralTable } from "../../model/user-referral";
-import moment from "moment";
-import envData from "../../config/index";
-import { PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   ParentChildTable,
   TransactionTable,
+  UserBanksTable,
+  UserReferralTable,
   UserTable,
   WebhookTable,
-} from "../../model";
+} from "@app/model";
 import {
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../services/v1/index";
+} from "@app/services/v1/index";
+import { TradingService, UserService } from "@app/services/v3/index";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   createAccount,
   getAccountStatusByAccountId,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
   Route,
-} from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import BaseController from "../base";
-import { TradingService, UserService } from "../../services/v3/index";
+} from "@app/utility";
+import moment from "moment";
+import BaseController from "@app/controllers/base";
 
 class WebHookController extends BaseController {
   /**

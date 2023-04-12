@@ -1,4 +1,3 @@
-import { ParentChildTable } from "./../../model/parentChild";
 import {
   DeletedUserTable,
   DeviceToken,
@@ -9,9 +8,10 @@ import {
   UserActivityTable,
   UserBanksTable,
   UserTable,
-} from "../../model";
+  ParentChildTable,
+} from "@app/model";
 import { ObjectId } from "mongodb";
-import { EUserType } from "../../types";
+import { EUserType } from "@app/types";
 import { UserDBService } from "../v4";
 
 class UserService {

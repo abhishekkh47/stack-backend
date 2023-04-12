@@ -1,8 +1,8 @@
-import { UserTable } from "../../model";
+import { UserTable } from "@app/model";
 import moment from "moment";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { DeviceTokenService } from "../../services/v1";
-import userDbService from "../../services/v4/user.db.service";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "@app/utility";
+import { DeviceTokenService } from "@app/services/v1";
+import userDbService from "@app/services/v4/user.db.service";
 
 export const kycReminderHandler = async () => {
   console.log("==========Start Cron For Kyc Reminder=============");

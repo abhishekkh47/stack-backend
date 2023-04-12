@@ -1,6 +1,6 @@
-import config from "../config";
+import config from "@app/config";
 import crypto from "crypto";
-import { AdminTable, UserTable } from "../model";
+import { AdminTable, UserTable } from "@app/model";
 import ShortUniqueId from "short-unique-id";
 
 const getUid = new ShortUniqueId({ length: 7 });

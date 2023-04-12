@@ -1,53 +1,54 @@
-import { getAccounts, institutionsGetByIdRequest } from "../../utility/plaid";
-import {
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-  PLAID_ITEM_ERROR,
-} from "../../utility/constants";
-import moment from "moment";
-import { EAction, EStatus, messages } from "../../types/useractivity";
-import { ObjectId } from "mongodb";
-import { UserActivityTable } from "../../model/useractivity";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   CryptoTable,
   ParentChildTable,
   TransactionTable,
+  UserActivityTable,
   UserBanksTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import {
   DeviceTokenService,
   PortfolioService,
+  TradingDBService,
   tradingService,
   zohoCrmService,
-  TradingDBService,
-} from "../../services/v1/index";
+} from "@app/services/v1/index";
+import { tradingDBService } from "@app/services/v2";
 import {
+  EAction,
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
+  EStatus,
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+  messages,
+} from "@app/types";
 import {
   createBank,
   createProcessorToken,
   executeQuote,
   generateQuote,
+  getAccounts,
   getBalance,
   getPublicTokenExchange,
+  institutionsGetByIdRequest,
   internalAssetTransfers,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  PARENT_SIGNUP_FUNNEL,
+  PLAID_ITEM_ERROR,
   Route,
-} from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
-import { tradingDBService } from "../../services/v2";
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import moment from "moment";
+import { ObjectId } from "mongodb";
+import BaseController from "@app/controllers/base";
 
 class TradingController extends BaseController {
   /**

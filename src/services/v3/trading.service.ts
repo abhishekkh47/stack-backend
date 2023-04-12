@@ -1,17 +1,11 @@
-import { UserTable } from "./../../model/user";
-import { EUserType } from "./../../types/user";
-import {
-  ETransactionType,
-  ETransactionStatus,
-} from "./../../types/transaction";
-import { TransactionTable } from "./../../model/transactions";
-import { CryptoTable } from "../../model/crypto";
+import { UserTable, TransactionTable, CryptoTable } from "@app/model";
+import { ETransactionType, ETransactionStatus, EUserType } from "@app/types";
 import {
   executeQuote,
   generateQuote,
   internalAssetTransfers,
-} from "../../utility";
-import envData from "../../config/index";
+} from "@app/utility";
+import envData from "@app/config/index";
 import moment from "moment";
 class TradingService {
   /**

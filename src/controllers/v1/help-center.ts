@@ -1,10 +1,9 @@
-import { Auth } from "../../middleware";
-import { AdminTable, UserTable } from "../../model";
-import { HttpMethod } from "../../types";
-import { Route, sendEmail } from "../../utility";
-import { CONSTANT } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+import { Auth } from "@app/middleware";
+import { AdminTable, UserTable } from "@app/model";
+import { HttpMethod } from "@app/types";
+import { CONSTANT, Route, sendEmail } from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class HelpCenterController extends BaseController {
   @Route({ path: "/send-issue", method: HttpMethod.POST })

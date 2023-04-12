@@ -1,9 +1,9 @@
 import {
   deleteAccountInformationInZoho,
   searchAccountInfoByEmail,
-} from "../../utility/index";
-import { NetworkError } from "../../middleware/error.middleware";
-import { UserTable } from "../../model";
+} from "@app/utility/index";
+import { NetworkError } from "@app/middleware/error.middleware";
+import { UserTable } from "@app/model";
 
 class UserDBService {
   /**

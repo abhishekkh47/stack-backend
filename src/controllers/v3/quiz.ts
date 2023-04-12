@@ -1,22 +1,20 @@
-import { PrimeTrustJWT } from "./../../middleware/primeTrust.middleware";
-import { validationsV3 } from "./../../validations/v3/apiValidation";
-import { validation } from "./../../validations/v1/apiValidation";
-import { EUserType } from "./../../types/user";
-import {
-  UserTable,
-  QuizQuestionTable,
-  QuizQuestionResult,
-  QuizTable,
-  QuizResult,
-  ParentChildTable,
-} from "../../model";
-import { Auth } from "../../middleware";
-import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
-import { get72HoursAhead, getQuizCooldown, Route } from "../../utility";
-import BaseController from "../base";
-import { quizService, zohoCrmService } from "../../services/v1";
-import mongoose from "mongoose";
 import moment from "moment";
+import mongoose from "mongoose";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  ParentChildTable,
+  QuizQuestionResult,
+  QuizQuestionTable,
+  QuizResult,
+  QuizTable,
+  UserTable,
+} from "@app/model";
+import { quizService, zohoCrmService } from "@app/services/v1";
+import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
+import { get72HoursAhead, getQuizCooldown, Route } from "@app/utility";
+import BaseController from "@app/controllers/base";
+import { validation } from "@app/validations/v1/apiValidation";
+import { validationsV3 } from "@app/validations/v3/apiValidation";
 
 class QuizController extends BaseController {
   /**

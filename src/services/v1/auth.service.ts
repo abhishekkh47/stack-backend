@@ -3,10 +3,10 @@ import {
   IUserSchema,
   StateTable,
   ParentChildTable,
-} from "../../model";
-import { EUSERSTATUS, IUser } from "../../types";
+} from "@app/model";
+import { EUSERSTATUS, IUser } from "@app/types";
 import bcrypt from "bcrypt";
-import { getContactId, updateContacts, kycDocumentChecks } from "../../utility";
+import { getContactId, updateContacts, kycDocumentChecks } from "@app/utility";
 
 class AuthService {
   async findUserByEmail(email: string) {

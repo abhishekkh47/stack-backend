@@ -1,4 +1,4 @@
-import config from "../config";
+import config from "@app/config";
 import axios from "axios";
 import { ZOHOAPIS } from "./constants";
 

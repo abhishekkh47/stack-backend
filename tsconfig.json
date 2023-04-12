@@ -3,7 +3,7 @@
     "baseUrl": "src",
     "esModuleInterop": true,
     "module": "commonjs",
-    "target": "es2017",
+    "target": "ES6",
     "noImplicitAny": false,
     "outDir": "./build",
     "sourceMap": true,
@@ -13,7 +13,12 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "paths": {
-      "@app/*": ["./*"]
+      "@app/*": ["./*"],
+      "@services/*": ["./services/*"],
+      "@controllers/*": ["./controllers/*"],
+      "@model/*": ["./model/*"],
+      "@middleware/*": ["./middleware/*"],
+      "@utility/*": ["./utility/*"]
     },
     "typeRoots": ["node_modules/@types", "./typings"]
   }

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { InotifyUser, MongooseModel } from "../types";
+import type { InotifyUser, MongooseModel } from "@app/types";
 
 export type INotifyUserSchema = MongooseModel<InotifyUser> & mongoose.Document;
 

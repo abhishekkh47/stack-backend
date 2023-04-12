@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IState, MongooseModel } from "../types";
+import type { IState, MongooseModel } from "@app/types";
 
 export type IStateSchema = MongooseModel<IState> & mongoose.Document;
 

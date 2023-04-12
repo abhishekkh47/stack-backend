@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IDeletedUser, MongooseModel } from "../types";
+import type { IDeletedUser, MongooseModel } from "@app/types";
 
 export type IDeletedUserType = MongooseModel<IDeletedUser> & mongoose.Document;
 

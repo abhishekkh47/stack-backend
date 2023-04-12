@@ -1,36 +1,45 @@
-import { getBalance } from "./../../utility/prime-trust";
-import {
-  ETransactionType,
-  ETransactionStatus,
-} from "./../../types/transaction";
-import { TransactionTable } from "./../../model/transactions";
-import { UserBanksTable } from "./../../model/userBanks";
 import moment from "moment";
-import { EGIFTSTACKCOINSSETTING, EUSERSTATUS } from "./../../types/user";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { AdminTable, ParentChildTable, UserTable } from "../../model";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  AdminTable,
+  ParentChildTable,
+  UserTable,
+  UserBanksTable,
+  TransactionTable,
+} from "@app/model";
 import {
   DeviceTokenService,
   PortfolioService,
   TradingDBService,
   zohoCrmService,
-} from "../../services/v1/index";
-import { EUserType, HttpMethod } from "../../types";
+} from "@app/services/v1/index";
+import {
+  tradingDBService,
+  TradingService,
+  UserService,
+} from "@app/services/v3/index";
+import {
+  EUserType,
+  HttpMethod,
+  EGIFTSTACKCOINSSETTING,
+  EUSERSTATUS,
+  ETransactionStatus,
+  ETransactionType,
+} from "@app/types";
 import {
   createBank,
   createProcessorToken,
   getPublicTokenExchange,
   Route,
-} from "../../utility";
+  getBalance,
+} from "@app/utility";
 import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
-} from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
-import { TradingService, UserService } from "../../services/v3/index";
-import { tradingDBService } from "../../services/v3/index";
+} from "@app/utility/constants";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class TradingController extends BaseController {
   /**

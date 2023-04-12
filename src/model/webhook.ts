@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IWebhook, MongooseModel } from "../types";
+import type { IWebhook, MongooseModel } from "@app/types";
 
 export type IWebhookType = MongooseModel<IWebhook> & mongoose.Document;
 

@@ -1,7 +1,7 @@
 import { OAuth2Client } from "google-auth-library";
 import { AppleSignIn } from "apple-sign-in-rest";
 
-import envData from "../../config/index";
+import envData from "@app/config";
 
 const google_client = new OAuth2Client(envData.GOOGLE_CLIENT_ID);
 const apple_client: any = new AppleSignIn({
@@ -21,7 +21,7 @@ class SocialService {
     /**
      * Sign in type 1 - google and 2 - apple
      */
-    
+
     if (![1, 2].includes(loginType)) {
       return;
     }

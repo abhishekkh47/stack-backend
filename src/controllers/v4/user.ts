@@ -1,6 +1,15 @@
-import { TradingService } from "../../services/v3/index";
 import moment from "moment";
-import BaseController from "../base";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  AdminTable,
+  CryptoTable,
+  TransactionTable,
+  UserBanksTable,
+  UserTable,
+} from "@app/model";
+import { DeviceTokenService, userService } from "@app/services/v1/index";
+import { TransactionDBService, UserService } from "@app/services/v3";
+import { TradingService } from "@app/services/v3/index";
 import {
   ENOTIFICATIONSETTINGS,
   ETransactionStatus,
@@ -8,20 +17,16 @@ import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
-import { DeviceTokenService, userService } from "../../services/v1/index";
-import { TransactionDBService, UserService } from "../../services/v3";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { validationsV4 } from "../../validations/v4/apiValidation";
+} from "@app/types";
 import {
-  UserTable,
-  TransactionTable,
-  UserBanksTable,
-  AdminTable,
-  CryptoTable,
-} from "../../model";
-import { Route, removeImage, uploadFileS3 } from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+  removeImage,
+  Route,
+  uploadFileS3,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
+import { validationsV4 } from "@app/validations/v4/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class UserController extends BaseController {
   /**

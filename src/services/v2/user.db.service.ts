@@ -1,6 +1,5 @@
-import { makeUniqueReferalCode } from "../../utility";
-import { ParentChildTable } from "../../model/parentChild";
-import { UserTable } from "../../model/user";
+import { makeUniqueReferalCode } from "@app/utility";
+import { ParentChildTable, UserTable } from "@app/model";
 
 class UserDBService {
   /**

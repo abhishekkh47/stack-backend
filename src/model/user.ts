@@ -6,7 +6,7 @@ import {
   IUser,
   MongooseModel,
   EPHONEVERIFIEDSTATUS,
-} from "../types";
+} from "@app/types";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 

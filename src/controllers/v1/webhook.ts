@@ -1,41 +1,41 @@
-import { UserBanksTable } from "./../../model/userBanks";
-import { UserReferralTable } from "../../model/user-referral";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   ParentChildTable,
   TransactionTable,
   UserTable,
   WebhookTable,
-} from "../../model";
+  UserReferralTable,
+} from "@app/model";
 import {
   AuthService,
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../services/v1/index";
+} from "@app/services/v1/index";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   checkValidBase64String,
   createAccount,
   getAccountStatusByAccountId,
   Route,
   uploadFilesFetch,
-} from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class WebHookController extends BaseController {
   /**

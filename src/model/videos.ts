@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IVideo, MongooseModel } from "../types";
+import type { IVideo, MongooseModel } from "@app/types";
 
 export type IVideoSchema = MongooseModel<IVideo> & mongoose.Document;
 

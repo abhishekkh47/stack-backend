@@ -1,15 +1,15 @@
-import AuthController from "./auth";
-import QuizController from "./quiz";
-import VideoController from "./video";
-import HelpCenterController from "./help-center";
-import TradingController from "./trading";
-import CryptoController from "./crypto";
-import UserController from "./user";
-import CMSController from "./cms";
-import WebHookController from "./webhook";
-import ScriptController from "./script";
-import DripshopController from "./dripshop";
-import { getRouteDict } from "../../utility";
+import AuthController from "@controllers/v1/auth";
+import QuizController from "@controllers/v1/quiz";
+import VideoController from "@controllers/v1/video";
+import HelpCenterController from "@controllers/v1/help-center";
+import TradingController from "@controllers/v1/trading";
+import CryptoController from "@controllers/v1/crypto";
+import UserController from "@controllers/v1/user";
+import CMSController from "@controllers/v1/cms";
+import WebHookController from "@controllers/v1/webhook";
+import ScriptController from "@controllers/v1/script";
+import DripshopController from "@controllers/v1/dripshop";
+import { getRouteDict } from "@app/utility";
 
 const routeDict = getRouteDict("1.0.0", [
   AuthController,

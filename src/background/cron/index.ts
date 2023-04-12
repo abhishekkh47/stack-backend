@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import config from "../../config";
+import config from "@app/config";
 import { priceHandler } from "./price";
 import { historicalPriceHandler } from "./historical-price";
 import { recurringDepositHandler } from "./recurring-deposit";

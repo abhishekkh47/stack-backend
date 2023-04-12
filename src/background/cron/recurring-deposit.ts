@@ -1,11 +1,16 @@
-import { DeviceTokenService } from "../../services/v1/index";
-import { createContributions, getPrimeTrustJWTToken } from "../../utility";
+import { DeviceTokenService } from "@app/services/v1/index";
+import {
+  createContributions,
+  getPrimeTrustJWTToken,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
 import {
   TransactionTable,
   UserTable,
   UserActivityTable,
   UserBanksTable,
-} from "../../model";
+} from "@app/model";
 import moment from "moment";
 import {
   ETransactionStatus,
@@ -15,8 +20,7 @@ import {
   EAction,
   EStatus,
   messages,
-} from "../../types";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+} from "@app/types";
 
 export const recurringDepositHandler = async () => {
   console.log("==========Start Cron For Recurring=============");

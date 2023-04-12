@@ -1,12 +1,7 @@
-import { EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { DripshopTable } from "../../model/dripshop";
-import {
-  GIFTCARDS,
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-} from "./../../utility/constants";
+import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
+import { DripshopTable } from "@app/model/dripshop";
 import moment from "moment";
-import { PrimeTrustJWT } from "../../middleware";
+import { PrimeTrustJWT } from "@app/middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
@@ -25,7 +20,7 @@ import {
   QuizTopicTable,
   QuizTable,
   DeletedUserTable,
-} from "../../model";
+} from "@app/model";
 import {
   EAction,
   EStatus,
@@ -33,7 +28,7 @@ import {
   ETransactionType,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   getAllGiftCards,
   getAssets,
@@ -44,7 +39,10 @@ import {
   getInternalTransferInformation,
   getQuizImageAspectRatio,
   getBalance,
-} from "../../utility";
+  GIFTCARDS,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
 import BaseController from ".././base";
 import {
   UserDBService,
@@ -53,10 +51,10 @@ import {
   ScriptService,
   userService,
   tradingService,
-} from "../../services/v1";
-import { UserService } from "../../services/v3";
-import quizContentData from "../../static/quizContent.json";
-import userDbService from "../../services/v4/user.db.service";
+} from "@app/services/v1";
+import { UserService } from "@app/services/v3";
+import quizContentData from "@app/static/quizContent.json";
+import userDbService from "@app/services/v4/user.db.service";
 
 class ScriptController extends BaseController {
   /**

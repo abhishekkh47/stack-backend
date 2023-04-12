@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { IUserGiftCard, MongooseModel } from "../types";
+import { IUserGiftCard, MongooseModel } from "@app/types";
 
 export type IUserGiftCardSchema = MongooseModel<IUserGiftCard> &
   mongoose.Document;
