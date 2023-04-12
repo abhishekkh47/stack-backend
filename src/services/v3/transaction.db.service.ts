@@ -1,7 +1,6 @@
 import moment from "moment";
-import { UserTable } from "../../model/user";
-import { TransactionTable } from "../../model";
-import { ETransactionType, ETransactionStatus } from "../../types";
+import { UserTable, TransactionTable } from "@app/model";
+import { ETransactionType, ETransactionStatus } from "@app/types";
 
 class TransactionDBService {
   /**

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { ICMS, MongooseModel } from "../types";
+import type { ICMS, MongooseModel } from "@app/types";
 
 export type ICMSType = MongooseModel<ICMS> & mongoose.Document;
 

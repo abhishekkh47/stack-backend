@@ -1,10 +1,10 @@
-import { validations } from "../../validations/v2/apiValidation";
-import { UserTable } from "../../model/user";
-import BaseController from "../base";
-import { Route } from "../../utility";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { HttpMethod } from "../../types";
-import { DripshopDBService, UserDBService } from "../../services/v1/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { UserTable } from "@app/model";
+import { DripshopDBService, UserDBService } from "@app/services/v1/index";
+import { HttpMethod } from "@app/types";
+import { Route } from "@app/utility";
+import { validations } from "@app/validations/v2/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class DripshopController extends BaseController {
   /**

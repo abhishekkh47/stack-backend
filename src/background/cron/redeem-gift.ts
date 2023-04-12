@@ -2,8 +2,14 @@ import {
   DeviceTokenService,
   tradingService,
   userService,
-} from "../../services/v1/index";
-import { getAllGiftCards, getPrimeTrustJWTToken } from "../../utility";
+} from "@app/services/v1/index";
+import {
+  getAllGiftCards,
+  getPrimeTrustJWTToken,
+  GIFTCARDS,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
 import {
   CryptoTable,
   TransactionTable,
@@ -11,19 +17,14 @@ import {
   UserActivityTable,
   Notification,
   UserGiftCardTable,
-} from "../../model";
+} from "@app/model";
 import moment from "moment";
 import {
   ETransactionStatus,
   ETransactionType,
   EAction,
   EStatus,
-} from "../../types";
-import {
-  GIFTCARDS,
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-} from "../../utility/constants";
+} from "@app/types";
 
 export const redeemGiftHandler = async () => {
   console.log(`

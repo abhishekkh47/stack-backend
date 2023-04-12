@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IOtp, MongooseModel } from "../types";
+import type { IOtp, MongooseModel } from "@app/types";
 
 export type IOtpSchema = MongooseModel<IOtp> & mongoose.Document;
 

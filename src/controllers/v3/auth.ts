@@ -1,32 +1,32 @@
-import { validations } from "../../validations/v2/apiValidation";
-import { validationsV3 } from "../../validations/v3/apiValidation";
-import { EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { AdminTable, OtpTable, ParentChildTable, UserTable } from "../../model";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { AdminTable, OtpTable, ParentChildTable, UserTable } from "@app/model";
 import {
   AnalyticsService,
   DeviceTokenService,
   SocialService,
   TokenService,
   zohoCrmService,
-} from "../../services/v1";
+} from "@app/services/v1";
 import {
   EAUTOAPPROVAL,
   EOTPVERIFICATION,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
+import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
 import {
   getMinutesBetweenDates,
   makeUniqueReferalCode,
   Route,
-} from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+  ANALYTICS_EVENTS,
+  PARENT_SIGNUP_FUNNEL,
+  TEEN_SIGNUP_FUNNEL,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import { validations } from "@app/validations/v2/apiValidation";
+import { validationsV3 } from "@app/validations/v3/apiValidation";
+import BaseController from "@app/controllers/base";
 import UserController from "../v3/user";
-import { ANALYTICS_EVENTS } from "../../utility/constants";
 
 class AuthController extends BaseController {
   /**

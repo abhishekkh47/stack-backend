@@ -1,17 +1,16 @@
 import Koa from "koa";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
   ParentChildTable,
   UserTable,
-} from "../../model";
-import { PortfolioService } from "../../services/v1/index";
-import { EUserType, HttpMethod } from "../../types";
-import { getBalance, Route } from "../../utility";
-import { CASH_USD_ICON } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+} from "@app/model";
+import { PortfolioService } from "@app/services/v1/index";
+import { EUserType, HttpMethod } from "@app/types";
+import { getBalance, Route, CASH_USD_ICON } from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })

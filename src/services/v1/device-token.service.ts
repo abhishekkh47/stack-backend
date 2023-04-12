@@ -1,7 +1,6 @@
-import { ENOTIFICATIONSETTINGS } from "../../types/user";
-import { ERead } from "../../types/deviceToken";
-import { sendNotification } from "../../utility/notificationSend";
-import { DeviceToken, Notification } from "../../model";
+import { ENOTIFICATIONSETTINGS, ERead } from "@app/types";
+import { sendNotification } from "@app/utility";
+import { DeviceToken, Notification } from "@app/model";
 import { DeviceTokenDBService } from ".";
 
 class DeviceTokenService {

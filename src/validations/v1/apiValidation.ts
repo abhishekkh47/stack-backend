@@ -5,7 +5,7 @@ Joi = Joi.defaults((schema) =>
   })
 );
 
-import { validationMessageKey } from "../../utility";
+import { validationMessageKey } from "@app/utility";
 export const validation = {
   getUserQuizDataValidation: (req, res, callback) => {
     const schema = Joi.object({

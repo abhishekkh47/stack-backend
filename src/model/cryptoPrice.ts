@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import type { ICryptoPrice, MongooseModel } from "../types";
+import type { ICryptoPrice, MongooseModel } from "@app/types";
 
 export type ICryptoPriceSchema = MongooseModel<ICryptoPrice> &
   mongoose.Document;

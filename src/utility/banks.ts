@@ -1,5 +1,5 @@
-import { EBankStatus } from "../types";
-import { UserBanksTable } from "../model";
+import { EBankStatus } from "@app/types";
+import { UserBanksTable } from "@app/model";
 
 /**
  * @description This api is used to add bank data to userbank table

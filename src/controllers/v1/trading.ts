@@ -1,7 +1,7 @@
 import moment from "moment";
 import { ObjectId } from "mongodb";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -10,17 +10,17 @@ import {
   UserActivityTable,
   UserBanksTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import {
   DeviceTokenService,
   PortfolioService,
+  TradingDBService,
   tradingService,
   UserBankDBService,
   UserDBService,
   userService,
   zohoCrmService,
-  TradingDBService,
-} from "../../services/v1/index";
+} from "@app/services/v1/index";
 import {
   EAction,
   EAUTOAPPROVAL,
@@ -34,7 +34,7 @@ import {
   EUserType,
   HttpMethod,
   messages,
-} from "../../types";
+} from "@app/types";
 import {
   createBank,
   createContributions,
@@ -44,6 +44,8 @@ import {
   generateQuote,
   getAccountId,
   getAccounts,
+  getAssets,
+  getAssetTotalWithId,
   getBalance,
   getContactId,
   getPublicTokenExchange,
@@ -53,17 +55,13 @@ import {
   internalAssetTransfers,
   Route,
   wireTransfer,
-  getAssets,
-  getAssetTotalWithId,
-} from "../../utility";
-import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
   PLAID_ITEM_ERROR,
-} from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class TradingController extends BaseController {
   /**

@@ -1,5 +1,5 @@
-import { getLatestPrice } from "../../utility";
-import { CryptoTable, CryptoPriceTable } from "../../model";
+import { getLatestPrice } from "@app/utility";
+import { CryptoTable, CryptoPriceTable } from "@app/model";
 
 export const priceHandler = async () => {
   console.log("==========Start Cron for price=============");

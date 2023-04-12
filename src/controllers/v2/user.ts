@@ -1,39 +1,43 @@
-import { ENOTIFICATIONSETTINGS, ESCREENSTATUS } from "../../types/user";
-import moment from "moment";
-import { json } from "co-body";
-import { validations } from "../../validations/v2/apiValidation";
-import { UserDraftTable } from "../../model/userDraft";
-import { TransactionTable } from "../../model/transactions";
-import { getAccounts } from "../../utility/plaid";
-import fs from "fs";
-import path from "path";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { ParentChildTable, UserTable } from "../../model";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  ParentChildTable,
+  TransactionTable,
+  UserBanksTable,
+  UserDraftTable,
+  UserTable,
+} from "@app/model";
 import {
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../services/v1/index";
-import { EUSERSTATUS, EUserType, HttpMethod } from "../../types";
-import { UserService } from "../../services/v2";
+} from "@app/services/v1/index";
+import { UserService } from "@app/services/v2";
+import {
+  ENOTIFICATIONSETTINGS,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+} from "@app/types";
 import {
   checkValidBase64String,
-  createAccount,
-  kycDocumentChecks,
-  Route,
-  uploadFilesFetch,
-  uploadIdProof,
-  uploadImage,
-} from "../../utility";
-import {
   CMS_LINKS,
+  createAccount,
+  getAccounts,
+  kycDocumentChecks,
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
-} from "../../utility/constants";
-import { UserBanksTable } from "../../model/userBanks";
-import BaseController from "../base";
+  Route,
+  uploadFilesFetch,
+  uploadImage,
+} from "@app/utility";
+import { validations } from "@app/validations/v2/apiValidation";
+import { json } from "co-body";
+import fs from "fs";
+import moment from "moment";
+import path from "path";
+import BaseController from "@app/controllers/base";
 
 class UserController extends BaseController {
   /**

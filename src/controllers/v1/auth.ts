@@ -1,9 +1,7 @@
-import { ENOTIFICATIONSETTINGS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -14,17 +12,17 @@ import {
   TransactionTable,
   UserDraftTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import {
   AuthService,
   DeviceTokenService,
+  ScriptService,
   SocialService,
   TokenService,
   TwilioService,
-  zohoCrmService,
   userService,
-  ScriptService,
-} from "../../services/v1/index";
+  zohoCrmService,
+} from "@app/services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
@@ -36,7 +34,8 @@ import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+  ENOTIFICATIONSETTINGS,
+} from "@app/types";
 import {
   createAccount,
   decodeJwtToken,
@@ -49,14 +48,13 @@ import {
   makeUniqueReferalCode,
   Route,
   verifyToken,
-} from "../../utility";
-import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
-} from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+  TEEN_SIGNUP_FUNNEL,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 import UserController from "./user";
 
 class AuthController extends BaseController {

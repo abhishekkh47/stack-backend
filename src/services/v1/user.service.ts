@@ -1,4 +1,4 @@
-import { EUserType, EUSERSTATUS } from "../../types/user";
+import { EUserType, EUSERSTATUS } from "@app/types";
 import {
   DeviceToken,
   Notification,
@@ -6,13 +6,16 @@ import {
   UserDraftTable,
   UserReferralTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { ERead, ERECURRING } from "../../types";
-import config from "../../config/index";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { sendNotification } from "../../utility/notificationSend";
+import { ERead, ERECURRING } from "@app/types";
+import config from "@app/config/index";
+import {
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  sendNotification,
+} from "@app/utility";
 
 class UserService {
   /**

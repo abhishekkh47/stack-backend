@@ -1,6 +1,6 @@
 import * as Koa from "koa";
 
-import { logger } from "../utility";
+import { logger } from "@app/utility";
 import multer from "multer";
 
 export const errorHandler = async (ctx: Koa.Context, next: Koa.Next) => {

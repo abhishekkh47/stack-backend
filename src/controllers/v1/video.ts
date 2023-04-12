@@ -1,9 +1,9 @@
 import Koa from "koa";
-import { Route } from "../../utility";
-import BaseController from "../base";
-import { Auth } from "../../middleware";
-import { HttpMethod } from "../../types";
-import { VideosTable } from "../../model/videos";
+import { Auth } from "@app/middleware";
+import { VideosTable } from "@app/model";
+import { HttpMethod } from "@app/types";
+import { Route } from "@app/utility";
+import BaseController from "@app/controllers/base";
 
 class VideoController extends BaseController {
   /**

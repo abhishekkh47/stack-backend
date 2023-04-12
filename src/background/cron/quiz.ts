@@ -1,8 +1,8 @@
-import { AdminTable, QuizResult, UserTable } from "../../model";
+import { AdminTable, QuizResult, UserTable } from "@app/model";
 import moment from "moment";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { DeviceTokenService } from "../../services/v1";
-import quizDbService from "../../services/v4/quiz.db.service";
+import { NOTIFICATION, NOTIFICATION_KEYS } from "@app/utility/constants";
+import { DeviceTokenService } from "@app/services/v1";
+import quizDbService from "@app/services/v4/quiz.db.service";
 
 export const challengeAvailableHandler = async () => {
   console.log("==========Start Cron For Challenge Available=============");

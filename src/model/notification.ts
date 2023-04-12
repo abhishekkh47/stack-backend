@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { INotification, MongooseModel } from "../types";
+import type { INotification, MongooseModel } from "@app/types";
 
 export type INotificationSchema = MongooseModel<INotification> &
   mongoose.Document;

@@ -1,19 +1,29 @@
-import { UserDraftTable } from "../../model/userDraft";
-import { ENOTIFICATIONSETTINGS } from "../../types/user";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import path from "path";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { NotifyUserTable, ParentChildTable, UserTable } from "../../model";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  NotifyUserTable,
+  ParentChildTable,
+  UserTable,
+  UserBanksTable,
+  UserDraftTable,
+} from "@app/model";
 import {
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../services/v1/index";
-import { ESCREENSTATUS, EUSERSTATUS, EUserType, HttpMethod } from "../../types";
+} from "@app/services/v1/index";
+import {
+  ESCREENSTATUS,
+  EUSERSTATUS,
+  EUserType,
+  HttpMethod,
+  ENOTIFICATIONSETTINGS,
+} from "@app/types";
 import {
   agreementPreviews,
   checkValidBase64String,
@@ -24,17 +34,16 @@ import {
   uploadFilesFetch,
   uploadIdProof,
   uploadImage,
-} from "../../utility";
+} from "@app/utility";
 import {
   CMS_LINKS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
-} from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import { UserBanksTable } from "../../model/userBanks";
-import { getAccounts } from "../../utility/plaid";
-import BaseController from "../base";
+  getAccounts,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class UserController extends BaseController {
   /**

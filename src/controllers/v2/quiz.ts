@@ -1,20 +1,19 @@
-import { validations } from "../../validations/v2/apiValidation";
-import { QuizQuestionTable } from "../../model/quizQuestion";
-import { QuizTable } from "../../model/quiz";
-import { get72HoursAhead, getQuizCooldown } from "../../utility/common";
-import moment from "moment";
-import mongoose from "mongoose";
-import { Auth } from "../../middleware";
+import { Auth } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
+  QuizQuestionTable,
   QuizResult,
+  QuizTable,
   UserTable,
-} from "../../model";
-import { quizService } from "../../services/v1/index";
-import { EUserType, HttpMethod } from "../../types";
-import { Route } from "../../utility";
-import BaseController from "../base";
+} from "@app/model";
+import { quizService } from "@app/services/v1/index";
+import { EUserType, HttpMethod } from "@app/types";
+import { get72HoursAhead, getQuizCooldown, Route } from "@app/utility";
+import { validations } from "@app/validations/v2/apiValidation";
+import moment from "moment";
+import mongoose from "mongoose";
+import BaseController from "@app/controllers/base";
 
 class QuizController extends BaseController {
   /**

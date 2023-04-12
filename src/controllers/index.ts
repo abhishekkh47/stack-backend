@@ -2,12 +2,12 @@ import Compose from "koa-compose";
 import Router from "koa-router";
 const KoaRouterVersion = require("koa-router-version");
 
-import { IRouteDict } from "../utility";
+import { IRouteDict } from "@app/utility";
 import routerDictV1 from "./v1";
 import routerDictV1_1 from "./v2";
 import routerDictV3 from "./v3";
 import routerDictV4 from "./v4";
-import { HttpMethod } from "../types";
+import { HttpMethod } from "@app/types";
 
 const router = new Router();
 

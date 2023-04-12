@@ -1,8 +1,7 @@
-import { CMSTable } from "../../model";
-import { HttpMethod } from "../../types";
-import { Route } from "../../utility";
-import { CMS_LINKS } from "../../utility/constants";
-import BaseController from "../base";
+import { CMSTable } from "@app/model";
+import { HttpMethod } from "@app/types";
+import { Route, CMS_LINKS } from "@app/utility";
+import BaseController from "@app/controllers/base";
 
 class CMSController extends BaseController {
   @Route({ path: "/get-cms/:type", method: HttpMethod.GET })

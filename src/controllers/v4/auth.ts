@@ -1,18 +1,18 @@
-import { EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { ANALYTICS_EVENTS, TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { AdminTable, OtpTable, UserTable } from "../../model";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { AdminTable, OtpTable, UserTable } from "@app/model";
+import { TokenService, zohoCrmService } from "@app/services/v1";
+import { AnalyticsService } from "@app/services/v4";
+import { EOTPVERIFICATION, EUserType, HttpMethod } from "@app/types";
+import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
+import { getMinutesBetweenDates, Route } from "@app/utility";
 import {
-  zohoCrmService,
-  TokenService,
-} from "../../services/v1";
-import { AnalyticsService } from "../../services/v4";
-import { EOTPVERIFICATION, EUserType, HttpMethod } from "../../types";
-import { getMinutesBetweenDates, Route } from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import { validationsV4 } from "../../validations/v4/apiValidation";
-import BaseController from "../base";
+  ANALYTICS_EVENTS,
+  PARENT_SIGNUP_FUNNEL,
+  TEEN_SIGNUP_FUNNEL,
+} from "@app/utility/constants";
+import { validation } from "@app/validations/v1/apiValidation";
+import { validationsV4 } from "@app/validations/v4/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class AuthController extends BaseController {
   /**
@@ -76,10 +76,14 @@ class AuthController extends BaseController {
             isParentFirst: true,
           });
           if (isOtpVerified) {
-            AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED, undefined, {
-              device_id: reqParam.deviceId,
-              user_id: user._id,
-            });
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED,
+              undefined,
+              {
+                device_id: reqParam.deviceId,
+                user_id: user._id,
+              }
+            );
 
             let findQuery = {};
             let setQuery = {};

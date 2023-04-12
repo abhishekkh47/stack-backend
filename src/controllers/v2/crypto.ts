@@ -1,10 +1,9 @@
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { CryptoTable, ParentChildTable, UserTable } from "../../model";
-import { PortfolioService } from "../../services/v1/index";
-import { EUserType, HttpMethod } from "../../types";
-import { getBalance, Route } from "../../utility";
-import { CASH_USD_ICON } from "../../utility/constants";
-import BaseController from "../base";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { CryptoTable, ParentChildTable, UserTable } from "@app/model";
+import { PortfolioService } from "@app/services/v1/index";
+import { EUserType, HttpMethod } from "@app/types";
+import { getBalance, Route, CASH_USD_ICON } from "@app/utility";
+import BaseController from "@app/controllers/base";
 
 class CryptocurrencyController extends BaseController {
   /**

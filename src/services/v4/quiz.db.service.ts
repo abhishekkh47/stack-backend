@@ -1,5 +1,9 @@
-import { NetworkError } from "../../middleware/error.middleware";
-import { get72HoursAhead, getQuizCooldown } from "../../utility";
+import { NetworkError } from "@app/middleware";
+import {
+  get72HoursAhead,
+  getQuizCooldown,
+  ANALYTICS_EVENTS,
+} from "@app/utility";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -8,12 +12,11 @@ import {
   QuizTable,
   QuizTopicTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import mongoose from "mongoose";
-import { EUserType, everyCorrectAnswerPoints } from "../../types";
-import { quizService } from "../v1";
-import { AnalyticsService } from "../../services/v4";
-import { ANALYTICS_EVENTS } from "../../utility/constants";
+import { EUserType, everyCorrectAnswerPoints } from "@app/types";
+import { quizService } from "@services/v1";
+import { AnalyticsService } from "@app/services/v4";
 
 class QuizDBService {
   /**
@@ -271,7 +274,8 @@ class QuizDBService {
      */
     await QuizQuestionResult.insertMany(quizQuestions);
 
-    const pointsEarnedFromQuiz = everyCorrectAnswerPoints * reqParam.solvedQuestions.length
+    const pointsEarnedFromQuiz =
+      everyCorrectAnswerPoints * reqParam.solvedQuestions.length;
     const dataToCreate = {
       topicId: quizExists.topicId,
       quizId: quizExists._id,
@@ -293,12 +297,12 @@ class QuizDBService {
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
       {
-        'Challenge Name': quizExists.quizName,
-        'Challenge Score': pointsEarnedFromQuiz,
+        "Challenge Name": quizExists.quizName,
+        "Challenge Score": pointsEarnedFromQuiz,
       },
       {
         device_id: reqParam.deviceId,
-        user_id: userId
+        user_id: userId,
       }
     );
 

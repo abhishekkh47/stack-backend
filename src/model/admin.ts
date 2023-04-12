@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IAdmin, MongooseModel } from "../types";
+import type { IAdmin, MongooseModel } from "@app/types";
 
 export type IAdminSchema = MongooseModel<IAdmin> & mongoose.Document;
 

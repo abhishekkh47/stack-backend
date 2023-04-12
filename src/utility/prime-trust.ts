@@ -1,8 +1,7 @@
 import axios from "axios";
-import config from "../config/index";
+import config from "@app/config";
 import request from "request";
 import { PRIMETRUSTAPIS } from "./constants";
-import envData from "../config/index";
 /**
  * @description This api is used by prime trust for getting jwt token to access all apis
  */
@@ -13,8 +12,8 @@ export const getPrimeTrustJWTToken = async () => {
       {},
       {
         auth: {
-          username: envData.PT_USERNAME,
-          password: envData.PT_PASSWORD,
+          username: config.PT_USERNAME,
+          password: config.PT_PASSWORD,
         },
       }
     )
