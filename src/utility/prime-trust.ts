@@ -774,3 +774,42 @@ export const getInternalTransferInformation = async (token, quoteId) => {
     });
   return response;
 };
+
+/**
+ * @description This api is used to update opened account to pending closure
+ * @param token
+ * @param accountId
+ * @return {*}
+ */
+export const updateAccountToPendingClosure = async (token, accountId) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.pendingClosure(accountId),
+      {
+        data: {
+          type: "accounts",
+          attributes: {
+            accounts: "pending close",
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
+    });
+  return response;
+};

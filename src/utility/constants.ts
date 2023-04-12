@@ -40,6 +40,7 @@ export const PRIMETRUSTAPIS = {
   getInternalTransferInformation: (quoteId) =>
     `v2/internal-asset-transfers/${quoteId}`,
   internalAssetTransfers: `v2/internal-asset-transfers`,
+  pendingClosure: (accountId) => `v2/accounts/${accountId}/pending-close`,
 };
 export const COINMARKETCAPAPIS = {
   historicalPrice: (crypto) =>
