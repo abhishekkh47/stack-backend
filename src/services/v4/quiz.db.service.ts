@@ -315,6 +315,7 @@ class QuizDBService {
    * @param userId
    */
   public async getQuizDataToSentInCrm(userIfExists: any, userId: string) {
+    console.log("== before");
     let userExistsForQuiz = null;
     let preLoadedCoins = 0;
     let isParentOrChild = 0;
@@ -414,6 +415,80 @@ class QuizDBService {
             Email: userExistsForQuiz.firstChildId.email,
           });
     }
+    return dataSentInCrm;
+  }
+
+  /**
+   * @description get quizinformation to sent in crm
+   * @param userIfExists
+   * @param userId
+   */
+  public async newQuizDataSentInCrm(userIfExists: any, userId: string) {
+    let userExistsForQuiz = null;
+    let preLoadedCoins = 0;
+    let isParentOrChild = 0;
+    if (userIfExists.type == EUserType.PARENT) {
+      throw new NetworkError("User not found", 400);
+    }
+    userExistsForQuiz = await ParentChildTable.findOne({
+      $or: [
+        { userId: userIfExists._id },
+        {
+          "teens.childId": userIfExists._id,
+        },
+      ],
+    }).populate("userId", [
+      "_id",
+      "preLoadedCoins",
+      "firstName",
+      "lastName",
+      "isGiftedCrypto",
+      "isParentFirst",
+      "email",
+    ]);
+    isParentOrChild = userExistsForQuiz ? 2 : 0;
+    preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
+    const checkQuizExists = await quizService.checkQuizExists({
+      $or: [
+        { userId: new mongoose.Types.ObjectId(userIfExists._id) },
+        {
+          userId: userExistsForQuiz
+            ? new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
+            : null,
+        },
+      ],
+      isOnBoardingQuiz: false,
+    });
+    let stackCoins = 0;
+    if (checkQuizExists.length > 0) {
+      stackCoins = checkQuizExists[0].sum;
+    }
+    stackCoins = stackCoins + preLoadedCoins;
+    /**
+     * Added Quiz information to zoho crm
+     */
+    let allQuizData: any = await QuizResult.find({
+      userId: userId,
+      isOnBoardingQuiz: false,
+    }).populate("quizId");
+    let quizDataAddInCrm = [];
+    if (allQuizData.length > 0) {
+      quizDataAddInCrm = allQuizData.map((res) => {
+        return {
+          Quiz_Number: allQuizData.length,
+          Quiz_Name: res.quizId.quizName,
+          Points: res.pointsEarned,
+        };
+      });
+    }
+    let dataSentInCrm: any = [
+      {
+        Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
+        Stack_Coins: stackCoins,
+        New_Quiz_Information: quizDataAddInCrm,
+        Email: userIfExists.email,
+      },
+    ];
     return dataSentInCrm;
   }
 

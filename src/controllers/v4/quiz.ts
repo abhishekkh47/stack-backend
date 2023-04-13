@@ -573,7 +573,7 @@ class QuizController extends BaseController {
             quizExists,
             isTeen
           );
-          const dataSentInCrm = await QuizDBService.getQuizDataToSentInCrm(
+          const dataSentInCrm = await QuizDBService.newQuizDataSentInCrm(
             userIfExists,
             user._id
           );
