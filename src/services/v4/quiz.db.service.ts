@@ -315,7 +315,6 @@ class QuizDBService {
    * @param userId
    */
   public async getQuizDataToSentInCrm(userIfExists: any, userId: string) {
-    console.log("== before");
     let userExistsForQuiz = null;
     let preLoadedCoins = 0;
     let isParentOrChild = 0;
