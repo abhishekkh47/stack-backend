@@ -473,9 +473,9 @@ class QuizDBService {
     }).populate("quizId");
     let quizDataAddInCrm = [];
     if (allQuizData.length > 0) {
-      quizDataAddInCrm = allQuizData.map((res) => {
+      quizDataAddInCrm = allQuizData.map((res, index) => {
         return {
-          Quiz_Number: allQuizData.length,
+          Quiz_Number: index + 1,
           Quiz_Name: res.quizId.quizName,
           Points: res.pointsEarned,
         };
