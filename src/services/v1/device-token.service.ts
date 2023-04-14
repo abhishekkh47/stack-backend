@@ -3,6 +3,8 @@ import { ERead } from "../../types/deviceToken";
 import { sendNotification } from "../../utility/notificationSend";
 import { DeviceToken, Notification } from "../../model";
 import { DeviceTokenDBService } from ".";
+import { AnalyticsService } from "../v4";
+import { ANALYTICS_EVENTS } from "@app/utility/constants";
 
 class DeviceTokenService {
   public async addDeviceTokenIfNeeded(userId: string, deviceToken: string) {
@@ -47,7 +49,7 @@ class DeviceTokenService {
         }
       );
     } else {
-      throw new Error("Device Token Doesn't Exist");
+      // throw new Error("Device Token Doesn't Exist");
     }
   }
 
@@ -64,7 +66,8 @@ class DeviceTokenService {
     notificationTitle: any,
     notificationMessage: any,
     activityId: any = null,
-    userId: any = null
+    userId: any = null,
+    nameForTracking: string = null,
   ) {
     let deviceTokenData = await DeviceTokenDBService.getDeviceTokenDataOfUser(
       id
@@ -94,6 +97,18 @@ class DeviceTokenService {
         isRead: ERead.UNREAD,
         data: JSON.stringify(notificationRequest),
       });
+
+      if (nameForTracking) {
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS.PUSH_NOTIFICATION_SENT,
+          {
+            'Push notification name': nameForTracking,
+          },
+          {
+            user_id: userId
+          }
+        );
+      }
     }
     return true;
   }
