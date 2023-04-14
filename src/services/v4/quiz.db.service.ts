@@ -314,62 +314,45 @@ class QuizDBService {
    * @param userIfExists
    * @param userId
    */
-  public async getQuizDataToSentInCrm(userIfExists: any, userId: string) {
+  public async getQuizDataForCrm(userIfExists: any, userId: string) {
     let userExistsForQuiz = null;
     let preLoadedCoins = 0;
     let isParentOrChild = 0;
     if (userIfExists.type == EUserType.PARENT) {
-      userExistsForQuiz = await ParentChildTable.findOne({
-        userId: userIfExists._id,
-      }).populate("firstChildId", [
-        "_id",
-        "preLoadedCoins",
-        "isGiftedCrypto",
-        "isParentFirst",
-        "firstName",
-        "lastName",
-        "email",
-      ]);
-      isParentOrChild = userExistsForQuiz ? 1 : 0;
-      preLoadedCoins = userExistsForQuiz
-        ? userExistsForQuiz.firstChildId.preLoadedCoins
-        : 0;
-    } else {
-      userExistsForQuiz = await ParentChildTable.findOne({
-        $or: [
-          { firstChildId: userIfExists._id },
-          {
-            "teens.childId": userIfExists._id,
-          },
-        ],
-      }).populate("userId", [
-        "_id",
-        "preLoadedCoins",
-        "firstName",
-        "lastName",
-        "isGiftedCrypto",
-        "isParentFirst",
-        "email",
-      ]);
-      isParentOrChild = userExistsForQuiz ? 2 : 0;
-      preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
+      throw new NetworkError("User not found", 400);
     }
-    const checkQuizExists = await quizService.checkQuizExists({
+    userExistsForQuiz = await ParentChildTable.findOne({
+      $or: [
+        { userId: userIfExists._id },
+        {
+          "teens.childId": userIfExists._id,
+        },
+      ],
+    }).populate("userId", [
+      "_id",
+      "preLoadedCoins",
+      "firstName",
+      "lastName",
+      "isGiftedCrypto",
+      "isParentFirst",
+      "email",
+    ]);
+    isParentOrChild = userExistsForQuiz ? 2 : 0;
+    preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
+    const quizIfExists = await quizService.checkQuizExists({
       $or: [
         { userId: new mongoose.Types.ObjectId(userIfExists._id) },
         {
           userId: userExistsForQuiz
-            ? userIfExists.type == EUserType.PARENT
-              ? new mongoose.Types.ObjectId(userExistsForQuiz.firstChildId._id)
-              : new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
+            ? new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
             : null,
         },
       ],
       isOnBoardingQuiz: false,
     });
     let stackCoins = 0;
-    if (checkQuizExists.length > 0) {
-      stackCoins = checkQuizExists[0].sum;
+    if (quizIfExists.length > 0) {
+      stackCoins = quizIfExists[0].sum;
     }
     stackCoins = stackCoins + preLoadedCoins;
     /**
@@ -377,12 +360,14 @@ class QuizDBService {
      */
     let allQuizData: any = await QuizResult.find({
       userId: userId,
+      isOnBoardingQuiz: false,
     }).populate("quizId");
-    let quizDataAddInCrm = [];
+    let quizDataForCrm = [];
     if (allQuizData.length > 0) {
-      quizDataAddInCrm = allQuizData.map((res) => {
+      quizDataForCrm = allQuizData.map((res, index) => {
         return {
-          Quiz_Number: parseInt(res.quizId.quizName.split(" ")[1]),
+          Quiz_Number: index + 1,
+          Quiz_Name: res.quizId.quizName,
           Points: res.pointsEarned,
         };
       });
@@ -391,29 +376,10 @@ class QuizDBService {
       {
         Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
         Stack_Coins: stackCoins,
-        Quiz_Information: quizDataAddInCrm,
+        New_Quiz_Information: quizDataForCrm,
         Email: userIfExists.email,
       },
     ];
-    if (isParentOrChild != 0) {
-      isParentOrChild == 2
-        ? dataSentInCrm.push({
-            Account_Name:
-              userExistsForQuiz.userId.firstName +
-              " " +
-              userExistsForQuiz.userId.lastName,
-            Stack_Coins: stackCoins,
-            Email: userExistsForQuiz.userId.email,
-          })
-        : dataSentInCrm.push({
-            Account_Name:
-              userExistsForQuiz.firstChildId.firstName +
-              " " +
-              userExistsForQuiz.firstChildId.lastName,
-            Stack_Coins: stackCoins,
-            Email: userExistsForQuiz.firstChildId.email,
-          });
-    }
     return dataSentInCrm;
   }
 
