@@ -183,7 +183,7 @@ class TradingService {
           "from-account-id": envData.OPERATIONAL_ACCOUNT,
           "to-account-id": getAccountId.accountId,
           "asset-id": crypto.assetId,
-          reference: `$${amount} BTC gift from Stack`,
+          reference: `$${amount} BTC gift from Jetson`,
           "hot-transfer": true,
         },
       },

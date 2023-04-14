@@ -366,7 +366,7 @@ class AuthController extends BaseController {
           }
           if (!childFirstName) {
             return this.Ok(ctx, {
-              message: "You are inviting your teen in stack",
+              message: "You are inviting your teen in Jetson",
             });
           }
           /**
