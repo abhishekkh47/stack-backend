@@ -551,15 +551,17 @@ class QuizController extends BaseController {
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
-          const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
-          if (!quizExists) {
+          const quizIfExists = await QuizTable.findOne({
+            _id: reqParam.quizId,
+          });
+          if (!quizIfExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
           }
-          const quizResultExists = await QuizResult.findOne({
+          const quizResultsIfExists = await QuizResult.findOne({
             userId: user._id,
             quizId: reqParam.quizId,
           });
-          if (quizResultExists) {
+          if (quizResultsIfExists) {
             return this.BadRequest(
               ctx,
               "You cannot submit the same quiz again"
@@ -570,16 +572,16 @@ class QuizController extends BaseController {
             user._id,
             headers,
             reqParam,
-            quizExists,
+            quizIfExists,
             isTeen
           );
-          const dataSentInCrm = await QuizDBService.newQuizDataSentInCrm(
+          const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id
           );
           await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
-            dataSentInCrm,
+            dataForCrm,
             true
           );
           return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });

@@ -422,7 +422,7 @@ class QuizDBService {
    * @param userIfExists
    * @param userId
    */
-  public async newQuizDataSentInCrm(userIfExists: any, userId: string) {
+  public async getQuizDataForCrm(userIfExists: any, userId: string) {
     let userExistsForQuiz = null;
     let preLoadedCoins = 0;
     let isParentOrChild = 0;
@@ -447,7 +447,7 @@ class QuizDBService {
     ]);
     isParentOrChild = userExistsForQuiz ? 2 : 0;
     preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
-    const checkQuizExists = await quizService.checkQuizExists({
+    const quizIfExists = await quizService.checkQuizExists({
       $or: [
         { userId: new mongoose.Types.ObjectId(userIfExists._id) },
         {
@@ -459,8 +459,8 @@ class QuizDBService {
       isOnBoardingQuiz: false,
     });
     let stackCoins = 0;
-    if (checkQuizExists.length > 0) {
-      stackCoins = checkQuizExists[0].sum;
+    if (quizIfExists.length > 0) {
+      stackCoins = quizIfExists[0].sum;
     }
     stackCoins = stackCoins + preLoadedCoins;
     /**
@@ -470,9 +470,9 @@ class QuizDBService {
       userId: userId,
       isOnBoardingQuiz: false,
     }).populate("quizId");
-    let quizDataAddInCrm = [];
+    let quizDataForCrm = [];
     if (allQuizData.length > 0) {
-      quizDataAddInCrm = allQuizData.map((res, index) => {
+      quizDataForCrm = allQuizData.map((res, index) => {
         return {
           Quiz_Number: index + 1,
           Quiz_Name: res.quizId.quizName,
@@ -484,7 +484,7 @@ class QuizDBService {
       {
         Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
         Stack_Coins: stackCoins,
-        New_Quiz_Information: quizDataAddInCrm,
+        New_Quiz_Information: quizDataForCrm,
         Email: userIfExists.email,
       },
     ];
