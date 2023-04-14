@@ -175,7 +175,6 @@ class UserDBService {
         ),
       };
       let uploadFile: any = await uploadFilesFetch(jwtToken, uploadData);
-      console.log(uploadFile, "uploadFile");
       if (uploadFile.status == 400) uploadFileError = uploadFile.message;
       if (uploadFile.status == 200 && uploadFile.message.errors != undefined)
         uploadFileError = uploadFile.message;
