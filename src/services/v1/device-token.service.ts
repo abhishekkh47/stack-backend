@@ -84,6 +84,7 @@ class DeviceTokenService {
         message: notificationMessage,
         activityId: activityId,
         userId: userId,
+        nameForTracking,
       };
       await sendNotification(
         deviceTokenData.deviceToken,
