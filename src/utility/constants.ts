@@ -142,16 +142,28 @@ export const NOTIFICATION = {
     "You have received 500🔥from your friend {friendName}! Be sure to say thanks.",
   DRIP_SHOP_MESSAGE:
     "Reedemed ${cryptoAmount} of ${cryptoName} in exchange of {fuelAmount} fuel",
-  REDEEM_BTC_SUCCESS_TITLE: "Hi! It's Jetson.",
-  REDEEM_BTC_SUCCESS_MESSAGE:
-    "🎉 We just sent you $5 Bitcoin. Time to show off!",
-  CHALLENGE_AVAILABLE_TITLE: "Hi! It's Jetson.",
-  CHALLENGE_AVAILABLE_MESSAGE:
-    "⏰ It's time for your next challenge. Let's Go!",
-  COMPLETE_KYC_REMINDER_TITLE: "Hi! It's Jetson.",
-  COMPLETE_KYC_REMINDER_MESSAGE:
-    "⏰ Complete the onboarding to unlock your child’s financial future.",
 };
+
+export const NOTIFICATIONS = {
+  REDEEM_BTC_SUCCESS: {
+    key: "redeem_btc_success",
+    title: "Hi! It's Jetson.",
+    message: "🎉 We just sent you $5 Bitcoin. Time to show off!",
+    nameForTracking: "Bitcoin redeemed", 
+  },
+  CHALLENGE_AVAILABLE: {
+    key: "challenge_available",
+    title: "Hi! It's Jetson.",
+    message: "⏰ It's time for your next challenge. Let's Go!",
+    nameForTracking: "New challenge available", 
+  },
+  COMPLETE_KYC_REMINDER: {
+    key:  "complete_kyc_reminder",
+    title: "Hi! It's Jetson.",
+    message: "⏰ Complete the onboarding to unlock your child’s financial future.",
+    nameForTracking: "Parent KYC reminder 1", 
+  },
+}
 
 export const PT_REFERENCE_TEXT = "$5 BTC gift from Jetson";
 
@@ -168,9 +180,6 @@ export const NOTIFICATION_KEYS = {
   FREIND_REFER: "refer_freind",
   GIFT_CARD_ISSUED: "gift_card_issued",
   EARN_STACK_COINS_AFTER_KYC_APPROVED: "earn_stack_coins_after_kyc_approved",
-  REDEEM_BTC_SUCCESS: "redeem_btc_success",
-  CHALLENGE_AVAILABLE: "challenge_available",
-  COMPLETE_KYC_REMINDER: "complete_kyc_reminder",
 };
 
 export const PARENT_SIGNUP_FUNNEL = {
@@ -219,4 +228,5 @@ export const ANALYTICS_EVENTS = {
   SIGNED_UP_SSO: "Signed Up with SSO",
   UPLOAD_DL_SUBMITTED: "Upload DL Submitted",
   CHALLENGE_COMPLETED: "Challenge Completed",
+  PUSH_NOTIFICATION_SENT: "Push Notification Sent",
 };

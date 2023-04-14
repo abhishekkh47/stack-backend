@@ -21,7 +21,7 @@ import {
   CryptoTable,
 } from "../../model";
 import { Route, removeImage, uploadFileS3 } from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+import { NOTIFICATIONS } from "../../utility/constants";
 
 class UserController extends BaseController {
   /**
@@ -133,13 +133,15 @@ class UserController extends BaseController {
             true
           );
           if (headers["build-number"]) {
+            const { key, title, message, nameForTracking } = NOTIFICATIONS.REDEEM_BTC_SUCCESS
             await DeviceTokenService.sendUserNotification(
               userExists._id,
-              NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
-              NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
-              NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+              key,
+              title,
+              message,
               null,
-              userExists._id
+              userExists._id,
+              nameForTracking,
             );
           }
         }
