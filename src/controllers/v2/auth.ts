@@ -1,6 +1,6 @@
 import { validations } from "../../validations/v2/apiValidation";
 import { ENOTIFICATIONSETTINGS, EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
+import { TEEN_SIGNUP_FUNNEL, PT_REFERENCE_TEXT } from "../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
 import envData from "../../config/index";
@@ -445,7 +445,7 @@ class AuthController extends BaseController {
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
+                    reference: PT_REFERENCE_TEXT,
                     "hot-transfer": true,
                   },
                 },
@@ -1156,7 +1156,7 @@ class AuthController extends BaseController {
           }
           if (!childFirstName) {
             return this.Ok(ctx, {
-              message: "You are inviting your teen in stack",
+              message: "You are inviting your teen in Jetson",
             });
           }
           /**

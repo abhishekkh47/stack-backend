@@ -19,7 +19,7 @@ export const getLinkToken = async (userData, accessToken, deviceType) => {
       // This should correspond to a unique id for the current user.
       client_user_id: clientUserId,
     },
-    client_name: "Stack",
+    client_name: "Jetson",
     products: accessToken ? [] : ["auth"],
     language: "en",
     country_codes: ["US"],

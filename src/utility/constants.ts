@@ -113,11 +113,11 @@ export const NOTIFICATION = {
   KYC_APPROVED_DESCRIPTION: "Explore our app for more features 🤩",
   KYC_REJECTED_TITLE: "Looks like we need additional information from you 👀",
   SUCCESS_REFER_MESSAGE:
-    "You have earned 1000 Stack coins from referring a friend! 🥳",
+    "You have earned 1000 Jetson coins from referring a friend! 🥳",
   SUCCESS_REFER_CODE_USE_MESSAGE:
-    "You have been gifted 1000 Stack coins by using correct referral code 🥳",
+    "You have been gifted 1000 Jetson coins by using correct referral code 🥳",
   EARN_STACK_COINS_AFTER_SUCCESSFUL_KYC:
-    "You have been gifted 1000 Stack coins as your parent's kyc got approved 🥳",
+    "You have been gifted 1000 Jetson coins as your parent's kyc got approved 🥳",
   ACCOUNT_CLOSED_TITLE: "Your account is closed",
   ACCOUNT_CLOSED_DESCRIPTION:
     "Thanks for applying, we can't open an account for you based on the info you provided",
@@ -152,6 +152,8 @@ export const NOTIFICATION = {
   COMPLETE_KYC_REMINDER_MESSAGE:
     "⏰ Complete the onboarding to unlock your child’s financial future.",
 };
+
+export const PT_REFERENCE_TEXT = "$5 BTC gift from Jetson";
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",

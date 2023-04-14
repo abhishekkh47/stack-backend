@@ -44,7 +44,10 @@ import {
   internalAssetTransfers,
   Route,
 } from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
+import {
+  PARENT_SIGNUP_FUNNEL,
+  PT_REFERENCE_TEXT,
+} from "../../utility/constants";
 import { validation } from "../../validations/v1/apiValidation";
 import BaseController from "../base";
 import { tradingDBService } from "../../services/v2";
@@ -627,7 +630,7 @@ class TradingController extends BaseController {
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
+                    reference: PT_REFERENCE_TEXT,
                     "hot-transfer": true,
                   },
                 },

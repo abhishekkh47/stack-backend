@@ -40,7 +40,7 @@ class TwilioService {
 
   public async sendOTP(mobile: string, type: EOTPTYPE) {
     const code = generateRandom6DigitCode(true);
-    const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
+    const message: string = `Your Jetson verification code is ${code}. Please don't share it with anyone.`;
     /**
      * Send Otp to User from registered mobile number
      */
