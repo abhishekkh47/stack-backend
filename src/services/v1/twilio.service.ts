@@ -44,10 +44,10 @@ class TwilioService {
     /**
      * Send Otp to User from registered mobile number
      */
-    // const twilioResponse: any = await this.sendSMS(mobile, message);
-    // if (twilioResponse.code === 400) {
-    //   throw new Error("Error in sending OTP");
-    // }
+    const twilioResponse: any = await this.sendSMS(mobile, message);
+    if (twilioResponse.code === 400) {
+      throw new Error("Error in sending OTP");
+    }
     await OtpTable.create({
       message,
       code,
