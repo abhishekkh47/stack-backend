@@ -4,7 +4,7 @@ import { sendNotification } from "../../utility/notificationSend";
 import { DeviceToken, Notification } from "../../model";
 import { DeviceTokenDBService } from ".";
 import { AnalyticsService } from "../v4";
-import { ANALYTICS_EVENTS } from "@app/utility/constants";
+import { ANALYTICS_EVENTS } from "../../utility/constants";
 
 class DeviceTokenService {
   public async addDeviceTokenIfNeeded(userId: string, deviceToken: string) {
