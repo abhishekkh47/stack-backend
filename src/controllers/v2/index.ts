@@ -7,13 +7,13 @@ import CryptoController from "./crypto";
 
 import { getRouteDict } from "../../utility";
 
-const routeDict = getRouteDict('2.0.0', [
+const routeDict = getRouteDict("2.0.0", [
   AuthController,
   UserController,
   TradingController,
   QuizController,
   DripshopController,
   CryptoController,
-])
+]);
 
 export default routeDict;

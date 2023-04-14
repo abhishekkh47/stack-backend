@@ -31,10 +31,9 @@ const server = (async () => {
     app.use(cors());
     app.use(i18nTs);
     app.use(async (ctx, next) => {
-      console.log(ctx.path, "path");
       if (
         [
-          "/update-primetrust-data",
+          "/api/v1/update-primetrust-data",
           "/api/v2/upload-id-proof",
           "/api/v1/upload-id-proof",
         ].filter((item) => ctx.path.includes(item)).length > 0
