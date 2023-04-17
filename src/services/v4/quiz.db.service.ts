@@ -24,7 +24,7 @@ class QuizDBService {
    * @param quizIds
    */
   public async getQuizData(quizIds: string[]) {
-    const quizData = await QuizTopicTable.aggregate([
+    let quizData = await QuizTopicTable.aggregate([
       {
         $sort: { createdAt: 1 },
       },
@@ -74,6 +74,7 @@ class QuizDBService {
     if (quizData.length === 0) {
       throw Error("Quiz Not Found");
     }
+    quizData = quizData.sort(() => 0.5 - Math.random());
     return quizData;
   }
 
