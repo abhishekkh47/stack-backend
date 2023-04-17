@@ -468,7 +468,7 @@ class UserService {
     name: any
   ) {
     let notificationRequest = {
-      key: NOTIFICATION_KEYS.FREIND_REFER,
+      key: NOTIFICATION_KEYS.FRIEND_REFER,
       title: NOTIFICATION.REFERR_TITLE,
       message: key.replace("{friendName}", name),
     };
