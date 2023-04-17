@@ -55,6 +55,7 @@ import {
 import { UserService } from "@app/services/v3";
 import quizContentData from "@app/static/quizContent.json";
 import userDbService from "@app/services/v4/user.db.service";
+import quizDbService from "@app/services/v4/quiz.db.service";
 
 class ScriptController extends BaseController {
   /**
@@ -1255,6 +1256,47 @@ class ScriptController extends BaseController {
       );
       return this.Ok(ctx, { data: zohoCrmAccounts });
     } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to get
+   * @param ctx
+   */
+  @Route({ path: "/sync-quiz-in-zoho", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
+  public async syncZohoCrmQuizInfoWithDB(ctx: any) {
+    try {
+      let quizResults: any = await quizDbService.getUsersQuizResult();
+      await Promise.all(
+        quizResults.map(async (res: any) => {
+          const quizDataForCrm = res.quizInformation.map(
+            (quizRes: any, quizNumber: number) => {
+              return {
+                Quiz_Number: quizNumber + 1,
+                Quiz_Name: quizRes.quizName,
+                Points: quizRes.pointsEarned,
+              };
+            }
+          );
+          let dataForCrm: any = [
+            {
+              Account_Name: res.firstName + " " + res.lastName,
+              New_Quiz_Information: quizDataForCrm,
+              Email: res.email,
+            },
+          ];
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataForCrm,
+            true
+          );
+        })
+      );
+      return this.Ok(ctx, { data: quizResults });
+    } catch (error) {
+      console.log(error);
       return this.BadRequest(ctx, error.message);
     }
   }

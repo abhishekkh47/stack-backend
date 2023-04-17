@@ -440,6 +440,94 @@ class QuizDBService {
     ]).exec();
     return quizResults;
   }
+
+  /**
+   * @description get last quiz records
+   */
+  public async getUsersQuizResult() {
+    const quizResults = await QuizResult.aggregate([
+      {
+        $match: {
+          isOnBoardingQuiz: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "quizTopicData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopicData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "quizId",
+          foreignField: "_id",
+          as: "quizData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $eq: ["$quizTopicData.image", null],
+            },
+            then: "$$PRUNE",
+            else: "$$KEEP",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          firstName: {
+            $first: "$userData.firstName",
+          },
+          lastName: {
+            $first: "$userData.lastName",
+          },
+          email: {
+            $first: "$userData.email",
+          },
+          quizInformation: {
+            $addToSet: {
+              pointsEarned: "$pointsEarned",
+              quizName: "$quizData.quizName",
+            },
+          },
+        },
+      },
+    ]).exec();
+    if (quizResults.length === 0) throw new NetworkError("Quiz not found", 400);
+    return quizResults;
+  }
 }
 
 export default new QuizDBService();
