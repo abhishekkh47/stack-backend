@@ -177,7 +177,7 @@ export const NOTIFICATION_KEYS = {
   ACCOUNT_CLOSED: "account_closed",
   KYC_FAILURE: "kyc_failure",
   KYC_PENDING: "kyc_pending",
-  FREIND_REFER: "refer_freind",
+  FRIEND_REFER: "refer_friend",
   GIFT_CARD_ISSUED: "gift_card_issued",
   EARN_STACK_COINS_AFTER_KYC_APPROVED: "earn_stack_coins_after_kyc_approved",
 };
