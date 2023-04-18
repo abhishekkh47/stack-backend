@@ -151,7 +151,7 @@ export const recurringDepositHandler = async () => {
             executedQuoteId: contributions.data.included[0].id,
             unitCount: null,
           };
-          await transactionArray.push(transactionData);
+          transactionArray.push(transactionData);
           let bulWriteOperation = {
             updateOne: {
               filter: { _id: user._id },
