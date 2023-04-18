@@ -26,6 +26,7 @@ import {
   createAccount,
   getAccountStatusByAccountId,
   NOTIFICATION,
+  NOTIFICATIONS,
   NOTIFICATION_KEYS,
   Route,
 } from "@app/utility";
@@ -231,13 +232,16 @@ class WebHookController extends BaseController {
                     admin,
                     false
                   );
+                  const { key, title, message, nameForTracking } =
+                    NOTIFICATIONS.REDEEM_BTC_SUCCESS;
                   await DeviceTokenService.sendUserNotification(
                     parentChildDetails.firstChildId,
-                    NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
-                    NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
-                    NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+                    key,
+                    title,
+                    message,
                     null,
-                    parentChildDetails.firstChildId
+                    parentChildDetails.firstChildId,
+                    nameForTracking
                   );
                 }
               }
@@ -428,13 +432,16 @@ class WebHookController extends BaseController {
                       admin,
                       false
                     );
+                    const { key, title, message, nameForTracking } =
+                      NOTIFICATIONS.REDEEM_BTC_SUCCESS;
                     await DeviceTokenService.sendUserNotification(
                       parentChildDetails.firstChildId,
-                      NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
-                      NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
-                      NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+                      key,
+                      title,
+                      message,
                       null,
-                      parentChildDetails.firstChildId
+                      parentChildDetails.firstChildId,
+                      nameForTracking
                     );
                   }
                 }

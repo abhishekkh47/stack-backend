@@ -7,6 +7,7 @@ import {
 } from "@app/utility";
 import envData from "@app/config/index";
 import moment from "moment";
+import { PT_REFERENCE_TEXT } from "../../utility/constants";
 class TradingService {
   /**
    * @description complete internal transfer action
@@ -82,7 +83,7 @@ class TradingService {
                   ? accountIdDetails.accountId
                   : accountIdDetails,
               "asset-id": crypto.assetId,
-              reference: "$5 BTC gift from Stack",
+              reference: PT_REFERENCE_TEXT,
               "hot-transfer": true,
             },
           },

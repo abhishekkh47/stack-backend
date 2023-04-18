@@ -49,13 +49,13 @@ import {
   zohoCrmService,
   DeviceTokenService,
   ScriptService,
-  userService,
   tradingService,
 } from "@app/services/v1";
 import { UserService } from "@app/services/v3";
 import quizContentData from "@app/static/quizContent.json";
 import userDbService from "@app/services/v4/user.db.service";
 import quizDbService from "@app/services/v4/quiz.db.service";
+import userService from "@app/services/v2/user.service";
 
 class ScriptController extends BaseController {
   /**
@@ -1299,6 +1299,20 @@ class ScriptController extends BaseController {
       console.log(error);
       return this.BadRequest(ctx, error.message);
     }
+  }
+
+  @Route({ path: "/send-referral-push-for-test", method: HttpMethod.POST })
+  public async sendReferralPushForTest(ctx: any) {
+    const { userId, deviceToken, receiverName } = ctx.request.body;
+
+    await userService.sendNotificationForUserReferral(
+      userId,
+      [deviceToken],
+      NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+      receiverName
+    );
+
+    return this.Ok(ctx, { message: "success" });
   }
 }
 

@@ -18,13 +18,7 @@ import {
   EUserType,
   HttpMethod,
 } from "@app/types";
-import {
-  removeImage,
-  Route,
-  uploadFileS3,
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-} from "@app/utility";
+import { removeImage, Route, uploadFileS3, NOTIFICATIONS } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
 
@@ -138,13 +132,16 @@ class UserController extends BaseController {
             true
           );
           if (headers["build-number"]) {
+            const { key, title, message, nameForTracking } =
+              NOTIFICATIONS.REDEEM_BTC_SUCCESS;
             await DeviceTokenService.sendUserNotification(
               userExists._id,
-              NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
-              NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
-              NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+              key,
+              title,
+              message,
               null,
-              userExists._id
+              userExists._id,
+              nameForTracking
             );
           }
         }

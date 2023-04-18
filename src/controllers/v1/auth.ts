@@ -52,6 +52,7 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
   TEEN_SIGNUP_FUNNEL,
+  PT_REFERENCE_TEXT,
 } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
 import BaseController from "@app/controllers/base";
@@ -441,7 +442,7 @@ class AuthController extends BaseController {
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
+                    reference: PT_REFERENCE_TEXT,
                     "hot-transfer": true,
                   },
                 },
@@ -1485,7 +1486,7 @@ class AuthController extends BaseController {
           }
           if (!childFirstName) {
             return this.Ok(ctx, {
-              message: "You are inviting your teen in stack",
+              message: "You are inviting your teen in Jetson",
             });
           }
           /**

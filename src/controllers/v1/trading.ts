@@ -59,6 +59,7 @@ import {
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
   PLAID_ITEM_ERROR,
+  PT_REFERENCE_TEXT,
 } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
 import BaseController from "@app/controllers/base";
@@ -248,7 +249,7 @@ class TradingController extends BaseController {
                         ? accountIdDetails.accountId
                         : accountIdDetails,
                     "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
+                    reference: PT_REFERENCE_TEXT,
                     "hot-transfer": true,
                   },
                 },
@@ -527,7 +528,7 @@ class TradingController extends BaseController {
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
+                    reference: PT_REFERENCE_TEXT,
                     "hot-transfer": true,
                   },
                 },

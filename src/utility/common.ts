@@ -103,13 +103,17 @@ export const getQuizCooldown = async (headers) => {
 
 export const getQuizImageAspectRatio = async (headers) => {
   let admin = await AdminTable.findOne({});
+  let aspectRatio = Object.values(admin.quizImageAspectRatio).pop();
   if (!headers["build-version"]) {
-    return null;
+    return aspectRatio;
   }
   let key = Object.keys(admin.quizImageAspectRatio).find((x) => {
     if (x == headers["build-version"]) {
       return x;
     }
   });
+  if (!admin.quizImageAspectRatio[key]) {
+    return aspectRatio;
+  }
   return admin.quizImageAspectRatio[key];
 };

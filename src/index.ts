@@ -35,7 +35,7 @@ const server = (async () => {
       console.log(ctx.path, "path");
       if (
         [
-          "/update-primetrust-data",
+          "/api/v1/update-primetrust-data",
           "/api/v2/upload-id-proof",
           "/api/v1/upload-id-proof",
         ].filter((item) => ctx.path.includes(item)).length > 0

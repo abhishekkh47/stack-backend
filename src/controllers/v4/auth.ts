@@ -1,10 +1,19 @@
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { AdminTable, OtpTable, UserTable } from "@app/model";
+import { AdminTable, OtpTable, UserTable, ParentChildTable } from "@app/model";
 import { TokenService, zohoCrmService } from "@app/services/v1";
 import { AnalyticsService } from "@app/services/v4";
-import { EOTPVERIFICATION, EUserType, HttpMethod } from "@app/types";
+import {
+  EOTPVERIFICATION,
+  EUserType,
+  HttpMethod,
+  EAUTOAPPROVAL,
+} from "@app/types";
 import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
-import { getMinutesBetweenDates, Route } from "@app/utility";
+import {
+  getMinutesBetweenDates,
+  Route,
+  makeUniqueReferalCode,
+} from "@app/utility";
 import {
   ANALYTICS_EVENTS,
   PARENT_SIGNUP_FUNNEL,
@@ -224,6 +233,230 @@ class AuthController extends BaseController {
           );
           return this.Ok(ctx, {
             message: "Your mobile number is changed successfully",
+          });
+        }
+      }
+    );
+  }
+
+  /**
+   * @description This method is used to check whether parent and child exists.
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/check-account-ready-to-link", method: HttpMethod.POST })
+  @Auth()
+  @PrimeTrustJWT(true)
+  public async checkAccountReadyToLink(ctx: any) {
+    const input = ctx.request.body;
+    return validation.checkAccountReadyToLinkValidation(
+      input,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const {
+            mobile,
+            childMobile,
+            email,
+            childEmail,
+            childFirstName,
+            childLastName,
+          } = input;
+          let query: any = {
+            mobile: childMobile,
+          };
+          let parentIfExists = await UserTable.findOne({
+            _id: ctx.request.user._id,
+          });
+          if (!parentIfExists) {
+            return this.BadRequest(ctx, "User not found");
+          }
+
+          let checkChildMobileAlreadyExists = await UserTable.findOne({
+            mobile: childMobile,
+          });
+
+          if (
+            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.type != EUserType.TEEN
+          ) {
+            return this.BadRequest(
+              ctx,
+              "The mobile no. already belongs to a parent"
+            );
+          }
+
+          if (
+            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.type == EUserType.TEEN &&
+            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.parentMobile !== mobile
+          ) {
+            return this.BadRequest(
+              ctx,
+              "The mobile is already linked to another parent"
+            );
+          }
+
+          /**
+           * migrate parent from userdraft to user table
+           */
+          const uniqueReferralCode = await makeUniqueReferalCode();
+          if (childEmail) {
+            query = {
+              ...query,
+              email: { $regex: `${childEmail}$`, $options: "i" },
+            };
+          }
+
+          let user = await UserTable.findOne(query);
+
+          const baseChildUser = {
+            firstName: childFirstName ? childFirstName : user.firstName,
+            lastName: childLastName ? childLastName : user.lastName,
+            mobile: childMobile ? childMobile : user.mobile,
+            parentEmail: email,
+            parentMobile: mobile,
+            type: EUserType.TEEN,
+            isParentFirst: false,
+            isAutoApproval: EAUTOAPPROVAL.ON,
+          };
+
+          if (user) {
+            await UserTable.findByIdAndUpdate(
+              {
+                _id: user._id,
+              },
+              {
+                $set: baseChildUser,
+              },
+              { new: true }
+            );
+
+            const updateObject = {
+              email: parentIfExists.email,
+              dob: parentIfExists.dob,
+              type: parentIfExists.type,
+              mobile: input.mobile,
+              firstName: parentIfExists.firstName,
+              lastName: parentIfExists.lastName,
+              referralCode: uniqueReferralCode,
+              isPhoneVerified: parentIfExists.isPhoneVerified,
+            };
+
+            await UserTable.findOneAndUpdate(
+              { _id: parentIfExists._id },
+              {
+                $set: updateObject,
+              },
+              {
+                new: true,
+              }
+            );
+
+            await ParentChildTable.findOneAndUpdate(
+              {
+                userId: parentIfExists._id,
+              },
+              {
+                $set: {
+                  contactId: null,
+                  firstChildId: user._id,
+                  teens: [{ childId: user._id, accountId: null }],
+                },
+              },
+              { upsert: true, new: true }
+            );
+
+            /**
+             * Add zoho crm
+             */
+            await zohoCrmService.searchAccountsAndUpdateDataInCrm(
+              ctx.request.zohoAccessToken,
+              childMobile ? childMobile : user.mobile,
+              parentIfExists,
+              "false"
+            );
+
+            AnalyticsService.identifyOnce(
+              parentIfExists._id,
+              "Teen First",
+              true
+            );
+
+            return this.Ok(ctx, {
+              message: "Account successfully linked!",
+              isAccountFound: true,
+            });
+          }
+          /**
+           * This validation is there to keep if any child sign up with parent email or mobile
+           */
+          if (childEmail) {
+            let checkEmailExists = await UserTable.findOne({
+              email: childEmail,
+            });
+            if (checkEmailExists) {
+              return this.BadRequest(ctx, "Child Email Already Exists");
+            }
+          }
+          let checkMobileExists = await UserTable.findOne({
+            mobile: childMobile,
+          });
+          if (checkMobileExists) {
+            return this.BadRequest(ctx, "Child Mobile Already Exists");
+          }
+          if (!childFirstName) {
+            return this.Ok(ctx, {
+              message: "You are inviting your teen in Jetson",
+            });
+          }
+          /**
+           * Generate referal code when user sign's up.
+           */
+          const createTeenObject = {
+            ...baseChildUser,
+            email: childEmail,
+            referralCode: uniqueReferralCode,
+            isParentFirst: true,
+          };
+          let createChild = await UserTable.create(createTeenObject);
+
+          await ParentChildTable.findOneAndUpdate(
+            {
+              userId: parentIfExists._id,
+            },
+            {
+              $set: {
+                contactId: null,
+                firstChildId: createChild._id,
+                teens: [{ childId: createChild._id, accountId: null }],
+              },
+            },
+            { upsert: true, new: true }
+          );
+          let preTreenAccountExists = await UserTable.find({
+            _id: { $ne: createChild._id },
+            parentMobile: mobile,
+            isParentFirst: true,
+          });
+          if (preTreenAccountExists.length > 0) {
+            await UserTable.deleteMany({
+              _id: { $ne: createChild._id },
+              parentMobile: mobile,
+              isParentFirst: true,
+            });
+          }
+
+          AnalyticsService.identifyOnce(
+            parentIfExists._id,
+            "Teen First",
+            false
+          );
+
+          return this.Ok(ctx, {
+            message: "Invite sent!",
+            isAccountFound: false,
           });
         }
       }
