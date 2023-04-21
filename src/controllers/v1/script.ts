@@ -52,7 +52,6 @@ import {
   tradingService,
 } from "@app/services/v1";
 import { UserService } from "@app/services/v3";
-import quizContentData from "@app/static/quizContent.json";
 import userDbService from "@app/services/v4/user.db.service";
 import quizDbService from "@app/services/v4/quiz.db.service";
 import userService from "@app/services/v2/user.service";
@@ -1155,6 +1154,7 @@ class ScriptController extends BaseController {
   @Route({ path: "/quiz-content", method: HttpMethod.POST })
   public async storeQuizContent(ctx: any) {
     try {
+      const { quizContentData } = ctx.request.body;
       if (!quizContentData || quizContentData.length == 0) {
         return this.BadRequest(ctx, "Please add Quiz Content");
       }
