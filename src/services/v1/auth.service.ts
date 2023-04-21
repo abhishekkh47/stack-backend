@@ -28,6 +28,13 @@ class AuthService {
     };
   }
 
+  public async getInternalJwtAuthInfo(password: string) {
+    return {
+      password: password,
+      issuedOn: Date.now(),
+    };
+  }
+
   public async updatePrimeTrustData(
     input: any,
     userExists: any,

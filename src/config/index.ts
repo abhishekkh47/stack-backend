@@ -136,5 +136,8 @@ export default {
   },
   get AMPLITUDE_KEY() {
     return process.env.AMPLITUDE_KEY;
-  }
+  },
+  get INTERNAL_USER_PASSWORD() {
+    return process.env.INTERNAL_USER_PASSWORD;
+  },
 };
