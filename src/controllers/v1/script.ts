@@ -1,7 +1,7 @@
 import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
 import { DripshopTable } from "@app/model/dripshop";
 import moment from "moment";
-import { PrimeTrustJWT } from "@app/middleware";
+import { InternalUserAuth, PrimeTrustJWT } from "@app/middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
@@ -20,6 +20,7 @@ import {
   QuizTopicTable,
   QuizTable,
   DeletedUserTable,
+  AdminTable,
 } from "@app/model";
 import {
   EAction,
@@ -50,12 +51,13 @@ import {
   DeviceTokenService,
   ScriptService,
   tradingService,
+  AuthService,
 } from "@app/services/v1";
 import { UserService } from "@app/services/v3";
-import quizContentData from "@app/static/quizContent.json";
 import userDbService from "@app/services/v4/user.db.service";
 import quizDbService from "@app/services/v4/quiz.db.service";
 import userService from "@app/services/v2/user.service";
+import envData from "@app/config";
 
 class ScriptController extends BaseController {
   /**
@@ -64,6 +66,7 @@ class ScriptController extends BaseController {
    * @returns
    */
   @Route({ path: "/update-screen-status-script", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async updateScreenStatusScript(ctx: any) {
     const reqParam = ctx.request.body;
     const { email } = reqParam;
@@ -135,6 +138,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-crypto-in-db", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT()
   public async addCryptoToDB(ctx: any) {
     let token = ctx.request.primeTrustToken;
@@ -205,6 +209,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/delete-data-after-30d", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async deleteDataAfter30D(ctx: any) {
     let dateBefore30Days = new Date(Date.now() - 60 * 60 * 24 * 30 * 1000); // 30 days before date
     const findQuery = {
@@ -253,6 +258,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-gift-card", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addGiftCard(ctx: any) {
     let token = await getPrimeTrustJWTToken();
     const crypto = await CryptoTable.findOne({ symbol: "BTC" });
@@ -440,6 +446,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-dripshop-offers", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addDripshop(ctx: any) {
     /**
      * get all the crypto and push in array to insert all together
@@ -466,6 +473,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-quiz-coins", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addQuizCoins(ctx: any) {
     let allQuizCoinData = await QuizResult.aggregate([
       {
@@ -512,6 +520,7 @@ class ScriptController extends BaseController {
    * @return  {*}
    */
   @Route({ path: "/add-userdata-to-crm", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async addUserDataToCrm(ctx: any) {
     /**
@@ -548,6 +557,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(false)
   public async kycApproveStaging(ctx: any) {
     const { primeTrustToken } = ctx.request;
@@ -571,6 +581,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-phone-verification-status", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addPhoneVerificationStatus(ctx: any) {
     const allUserInfo = await UserTable.find();
     let userToUpdateStatus = allUserInfo.map((user) => {
@@ -602,6 +613,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-onboarding-quiz", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addOnboardingQuiz(ctx: any) {
     const reqParam = ctx.request.body;
     await QuizQuestionTable.insertMany(reqParam.onboardingQuizData);
@@ -613,6 +625,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/unset-fields-in-db", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async unsetFieldsInDb(ctx: any) {
     /**
      * Clean up user fields , userdraft fields and  parent child table
@@ -662,6 +675,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/delete-userdraft-data", method: HttpMethod.DELETE })
+  @InternalUserAuth()
   public async deleteUserdraftSelfData(ctx: any) {
     const deleteDataQuery = {
       $or: [{ type: { $in: [null, 3] } }, { email: null }, { dob: null }],
@@ -685,6 +699,7 @@ class ScriptController extends BaseController {
     path: "/migrate-teen-data",
     method: HttpMethod.POST,
   })
+  @InternalUserAuth()
   public async migrateTeenDatatoUser(ctx: any) {
     const getTeenUserdraftData = await UserDraftTable.find({
       type: EUserType.TEEN,
@@ -772,6 +787,7 @@ class ScriptController extends BaseController {
     path: "/migrate-parent-data",
     method: HttpMethod.POST,
   })
+  @InternalUserAuth()
   public async migrateParentDatatoUser(ctx: any) {
     const getAllParentData = await UserDraftTable.find({
       type: EUserType.PARENT,
@@ -926,6 +942,7 @@ class ScriptController extends BaseController {
    * @returns
    */
   @Route({ path: "/delete-data", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async deleteDataFromDB(ctx: any) {
     const userId = ctx.request.body.userId;
@@ -952,6 +969,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/update-onboardingquiz-status", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async updateOnboardingQuizStatus(ctx: any) {
     await UserTable.updateMany(
       {
@@ -972,6 +990,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/portfolio-asset-fix", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async fixPortfolioAssetBalance(ctx: any) {
     let jwtToken = ctx.request.primeTrustToken;
@@ -1072,6 +1091,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/add-quiz-topics", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addQuizTopics(ctx: any) {
     try {
       const reqBody = ctx.request.body;
@@ -1111,6 +1131,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/add-quiz-content", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addQuizContent(ctx: any) {
     try {
       /**
@@ -1131,6 +1152,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/add-default-reminder-status", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addDefaultReminderStatus(ctx: any) {
     try {
       const updatedData = await UserTable.updateMany(
@@ -1153,8 +1175,10 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/quiz-content", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async storeQuizContent(ctx: any) {
     try {
+      const { quizContentData } = ctx.request.body;
       if (!quizContentData || quizContentData.length == 0) {
         return this.BadRequest(ctx, "Please add Quiz Content");
       }
@@ -1204,6 +1228,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/get-prime-trust-balance", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT()
   public async getBalancePT(ctx: any) {
     try {
@@ -1242,6 +1267,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/delete-crm-users", method: HttpMethod.DELETE })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async deleteCRMUsers(ctx: any) {
     try {
@@ -1265,6 +1291,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/sync-quiz-in-zoho", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async syncZohoCrmQuizInfoWithDB(ctx: any) {
     try {
@@ -1302,6 +1329,7 @@ class ScriptController extends BaseController {
   }
 
   @Route({ path: "/send-referral-push-for-test", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async sendReferralPushForTest(ctx: any) {
     const { userId, deviceToken, receiverName } = ctx.request.body;
 
@@ -1312,6 +1340,12 @@ class ScriptController extends BaseController {
       receiverName
     );
 
+    return this.Ok(ctx, { message: "success" });
+  }
+
+  @Route({ path: "/abc", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async aff(ctx: any) {
     return this.Ok(ctx, { message: "success" });
   }
 }

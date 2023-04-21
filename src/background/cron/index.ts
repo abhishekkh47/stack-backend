@@ -6,6 +6,7 @@ import { recurringDepositHandler } from "./recurring-deposit";
 import { redeemGiftHandler } from "./redeem-gift";
 import { challengeAvailableHandler } from "./quiz";
 import { kycReminderHandler } from "./user";
+import { rotateTokenHandler } from "./admin";
 
 const isUAT = config.APP_ENVIRONMENT === "UAT";
 
@@ -63,6 +64,15 @@ const JOBS = [
     disabled: false,
     expression: "*/30 * * * *",
     func: kycReminderHandler,
+  },
+  {
+    /**
+     * Logic for rotating auth tokens from admin
+     * Time: at 00:00 am every day
+     */
+    disabled: false,
+    expression: "0 0 * * *",
+    func: rotateTokenHandler,
   },
 ];
 
