@@ -140,4 +140,13 @@ export default {
   get INTERNAL_USER_PASSWORD() {
     return process.env.INTERNAL_USER_PASSWORD;
   },
+  get SHEET_ID() {
+    return process.env.SHEET_ID;
+  },
+  get CLIENT_EMAIL() {
+    return process.env.CLIENT_EMAIL;
+  },
+  get GOOGLE_SERVICEACCOUNT_PRIVATE_KEY() {
+    return process.env.GOOGLE_SERVICEACCOUNT_PRIVATE_KEY;
+  },
 };
