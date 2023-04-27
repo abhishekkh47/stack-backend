@@ -1176,7 +1176,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/quiz-content", method: HttpMethod.POST })
-  // @InternalUserAuth()
+  @InternalUserAuth()
   public async storeQuizContent(ctx: any) {
     try {
       const { quizNums } = ctx.request.body;
