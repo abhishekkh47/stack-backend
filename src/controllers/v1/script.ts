@@ -58,6 +58,7 @@ import userDbService from "@app/services/v4/user.db.service";
 import quizDbService from "@app/services/v4/quiz.db.service";
 import userService from "@app/services/v2/user.service";
 import envData from "@app/config";
+import { GoogleSpreadsheet } from "google-spreadsheet";
 
 class ScriptController extends BaseController {
   /**
@@ -1175,50 +1176,38 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/quiz-content", method: HttpMethod.POST })
-  @InternalUserAuth()
+  // @InternalUserAuth()
   public async storeQuizContent(ctx: any) {
     try {
-      const { quizContentData } = ctx.request.body;
-      if (!quizContentData || quizContentData.length == 0) {
-        return this.BadRequest(ctx, "Please add Quiz Content");
+      const { quizNums } = ctx.request.body;
+      if (quizNums.length === 0) {
+        return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
-      const topicIdIfExists = quizContentData.every((x) => x.topicId);
-      if (!topicIdIfExists) {
-        return this.BadRequest(ctx, "Quiz Topic is Required");
-      }
-      const quizNameIfExists = quizContentData.every((x) => x.quizName);
-      if (!quizNameIfExists) {
-        return this.BadRequest(ctx, "Quiz Image is Required");
-      }
-      const quizImageIfExists = quizContentData.every((x) => x.quizImage);
-      if (!quizImageIfExists) {
-        return this.BadRequest(ctx, "Quiz Image is Required");
-      }
-      const questionDataIfExists = quizContentData.every((x) => x.questionData);
-      if (!questionDataIfExists) {
-        return this.BadRequest(ctx, "Quiz Question is Required");
-      }
-      let quizQuestions = [];
-      await Promise.all(
-        quizContentData.map(async (data: any, index) => {
-          const quiz = await QuizTable.create({
-            quizName: data.quizName,
-            topicId: data.topicId,
-            image: data.quizImage,
-          });
-          data.questionData = data.questionData.map((x) => ({
-            ...x,
-            quizId: quiz._id,
-          }));
-          quizQuestions = quizQuestions.concat(data.questionData);
-        })
+      let investingTopic = await QuizTopicTable.findOne({ topic: "Investing" });
+      /**
+       * Read Spreadsheet
+       */
+      const rows = await ScriptService.readSpreadSheet();
+      /**
+       * Convert Spreadsheet to JSON
+       */
+      const quizContentData = await ScriptService.convertSpreadSheetToJSON(
+        investingTopic._id,
+        quizNums,
+        rows
       );
-      // /**
-      //  * Create Quiz Question
-      //  */
-      const questions = await QuizQuestionTable.insertMany(quizQuestions);
-      return this.Ok(ctx, { message: "Success", data: { questions } });
+      if (quizContentData.length === 0) {
+        return this.BadRequest(ctx, "Quiz Content Not Found");
+      }
+      const isAddedToDb = await ScriptService.addQuizContentsToDB(
+        quizContentData
+      );
+      if (!isAddedToDb) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: quizContentData });
     } catch (error) {
+      console.log(error);
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
