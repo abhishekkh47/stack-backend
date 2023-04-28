@@ -29,6 +29,8 @@ class QuizDBService {
         $sort: { createdAt: 1 },
       },
       {
+        // type = 2 means new quiz, which means we are pulling the new space school quiz
+        // status = 1 means active quizzes
         $match: {
           type: 2,
           status: 1,

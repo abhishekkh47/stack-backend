@@ -30,3 +30,17 @@ export const QuizTopicTable = mongoose.model<IQuizTopicSchema>(
   "quizTopic",
   schema
 );
+
+/*
+
+Topic, aka, category:
+
+- Type
+ type = 1 means new space school teen quizzes.
+- Category:
+ Crypto - for parent quizzes
+ Onboarding Quiz Topic - for teens during the onboarding
+
+Topic is currently being used for deciding whether a quiz is new or not (by the type field)
+
+*/
