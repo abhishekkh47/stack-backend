@@ -33,10 +33,7 @@ import {
   Route,
   getBalance,
 } from "@app/utility";
-import {
-  NOTIFICATIONS,
-  PARENT_SIGNUP_FUNNEL,
-} from "@app/utility/constants";
+import { NOTIFICATIONS, PARENT_SIGNUP_FUNNEL } from "@app/utility/constants";
 import { validation } from "@app/validations/v1/apiValidation";
 import BaseController from "@app/controllers/base";
 
@@ -144,7 +141,8 @@ class TradingController extends BaseController {
                   false
                 );
                 if (headers["build-number"]) {
-                  const { key, title, message, nameForTracking } = NOTIFICATIONS.REDEEM_BTC_SUCCESS
+                  const { key, title, message, nameForTracking } =
+                    NOTIFICATIONS.REDEEM_BTC_SUCCESS;
                   await DeviceTokenService.sendUserNotification(
                     parentChildDetails.firstChildId,
                     key,
@@ -152,7 +150,7 @@ class TradingController extends BaseController {
                     message,
                     null,
                     parentChildDetails.firstChildId,
-                    nameForTracking,
+                    nameForTracking
                   );
                 }
               }

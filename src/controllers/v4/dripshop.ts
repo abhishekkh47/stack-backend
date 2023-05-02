@@ -69,8 +69,15 @@ class DripshopController extends BaseController {
               updateParentCoinQuery
             );
           }
-
-          return this.Ok(ctx, { message: "Transaction Processed!" });
+          const userInfo = await UserDBService.getUserInfo(user._id);
+          const totalStackCoins =
+            userInfo.quizCoins +
+            userInfo.preLoadedCoins +
+            userInfo.parentQuizCoins;
+          return this.Ok(ctx, {
+            message: "Transaction Processed!",
+            totalStackCoins,
+          });
         }
       }
     );
