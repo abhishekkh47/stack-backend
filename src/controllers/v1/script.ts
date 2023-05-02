@@ -1331,12 +1331,6 @@ class ScriptController extends BaseController {
 
     return this.Ok(ctx, { message: "success" });
   }
-
-  @Route({ path: "/abc", method: HttpMethod.POST })
-  @InternalUserAuth()
-  public async aff(ctx: any) {
-    return this.Ok(ctx, { message: "success" });
-  }
 }
 
 export default new ScriptController();

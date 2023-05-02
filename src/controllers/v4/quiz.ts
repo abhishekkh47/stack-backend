@@ -463,19 +463,10 @@ class QuizController extends BaseController {
     } else {
       childExists = await ParentChildTable.findOne({
         firstChildId: userIfExists._id,
-      }).populate("userId", ["_id", "preLoadedCoins"]);
+      }).populate("userId", ["_id", "quizCoins"]);
     }
     const checkQuizExists = await quizService.checkQuizExists({
-      $or: [
-        { userId: new mongoose.Types.ObjectId(user._id) },
-        {
-          userId: childExists
-            ? userIfExists.type == EUserType.PARENT
-              ? new mongoose.Types.ObjectId(childExists.userId._id)
-              : new mongoose.Types.ObjectId(childExists.firstChildId._id)
-            : null,
-        },
-      ],
+      $or: [{ userId: new mongoose.Types.ObjectId(user._id) }],
       isOnBoardingQuiz: false,
     });
     const dataToSent = {
@@ -497,15 +488,10 @@ class QuizController extends BaseController {
     /**
      * Get Stack Point Earned
      */
-    if (checkQuizExists.length > 0) {
-      dataToSent.totalStackPointsEarned += checkQuizExists[0].sum;
-    }
-    const totalStackCoins = await QuizDBService.getTotalCoinsFromQuiz(
-      user._id,
-      childExists,
-      userIfExists
-    );
-    dataToSent.totalStackPointsEarnedTop += totalStackCoins;
+    let parentCoins = childExists.userId.quizCoins;
+    dataToSent.totalStackPointsEarned += userIfExists.quizCoins;
+    dataToSent.totalStackPointsEarnedTop +=
+      userIfExists.quizCoins + parentCoins;
 
     /**
      * Get Quiz Question Count
