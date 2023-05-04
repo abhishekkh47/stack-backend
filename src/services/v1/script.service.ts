@@ -9,7 +9,6 @@ import json2csv from "json2csv";
 import fs from "fs";
 import { Transform } from "stream";
 import moment from "moment";
-import path from "path";
 
 class ScriptService {
   public async sandboxApproveKYC(
