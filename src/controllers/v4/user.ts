@@ -393,7 +393,6 @@ class UserController extends BaseController {
     const userIfExists: any = await UserTable.findOne({
       _id: ctx.request.user._id,
     });
-    console.log(userIfExists, "userIfExists");
     if (
       !userIfExists ||
       (userIfExists && userIfExists.type !== EUserType.TEEN)
