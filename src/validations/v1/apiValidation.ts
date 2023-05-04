@@ -406,7 +406,6 @@ export const validation = {
         .disallow(Joi.ref("mobile"))
         .required(),
       email: Joi.string().email().required(),
-      childEmail: Joi.string().email().allow("").disallow(Joi.ref("email")),
       childFirstName: Joi.string()
         .min(1)
         .allow("")

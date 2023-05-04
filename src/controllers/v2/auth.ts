@@ -867,8 +867,6 @@ class AuthController extends BaseController {
             );
 
             if (updateUser.type == EUserType.SELF) {
-              const crypto = await CryptoTable.findOne({ symbol: "BTC" });
-
               const newUserDetail = await UserDBService.createUserAccount(
                 updateUser,
                 reqParam.mobile
@@ -879,7 +877,7 @@ class AuthController extends BaseController {
                 _id: ctx.request.user._id,
               });
 
-              let checkTransactionExists = await TransactionTable.findOne({
+              const checkTransactionExists = await TransactionTable.findOne({
                 userId: newUserDetail._id,
               });
               if (
@@ -887,6 +885,7 @@ class AuthController extends BaseController {
                 newUserDetail.isGiftedCrypto == 0 &&
                 !checkTransactionExists
               ) {
+                const crypto = await CryptoTable.findOne({ symbol: "BTC" });
                 await TransactionDBService.createBtcGiftedTransaction(
                   newUserDetail._id,
                   crypto,
