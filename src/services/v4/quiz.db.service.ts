@@ -3,6 +3,7 @@ import {
   get72HoursAhead,
   getQuizCooldown,
   ANALYTICS_EVENTS,
+  XP_POINTS,
 } from "@app/utility";
 import {
   ParentChildTable,
@@ -279,6 +280,7 @@ class QuizDBService {
 
     const pointsEarnedFromQuiz =
       everyCorrectAnswerPoints * reqParam.solvedQuestions.length;
+
     const dataToCreate = {
       topicId: quizExists.topicId,
       quizId: quizExists._id,
@@ -287,13 +289,23 @@ class QuizDBService {
       pointsEarned: pointsEarnedFromQuiz,
     };
     await QuizResult.create(dataToCreate);
+    let incrementObj: any = {
+      quizCoins: pointsEarnedFromQuiz,
+    };
     let query: any = {
-      $inc: {
-        quizCoins: pointsEarnedFromQuiz,
-      },
+      $inc: incrementObj,
     };
     if (isTeen) {
-      query = { ...query, $set: { isQuizReminderNotificationSent: false } };
+      const correctAnswerXPPointsEarned =
+        reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
+      const totalXPPoints =
+        correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ;
+      incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
+      query = {
+        ...query,
+        $inc: incrementObj,
+        $set: { isQuizReminderNotificationSent: false },
+      };
     }
     await UserTable.updateOne({ _id: userId }, query);
 

@@ -150,21 +150,22 @@ export const NOTIFICATIONS = {
     key: "redeem_btc_success",
     title: "Hi! It's Jetson.",
     message: "🎉 We just sent you $5 Bitcoin. Time to show off!",
-    nameForTracking: "Bitcoin redeemed", 
+    nameForTracking: "Bitcoin redeemed",
   },
   CHALLENGE_AVAILABLE: {
     key: "challenge_available",
     title: "Hi! It's Jetson.",
     message: "⏰ It's time for your next challenge. Let's Go!",
-    nameForTracking: "New challenge available", 
+    nameForTracking: "New challenge available",
   },
   COMPLETE_KYC_REMINDER: {
-    key:  "complete_kyc_reminder",
+    key: "complete_kyc_reminder",
     title: "Hi! It's Jetson.",
-    message: "⏰ Complete the onboarding to unlock your child’s financial future.",
-    nameForTracking: "Parent KYC reminder 1", 
+    message:
+      "⏰ Complete the onboarding to unlock your child’s financial future.",
+    nameForTracking: "Parent KYC reminder 1",
   },
-}
+};
 
 export const PT_REFERENCE_TEXT = "$5 BTC gift from Jetson";
 
@@ -230,4 +231,9 @@ export const ANALYTICS_EVENTS = {
   UPLOAD_DL_SUBMITTED: "Upload DL Submitted",
   CHALLENGE_COMPLETED: "Challenge Completed",
   PUSH_NOTIFICATION_SENT: "Push Notification Sent",
+};
+
+export const XP_POINTS = {
+  CORRECT_ANSWER: 5,
+  COMPLETED_QUIZ: 10,
 };

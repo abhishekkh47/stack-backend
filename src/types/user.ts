@@ -17,6 +17,7 @@ export interface IUser extends IAccount {
   isOnboardingQuizCompleted: boolean;
   isParentOnboardingReminderSent: boolean;
   isQuizReminderNotificationSent: boolean;
+  xpPoints: number;
 }
 
 export interface IAccount {
