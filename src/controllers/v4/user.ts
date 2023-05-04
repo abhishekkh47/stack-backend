@@ -380,7 +380,7 @@ class UserController extends BaseController {
   }
 
   /**
-   * @description This method is used to get ranks of all 20 teens based on highest xp Points
+   * @description This method is used to get ranks of all 20 teens based on highest xpPoints
    * @param ctx
    * @returns {*} => list of teens based on highest ranking xp Points
    */
