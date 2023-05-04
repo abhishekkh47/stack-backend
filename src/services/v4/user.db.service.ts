@@ -273,6 +273,59 @@ class UserDBService {
       );
     }
   }
+
+  /**
+   * @description This method will return ranking of teens based on xpPoints
+   * @param userIfExists
+   * @returns {*}
+   */
+  public async getLeaderboards(userIfExists: any) {
+    let leaderBoardData: any = await UserTable.aggregate([
+      {
+        $match: {
+          type: EUserType.TEEN,
+        },
+      },
+      {
+        $setWindowFields: {
+          sortBy: {
+            xpPoints: -1,
+          },
+          output: {
+            rank: {
+              $documentNumber: {},
+            },
+          },
+        },
+      },
+      {
+        $limit: 20,
+      },
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          firstName: 1,
+          lastName: 1,
+          rank: 1,
+          xpPoints: 1,
+          profilePicture: 1,
+        },
+      },
+    ]).exec();
+    if (leaderBoardData.length === 0) {
+      throw new NetworkError("User Not Found", 400);
+    }
+    const userExistsInLeaderBoard = leaderBoardData.find(
+      (x) => x._id.toString() === userIfExists._id.toString()
+    );
+    let userObject = {
+      _id: userIfExists._id,
+      rank: userExistsInLeaderBoard ? userExistsInLeaderBoard.rank : 21,
+      xpPoints: userIfExists.xpPoints,
+    };
+    return { leaderBoardData, userObject };
+  }
 }
 
 export default new UserDBService();
