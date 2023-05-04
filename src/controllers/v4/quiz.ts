@@ -484,6 +484,7 @@ class QuizController extends BaseController {
           : userIfExists.type == EUserType.TEEN
           ? userIfExists.preLoadedCoins
           : 0,
+      xpPoints: 0,
     };
     /**
      * Get Stack Point Earned
@@ -510,6 +511,9 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
+    userIfExists.type == EUserType.TEEN
+      ? (dataToSent.xpPoints = userIfExists.xpPoints)
+      : (dataToSent.xpPoints = 0);
     dataToSent.quizCooldown = await getQuizCooldown(headers);
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
