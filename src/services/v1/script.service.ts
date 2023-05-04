@@ -4,6 +4,11 @@ import { ObjectId } from "mongodb";
 import envData from "@app/config";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { QuizQuestionTable, QuizTable } from "@app/model";
+import { NetworkError } from "@app/middleware";
+import json2csv from "json2csv";
+import fs from "fs";
+import { Transform } from "stream";
+import moment from "moment";
 
 class ScriptService {
   public async sandboxApproveKYC(
@@ -241,6 +246,173 @@ class ScriptService {
     } catch (err) {
       return false;
     }
+  }
+
+  /**
+   * @description This function is used to get parent-child pairs
+   * @param
+   */
+  public async getParentChildRecords() {
+    let parentChildRecords = await ParentChildTable.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "teens.childId",
+          foreignField: "_id",
+          as: "teensData",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "parentData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$parentData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          parentData: {
+            $ne: null,
+            $exists: true,
+          },
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $and: [
+                {
+                  $gt: [
+                    {
+                      $size: "$teensData",
+                    },
+                    0,
+                  ],
+                },
+              ],
+            },
+            then: "$$KEEP",
+            else: "$$PRUNE",
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: "$teensData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          TimeBetweenCreation: 0,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          ParentCreationTime: "$parentData.createdAt",
+          TeenCreationTime: "$teensData.createdAt",
+          ParentName: {
+            $cond: {
+              if: {
+                $eq: ["$parentData.lastName", null],
+              },
+              then: "$parentData.firstName",
+              else: {
+                $concat: ["$parentData.firstName", " ", "$parentData.lastName"],
+              },
+            },
+          },
+          TeenName: {
+            $cond: {
+              if: {
+                $eq: ["$teensData.lastName", null],
+              },
+              then: "$teensData.firstName",
+              else: {
+                $concat: ["$teensData.firstName", " ", "$teensData.lastName"],
+              },
+            },
+          },
+          ParentNumber: "$parentData.mobile",
+          TeenNumber: "$teensData.mobile",
+          WhoComesFirst: {
+            $cond: [
+              {
+                $gte: ["$teensData.createdAt", "$parentData.createdAt"],
+              },
+              "Teen",
+              "Parent",
+            ],
+          },
+          TimeBetweenCreation: 1,
+        },
+      },
+    ]).exec();
+    if (parentChildRecords.length === 0) {
+      throw new NetworkError("No Parent Child Record Exists", 400);
+    }
+    for await (let data of parentChildRecords) {
+      const parentTime = moment(data.ParentCreationTime).unix();
+      const teenTime = moment(data.TeenCreationTime).unix();
+      let timeDiff =
+        data.WhoComesFirst === "Teen"
+          ? teenTime - parentTime
+          : parentTime - teenTime;
+      timeDiff = timeDiff / 60;
+      data.TimeBetweenCreation = timeDiff;
+    }
+    return parentChildRecords;
+  }
+
+  /**
+   * @description This function is used to convert data to csv
+   * @param ctx
+   * @param parentChildRecords
+   */
+  public async convertDataToCsv(ctx: any, parentChildRecords: any) {
+    const fields = [
+      "ParentName",
+      "TeenName",
+      "ParentNumber",
+      "TeenNumber",
+      "ParentCreationDate",
+      "TeenCreationDate",
+      "WhoComesFirst",
+      "TimeBetweenCreation",
+    ];
+    const filePath = `uploads/${moment().unix()}.csv`;
+    const csv = json2csv.parse(parentChildRecords, fields);
+    const combinedStream = new Transform({
+      transform(chunk, encoding, callback) {
+        callback(null, chunk);
+      },
+    });
+    await new Promise((resolve, reject) => {
+      combinedStream.pipe(fs.createWriteStream(filePath));
+      combinedStream.write(csv);
+      combinedStream.end();
+      combinedStream.on("error", (err) => {
+        reject(err);
+      });
+      combinedStream.on("finish", function () {
+        console.log("file written");
+        resolve(true);
+      });
+    });
+    console.log("processing file");
+    ctx.attachment(filePath);
+    ctx.type = "text/csv";
+    ctx.body = await fs.createReadStream(filePath);
+    return ctx;
   }
 }
 

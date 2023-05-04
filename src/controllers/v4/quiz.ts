@@ -488,7 +488,7 @@ class QuizController extends BaseController {
     /**
      * Get Stack Point Earned
      */
-    let parentCoins = childExists.userId.quizCoins;
+    let parentCoins = childExists?.userId?.quizCoins || 0;
     dataToSent.totalStackPointsEarned += userIfExists.quizCoins;
     dataToSent.totalStackPointsEarnedTop +=
       userIfExists.quizCoins + parentCoins;

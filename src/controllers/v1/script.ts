@@ -57,8 +57,6 @@ import { UserService } from "@app/services/v3";
 import userDbService from "@app/services/v4/user.db.service";
 import quizDbService from "@app/services/v4/quiz.db.service";
 import userService from "@app/services/v2/user.service";
-import envData from "@app/config";
-import { GoogleSpreadsheet } from "google-spreadsheet";
 
 class ScriptController extends BaseController {
   /**
@@ -1330,6 +1328,18 @@ class ScriptController extends BaseController {
     );
 
     return this.Ok(ctx, { message: "success" });
+  }
+
+  /**
+   * @description This method is used to export csv and get parent-child records with time in between them
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/export-parentchild-info", method: HttpMethod.GET })
+  public async exportParentChildInformation(ctx: any) {
+    const parentChildRecords = await ScriptService.getParentChildRecords();
+    await ScriptService.convertDataToCsv(ctx, parentChildRecords);
+    return ctx;
   }
 }
 
