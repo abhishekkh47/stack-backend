@@ -49,6 +49,7 @@ export interface IAccount {
   isRecurring: ERECURRING;
   selectedDeposit: number;
   selectedDepositDate;
+  xpPoints: number;
 }
 
 export interface IAdmin extends IUser {
