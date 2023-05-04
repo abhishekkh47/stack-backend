@@ -9,6 +9,7 @@ import json2csv from "json2csv";
 import fs from "fs";
 import { Transform } from "stream";
 import moment from "moment";
+import path from "path";
 
 class ScriptService {
   public async sandboxApproveKYC(
@@ -396,14 +397,19 @@ class ScriptService {
         callback(null, chunk);
       },
     });
-
-    combinedStream.pipe(fs.createWriteStream(filePath));
-
-    // Push the header row and data rows to the stream
-    combinedStream.write(csv);
-
-    // End the stream
-    combinedStream.end();
+    await new Promise((resolve, reject) => {
+      combinedStream.pipe(fs.createWriteStream(filePath));
+      combinedStream.write(csv);
+      combinedStream.end();
+      combinedStream.on("error", (err) => {
+        reject(err);
+      });
+      combinedStream.on("finish", function () {
+        console.log("file written");
+        resolve(true);
+      });
+    });
+    console.log("processing file");
     ctx.attachment(filePath);
     ctx.type = "text/csv";
     ctx.body = await fs.createReadStream(filePath);
