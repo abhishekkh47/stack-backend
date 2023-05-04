@@ -258,40 +258,24 @@ class AuthController extends BaseController {
             mobile,
             childMobile,
             email,
-            childEmail,
             childFirstName,
             childLastName,
           } = input;
-          let query: any = {
-            mobile: childMobile,
-          };
-          let parentIfExists = await UserTable.findOne({
-            _id: ctx.request.user._id,
-          });
+          let query: any = { mobile: childMobile };
+
+          let parentIfExists = await UserTable.findOne({ _id: ctx.request.user._id });
           if (!parentIfExists) {
             return this.BadRequest(ctx, "User not found");
           }
 
-          let checkChildMobileAlreadyExists = await UserTable.findOne({
-            mobile: childMobile,
-          });
-
-          if (
-            checkChildMobileAlreadyExists &&
-            checkChildMobileAlreadyExists.type != EUserType.TEEN
-          ) {
+          let childIfExists = await UserTable.findOne({ mobile: childMobile });
+          if (childIfExists && childIfExists.type != EUserType.TEEN) {
             return this.BadRequest(
               ctx,
-              "The mobile no. already belongs to a parent"
+              "The mobile number already belongs to a parent"
             );
           }
-
-          if (
-            checkChildMobileAlreadyExists &&
-            checkChildMobileAlreadyExists.type == EUserType.TEEN &&
-            checkChildMobileAlreadyExists &&
-            checkChildMobileAlreadyExists.parentMobile !== mobile
-          ) {
+          if (childIfExists?.type == EUserType.TEEN && childIfExists.parentMobile !== mobile) {
             return this.BadRequest(
               ctx,
               "The mobile is already linked to another parent"
@@ -302,19 +286,13 @@ class AuthController extends BaseController {
            * migrate parent from userdraft to user table
            */
           const uniqueReferralCode = await makeUniqueReferalCode();
-          if (childEmail) {
-            query = {
-              ...query,
-              email: { $regex: `${childEmail}$`, $options: "i" },
-            };
-          }
 
           let user = await UserTable.findOne(query);
 
           const baseChildUser = {
-            firstName: childFirstName ? childFirstName : user.firstName,
-            lastName: childLastName ? childLastName : user.lastName,
-            mobile: childMobile ? childMobile : user.mobile,
+            firstName: childFirstName || user.firstName,
+            lastName: childLastName || user.lastName,
+            mobile: childMobile || user.mobile,
             parentEmail: email,
             parentMobile: mobile,
             type: EUserType.TEEN,
@@ -333,21 +311,19 @@ class AuthController extends BaseController {
               { new: true }
             );
 
-            const updateObject = {
-              email: parentIfExists.email,
-              dob: parentIfExists.dob,
-              type: parentIfExists.type,
-              mobile: input.mobile,
-              firstName: parentIfExists.firstName,
-              lastName: parentIfExists.lastName,
-              referralCode: uniqueReferralCode,
-              isPhoneVerified: parentIfExists.isPhoneVerified,
-            };
-
             await UserTable.findOneAndUpdate(
               { _id: parentIfExists._id },
               {
-                $set: updateObject,
+                $set: {
+                  email: parentIfExists.email,
+                  dob: parentIfExists.dob,
+                  type: parentIfExists.type,
+                  mobile: input.mobile,
+                  firstName: parentIfExists.firstName,
+                  lastName: parentIfExists.lastName,
+                  referralCode: uniqueReferralCode,
+                  isPhoneVerified: parentIfExists.isPhoneVerified,
+                },
               },
               {
                 new: true,
@@ -378,10 +354,17 @@ class AuthController extends BaseController {
               "false"
             );
 
-            AnalyticsService.identifyOnce(
+            await AnalyticsService.identifyOnce(
               parentIfExists._id,
-              "Teen First",
-              true
+              { "Teen First": true },
+            );
+
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.PARENT_SIGNED_UP,
+              undefined,
+              {
+                user_id: user._id,
+              },
             );
 
             return this.Ok(ctx, {
@@ -389,17 +372,7 @@ class AuthController extends BaseController {
               isAccountFound: true,
             });
           }
-          /**
-           * This validation is there to keep if any child sign up with parent email or mobile
-           */
-          if (childEmail) {
-            let checkEmailExists = await UserTable.findOne({
-              email: childEmail,
-            });
-            if (checkEmailExists) {
-              return this.BadRequest(ctx, "Child Email Already Exists");
-            }
-          }
+
           let checkMobileExists = await UserTable.findOne({
             mobile: childMobile,
           });
@@ -416,7 +389,6 @@ class AuthController extends BaseController {
            */
           const createTeenObject = {
             ...baseChildUser,
-            email: childEmail,
             referralCode: uniqueReferralCode,
             isParentFirst: true,
           };
@@ -450,8 +422,7 @@ class AuthController extends BaseController {
 
           AnalyticsService.identifyOnce(
             parentIfExists._id,
-            "Teen First",
-            false
+            { "Teen First": false },
           );
 
           return this.Ok(ctx, {

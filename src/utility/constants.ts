@@ -230,4 +230,6 @@ export const ANALYTICS_EVENTS = {
   UPLOAD_DL_SUBMITTED: "Upload DL Submitted",
   CHALLENGE_COMPLETED: "Challenge Completed",
   PUSH_NOTIFICATION_SENT: "Push Notification Sent",
+  PARENT_SIGNED_UP: "Parent Signed Up",
+  PARENT_KYC_APPROVED: "Parent KYC Approved",
 };

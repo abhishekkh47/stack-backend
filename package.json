@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "./node_modules/.bin/ts-node -r tsconfig-paths/register src/index.ts",
+    "start": "yarn build && ./node_modules/.bin/ts-node -r tsconfig-paths/register src/index.ts",
     "dev": "nodemon --watch 'src/**/*' -e ts --exec ts-node -r tsconfig-paths/register src/index.ts",
     "build-sdk": "cd ./node_modules/circle-sdk; npm run build",
     "format": "prettier --write \"src/**/*.ts\"",
