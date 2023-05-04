@@ -9,6 +9,7 @@ import {
 } from "@app/model";
 import { DeviceTokenService, userService } from "@app/services/v1/index";
 import { TransactionDBService, UserService } from "@app/services/v3";
+import { UserDBService } from "@app/services/v4";
 import { TradingService } from "@app/services/v3/index";
 import {
   ENOTIFICATIONSETTINGS,
@@ -376,6 +377,35 @@ class UserController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is used to get ranks of all 20 teens based on highest xpPoints
+   * @param ctx
+   * @returns {*} => list of teens based on highest ranking xp Points
+   */
+  @Route({
+    path: "/leaderboard",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getLeaderboard(ctx: any) {
+    const userIfExists: any = await UserTable.findOne({
+      _id: ctx.request.user._id,
+    });
+    if (
+      !userIfExists ||
+      (userIfExists && userIfExists.type !== EUserType.TEEN)
+    ) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
+      userIfExists
+    );
+    return this.Ok(ctx, {
+      data: { leaderBoardData, userObject },
+      message: "Success",
+    });
   }
 }
 
