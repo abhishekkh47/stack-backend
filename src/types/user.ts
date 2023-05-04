@@ -17,6 +17,7 @@ export interface IUser extends IAccount {
   isOnboardingQuizCompleted: boolean;
   isParentOnboardingReminderSent: boolean;
   isQuizReminderNotificationSent: boolean;
+  xpPoints: number;
 }
 
 export interface IAccount {
@@ -49,7 +50,6 @@ export interface IAccount {
   isRecurring: ERECURRING;
   selectedDeposit: number;
   selectedDepositDate;
-  xpPoints: number;
 }
 
 export interface IAdmin extends IUser {
