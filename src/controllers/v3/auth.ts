@@ -1,12 +1,12 @@
 import { Auth, PrimeTrustJWT } from "@app/middleware";
 import { AdminTable, OtpTable, ParentChildTable, UserTable } from "@app/model";
 import {
-  AnalyticsService,
   DeviceTokenService,
   SocialService,
   TokenService,
   zohoCrmService,
 } from "@app/services/v1";
+import { AnalyticsService } from "@app/services/v4";
 import {
   EAUTOAPPROVAL,
   EOTPVERIFICATION,
@@ -178,10 +178,14 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, type, deviceId } = input;
-          AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED, {
-            device_id: deviceId,
-            user_id: user._id,
-          });
+          AnalyticsService.sendEvent(
+            ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED,
+            undefined,
+            {
+              device_id: deviceId,
+              user_id: user._id,
+            },
+          );
 
           let userExists = await UserTable.findOne({
             mobile: mobile,
@@ -243,7 +247,7 @@ class AuthController extends BaseController {
           ) {
             return this.BadRequest(
               ctx,
-              "The mobile no. already belongs to a parent"
+              "The mobile number already belongs to a parent"
             );
           }
 
@@ -446,10 +450,7 @@ class AuthController extends BaseController {
       { _id: ctx.request.user._id },
       {
         $set: {
-          parentEmail:
-            checkParentExists && checkParentExists.email
-              ? checkParentExists.email
-              : null,
+          parentEmail: checkParentExists?.email || null,
           parentMobile: ctx.request.body.parentMobile,
           isEnteredParentNumber: true,
         },
@@ -550,10 +551,20 @@ class AuthController extends BaseController {
 
               accountCreated = true;
 
-              AnalyticsService.sendEvent(ANALYTICS_EVENTS.SIGNED_UP_SSO, {
-                device_id: deviceId,
-                user_id: userExists._id,
-              });
+              // for sensitive identify calls, we need to await to make sure it waits.
+              await AnalyticsService.identifyOnce(
+                userExists._id,
+                {"Account Type" : EUserType[reqParam.type]}
+              );
+
+              AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.SIGNED_UP_SSO,
+                undefined,
+                {
+                  device_id: deviceId,
+                  user_id: userExists._id,
+                },
+              );
 
               if (userExists) {
                 /**

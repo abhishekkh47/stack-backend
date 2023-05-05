@@ -29,9 +29,11 @@ import {
   NOTIFICATIONS,
   NOTIFICATION_KEYS,
   Route,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import moment from "moment";
 import BaseController from "@app/controllers/base";
+import { AnalyticsService } from "@app/services/v4";
 
 class WebHookController extends BaseController {
   /**
@@ -111,8 +113,7 @@ class WebHookController extends BaseController {
          * Failure phases
          */
         if (
-          body.data &&
-          body.data["kyc_required_actions"] &&
+          body.data?.["kyc_required_actions"] &&
           Object.keys(body.data["kyc_required_actions"]).length > 0
         ) {
           await UserTable.updateOne(
@@ -151,9 +152,7 @@ class WebHookController extends BaseController {
          * Success phases
          */
         if (
-          body.data &&
-          body.data["changes"] &&
-          body.data["changes"].length > 0 &&
+          body.data?.["changes"]?.length > 0 &&
           (body.data["changes"].includes("cip-cleared") ||
             body.data["changes"].includes("aml-cleared") ||
             body.data["changes"].includes("identity-confirmed"))
@@ -212,10 +211,8 @@ class WebHookController extends BaseController {
               const current = moment().unix();
 
               if (
-                parentChildDetails &&
-                parentChildDetails.unlockRewardTime &&
-                parentChildDetails.isRewardDeclined == false &&
-                current <= parentChildDetails.unlockRewardTime
+                parentChildDetails?.unlockRewardTime &&
+                parentChildDetails.isRewardDeclined == false && current <= parentChildDetails.unlockRewardTime
               ) {
                 if (
                   admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
@@ -267,6 +264,15 @@ class WebHookController extends BaseController {
               null,
               userExists._id
             );
+
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.PARENT_KYC_APPROVED,
+              undefined,
+              {
+                user_id: checkAccountIdExists.firstChildId._id,
+              },
+            )
+            
             /**
              * Gift stack coins to all teens whose parent's kyc is approved
              */
@@ -285,12 +291,12 @@ class WebHookController extends BaseController {
                 ));
 
               if (userExists.type == EUserType.PARENT) {
-                let allTeens = await checkAccountIdExists.teens.filter(
+                let allTeens = checkAccountIdExists.teens.filter(
                   (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
                 );
                 if (allTeens.length > 0) {
-                  for await (let allTeen of allTeens) {
-                    await userIdsToBeGifted.push(allTeen.childId._id);
+                  for (let allTeen of allTeens) {
+                    userIdsToBeGifted.push(allTeen.childId._id);
                     /**
                      * Added in zoho
                      */
@@ -468,6 +474,15 @@ class WebHookController extends BaseController {
                 null,
                 userExists._id
               );
+
+              AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.PARENT_KYC_APPROVED,
+                undefined,
+                {
+                  user_id: checkAccountIdExists.firstChildId._id,
+                },
+              )
+
               if (userExists.type == EUserType.PARENT) {
                 let allChilds: any = await checkAccountIdExists.teens.filter(
                   (x) =>
