@@ -1,6 +1,6 @@
 import { Auth, PrimeTrustJWT } from "@app/middleware";
 import { AdminTable, OtpTable, UserTable, ParentChildTable } from "@app/model";
-import { TokenService, zohoCrmService } from "@app/services/v1";
+import { TokenService, zohoCrmService, userService } from "@app/services/v1";
 import { AnalyticsService } from "@app/services/v4";
 import {
   EOTPVERIFICATION,
@@ -254,16 +254,13 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const {
-            mobile,
-            childMobile,
-            email,
-            childFirstName,
-            childLastName,
-          } = input;
+          const { mobile, childMobile, email, childFirstName, childLastName } =
+            input;
           let query: any = { mobile: childMobile };
 
-          let parentIfExists = await UserTable.findOne({ _id: ctx.request.user._id });
+          let parentIfExists = await UserTable.findOne({
+            _id: ctx.request.user._id,
+          });
           if (!parentIfExists) {
             return this.BadRequest(ctx, "User not found");
           }
@@ -275,7 +272,10 @@ class AuthController extends BaseController {
               "The mobile number already belongs to a parent"
             );
           }
-          if (childIfExists?.type == EUserType.TEEN && childIfExists.parentMobile !== mobile) {
+          if (
+            childIfExists?.type == EUserType.TEEN &&
+            childIfExists.parentMobile !== mobile
+          ) {
             return this.BadRequest(
               ctx,
               "The mobile is already linked to another parent"
@@ -354,17 +354,16 @@ class AuthController extends BaseController {
               "false"
             );
 
-            await AnalyticsService.identifyOnce(
-              parentIfExists._id,
-              { "Teen First": true },
-            );
+            await AnalyticsService.identifyOnce(parentIfExists._id, {
+              "Teen First": true,
+            });
 
             AnalyticsService.sendEvent(
               ANALYTICS_EVENTS.PARENT_SIGNED_UP,
               undefined,
               {
                 user_id: user._id,
-              },
+              }
             );
 
             return this.Ok(ctx, {
@@ -420,10 +419,9 @@ class AuthController extends BaseController {
             });
           }
 
-          AnalyticsService.identifyOnce(
-            parentIfExists._id,
-            { "Teen First": false },
-          );
+          AnalyticsService.identifyOnce(parentIfExists._id, {
+            "Teen First": false,
+          });
 
           return this.Ok(ctx, {
             message: "Invite sent!",
@@ -432,6 +430,60 @@ class AuthController extends BaseController {
         }
       }
     );
+  }
+
+  /**
+   * @description This method is used to check referral and if exists it give both teens 20xp
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/check-referral", method: HttpMethod.POST })
+  @Auth()
+  public async checkForReferral(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      if (!body.referralCode) {
+        return this.Ok(ctx, { message: "No XP Points rewarded" });
+      }
+      let checkUserReferralExists = await UserTable.findOne({
+        _id: { $ne: userExists._id },
+        referralCode: body.referralCode,
+        type: EUserType.TEEN,
+      });
+      if (!checkUserReferralExists) {
+        return this.Ok(ctx, { message: "No XP Points rewarded" });
+      }
+      /**
+       * add referral code number as well
+       */
+      let senderName = checkUserReferralExists.lastName
+        ? checkUserReferralExists.firstName +
+          " " +
+          checkUserReferralExists.lastName
+        : checkUserReferralExists.firstName;
+
+      let receiverName = userExists.lastName
+        ? userExists.firstName + " " + userExists.lastName
+        : userExists.firstName;
+      await userService.updateOrCreateUserReferral(
+        checkUserReferralExists._id,
+        userExists._id,
+        senderName,
+        receiverName
+      );
+      await userService.redeemUserReferral(
+        checkUserReferralExists._id,
+        [userExists._id],
+        body.referralCode
+      );
+      return this.Ok(ctx, { message: "Successfully rewarded XP Points" });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
   }
 }
 

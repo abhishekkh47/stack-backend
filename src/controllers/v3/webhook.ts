@@ -77,25 +77,6 @@ class WebHookController extends BaseController {
       return this.OkWebhook(ctx, "User Not Found");
     }
 
-    /**
-     * to get all the teen ids for the parent and self ids in case of self
-     */
-    let arrayForReferral = [];
-    if (
-      userExists.type === EUserType.PARENT &&
-      checkAccountIdExists.teens.length > 0
-    ) {
-      checkAccountIdExists.teens.map((obj) =>
-        arrayForReferral.push(obj.childId._id)
-      );
-    } else {
-      arrayForReferral.push(checkAccountIdExists.firstChildId._id);
-    }
-
-    let getReferralSenderId = await UserReferralTable.findOne({
-      "referralArray.referredId": { $in: arrayForReferral },
-    });
-
     const userBankInfo = await UserBanksTable.findOne({
       userId: userExists._id,
     });
@@ -212,7 +193,8 @@ class WebHookController extends BaseController {
 
               if (
                 parentChildDetails?.unlockRewardTime &&
-                parentChildDetails.isRewardDeclined == false && current <= parentChildDetails.unlockRewardTime
+                parentChildDetails.isRewardDeclined == false &&
+                current <= parentChildDetails.unlockRewardTime
               ) {
                 if (
                   admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
@@ -270,26 +252,14 @@ class WebHookController extends BaseController {
               undefined,
               {
                 user_id: checkAccountIdExists.firstChildId._id,
-              },
-            )
-            
+              }
+            );
+
             /**
              * Gift stack coins to all teens whose parent's kyc is approved
              */
             if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
               let userIdsToBeGifted = [];
-
-              /**
-               * for user referral
-               */
-
-              getReferralSenderId &&
-                (await userService.redeemUserReferral(
-                  getReferralSenderId.userId,
-                  arrayForReferral,
-                  userExists.referralCode
-                ));
-
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = checkAccountIdExists.teens.filter(
                   (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
@@ -480,8 +450,8 @@ class WebHookController extends BaseController {
                 undefined,
                 {
                   user_id: checkAccountIdExists.firstChildId._id,
-                },
-              )
+                }
+              );
 
               if (userExists.type == EUserType.PARENT) {
                 let allChilds: any = await checkAccountIdExists.teens.filter(
@@ -556,16 +526,6 @@ class WebHookController extends BaseController {
                */
               if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
                 let userIdsToBeGifted = [];
-
-                /**
-                 * for user referral
-                 */
-                getReferralSenderId &&
-                  (await userService.redeemUserReferral(
-                    getReferralSenderId.userId,
-                    arrayForReferral,
-                    userExists.referralCode
-                  ));
 
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(

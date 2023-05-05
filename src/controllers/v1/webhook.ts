@@ -78,25 +78,6 @@ class WebHookController extends BaseController {
       return this.OkWebhook(ctx, "User Not Found");
     }
 
-    /**
-     * to get all the teen ids for the parent and self ids in case of self
-     */
-    let arrayForReferral = [];
-    if (
-      userExists.type === EUserType.PARENT &&
-      checkAccountIdExists.teens.length > 0
-    ) {
-      checkAccountIdExists.teens.map((obj) =>
-        arrayForReferral.push(obj.childId._id)
-      );
-    } else {
-      arrayForReferral.push(checkAccountIdExists.firstChildId._id);
-    }
-
-    let getReferralSenderId = await UserReferralTable.findOne({
-      "referralArray.referredId": { $in: arrayForReferral },
-    });
-
     switch (body.resource_type) {
       /**
        * For kyc success or failure
@@ -217,17 +198,6 @@ class WebHookController extends BaseController {
              */
             if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
               let userIdsToBeGifted = [];
-
-              /**
-               * for user referral
-               */
-
-              getReferralSenderId &&
-                (await userService.redeemUserReferral(
-                  getReferralSenderId.userId,
-                  arrayForReferral,
-                  userExists.referralCode
-                ));
 
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = await checkAccountIdExists.teens.filter(
@@ -432,16 +402,6 @@ class WebHookController extends BaseController {
                */
               if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
                 let userIdsToBeGifted = [];
-
-                /**
-                 * for user referral
-                 */
-                getReferralSenderId &&
-                  (await userService.redeemUserReferral(
-                    getReferralSenderId.userId,
-                    arrayForReferral,
-                    userExists.referralCode
-                  ));
 
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(

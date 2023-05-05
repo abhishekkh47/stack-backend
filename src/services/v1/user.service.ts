@@ -15,6 +15,7 @@ import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   sendNotification,
+  XP_POINTS,
 } from "@app/utility";
 
 class UserService {
@@ -296,7 +297,6 @@ class UserService {
     userReferral: string
   ) {
     let arrayOfReceiverIds = receiverIds.map((x) => x.toString());
-    let referralCoins = 0;
     let userUpdateReferrals = [];
     let referrals;
     if (userReferral) {
@@ -356,7 +356,7 @@ class UserService {
               $first: "$deviceTokenInfo",
             },
             receiverDeviceTokenInfo: {
-              $push: "$receiverDeviceTokenInfo",
+              $addToSet: "$receiverDeviceTokenInfo",
             },
           },
         },
@@ -370,7 +370,6 @@ class UserService {
         /**
          * get all ids in an array
          */
-        referralCoins = referralCoins + config.APP_REFERRAL_COINS;
         userUpdateReferrals = referrals.referralArray.map((obj) => {
           if (arrayOfReceiverIds.includes(obj.referredId.toString())) {
             return obj.referredId.toString();
@@ -388,7 +387,7 @@ class UserService {
       },
       {
         $inc: {
-          preLoadedCoins: referralCoins,
+          xpPoints: XP_POINTS.REFERRAL,
         },
       },
       { new: true }
@@ -410,7 +409,6 @@ class UserService {
      */
     let referredIdsArray = [];
     let allNotifications = [];
-
     referredIdsArray = await Promise.all(
       referrals.referralArray.map(async (receiver) => {
         if (arrayOfReceiverIds.includes(receiver.referredId.toString())) {
@@ -498,7 +496,7 @@ class UserService {
     receiverId: string,
     senderName: string,
     receiverName: string,
-    type: number
+    type: number = 1
   ) {
     /**
      * check whether user exist in referral
@@ -520,7 +518,7 @@ class UserService {
             referredId: receiverId,
             receiverName: receiverName,
             type: type,
-            coinsGifted: config.APP_REFERRAL_COINS,
+            coinsGifted: XP_POINTS.REFERRAL,
           },
         ],
       });
@@ -538,7 +536,7 @@ class UserService {
               receiverName: receiverName,
               referredId: receiverId,
               type: type,
-              coinsGifted: config.APP_REFERRAL_COINS,
+              coinsGifted: XP_POINTS.REFERRAL,
             },
           },
         }
