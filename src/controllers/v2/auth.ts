@@ -593,28 +593,6 @@ class AuthController extends BaseController {
               receiverName,
               reqParam.type
             );
-
-            if (
-              (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
-              user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              await userService.redeemUserReferral(
-                refferalCodeExists._id,
-                [user._id],
-                reqParam.refferalCode
-              );
-            } else if (
-              user.type == EUserType.TEEN &&
-              checkParentExists &&
-              parentChildInfo &&
-              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              await userService.redeemUserReferral(
-                refferalCodeExists._id,
-                [user._id],
-                reqParam.refferalCode
-              );
-            }
           }
 
           const authInfo = await AuthService.getJwtAuthInfo(user);
