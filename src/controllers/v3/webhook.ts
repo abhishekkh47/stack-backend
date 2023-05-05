@@ -260,7 +260,6 @@ class WebHookController extends BaseController {
              */
             if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
               let userIdsToBeGifted = [];
-
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = checkAccountIdExists.teens.filter(
                   (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
