@@ -15,13 +15,21 @@ class AnalyticsService {
    * @param event The event to send
    * @param properties Optional properties to send
    */
-  public identifyOnce(userId: string, key: string, value: any) {
+  public async identifyOnce(
+    userId: Object,
+    dict: {
+      [key: string]: amplitude.Types.ValidPropertyType;
+    }
+  ) {
     const identifyObj = new amplitude.Identify();
-    identifyObj.setOnce(key, value);
 
-    amplitude.identify(identifyObj, {
-      user_id: userId,
-    });
+    Object.keys(dict).forEach(key => {
+      identifyObj.setOnce(key, dict[key]);
+    })
+
+    await amplitude.identify(identifyObj, {
+      user_id: userId.toString(),
+    }).promise;
   }
 
   /**
