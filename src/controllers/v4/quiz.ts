@@ -558,7 +558,7 @@ class QuizController extends BaseController {
             );
           }
           const isTeen = userIfExists.type === EUserType.TEEN ? true : false;
-          await QuizDBService.storeQuizInformation(
+          const { totalXPPoints } = await QuizDBService.storeQuizInformation(
             user._id,
             headers,
             reqParam,
@@ -574,7 +574,10 @@ class QuizController extends BaseController {
             dataForCrm,
             true
           );
-          return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });
+          return this.Ok(ctx, {
+            message: "Quiz Results Stored Successfully",
+            totalXPPoints: totalXPPoints,
+          });
         }
       }
     );

@@ -90,6 +90,7 @@ export const makeUniqueReferalCode = async () => {
 export const getQuizCooldown = async (headers) => {
   let admin = await AdminTable.findOne({});
   let hours = admin.quizCooldown["default"];
+  let quizCoolDownHours = Object.values(admin.quizCooldown).pop();
   if (!headers["build-version"]) {
     return hours;
   }
@@ -98,7 +99,7 @@ export const getQuizCooldown = async (headers) => {
       return x;
     }
   });
-  return admin.quizCooldown[key] ? admin.quizCooldown[key] : hours;
+  return admin.quizCooldown[key] ? admin.quizCooldown[key] : quizCoolDownHours;
 };
 
 export const getQuizImageAspectRatio = async (headers) => {
