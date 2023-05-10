@@ -184,7 +184,7 @@ class AuthController extends BaseController {
             {
               device_id: deviceId,
               user_id: user._id,
-            },
+            }
           );
 
           let userExists = await UserTable.findOne({
@@ -552,10 +552,9 @@ class AuthController extends BaseController {
               accountCreated = true;
 
               // for sensitive identify calls, we need to await to make sure it waits.
-              await AnalyticsService.identifyOnce(
-                userExists._id,
-                {"Account Type" : EUserType[reqParam.type]}
-              );
+              await AnalyticsService.identifyOnce(userExists._id, {
+                "Account Type": EUserType[reqParam.type],
+              });
 
               AnalyticsService.sendEvent(
                 ANALYTICS_EVENTS.SIGNED_UP_SSO,
@@ -563,7 +562,7 @@ class AuthController extends BaseController {
                 {
                   device_id: deviceId,
                   user_id: userExists._id,
-                },
+                }
               );
 
               if (userExists) {
