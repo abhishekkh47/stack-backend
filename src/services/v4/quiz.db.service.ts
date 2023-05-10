@@ -233,6 +233,7 @@ class QuizDBService {
     quizExists: any,
     isTeen: boolean
   ) {
+    let totalXPPoints = 0;
     const lastQuizPlayed = await QuizResult.findOne({
       userId: userId,
       isOnBoardingQuiz: false,
@@ -298,8 +299,7 @@ class QuizDBService {
     if (isTeen) {
       const correctAnswerXPPointsEarned =
         reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
-      const totalXPPoints =
-        correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ;
+      totalXPPoints = correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ;
       incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
       query = {
         ...query,
@@ -320,8 +320,7 @@ class QuizDBService {
         user_id: userId,
       }
     );
-
-    return true;
+    return { totalXPPoints };
   }
 
   /**
