@@ -325,7 +325,7 @@ class UserController extends BaseController {
                 isNotificationOn: reqParam.isNotificationOn,
               },
             },
-            { new: true }
+            { new: true, upsert: true }
           );
 
           let message =
