@@ -47,6 +47,7 @@ import {
   Route,
   TEEN_SIGNUP_FUNNEL,
   PT_REFERENCE_TEXT,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
 import { validations } from "@app/validations/v2/apiValidation";
@@ -54,6 +55,7 @@ import Koa from "koa";
 import moment from "moment";
 import BaseController from "@app/controllers/base";
 import UserController from "@app/controllers/v2/user";
+import { AnalyticsService } from "@app/services/v4";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -376,6 +378,30 @@ class AuthController extends BaseController {
                 }
               );
             }
+          }
+
+          /**
+           * Confirm your detail screen
+           */
+          if (user.type == EUserType.PARENT) {
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.CONFIRM_DETAILS_SUBMITTED,
+              {
+                "Legal Name": reqParam.lastName
+                  ? reqParam.firstName + " " + reqParam.lastName
+                  : reqParam.firstName,
+                "Tax Id Number": reqParam.taxIdNo,
+                Address: reqParam.address,
+                State: reqParam.state,
+                City: reqParam.city,
+                Country: reqParam.country,
+                "Unit Apt": reqParam.unitApt,
+                "Postal Code": reqParam.postalCode,
+              },
+              {
+                user_id: user._id,
+              }
+            );
           }
 
           if (
