@@ -64,6 +64,15 @@ export interface IQuizResult {
   isOnBoardingQuiz: boolean;
 }
 
+export interface IQuizReview {
+  userId: mongoose.Schema.Types.ObjectId;
+  quizId: mongoose.Schema.Types.ObjectId;
+  quizName: string;
+  difficultyLevel: number;
+  funLevel: number;
+  wantMore: number;
+}
+
 export interface IQuizQuestionResult extends IQuizResult {
   quizQuestionId: mongoose.Schema.Types.ObjectId;
 }

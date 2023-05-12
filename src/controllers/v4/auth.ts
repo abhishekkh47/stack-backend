@@ -1,5 +1,11 @@
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { AdminTable, OtpTable, UserTable, ParentChildTable } from "@app/model";
+import {
+  AdminTable,
+  OtpTable,
+  UserTable,
+  ParentChildTable,
+  UserReferralTable,
+} from "@app/model";
 import { TokenService, zohoCrmService, userService } from "@app/services/v1";
 import { AnalyticsService } from "@app/services/v4";
 import {
@@ -448,6 +454,12 @@ class AuthController extends BaseController {
       }
       if (!body.referralCode) {
         return this.Ok(ctx, { message: "No XP Points rewarded" });
+      }
+      let alreadyReferredUser = await UserReferralTable.findOne({
+        "referralArray.referredId": userExists._id,
+      });
+      if (alreadyReferredUser) {
+        return this.Ok(ctx, { message: "Already Referred User" });
       }
       let checkUserReferralExists = await UserTable.findOne({
         _id: { $ne: userExists._id },
