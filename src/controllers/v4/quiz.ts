@@ -8,9 +8,10 @@ import {
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
-import { QuizDBService } from "@app/services/v4";
+import { AnalyticsService, QuizDBService } from "@app/services/v4";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
+  ANALYTICS_EVENTS,
   get72HoursAhead,
   getQuizCooldown,
   getQuizImageAspectRatio,
@@ -689,6 +690,21 @@ class QuizController extends BaseController {
           const createdQuizReview = await quizDbService.storeQuizReview(
             body,
             userIfExists
+          );
+          /**
+           * Track amplitude quiz review
+           */
+          AnalyticsService.sendEvent(
+            ANALYTICS_EVENTS.CHALLENGE_REVIEW_SUBMITTED,
+            {
+              "Challenge Name": createdQuizReview.quizName,
+              "Difficulty Level": createdQuizReview.difficultyLevel,
+              "Fun Level": createdQuizReview.funLevel,
+              "Want More": createdQuizReview.wantMore ? "Yes" : "No",
+            },
+            {
+              user_id: userIfExists._id,
+            }
           );
           return this.Ok(ctx, {
             message: "Quiz Review Stored Successfully",
