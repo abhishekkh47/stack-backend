@@ -386,18 +386,7 @@ class AuthController extends BaseController {
           if (user.type == EUserType.PARENT) {
             AnalyticsService.sendEvent(
               ANALYTICS_EVENTS.CONFIRM_DETAILS_SUBMITTED,
-              {
-                "Legal Name": reqParam.lastName
-                  ? reqParam.firstName + " " + reqParam.lastName
-                  : reqParam.firstName,
-                "Tax Id Number": reqParam.taxIdNo,
-                Address: reqParam.address,
-                State: reqParam.state,
-                City: reqParam.city,
-                Country: reqParam.country,
-                "Unit Apt": reqParam.unitApt,
-                "Postal Code": reqParam.postalCode,
-              },
+              undefined,
               {
                 user_id: user._id,
               }
