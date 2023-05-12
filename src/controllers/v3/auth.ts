@@ -558,7 +558,9 @@ class AuthController extends BaseController {
 
               AnalyticsService.sendEvent(
                 ANALYTICS_EVENTS.SIGNED_UP_SSO,
-                undefined,
+                {
+                  Email: userExists.email,
+                },
                 {
                   device_id: deviceId,
                   user_id: userExists._id,
