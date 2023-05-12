@@ -234,6 +234,8 @@ export const ANALYTICS_EVENTS = {
   PARENT_SIGNED_UP: "Parent Signed Up",
   PARENT_KYC_APPROVED: "Parent KYC Approved",
   CHALLENGE_REVIEW_SUBMITTED: "Challenge Review Submitted",
+  KYC_APPROVED: "KYC Approved",
+  KYC_SUBMITTED: "KYC Submitted",
 };
 
 export const XP_POINTS = {
