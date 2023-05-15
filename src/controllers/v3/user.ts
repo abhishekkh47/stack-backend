@@ -34,8 +34,10 @@ import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import BaseController from "@app/controllers/base";
+import { AnalyticsService } from "@app/services/v4";
 
 class UserController extends BaseController {
   /**
@@ -502,6 +504,13 @@ class UserController extends BaseController {
     }
     await ParentChildTable.updateOne(filterQuery, {
       $set: updateQuery,
+    });
+
+    /**
+     * Parent event for kyc submitted
+     */
+    AnalyticsService.sendEvent(ANALYTICS_EVENTS.KYC_SUBMITTED, undefined, {
+      user_id: userExists._id,
     });
     /**
      * Update the status to zoho crm

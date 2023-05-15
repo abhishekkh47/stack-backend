@@ -254,6 +254,13 @@ class WebHookController extends BaseController {
                 user_id: checkAccountIdExists.firstChildId._id,
               }
             );
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.KYC_APPROVED,
+              undefined,
+              {
+                user_id: checkAccountIdExists.userId._id,
+              }
+            );
 
             /**
              * Gift stack coins to all teens whose parent's kyc is approved
@@ -450,6 +457,13 @@ class WebHookController extends BaseController {
                 undefined,
                 {
                   user_id: checkAccountIdExists.firstChildId._id,
+                }
+              );
+              AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.KYC_APPROVED,
+                undefined,
+                {
+                  user_id: checkAccountIdExists.userId._id,
                 }
               );
 
