@@ -95,4 +95,23 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  quizReviewValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      quizId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      funLevel: Joi.number().valid(1, 2, 3, 4, 5).required(),
+      difficultyLevel: Joi.number().valid(1, 2, 3, 4, 5).required(),
+      wantMore: Joi.number().valid(0, 1).required(),
+    });
+
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("quizReviewValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };
