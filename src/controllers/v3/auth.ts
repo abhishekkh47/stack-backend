@@ -554,13 +554,12 @@ class AuthController extends BaseController {
               // for sensitive identify calls, we need to await to make sure it waits.
               await AnalyticsService.identifyOnce(userExists._id, {
                 "Account Type": EUserType[reqParam.type],
+                Email: userExists.email,
               });
 
               AnalyticsService.sendEvent(
                 ANALYTICS_EVENTS.SIGNED_UP_SSO,
-                {
-                  Email: userExists.email,
-                },
+                undefined,
                 {
                   device_id: deviceId,
                   user_id: userExists._id,
