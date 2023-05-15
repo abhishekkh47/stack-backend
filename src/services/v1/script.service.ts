@@ -120,7 +120,11 @@ class ScriptService {
     for (let i = 0; i < rowsCount; i++) {
       for (let j = 0; j < columnsCount; j++) {
         const cell = sheet.getCell(i, j);
-        if (cell["_rawData"]["effectiveFormat"]["backgroundColor"].red !== 1) {
+        if (
+          cell["_rawData"] &&
+          cell["_rawData"]["effectiveFormat"] &&
+          cell["_rawData"]["effectiveFormat"]["backgroundColor"].red !== 1
+        ) {
           if (rows[cell["_row"] - 1]) {
             rows[cell["_row"] - 1].correctAnswer =
               cell["_rawData"]["formattedValue"];
