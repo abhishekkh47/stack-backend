@@ -1126,27 +1126,6 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to add new 1.9 quiz topics
-   * @param ctx
-   */
-  @Route({ path: "/add-quiz-content", method: HttpMethod.POST })
-  @InternalUserAuth()
-  public async addQuizContent(ctx: any) {
-    try {
-      /**
-       * Make sure quiz question request body is valid in postman
-       */
-      const reqBody = ctx.request.body;
-      const createQuizContentData = await QuizQuestionTable.insertMany(
-        reqBody.data
-      );
-      return this.Ok(ctx, { message: "Success", data: createQuizContentData });
-    } catch (error) {
-      return this.BadRequest(ctx, "Something Went Wrong");
-    }
-  }
-
-  /**
    * @description This method is used to add default reminder status
    * @param ctx
    */
