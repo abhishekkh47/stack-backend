@@ -1,8 +1,8 @@
-import { AdminTable, QuizResult, UserTable } from "../../model";
+import { AdminTable, QuizResult, UserTable } from "@app/model";
 import moment from "moment";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { DeviceTokenService } from "../../services/v1";
-import quizDbService from "../../services/v4/quiz.db.service";
+import { NOTIFICATIONS, NOTIFICATION_KEYS } from "@app/utility/constants";
+import { DeviceTokenService } from "@app/services/v1";
+import quizDbService from "@app/services/v4/quiz.db.service";
 
 export const challengeAvailableHandler = async () => {
   console.log("==========Start Cron For Challenge Available=============");
@@ -16,13 +16,16 @@ export const challengeAvailableHandler = async () => {
     lastQuizResult.map(async (data: any) => {
       let createdAt = moment(data.createdAt).add(hoursToAdd, "hours").unix();
       if (createdAt <= currentTime) {
+        const { key, title, message, nameForTracking } =
+          NOTIFICATIONS.CHALLENGE_AVAILABLE;
         await DeviceTokenService.sendUserNotification(
           data._id,
-          NOTIFICATION_KEYS.CHALLENGE_AVAILABLE,
-          NOTIFICATION.CHALLENGE_AVAILABLE_TITLE,
-          NOTIFICATION.CHALLENGE_AVAILABLE_MESSAGE,
+          key,
+          title,
+          message,
           null,
-          data._id
+          data._id,
+          nameForTracking
         );
         userIds.push(data._id);
       }

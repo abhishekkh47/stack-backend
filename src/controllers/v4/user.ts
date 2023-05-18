@@ -1,6 +1,16 @@
-import { TradingService } from "../../services/v3/index";
 import moment from "moment";
-import BaseController from "../base";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import {
+  AdminTable,
+  CryptoTable,
+  TransactionTable,
+  UserBanksTable,
+  UserTable,
+} from "@app/model";
+import { DeviceTokenService, userService } from "@app/services/v1/index";
+import { TransactionDBService, UserService } from "@app/services/v3";
+import { UserDBService } from "@app/services/v4";
+import { TradingService } from "@app/services/v3/index";
 import {
   ENOTIFICATIONSETTINGS,
   ETransactionStatus,
@@ -8,20 +18,10 @@ import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
-import { DeviceTokenService, userService } from "../../services/v1/index";
-import { TransactionDBService, UserService } from "../../services/v3";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { validationsV4 } from "../../validations/v4/apiValidation";
-import {
-  UserTable,
-  TransactionTable,
-  UserBanksTable,
-  AdminTable,
-  CryptoTable,
-} from "../../model";
-import { Route, removeImage, uploadFileS3 } from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+} from "@app/types";
+import { removeImage, Route, uploadFileS3, NOTIFICATIONS } from "@app/utility";
+import { validationsV4 } from "@app/validations/v4/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class UserController extends BaseController {
   /**
@@ -133,13 +133,16 @@ class UserController extends BaseController {
             true
           );
           if (headers["build-number"]) {
+            const { key, title, message, nameForTracking } =
+              NOTIFICATIONS.REDEEM_BTC_SUCCESS;
             await DeviceTokenService.sendUserNotification(
               userExists._id,
-              NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
-              NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
-              NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+              key,
+              title,
+              message,
               null,
-              userExists._id
+              userExists._id,
+              nameForTracking
             );
           }
         }
@@ -322,7 +325,7 @@ class UserController extends BaseController {
                 isNotificationOn: reqParam.isNotificationOn,
               },
             },
-            { new: true }
+            { new: true, upsert: true }
           );
 
           let message =
@@ -374,6 +377,35 @@ class UserController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is used to get ranks of all 20 teens based on highest xpPoints
+   * @param ctx
+   * @returns {*} => list of teens based on highest ranking xp Points
+   */
+  @Route({
+    path: "/leaderboard",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getLeaderboard(ctx: any) {
+    const userIfExists: any = await UserTable.findOne({
+      _id: ctx.request.user._id,
+    });
+    if (
+      !userIfExists ||
+      (userIfExists && userIfExists.type !== EUserType.TEEN)
+    ) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
+      userIfExists
+    );
+    return this.Ok(ctx, {
+      data: { leaderBoardData, userObject },
+      message: "Success",
+    });
   }
 }
 

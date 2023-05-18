@@ -1,7 +1,7 @@
-import { getAssetTotalWithId } from "../../utility/prime-trust";
+import { getAssetTotalWithId } from "@app/utility";
 import { ObjectId } from "mongodb";
-import { TransactionTable } from "../../model";
-import { ETransactionType, ETransactionStatus } from "../../types";
+import { TransactionTable } from "@app/model";
+import { ETransactionType, ETransactionStatus } from "@app/types";
 
 class TradingDBService {
   // pull all the crypto(fiat excluded) transactions from db

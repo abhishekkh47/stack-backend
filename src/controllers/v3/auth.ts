@@ -1,32 +1,32 @@
-import { validations } from "../../validations/v2/apiValidation";
-import { validationsV3 } from "../../validations/v3/apiValidation";
-import { EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { AdminTable, OtpTable, ParentChildTable, UserTable } from "../../model";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { AdminTable, OtpTable, ParentChildTable, UserTable } from "@app/model";
 import {
-  AnalyticsService,
   DeviceTokenService,
   SocialService,
   TokenService,
   zohoCrmService,
-} from "../../services/v1";
+} from "@app/services/v1";
+import { AnalyticsService } from "@app/services/v4";
 import {
   EAUTOAPPROVAL,
   EOTPVERIFICATION,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
+import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
 import {
   getMinutesBetweenDates,
   makeUniqueReferalCode,
   Route,
-} from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+  ANALYTICS_EVENTS,
+  PARENT_SIGNUP_FUNNEL,
+  TEEN_SIGNUP_FUNNEL,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import { validations } from "@app/validations/v2/apiValidation";
+import { validationsV3 } from "@app/validations/v3/apiValidation";
+import BaseController from "@app/controllers/base";
 import UserController from "../v3/user";
-import { ANALYTICS_EVENTS } from "../../utility/constants";
 
 class AuthController extends BaseController {
   /**
@@ -178,10 +178,14 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, type, deviceId } = input;
-          AnalyticsService.sendEvent(ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED, {
-            device_id: deviceId,
-            user_id: user._id,
-          });
+          AnalyticsService.sendEvent(
+            ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED,
+            undefined,
+            {
+              device_id: deviceId,
+              user_id: user._id,
+            }
+          );
 
           let userExists = await UserTable.findOne({
             mobile: mobile,
@@ -243,7 +247,7 @@ class AuthController extends BaseController {
           ) {
             return this.BadRequest(
               ctx,
-              "The mobile no. already belongs to a parent"
+              "The mobile number already belongs to a parent"
             );
           }
 
@@ -366,7 +370,7 @@ class AuthController extends BaseController {
           }
           if (!childFirstName) {
             return this.Ok(ctx, {
-              message: "You are inviting your teen in stack",
+              message: "You are inviting your teen in Jetson",
             });
           }
           /**
@@ -446,10 +450,7 @@ class AuthController extends BaseController {
       { _id: ctx.request.user._id },
       {
         $set: {
-          parentEmail:
-            checkParentExists && checkParentExists.email
-              ? checkParentExists.email
-              : null,
+          parentEmail: checkParentExists?.email || null,
           parentMobile: ctx.request.body.parentMobile,
           isEnteredParentNumber: true,
         },
@@ -550,10 +551,19 @@ class AuthController extends BaseController {
 
               accountCreated = true;
 
-              AnalyticsService.sendEvent(ANALYTICS_EVENTS.SIGNED_UP_SSO, {
-                device_id: deviceId,
-                user_id: userExists._id,
+              // for sensitive identify calls, we need to await to make sure it waits.
+              await AnalyticsService.identifyOnce(userExists._id, {
+                "Account Type": EUserType[reqParam.type],
               });
+
+              AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.SIGNED_UP_SSO,
+                undefined,
+                {
+                  device_id: deviceId,
+                  user_id: userExists._id,
+                }
+              );
 
               if (userExists) {
                 /**

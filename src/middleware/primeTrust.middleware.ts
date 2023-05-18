@@ -1,11 +1,11 @@
 import moment from "moment";
-import { AdminTable } from "../model";
+import { AdminTable } from "@app/model";
 import {
   getPrimeTrustJWTToken,
   getUser,
   verifyToken,
   getAccessToken,
-} from "../utility";
+} from "@app/utility";
 export const PrimeTrustJWT = (isZohoCrmApplicable: boolean = null) => {
   return (_: Object, __?: string, descriptor?: PropertyDescriptor) => {
     const fn: Function = descriptor.value;

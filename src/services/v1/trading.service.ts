@@ -1,15 +1,14 @@
-import { unlinkBankAccount } from "../../utility/plaid";
-import { CryptoTable } from "../../model/crypto";
-import { ParentChildTable } from "../../model/parentChild";
-import { PLAID_ITEM_ERROR } from "../../utility/constants";
+import { ParentChildTable, CryptoTable } from "@app/model";
 import {
   createContributions,
   createDisbursements,
   executeQuote,
   generateQuote,
   internalAssetTransfers,
-} from "../../utility";
-import envData from "../../config/index";
+  unlinkBankAccount,
+  PLAID_ITEM_ERROR,
+} from "@app/utility";
+import envData from "@app/config/index";
 class TradingService {
   /**
    * @description This method is used for adding deposit action
@@ -183,7 +182,7 @@ class TradingService {
           "from-account-id": envData.OPERATIONAL_ACCOUNT,
           "to-account-id": getAccountId.accountId,
           "asset-id": crypto.assetId,
-          reference: `$${amount} BTC gift from Stack`,
+          reference: `$${amount} BTC gift from Jetson`,
           "hot-transfer": true,
         },
       },

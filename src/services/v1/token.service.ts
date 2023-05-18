@@ -1,4 +1,4 @@
-import { getJwtToken, getRefreshToken } from "../../utility";
+import { getJwtToken, getRefreshToken } from "@app/utility";
 import { AuthService } from ".";
 
 class TokenService {

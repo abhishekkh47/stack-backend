@@ -1,4 +1,4 @@
-import { ParentChildTable } from "../model";
+import { ParentChildTable } from "@app/model";
 import { ObjectId } from "mongodb";
 
 export const getAccountId = async (userId: any) => {

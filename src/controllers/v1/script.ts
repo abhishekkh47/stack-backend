@@ -1,12 +1,7 @@
-import { EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { DripshopTable } from "../../model/dripshop";
-import {
-  GIFTCARDS,
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-} from "./../../utility/constants";
+import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
+import { DripshopTable } from "@app/model/dripshop";
 import moment from "moment";
-import { PrimeTrustJWT } from "../../middleware";
+import { InternalUserAuth, PrimeTrustJWT } from "@app/middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
@@ -25,7 +20,8 @@ import {
   QuizTopicTable,
   QuizTable,
   DeletedUserTable,
-} from "../../model";
+  AdminTable,
+} from "@app/model";
 import {
   EAction,
   EStatus,
@@ -33,7 +29,7 @@ import {
   ETransactionType,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   getAllGiftCards,
   getAssets,
@@ -44,19 +40,23 @@ import {
   getInternalTransferInformation,
   getQuizImageAspectRatio,
   getBalance,
-} from "../../utility";
+  GIFTCARDS,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
 import BaseController from ".././base";
 import {
   UserDBService,
   zohoCrmService,
   DeviceTokenService,
   ScriptService,
-  userService,
   tradingService,
-} from "../../services/v1";
-import { UserService } from "../../services/v3";
-import quizContentData from "../../static/quizContent.json";
-import userDbService from "../../services/v4/user.db.service";
+  AuthService,
+} from "@app/services/v1";
+import { UserService } from "@app/services/v3";
+import userDbService from "@app/services/v4/user.db.service";
+import quizDbService from "@app/services/v4/quiz.db.service";
+import userService from "@app/services/v2/user.service";
 
 class ScriptController extends BaseController {
   /**
@@ -65,6 +65,7 @@ class ScriptController extends BaseController {
    * @returns
    */
   @Route({ path: "/update-screen-status-script", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async updateScreenStatusScript(ctx: any) {
     const reqParam = ctx.request.body;
     const { email } = reqParam;
@@ -136,6 +137,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/add-crypto-in-db", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT()
   public async addCryptoToDB(ctx: any) {
     let token = ctx.request.primeTrustToken;
@@ -206,6 +208,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/delete-data-after-30d", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async deleteDataAfter30D(ctx: any) {
     let dateBefore30Days = new Date(Date.now() - 60 * 60 * 24 * 30 * 1000); // 30 days before date
     const findQuery = {
@@ -254,6 +257,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-gift-card", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addGiftCard(ctx: any) {
     let token = await getPrimeTrustJWTToken();
     const crypto = await CryptoTable.findOne({ symbol: "BTC" });
@@ -441,6 +445,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-dripshop-offers", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addDripshop(ctx: any) {
     /**
      * get all the crypto and push in array to insert all together
@@ -467,6 +472,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-quiz-coins", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addQuizCoins(ctx: any) {
     let allQuizCoinData = await QuizResult.aggregate([
       {
@@ -513,6 +519,7 @@ class ScriptController extends BaseController {
    * @return  {*}
    */
   @Route({ path: "/add-userdata-to-crm", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async addUserDataToCrm(ctx: any) {
     /**
@@ -549,6 +556,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/staging/kyc-approve-user/:userId", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(false)
   public async kycApproveStaging(ctx: any) {
     const { primeTrustToken } = ctx.request;
@@ -572,6 +580,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-phone-verification-status", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addPhoneVerificationStatus(ctx: any) {
     const allUserInfo = await UserTable.find();
     let userToUpdateStatus = allUserInfo.map((user) => {
@@ -603,6 +612,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/add-onboarding-quiz", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addOnboardingQuiz(ctx: any) {
     const reqParam = ctx.request.body;
     await QuizQuestionTable.insertMany(reqParam.onboardingQuizData);
@@ -614,6 +624,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/unset-fields-in-db", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async unsetFieldsInDb(ctx: any) {
     /**
      * Clean up user fields , userdraft fields and  parent child table
@@ -663,6 +674,7 @@ class ScriptController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/delete-userdraft-data", method: HttpMethod.DELETE })
+  @InternalUserAuth()
   public async deleteUserdraftSelfData(ctx: any) {
     const deleteDataQuery = {
       $or: [{ type: { $in: [null, 3] } }, { email: null }, { dob: null }],
@@ -686,6 +698,7 @@ class ScriptController extends BaseController {
     path: "/migrate-teen-data",
     method: HttpMethod.POST,
   })
+  @InternalUserAuth()
   public async migrateTeenDatatoUser(ctx: any) {
     const getTeenUserdraftData = await UserDraftTable.find({
       type: EUserType.TEEN,
@@ -773,6 +786,7 @@ class ScriptController extends BaseController {
     path: "/migrate-parent-data",
     method: HttpMethod.POST,
   })
+  @InternalUserAuth()
   public async migrateParentDatatoUser(ctx: any) {
     const getAllParentData = await UserDraftTable.find({
       type: EUserType.PARENT,
@@ -927,17 +941,19 @@ class ScriptController extends BaseController {
    * @returns
    */
   @Route({ path: "/delete-data", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async deleteDataFromDB(ctx: any) {
     const userId = ctx.request.body.userId;
-    const zohoAccessToken = ctx.request.zohoAccessToken;
+    const { zohoAccessToken, primeTrustToken } = ctx.request;
     let userExists = await UserTable.findOne({ _id: userId });
     if (!userId || !userExists) {
       return this.BadRequest(ctx, "User Details Not Found");
     }
     const isDetailsDeleted = await UserService.deleteUserData(
       userExists,
-      zohoAccessToken
+      zohoAccessToken,
+      primeTrustToken
     );
     if (!isDetailsDeleted) {
       return this.BadRequest(ctx, "Error in deleting account");
@@ -952,6 +968,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/update-onboardingquiz-status", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async updateOnboardingQuizStatus(ctx: any) {
     await UserTable.updateMany(
       {
@@ -972,6 +989,7 @@ class ScriptController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/portfolio-asset-fix", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async fixPortfolioAssetBalance(ctx: any) {
     let jwtToken = ctx.request.primeTrustToken;
@@ -1072,6 +1090,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/add-quiz-topics", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addQuizTopics(ctx: any) {
     try {
       const reqBody = ctx.request.body;
@@ -1107,30 +1126,11 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to add new 1.9 quiz topics
-   * @param ctx
-   */
-  @Route({ path: "/add-quiz-content", method: HttpMethod.POST })
-  public async addQuizContent(ctx: any) {
-    try {
-      /**
-       * Make sure quiz question request body is valid in postman
-       */
-      const reqBody = ctx.request.body;
-      const createQuizContentData = await QuizQuestionTable.insertMany(
-        reqBody.data
-      );
-      return this.Ok(ctx, { message: "Success", data: createQuizContentData });
-    } catch (error) {
-      return this.BadRequest(ctx, "Something Went Wrong");
-    }
-  }
-
-  /**
    * @description This method is used to add default reminder status
    * @param ctx
    */
   @Route({ path: "/add-default-reminder-status", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async addDefaultReminderStatus(ctx: any) {
     try {
       const updatedData = await UserTable.updateMany(
@@ -1153,48 +1153,38 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/quiz-content", method: HttpMethod.POST })
+  @InternalUserAuth()
   public async storeQuizContent(ctx: any) {
     try {
-      if (!quizContentData || quizContentData.length == 0) {
-        return this.BadRequest(ctx, "Please add Quiz Content");
+      const { quizNums } = ctx.request.body;
+      if (quizNums.length === 0) {
+        return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
-      const topicIdIfExists = quizContentData.every((x) => x.topicId);
-      if (!topicIdIfExists) {
-        return this.BadRequest(ctx, "Quiz Topic is Required");
-      }
-      const quizNameIfExists = quizContentData.every((x) => x.quizName);
-      if (!quizNameIfExists) {
-        return this.BadRequest(ctx, "Quiz Image is Required");
-      }
-      const quizImageIfExists = quizContentData.every((x) => x.quizImage);
-      if (!quizImageIfExists) {
-        return this.BadRequest(ctx, "Quiz Image is Required");
-      }
-      const questionDataIfExists = quizContentData.every((x) => x.questionData);
-      if (!questionDataIfExists) {
-        return this.BadRequest(ctx, "Quiz Question is Required");
-      }
-      let quizQuestions = [];
-      await Promise.all(
-        quizContentData.map(async (data: any, index) => {
-          const quiz = await QuizTable.create({
-            quizName: data.quizName,
-            topicId: data.topicId,
-            image: data.quizImage,
-          });
-          data.questionData = data.questionData.map((x) => ({
-            ...x,
-            quizId: quiz._id,
-          }));
-          quizQuestions = quizQuestions.concat(data.questionData);
-        })
+      let investingTopic = await QuizTopicTable.findOne({ topic: "Investing" });
+      /**
+       * Read Spreadsheet
+       */
+      const rows = await ScriptService.readSpreadSheet();
+      /**
+       * Convert Spreadsheet to JSON
+       */
+      const quizContentData = await ScriptService.convertSpreadSheetToJSON(
+        investingTopic._id,
+        quizNums,
+        rows
       );
-      // /**
-      //  * Create Quiz Question
-      //  */
-      const questions = await QuizQuestionTable.insertMany(quizQuestions);
-      return this.Ok(ctx, { message: "Success", data: { questions } });
+      if (quizContentData.length === 0) {
+        return this.BadRequest(ctx, "Quiz Content Not Found");
+      }
+      const isAddedToDb = await ScriptService.addQuizContentsToDB(
+        quizContentData
+      );
+      if (!isAddedToDb) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: quizContentData });
     } catch (error) {
+      console.log(error);
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
@@ -1204,6 +1194,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/get-prime-trust-balance", method: HttpMethod.POST })
+  @InternalUserAuth()
   @PrimeTrustJWT()
   public async getBalancePT(ctx: any) {
     try {
@@ -1242,6 +1233,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/delete-crm-users", method: HttpMethod.DELETE })
+  @InternalUserAuth()
   @PrimeTrustJWT(true)
   public async deleteCRMUsers(ctx: any) {
     try {
@@ -1258,6 +1250,75 @@ class ScriptController extends BaseController {
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
+  }
+
+  /**
+   * @description This method is used to get
+   * @param ctx
+   */
+  @Route({ path: "/sync-quiz-in-zoho", method: HttpMethod.POST })
+  @InternalUserAuth()
+  @PrimeTrustJWT(true)
+  public async syncZohoCrmQuizInfoWithDB(ctx: any) {
+    try {
+      let quizResults: any = await quizDbService.getUsersQuizResult();
+      await Promise.all(
+        quizResults.map(async (res: any) => {
+          const quizDataForCrm = res.quizInformation.map(
+            (quizRes: any, quizNumber: number) => {
+              return {
+                Quiz_Number: quizNumber + 1,
+                Quiz_Name: quizRes.quizName,
+                Points: quizRes.pointsEarned,
+              };
+            }
+          );
+          let dataForCrm: any = [
+            {
+              Account_Name: res.firstName + " " + res.lastName,
+              New_Quiz_Information: quizDataForCrm,
+              Email: res.email,
+            },
+          ];
+          await zohoCrmService.addAccounts(
+            ctx.request.zohoAccessToken,
+            dataForCrm,
+            true
+          );
+        })
+      );
+      return this.Ok(ctx, { data: quizResults });
+    } catch (error) {
+      console.log(error);
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  @Route({ path: "/send-referral-push-for-test", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async sendReferralPushForTest(ctx: any) {
+    const { userId, deviceToken, receiverName } = ctx.request.body;
+
+    await userService.sendNotificationForUserReferral(
+      userId,
+      [deviceToken],
+      NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+      receiverName
+    );
+
+    return this.Ok(ctx, { message: "success" });
+  }
+
+  /**
+   * @description This method is used to export csv and get parent-child records with time in between them
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/export-parentchild-info", method: HttpMethod.GET })
+  public async exportParentChildInformation(ctx: any) {
+    const parentChildRecords = await ScriptService.getParentChildRecords();
+    await ScriptService.convertDataToCsv(ctx, parentChildRecords);
+    return ctx;
   }
 }
 

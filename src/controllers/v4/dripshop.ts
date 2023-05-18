@@ -1,10 +1,10 @@
-import { validationsV4 } from "../../validations/v4/apiValidation";
-import { UserTable } from "../../model/user";
-import BaseController from "../base";
-import { Route } from "../../utility";
-import { Auth, PrimeTrustJWT } from "../../middleware";
-import { HttpMethod } from "../../types";
-import { DripshopDBService, UserDBService } from "../../services/v1/index";
+import { validationsV4 } from "@app/validations/v4/apiValidation";
+import { UserTable } from "@app/model/user";
+import BaseController from "@app/controllers/base";
+import { Route } from "@app/utility";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { HttpMethod } from "@app/types";
+import { DripshopDBService, UserDBService } from "@app/services/v1/index";
 
 class DripshopController extends BaseController {
   /**
@@ -69,8 +69,15 @@ class DripshopController extends BaseController {
               updateParentCoinQuery
             );
           }
-
-          return this.Ok(ctx, { message: "Transaction Processed!" });
+          const userInfo = await UserDBService.getUserInfo(user._id);
+          const totalStackCoins =
+            userInfo.quizCoins +
+            userInfo.preLoadedCoins +
+            userInfo.parentQuizCoins;
+          return this.Ok(ctx, {
+            message: "Transaction Processed!",
+            totalStackCoins,
+          });
         }
       }
     );

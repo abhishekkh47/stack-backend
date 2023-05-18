@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IQuizResult, MongooseModel } from "../types";
+import type { IQuizResult, MongooseModel } from "@app/types";
 
 export type IQuizResultSchema = MongooseModel<IQuizResult> & mongoose.Document;
 

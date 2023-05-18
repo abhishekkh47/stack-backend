@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { ETransactionStatus, ITransaction, MongooseModel } from "../types";
+import { ETransactionStatus, ITransaction, MongooseModel } from "@app/types";
 
 export type ITransactionSchema = MongooseModel<ITransaction> &
   mongoose.Document;

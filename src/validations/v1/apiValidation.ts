@@ -5,7 +5,7 @@ Joi = Joi.defaults((schema) =>
   })
 );
 
-import { validationMessageKey } from "../../utility";
+import { validationMessageKey } from "@app/utility";
 export const validation = {
   getUserQuizDataValidation: (req, res, callback) => {
     const schema = Joi.object({
@@ -406,7 +406,6 @@ export const validation = {
         .disallow(Joi.ref("mobile"))
         .required(),
       email: Joi.string().email().required(),
-      childEmail: Joi.string().email().allow("").disallow(Joi.ref("email")),
       childFirstName: Joi.string()
         .min(1)
         .allow("")

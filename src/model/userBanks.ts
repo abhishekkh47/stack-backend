@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import { EBankStatus, IBankAccount, MongooseModel } from "../types";
+import { EBankStatus, IBankAccount, MongooseModel } from "@app/types";
 
 export type IUserBanksSchema = MongooseModel<IBankAccount> & mongoose.Document;
 

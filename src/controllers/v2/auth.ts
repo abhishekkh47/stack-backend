@@ -1,10 +1,5 @@
-import { validations } from "../../validations/v2/apiValidation";
-import { ENOTIFICATIONSETTINGS, EPHONEVERIFIEDSTATUS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
-import Koa from "koa";
-import moment from "moment";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -14,28 +9,31 @@ import {
   TransactionTable,
   UserDraftTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import {
   AuthService,
   DeviceTokenService,
+  ScriptService,
   SocialService,
   TokenService,
   TwilioService,
-  zohoCrmService,
   userService,
-  ScriptService,
-} from "../../services/v1/index";
+  zohoCrmService,
+} from "@app/services/v1/index";
+import { TransactionDBService, UserDBService } from "@app/services/v2";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
+  ENOTIFICATIONSETTINGS,
   EOTPTYPE,
   EOTPVERIFICATION,
+  EPHONEVERIFIEDSTATUS,
   ETransactionStatus,
   ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   createAccount,
   executeQuote,
@@ -45,13 +43,19 @@ import {
   getRefreshToken,
   internalAssetTransfers,
   makeUniqueReferalCode,
+  PARENT_SIGNUP_FUNNEL,
   Route,
-} from "../../utility";
-import { PARENT_SIGNUP_FUNNEL } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
-import UserController from "./user";
-import { UserDBService, TransactionDBService } from "../../services/v2";
+  TEEN_SIGNUP_FUNNEL,
+  PT_REFERENCE_TEXT,
+  ANALYTICS_EVENTS,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import { validations } from "@app/validations/v2/apiValidation";
+import Koa from "koa";
+import moment from "moment";
+import BaseController from "@app/controllers/base";
+import UserController from "@app/controllers/v2/user";
+import { AnalyticsService } from "@app/services/v4";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
@@ -376,6 +380,19 @@ class AuthController extends BaseController {
             }
           }
 
+          /**
+           * Confirm your detail screen
+           */
+          if (user.type == EUserType.PARENT) {
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.CONFIRM_DETAILS_SUBMITTED,
+              undefined,
+              {
+                user_id: user._id,
+              }
+            );
+          }
+
           if (
             admin.giftCryptoSetting == 1 &&
             user.isGiftedCrypto !== 2 &&
@@ -445,7 +462,7 @@ class AuthController extends BaseController {
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
+                    reference: PT_REFERENCE_TEXT,
                     "hot-transfer": true,
                   },
                 },
@@ -591,28 +608,6 @@ class AuthController extends BaseController {
               receiverName,
               reqParam.type
             );
-
-            if (
-              (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
-              user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              await userService.redeemUserReferral(
-                refferalCodeExists._id,
-                [user._id],
-                reqParam.refferalCode
-              );
-            } else if (
-              user.type == EUserType.TEEN &&
-              checkParentExists &&
-              parentChildInfo &&
-              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              await userService.redeemUserReferral(
-                refferalCodeExists._id,
-                [user._id],
-                reqParam.refferalCode
-              );
-            }
           }
 
           const authInfo = await AuthService.getJwtAuthInfo(user);
@@ -865,8 +860,6 @@ class AuthController extends BaseController {
             );
 
             if (updateUser.type == EUserType.SELF) {
-              const crypto = await CryptoTable.findOne({ symbol: "BTC" });
-
               const newUserDetail = await UserDBService.createUserAccount(
                 updateUser,
                 reqParam.mobile
@@ -877,7 +870,7 @@ class AuthController extends BaseController {
                 _id: ctx.request.user._id,
               });
 
-              let checkTransactionExists = await TransactionTable.findOne({
+              const checkTransactionExists = await TransactionTable.findOne({
                 userId: newUserDetail._id,
               });
               if (
@@ -885,6 +878,7 @@ class AuthController extends BaseController {
                 newUserDetail.isGiftedCrypto == 0 &&
                 !checkTransactionExists
               ) {
+                const crypto = await CryptoTable.findOne({ symbol: "BTC" });
                 await TransactionDBService.createBtcGiftedTransaction(
                   newUserDetail._id,
                   crypto,
@@ -1156,7 +1150,7 @@ class AuthController extends BaseController {
           }
           if (!childFirstName) {
             return this.Ok(ctx, {
-              message: "You are inviting your teen in stack",
+              message: "You are inviting your teen in Jetson",
             });
           }
           /**

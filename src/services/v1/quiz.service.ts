@@ -1,4 +1,4 @@
-import { QuizResult } from "../../model";
+import { QuizResult } from "@app/model";
 
 class QuizService {
   public async checkQuizExists(matchedCondition: any) {

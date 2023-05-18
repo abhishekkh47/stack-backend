@@ -1,11 +1,16 @@
-import { DeviceTokenService } from "../../services/v1/index";
-import { createContributions, getPrimeTrustJWTToken } from "../../utility";
+import { DeviceTokenService } from "@app/services/v1/index";
+import {
+  createContributions,
+  getPrimeTrustJWTToken,
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
 import {
   TransactionTable,
   UserTable,
   UserActivityTable,
   UserBanksTable,
-} from "../../model";
+} from "@app/model";
 import moment from "moment";
 import {
   ETransactionStatus,
@@ -15,8 +20,7 @@ import {
   EAction,
   EStatus,
   messages,
-} from "../../types";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
+} from "@app/types";
 
 export const recurringDepositHandler = async () => {
   console.log("==========Start Cron For Recurring=============");
@@ -48,8 +52,22 @@ export const recurringDepositHandler = async () => {
       },
     },
     { $unwind: { path: "$self", preserveNullAndEmptyArrays: true } },
+    {
+      $group: {
+        _id: "$_id",
+        doc: {
+          $first: "$$ROOT",
+        },
+      },
+    },
+    {
+      $replaceRoot: {
+        newRoot: "$doc",
+      },
+    },
   ]).exec();
   if (users.length > 0) {
+    users = users.filter((x) => x.parentChild || x.self);
     let todayDate = moment().startOf("day").unix();
     let transactionArray = [];
     let mainArray = [];
@@ -59,7 +77,7 @@ export const recurringDepositHandler = async () => {
       accountIdDetails = await user.parentChild?.teens.find(
         (x: any) => x.childId.toString() == user._id.toString()
       );
-      if (!accountIdDetails) {
+      if (!accountIdDetails && user.self) {
         accountIdDetails =
           (await user.self.userId.toString()) == user._id.toString() &&
           user.self;
@@ -77,6 +95,9 @@ export const recurringDepositHandler = async () => {
           $or: [{ userId: id }, { parentId: id }],
           $and: [{ isDefault: 1 }],
         });
+        if (!userInfo || (userInfo && !userInfo.processorToken)) {
+          continue;
+        }
         let contactId =
           user.type == EUserType.SELF
             ? user.self.contactId
@@ -147,13 +168,13 @@ export const recurringDepositHandler = async () => {
             executedQuoteId: contributions.data.included[0].id,
             unitCount: null,
           };
-          await transactionArray.push(transactionData);
+          transactionArray.push(transactionData);
           let bulWriteOperation = {
             updateOne: {
               filter: { _id: user._id },
               update: {
                 $set: {
-                  selectedDepositDate: moment(user.selectedDepositDate)
+                  selectedDepositDate: moment()
                     .utc()
                     .startOf("day")
                     .add(
@@ -183,7 +204,6 @@ export const recurringDepositHandler = async () => {
     await UserActivityTable.insertMany(activityArray);
     await TransactionTable.insertMany(transactionArray);
     await UserTable.bulkWrite(mainArray);
-    return true;
   }
   return true;
 };

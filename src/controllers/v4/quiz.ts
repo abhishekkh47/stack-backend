@@ -1,29 +1,27 @@
-import { PrimeTrustJWT } from "./../../middleware/primeTrust.middleware";
-import { validationsV3 } from "./../../validations/v3/apiValidation";
-import { validationsV4 } from "./../../validations/v4/apiValidation";
-import { validation } from "./../../validations/v1/apiValidation";
-import { EUserType } from "./../../types/user";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
-  UserTable,
-  QuizQuestionTable,
-  QuizQuestionResult,
-  QuizTable,
-  QuizResult,
   ParentChildTable,
-} from "../../model";
-import { Auth } from "../../middleware";
-import { everyCorrectAnswerPoints, HttpMethod } from "../../types";
+  QuizQuestionResult,
+  QuizQuestionTable,
+  QuizResult,
+  QuizTable,
+  UserTable,
+} from "@app/model";
+import { quizService, zohoCrmService } from "@app/services/v1";
+import { QuizDBService } from "@app/services/v4";
+import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
   get72HoursAhead,
   getQuizCooldown,
-  Route,
   getQuizImageAspectRatio,
-} from "../../utility";
-import BaseController from "../base";
-import { quizService, zohoCrmService } from "../../services/v1";
-import mongoose from "mongoose";
+  Route,
+} from "@app/utility";
 import moment from "moment";
-import { QuizDBService } from "../../services/v4";
+import mongoose from "mongoose";
+import BaseController from "@app/controllers/base";
+import { validation } from "@app/validations/v1/apiValidation";
+import { validationsV3 } from "@app/validations/v3/apiValidation";
+import { validationsV4 } from "@app/validations/v4/apiValidation";
 
 class QuizController extends BaseController {
   /**
@@ -465,19 +463,10 @@ class QuizController extends BaseController {
     } else {
       childExists = await ParentChildTable.findOne({
         firstChildId: userIfExists._id,
-      }).populate("userId", ["_id", "preLoadedCoins"]);
+      }).populate("userId", ["_id", "quizCoins"]);
     }
     const checkQuizExists = await quizService.checkQuizExists({
-      $or: [
-        { userId: new mongoose.Types.ObjectId(user._id) },
-        {
-          userId: childExists
-            ? userIfExists.type == EUserType.PARENT
-              ? new mongoose.Types.ObjectId(childExists.userId._id)
-              : new mongoose.Types.ObjectId(childExists.firstChildId._id)
-            : null,
-        },
-      ],
+      $or: [{ userId: new mongoose.Types.ObjectId(user._id) }],
       isOnBoardingQuiz: false,
     });
     const dataToSent = {
@@ -495,19 +484,15 @@ class QuizController extends BaseController {
           : userIfExists.type == EUserType.TEEN
           ? userIfExists.preLoadedCoins
           : 0,
+      xpPoints: 0,
     };
     /**
      * Get Stack Point Earned
      */
-    if (checkQuizExists.length > 0) {
-      dataToSent.totalStackPointsEarned += checkQuizExists[0].sum;
-    }
-    const totalStackCoins = await QuizDBService.getTotalCoinsFromQuiz(
-      user._id,
-      childExists,
-      userIfExists
-    );
-    dataToSent.totalStackPointsEarnedTop += totalStackCoins;
+    let parentCoins = childExists?.userId?.quizCoins || 0;
+    dataToSent.totalStackPointsEarned += userIfExists.quizCoins;
+    dataToSent.totalStackPointsEarnedTop +=
+      userIfExists.quizCoins + parentCoins;
 
     /**
      * Get Quiz Question Count
@@ -526,6 +511,9 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
+    userIfExists.type == EUserType.TEEN
+      ? (dataToSent.xpPoints = userIfExists.xpPoints)
+      : (dataToSent.xpPoints = 0);
     dataToSent.quizCooldown = await getQuizCooldown(headers);
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
@@ -553,38 +541,43 @@ class QuizController extends BaseController {
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
-          const quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
-          if (!quizExists) {
+          const quizIfExists = await QuizTable.findOne({
+            _id: reqParam.quizId,
+          });
+          if (!quizIfExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
           }
-          const quizResultExists = await QuizResult.findOne({
+          const quizResultsIfExists = await QuizResult.findOne({
             userId: user._id,
             quizId: reqParam.quizId,
           });
-          if (quizResultExists) {
+          if (quizResultsIfExists) {
             return this.BadRequest(
               ctx,
               "You cannot submit the same quiz again"
             );
           }
           const isTeen = userIfExists.type === EUserType.TEEN ? true : false;
-          await QuizDBService.storeQuizInformation(
+          const { totalXPPoints } = await QuizDBService.storeQuizInformation(
             user._id,
             headers,
             reqParam,
-            quizExists,
+            quizIfExists,
             isTeen
           );
-          const dataSentInCrm = await QuizDBService.getQuizDataToSentInCrm(
+          const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id
           );
           await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
-            dataSentInCrm,
+            dataForCrm,
             true
           );
-          return this.Ok(ctx, { message: "Quiz Results Stored Successfully" });
+          return this.Ok(ctx, {
+            message: "Quiz Results Stored Successfully",
+            totalXPPoints: totalXPPoints,
+          });
         }
       }
     );

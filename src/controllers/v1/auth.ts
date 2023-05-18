@@ -1,9 +1,7 @@
-import { ENOTIFICATIONSETTINGS } from "../../types/user";
-import { TEEN_SIGNUP_FUNNEL } from "../../utility/constants";
 import Koa from "koa";
 import moment from "moment";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   CryptoTable,
@@ -14,17 +12,17 @@ import {
   TransactionTable,
   UserDraftTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import {
   AuthService,
   DeviceTokenService,
+  ScriptService,
   SocialService,
   TokenService,
   TwilioService,
-  zohoCrmService,
   userService,
-  ScriptService,
-} from "../../services/v1/index";
+  zohoCrmService,
+} from "@app/services/v1/index";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
@@ -36,7 +34,8 @@ import {
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+  ENOTIFICATIONSETTINGS,
+} from "@app/types";
 import {
   createAccount,
   decodeJwtToken,
@@ -49,14 +48,14 @@ import {
   makeUniqueReferalCode,
   Route,
   verifyToken,
-} from "../../utility";
-import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   PARENT_SIGNUP_FUNNEL,
-} from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+  TEEN_SIGNUP_FUNNEL,
+  PT_REFERENCE_TEXT,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 import UserController from "./user";
 
 class AuthController extends BaseController {
@@ -443,7 +442,7 @@ class AuthController extends BaseController {
                     "from-account-id": envData.OPERATIONAL_ACCOUNT,
                     "to-account-id": accountIdDetails.accountId,
                     "asset-id": crypto.assetId,
-                    reference: "$5 BTC gift from Stack",
+                    reference: PT_REFERENCE_TEXT,
                     "hot-transfer": true,
                   },
                 },
@@ -608,28 +607,6 @@ class AuthController extends BaseController {
               receiverName,
               reqParam.type
             );
-
-            if (
-              (user.type == EUserType.PARENT || user.type == EUserType.SELF) &&
-              user.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              await userService.redeemUserReferral(
-                refferalCodeExists._id,
-                [user._id],
-                reqParam.refferalCode
-              );
-            } else if (
-              user.type == EUserType.TEEN &&
-              checkParentExists &&
-              parentChildInfo &&
-              checkParentExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-            ) {
-              await userService.redeemUserReferral(
-                refferalCodeExists._id,
-                [user._id],
-                reqParam.refferalCode
-              );
-            }
           }
 
           const authInfo = await AuthService.getJwtAuthInfo(user);
@@ -1487,7 +1464,7 @@ class AuthController extends BaseController {
           }
           if (!childFirstName) {
             return this.Ok(ctx, {
-              message: "You are inviting your teen in stack",
+              message: "You are inviting your teen in Jetson",
             });
           }
           /**

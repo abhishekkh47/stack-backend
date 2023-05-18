@@ -1,5 +1,5 @@
-import { getHistoricalDataOfCoins } from "../../utility";
-import { CryptoTable, CryptoPriceTable } from "../../model";
+import { getHistoricalDataOfCoins } from "@app/utility";
+import { CryptoTable, CryptoPriceTable } from "@app/model";
 
 export const historicalPriceHandler = async () => {
   console.log("==========Start Cron for historical price=============");

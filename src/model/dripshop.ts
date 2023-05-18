@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IDripshop, MongooseModel } from "../types";
+import type { IDripshop, MongooseModel } from "@app/types";
 
 export type IDripshopSchema = MongooseModel<IDripshop> & mongoose.Document;
 

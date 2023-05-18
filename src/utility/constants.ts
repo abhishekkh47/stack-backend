@@ -40,6 +40,7 @@ export const PRIMETRUSTAPIS = {
   getInternalTransferInformation: (quoteId) =>
     `v2/internal-asset-transfers/${quoteId}`,
   internalAssetTransfers: `v2/internal-asset-transfers`,
+  pendingClosure: (accountId) => `v2/accounts/${accountId}/pending-close`,
 };
 export const COINMARKETCAPAPIS = {
   historicalPrice: (crypto) =>
@@ -113,11 +114,11 @@ export const NOTIFICATION = {
   KYC_APPROVED_DESCRIPTION: "Explore our app for more features 🤩",
   KYC_REJECTED_TITLE: "Looks like we need additional information from you 👀",
   SUCCESS_REFER_MESSAGE:
-    "You have earned 1000 Stack coins from referring a friend! 🥳",
+    "You have earned 1000 Jetson coins from referring a friend! 🥳",
   SUCCESS_REFER_CODE_USE_MESSAGE:
-    "You have been gifted 1000 Stack coins by using correct referral code 🥳",
+    "You have been gifted 1000 Jetson coins by using correct referral code 🥳",
   EARN_STACK_COINS_AFTER_SUCCESSFUL_KYC:
-    "You have been gifted 1000 Stack coins as your parent's kyc got approved 🥳",
+    "You have been gifted 1000 Jetson coins as your parent's kyc got approved 🥳",
   ACCOUNT_CLOSED_TITLE: "Your account is closed",
   ACCOUNT_CLOSED_DESCRIPTION:
     "Thanks for applying, we can't open an account for you based on the info you provided",
@@ -137,21 +138,36 @@ export const NOTIFICATION = {
     "Redeemed ${amount} Bitcoin Gift Card from {sender}",
   REFERR_TITLE: "Congrats 🎉",
   REFERRAL_SENDER_MESSAGE:
-    "You have received 500🔥from referring your friend {friendName}! Be sure to say thanks.",
+    "You have received 20XP from referring your friend {friendName}! Be sure to say thanks.",
   REFERRAL_RECEIVER_MESSAGE:
-    "You have received 500🔥from your friend {friendName}! Be sure to say thanks.",
+    "You have received 20XP from your friend {friendName}! Be sure to say thanks.",
   DRIP_SHOP_MESSAGE:
     "Reedemed ${cryptoAmount} of ${cryptoName} in exchange of {fuelAmount} fuel",
-  REDEEM_BTC_SUCCESS_TITLE: "Hi! It's Jetson.",
-  REDEEM_BTC_SUCCESS_MESSAGE:
-    "🎉 We just sent you $5 Bitcoin. Time to show off!",
-  CHALLENGE_AVAILABLE_TITLE: "Hi! It's Jetson.",
-  CHALLENGE_AVAILABLE_MESSAGE:
-    "⏰ It's time for your next challenge. Let's Go!",
-  COMPLETE_KYC_REMINDER_TITLE: "Hi! It's Jetson.",
-  COMPLETE_KYC_REMINDER_MESSAGE:
-    "⏰ Complete the onboarding to unlock your child’s financial future.",
 };
+
+export const NOTIFICATIONS = {
+  REDEEM_BTC_SUCCESS: {
+    key: "redeem_btc_success",
+    title: "Hi! It's Jetson.",
+    message: "🎉 We just sent you $5 Bitcoin. Time to show off!",
+    nameForTracking: "Bitcoin redeemed",
+  },
+  CHALLENGE_AVAILABLE: {
+    key: "challenge_available",
+    title: "Hi! It's Jetson.",
+    message: "⏰ It's time for your next challenge. Let's Go!",
+    nameForTracking: "New challenge available",
+  },
+  COMPLETE_KYC_REMINDER: {
+    key: "complete_kyc_reminder",
+    title: "Hi! It's Jetson.",
+    message:
+      "⏰ Complete the onboarding to unlock your child’s financial future.",
+    nameForTracking: "Parent KYC reminder 1",
+  },
+};
+
+export const PT_REFERENCE_TEXT = "$5 BTC gift from Jetson";
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
@@ -163,12 +179,9 @@ export const NOTIFICATION_KEYS = {
   ACCOUNT_CLOSED: "account_closed",
   KYC_FAILURE: "kyc_failure",
   KYC_PENDING: "kyc_pending",
-  FREIND_REFER: "refer_freind",
+  FRIEND_REFER: "refer_friend",
   GIFT_CARD_ISSUED: "gift_card_issued",
   EARN_STACK_COINS_AFTER_KYC_APPROVED: "earn_stack_coins_after_kyc_approved",
-  REDEEM_BTC_SUCCESS: "redeem_btc_success",
-  CHALLENGE_AVAILABLE: "challenge_available",
-  COMPLETE_KYC_REMINDER: "complete_kyc_reminder",
 };
 
 export const PARENT_SIGNUP_FUNNEL = {
@@ -217,4 +230,15 @@ export const ANALYTICS_EVENTS = {
   SIGNED_UP_SSO: "Signed Up with SSO",
   UPLOAD_DL_SUBMITTED: "Upload DL Submitted",
   CHALLENGE_COMPLETED: "Challenge Completed",
+  PUSH_NOTIFICATION_SENT: "Push Notification Sent",
+  PARENT_SIGNED_UP: "Parent Signed Up",
+  PARENT_KYC_APPROVED: "Parent KYC Approved",
+  KYC_APPROVED: "KYC Approved",
+  KYC_SUBMITTED: "KYC Submitted",
+};
+
+export const XP_POINTS = {
+  CORRECT_ANSWER: 5,
+  COMPLETED_QUIZ: 10,
+  REFERRAL: 20,
 };

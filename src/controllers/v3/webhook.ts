@@ -1,35 +1,39 @@
-import { UserBanksTable } from "./../../model/userBanks";
-import { UserReferralTable } from "../../model/user-referral";
-import moment from "moment";
-import envData from "../../config/index";
-import { PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   ParentChildTable,
   TransactionTable,
+  UserBanksTable,
+  UserReferralTable,
   UserTable,
   WebhookTable,
-} from "../../model";
+} from "@app/model";
 import {
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../services/v1/index";
+} from "@app/services/v1/index";
+import { TradingService, UserService } from "@app/services/v3/index";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   createAccount,
   getAccountStatusByAccountId,
+  NOTIFICATION,
+  NOTIFICATIONS,
+  NOTIFICATION_KEYS,
   Route,
-} from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import BaseController from "../base";
-import { TradingService, UserService } from "../../services/v3/index";
+  ANALYTICS_EVENTS,
+} from "@app/utility";
+import moment from "moment";
+import BaseController from "@app/controllers/base";
+import { AnalyticsService } from "@app/services/v4";
 
 class WebHookController extends BaseController {
   /**
@@ -73,25 +77,6 @@ class WebHookController extends BaseController {
       return this.OkWebhook(ctx, "User Not Found");
     }
 
-    /**
-     * to get all the teen ids for the parent and self ids in case of self
-     */
-    let arrayForReferral = [];
-    if (
-      userExists.type === EUserType.PARENT &&
-      checkAccountIdExists.teens.length > 0
-    ) {
-      checkAccountIdExists.teens.map((obj) =>
-        arrayForReferral.push(obj.childId._id)
-      );
-    } else {
-      arrayForReferral.push(checkAccountIdExists.firstChildId._id);
-    }
-
-    let getReferralSenderId = await UserReferralTable.findOne({
-      "referralArray.referredId": { $in: arrayForReferral },
-    });
-
     const userBankInfo = await UserBanksTable.findOne({
       userId: userExists._id,
     });
@@ -109,8 +94,7 @@ class WebHookController extends BaseController {
          * Failure phases
          */
         if (
-          body.data &&
-          body.data["kyc_required_actions"] &&
+          body.data?.["kyc_required_actions"] &&
           Object.keys(body.data["kyc_required_actions"]).length > 0
         ) {
           await UserTable.updateOne(
@@ -149,9 +133,7 @@ class WebHookController extends BaseController {
          * Success phases
          */
         if (
-          body.data &&
-          body.data["changes"] &&
-          body.data["changes"].length > 0 &&
+          body.data?.["changes"]?.length > 0 &&
           (body.data["changes"].includes("cip-cleared") ||
             body.data["changes"].includes("aml-cleared") ||
             body.data["changes"].includes("identity-confirmed"))
@@ -210,8 +192,7 @@ class WebHookController extends BaseController {
               const current = moment().unix();
 
               if (
-                parentChildDetails &&
-                parentChildDetails.unlockRewardTime &&
+                parentChildDetails?.unlockRewardTime &&
                 parentChildDetails.isRewardDeclined == false &&
                 current <= parentChildDetails.unlockRewardTime
               ) {
@@ -230,13 +211,16 @@ class WebHookController extends BaseController {
                     admin,
                     false
                   );
+                  const { key, title, message, nameForTracking } =
+                    NOTIFICATIONS.REDEEM_BTC_SUCCESS;
                   await DeviceTokenService.sendUserNotification(
                     parentChildDetails.firstChildId,
-                    NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
-                    NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
-                    NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+                    key,
+                    title,
+                    message,
                     null,
-                    parentChildDetails.firstChildId
+                    parentChildDetails.firstChildId,
+                    nameForTracking
                   );
                 }
               }
@@ -262,30 +246,34 @@ class WebHookController extends BaseController {
               null,
               userExists._id
             );
+
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.PARENT_KYC_APPROVED,
+              undefined,
+              {
+                user_id: checkAccountIdExists.firstChildId._id,
+              }
+            );
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.KYC_APPROVED,
+              undefined,
+              {
+                user_id: checkAccountIdExists.userId._id,
+              }
+            );
+
             /**
              * Gift stack coins to all teens whose parent's kyc is approved
              */
             if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
               let userIdsToBeGifted = [];
-
-              /**
-               * for user referral
-               */
-
-              getReferralSenderId &&
-                (await userService.redeemUserReferral(
-                  getReferralSenderId.userId,
-                  arrayForReferral,
-                  userExists.referralCode
-                ));
-
               if (userExists.type == EUserType.PARENT) {
-                let allTeens = await checkAccountIdExists.teens.filter(
+                let allTeens = checkAccountIdExists.teens.filter(
                   (x) => x.childId.isGifted == EGIFTSTACKCOINSSETTING.OFF
                 );
                 if (allTeens.length > 0) {
-                  for await (let allTeen of allTeens) {
-                    await userIdsToBeGifted.push(allTeen.childId._id);
+                  for (let allTeen of allTeens) {
+                    userIdsToBeGifted.push(allTeen.childId._id);
                     /**
                      * Added in zoho
                      */
@@ -427,13 +415,16 @@ class WebHookController extends BaseController {
                       admin,
                       false
                     );
+                    const { key, title, message, nameForTracking } =
+                      NOTIFICATIONS.REDEEM_BTC_SUCCESS;
                     await DeviceTokenService.sendUserNotification(
                       parentChildDetails.firstChildId,
-                      NOTIFICATION_KEYS.REDEEM_BTC_SUCCESS,
-                      NOTIFICATION.REDEEM_BTC_SUCCESS_TITLE,
-                      NOTIFICATION.REDEEM_BTC_SUCCESS_MESSAGE,
+                      key,
+                      title,
+                      message,
                       null,
-                      parentChildDetails.firstChildId
+                      parentChildDetails.firstChildId,
+                      nameForTracking
                     );
                   }
                 }
@@ -460,6 +451,22 @@ class WebHookController extends BaseController {
                 null,
                 userExists._id
               );
+
+              AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.PARENT_KYC_APPROVED,
+                undefined,
+                {
+                  user_id: checkAccountIdExists.firstChildId._id,
+                }
+              );
+              AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.KYC_APPROVED,
+                undefined,
+                {
+                  user_id: checkAccountIdExists.userId._id,
+                }
+              );
+
               if (userExists.type == EUserType.PARENT) {
                 let allChilds: any = await checkAccountIdExists.teens.filter(
                   (x) =>
@@ -533,16 +540,6 @@ class WebHookController extends BaseController {
                */
               if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
                 let userIdsToBeGifted = [];
-
-                /**
-                 * for user referral
-                 */
-                getReferralSenderId &&
-                  (await userService.redeemUserReferral(
-                    getReferralSenderId.userId,
-                    arrayForReferral,
-                    userExists.referralCode
-                  ));
 
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(

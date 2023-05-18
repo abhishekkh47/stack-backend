@@ -6,7 +6,7 @@ import {
   IUser,
   MongooseModel,
   EPHONEVERIFIEDSTATUS,
-} from "../types";
+} from "@app/types";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
@@ -98,6 +98,11 @@ const schema = new mongoose.Schema<IUserSchema>(
      * you will get 1000 coins by signing up.
      */
     preLoadedCoins: { type: mongoose.Schema.Types.Number, default: 0 },
+    /**
+     * Introduced in v1.12
+     * Used only for teens
+     */
+    xpPoints: { type: mongoose.Schema.Types.Number, default: 0 },
     /**
      * number of quiz coins used by teen
      */

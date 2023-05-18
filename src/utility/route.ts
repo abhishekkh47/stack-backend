@@ -4,7 +4,7 @@ import {
   IController,
   IControllerRoute,
   IRouteParams,
-} from "../types";
+} from "@app/types";
 
 export interface IRouteDict {
   // key will look like this: httpMethod + ' - ' + routePath

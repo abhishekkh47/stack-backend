@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IAdmin, MongooseModel } from "../types";
+import type { IAdmin, MongooseModel } from "@app/types";
 
 export type IAdminSchema = MongooseModel<IAdmin> & mongoose.Document;
 
@@ -44,6 +44,10 @@ const schema = new mongoose.Schema<IAdminSchema>(
     quizCooldown: {
       type: mongoose.Schema.Types.Mixed,
       required: true,
+    },
+    token: {
+      type: mongoose.Schema.Types.String,
+      default: null,
     },
   },
   { timestamps: true }

@@ -1,8 +1,8 @@
-import { OtpTable } from "../../model";
-import { EOTPTYPE } from "../../types";
-import { generateRandom6DigitCode } from "../../utility";
+import { OtpTable } from "@app/model";
+import { EOTPTYPE } from "@app/types";
+import { generateRandom6DigitCode } from "@app/utility";
 
-import config from "../../config";
+import config from "@app/config";
 
 class TwilioService {
   /**
@@ -40,7 +40,7 @@ class TwilioService {
 
   public async sendOTP(mobile: string, type: EOTPTYPE) {
     const code = generateRandom6DigitCode(true);
-    const message: string = `Your Stack verification code is ${code}. Please don't share it with anyone.`;
+    const message: string = `Your Jetson verification code is ${code}. Please don't share it with anyone.`;
     /**
      * Send Otp to User from registered mobile number
      */

@@ -1,6 +1,7 @@
+import { AdminTable } from "@app/model";
 import { verifyToken } from "@app/utility";
 
-export const Auth = () => {
+export const InternalUserAuth = () => {
   return (_: Object, __?: string, descriptor?: PropertyDescriptor) => {
     const fn: Function = descriptor.value;
     descriptor.value = async function (ctx: any) {
@@ -14,6 +15,10 @@ export const Auth = () => {
       try {
         const response = await verifyToken(token);
         if (response && response.status && response.status === 401) {
+          return this.UnAuthorized(ctx, "Invalid JWT Token");
+        }
+        const admin = await AdminTable.findOne({});
+        if (admin.token !== token) {
           return this.UnAuthorized(ctx, "Invalid JWT Token");
         }
         ctx.request.user = response;

@@ -1,17 +1,19 @@
-import { EUserType, EUSERSTATUS } from "../../types/user";
+import { EUserType, EUSERSTATUS, ERead, ERECURRING } from "@app/types";
 import {
   Notification,
   ParentChildTable,
   UserDraftTable,
   UserReferralTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { ERead, ERECURRING } from "../../types";
-import config from "../../config/index";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { sendNotification } from "../../utility/notificationSend";
+import config from "@app/config/index";
+import {
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+  sendNotification,
+} from "@app/utility";
 
 class UserService {
   /**
@@ -482,7 +484,7 @@ class UserService {
     name: any
   ) {
     let notificationRequest = {
-      key: NOTIFICATION_KEYS.FREIND_REFER,
+      key: NOTIFICATION_KEYS.FRIEND_REFER,
       title: NOTIFICATION.REFERR_TITLE,
       message: key.replace("{friendName}", name),
     };

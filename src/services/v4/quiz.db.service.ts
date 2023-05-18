@@ -1,5 +1,10 @@
-import { NetworkError } from "../../middleware/error.middleware";
-import { get72HoursAhead, getQuizCooldown } from "../../utility";
+import { NetworkError } from "@app/middleware";
+import {
+  get72HoursAhead,
+  getQuizCooldown,
+  ANALYTICS_EVENTS,
+  XP_POINTS,
+} from "@app/utility";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -8,12 +13,11 @@ import {
   QuizTable,
   QuizTopicTable,
   UserTable,
-} from "../../model";
+} from "@app/model";
 import mongoose from "mongoose";
-import { EUserType, everyCorrectAnswerPoints } from "../../types";
-import { quizService } from "../v1";
-import { AnalyticsService } from "../../services/v4";
-import { ANALYTICS_EVENTS } from "../../utility/constants";
+import { EUserType, everyCorrectAnswerPoints } from "@app/types";
+import { quizService } from "@services/v1";
+import { AnalyticsService } from "@app/services/v4";
 
 class QuizDBService {
   /**
@@ -21,11 +25,13 @@ class QuizDBService {
    * @param quizIds
    */
   public async getQuizData(quizIds: string[]) {
-    const quizData = await QuizTopicTable.aggregate([
+    let quizData = await QuizTopicTable.aggregate([
       {
         $sort: { createdAt: 1 },
       },
       {
+        // type = 2 means new quiz, which means we are pulling the new space school quiz
+        // status = 1 means active quizzes
         $match: {
           type: 2,
           status: 1,
@@ -71,6 +77,7 @@ class QuizDBService {
     if (quizData.length === 0) {
       throw Error("Quiz Not Found");
     }
+    quizData = quizData.sort(() => 0.5 - Math.random());
     return quizData;
   }
 
@@ -226,6 +233,7 @@ class QuizDBService {
     quizExists: any,
     isTeen: boolean
   ) {
+    let totalXPPoints = 0;
     const lastQuizPlayed = await QuizResult.findOne({
       userId: userId,
       isOnBoardingQuiz: false,
@@ -271,7 +279,9 @@ class QuizDBService {
      */
     await QuizQuestionResult.insertMany(quizQuestions);
 
-    const pointsEarnedFromQuiz = everyCorrectAnswerPoints * reqParam.solvedQuestions.length
+    const pointsEarnedFromQuiz =
+      everyCorrectAnswerPoints * reqParam.solvedQuestions.length;
+
     const dataToCreate = {
       topicId: quizExists.topicId,
       quizId: quizExists._id,
@@ -280,29 +290,37 @@ class QuizDBService {
       pointsEarned: pointsEarnedFromQuiz,
     };
     await QuizResult.create(dataToCreate);
+    let incrementObj: any = {
+      quizCoins: pointsEarnedFromQuiz,
+    };
     let query: any = {
-      $inc: {
-        quizCoins: pointsEarnedFromQuiz,
-      },
+      $inc: incrementObj,
     };
     if (isTeen) {
-      query = { ...query, $set: { isQuizReminderNotificationSent: false } };
+      const correctAnswerXPPointsEarned =
+        reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
+      totalXPPoints = correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ;
+      incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
+      query = {
+        ...query,
+        $inc: incrementObj,
+        $set: { isQuizReminderNotificationSent: false },
+      };
     }
     await UserTable.updateOne({ _id: userId }, query);
 
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
       {
-        'Challenge Name': quizExists.quizName,
-        'Challenge Score': pointsEarnedFromQuiz,
+        "Challenge Name": quizExists.quizName,
+        "Challenge Score": pointsEarnedFromQuiz,
       },
       {
         device_id: reqParam.deviceId,
-        user_id: userId
+        user_id: userId,
       }
     );
-
-    return true;
+    return { totalXPPoints };
   }
 
   /**
@@ -310,62 +328,45 @@ class QuizDBService {
    * @param userIfExists
    * @param userId
    */
-  public async getQuizDataToSentInCrm(userIfExists: any, userId: string) {
+  public async getQuizDataForCrm(userIfExists: any, userId: string) {
     let userExistsForQuiz = null;
     let preLoadedCoins = 0;
     let isParentOrChild = 0;
     if (userIfExists.type == EUserType.PARENT) {
-      userExistsForQuiz = await ParentChildTable.findOne({
-        userId: userIfExists._id,
-      }).populate("firstChildId", [
-        "_id",
-        "preLoadedCoins",
-        "isGiftedCrypto",
-        "isParentFirst",
-        "firstName",
-        "lastName",
-        "email",
-      ]);
-      isParentOrChild = userExistsForQuiz ? 1 : 0;
-      preLoadedCoins = userExistsForQuiz
-        ? userExistsForQuiz.firstChildId.preLoadedCoins
-        : 0;
-    } else {
-      userExistsForQuiz = await ParentChildTable.findOne({
-        $or: [
-          { firstChildId: userIfExists._id },
-          {
-            "teens.childId": userIfExists._id,
-          },
-        ],
-      }).populate("userId", [
-        "_id",
-        "preLoadedCoins",
-        "firstName",
-        "lastName",
-        "isGiftedCrypto",
-        "isParentFirst",
-        "email",
-      ]);
-      isParentOrChild = userExistsForQuiz ? 2 : 0;
-      preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
+      throw new NetworkError("User not found", 400);
     }
-    const checkQuizExists = await quizService.checkQuizExists({
+    userExistsForQuiz = await ParentChildTable.findOne({
+      $or: [
+        { userId: userIfExists._id },
+        {
+          "teens.childId": userIfExists._id,
+        },
+      ],
+    }).populate("userId", [
+      "_id",
+      "preLoadedCoins",
+      "firstName",
+      "lastName",
+      "isGiftedCrypto",
+      "isParentFirst",
+      "email",
+    ]);
+    isParentOrChild = userExistsForQuiz ? 2 : 0;
+    preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
+    const quizIfExists = await quizService.checkQuizExists({
       $or: [
         { userId: new mongoose.Types.ObjectId(userIfExists._id) },
         {
           userId: userExistsForQuiz
-            ? userIfExists.type == EUserType.PARENT
-              ? new mongoose.Types.ObjectId(userExistsForQuiz.firstChildId._id)
-              : new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
+            ? new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
             : null,
         },
       ],
       isOnBoardingQuiz: false,
     });
     let stackCoins = 0;
-    if (checkQuizExists.length > 0) {
-      stackCoins = checkQuizExists[0].sum;
+    if (quizIfExists.length > 0) {
+      stackCoins = quizIfExists[0].sum;
     }
     stackCoins = stackCoins + preLoadedCoins;
     /**
@@ -373,12 +374,14 @@ class QuizDBService {
      */
     let allQuizData: any = await QuizResult.find({
       userId: userId,
+      isOnBoardingQuiz: false,
     }).populate("quizId");
-    let quizDataAddInCrm = [];
+    let quizDataForCrm = [];
     if (allQuizData.length > 0) {
-      quizDataAddInCrm = allQuizData.map((res) => {
+      quizDataForCrm = allQuizData.map((res, index) => {
         return {
-          Quiz_Number: parseInt(res.quizId.quizName.split(" ")[1]),
+          Quiz_Number: index + 1,
+          Quiz_Name: res.quizId.quizName,
           Points: res.pointsEarned,
         };
       });
@@ -387,29 +390,10 @@ class QuizDBService {
       {
         Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
         Stack_Coins: stackCoins,
-        Quiz_Information: quizDataAddInCrm,
+        New_Quiz_Information: quizDataForCrm,
         Email: userIfExists.email,
       },
     ];
-    if (isParentOrChild != 0) {
-      isParentOrChild == 2
-        ? dataSentInCrm.push({
-            Account_Name:
-              userExistsForQuiz.userId.firstName +
-              " " +
-              userExistsForQuiz.userId.lastName,
-            Stack_Coins: stackCoins,
-            Email: userExistsForQuiz.userId.email,
-          })
-        : dataSentInCrm.push({
-            Account_Name:
-              userExistsForQuiz.firstChildId.firstName +
-              " " +
-              userExistsForQuiz.firstChildId.lastName,
-            Stack_Coins: stackCoins,
-            Email: userExistsForQuiz.firstChildId.email,
-          });
-    }
     return dataSentInCrm;
   }
 
@@ -467,6 +451,94 @@ class QuizDBService {
         },
       },
     ]).exec();
+    return quizResults;
+  }
+
+  /**
+   * @description get last quiz records
+   */
+  public async getUsersQuizResult() {
+    const quizResults = await QuizResult.aggregate([
+      {
+        $match: {
+          isOnBoardingQuiz: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "quizTopicData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopicData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "quizId",
+          foreignField: "_id",
+          as: "quizData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $eq: ["$quizTopicData.image", null],
+            },
+            then: "$$PRUNE",
+            else: "$$KEEP",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          firstName: {
+            $first: "$userData.firstName",
+          },
+          lastName: {
+            $first: "$userData.lastName",
+          },
+          email: {
+            $first: "$userData.email",
+          },
+          quizInformation: {
+            $addToSet: {
+              pointsEarned: "$pointsEarned",
+              quizName: "$quizData.quizName",
+            },
+          },
+        },
+      },
+    ]).exec();
+    if (quizResults.length === 0) throw new NetworkError("Quiz not found", 400);
     return quizResults;
   }
 }

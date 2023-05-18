@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IDeviceToken, MongooseModel } from "../types";
+import type { IDeviceToken, MongooseModel } from "@app/types";
 
 export type IDeviceTokenSchema = MongooseModel<IDeviceToken> &
   mongoose.Document;

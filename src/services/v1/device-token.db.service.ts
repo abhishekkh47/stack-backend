@@ -1,4 +1,4 @@
-import { DeviceToken } from "../../model/deviceToken";
+import { DeviceToken } from "@app/model";
 
 class DeviceTokenDBService {
   /**
@@ -25,9 +25,20 @@ class DeviceTokenDBService {
         },
       },
       {
-        $project: {
-          isNotificationOn: "$userNotificationInfo.isNotificationOn",
-          deviceToken: 1,
+        $unwind: {
+          path: "$deviceToken",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          deviceToken: {
+            $addToSet: "$deviceToken",
+          },
+          isNotificationOn: {
+            $first: "$userNotificationInfo.isNotificationOn",
+          },
         },
       },
     ];

@@ -1,8 +1,7 @@
 import axios from "axios";
-import config from "../config/index";
+import config from "@app/config";
 import request from "request";
 import { PRIMETRUSTAPIS } from "./constants";
-import envData from "../config/index";
 /**
  * @description This api is used by prime trust for getting jwt token to access all apis
  */
@@ -13,8 +12,8 @@ export const getPrimeTrustJWTToken = async () => {
       {},
       {
         auth: {
-          username: envData.PT_USERNAME,
-          password: envData.PT_PASSWORD,
+          username: config.PT_USERNAME,
+          password: config.PT_PASSWORD,
         },
       }
     )
@@ -772,6 +771,45 @@ export const getInternalTransferInformation = async (token, quoteId) => {
     .then((res) => res.data)
     .catch((error) => {
       return { status: 400, message: error.response.data };
+    });
+  return response;
+};
+
+/**
+ * @description This api is used to update opened account to pending closure
+ * @param token
+ * @param accountId
+ * @return {*}
+ */
+export const updateAccountToPendingClosure = async (token, accountId) => {
+  const response = await axios
+    .post(
+      config.PRIMETRUSTAPI_URL + PRIMETRUSTAPIS.pendingClosure(accountId),
+      {
+        data: {
+          type: "accounts",
+          attributes: {
+            accounts: "pending close",
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+    .then((res) => {
+      return {
+        status: 200,
+        data: res.data,
+      };
+    })
+    .catch((error) => {
+      return {
+        status: 400,
+        message: error.response.data.errors[0].detail,
+      };
     });
   return response;
 };

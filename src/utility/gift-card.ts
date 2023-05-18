@@ -1,6 +1,6 @@
 import { Config } from "aws-sdk";
 import axios from "axios";
-import config from "../config/index";
+import config from "@app/config";
 import { GIFTCARDAPIS, GIFTCARDS } from "./constants";
 
 /**

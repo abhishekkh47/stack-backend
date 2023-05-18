@@ -1,41 +1,41 @@
-import { UserBanksTable } from "./../../model/userBanks";
-import { UserReferralTable } from "../../model/user-referral";
 import { json } from "co-body";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
-import envData from "../../config/index";
-import { Auth, PrimeTrustJWT } from "../../middleware";
+import envData from "@app/config/index";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
   ParentChildTable,
   TransactionTable,
   UserTable,
   WebhookTable,
-} from "../../model";
+  UserReferralTable,
+} from "@app/model";
 import {
   AuthService,
   DeviceTokenService,
   userService,
   zohoCrmService,
-} from "../../services/v1/index";
+} from "@app/services/v1/index";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
-} from "../../types";
+} from "@app/types";
 import {
   checkValidBase64String,
   createAccount,
   getAccountStatusByAccountId,
   Route,
   uploadFilesFetch,
-} from "../../utility";
-import { NOTIFICATION, NOTIFICATION_KEYS } from "../../utility/constants";
-import { validation } from "../../validations/v1/apiValidation";
-import BaseController from "../base";
+  NOTIFICATION,
+  NOTIFICATION_KEYS,
+} from "@app/utility";
+import { validation } from "@app/validations/v1/apiValidation";
+import BaseController from "@app/controllers/base";
 
 class WebHookController extends BaseController {
   /**
@@ -77,25 +77,6 @@ class WebHookController extends BaseController {
     if (!userExists) {
       return this.OkWebhook(ctx, "User Not Found");
     }
-
-    /**
-     * to get all the teen ids for the parent and self ids in case of self
-     */
-    let arrayForReferral = [];
-    if (
-      userExists.type === EUserType.PARENT &&
-      checkAccountIdExists.teens.length > 0
-    ) {
-      checkAccountIdExists.teens.map((obj) =>
-        arrayForReferral.push(obj.childId._id)
-      );
-    } else {
-      arrayForReferral.push(checkAccountIdExists.firstChildId._id);
-    }
-
-    let getReferralSenderId = await UserReferralTable.findOne({
-      "referralArray.referredId": { $in: arrayForReferral },
-    });
 
     switch (body.resource_type) {
       /**
@@ -217,17 +198,6 @@ class WebHookController extends BaseController {
              */
             if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
               let userIdsToBeGifted = [];
-
-              /**
-               * for user referral
-               */
-
-              getReferralSenderId &&
-                (await userService.redeemUserReferral(
-                  getReferralSenderId.userId,
-                  arrayForReferral,
-                  userExists.referralCode
-                ));
 
               if (userExists.type == EUserType.PARENT) {
                 let allTeens = await checkAccountIdExists.teens.filter(
@@ -432,16 +402,6 @@ class WebHookController extends BaseController {
                */
               if (admin.giftStackCoinsSetting == EGIFTSTACKCOINSSETTING.ON) {
                 let userIdsToBeGifted = [];
-
-                /**
-                 * for user referral
-                 */
-                getReferralSenderId &&
-                  (await userService.redeemUserReferral(
-                    getReferralSenderId.userId,
-                    arrayForReferral,
-                    userExists.referralCode
-                  ));
 
                 if (userExists.type == EUserType.PARENT) {
                   let allTeens = await checkAccountIdExists.teens.filter(

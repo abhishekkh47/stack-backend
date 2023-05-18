@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IUserReferral, MongooseModel } from "../types";
+import type { IUserReferral, MongooseModel } from "@app/types";
 
 export type IUserReferralSchema = MongooseModel<IUserReferral> &
   mongoose.Document;

@@ -1,8 +1,7 @@
-import { ParentChildTable } from "../../model/parentChild";
-import { ERECURRING } from "../../types/user";
+import { ParentChildTable, UserTable } from "@app/model";
+import { ERECURRING } from "@app/types/user";
 import { ObjectId } from "mongodb";
-import { UserTable } from "../../model/user";
-import { NetworkError } from "../../middleware/error.middleware";
+import { NetworkError } from "@app/middleware";
 
 class UserDBService {
   /**
