@@ -52,8 +52,22 @@ export const recurringDepositHandler = async () => {
       },
     },
     { $unwind: { path: "$self", preserveNullAndEmptyArrays: true } },
+    {
+      $group: {
+        _id: "$_id",
+        doc: {
+          $first: "$$ROOT",
+        },
+      },
+    },
+    {
+      $replaceRoot: {
+        newRoot: "$doc",
+      },
+    },
   ]).exec();
   if (users.length > 0) {
+    users = users.filter((x) => x.parentChild || x.self);
     let todayDate = moment().startOf("day").unix();
     let transactionArray = [];
     let mainArray = [];
@@ -63,7 +77,7 @@ export const recurringDepositHandler = async () => {
       accountIdDetails = await user.parentChild?.teens.find(
         (x: any) => x.childId.toString() == user._id.toString()
       );
-      if (!accountIdDetails) {
+      if (!accountIdDetails && user.self) {
         accountIdDetails =
           (await user.self.userId.toString()) == user._id.toString() &&
           user.self;
@@ -81,6 +95,9 @@ export const recurringDepositHandler = async () => {
           $or: [{ userId: id }, { parentId: id }],
           $and: [{ isDefault: 1 }],
         });
+        if (!userInfo || (userInfo && !userInfo.processorToken)) {
+          continue;
+        }
         let contactId =
           user.type == EUserType.SELF
             ? user.self.contactId
@@ -157,7 +174,7 @@ export const recurringDepositHandler = async () => {
               filter: { _id: user._id },
               update: {
                 $set: {
-                  selectedDepositDate: moment(user.selectedDepositDate)
+                  selectedDepositDate: moment()
                     .utc()
                     .startOf("day")
                     .add(
@@ -187,7 +204,6 @@ export const recurringDepositHandler = async () => {
     await UserActivityTable.insertMany(activityArray);
     await TransactionTable.insertMany(transactionArray);
     await UserTable.bulkWrite(mainArray);
-    return true;
   }
   return true;
 };
