@@ -5,7 +5,7 @@ class DeviceTokenDBServiceV4 {
    * @description get the users token data
    * @param id
    */
-  public async getDeviceTokenDataOfUser(ids: any) {
+  public async getDeviceTokenDataOfUser(ids: string[]) {
     const queryFindDeviceTokenData: any = [
       {
         $match: {

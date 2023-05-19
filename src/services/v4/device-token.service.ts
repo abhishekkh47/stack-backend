@@ -14,7 +14,7 @@ class DeviceTokenServiceV4 {
    * @param notificationMessage
    */
   public async sendUserNotificationForCron(
-    ids: any,
+    ids: string[],
     notificationKey: any,
     notificationTitle: any,
     notificationMessage: any,
