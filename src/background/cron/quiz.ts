@@ -1,7 +1,7 @@
 import { AdminTable, QuizResult, UserTable } from "@app/model";
 import moment from "moment";
 import { NOTIFICATIONS, NOTIFICATION_KEYS } from "@app/utility/constants";
-import { DeviceTokenService } from "@app/services/v1";
+import { DeviceTokenServiceV4 } from "@app/services/v4";
 import quizDbService from "@app/services/v4/quiz.db.service";
 
 export const challengeAvailableHandler = async () => {
@@ -16,21 +16,21 @@ export const challengeAvailableHandler = async () => {
     lastQuizResult.map(async (data: any) => {
       let createdAt = moment(data.createdAt).add(hoursToAdd, "hours").unix();
       if (createdAt <= currentTime) {
-        const { key, title, message, nameForTracking } =
-          NOTIFICATIONS.CHALLENGE_AVAILABLE;
-        await DeviceTokenService.sendUserNotification(
-          data._id,
-          key,
-          title,
-          message,
-          null,
-          data._id,
-          nameForTracking
-        );
         userIds.push(data._id);
       }
       return true;
     })
+  );
+  const { key, title, message, nameForTracking } =
+    NOTIFICATIONS.CHALLENGE_AVAILABLE;
+  await DeviceTokenServiceV4.sendUserNotificationForCron(
+    userIds,
+    key,
+    title,
+    message,
+    null,
+    userIds,
+    nameForTracking
   );
   await UserTable.updateMany(
     { _id: { $in: userIds } },

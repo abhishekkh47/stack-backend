@@ -1,15 +1,23 @@
 import { DeviceToken } from "@app/model";
-import { ObjectId } from "mongodb";
 
-class DeviceTokenDBService {
+class DeviceTokenDBServiceV4 {
   /**
    * @description get the users token data
    * @param id
    */
-  public async getDeviceTokenDataOfUser(id: any) {
-    const queryFindDeviceTokenData = [
+  public async getDeviceTokenDataOfUser(ids: any) {
+    const queryFindDeviceTokenData: any = [
       {
-        $match: { userId: new ObjectId(id) },
+        $match: {
+          userId: {
+            $in: ids,
+          },
+        },
+      },
+      {
+        $sort: {
+          updatedAt: -1,
+        },
       },
       {
         $lookup: {
@@ -33,12 +41,23 @@ class DeviceTokenDBService {
       },
       {
         $group: {
-          _id: "$userId",
-          deviceToken: {
-            $addToSet: "$deviceToken",
+          _id: "$deviceToken",
+          userId: {
+            $first: "$userId",
           },
           isNotificationOn: {
             $first: "$userNotificationInfo.isNotificationOn",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          deviceToken: {
+            $addToSet: "$_id",
+          },
+          isNotificationOn: {
+            $first: "$isNotificationOn",
           },
         },
       },
@@ -47,9 +66,9 @@ class DeviceTokenDBService {
       queryFindDeviceTokenData
     ).exec();
 
-    deviceTokenData = deviceTokenData.length > 0 ? deviceTokenData[0] : null;
+    deviceTokenData = deviceTokenData.length > 0 ? deviceTokenData : null;
     return deviceTokenData;
   }
 }
 
-export default new DeviceTokenDBService();
+export default new DeviceTokenDBServiceV4();
