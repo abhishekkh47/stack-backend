@@ -1320,6 +1320,71 @@ class ScriptController extends BaseController {
     await ScriptService.convertDataToCsv(ctx, parentChildRecords);
     return ctx;
   }
+
+  /**
+   * @description This method is used to delete same device token in users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/remove-same-device-token", method: HttpMethod.DELETE })
+  @InternalUserAuth()
+  public async removeSameDeviceToken(ctx: any) {
+    let deviceTokens = await DeviceToken.aggregate([
+      {
+        $unwind: {
+          path: "$deviceToken",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$deviceToken",
+          userId: {
+            $push: "$userId",
+          },
+        },
+      },
+      {
+        $addFields: {
+          length: {
+            $size: "$userId",
+          },
+        },
+      },
+      {
+        $match: {
+          length: {
+            $gt: 1,
+          },
+          _id: {
+            $ne: null,
+          },
+        },
+      },
+    ]).exec();
+    if (deviceTokens.length === 0) {
+      return this.Ok(ctx, { message: "No similar device tokens" });
+    }
+    await Promise.all(
+      deviceTokens.map(async (data, index) => {
+        await data.userId.map(async (user) => {
+          await DeviceToken.updateOne(
+            { userId: user },
+            {
+              $pull: {
+                deviceToken: data._id,
+              },
+            }
+          );
+        });
+        return true;
+      })
+    );
+    return this.Ok(ctx, {
+      message: "Same device token deleted successfully",
+      data: deviceTokens,
+    });
+  }
 }
 
 export default new ScriptController();

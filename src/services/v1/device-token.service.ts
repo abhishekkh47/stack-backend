@@ -10,27 +10,40 @@ class DeviceTokenService {
     if (!deviceToken) {
       return;
     }
-
-    const checkDeviceTokenExists = await DeviceToken.findOne({
+    let isDeviceTokenInOtherUser = false;
+    const checkDeviceTokenExists: any = await DeviceToken.findOne({
       userId,
     });
     if (!checkDeviceTokenExists) {
+      isDeviceTokenInOtherUser = true;
       await DeviceToken.create({
         userId,
         "deviceToken.0": deviceToken,
       });
     } else {
       if (!checkDeviceTokenExists.deviceToken.includes(deviceToken)) {
+        isDeviceTokenInOtherUser = true;
         await DeviceToken.updateOne(
           { _id: checkDeviceTokenExists._id },
           {
-            $push: {
+            $addToSet: {
               deviceToken: deviceToken,
             },
           }
         );
       }
     }
+    if (isDeviceTokenInOtherUser) {
+      await DeviceToken.updateOne(
+        { deviceToken: deviceToken, userId: { $ne: userId } },
+        {
+          $pull: {
+            deviceToken: deviceToken,
+          },
+        }
+      );
+    }
+    return true;
   }
 
   public async removeDeviceToken(userId: string, deviceToken: string) {
@@ -66,7 +79,7 @@ class DeviceTokenService {
     notificationMessage: any,
     activityId: any = null,
     userId: any = null,
-    nameForTracking: string = null,
+    nameForTracking: string = null
   ) {
     let deviceTokenData = await DeviceTokenDBService.getDeviceTokenDataOfUser(
       id
@@ -102,10 +115,10 @@ class DeviceTokenService {
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.PUSH_NOTIFICATION_SENT,
           {
-            'Push notification name': nameForTracking,
+            "Push notification name": nameForTracking,
           },
           {
-            user_id: userId
+            user_id: userId,
           }
         );
       }
