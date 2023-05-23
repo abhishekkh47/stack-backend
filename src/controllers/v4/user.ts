@@ -407,6 +407,43 @@ class UserController extends BaseController {
       message: "Success",
     });
   }
+
+  /**
+   * @description This method is used to change/edit teens name
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/change-name", method: HttpMethod.PUT })
+  @Auth()
+  public async changeName(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      return validationsV4.changeNameValidation(body, ctx, async (validate) => {
+        if (validate) {
+          const updatedUser = await UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            {
+              $set: {
+                firstName: body.firstName,
+                lastName: body?.lastName || userExists.lastName,
+              },
+            },
+            { new: true, projection: { _id: 1, firstName: 1, lastName: 1 } }
+          );
+          return this.Ok(ctx, {
+            data: updatedUser,
+            message: "Your name changed successfully!",
+          });
+        }
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new UserController();
