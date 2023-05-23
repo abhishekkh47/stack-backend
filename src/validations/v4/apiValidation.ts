@@ -114,4 +114,18 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  changeNameValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      firstName: Joi.string().required(),
+      lastName: Joi.string().allow("").optional(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("changeNameValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };
