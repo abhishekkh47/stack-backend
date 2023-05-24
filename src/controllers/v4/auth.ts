@@ -187,16 +187,19 @@ class AuthController extends BaseController {
    */
   @Route({ path: "/verify-otp", method: HttpMethod.POST })
   @Auth()
-  public verifyOtp(ctx: any) {
-    const reqParam = ctx.request.body;
-    const user = ctx.request.user;
+  public async verifyOtp(ctx: any) {
+    const { body, user } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User not found");
+    }
     return validationsV4.verifyOtpValidation(
-      reqParam,
+      body,
       ctx,
       async (validate: boolean) => {
         if (validate) {
           const otpExists = await OtpTable.findOne({
-            receiverMobile: reqParam.mobile,
+            receiverMobile: body.mobile,
           }).sort({ createdAt: -1 });
           if (!otpExists) {
             return this.BadRequest(ctx, "Mobile Number Not Found");
@@ -218,7 +221,7 @@ class AuthController extends BaseController {
             );
           }
           /* tslint:disable-next-line */
-          if (otpExists.code != reqParam.code) {
+          if (otpExists.code != body.code) {
             return this.BadRequest(ctx, "Code Doesn't Match");
           }
           /**
@@ -228,11 +231,19 @@ class AuthController extends BaseController {
             { _id: user._id },
             {
               $set: {
-                mobile: reqParam.mobile,
+                mobile: body.mobile,
                 isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
               },
             }
           );
+          if (userIfExists.type == EUserType.PARENT) {
+            await UserTable.updateMany(
+              { parentMobile: userIfExists.mobile },
+              {
+                $set: { parentMobile: body.mobile },
+              }
+            );
+          }
           await OtpTable.updateOne(
             { _id: otpExists._id },
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
