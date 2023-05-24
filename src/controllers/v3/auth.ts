@@ -254,7 +254,7 @@ class AuthController extends BaseController {
           if (
             checkChildMobileAlreadyExists &&
             checkChildMobileAlreadyExists.type == EUserType.TEEN &&
-            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.parentMobile &&
             checkChildMobileAlreadyExists.parentMobile !== mobile
           ) {
             return this.BadRequest(
