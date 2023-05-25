@@ -17,7 +17,7 @@ export const challengeAvailableHandler = async () => {
     lastQuizResult.map(async (data: any) => {
       let createdAt = moment(data.createdAt).add(hoursToAdd, "hours").unix();
       if (createdAt <= currentTime) {
-        let isQuizRemaining = await QuizDBService.checkAllQuizPlayedByTeens(
+        const isQuizRemaining = await QuizDBService.checkAllQuizPlayedByTeens(
           data._id
         );
         if (!isQuizRemaining) return false;

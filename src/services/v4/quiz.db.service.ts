@@ -585,7 +585,7 @@ class QuizDBService {
    * @returns {*}
    */
   public async checkAllQuizPlayedByTeens(userId: string) {
-    let isQuizRemaining = await QuizTable.aggregate([
+    const isQuizRemaining = await QuizTable.aggregate([
       {
         $lookup: {
           from: "quizresults",
