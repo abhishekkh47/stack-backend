@@ -229,23 +229,36 @@ class ScriptService {
     try {
       let quizQuestions = [];
       await Promise.all(
-        quizContentData.map(async (data: any, index) => {
-          const quiz = await QuizTable.create({
-            quizName: data.quizName,
-            topicId: data.topicId,
-            image: data.image,
+        quizContentData.map(async (data: any) => {
+          const quiz = await QuizTable.findOneAndUpdate(
+            { quizName: data.quizName },
+            {
+              $set: {
+                quizName: data.quizName,
+                topicId: data.topicId,
+                image: data.image,
+              },
+            },
+            { upsert: true, new: true }
+          );
+          data.questionData = data.questionData.map((questions) => {
+            let bulkWriteObject = {
+              updateOne: {
+                filter: { quizId: quiz._id, text: questions.text },
+                update: {
+                  $set: { ...questions, quizId: quiz._id },
+                },
+                upsert: true,
+              },
+            };
+            quizQuestions.push(bulkWriteObject);
           });
-          data.questionData = data.questionData.map((x) => ({
-            ...x,
-            quizId: quiz._id,
-          }));
-          quizQuestions = quizQuestions.concat(data.questionData);
         })
       );
       // /**
       //  * Create Quiz Question
       //  */
-      const questions = await QuizQuestionTable.insertMany(quizQuestions);
+      const questions = await QuizQuestionTable.bulkWrite(quizQuestions);
       return true;
     } catch (err) {
       return false;
