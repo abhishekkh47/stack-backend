@@ -578,6 +578,66 @@ class QuizDBService {
     });
     return createdQuizReview;
   }
+
+  /**
+   * @description This method is used to check all quiz available are played by teens or not
+   * @param userId
+   * @returns {*}
+   */
+  public async checkAllQuizPlayedByTeens(userId: string) {
+    let isQuizRemaining = await QuizTable.aggregate([
+      {
+        $lookup: {
+          from: "quizresults",
+          let: {
+            quizId: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$userId", userId],
+                    },
+                    {
+                      $eq: ["$quizId", "$$quizId"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "quizPlayed",
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              image: {
+                $ne: null,
+              },
+            },
+            {
+              $expr: {
+                $eq: [
+                  {
+                    $size: "$quizPlayed",
+                  },
+                  0,
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ]).exec();
+    if (isQuizRemaining.length == 0) {
+      return false;
+    }
+    return true;
+  }
 }
 
 export default new QuizDBService();
