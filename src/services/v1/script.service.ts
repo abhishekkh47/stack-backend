@@ -431,6 +431,36 @@ class ScriptService {
     ctx.body = await fs.createReadStream(filePath);
     return ctx;
   }
+
+  /**
+   * @dscription This method will delete all quiz based on quiznums from request
+   * @param quizNums
+   * @return {*}
+   */
+  public async removeQuizFromDb(quizNums: any) {
+    let mainQuery = [];
+    let quizQuery = [];
+    quizNums = [...new Set(quizNums)];
+    await Promise.all(
+      await quizNums.map(async (quizNum) => {
+        console.log(parseInt(quizNum));
+        const quizIfExists = await QuizTable.findOne({
+          quizNum: parseInt(quizNum),
+        });
+        console.log(quizIfExists);
+        if (!quizIfExists) return false;
+        mainQuery.push({
+          _id: quizIfExists._id,
+        });
+        quizQuery.push({
+          quizId: quizIfExists._id,
+        });
+      })
+    );
+    console.log(mainQuery);
+    console.log(quizQuery);
+    return true;
+  }
 }
 
 export default new ScriptService();

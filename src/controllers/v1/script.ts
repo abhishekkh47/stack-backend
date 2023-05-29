@@ -1320,6 +1320,29 @@ class ScriptController extends BaseController {
     await ScriptService.convertDataToCsv(ctx, parentChildRecords);
     return ctx;
   }
+
+  /**
+   * @description This method is used to export csv and get parent-child records with time in between them
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/remove-quiz", method: HttpMethod.DELETE })
+  @InternalUserAuth()
+  public async removeQuiz(ctx: any) {
+    try {
+      const { quizNums } = ctx.request.body;
+      if (quizNums.length === 0) {
+        return this.BadRequest(ctx, "Please enter input quiz numbers");
+      }
+      let isQuizzesDeleted = await ScriptService.removeQuizFromDb(quizNums);
+      if (!isQuizzesDeleted) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Quiz Deleted Successfully" });
+    } catch (error) {
+      return this.Ok(ctx, { message: error.message });
+    }
+  }
 }
 
 export default new ScriptController();
