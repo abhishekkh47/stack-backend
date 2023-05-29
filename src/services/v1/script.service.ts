@@ -3,7 +3,12 @@ import axios from "axios";
 import { ObjectId } from "mongodb";
 import envData from "@app/config";
 import { GoogleSpreadsheet } from "google-spreadsheet";
-import { QuizQuestionTable, QuizTable } from "@app/model";
+import {
+  QuizQuestionResult,
+  QuizQuestionTable,
+  QuizResult,
+  QuizTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
 import fs from "fs";
@@ -454,16 +459,14 @@ class ScriptService {
         });
         console.log(quizIfExists);
         if (!quizIfExists) return false;
-        mainQuery.push({
-          _id: quizIfExists._id,
-        });
-        quizQuery.push({
-          quizId: quizIfExists._id,
-        });
+        mainQuery.push(quizIfExists._id);
+        quizQuery.push(quizIfExists._id);
       })
     );
-    console.log(mainQuery);
-    console.log(quizQuery);
+    await QuizQuestionTable.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizQuestionResult.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizResult.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizTable.deleteMany({ _id: { $in: mainQuery } });
     return true;
   }
 }
