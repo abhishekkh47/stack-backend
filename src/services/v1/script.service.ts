@@ -3,7 +3,12 @@ import axios from "axios";
 import { ObjectId } from "mongodb";
 import envData from "@app/config";
 import { GoogleSpreadsheet } from "google-spreadsheet";
-import { QuizQuestionTable, QuizTable } from "@app/model";
+import {
+  QuizQuestionResult,
+  QuizQuestionTable,
+  QuizResult,
+  QuizTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
 import fs from "fs";
@@ -435,6 +440,34 @@ class ScriptService {
     ctx.type = "text/csv";
     ctx.body = await fs.createReadStream(filePath);
     return ctx;
+  }
+
+  /**
+   * @dscription This method will delete all quiz based on quiznums from request
+   * @param quizNums
+   * @return {*}
+   */
+  public async removeQuizFromDb(quizNums: any) {
+    let mainQuery = [];
+    let quizQuery = [];
+    quizNums = [...new Set(quizNums)];
+    await Promise.all(
+      await quizNums.map(async (quizNum) => {
+        console.log(parseInt(quizNum));
+        const quizIfExists = await QuizTable.findOne({
+          quizNum: parseInt(quizNum),
+        });
+        console.log(quizIfExists);
+        if (!quizIfExists) return false;
+        mainQuery.push(quizIfExists._id);
+        quizQuery.push(quizIfExists._id);
+      })
+    );
+    await QuizQuestionTable.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizQuestionResult.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizResult.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizTable.deleteMany({ _id: { $in: mainQuery } });
+    return true;
   }
 }
 
