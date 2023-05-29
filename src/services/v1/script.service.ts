@@ -209,6 +209,7 @@ class ScriptService {
         ) {
           let quizData = {
             topicId: topicId,
+            quizNum: data["Quiz #"],
             quizName: lastQuizName,
             image: lastQuizImage,
             questionData: questionDataArray,
@@ -230,8 +231,12 @@ class ScriptService {
       let quizQuestions = [];
       await Promise.all(
         quizContentData.map(async (data: any) => {
+          const quizNum = isNaN(parseInt(data.quizNum))
+            ? null
+            : parseInt(data.quizNum);
+          if (!quizNum) return false;
           const quiz = await QuizTable.findOneAndUpdate(
-            { quizName: data.quizName },
+            { quizNum: quizNum },
             {
               $set: {
                 quizName: data.quizName,

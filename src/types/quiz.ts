@@ -54,6 +54,7 @@ export interface IQuiz {
   topicId: mongoose.Schema.Types.ObjectId;
   videoUrl: string;
   image: string;
+  quizNum: number;
 }
 
 export interface IQuizResult {
