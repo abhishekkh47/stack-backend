@@ -17,6 +17,7 @@ export const sendNotification = async (to, body, data, action = null) => {
       priority: "high",
       "content-available": true,
       data: JSON.stringify(data),
+      badge: 1,
     },
     priority: "high",
     "content-available": true,
