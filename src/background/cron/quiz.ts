@@ -37,6 +37,17 @@ export const challengeAvailableHandler = async () => {
       return true;
     })
   );
+  const { key, title, message, nameForTracking } =
+    NOTIFICATIONS.CHALLENGE_AVAILABLE;
+  await DeviceTokenService.sendUserNotificationForCron(
+    userIds,
+    key,
+    title,
+    message,
+    null,
+    userIds,
+    nameForTracking
+  );
   await UserTable.updateMany(
     { _id: { $in: userIds } },
     {
