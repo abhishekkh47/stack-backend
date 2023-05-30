@@ -1,7 +1,7 @@
 import { UserTable } from "@app/model";
 import moment from "moment";
 import { NOTIFICATIONS, NOTIFICATION_KEYS } from "@app/utility";
-import { DeviceTokenServiceV4 } from "@app/services/v4";
+import { DeviceTokenService } from "@app/services/v1";
 import userDbService from "@app/services/v4/user.db.service";
 
 export const kycReminderHandler = async () => {
@@ -21,7 +21,7 @@ export const kycReminderHandler = async () => {
   );
   const { key, title, message, nameForTracking } =
     NOTIFICATIONS.COMPLETE_KYC_REMINDER;
-  await DeviceTokenServiceV4.sendUserNotificationForCron(
+  await DeviceTokenService.sendUserNotificationForCron(
     userIds,
     key,
     title,

@@ -1,7 +1,7 @@
 import { AdminTable, QuizResult, UserTable } from "@app/model";
 import moment from "moment";
 import { NOTIFICATIONS, NOTIFICATION_KEYS } from "@app/utility/constants";
-import { DeviceTokenServiceV4 } from "@app/services/v4";
+import { DeviceTokenService } from "@app/services/v1";
 import quizDbService from "@app/services/v4/quiz.db.service";
 
 export const challengeAvailableHandler = async () => {
@@ -23,7 +23,7 @@ export const challengeAvailableHandler = async () => {
   );
   const { key, title, message, nameForTracking } =
     NOTIFICATIONS.CHALLENGE_AVAILABLE;
-  await DeviceTokenServiceV4.sendUserNotificationForCron(
+  await DeviceTokenService.sendUserNotificationForCron(
     userIds,
     key,
     title,
