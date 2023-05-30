@@ -3,7 +3,12 @@ import axios from "axios";
 import { ObjectId } from "mongodb";
 import envData from "@app/config";
 import { GoogleSpreadsheet } from "google-spreadsheet";
-import { QuizQuestionTable, QuizTable } from "@app/model";
+import {
+  QuizQuestionResult,
+  QuizQuestionTable,
+  QuizResult,
+  QuizTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
 import fs from "fs";
@@ -209,6 +214,7 @@ class ScriptService {
         ) {
           let quizData = {
             topicId: topicId,
+            quizNum: data["Quiz #"],
             quizName: lastQuizName,
             image: lastQuizImage,
             questionData: questionDataArray,
@@ -229,23 +235,40 @@ class ScriptService {
     try {
       let quizQuestions = [];
       await Promise.all(
-        quizContentData.map(async (data: any, index) => {
-          const quiz = await QuizTable.create({
-            quizName: data.quizName,
-            topicId: data.topicId,
-            image: data.image,
+        quizContentData.map(async (data: any) => {
+          const quizNum = isNaN(parseInt(data.quizNum))
+            ? null
+            : parseInt(data.quizNum);
+          if (!quizNum) return false;
+          const quiz = await QuizTable.findOneAndUpdate(
+            { quizNum: quizNum },
+            {
+              $set: {
+                quizName: data.quizName,
+                topicId: data.topicId,
+                image: data.image,
+              },
+            },
+            { upsert: true, new: true }
+          );
+          data.questionData = data.questionData.map((questions) => {
+            let bulkWriteObject = {
+              updateOne: {
+                filter: { quizId: quiz._id, text: questions.text },
+                update: {
+                  $set: { ...questions, quizId: quiz._id },
+                },
+                upsert: true,
+              },
+            };
+            quizQuestions.push(bulkWriteObject);
           });
-          data.questionData = data.questionData.map((x) => ({
-            ...x,
-            quizId: quiz._id,
-          }));
-          quizQuestions = quizQuestions.concat(data.questionData);
         })
       );
       // /**
       //  * Create Quiz Question
       //  */
-      const questions = await QuizQuestionTable.insertMany(quizQuestions);
+      const questions = await QuizQuestionTable.bulkWrite(quizQuestions);
       return true;
     } catch (err) {
       return false;
@@ -417,6 +440,34 @@ class ScriptService {
     ctx.type = "text/csv";
     ctx.body = await fs.createReadStream(filePath);
     return ctx;
+  }
+
+  /**
+   * @dscription This method will delete all quiz based on quiznums from request
+   * @param quizNums
+   * @return {*}
+   */
+  public async removeQuizFromDb(quizNums: any) {
+    let mainQuery = [];
+    let quizQuery = [];
+    quizNums = [...new Set(quizNums)];
+    await Promise.all(
+      await quizNums.map(async (quizNum) => {
+        console.log(parseInt(quizNum));
+        const quizIfExists = await QuizTable.findOne({
+          quizNum: parseInt(quizNum),
+        });
+        console.log(quizIfExists);
+        if (!quizIfExists) return false;
+        mainQuery.push(quizIfExists._id);
+        quizQuery.push(quizIfExists._id);
+      })
+    );
+    await QuizQuestionTable.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizQuestionResult.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizResult.deleteMany({ quizId: { $in: quizQuery } });
+    await QuizTable.deleteMany({ _id: { $in: mainQuery } });
+    return true;
   }
 }
 

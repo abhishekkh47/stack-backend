@@ -254,7 +254,7 @@ class AuthController extends BaseController {
           if (
             checkChildMobileAlreadyExists &&
             checkChildMobileAlreadyExists.type == EUserType.TEEN &&
-            checkChildMobileAlreadyExists &&
+            checkChildMobileAlreadyExists.parentMobile &&
             checkChildMobileAlreadyExists.parentMobile !== mobile
           ) {
             return this.BadRequest(
@@ -551,9 +551,10 @@ class AuthController extends BaseController {
 
               accountCreated = true;
 
-              // for sensitive identify calls, we need to await to make sure it waits.
+              // for sensitive identify calls,we need to await to make sure it waits.
               await AnalyticsService.identifyOnce(userExists._id, {
                 "Account Type": EUserType[reqParam.type],
+                Email: userExists.email,
               });
 
               AnalyticsService.sendEvent(
