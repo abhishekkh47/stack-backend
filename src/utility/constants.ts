@@ -233,6 +233,7 @@ export const ANALYTICS_EVENTS = {
   PUSH_NOTIFICATION_SENT: "Push Notification Sent",
   PARENT_SIGNED_UP: "Parent Signed Up",
   PARENT_KYC_APPROVED: "Parent KYC Approved",
+  CHALLENGE_REVIEW_SUBMITTED: "Challenge Review Submitted",
   KYC_APPROVED: "KYC Approved",
   KYC_SUBMITTED: "KYC Submitted",
 };

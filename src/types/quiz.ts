@@ -54,6 +54,7 @@ export interface IQuiz {
   topicId: mongoose.Schema.Types.ObjectId;
   videoUrl: string;
   image: string;
+  quizNum: number;
 }
 
 export interface IQuizResult {
@@ -62,6 +63,15 @@ export interface IQuizResult {
   quizId: mongoose.Schema.Types.ObjectId;
   pointsEarned: number;
   isOnBoardingQuiz: boolean;
+}
+
+export interface IQuizReview {
+  userId: mongoose.Schema.Types.ObjectId;
+  quizId: mongoose.Schema.Types.ObjectId;
+  quizName: string;
+  difficultyLevel: number;
+  funLevel: number;
+  wantMore: number;
 }
 
 export interface IQuizQuestionResult extends IQuizResult {

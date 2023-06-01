@@ -15,6 +15,10 @@ const schema = new mongoose.Schema<IQuizSchema>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    quizNum: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+    },
     videoUrl: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }

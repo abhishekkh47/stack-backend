@@ -268,5 +268,16 @@
 	"getPortFolioVersionUnknown": "getPortFolioVersionUnknown",
 	"nextDepositDateVersionUnknown": "nextDepositDateVersionUnknown",
 	"checkUserSignupValidationDobFormat": "checkUserSignupValidationDobFormat",
-	"toggleNotificationUseridRequired": "toggleNotificationUseridRequired"
+	"toggleNotificationUseridRequired": "toggleNotificationUseridRequired",
+	"quizReviewValidationQuizidRequired": "Please enter quiz.",
+	"quizReviewValidationQuizidEmpty": "Please enter quiz.",
+	"quizReviewValidationQuizidPattern": "Please enter quiz.",
+	"quizReviewValidationFunlevelRequired": "Please enter fun level.",
+	"quizReviewValidationFunlevelOnly": "Please enter valid fun level values.",
+	"quizReviewValidationDifficultylevelRequired": "Please enter difficulty level.",
+	"quizReviewValidationDifficultylevelOnly": "Please enter difficulty level values",
+	"quizReviewValidationWantmoreRequired": "Please enter want more quiz.",
+	"quizReviewValidationWantmoreOnly": "Please enter want more quiz values.",
+	"changeNameValidationFirstnameEmpty": "Please enter first name.",
+	"changeNameValidationFirstnameRequired": "Please enter first name."
 }

@@ -8,9 +8,10 @@ import {
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
-import { QuizDBService } from "@app/services/v4";
+import { AnalyticsService, QuizDBService } from "@app/services/v4";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
+  ANALYTICS_EVENTS,
   get72HoursAhead,
   getQuizCooldown,
   getQuizImageAspectRatio,
@@ -22,6 +23,7 @@ import BaseController from "@app/controllers/base";
 import { validation } from "@app/validations/v1/apiValidation";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
+import quizDbService from "@app/services/v4/quiz.db.service";
 
 class QuizController extends BaseController {
   /**
@@ -663,6 +665,55 @@ class QuizController extends BaseController {
       return this.Ok(ctx, { data: quizInformation });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to store quiz review based on quizzes played by teens
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-review", method: HttpMethod.POST })
+  @Auth()
+  public async storeQuizReview(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (
+        !userIfExists ||
+        (userIfExists && userIfExists.type !== EUserType.TEEN)
+      ) {
+        return this.BadRequest(ctx, "Teen not found");
+      }
+      return validationsV4.quizReviewValidation(body, ctx, async (validate) => {
+        if (validate) {
+          const createdQuizReview = await quizDbService.storeQuizReview(
+            body,
+            userIfExists
+          );
+          /**
+           * Track amplitude quiz review
+           */
+          AnalyticsService.sendEvent(
+            ANALYTICS_EVENTS.CHALLENGE_REVIEW_SUBMITTED,
+            {
+              "Challenge Name": createdQuizReview.quizName,
+              "Difficulty Level": createdQuizReview.difficultyLevel,
+              "Fun Level": createdQuizReview.funLevel,
+              "Want More": createdQuizReview.wantMore ? "Yes" : "No",
+            },
+            {
+              user_id: userIfExists._id,
+            }
+          );
+          return this.Ok(ctx, {
+            message: "Quiz Review Stored Successfully",
+            data: createdQuizReview,
+          });
+        }
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
     }
   }
 }

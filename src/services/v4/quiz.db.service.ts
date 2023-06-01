@@ -10,6 +10,7 @@ import {
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
+  QuizReview,
   QuizTable,
   QuizTopicTable,
   UserTable,
@@ -540,6 +541,102 @@ class QuizDBService {
     ]).exec();
     if (quizResults.length === 0) throw new NetworkError("Quiz not found", 400);
     return quizResults;
+  }
+
+  /**
+   * @description This method is used to store quiz review
+   * @param reqParam
+   * @param user
+   */
+  public async storeQuizReview(reqParam: any, user: any) {
+    let quizExists = await QuizTable.findOne({ _id: reqParam.quizId });
+    if (!quizExists) {
+      throw new NetworkError("Quiz Doesn't Exists", 400);
+    }
+    let quizResultExists = await QuizResult.findOne({
+      quizId: reqParam.quizId,
+      userId: user._id,
+      isOnBoardingQuiz: false,
+    });
+    if (!quizResultExists) {
+      throw new NetworkError("You haven't played this quiz yet!", 400);
+    }
+    let quizReviewAlreadyExists = await QuizReview.findOne({
+      quizId: reqParam.quizId,
+      userId: user._id,
+    });
+    if (quizReviewAlreadyExists) {
+      throw new NetworkError("Quiz Already Exists", 400);
+    }
+    const createdQuizReview = await QuizReview.create({
+      userId: user._id,
+      quizId: reqParam.quizId,
+      quizName: quizExists.quizName,
+      funLevel: reqParam.funLevel,
+      difficultyLevel: reqParam.difficultyLevel,
+      wantMore: reqParam.wantMore,
+    });
+    return createdQuizReview;
+  }
+
+  /**
+   * @description This method is used to check all quiz available are played by teens or not
+   * @param userId
+   * @returns {*}
+   */
+  public async checkAllQuizPlayedByTeens(userId: string) {
+    const isQuizRemaining = await QuizTable.aggregate([
+      {
+        $lookup: {
+          from: "quizresults",
+          let: {
+            quizId: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$userId", userId],
+                    },
+                    {
+                      $eq: ["$quizId", "$$quizId"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "quizPlayed",
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              image: {
+                $ne: null,
+              },
+            },
+            {
+              $expr: {
+                $eq: [
+                  {
+                    $size: "$quizPlayed",
+                  },
+                  0,
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ]).exec();
+    if (isQuizRemaining.length == 0) {
+      return false;
+    }
+    return true;
   }
 }
 

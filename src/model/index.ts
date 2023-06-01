@@ -25,3 +25,4 @@ export * from "@model/userBanks";
 export * from "@model/userGiftCard";
 export * from "@model/dripshop";
 export * from "@model/deletedUser";
+export * from "@model/quizReview";
