@@ -254,7 +254,7 @@ class ScriptService {
           data.questionData = data.questionData.map((questions) => {
             let bulkWriteObject = {
               updateOne: {
-                filter: { quizId: quiz._id, text: questions.text },
+                filter: { quizId: quiz._id, order: questions.order },
                 update: {
                   $set: { ...questions, quizId: quiz._id },
                 },
