@@ -247,20 +247,35 @@ class UserService {
        */
       let otherRecordsQuery = {};
       let userQuery = {};
+      const userRelatedQuery = { userId: userDetails._id };
 
       if (userDetails.type == EUserType.PARENT) {
-        otherRecordsQuery = { ...otherRecordsQuery, userId: { $in: teenIds } };
         teenIds.push(userDetails._id);
-        userQuery = { ...userQuery, _id: { $in: teenIds } };
+        otherRecordsQuery = { ...otherRecordsQuery, userId: { $in: teenIds } };
+        userQuery = { ...userQuery, _id: userDetails._id };
       } else {
         if (parentChildRecord) {
           if (parentChildRecord.teens.length === 1) {
+            teenIds.push(parentChildRecord.userId);
             otherRecordsQuery = {
               ...otherRecordsQuery,
               userId: { $in: teenIds },
             };
-            teenIds.push(parentChildRecord.userId);
-            userQuery = { ...userQuery, _id: { $in: teenIds } };
+            userQuery = { ...userQuery, _id: userDetails._id };
+            await UserTable.updateOne(
+              { _id: parentChildRecord.userId },
+              {
+                $set: {
+                  address: null,
+                  country: null,
+                  state: null,
+                  city: null,
+                  postalCode: null,
+                  status: 0,
+                  taxIdNo: null,
+                },
+              }
+            );
           } else {
             if (
               parentChildRecord.firstChildId.toString() ===
@@ -347,14 +362,14 @@ class UserService {
       let emails = users.map((x) => x.email);
       emails = [...new Set(emails)];
       await UserDBService.searchAndDeleteZohoAccounts(emails, zohoAccessToken);
-      await UserBanksTable.deleteMany(otherRecordsQuery);
-      await DeviceToken.deleteMany(otherRecordsQuery);
+      await DeviceToken.deleteMany(userRelatedQuery);
+      await QuizQuestionResult.deleteMany(userRelatedQuery);
+      await QuizResult.deleteMany(userRelatedQuery);
+      await UserTable.deleteMany(userQuery);
       await Notification.deleteMany(otherRecordsQuery);
-      await QuizQuestionResult.deleteMany(otherRecordsQuery);
-      await QuizResult.deleteMany(otherRecordsQuery);
+      await UserBanksTable.deleteMany(otherRecordsQuery);
       await TransactionTable.deleteMany(otherRecordsQuery);
       await UserActivityTable.deleteMany(otherRecordsQuery);
-      await UserTable.deleteMany(userQuery);
       await ParentChildTable.deleteMany(otherRecordsQuery);
       /**
        * Store Deleted Users in a separate document
