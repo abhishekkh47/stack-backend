@@ -161,7 +161,7 @@ class ScriptService {
     await Promise.all(
       await rows.map(async (data, index) => {
         if (data["Quiz Title"] != "") {
-          lastQuizName = data["Quiz Title"];
+          lastQuizName = data["Quiz Title"].trimEnd();
           lastQuizImage = data["Quiz Image"];
         }
         if (data["Quiz Title"] == "") {
@@ -170,7 +170,7 @@ class ScriptService {
           order = 1;
         }
         let questionData = {
-          text: data["Question"],
+          text: data["Question"].trimEnd(),
           question_image: null,
           order: order,
           points: 10,
@@ -178,32 +178,40 @@ class ScriptService {
           answer_type: 2,
           answer_array: [
             {
-              name: data["A"],
+              name: data["A"].trimEnd(),
               image: data["Image A"],
               correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["A"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["A"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
             {
-              name: data["B"],
+              name: data["B"].trimEnd(),
               image: data["Image B"],
               correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["B"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["B"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
             {
-              name: data["C"],
+              name: data["C"].trimEnd(),
               image: data["Image C"],
               correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["C"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["C"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
             {
-              name: data["D"],
+              name: data["D"].trimEnd(),
               image: data["Image D"],
               correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["D"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["D"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
           ],
         };
@@ -214,7 +222,7 @@ class ScriptService {
         ) {
           let quizData = {
             topicId: topicId,
-            quizNum: data["Quiz #"],
+            quizNum: data["Quiz #"].trimEnd(),
             quizName: lastQuizName,
             image: lastQuizImage,
             questionData: questionDataArray,
