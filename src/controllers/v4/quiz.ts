@@ -5,6 +5,7 @@ import {
   QuizQuestionTable,
   QuizResult,
   QuizTable,
+  QuizTopicTable,
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
@@ -650,6 +651,10 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuiz(ctx: any) {
     try {
+      const { categoryId, status } = ctx.request.query; //status 1 - Start Journey and 2 - Completed
+      if (status && !["1", "2"].includes(status)) {
+        return this.BadRequest(ctx, "Please enter valid status");
+      }
       const user = await UserTable.findOne({ _id: ctx.request.user._id });
       if (!user) {
         return this.BadRequest(ctx, "User not found");
@@ -661,10 +666,14 @@ class QuizController extends BaseController {
       if (quizResult.length > 0) {
         quizIds = quizResult.map((x) => x.quizId);
       }
-      const quizInformation = await QuizDBService.getQuizData(quizIds);
+      const quizInformation = await QuizDBService.getQuizData(
+        quizIds,
+        categoryId,
+        status
+      );
       return this.Ok(ctx, { data: quizInformation });
     } catch (error) {
-      return this.BadRequest(ctx, "Something Went Wrong");
+      return this.BadRequest(ctx, error.message);
     }
   }
 
@@ -711,6 +720,48 @@ class QuizController extends BaseController {
             data: createdQuizReview,
           });
         }
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to store quiz categories
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-categories", method: HttpMethod.GET })
+  @Auth()
+  public async quizCategories(ctx: any) {
+    try {
+      let userIfExists = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      let quizResultsData = await QuizResult.find({ userId: userIfExists._id });
+      const quizCategories = await QuizDBService.listQuizCategories(
+        quizResultsData
+      );
+      const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+        quizResultsData,
+        userIfExists._id
+      );
+      /**
+       * Give any 3 random quizzes if quiz not played
+       */
+      let quizzes: any;
+      if (quizResultsData.length === 0) {
+        quizzes = await QuizDBService.getRandomQuiz();
+      } else {
+        quizzes = await QuizDBService.getMostPlayedCategoryQuizzes(
+          userIfExists._id
+        );
+      }
+      return this.Ok(ctx, {
+        categories: quizCategories,
+        quizzes,
+        isQuizLimitReached,
       });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

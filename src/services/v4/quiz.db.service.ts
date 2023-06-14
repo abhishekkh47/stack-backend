@@ -5,14 +5,15 @@ import {
   ANALYTICS_EVENTS,
   XP_POINTS,
 } from "@app/utility";
+import { ObjectId } from "mongodb";
 import {
   ParentChildTable,
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
   QuizReview,
-  QuizTable,
   QuizTopicTable,
+  QuizTable,
   UserTable,
 } from "@app/model";
 import mongoose from "mongoose";
@@ -25,39 +26,38 @@ class QuizDBService {
    * @description get quiz data
    * @param quizIds
    */
-  public async getQuizData(quizIds: string[]) {
-    let quizData = await QuizTopicTable.aggregate([
-      {
-        $sort: { createdAt: 1 },
-      },
-      {
-        // type = 2 means new quiz, which means we are pulling the new space school quiz
-        // status = 1 means active quizzes
-        $match: {
-          type: 2,
-          status: 1,
+  public async getQuizData(
+    quizIds: string[],
+    categoryId: string = null,
+    status: number = null
+  ) {
+    let matchQuery: any = {
+      $and: [
+        {
+          quizNum: {
+            $exists: true,
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "quiz",
-          localField: "_id",
-          foreignField: "topicId",
-          as: "quizData",
+        {
+          quizNum: {
+            $ne: 0,
+          },
         },
-      },
+      ],
+    };
+    if (categoryId) {
+      matchQuery = { ...matchQuery, topicId: new ObjectId(categoryId) };
+    }
+    let quizData = await QuizTable.aggregate([
       {
-        $unwind: {
-          path: "$quizData",
-          preserveNullAndEmptyArrays: true,
-        },
+        $match: matchQuery,
       },
       {
         $addFields: {
           isCompleted: {
             $cond: {
               if: {
-                $in: ["$quizData._id", quizIds],
+                $in: ["$_id", quizIds],
               },
               then: true,
               else: false,
@@ -66,12 +66,23 @@ class QuizDBService {
         },
       },
       {
+        $redact: {
+          $cond: {
+            if: {
+              $eq: ["$isCompleted", status == 1 ? false : true],
+            },
+            then: "$$KEEP",
+            else: status ? "$$PRUNE" : "$$KEEP",
+          },
+        },
+      },
+      {
         $project: {
-          _id: "$quizData._id",
-          image: "$quizData.image",
-          name: "$quizData.quizName",
+          _id: 1,
+          image: 1,
+          name: "$quizName",
           isCompleted: 1,
-          topicId: "$_id",
+          topicId: 1,
         },
       },
     ]).exec();
@@ -637,6 +648,217 @@ class QuizDBService {
       return false;
     }
     return true;
+  }
+
+  /**
+   * @description  Get any 3 random quizzes
+   * @returns {*}
+   */
+  public async getRandomQuiz() {
+    const quizzes = await QuizTable.aggregate([
+      {
+        $match: {
+          $and: [
+            {
+              quizNum: {
+                $exists: true,
+              },
+            },
+            {
+              quizNum: {
+                $ne: 0,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $sample: { size: 3 },
+      },
+      {
+        $project: {
+          _id: 1,
+          quizName: 1,
+          topicId: 1,
+          image: 1,
+        },
+      },
+    ]).exec();
+    if (quizzes.length == 0) throw new NetworkError(`Quiz Not Found`, 400);
+    return quizzes;
+  }
+
+  /**
+   * @description  Check Quiz Limit Reached
+   * @param quizResultsData
+   * @param userId
+   * @returns {boolean}
+   */
+  public async checkQuizLimitReached(quizResultsData: any, userId: string) {
+    let todaysQuizPlayed = null;
+    let isQuizLimitReached = false;
+    if (quizResultsData.length > 0) {
+      const todayStart = new Date().setUTCHours(0, 0, 0, 0);
+      const todayEnd = new Date().setUTCHours(23, 59, 59, 999);
+      todaysQuizPlayed = await QuizResult.find({
+        createdAt: {
+          $gte: todayStart,
+          $lte: todayEnd,
+        },
+        userId: userId,
+      });
+      isQuizLimitReached = todaysQuizPlayed.length >= 3 ? true : false;
+    }
+    return isQuizLimitReached;
+  }
+
+  /**
+   * @description  Get All Quiz Categories
+   * @param quizResultsData
+   * @returns {*}
+   */
+  public async listQuizCategories(quizResultsData: any) {
+    /**
+     * isStarted flag - 0 (start Journey) 1 ()
+     */
+    let quizCategories: any = await QuizTopicTable.find({
+      type: 2,
+      status: 1,
+    }).select("_id topic image");
+    if (quizCategories.length === 0) {
+      throw new NetworkError(`Quiz Categories not found`, 400);
+    }
+    quizCategories = quizCategories.map((data) => {
+      let categoryIfExists =
+        quizResultsData.length !== 0
+          ? quizResultsData.find(
+              (x) => x.topicId.toString() == data._id.toString()
+            )
+          : null;
+
+      return {
+        _id: data._id,
+        topic: data.topic,
+        image: data.image,
+        isStarted: categoryIfExists ? 1 : 0,
+      };
+    });
+    return quizCategories;
+  }
+
+  /**
+   * @description  Get most played category quizzes by user
+   * @returns {*}
+   */
+  public async getMostPlayedCategoryQuizzes(userId: string) {
+    const quizzes = await QuizResult.aggregate([
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "quizId",
+          foreignField: "_id",
+          as: "quizData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          $and: [
+            {
+              "quizData.quizNum": {
+                $exists: true,
+              },
+            },
+            {
+              "quizData.quizNum": {
+                $ne: 0,
+              },
+            },
+            {
+              userId: userId,
+            },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: "$topicId",
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+      {
+        $sort: {
+          count: -1,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "_id",
+          foreignField: "topicId",
+          as: "quizzes",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizzes",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "quizresults",
+          let: {
+            quizId: "$quizzes._id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$userId", userId],
+                    },
+                    {
+                      $eq: ["$quizId", "$$quizId"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "playedQuizzes",
+        },
+      },
+      {
+        $match: {
+          playedQuizzes: {
+            $size: 0,
+          },
+        },
+      },
+      {
+        $project: {
+          _id: "$quizzes._id",
+          quizName: "$quizzes.quizName",
+          image: "$quizzes.image",
+          topicId: "$quizzes.topicId",
+          count: 1,
+        },
+      },
+      {
+        $limit: 3,
+      },
+    ]).exec();
+    if (quizzes.length == 0) throw new NetworkError(`Quiz Not Found`, 400);
+    return quizzes;
   }
 }
 

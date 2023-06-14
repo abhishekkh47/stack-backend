@@ -8,6 +8,7 @@ import {
   QuizQuestionTable,
   QuizResult,
   QuizTable,
+  QuizTopicTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -70,9 +71,7 @@ class ScriptService {
             },
           }
         )
-        .catch((error) => {
-          console.log(error);
-        });
+        .catch((error) => {});
     };
 
     // First part of Staging KYC Approval
@@ -105,18 +104,20 @@ class ScriptService {
 
   /**
    * @description This function authenticates spreadsheet and read the data
+   * @param gid GridId of sheet
    * @returns {*}
    */
-  public async readSpreadSheet() {
+  public async readSpreadSheet(gid: string = null) {
     const document = new GoogleSpreadsheet(envData.SHEET_ID);
     await document.useServiceAccountAuth({
       client_email: envData.CLIENT_EMAIL,
       private_key: envData.GOOGLE_SERVICEACCOUNT_PRIVATE_KEY,
     });
     await document.loadInfo();
-    const sheet = document.sheetsByIndex[0];
+    const sheet = gid ? document.sheetsById[gid] : document.sheetsByIndex[0];
     await sheet.loadCells();
     let rows = await sheet.getRows();
+    if (gid) return rows;
     const rowsCount = sheet.rowCount;
     const columnsCount = sheet.columnCount;
     rows.forEach(function (element) {
@@ -284,6 +285,62 @@ class ScriptService {
   }
 
   /**
+   * @description This function is used to add the json category contents to db
+   * @param quizCategoryData
+   */
+  public async addQuizCategoryContentsToDB(quizCategoryData: any) {
+    try {
+      let quizCategoryQuery = [];
+      let quizQuery = [];
+      for await (let data of quizCategoryData) {
+        if (!data["Quiz Number"] || !data["Category"]) {
+          continue;
+        }
+        let quiz = await QuizTable.findOne({
+          quizNum: parseInt(data["Quiz Number"]),
+        });
+        if (!quiz) {
+          continue;
+        }
+        let category = await QuizTopicTable.findOne({
+          topic: data["Category"],
+        });
+        if (!category) {
+          category = await QuizTopicTable.create({
+            type: 2,
+            status: 1,
+            topic: data["Category"],
+          });
+        }
+        let bulkWriteObject = {
+          updateOne: {
+            filter: { quizId: quiz._id },
+            update: {
+              $set: { topicId: category ? category._id : quiz.topicId },
+            },
+          },
+        };
+        quizCategoryQuery.push(bulkWriteObject);
+        let bulkWriteObjectQuiz = {
+          updateOne: {
+            filter: { _id: quiz._id },
+            update: {
+              $set: { topicId: category ? category._id : quiz.topicId },
+            },
+          },
+        };
+        quizQuery.push(bulkWriteObjectQuiz);
+      }
+      await QuizResult.bulkWrite(quizCategoryQuery);
+      await QuizQuestionResult.bulkWrite(quizCategoryQuery);
+      await QuizTable.bulkWrite(quizQuery);
+      return { isAddedToDB: true, data: quizCategoryQuery };
+    } catch (err) {
+      return { isAddedToDB: false, data: null };
+    }
+  }
+
+  /**
    * @description This function is used to get parent-child pairs
    * @param
    */
@@ -439,11 +496,10 @@ class ScriptService {
         reject(err);
       });
       combinedStream.on("finish", function () {
-        console.log("file written");
         resolve(true);
       });
     });
-    console.log("processing file");
+
     ctx.attachment(filePath);
     ctx.type = "text/csv";
     ctx.body = await fs.createReadStream(filePath);
@@ -461,11 +517,10 @@ class ScriptService {
     quizNums = [...new Set(quizNums)];
     await Promise.all(
       await quizNums.map(async (quizNum) => {
-        console.log(parseInt(quizNum));
         const quizIfExists = await QuizTable.findOne({
           quizNum: parseInt(quizNum),
         });
-        console.log(quizIfExists);
+
         if (!quizIfExists) return false;
         mainQuery.push(quizIfExists._id);
         quizQuery.push(quizIfExists._id);
