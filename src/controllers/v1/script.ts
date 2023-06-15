@@ -1194,7 +1194,7 @@ class ScriptController extends BaseController {
    * @description This method is used to store new 1.10 new quiz content
    * @param ctx
    */
-  @Route({ path: "/quiz-category", method: HttpMethod.POST })
+  @Route({ path: "/import-quiz-category", method: HttpMethod.POST })
   @InternalUserAuth()
   public async storeQuizCategory(ctx: any) {
     try {
