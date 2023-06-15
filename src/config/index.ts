@@ -149,4 +149,7 @@ export default {
   get GOOGLE_SERVICEACCOUNT_PRIVATE_KEY() {
     return process.env.GOOGLE_SERVICEACCOUNT_PRIVATE_KEY;
   },
+  get CATEGORY_SHEET_GID() {
+    return process.env.CATEGORY_SHEET_GID;
+  },
 };

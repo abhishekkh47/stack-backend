@@ -152,12 +152,6 @@ export const NOTIFICATIONS = {
     message: "🎉 We just sent you $5 Bitcoin. Time to show off!",
     nameForTracking: "Bitcoin redeemed",
   },
-  CHALLENGE_AVAILABLE: {
-    key: "challenge_available",
-    title: "Hi! It's Jetson.",
-    message: "⏰ It's time for your next challenge. Let's Go!",
-    nameForTracking: "New challenge available",
-  },
   COMPLETE_KYC_REMINDER: {
     key: "complete_kyc_reminder",
     title: "Hi! It's Jetson.",
@@ -168,6 +162,8 @@ export const NOTIFICATIONS = {
 };
 
 export const PT_REFERENCE_TEXT = "$5 BTC gift from Jetson";
+export const QUIZ_LIMIT_REACHED_TEXT =
+  "Quiz domination reached. Please wait for next day to unlock this quiz";
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
