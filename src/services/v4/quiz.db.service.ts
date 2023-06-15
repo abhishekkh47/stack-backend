@@ -4,6 +4,7 @@ import {
   getQuizCooldown,
   ANALYTICS_EVENTS,
   XP_POINTS,
+  QUIZ_LIMIT_REACHED_TEXT,
 } from "@app/utility";
 import { ObjectId } from "mongodb";
 import {
@@ -104,21 +105,18 @@ class QuizDBService {
     topicId: string,
     headers: object
   ) {
-    const quizCheck: any = await QuizResult.findOne({
+    let quizResultsData = await QuizResult.find({
       userId: userId,
-      topicId: topicId,
-    }).sort({ createdAt: -1 });
-    const quizIds: any = [];
-    if (quizCheck !== null) {
-      const Time = await get72HoursAhead(quizCheck.createdAt);
-      const quizCooldown = await getQuizCooldown(headers);
-      if (Time < quizCooldown) {
-        throw new NetworkError(
-          `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`,
-          400
-        );
-      }
+      isOnBoardingQuiz: false,
+    });
+    const isQuizLimitReached = await this.checkQuizLimitReached(
+      quizResultsData,
+      userId
+    );
+    if (isQuizLimitReached) {
+      throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
     }
+    const quizIds: any = [];
     const quizCheckCompleted = await QuizResult.find(
       {
         userId: userId,
@@ -165,18 +163,16 @@ class QuizDBService {
       userId: userId,
       isOnBoardingQuiz: false,
     };
-    const quizCheck: any = await QuizResult.findOne(query).sort({
-      createdAt: -1,
+    let quizResultsData = await QuizResult.find({
+      userId: userId,
+      isOnBoardingQuiz: false,
     });
-    if (quizCheck !== null) {
-      const Time = await get72HoursAhead(quizCheck.createdAt);
-      const quizCooldown = await getQuizCooldown(headers);
-      if (Time < quizCooldown) {
-        throw new NetworkError(
-          `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`,
-          400
-        );
-      }
+    const isQuizLimitReached = await this.checkQuizLimitReached(
+      quizResultsData,
+      userId
+    );
+    if (isQuizLimitReached) {
+      throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
     }
     const quizQuestionList = await QuizQuestionTable.find({
       quizId: quizId,
@@ -245,21 +241,18 @@ class QuizDBService {
     quizExists: any,
     isTeen: boolean
   ) {
-    let totalXPPoints = 0;
-    const lastQuizPlayed = await QuizResult.findOne({
+    let quizResultsData = await QuizResult.find({
       userId: userId,
       isOnBoardingQuiz: false,
-    }).sort({ createdAt: -1 });
-    const quizCooldown = await getQuizCooldown(headers);
-    if (lastQuizPlayed) {
-      const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-      if (timeDiff <= quizCooldown) {
-        throw new NetworkError(
-          `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`,
-          400
-        );
-      }
+    });
+    const isQuizLimitReached = await this.checkQuizLimitReached(
+      quizResultsData,
+      userId
+    );
+    if (isQuizLimitReached) {
+      throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
     }
+    let totalXPPoints = 0;
     /**
      * Check question acutally exists in that quiz
      */

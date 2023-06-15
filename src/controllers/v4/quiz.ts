@@ -1,4 +1,4 @@
-import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -16,6 +16,7 @@ import {
   get72HoursAhead,
   getQuizCooldown,
   getQuizImageAspectRatio,
+  QUIZ_LIMIT_REACHED_TEXT,
   Route,
 } from "@app/utility";
 import moment from "moment";
@@ -268,19 +269,16 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const lastQuizPlayed = await QuizResult.findOne({
+          let quizResultsData = await QuizResult.find({
             userId: user._id,
             isOnBoardingQuiz: false,
-          }).sort({ createdAt: -1 });
-          const quizCooldown = await getQuizCooldown(headers);
-          if (lastQuizPlayed) {
-            const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            if (timeDiff <= quizCooldown) {
-              return this.BadRequest(
-                ctx,
-                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
-              );
-            }
+          });
+          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+            quizResultsData,
+            user._id
+          );
+          if (isQuizLimitReached) {
+            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
           /**
            * Check question acutally exists in that quiz
@@ -739,7 +737,10 @@ class QuizController extends BaseController {
       if (!userIfExists) {
         return this.BadRequest(ctx, "User not found");
       }
-      let quizResultsData = await QuizResult.find({ userId: userIfExists._id });
+      let quizResultsData = await QuizResult.find({
+        userId: userIfExists._id,
+        isOnBoardingQuiz: false,
+      });
       const quizCategories = await QuizDBService.listQuizCategories(
         quizResultsData
       );
@@ -759,9 +760,11 @@ class QuizController extends BaseController {
         );
       }
       return this.Ok(ctx, {
-        categories: quizCategories,
-        quizzes,
-        isQuizLimitReached,
+        data: {
+          categories: quizCategories,
+          quizzes,
+          isQuizLimitReached,
+        },
       });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

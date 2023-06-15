@@ -168,6 +168,8 @@ export const NOTIFICATIONS = {
 };
 
 export const PT_REFERENCE_TEXT = "$5 BTC gift from Jetson";
+export const QUIZ_LIMIT_REACHED_TEXT =
+  "Quiz domination reached. Please wait for next day to unlock this quiz";
 
 export const NOTIFICATION_KEYS = {
   TRADING: "trading",
