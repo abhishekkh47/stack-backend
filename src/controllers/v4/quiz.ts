@@ -759,9 +759,11 @@ class QuizController extends BaseController {
         );
       }
       return this.Ok(ctx, {
-        categories: quizCategories,
-        quizzes,
-        isQuizLimitReached,
+        data: {
+          categories: quizCategories,
+          quizzes,
+          isQuizLimitReached,
+        },
       });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
