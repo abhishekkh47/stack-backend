@@ -23,9 +23,9 @@ class AnalyticsService {
   ) {
     const identifyObj = new amplitude.Identify();
 
-    Object.keys(dict).forEach(key => {
+    Object.keys(dict).forEach((key) => {
       identifyObj.setOnce(key, dict[key]);
-    })
+    });
 
     await amplitude.identify(identifyObj, {
       user_id: userId.toString(),

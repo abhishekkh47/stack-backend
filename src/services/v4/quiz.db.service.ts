@@ -63,6 +63,7 @@ class QuizDBService {
               else: false,
             },
           },
+          xpPoints: XP_POINTS.COMPLETED_QUIZ,
         },
       },
       {
@@ -82,11 +83,12 @@ class QuizDBService {
           image: 1,
           name: "$quizName",
           isCompleted: 1,
+          xpPoints: 1,
           topicId: 1,
         },
       },
     ]).exec();
-    if (quizData.length === 0) {
+    if (quizData.length === 0 && !categoryId) {
       throw Error("Quiz Not Found");
     }
     quizData = quizData.sort(() => 0.5 - Math.random());
@@ -678,7 +680,7 @@ class QuizDBService {
       {
         $project: {
           _id: 1,
-          quizName: 1,
+          name: "$quizName",
           topicId: 1,
           image: 1,
         },
@@ -847,7 +849,7 @@ class QuizDBService {
       {
         $project: {
           _id: "$quizzes._id",
-          quizName: "$quizzes.quizName",
+          name: "$quizzes.quizName",
           image: "$quizzes.image",
           topicId: "$quizzes.topicId",
           count: 1,

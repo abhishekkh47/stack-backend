@@ -666,12 +666,18 @@ class QuizController extends BaseController {
       if (quizResult.length > 0) {
         quizIds = quizResult.map((x) => x.quizId);
       }
+      let completedCount: any = 0;
+      if (categoryId) {
+        completedCount = quizResult.filter(
+          (x) => x.topicId.toString() == categoryId.toString()
+        ).length;
+      }
       const quizInformation = await QuizDBService.getQuizData(
         quizIds,
         categoryId,
         status
       );
-      return this.Ok(ctx, { data: quizInformation });
+      return this.Ok(ctx, { data: { quizInformation, completedCount } });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
