@@ -1,7 +1,5 @@
 import { NetworkError } from "@app/middleware";
 import {
-  get72HoursAhead,
-  getQuizCooldown,
   ANALYTICS_EVENTS,
   XP_POINTS,
   QUIZ_LIMIT_REACHED_TEXT,

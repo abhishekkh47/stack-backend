@@ -13,8 +13,6 @@ import { AnalyticsService, QuizDBService } from "@app/services/v4";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
   ANALYTICS_EVENTS,
-  get72HoursAhead,
-  getQuizCooldown,
   getQuizImageAspectRatio,
   QUIZ_LIMIT_REACHED_TEXT,
   Route,
@@ -228,7 +226,6 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
-    dataToSent.quizCooldown = await getQuizCooldown(headers);
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
@@ -515,7 +512,6 @@ class QuizController extends BaseController {
     userIfExists.type == EUserType.TEEN
       ? (dataToSent.xpPoints = userIfExists.xpPoints)
       : (dataToSent.xpPoints = 0);
-    dataToSent.quizCooldown = await getQuizCooldown(headers);
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
