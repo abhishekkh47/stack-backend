@@ -1165,7 +1165,6 @@ class ScriptController extends BaseController {
       let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
         "_id topic"
       );
-      console.log(allTopics);
       /**
        * Read Spreadsheet
        */

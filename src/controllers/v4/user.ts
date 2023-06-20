@@ -193,8 +193,6 @@ class UserController extends BaseController {
   public async addDeviceToken(ctx: any) {
     const user = ctx.request.user;
     const reqParam = ctx.request.body;
-    console.log(reqParam);
-    console.log(user);
     const checkUserExists = await UserTable.findOne({
       _id: user._id,
     });
