@@ -1154,7 +1154,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/quiz-content", method: HttpMethod.POST })
-  @InternalUserAuth()
+  // @InternalUserAuth()
   public async storeQuizContent(ctx: any) {
     try {
       const { quizNums } = ctx.request.body;
@@ -1162,6 +1162,10 @@ class ScriptController extends BaseController {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
       let investingTopic = await QuizTopicTable.findOne({ topic: "Investing" });
+      let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
+        "_id topic"
+      );
+      console.log(allTopics);
       /**
        * Read Spreadsheet
        */
@@ -1172,7 +1176,8 @@ class ScriptController extends BaseController {
       const quizContentData = await ScriptService.convertSpreadSheetToJSON(
         investingTopic._id,
         quizNums,
-        rows
+        rows,
+        allTopics
       );
       if (quizContentData.length === 0) {
         return this.BadRequest(ctx, "Quiz Content Not Found");
