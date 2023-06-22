@@ -44,7 +44,7 @@ class QuizController extends BaseController {
         question_image_title: 1,
         quizId: 1,
       }
-    );
+    ).sort({ createdAt: 1 });
 
     return this.Ok(ctx, { data: onboardingQuestionData });
   }
