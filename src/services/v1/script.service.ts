@@ -158,7 +158,6 @@ class ScriptService {
     let lastQuizName = "";
     let lastQuizImage = "";
     let lastQuizCategory = "";
-    let lastQuizCategoryImage = "";
     let quizContentData = [];
     let questionDataArray = [];
     let order = 1;
@@ -170,9 +169,8 @@ class ScriptService {
           lastQuizName = data["Quiz Title"].trimEnd();
           lastQuizImage = data["Quiz Image"];
         }
-        if (data["Category"] != "" && data["Category Image"] != "") {
+        if (data["Category"] != "") {
           lastQuizCategory = data["Category"].trimEnd();
-          lastQuizCategoryImage = data["Category Image"].trimEnd();
         }
         if (data["Quiz Title"] == "") {
           ++order;
@@ -237,7 +235,7 @@ class ScriptService {
             if (!isCategoryExists) {
               categories.push({
                 topic: lastQuizCategory,
-                image: lastQuizCategoryImage,
+                image: null,
                 status: 1,
                 type: 2,
               });
