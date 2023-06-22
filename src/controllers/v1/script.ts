@@ -1154,7 +1154,7 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/quiz-content", method: HttpMethod.POST })
-  @InternalUserAuth()
+  // @InternalUserAuth()
   public async storeQuizContent(ctx: any) {
     try {
       const { quizNums } = ctx.request.body;
@@ -1345,7 +1345,17 @@ class ScriptController extends BaseController {
   @Route({ path: "/export-parentchild-info", method: HttpMethod.GET })
   public async exportParentChildInformation(ctx: any) {
     const parentChildRecords = await ScriptService.getParentChildRecords();
-    await ScriptService.convertDataToCsv(ctx, parentChildRecords);
+    const fields = [
+      "ParentName",
+      "TeenName",
+      "ParentNumber",
+      "TeenNumber",
+      "ParentCreationDate",
+      "TeenCreationDate",
+      "WhoComesFirst",
+      "TimeBetweenCreation",
+    ];
+    await ScriptService.convertDataToCsv(ctx, parentChildRecords, fields);
     return ctx;
   }
 
@@ -1435,6 +1445,47 @@ class ScriptController extends BaseController {
     } catch (error) {
       return this.Ok(ctx, { message: error.message });
     }
+  }
+
+  /**
+   * @description This method is used to export csv and get parent-child records with time in between them
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/export-parent-emails", method: HttpMethod.GET })
+  public async exportParentEmails(ctx: any) {
+    let data: any = await ParentChildTable.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          "userData.type": 2,
+          "userData.status": 3,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          Email: "$userData.email",
+        },
+      },
+    ]).exec();
+    if (data.length === 0) return this.BadRequest(ctx, "Parent Info not found");
+    const fields = ["Email"];
+    await ScriptService.convertDataToCsv(ctx, data, fields);
+    return ctx;
   }
 }
 

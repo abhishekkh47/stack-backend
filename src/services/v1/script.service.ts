@@ -520,17 +520,11 @@ class ScriptService {
    * @param ctx
    * @param parentChildRecords
    */
-  public async convertDataToCsv(ctx: any, parentChildRecords: any) {
-    const fields = [
-      "ParentName",
-      "TeenName",
-      "ParentNumber",
-      "TeenNumber",
-      "ParentCreationDate",
-      "TeenCreationDate",
-      "WhoComesFirst",
-      "TimeBetweenCreation",
-    ];
+  public async convertDataToCsv(
+    ctx: any,
+    parentChildRecords: any,
+    fields: any
+  ) {
     const filePath = `uploads/${moment().unix()}.csv`;
     const csv = json2csv.parse(parentChildRecords, fields);
     const combinedStream = new Transform({
