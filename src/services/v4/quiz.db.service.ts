@@ -700,6 +700,7 @@ class QuizDBService {
           $gte: todayStart,
           $lte: todayEnd,
         },
+        isOnBoardingQuiz: false,
         userId: userId,
       });
       isQuizLimitReached = todaysQuizPlayed.length >= 3 ? true : false;
