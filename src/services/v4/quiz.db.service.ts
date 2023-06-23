@@ -720,7 +720,9 @@ class QuizDBService {
     let quizCategories: any = await QuizTopicTable.find({
       type: 2,
       status: 1,
-    }).select("_id topic image");
+    })
+      .select("_id topic image")
+      .sort({ createdAt: -1 });
     if (quizCategories.length === 0) {
       throw new NetworkError(`Quiz Categories not found`, 400);
     }
