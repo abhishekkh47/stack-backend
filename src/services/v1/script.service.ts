@@ -361,7 +361,7 @@ class ScriptService {
           });
         }
         let bulkWriteObject = {
-          updateOne: {
+          updateMany: {
             filter: { quizId: quiz._id },
             update: {
               $set: { topicId: category ? category._id : quiz.topicId },
@@ -370,7 +370,7 @@ class ScriptService {
         };
         quizCategoryQuery.push(bulkWriteObject);
         let bulkWriteObjectQuiz = {
-          updateOne: {
+          updateMany: {
             filter: { _id: quiz._id },
             update: {
               $set: { topicId: category ? category._id : quiz.topicId },
