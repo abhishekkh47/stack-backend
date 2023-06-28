@@ -9,7 +9,7 @@ import { validationMessageKey } from "@app/utility";
 export const validations = {
   checkValidMobileValidation: (req, res, callback) => {
     const schema = Joi.object({
-      type: Joi.number().valid(1, 2, 3).required(),
+      type: Joi.number().valid(0, 1, 2, 3).optional(),
       mobile: Joi.string()
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),

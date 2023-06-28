@@ -1,188 +1,25 @@
 import moment from "moment";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import {
-  AdminTable,
-  CryptoTable,
-  TransactionTable,
-  UserBanksTable,
-  UserTable,
-} from "@app/model";
+import { ParentChildTable, UserTable } from "@app/model";
 import { DeviceTokenService, userService } from "@app/services/v1/index";
-import { TransactionDBService, UserService } from "@app/services/v3";
 import { UserDBService } from "@app/services/v4";
-import { TradingService } from "@app/services/v3/index";
 import {
   ENOTIFICATIONSETTINGS,
-  ETransactionStatus,
-  ETransactionType,
   EUSERSTATUS,
   EUserType,
   HttpMethod,
 } from "@app/types";
-import { removeImage, Route, uploadFileS3, NOTIFICATIONS } from "@app/utility";
+import {
+  removeImage,
+  Route,
+  uploadFileS3,
+  getBalance,
+  getAssetTotals,
+} from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
 
 class UserController extends BaseController {
-  /**
-   * @description This method is start reward time , make intial transaction and set isGiftedCrypto to 1
-   * @param ctx
-   */
-  @Route({ path: "/start-reward-timer", method: HttpMethod.POST })
-  @Auth()
-  public async startRewardTimer(ctx: any) {
-    try {
-      const user = ctx.request.user;
-      const admin = await AdminTable.findOne({});
-      const userExists = await UserTable.findOne({ _id: user._id });
-      if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
-        return this.BadRequest(ctx, "User Not Found");
-      }
-      if (userExists.unlockRewardTime) {
-        return this.BadRequest(ctx, "You already unlocked the reward");
-      }
-      let transactionExists = await TransactionTable.findOne({
-        userId: userExists._id,
-        type: ETransactionType.BUY,
-        status: ETransactionStatus.GIFTED,
-      });
-      if (
-        admin.giftCryptoSetting == 1 &&
-        userExists.isGiftedCrypto == 0 &&
-        !transactionExists
-      ) {
-        let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-        await TransactionDBService.createBtcGiftedTransaction(
-          userExists._id,
-          crypto,
-          admin
-        );
-      } else if (transactionExists) {
-        await UserTable.findOneAndUpdate(
-          { _id: userExists._id },
-          {
-            $set: {
-              unlockRewardTime: moment().add(admin.rewardHours, "hours").unix(),
-              isGiftedCrypto: 1,
-            },
-          }
-        );
-      }
-      const userData = await UserTable.findOne({ _id: userExists._id });
-
-      return this.Ok(ctx, {
-        message: "Reward Unlocked Successfully",
-        data: { rewardHours: userData.unlockRewardTime },
-      });
-    } catch (error) {
-      return this.BadRequest(ctx, "Something went wrong");
-    }
-  }
-
-  /**
-   * @description This method is used to reward crypto when parent is completed with kyc + bank details
-   * @param ctx
-   */
-  @Route({ path: "/reward-crypto", method: HttpMethod.POST })
-  @Auth()
-  @PrimeTrustJWT(true)
-  public async rewardCrypto(ctx: any) {
-    try {
-      const jwtToken = ctx.request.primeTrustToken;
-      const admin = await AdminTable.findOne({});
-      const { user, headers } = ctx.request;
-      const userExists = await UserTable.findOne({ _id: user._id });
-      if (!userExists) {
-        return this.BadRequest(ctx, "User Not Found");
-      }
-      const parentChildDetails = await UserService.getParentChildInfo(
-        userExists._id
-      );
-      const checkParentInfo =
-        parentChildDetails &&
-        (await UserTable.findOne({
-          _id: parentChildDetails.userId,
-        }));
-
-      const checkParentBankExists =
-        parentChildDetails &&
-        (await UserBanksTable.findOne({
-          $or: [
-            { userId: parentChildDetails.userId },
-            { parentId: parentChildDetails.userId },
-          ],
-        }));
-      if (
-        checkParentInfo &&
-        checkParentInfo.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-        checkParentBankExists &&
-        admin.giftCryptoSetting == 1 &&
-        userExists.isGiftedCrypto !== 2
-      ) {
-        const accountIdDetails = await parentChildDetails.teens.find(
-          (x: any) => x.childId.toString() == userExists._id.toString()
-        ).accountId;
-
-        if (parentChildDetails && userExists.isRewardDeclined == false) {
-          await TradingService.internalTransfer(
-            parentChildDetails,
-            jwtToken,
-            accountIdDetails,
-            userExists.type,
-            admin,
-            true
-          );
-          if (headers["build-number"]) {
-            const { key, title, message, nameForTracking } =
-              NOTIFICATIONS.REDEEM_BTC_SUCCESS;
-            await DeviceTokenService.sendUserNotification(
-              userExists._id,
-              key,
-              title,
-              message,
-              null,
-              userExists._id,
-              nameForTracking
-            );
-          }
-        }
-      }
-      return this.Ok(ctx, { message: "Success" });
-    } catch (error) {
-      return this.BadRequest(ctx, "Something went wrong");
-    }
-  }
-
-  /**
-   * @description This method is used to decline the reward
-   * @param ctx
-   */
-  @Route({ path: "/decline-reward", method: HttpMethod.POST })
-  @Auth()
-  public async declineReward(ctx: any) {
-    try {
-      const userExists = await UserTable.findOne({ _id: ctx.request.user._id });
-      if (!userExists) {
-        return this.BadRequest(ctx, "User Not Found");
-      }
-      await UserTable.findOneAndUpdate(
-        { userId: userExists._id },
-        {
-          $set: {
-            isRewardDeclined: true,
-          },
-        }
-      );
-      await TransactionTable.deleteOne({
-        userId: userExists._id,
-        status: ETransactionStatus.GIFTED,
-      });
-      return this.Ok(ctx, { message: "Reward Declined Successfully" });
-    } catch (error) {
-      return this.BadRequest(ctx, "Something went wrong");
-    }
-  }
-
   /**
    * @description This method is used to add/remove device token
    * @param ctx
@@ -393,10 +230,7 @@ class UserController extends BaseController {
     const userIfExists: any = await UserTable.findOne({
       _id: ctx.request.user._id,
     });
-    if (
-      !userIfExists ||
-      (userIfExists && userIfExists.type !== EUserType.TEEN)
-    ) {
+    if (!userIfExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
     const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
@@ -440,6 +274,76 @@ class UserController extends BaseController {
           });
         }
       });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to check balance greater or not
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/asset-account-balance", method: HttpMethod.GET })
+  @Auth()
+  @PrimeTrustJWT()
+  public async checkBalance(ctx: any) {
+    try {
+      let hasBalance = false;
+      const { user, primeTrustToken } = ctx.request;
+      const userExists = await UserTable.findOne({
+        _id: user._id,
+        type: { $in: [EUserType.PARENT, EUserType.SELF] },
+        status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
+      });
+      if (!userExists) {
+        return this.Ok(ctx, { data: { hasBalance } });
+      }
+      const parentChildRecords: any = await ParentChildTable.findOne({
+        userId: userExists._id,
+      });
+      if (
+        !parentChildRecords ||
+        (userExists.type == EUserType.PARENT &&
+          parentChildRecords.teens.length === 0) ||
+        (userExists.type == EUserType.SELF && !parentChildRecords.accountId)
+      ) {
+        return this.Ok(ctx, { data: { hasBalance } });
+      }
+      let userInfo =
+        userExists.type == EUserType.PARENT
+          ? parentChildRecords.teens.filter((x) => x.accountId)
+          : [parentChildRecords];
+      for (let value of userInfo) {
+        const balanceInfo: any = await getBalance(
+          primeTrustToken,
+          value.accountId
+        );
+        if (balanceInfo.status == 400) {
+          continue;
+        }
+        if (balanceInfo.data.data[0].attributes.disbursable > 0) {
+          hasBalance = true;
+          break;
+        }
+        let assetInfo: any = await getAssetTotals(
+          primeTrustToken,
+          value.accountId
+        );
+        if (assetInfo.status == 400) {
+          continue;
+        }
+        assetInfo = assetInfo?.data?.data || [];
+        assetInfo =
+          assetInfo.length > 0
+            ? assetInfo.filter((x) => x.attributes.disbursable > 0)
+            : [];
+        if (assetInfo.length > 0) {
+          hasBalance = true;
+          break;
+        }
+      }
+      return this.Ok(ctx, { data: { hasBalance } });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

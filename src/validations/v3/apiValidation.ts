@@ -18,8 +18,10 @@ export const validationsV3 = {
       deviceToken: Joi.string().optional().allow(""),
       dob: Joi.date()
         .iso()
-        .max(Date.now() + 60 * 60 * 1000),
-      type: Joi.number().valid(1, 2, 3),
+        .max(Date.now() + 60 * 60 * 1000)
+        .optional()
+        .allow(""),
+      type: Joi.number().valid(0, 1, 2, 3).optional(),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {

@@ -1,7 +1,5 @@
 import { NetworkError } from "@app/middleware";
 import {
-  get72HoursAhead,
-  getQuizCooldown,
   ANALYTICS_EVENTS,
   XP_POINTS,
   QUIZ_LIMIT_REACHED_TEXT,
@@ -241,7 +239,7 @@ class QuizDBService {
     headers: object,
     reqParam: any,
     quizExists: any,
-    isTeen: boolean
+    isTeen: boolean = null
   ) {
     let quizResultsData = await QuizResult.find({
       userId: userId,
@@ -303,17 +301,15 @@ class QuizDBService {
     let query: any = {
       $inc: incrementObj,
     };
-    if (isTeen) {
-      const correctAnswerXPPointsEarned =
-        reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
-      totalXPPoints = correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ;
-      incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
-      query = {
-        ...query,
-        $inc: incrementObj,
-        $set: { isQuizReminderNotificationSent: false },
-      };
-    }
+    const correctAnswerXPPointsEarned =
+      reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
+    totalXPPoints = correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ;
+    incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
+    query = {
+      ...query,
+      $inc: incrementObj,
+      $set: { isQuizReminderNotificationSent: false },
+    };
     await UserTable.updateOne({ _id: userId }, query);
 
     AnalyticsService.sendEvent(

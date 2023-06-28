@@ -563,112 +563,6 @@ class TradingController extends BaseController {
             });
           }
 
-          /**
-           * Gift 5$ crypto to teen if deposited first time
-           */
-          let isInitialDeposit = false;
-          if (
-            userExists.type === EUserType.PARENT ||
-            userExists.type === EUserType.SELF
-          ) {
-            let childExists = await UserTable.findOne({
-              _id: reqParam.childId ? reqParam.childId : userExists._id,
-            });
-
-            if (
-              childExists &&
-              childExists.isGiftedCrypto == EGIFTSTACKCOINSSETTING.ON &&
-              admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON
-            ) {
-              let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-              const requestQuoteDay: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                    hot: true,
-                    "transaction-type": "buy",
-                    total_amount: "5",
-                  },
-                },
-              };
-              const generateQuoteResponse: any = await generateQuote(
-                jwtToken,
-                requestQuoteDay
-              );
-              if (generateQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, generateQuoteResponse.message);
-              }
-              /**
-               * Execute a quote
-               */
-              const requestExecuteQuote: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                  },
-                },
-              };
-              const executeQuoteResponse: any = await executeQuote(
-                jwtToken,
-                generateQuoteResponse.data.data.id,
-                requestExecuteQuote
-              );
-              if (executeQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, executeQuoteResponse.message);
-              }
-              let internalTransferRequest = {
-                data: {
-                  type: "internal-asset-transfers",
-                  attributes: {
-                    "unit-count":
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                    "to-account-id": accountIdDetails.accountId,
-                    "asset-id": crypto.assetId,
-                    reference: PT_REFERENCE_TEXT,
-                    "hot-transfer": true,
-                  },
-                },
-              };
-              const internalTransferResponse: any =
-                await internalAssetTransfers(jwtToken, internalTransferRequest);
-              if (internalTransferResponse.status == 400) {
-                return this.BadRequest(ctx, internalTransferResponse.message);
-              }
-              await TransactionTable.updateOne(
-                {
-                  status: ETransactionStatus.GIFTED,
-                  userId: childExists._id,
-                },
-                {
-                  $set: {
-                    unitCount:
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                    status: ETransactionStatus.SETTLED,
-                    executedQuoteId: internalTransferResponse.data.data.id,
-                    accountId: accountIdDetails.accountId,
-                  },
-                }
-              );
-              await UserTable.updateOne(
-                {
-                  _id: childExists._id,
-                },
-                {
-                  $set: {
-                    isGiftedCrypto: 2,
-                  },
-                }
-              );
-
-              isInitialDeposit = true;
-            }
-          }
-
           await UserActivityTable.create({
             userId: reqParam.childId ? reqParam.childId : userExists._id,
             userType: reqParam.childId ? EUserType.TEEN : userExists.type,
@@ -691,7 +585,7 @@ class TradingController extends BaseController {
             userId: accountIdDetails.childId
               ? accountIdDetails.childId
               : userExists._id,
-            intialDeposit: isInitialDeposit ? true : false,
+            intialDeposit: false,
             parentId: userExists._id,
             status: ETransactionStatus.PENDING,
             executedQuoteId: contributions.data.included[0].id,

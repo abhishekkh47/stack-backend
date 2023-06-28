@@ -20,7 +20,7 @@ import {
   userService,
   zohoCrmService,
 } from "@app/services/v1/index";
-import { TransactionDBService, UserDBService } from "@app/services/v2";
+import { UserDBService } from "@app/services/v2";
 import {
   EAUTOAPPROVAL,
   EGIFTSTACKCOINSSETTING,
@@ -392,123 +392,6 @@ class AuthController extends BaseController {
               }
             );
           }
-
-          if (
-            admin.giftCryptoSetting == 1 &&
-            user.isGiftedCrypto !== 2 &&
-            user.type == EUserType.TEEN &&
-            checkParentExists &&
-            checkParentExists.status === EUSERSTATUS.KYC_DOCUMENT_VERIFIED
-          ) {
-            let crypto = await CryptoTable.findOne({ symbol: "BTC" });
-            let checkTransactionExistsAlready = await TransactionTable.findOne({
-              userId: user._id,
-              status: ETransactionStatus.GIFTED,
-              type: ETransactionType.BUY,
-            });
-            let childExistsInParentChild = await ParentChildTable.findOne({
-              "teens.childId": user._id,
-            });
-            if (checkTransactionExistsAlready && childExistsInParentChild) {
-              const accountIdDetails: any = childExistsInParentChild.teens.find(
-                (x: any) => x.childId.toString() == user._id.toString()
-              );
-
-              const requestQuoteDay: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": envData.OPERATIONAL_ACCOUNT,
-                    "asset-id": crypto.assetId,
-                    hot: true,
-                    "transaction-type": "buy",
-                    total_amount: "5",
-                  },
-                },
-              };
-              const generateQuoteResponse: any = await generateQuote(
-                ctx.request.primeTrustToken,
-                requestQuoteDay
-              );
-              if (generateQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, generateQuoteResponse.message);
-              }
-              /**
-               * Execute a quote
-               */
-              const requestExecuteQuote: any = {
-                data: {
-                  type: "quotes",
-                  attributes: {
-                    "account-id": accountIdDetails.accountId,
-                    "asset-id": crypto.assetId,
-                  },
-                },
-              };
-              const executeQuoteResponse: any = await executeQuote(
-                ctx.request.primeTrustToken,
-                generateQuoteResponse.data.data.id,
-                requestExecuteQuote
-              );
-              if (executeQuoteResponse.status == 400) {
-                return this.BadRequest(ctx, executeQuoteResponse.message);
-              }
-              let internalTransferRequest = {
-                data: {
-                  type: "internal-asset-transfers",
-                  attributes: {
-                    "unit-count":
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                    "from-account-id": envData.OPERATIONAL_ACCOUNT,
-                    "to-account-id": accountIdDetails.accountId,
-                    "asset-id": crypto.assetId,
-                    reference: PT_REFERENCE_TEXT,
-                    "hot-transfer": true,
-                  },
-                },
-              };
-              const internalTransferResponse: any =
-                await internalAssetTransfers(
-                  ctx.request.primeTrustToken,
-                  internalTransferRequest
-                );
-              if (internalTransferResponse.status == 400) {
-                return this.BadRequest(ctx, internalTransferResponse.message);
-              }
-              await TransactionTable.findOneAndUpdate(
-                {
-                  _id: checkTransactionExistsAlready._id,
-                },
-                {
-                  $set: {
-                    assetId: crypto.assetId,
-                    cryptoId: crypto._id,
-                    accountId: accountIdDetails.accountId,
-                    type: ETransactionType.BUY,
-                    settledTime: moment().unix(),
-                    amount: admin.giftCryptoAmount,
-                    amountMod: -admin.giftCryptoAmount,
-                    userId: user._id,
-                    parentId: childExistsInParentChild.userId,
-                    status: ETransactionStatus.SETTLED,
-                    executedQuoteId: internalTransferResponse.data.data.id,
-                    unitCount:
-                      executeQuoteResponse.data.data.attributes["unit-count"],
-                  },
-                }
-              );
-              await UserTable.updateOne(
-                {
-                  _id: user._id,
-                },
-                {
-                  $set: {
-                    isGiftedCrypto: 2,
-                  },
-                }
-              );
-            }
-          }
           /**
            * Gift Stack Coins and add entry in zoho
            */
@@ -869,22 +752,6 @@ class AuthController extends BaseController {
               await UserDraftTable.deleteOne({
                 _id: ctx.request.user._id,
               });
-
-              const checkTransactionExists = await TransactionTable.findOne({
-                userId: newUserDetail._id,
-              });
-              if (
-                admin.giftCryptoSetting == 1 &&
-                newUserDetail.isGiftedCrypto == 0 &&
-                !checkTransactionExists
-              ) {
-                const crypto = await CryptoTable.findOne({ symbol: "BTC" });
-                await TransactionDBService.createBtcGiftedTransaction(
-                  newUserDetail._id,
-                  crypto,
-                  admin
-                );
-              }
             }
 
             const isUserNotTeen =

@@ -282,11 +282,6 @@ class UserDBService {
   public async getLeaderboards(userIfExists: any) {
     let leaderBoardData: any = await UserTable.aggregate([
       {
-        $match: {
-          type: EUserType.TEEN,
-        },
-      },
-      {
         $setWindowFields: {
           sortBy: {
             xpPoints: -1,
