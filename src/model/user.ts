@@ -31,11 +31,12 @@ const schema = new mongoose.Schema<IUserSchema>(
     },
     /**
      * 1 - teenager,  2 - parent and 3 - Self
+     * Default:- 0
      */
     type: {
       type: mongoose.Schema.Types.Number,
       required: false,
-      default: null,
+      default: 0,
     },
     /**
      * 1 - Kyc document upload , 2 - Kyc failed and reupload document , 3 - Kyc approved

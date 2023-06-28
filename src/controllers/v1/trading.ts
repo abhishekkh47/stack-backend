@@ -789,55 +789,6 @@ class TradingController extends BaseController {
   }
 
   /**
-   * @description This method is used for checking balance for teen as well as parent
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/check-balance", method: HttpMethod.GET })
-  @Auth()
-  @PrimeTrustJWT()
-  public async checkBalance(ctx: any) {
-    const user = ctx.request.user;
-    const childId = ctx.request.query.childId;
-    if (!childId) {
-      return this.BadRequest(ctx, "Child Details Doesn't Exists");
-    }
-    const jwtToken = ctx.request.primeTrustToken;
-    const userExists = await UserTable.findOne({ _id: user._id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const query =
-      userExists.type == EUserType.SELF
-        ? { userId: user._id }
-        : { "teens.childId": childId };
-    let parent: any = await ParentChildTable.findOne(query);
-    if (!parent) return this.BadRequest(ctx, "Invalid User");
-    const accountIdDetails =
-      userExists.type == EUserType.SELF
-        ? parent
-        : await parent.teens.find(
-            (x: any) => x.childId.toString() == childId.toString()
-          );
-    if (!accountIdDetails) {
-      return this.BadRequest(ctx, "Account Details Not Found");
-    }
-    const fetchBalance: any = await getBalance(
-      jwtToken,
-      accountIdDetails.accountId
-    );
-    if (fetchBalance.status == 400) {
-      return this.BadRequest(ctx, fetchBalance.message);
-    }
-    const balance = fetchBalance.data.data[0].attributes.disbursable;
-    const pending = fetchBalance.data.data[0].attributes["pending-transfer"];
-    if (fetchBalance.status == 400) {
-      return this.BadRequest(ctx, fetchBalance.message);
-    }
-    return this.Ok(ctx, { balance: balance, pendingBalance: pending });
-  }
-
-  /**
    * @description This method is used to buy crypto
    * @param ctx
    * @returns

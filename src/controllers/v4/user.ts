@@ -1,6 +1,6 @@
 import moment from "moment";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { UserTable } from "@app/model";
+import { ParentChildTable, UserTable } from "@app/model";
 import { DeviceTokenService, userService } from "@app/services/v1/index";
 import { UserDBService } from "@app/services/v4";
 import {
@@ -9,7 +9,13 @@ import {
   EUserType,
   HttpMethod,
 } from "@app/types";
-import { removeImage, Route, uploadFileS3, NOTIFICATIONS } from "@app/utility";
+import {
+  removeImage,
+  Route,
+  uploadFileS3,
+  getBalance,
+  getAssetTotals,
+} from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
 
@@ -224,10 +230,7 @@ class UserController extends BaseController {
     const userIfExists: any = await UserTable.findOne({
       _id: ctx.request.user._id,
     });
-    if (
-      !userIfExists ||
-      (userIfExists && userIfExists.type !== EUserType.TEEN)
-    ) {
+    if (!userIfExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
     const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
@@ -271,6 +274,76 @@ class UserController extends BaseController {
           });
         }
       });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to check balance greater or not
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/asset-account-balance", method: HttpMethod.GET })
+  @Auth()
+  @PrimeTrustJWT()
+  public async checkBalance(ctx: any) {
+    try {
+      let hasBalance = false;
+      const { user, primeTrustToken } = ctx.request;
+      const userExists = await UserTable.findOne({
+        _id: user._id,
+        type: { $in: [EUserType.PARENT, EUserType.SELF] },
+        status: EUSERSTATUS.KYC_DOCUMENT_VERIFIED,
+      });
+      if (!userExists) {
+        return this.Ok(ctx, { data: { hasBalance } });
+      }
+      const parentChildRecords: any = await ParentChildTable.findOne({
+        userId: userExists._id,
+      });
+      if (
+        !parentChildRecords ||
+        (userExists.type == EUserType.PARENT &&
+          parentChildRecords.teens.length === 0) ||
+        (userExists.type == EUserType.SELF && !parentChildRecords.accountId)
+      ) {
+        return this.Ok(ctx, { data: { hasBalance } });
+      }
+      let userInfo =
+        userExists.type == EUserType.PARENT
+          ? parentChildRecords.teens.filter((x) => x.accountId)
+          : [parentChildRecords];
+      for (let value of userInfo) {
+        const balanceInfo: any = await getBalance(
+          primeTrustToken,
+          value.accountId
+        );
+        if (balanceInfo.status == 400) {
+          continue;
+        }
+        if (balanceInfo.data.data[0].attributes.disbursable > 0) {
+          hasBalance = true;
+          break;
+        }
+        let assetInfo: any = await getAssetTotals(
+          primeTrustToken,
+          value.accountId
+        );
+        if (assetInfo.status == 400) {
+          continue;
+        }
+        assetInfo = assetInfo?.data?.data || [];
+        assetInfo =
+          assetInfo.length > 0
+            ? assetInfo.filter((x) => x.attributes.disbursable > 0)
+            : [];
+        if (assetInfo.length > 0) {
+          hasBalance = true;
+          break;
+        }
+      }
+      return this.Ok(ctx, { data: { hasBalance } });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

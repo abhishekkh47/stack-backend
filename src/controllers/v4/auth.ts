@@ -86,10 +86,6 @@ class AuthController extends BaseController {
             { $set: { isVerified: EOTPVERIFICATION.VERIFIED } }
           );
           let updateUser = null;
-          let teenExists = await UserTable.findOne({
-            mobile: reqParam.mobile,
-            isParentFirst: true,
-          });
           if (isOtpVerified) {
             AnalyticsService.sendEvent(
               ANALYTICS_EVENTS.PHONE_NUMBER_VERIFIED,
@@ -102,21 +98,13 @@ class AuthController extends BaseController {
 
             let findQuery = {};
             let setQuery = {};
-            if (teenExists) {
-              findQuery = { ...findQuery, _id: teenExists._id };
+            if (userExists) {
+              findQuery = { ...findQuery, _id: userExists._id };
               setQuery = {
                 ...setQuery,
                 isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
                 email: userExists.email,
-                dob: userExists.dob,
-              };
-              migratedId = teenExists._id;
-            } else {
-              findQuery = { ...findQuery, _id: user._id };
-              setQuery = {
-                ...setQuery,
                 mobile: reqParam.mobile,
-                isPhoneVerified: EPHONEVERIFIEDSTATUS.TRUE,
               };
             }
             updateUser = await UserTable.findOneAndUpdate(
@@ -127,30 +115,10 @@ class AuthController extends BaseController {
               { new: true }
             );
 
-            const isUserNotTeen =
-              updateUser.type == EUserType.PARENT ||
-              updateUser.type == EUserType.SELF;
-
-            const parentSignupFunnel = [
-              ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-              PARENT_SIGNUP_FUNNEL.DOB,
-              PARENT_SIGNUP_FUNNEL.MOBILE_NUMBER,
-            ];
-
-            const teenSignupFunnel = [
-              TEEN_SIGNUP_FUNNEL.SIGNUP,
-              TEEN_SIGNUP_FUNNEL.DOB,
-              TEEN_SIGNUP_FUNNEL.PHONE_NUMBER,
-            ];
-
             let dataSentInCrm: any = {
               Account_Name: updateUser.firstName + " " + updateUser.lastName,
               Email: updateUser.email,
               Mobile: reqParam.mobile,
-              ...(isUserNotTeen && {
-                Parent_Signup_Funnel: parentSignupFunnel,
-              }),
-              ...(!isUserNotTeen && { Teen_Signup_Funnel: teenSignupFunnel }),
             };
 
             await zohoCrmService.addAccounts(
@@ -161,18 +129,6 @@ class AuthController extends BaseController {
           let response: any = {
             message: "Your mobile number is verified successfully",
           };
-          if (migratedId) {
-            await UserTable.deleteOne({
-              _id: user._id,
-            });
-            /**
-             * Give new auth token instead of migratedId which will be used for other apis.
-             */
-            const { token, refreshToken } = await TokenService.generateToken(
-              teenExists
-            );
-            response = { ...response, token, refreshToken };
-          }
 
           return this.Ok(ctx, response);
         }

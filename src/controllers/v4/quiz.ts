@@ -453,16 +453,6 @@ class QuizController extends BaseController {
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
     }
-    let childExists = null;
-    if (userIfExists.type == EUserType.PARENT) {
-      childExists = await ParentChildTable.findOne({
-        userId: userIfExists._id,
-      }).populate("firstChildId", ["_id", "preLoadedCoins"]);
-    } else {
-      childExists = await ParentChildTable.findOne({
-        firstChildId: userIfExists._id,
-      }).populate("userId", ["_id", "quizCoins"]);
-    }
     const checkQuizExists = await quizService.checkQuizExists({
       $or: [{ userId: new mongoose.Types.ObjectId(user._id) }],
       isOnBoardingQuiz: false,
@@ -472,26 +462,15 @@ class QuizController extends BaseController {
       lastQuizTime: null,
       totalQuestionSolved: 0,
       totalStackPointsEarned: 0,
-      totalStackPointsEarnedTop:
-        userIfExists.type == EUserType.PARENT && childExists
-          ? childExists.firstChildId
-            ? childExists.firstChildId.preLoadedCoins
-              ? childExists.firstChildId.preLoadedCoins
-              : 0
-            : 0
-          : userIfExists.type == EUserType.TEEN
-          ? userIfExists.preLoadedCoins
-          : 0,
+      totalStackPointsEarnedTop: userIfExists.preLoadedCoins,
       xpPoints: 0,
     };
     /**
      * Get Stack Point Earned
      */
-    let parentCoins = childExists?.userId?.quizCoins || 0;
+    // let parentCoins = childExists?.userId?.quizCoins || 0;
     dataToSent.totalStackPointsEarned += userIfExists.quizCoins;
-    dataToSent.totalStackPointsEarnedTop +=
-      userIfExists.quizCoins + parentCoins;
-
+    dataToSent.totalStackPointsEarnedTop += userIfExists.quizCoins;
     /**
      * Get Quiz Question Count
      */
@@ -509,9 +488,11 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
-    userIfExists.type == EUserType.TEEN
+    /* userIfExists.type == EUserType.TEEN
       ? (dataToSent.xpPoints = userIfExists.xpPoints)
       : (dataToSent.xpPoints = 0);
+     */
+    dataToSent.xpPoints = userIfExists.xpPoints;
     dataToSent.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
@@ -554,13 +535,12 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const isTeen = userIfExists.type === EUserType.TEEN ? true : false;
+          // const isTeen = userIfExists.type === EUserType.TEEN ? true : false;
           const { totalXPPoints } = await QuizDBService.storeQuizInformation(
             user._id,
             headers,
             reqParam,
-            quizIfExists,
-            isTeen
+            quizIfExists
           );
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
@@ -688,10 +668,7 @@ class QuizController extends BaseController {
     try {
       const { user, body } = ctx.request;
       const userIfExists = await UserTable.findOne({ _id: user._id });
-      if (
-        !userIfExists ||
-        (userIfExists && userIfExists.type !== EUserType.TEEN)
-      ) {
+      if (!userIfExists) {
         return this.BadRequest(ctx, "Teen not found");
       }
       return validationsV4.quizReviewValidation(body, ctx, async (validate) => {

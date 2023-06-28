@@ -177,7 +177,7 @@ class AuthController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const { mobile, type, deviceId } = input;
+          const { mobile, deviceId } = input;
           AnalyticsService.sendEvent(
             ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED,
             undefined,
@@ -190,14 +190,6 @@ class AuthController extends BaseController {
           let userExists = await UserTable.findOne({
             mobile: mobile,
           });
-          if (userExists && type == EUserType.TEEN) {
-            if (userExists.isParentFirst == true) {
-              return this.Ok(ctx, { message: "Success" });
-            }
-          }
-          if (userExists) {
-            return this.BadRequest(ctx, "Mobile Number Already Exists");
-          }
           return this.Ok(ctx, { message: "Success" });
         }
       }
@@ -513,31 +505,6 @@ class AuthController extends BaseController {
             await SocialService.verifySocial(reqParam);
 
             if (!userExists) {
-              if (!reqParam.type) {
-                return this.BadRequest(ctx, "Please enter user type");
-              }
-              if (!reqParam.dob) {
-                return this.BadRequest(ctx, "Please enter dob");
-              }
-              if (reqParam.type === EUserType.SELF) {
-                return this.BadRequest(
-                  ctx,
-                  "Hang tight -- we aren't currently serving users of your age."
-                );
-              }
-              const isUserBelow18 =
-                new Date(
-                  Date.now() - new Date(reqParam.dob).getTime()
-                ).getFullYear() < 1988;
-              if (
-                (isUserBelow18 && reqParam.type == EUserType.PARENT) ||
-                (!isUserBelow18 && reqParam.type == EUserType.TEEN)
-              ) {
-                return this.BadRequest(
-                  ctx,
-                  "Dob doesn't match with your type."
-                );
-              }
               const uniqueReferralCode = await makeUniqueReferalCode();
               const createQuery: any = {
                 email: reqParam.email,
@@ -553,7 +520,7 @@ class AuthController extends BaseController {
 
               // for sensitive identify calls,we need to await to make sure it waits.
               await AnalyticsService.identifyOnce(userExists._id, {
-                "Account Type": EUserType[reqParam.type],
+                // "Account Type": EUserType[reqParam.type],
                 Email: userExists.email,
               });
 
@@ -575,31 +542,7 @@ class AuthController extends BaseController {
                   First_Name: reqParam.firstName,
                   Last_Name: reqParam.lastName ? reqParam.lastName : null,
                   Email: reqParam.email,
-                  Birthday: reqParam.dob,
-                  Account_Type:
-                    reqParam.type == EUserType.PARENT
-                      ? "Parent"
-                      : reqParam.type == EUserType.TEEN
-                      ? "Teen"
-                      : "Self",
                 };
-                if (isUserBelow18) {
-                  dataSentInCrm = {
-                    ...dataSentInCrm,
-                    Teen_Signup_Funnel: [
-                      TEEN_SIGNUP_FUNNEL.SIGNUP,
-                      TEEN_SIGNUP_FUNNEL.DOB,
-                    ],
-                  };
-                } else {
-                  dataSentInCrm = {
-                    ...dataSentInCrm,
-                    Parent_Signup_Funnel: [
-                      ...PARENT_SIGNUP_FUNNEL.SIGNUP,
-                      PARENT_SIGNUP_FUNNEL.DOB,
-                    ],
-                  };
-                }
 
                 await zohoCrmService.addAccounts(
                   ctx.request.zohoAccessToken,
