@@ -151,19 +151,26 @@ class ScriptService {
   public async convertSpreadSheetToJSON(
     topicId: string,
     quizNums: any,
-    rows: any
+    rows: any,
+    allTopics: any
   ) {
     rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
     let lastQuizName = "";
     let lastQuizImage = "";
+    let lastQuizCategory = "";
     let quizContentData = [];
     let questionDataArray = [];
     let order = 1;
+    let categories = [];
+    let filterCategory = [];
     await Promise.all(
       await rows.map(async (data, index) => {
         if (data["Quiz Title"] != "") {
           lastQuizName = data["Quiz Title"].trimEnd();
           lastQuizImage = data["Quiz Image"];
+        }
+        if (data["Category"] != "") {
+          lastQuizCategory = data["Category"].trimEnd();
         }
         if (data["Quiz Title"] == "") {
           ++order;
@@ -221,6 +228,26 @@ class ScriptService {
           rows[index + 1] == undefined ||
           rows[index + 1]["Quiz #"] !== data["Quiz #"]
         ) {
+          if (lastQuizCategory) {
+            const isCategoryExists = allTopics.find(
+              (x) => x.topic == lastQuizCategory
+            );
+            if (!isCategoryExists) {
+              categories.push({
+                topic: lastQuizCategory,
+                image: null,
+                status: 1,
+                type: 2,
+              });
+              filterCategory.push({
+                key: data["Quiz #"],
+                value: lastQuizCategory,
+              });
+              topicId = null;
+            } else {
+              topicId = isCategoryExists._id;
+            }
+          }
           let quizData = {
             topicId: topicId,
             quizNum: data["Quiz #"].trimEnd(),
@@ -233,6 +260,27 @@ class ScriptService {
         }
       })
     );
+    if (categories.length > 0) {
+      categories = Array.from(
+        new Set(categories.map((item) => item.topic))
+      ).map((topic) => categories.find((item) => item.topic === topic));
+      const createdCategories = await QuizTopicTable.insertMany(categories);
+      quizContentData.map((quizData) => {
+        if (quizData.topicId == null) {
+          const checkIfCategoryMatched = filterCategory.find(
+            (x) => x.key == quizData.quizNum
+          );
+          if (checkIfCategoryMatched) {
+            const filteredCategory = createdCategories.find(
+              (x) => x.topic == checkIfCategoryMatched.value
+            );
+            if (filteredCategory) {
+              quizData.topicId = filteredCategory._id;
+            }
+          }
+        }
+      });
+    }
     return quizContentData;
   }
 
@@ -313,7 +361,7 @@ class ScriptService {
           });
         }
         let bulkWriteObject = {
-          updateOne: {
+          updateMany: {
             filter: { quizId: quiz._id },
             update: {
               $set: { topicId: category ? category._id : quiz.topicId },
@@ -322,7 +370,7 @@ class ScriptService {
         };
         quizCategoryQuery.push(bulkWriteObject);
         let bulkWriteObjectQuiz = {
-          updateOne: {
+          updateMany: {
             filter: { _id: quiz._id },
             update: {
               $set: { topicId: category ? category._id : quiz.topicId },

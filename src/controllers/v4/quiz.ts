@@ -636,6 +636,7 @@ class QuizController extends BaseController {
       }
       const quizResult = await QuizResult.find({
         userId: user._id,
+        isOnBoardingQuiz: false,
       });
       let quizIds = [];
       if (quizResult.length > 0) {
@@ -652,6 +653,7 @@ class QuizController extends BaseController {
         categoryId,
         status
       );
+      if (!categoryId) return this.Ok(ctx, { data: quizInformation });
       return this.Ok(ctx, { data: { quizInformation, completedCount } });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
