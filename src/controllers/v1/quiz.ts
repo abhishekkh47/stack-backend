@@ -1,7 +1,7 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
-import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -18,9 +18,10 @@ import {
   everyCorrectAnswerPoints,
   HttpMethod,
 } from "@app/types";
-import { get72HoursAhead, getQuizCooldown, Route } from "@app/utility";
+import { QUIZ_LIMIT_REACHED_TEXT, Route } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
 import BaseController from "@app/controllers/base";
+import { QuizDBService } from "@app/services/v4";
 
 class QuizController extends BaseController {
   /**
@@ -235,21 +236,19 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const quizCheck: any = await QuizResult.findOne({
+          let quizResultsData = await QuizResult.find({
             userId: user._id,
             topicId: reqParam.topicId,
-          }).sort({ createdAt: -1 });
-          const quizIds: any = [];
-          if (quizCheck !== null) {
-            const Time = await get72HoursAhead(quizCheck.createdAt);
-            const quizCooldown = await getQuizCooldown(headers);
-            if (Time < quizCooldown) {
-              return this.BadRequest(
-                ctx,
-                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
-              );
-            }
+            isOnBoardingQuiz: false,
+          });
+          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+            quizResultsData,
+            user._id
+          );
+          if (isQuizLimitReached) {
+            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
+          const quizIds: any = [];
           const quizCheckCompleted = await QuizResult.find(
             {
               userId: user._id,
@@ -315,18 +314,16 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const lastQuizPlayed = await QuizResult.findOne({
+          let quizResultsData = await QuizResult.find({
             userId: user._id,
-          }).sort({ createdAt: -1 });
-          if (lastQuizPlayed) {
-            const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            const quizCooldown = await getQuizCooldown(headers);
-            if (timeDiff <= quizCooldown) {
-              return this.BadRequest(
-                ctx,
-                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
-              );
-            }
+            isOnBoardingQuiz: false,
+          });
+          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+            quizResultsData,
+            user._id
+          );
+          if (isQuizLimitReached) {
+            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
           /**
            * Check question acutally exists in that quiz
@@ -484,56 +481,6 @@ class QuizController extends BaseController {
         }
       }
     );
-  }
-
-  /**
-   * @description This method is used to give list of quiz
-   * @param ctx
-   * @return {*}
-   */
-  @Route({ path: "/quiz-list/:topicId", method: HttpMethod.GET })
-  @Auth()
-  public getQuizList(ctx: any) {
-    const reqParam = ctx.params;
-    const { user, headers } = ctx.request;
-    return validation.getQuizListValidation(reqParam, ctx, async (validate) => {
-      if (validate) {
-        const quizCheck: any = await QuizResult.findOne({
-          userId: user._id,
-          topicId: reqParam.topicId,
-        }).sort({ createdAt: -1 });
-        const QuizIds = [];
-        if (quizCheck !== null) {
-          const Time = await get72HoursAhead(quizCheck.createdAt);
-          const quizCooldown = await getQuizCooldown(headers);
-          if (Time < quizCooldown) {
-            return this.BadRequest(
-              ctx,
-              `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
-            );
-          } else {
-            const quizCheckCompleted = await QuizResult.find(
-              {
-                userId: user._id,
-                topicId: reqParam.topicId,
-              },
-              {
-                _id: 0,
-                quizId: 1,
-              }
-            ).select("quizId");
-            for (const quizId of quizCheckCompleted) {
-              QuizIds.push(quizId.quizId);
-            }
-          }
-        }
-        const data = await QuizTable.find({
-          topicId: reqParam.topicId,
-          _id: { $nin: QuizIds },
-        });
-        return this.Ok(ctx, { data, message: "Success" });
-      }
-    });
   }
 }
 

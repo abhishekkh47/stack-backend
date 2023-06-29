@@ -9,12 +9,7 @@ import {
   UserTable,
   WebhookTable,
 } from "@app/model";
-import {
-  DeviceTokenService,
-  userService,
-  zohoCrmService,
-} from "@app/services/v1/index";
-import { TradingService, UserService } from "@app/services/v3/index";
+import { DeviceTokenService, zohoCrmService } from "@app/services/v1/index";
 import {
   EGIFTSTACKCOINSSETTING,
   ETransactionStatus,
@@ -171,60 +166,6 @@ class WebHookController extends BaseController {
                 },
               }
             );
-
-            if (userBankInfo) {
-              const parentChildDetails = await UserService.getParentChildInfo(
-                userExists._id
-              );
-
-              const accountIdDetails =
-                userExists.type == EUserType.PARENT && parentChildDetails
-                  ? await parentChildDetails.teens.find(
-                      (x: any) =>
-                        x.childId.toString() ==
-                        parentChildDetails.firstChildId.toString()
-                    )
-                  : parentChildDetails.accountId;
-
-              /**
-               * difference of 72 hours
-               */
-              const current = moment().unix();
-
-              if (
-                parentChildDetails?.unlockRewardTime &&
-                parentChildDetails.isRewardDeclined == false &&
-                current <= parentChildDetails.unlockRewardTime
-              ) {
-                if (
-                  admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
-                  parentChildDetails &&
-                  parentChildDetails.isGiftedCrypto ==
-                    EGIFTSTACKCOINSSETTING.ON &&
-                  parentChildDetails.unlockRewardTime
-                ) {
-                  await TradingService.internalTransfer(
-                    parentChildDetails,
-                    jwtToken,
-                    accountIdDetails,
-                    userExists.type,
-                    admin,
-                    false
-                  );
-                  const { key, title, message, nameForTracking } =
-                    NOTIFICATIONS.REDEEM_BTC_SUCCESS;
-                  await DeviceTokenService.sendUserNotification(
-                    parentChildDetails.firstChildId,
-                    key,
-                    title,
-                    message,
-                    null,
-                    parentChildDetails.firstChildId,
-                    nameForTracking
-                  );
-                }
-              }
-            }
             /**
              * Update the status to zoho crm
              */
@@ -375,60 +316,6 @@ class WebHookController extends BaseController {
                   },
                 }
               );
-
-              if (userBankInfo) {
-                const parentChildDetails = await UserService.getParentChildInfo(
-                  userExists._id
-                );
-
-                const accountIdDetails =
-                  userExists.type == EUserType.PARENT && parentChildDetails
-                    ? await parentChildDetails.teens.find(
-                        (x: any) =>
-                          x.childId.toString() ==
-                          parentChildDetails.firstChildId.toString()
-                      )
-                    : parentChildDetails.accountId;
-
-                /**
-                 * difference of 72 hours
-                 */
-                const current = moment().unix();
-
-                if (
-                  parentChildDetails &&
-                  parentChildDetails.unlockRewardTime &&
-                  current <= parentChildDetails.unlockRewardTime
-                ) {
-                  if (
-                    admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
-                    parentChildDetails &&
-                    parentChildDetails.isGiftedCrypto ==
-                      EGIFTSTACKCOINSSETTING.ON &&
-                    parentChildDetails.unlockRewardTime
-                  ) {
-                    await TradingService.internalTransfer(
-                      parentChildDetails,
-                      jwtToken,
-                      accountIdDetails,
-                      userExists.type,
-                      admin,
-                      false
-                    );
-                    const { key, title, message, nameForTracking } =
-                      NOTIFICATIONS.REDEEM_BTC_SUCCESS;
-                    await DeviceTokenService.sendUserNotification(
-                      parentChildDetails.firstChildId,
-                      key,
-                      title,
-                      message,
-                      null,
-                      parentChildDetails.firstChildId,
-                      nameForTracking
-                    );
-                  }
-                }
-              }
 
               /**
                * Update the status to zoho crm

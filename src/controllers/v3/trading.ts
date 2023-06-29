@@ -8,16 +8,11 @@ import {
   TransactionTable,
 } from "@app/model";
 import {
-  DeviceTokenService,
   PortfolioService,
   TradingDBService,
   zohoCrmService,
 } from "@app/services/v1/index";
-import {
-  tradingDBService,
-  TradingService,
-  UserService,
-} from "@app/services/v3/index";
+import { tradingDBService } from "@app/services/v3/index";
 import {
   EUserType,
   HttpMethod,
@@ -97,65 +92,6 @@ class TradingController extends BaseController {
             reqParam.institutionId,
             userExists
           );
-          if (
-            userExists.status == EUSERSTATUS.KYC_DOCUMENT_VERIFIED &&
-            userBankInfo
-          ) {
-            const parentChildDetails = await UserService.getParentChildInfo(
-              userExists._id
-            );
-
-            const accountIdDetails =
-              userExists.type == EUserType.PARENT && parentChildDetails
-                ? await parentChildDetails.teens.find(
-                    (x: any) =>
-                      x.childId.toString() ==
-                      parentChildDetails.firstChildId.toString()
-                  )
-                : parent.accountId;
-
-            /**
-             * difference of 72 hours
-             */
-            const current = moment().unix();
-
-            if (
-              parentChildDetails &&
-              parentChildDetails.unlockRewardTime &&
-              parentChildDetails.isRewardDeclined == false &&
-              current <= parentChildDetails.unlockRewardTime
-            ) {
-              if (
-                admin.giftCryptoSetting == EGIFTSTACKCOINSSETTING.ON &&
-                parentChildDetails &&
-                parentChildDetails.isGiftedCrypto ==
-                  EGIFTSTACKCOINSSETTING.ON &&
-                parentChildDetails.unlockRewardTime
-              ) {
-                await TradingService.internalTransfer(
-                  parentChildDetails,
-                  jwtToken,
-                  accountIdDetails,
-                  userExists.type,
-                  admin,
-                  false
-                );
-                if (headers["build-number"]) {
-                  const { key, title, message, nameForTracking } =
-                    NOTIFICATIONS.REDEEM_BTC_SUCCESS;
-                  await DeviceTokenService.sendUserNotification(
-                    parentChildDetails.firstChildId,
-                    key,
-                    title,
-                    message,
-                    null,
-                    parentChildDetails.firstChildId,
-                    nameForTracking
-                  );
-                }
-              }
-            }
-          }
 
           /**
            * added bank successfully

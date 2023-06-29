@@ -11,12 +11,7 @@ import {
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
-import {
-  get72HoursAhead,
-  getQuizCooldown,
-  QUIZ_LIMIT_REACHED_TEXT,
-  Route,
-} from "@app/utility";
+import { QUIZ_LIMIT_REACHED_TEXT, Route } from "@app/utility";
 import BaseController from "@app/controllers/base";
 import { validation } from "@app/validations/v1/apiValidation";
 import { validationsV3 } from "@app/validations/v3/apiValidation";

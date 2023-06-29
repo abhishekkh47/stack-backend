@@ -1,4 +1,4 @@
-import { Auth } from "@app/middleware";
+import { Auth, NetworkError } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -9,11 +9,12 @@ import {
 } from "@app/model";
 import { quizService } from "@app/services/v1/index";
 import { EUserType, HttpMethod } from "@app/types";
-import { get72HoursAhead, getQuizCooldown, Route } from "@app/utility";
+import { QUIZ_LIMIT_REACHED_TEXT, Route } from "@app/utility";
 import { validations } from "@app/validations/v2/apiValidation";
 import moment from "moment";
 import mongoose from "mongoose";
 import BaseController from "@app/controllers/base";
+import { QuizDBService } from "@app/services/v4";
 
 class QuizController extends BaseController {
   /**
@@ -143,23 +144,20 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const quizCheck: any = await QuizResult.findOne({
+          let quizResultsData = await QuizResult.find({
             userId: ctx.request.body.userId
               ? ctx.request.body.userId
               : user._id,
-            topicId: reqParam.topicId,
-          }).sort({ createdAt: -1 });
-          const quizIds: any = [];
-          if (quizCheck !== null) {
-            const Time = await get72HoursAhead(quizCheck.createdAt);
-            const quizCooldown = await getQuizCooldown(headers);
-            if (Time < quizCooldown) {
-              return this.BadRequest(
-                ctx,
-                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
-              );
-            }
+            isOnBoardingQuiz: false,
+          });
+          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+            quizResultsData,
+            ctx.request.body.userId ? ctx.request.body.userId : user._id
+          );
+          if (isQuizLimitReached) {
+            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
+          const quizIds: any = [];
           const quizCheckCompleted = await QuizResult.find(
             {
               userId: user._id,
