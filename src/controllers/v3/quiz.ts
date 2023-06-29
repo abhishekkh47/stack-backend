@@ -1,6 +1,6 @@
 import moment from "moment";
 import mongoose from "mongoose";
-import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -11,10 +11,16 @@ import {
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
-import { get72HoursAhead, getQuizCooldown, Route } from "@app/utility";
+import {
+  get72HoursAhead,
+  getQuizCooldown,
+  QUIZ_LIMIT_REACHED_TEXT,
+  Route,
+} from "@app/utility";
 import BaseController from "@app/controllers/base";
 import { validation } from "@app/validations/v1/apiValidation";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
+import { QuizDBService } from "@app/services/v4";
 
 class QuizController extends BaseController {
   /**
@@ -38,7 +44,7 @@ class QuizController extends BaseController {
         question_image_title: 1,
         quizId: 1,
       }
-    );
+    ).sort({ createdAt: 1 });
 
     return this.Ok(ctx, { data: onboardingQuestionData });
   }
@@ -292,19 +298,16 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const lastQuizPlayed = await QuizResult.findOne({
+          let quizResultsData = await QuizResult.find({
             userId: user._id,
             isOnBoardingQuiz: false,
-          }).sort({ createdAt: -1 });
-          if (lastQuizPlayed) {
-            const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            const quizCooldown = await getQuizCooldown(headers);
-            if (timeDiff <= quizCooldown) {
-              return this.BadRequest(
-                ctx,
-                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
-              );
-            }
+          });
+          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+            quizResultsData,
+            user._id
+          );
+          if (isQuizLimitReached) {
+            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
           /**
            * Check question acutally exists in that quiz

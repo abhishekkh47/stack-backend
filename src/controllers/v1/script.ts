@@ -57,6 +57,7 @@ import { UserService } from "@app/services/v3";
 import userDbService from "@app/services/v4/user.db.service";
 import quizDbService from "@app/services/v4/quiz.db.service";
 import userService from "@app/services/v2/user.service";
+import envData from "@app/config";
 
 class ScriptController extends BaseController {
   /**
@@ -1161,6 +1162,9 @@ class ScriptController extends BaseController {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
       let investingTopic = await QuizTopicTable.findOne({ topic: "Investing" });
+      let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
+        "_id topic"
+      );
       /**
        * Read Spreadsheet
        */
@@ -1171,7 +1175,8 @@ class ScriptController extends BaseController {
       const quizContentData = await ScriptService.convertSpreadSheetToJSON(
         investingTopic._id,
         quizNums,
-        rows
+        rows,
+        allTopics
       );
       if (quizContentData.length === 0) {
         return this.BadRequest(ctx, "Quiz Content Not Found");
@@ -1185,6 +1190,29 @@ class ScriptController extends BaseController {
       return this.Ok(ctx, { message: "Success", data: quizContentData });
     } catch (error) {
       console.log(error);
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to store new 1.10 new quiz content
+   * @param ctx
+   */
+  @Route({ path: "/import-quiz-category", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeQuizCategory(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.CATEGORY_SHEET_GID
+      );
+      const { isAddedToDB, data }: any =
+        await ScriptService.addQuizCategoryContentsToDB(rows);
+      if (!isAddedToDB) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+
+      return this.Ok(ctx, { message: "Success", data });
+    } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
@@ -1385,7 +1413,7 @@ class ScriptController extends BaseController {
       data: deviceTokens,
     });
   }
-  
+
   /*
    * @description This method is used to export csv and get parent-child records with time in between them
    * @param ctx

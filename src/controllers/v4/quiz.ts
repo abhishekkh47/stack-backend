@@ -1,10 +1,11 @@
-import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
   QuizTable,
+  QuizTopicTable,
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
@@ -15,6 +16,7 @@ import {
   get72HoursAhead,
   getQuizCooldown,
   getQuizImageAspectRatio,
+  QUIZ_LIMIT_REACHED_TEXT,
   Route,
 } from "@app/utility";
 import moment from "moment";
@@ -267,19 +269,16 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const lastQuizPlayed = await QuizResult.findOne({
+          let quizResultsData = await QuizResult.find({
             userId: user._id,
             isOnBoardingQuiz: false,
-          }).sort({ createdAt: -1 });
-          const quizCooldown = await getQuizCooldown(headers);
-          if (lastQuizPlayed) {
-            const timeDiff = await get72HoursAhead(lastQuizPlayed.createdAt);
-            if (timeDiff <= quizCooldown) {
-              return this.BadRequest(
-                ctx,
-                `Quiz is locked. Please wait for ${quizCooldown} hours to unlock this quiz`
-              );
-            }
+          });
+          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+            quizResultsData,
+            user._id
+          );
+          if (isQuizLimitReached) {
+            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
           /**
            * Check question acutally exists in that quiz
@@ -650,21 +649,37 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuiz(ctx: any) {
     try {
+      const { categoryId, status } = ctx.request.query; //status 1 - Start Journey and 2 - Completed
+      if (status && !["1", "2"].includes(status)) {
+        return this.BadRequest(ctx, "Please enter valid status");
+      }
       const user = await UserTable.findOne({ _id: ctx.request.user._id });
       if (!user) {
         return this.BadRequest(ctx, "User not found");
       }
       const quizResult = await QuizResult.find({
         userId: user._id,
+        isOnBoardingQuiz: false,
       });
       let quizIds = [];
       if (quizResult.length > 0) {
         quizIds = quizResult.map((x) => x.quizId);
       }
-      const quizInformation = await QuizDBService.getQuizData(quizIds);
-      return this.Ok(ctx, { data: quizInformation });
+      let completedCount: any = 0;
+      if (categoryId) {
+        completedCount = quizResult.filter(
+          (x) => x.topicId.toString() == categoryId.toString()
+        ).length;
+      }
+      const quizInformation = await QuizDBService.getQuizData(
+        quizIds,
+        categoryId,
+        status
+      );
+      if (!categoryId) return this.Ok(ctx, { data: quizInformation });
+      return this.Ok(ctx, { data: { quizInformation, completedCount } });
     } catch (error) {
-      return this.BadRequest(ctx, "Something Went Wrong");
+      return this.BadRequest(ctx, error.message);
     }
   }
 
@@ -711,6 +726,53 @@ class QuizController extends BaseController {
             data: createdQuizReview,
           });
         }
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to store quiz categories
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-categories", method: HttpMethod.GET })
+  @Auth()
+  public async quizCategories(ctx: any) {
+    try {
+      let userIfExists = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      let quizResultsData = await QuizResult.find({
+        userId: userIfExists._id,
+        isOnBoardingQuiz: false,
+      });
+      const quizCategories = await QuizDBService.listQuizCategories(
+        quizResultsData
+      );
+      const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
+        quizResultsData,
+        userIfExists._id
+      );
+      /**
+       * Give any 3 random quizzes if quiz not played
+       */
+      let quizzes: any;
+      if (quizResultsData.length === 0) {
+        quizzes = await QuizDBService.getRandomQuiz();
+      } else {
+        quizzes = await QuizDBService.getMostPlayedCategoryQuizzes(
+          userIfExists._id
+        );
+      }
+      return this.Ok(ctx, {
+        data: {
+          categories: quizCategories,
+          quizzes,
+          isQuizLimitReached,
+        },
       });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

@@ -30,6 +30,7 @@ import {
   createAccount,
   getLinkToken,
   kycDocumentChecks,
+  PLAID_ITEM_ERROR,
   Route,
   uploadFilesFetch,
   uploadIdProof,
@@ -497,8 +498,17 @@ class UserController extends BaseController {
       ],
     });
     if (userBankExists) {
-      for await (let userBank of userBankExists) {
+      for (let userBank of userBankExists) {
         account = await getAccounts(userBank.accessToken);
+        if (account.status == 400) {
+          return this.BadRequest(
+            ctx,
+            account.error_code !== PLAID_ITEM_ERROR
+              ? account.messsage
+              : PLAID_ITEM_ERROR
+          );
+        }
+
         array.push({
           _id: userBank._id,
           accessToken: userBank.accessToken,

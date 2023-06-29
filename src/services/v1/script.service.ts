@@ -8,6 +8,7 @@ import {
   QuizQuestionTable,
   QuizResult,
   QuizTable,
+  QuizTopicTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -70,9 +71,7 @@ class ScriptService {
             },
           }
         )
-        .catch((error) => {
-          console.log(error);
-        });
+        .catch((error) => {});
     };
 
     // First part of Staging KYC Approval
@@ -105,18 +104,20 @@ class ScriptService {
 
   /**
    * @description This function authenticates spreadsheet and read the data
+   * @param gid GridId of sheet
    * @returns {*}
    */
-  public async readSpreadSheet() {
+  public async readSpreadSheet(gid: string = null) {
     const document = new GoogleSpreadsheet(envData.SHEET_ID);
     await document.useServiceAccountAuth({
       client_email: envData.CLIENT_EMAIL,
       private_key: envData.GOOGLE_SERVICEACCOUNT_PRIVATE_KEY,
     });
     await document.loadInfo();
-    const sheet = document.sheetsByIndex[0];
+    const sheet = gid ? document.sheetsById[gid] : document.sheetsByIndex[0];
     await sheet.loadCells();
     let rows = await sheet.getRows();
+    if (gid) return rows;
     const rowsCount = sheet.rowCount;
     const columnsCount = sheet.columnCount;
     rows.forEach(function (element) {
@@ -150,19 +151,26 @@ class ScriptService {
   public async convertSpreadSheetToJSON(
     topicId: string,
     quizNums: any,
-    rows: any
+    rows: any,
+    allTopics: any
   ) {
     rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
     let lastQuizName = "";
     let lastQuizImage = "";
+    let lastQuizCategory = "";
     let quizContentData = [];
     let questionDataArray = [];
     let order = 1;
+    let categories = [];
+    let filterCategory = [];
     await Promise.all(
       await rows.map(async (data, index) => {
         if (data["Quiz Title"] != "") {
-          lastQuizName = data["Quiz Title"];
+          lastQuizName = data["Quiz Title"].trimEnd();
           lastQuizImage = data["Quiz Image"];
+        }
+        if (data["Category"] != "") {
+          lastQuizCategory = data["Category"].trimEnd();
         }
         if (data["Quiz Title"] == "") {
           ++order;
@@ -170,7 +178,7 @@ class ScriptService {
           order = 1;
         }
         let questionData = {
-          text: data["Question"],
+          text: data["Question"].trimEnd(),
           question_image: null,
           order: order,
           points: 10,
@@ -178,32 +186,40 @@ class ScriptService {
           answer_type: 2,
           answer_array: [
             {
-              name: data["A"],
+              name: data["A"].trimEnd(),
               image: data["Image A"],
               correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["A"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["A"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
             {
-              name: data["B"],
+              name: data["B"].trimEnd(),
               image: data["Image B"],
               correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["B"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["B"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
             {
-              name: data["C"],
+              name: data["C"].trimEnd(),
               image: data["Image C"],
               correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["C"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["C"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
             {
-              name: data["D"],
+              name: data["D"].trimEnd(),
               image: data["Image D"],
               correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
               statement:
-                data["correctAnswer"] == data["D"] ? data["Explanation"] : null,
+                data["correctAnswer"] == data["D"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
             },
           ],
         };
@@ -212,9 +228,29 @@ class ScriptService {
           rows[index + 1] == undefined ||
           rows[index + 1]["Quiz #"] !== data["Quiz #"]
         ) {
+          if (lastQuizCategory) {
+            const isCategoryExists = allTopics.find(
+              (x) => x.topic == lastQuizCategory
+            );
+            if (!isCategoryExists) {
+              categories.push({
+                topic: lastQuizCategory,
+                image: null,
+                status: 1,
+                type: 2,
+              });
+              filterCategory.push({
+                key: data["Quiz #"],
+                value: lastQuizCategory,
+              });
+              topicId = null;
+            } else {
+              topicId = isCategoryExists._id;
+            }
+          }
           let quizData = {
             topicId: topicId,
-            quizNum: data["Quiz #"],
+            quizNum: data["Quiz #"].trimEnd(),
             quizName: lastQuizName,
             image: lastQuizImage,
             questionData: questionDataArray,
@@ -224,6 +260,27 @@ class ScriptService {
         }
       })
     );
+    if (categories.length > 0) {
+      categories = Array.from(
+        new Set(categories.map((item) => item.topic))
+      ).map((topic) => categories.find((item) => item.topic === topic));
+      const createdCategories = await QuizTopicTable.insertMany(categories);
+      quizContentData.map((quizData) => {
+        if (quizData.topicId == null) {
+          const checkIfCategoryMatched = filterCategory.find(
+            (x) => x.key == quizData.quizNum
+          );
+          if (checkIfCategoryMatched) {
+            const filteredCategory = createdCategories.find(
+              (x) => x.topic == checkIfCategoryMatched.value
+            );
+            if (filteredCategory) {
+              quizData.topicId = filteredCategory._id;
+            }
+          }
+        }
+      });
+    }
     return quizContentData;
   }
 
@@ -254,7 +311,7 @@ class ScriptService {
           data.questionData = data.questionData.map((questions) => {
             let bulkWriteObject = {
               updateOne: {
-                filter: { quizId: quiz._id, text: questions.text },
+                filter: { quizId: quiz._id, order: questions.order },
                 update: {
                   $set: { ...questions, quizId: quiz._id },
                 },
@@ -272,6 +329,62 @@ class ScriptService {
       return true;
     } catch (err) {
       return false;
+    }
+  }
+
+  /**
+   * @description This function is used to add the json category contents to db
+   * @param quizCategoryData
+   */
+  public async addQuizCategoryContentsToDB(quizCategoryData: any) {
+    try {
+      let quizCategoryQuery = [];
+      let quizQuery = [];
+      for await (let data of quizCategoryData) {
+        if (!data["Quiz Number"] || !data["Category"]) {
+          continue;
+        }
+        let quiz = await QuizTable.findOne({
+          quizNum: parseInt(data["Quiz Number"]),
+        });
+        if (!quiz) {
+          continue;
+        }
+        let category = await QuizTopicTable.findOne({
+          topic: data["Category"],
+        });
+        if (!category) {
+          category = await QuizTopicTable.create({
+            type: 2,
+            status: 1,
+            topic: data["Category"],
+          });
+        }
+        let bulkWriteObject = {
+          updateMany: {
+            filter: { quizId: quiz._id },
+            update: {
+              $set: { topicId: category ? category._id : quiz.topicId },
+            },
+          },
+        };
+        quizCategoryQuery.push(bulkWriteObject);
+        let bulkWriteObjectQuiz = {
+          updateMany: {
+            filter: { _id: quiz._id },
+            update: {
+              $set: { topicId: category ? category._id : quiz.topicId },
+            },
+          },
+        };
+        quizQuery.push(bulkWriteObjectQuiz);
+      }
+      await QuizResult.bulkWrite(quizCategoryQuery);
+      await QuizQuestionResult.bulkWrite(quizCategoryQuery);
+      await QuizTable.bulkWrite(quizQuery);
+      return { isAddedToDB: true, data: quizCategoryQuery };
+    } catch (err) {
+      return { isAddedToDB: false, data: null };
     }
   }
 
@@ -431,11 +544,10 @@ class ScriptService {
         reject(err);
       });
       combinedStream.on("finish", function () {
-        console.log("file written");
         resolve(true);
       });
     });
-    console.log("processing file");
+
     ctx.attachment(filePath);
     ctx.type = "text/csv";
     ctx.body = await fs.createReadStream(filePath);
@@ -453,11 +565,10 @@ class ScriptService {
     quizNums = [...new Set(quizNums)];
     await Promise.all(
       await quizNums.map(async (quizNum) => {
-        console.log(parseInt(quizNum));
         const quizIfExists = await QuizTable.findOne({
           quizNum: parseInt(quizNum),
         });
-        console.log(quizIfExists);
+
         if (!quizIfExists) return false;
         mainQuery.push(quizIfExists._id);
         quizQuery.push(quizIfExists._id);
