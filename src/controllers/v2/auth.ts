@@ -801,6 +801,7 @@ class AuthController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/confirm-mobile-number", method: HttpMethod.POST })
+  @Auth()
   public async confirmMobileNumber(ctx) {
     const input = ctx.request.body;
     const user = ctx.request.user;
