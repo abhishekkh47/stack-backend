@@ -535,16 +535,17 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          // const isTeen = userIfExists.type === EUserType.TEEN ? true : false;
-          const { totalXPPoints } = await QuizDBService.storeQuizInformation(
-            user._id,
-            headers,
-            reqParam,
-            quizIfExists
-          );
+          const { totalXPPoints, updatedXPPoints } =
+            await QuizDBService.storeQuizInformation(
+              user._id,
+              headers,
+              reqParam,
+              quizIfExists
+            );
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
-            user._id
+            user._id,
+            updatedXPPoints
           );
           await zohoCrmService.addAccounts(
             ctx.request.zohoAccessToken,
