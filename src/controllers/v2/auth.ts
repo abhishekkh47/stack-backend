@@ -803,12 +803,21 @@ class AuthController extends BaseController {
   @Route({ path: "/confirm-mobile-number", method: HttpMethod.POST })
   public async confirmMobileNumber(ctx) {
     const input = ctx.request.body;
+    const user = ctx.request.user;
     return validation.confirmMobileNumberValidation(
       input,
       ctx,
       async (validate) => {
         if (validate) {
-          const { mobile } = input;
+          const { mobile, deviceId } = input;
+          AnalyticsService.sendEvent(
+            ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED,
+            undefined,
+            {
+              device_id: deviceId,
+              user_id: user._id,
+            }
+          );
 
           try {
             await TwilioService.sendOTP(mobile, EOTPTYPE.SIGN_UP);
