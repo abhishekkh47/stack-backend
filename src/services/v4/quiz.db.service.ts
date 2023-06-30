@@ -819,15 +819,15 @@ class QuizDBService {
         },
       },
       {
+        $addFields: {
+          isCompleted: false,
+        },
+      },
+      {
         $match: {
           playedQuizzes: {
             $size: 0,
           },
-        },
-      },
-      {
-        $addFields: {
-          isCompleted: false,
         },
       },
       {
