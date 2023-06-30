@@ -166,15 +166,6 @@ export const QUIZ_LIMIT_REACHED_TEXT =
   "Quiz domination reached. Please wait for next day to unlock this quiz";
 
 export const NOTIFICATION_KEYS = {
-  TRADING: "trading",
-  NO_BANK_REMINDER: "no_bank",
-  NO_RECURRING_REMINDER: "no_recurring",
-  RECURRING_FAILED_BANK: "recurring_failed_bank_failure",
-  RECURRING_FAILED_BALANCE: "recurring_failed_insufficient_balance",
-  KYC_SUCCESS: "kyc_success",
-  ACCOUNT_CLOSED: "account_closed",
-  KYC_FAILURE: "kyc_failure",
-  KYC_PENDING: "kyc_pending",
   FRIEND_REFER: "refer_friend",
   GIFT_CARD_ISSUED: "gift_card_issued",
   EARN_STACK_COINS_AFTER_KYC_APPROVED: "earn_stack_coins_after_kyc_approved",

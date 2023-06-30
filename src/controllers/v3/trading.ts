@@ -28,7 +28,7 @@ import {
   Route,
   getBalance,
 } from "@app/utility";
-import { NOTIFICATIONS, PARENT_SIGNUP_FUNNEL } from "@app/utility/constants";
+import { PARENT_SIGNUP_FUNNEL } from "@app/utility/constants";
 import { validation } from "@app/validations/v1/apiValidation";
 import BaseController from "@app/controllers/base";
 

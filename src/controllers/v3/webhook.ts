@@ -20,9 +20,6 @@ import {
 import {
   createAccount,
   getAccountStatusByAccountId,
-  NOTIFICATION,
-  NOTIFICATIONS,
-  NOTIFICATION_KEYS,
   Route,
   ANALYTICS_EVENTS,
 } from "@app/utility";
@@ -113,15 +110,6 @@ class WebHookController extends BaseController {
             ctx.request.zohoAccessToken,
             dataSentInCrm
           );
-
-          await DeviceTokenService.sendUserNotification(
-            userExists._id,
-            NOTIFICATION_KEYS.KYC_FAILURE,
-            NOTIFICATION.KYC_REJECTED_TITLE,
-            null,
-            null,
-            userExists._id
-          );
           return this.Ok(ctx, { message: "User Kyc Failed" });
         }
         /**
@@ -177,15 +165,6 @@ class WebHookController extends BaseController {
             await zohoCrmService.addAccounts(
               ctx.request.zohoAccessToken,
               dataSentInCrm
-            );
-
-            await DeviceTokenService.sendUserNotification(
-              userExists._id,
-              NOTIFICATION_KEYS.KYC_SUCCESS,
-              NOTIFICATION.KYC_APPROVED_TITLE,
-              NOTIFICATION.KYC_APPROVED_DESCRIPTION,
-              null,
-              userExists._id
             );
 
             AnalyticsService.sendEvent(
@@ -328,15 +307,6 @@ class WebHookController extends BaseController {
               await zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
                 dataSentInCrm
-              );
-
-              await DeviceTokenService.sendUserNotification(
-                userExists._id,
-                NOTIFICATION_KEYS.KYC_SUCCESS,
-                NOTIFICATION.KYC_APPROVED_TITLE,
-                NOTIFICATION.KYC_APPROVED_DESCRIPTION,
-                null,
-                userExists._id
               );
 
               AnalyticsService.sendEvent(
@@ -487,24 +457,6 @@ class WebHookController extends BaseController {
               }
             }
           }
-        }
-        /**
-         * When account gets closed send notification
-         */
-        if (
-          body.data &&
-          body.data["changes"] &&
-          body.data["changes"].length > 0 &&
-          body.data["changes"].includes("disbursements-frozen")
-        ) {
-          await DeviceTokenService.sendUserNotification(
-            userExists._id,
-            NOTIFICATION_KEYS.ACCOUNT_CLOSED,
-            NOTIFICATION.ACCOUNT_CLOSED_TITLE,
-            NOTIFICATION.ACCOUNT_CLOSED_DESCRIPTION,
-            null,
-            userExists._id
-          );
         }
         break;
       /**

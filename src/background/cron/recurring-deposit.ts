@@ -121,21 +121,6 @@ export const recurringDepositHandler = async () => {
           contributionRequest
         );
         if (contributions.status == 400) {
-          /**
-           * Notification
-           */
-          await DeviceTokenService.sendUserNotification(
-            user.type == EUserType.SELF
-              ? user.self.userId
-              : user.parentChild.userId,
-            contributions.code == 25001
-              ? NOTIFICATION_KEYS.RECURRING_FAILED_BANK
-              : NOTIFICATION_KEYS.RECURRING_FAILED_BALANCE,
-            "Recurring Deposit Error",
-            contributions.code == 25001
-              ? NOTIFICATION.RECURRING_FAILED_BANK_ERROR
-              : NOTIFICATION.RECURRING_FAILED_INSUFFICIENT_BALANCE
-          );
           continue;
         } else {
           let activityData = {

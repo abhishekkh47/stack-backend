@@ -376,16 +376,6 @@ class UserController extends BaseController {
       dataSentInCrm
     );
 
-    /**
-     * Kyc pending mode call
-     */
-    await DeviceTokenService.sendUserNotification(
-      userExists._id,
-      NOTIFICATION_KEYS.KYC_PENDING,
-      NOTIFICATION.KYC_PENDING_TITLE,
-      NOTIFICATION.KYC_PENDING_DESCRIPTION
-    );
-
     return this.Ok(ctx, {
       data: kycResponse.data,
       message:

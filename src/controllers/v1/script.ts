@@ -1436,6 +1436,35 @@ class ScriptController extends BaseController {
       return this.Ok(ctx, { message: error.message });
     }
   }
+
+  /**
+   * @description This method is used to sync existing xp of users to zoho
+   * @param ctx
+   */
+  @Route({ path: "/sync-xp-in-zoho", method: HttpMethod.POST })
+  @InternalUserAuth()
+  @PrimeTrustJWT(true)
+  public async syncXPInZoho(ctx: any) {
+    try {
+      const users = await UserTable.find({
+        xpPoints: { $exists: true },
+      }).select({
+        _id: "-$_id",
+        Account_Name: { $concat: ["$firstName", " ", "$lastName"] },
+        Email: "$email",
+        XP: "$xpPoints",
+      });
+      if (users.length === 0) return this.BadRequest(ctx, "User not found");
+      await zohoCrmService.addAccounts(
+        ctx.request.zohoAccessToken,
+        users,
+        true
+      );
+      return this.Ok(ctx, { data: users });
+    } catch (error) {
+      return this.Ok(ctx, { message: error.message });
+    }
+  }
 }
 
 export default new ScriptController();

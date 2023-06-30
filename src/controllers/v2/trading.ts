@@ -542,14 +542,6 @@ class TradingController extends BaseController {
                 executedQuoteId: contributions.data.included[0].id,
                 unitCount: null,
               });
-            } else {
-              await DeviceTokenService.sendUserNotification(
-                parentDetails.userId,
-                NOTIFICATION_KEYS.TRADING,
-                NOTIFICATION.TEEN_REQUEST_MADE,
-                NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
-                activity._id
-              );
             }
 
             /*   message:

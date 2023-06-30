@@ -347,14 +347,6 @@ class TradingController extends BaseController {
                 executedQuoteId: contributions.data.included[0].id,
                 unitCount: null,
               });
-            } else {
-              await DeviceTokenService.sendUserNotification(
-                parentDetails.userId,
-                NOTIFICATION_KEYS.TRADING,
-                NOTIFICATION.TEEN_REQUEST_MADE,
-                NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT,
-                activity._id
-              );
             }
 
             /*   message:
@@ -616,17 +608,6 @@ class TradingController extends BaseController {
                 executedQuoteId: disbursement.data.included[0].id,
                 unitCount: null,
               });
-            } else {
-              /**
-               * Notification
-               */
-              await DeviceTokenService.sendUserNotification(
-                parentDetails.userId,
-                NOTIFICATION_KEYS.TRADING,
-                NOTIFICATION.TEEN_REQUEST_MADE,
-                NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW,
-                activity._id
-              );
             }
 
             /*  message:
@@ -944,18 +925,6 @@ class TradingController extends BaseController {
         userType,
         status: mainQuery ? EStatus.PROCESSED : EStatus.PENDING,
       });
-      if (
-        userType == EUserType.TEEN &&
-        userExists.isAutoApproval == EAUTOAPPROVAL.OFF
-      ) {
-        await DeviceTokenService.sendUserNotification(
-          parent.userId,
-          NOTIFICATION_KEYS.TRADING,
-          NOTIFICATION.TEEN_REQUEST_MADE,
-          NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO.replace("@cryto", crypto.name),
-          activity._id
-        );
-      }
       /* const message = mainQuery
         ? `Your request for buy order of crypto of $${reqParam.amount} USD has been processed`
          : `Your request for buy order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it`; */
@@ -1115,21 +1084,6 @@ class TradingController extends BaseController {
           status: mainQuery ? EStatus.PROCESSED : EStatus.PENDING,
           isMax: reqParam.isMax ? true : false,
         });
-        if (
-          userExists.type == EUserType.TEEN &&
-          userExists.isAutoApproval == EAUTOAPPROVAL.OFF
-        ) {
-          await DeviceTokenService.sendUserNotification(
-            parent.userId,
-            NOTIFICATION_KEYS.TRADING,
-            NOTIFICATION.TEEN_REQUEST_MADE,
-            NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO.replace(
-              "@cryto",
-              crypto.name
-            ),
-            activity._id
-          );
-        }
         /* const message = mainQuery
            ? `Your request for sell order of crypto of $${reqParam.amount} USD has been processed`
            : `Your request for sell order of crypto of $${reqParam.amount} USD has been sent to your parent. Please wait while he/she approves it.`; */
@@ -1265,16 +1219,6 @@ class TradingController extends BaseController {
             ? `${messages.REJECT_BUY} ${crypto.name} buy request of $${activity.currencyValue}`
             : `${messages.REJECT_SELL} ${crypto.name} sell request of $${activity.currencyValue}`,
       }
-    );
-    /**
-     * Notification
-     */
-    await DeviceTokenService.sendUserNotification(
-      activity.userId,
-      NOTIFICATION_KEYS.TRADING,
-      NOTIFICATION.TEEN_REQUEST_DENIED,
-      NOTIFICATION.TEEN_REQUEST_DENIED_DESCRIPTION,
-      activity._id
     );
 
     return this.Ok(ctx, { message: "Activity cancelled out successfully" });
@@ -1607,14 +1551,6 @@ class TradingController extends BaseController {
           unitCount: null,
         });
 
-        await DeviceTokenService.sendUserNotification(
-          accountIdDetails.childId,
-          NOTIFICATION_KEYS.TRADING,
-          NOTIFICATION.TEEN_REQUEST_APPROVED,
-          NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
-          activityId
-        );
-
         return this.Ok(ctx, {
           message: "Transaction Processed!",
           data: contributions.data,
@@ -1654,14 +1590,6 @@ class TradingController extends BaseController {
           executedQuoteId: disbursementResponse.data.included[0].id,
           unitCount: null,
         });
-
-        await DeviceTokenService.sendUserNotification(
-          accountIdDetails.childId,
-          NOTIFICATION_KEYS.TRADING,
-          NOTIFICATION.TEEN_REQUEST_APPROVED,
-          NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
-          activityId
-        );
 
         return this.Ok(ctx, {
           data: disbursementResponse.data,
@@ -1739,17 +1667,6 @@ class TradingController extends BaseController {
             status: EStatus.PROCESSED,
             message: `${messages.APPROVE_BUY} ${cryptoData.name} buy request of $${activity.currencyValue}`,
           }
-        );
-
-        await DeviceTokenService.sendUserNotification(
-          accountIdDetails.childId,
-          NOTIFICATION_KEYS.TRADING,
-          NOTIFICATION.TEEN_REQUEST_APPROVED,
-          NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
-            "@crypto",
-            cryptoData.name
-          ),
-          activityId
         );
 
         return this.Ok(ctx, {
@@ -1854,17 +1771,6 @@ class TradingController extends BaseController {
             status: EStatus.PROCESSED,
             message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
           }
-        );
-
-        await DeviceTokenService.sendUserNotification(
-          accountIdDetails.childId,
-          NOTIFICATION_KEYS.TRADING,
-          NOTIFICATION.TEEN_REQUEST_APPROVED,
-          NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
-            "@crypto",
-            sellCryptoData.name
-          ),
-          activityId
         );
 
         return this.Ok(ctx, {
@@ -2087,14 +1993,6 @@ class TradingController extends BaseController {
                     executedQuoteId: contributions.data.included[0].id,
                     unitCount: null,
                   });
-
-                  await DeviceTokenService.sendUserNotification(
-                    accountIdDetails.childId,
-                    NOTIFICATION_KEYS.TRADING,
-                    NOTIFICATION.TEEN_REQUEST_APPROVED,
-                    NOTIFICATION.TEEN_REQUEST_ADD_DEPOSIT_APPROVED,
-                    activity._id
-                  );
                   break;
                 case 2:
                   if (!userBankInfo) {
@@ -2142,14 +2040,6 @@ class TradingController extends BaseController {
                     executedQuoteId: disbursementResponse.data.included[0].id,
                     unitCount: null,
                   });
-
-                  await DeviceTokenService.sendUserNotification(
-                    accountIdDetails.childId,
-                    NOTIFICATION_KEYS.TRADING,
-                    NOTIFICATION.TEEN_REQUEST_APPROVED,
-                    NOTIFICATION.TEEN_REQUEST_ADD_WITHDRAW_APPROVED,
-                    activity._id
-                  );
                   break;
                 case 3:
                   if (!activity.cryptoId) {
@@ -2223,17 +2113,6 @@ class TradingController extends BaseController {
                         message: `${messages.APPROVE_BUY} ${cryptoData.name} buy request of $${activity.currencyValue}`,
                       },
                     }
-                  );
-
-                  await DeviceTokenService.sendUserNotification(
-                    accountIdDetails.childId,
-                    NOTIFICATION_KEYS.TRADING,
-                    NOTIFICATION.TEEN_REQUEST_APPROVED,
-                    NOTIFICATION.TEEN_REQUEST_BUY_CRYPTO_APPROVED.replace(
-                      "@crypto",
-                      cryptoData.name
-                    ),
-                    activity._id
                   );
                   break;
                 case 4:
@@ -2314,17 +2193,6 @@ class TradingController extends BaseController {
                       status: EStatus.PROCESSED,
                       message: `${messages.APPROVE_SELL} ${sellCryptoData.name} sell request of $${activity.currencyValue}`,
                     }
-                  );
-
-                  await DeviceTokenService.sendUserNotification(
-                    accountIdDetails.childId,
-                    NOTIFICATION_KEYS.TRADING,
-                    NOTIFICATION.TEEN_REQUEST_APPROVED,
-                    NOTIFICATION.TEEN_REQUEST_SELL_CRYPTO_APPROVED.replace(
-                      "@crypto",
-                      sellCryptoData.name
-                    ),
-                    activity._id
                   );
                   break;
                 default:

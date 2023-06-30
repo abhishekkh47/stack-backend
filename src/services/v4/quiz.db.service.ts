@@ -310,7 +310,13 @@ class QuizDBService {
       $inc: incrementObj,
       $set: { isQuizReminderNotificationSent: false },
     };
-    await UserTable.updateOne({ _id: userId }, query);
+    const updatedXP: any = await UserTable.findOneAndUpdate(
+      { _id: userId },
+      query,
+      {
+        new: true,
+      }
+    );
 
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
@@ -323,7 +329,7 @@ class QuizDBService {
         user_id: userId,
       }
     );
-    return { totalXPPoints };
+    return { totalXPPoints, updatedXPPoints: updatedXP.xpPoints };
   }
 
   /**
@@ -331,40 +337,14 @@ class QuizDBService {
    * @param userIfExists
    * @param userId
    */
-  public async getQuizDataForCrm(userIfExists: any, userId: string) {
-    let userExistsForQuiz = null;
-    let preLoadedCoins = 0;
-    let isParentOrChild = 0;
-    if (userIfExists.type == EUserType.PARENT) {
-      throw new NetworkError("User not found", 400);
-    }
-    userExistsForQuiz = await ParentChildTable.findOne({
-      $or: [
-        { userId: userIfExists._id },
-        {
-          "teens.childId": userIfExists._id,
-        },
-      ],
-    }).populate("userId", [
-      "_id",
-      "preLoadedCoins",
-      "firstName",
-      "lastName",
-      "isGiftedCrypto",
-      "isParentFirst",
-      "email",
-    ]);
-    isParentOrChild = userExistsForQuiz ? 2 : 0;
-    preLoadedCoins = userExistsForQuiz ? userIfExists.preLoadedCoins : 0;
+  public async getQuizDataForCrm(
+    userIfExists: any,
+    userId: string,
+    totalXPPoints: number
+  ) {
+    let preLoadedCoins = userIfExists.preLoadedCoins;
     const quizIfExists = await quizService.checkQuizExists({
-      $or: [
-        { userId: new mongoose.Types.ObjectId(userIfExists._id) },
-        {
-          userId: userExistsForQuiz
-            ? new mongoose.Types.ObjectId(userExistsForQuiz.userId._id)
-            : null,
-        },
-      ],
+      userId: new mongoose.Types.ObjectId(userIfExists._id),
       isOnBoardingQuiz: false,
     });
     let stackCoins = 0;
@@ -395,6 +375,7 @@ class QuizDBService {
         Stack_Coins: stackCoins,
         New_Quiz_Information: quizDataForCrm,
         Email: userIfExists.email,
+        XP: totalXPPoints,
       },
     ];
     return dataSentInCrm;
