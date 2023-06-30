@@ -648,8 +648,14 @@ class QuizDBService {
         $sample: { size: 3 },
       },
       {
+        $addFields: {
+          isCompleted: false,
+        },
+      },
+      {
         $project: {
           _id: 1,
+          isCompleted: 1,
           name: "$quizName",
           topicId: 1,
           image: 1,
@@ -813,6 +819,11 @@ class QuizDBService {
         },
       },
       {
+        $addFields: {
+          isCompleted: false,
+        },
+      },
+      {
         $match: {
           playedQuizzes: {
             $size: 0,
@@ -824,6 +835,7 @@ class QuizDBService {
           _id: "$quizzes._id",
           name: "$quizzes.quizName",
           image: "$quizzes.image",
+          isCompleted: 1,
           topicId: "$quizzes.topicId",
           count: 1,
         },
