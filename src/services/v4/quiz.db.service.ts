@@ -157,7 +157,8 @@ class QuizDBService {
   public async getQuizQuestions(
     userId: string,
     quizId: string,
-    headers: object
+    headers: object,
+    isCompleted: any = null
   ) {
     const query = {
       userId: userId,
@@ -167,12 +168,14 @@ class QuizDBService {
       userId: userId,
       isOnBoardingQuiz: false,
     });
-    const isQuizLimitReached = await this.checkQuizLimitReached(
-      quizResultsData,
-      userId
-    );
-    if (isQuizLimitReached) {
-      throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
+    if (!isCompleted) {
+      const isQuizLimitReached = await this.checkQuizLimitReached(
+        quizResultsData,
+        userId
+      );
+      if (isQuizLimitReached) {
+        throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
+      }
     }
     const quizQuestionList = await QuizQuestionTable.find({
       quizId: quizId,
