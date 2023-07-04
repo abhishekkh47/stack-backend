@@ -600,14 +600,16 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-questions/:quizId", method: HttpMethod.GET })
   @Auth()
   public async getQuizQuestions(ctx: any) {
-    const { user, headers, params } = ctx.request;
+    const { user, headers, params, query } = ctx.request;
     if (!params.quizId) {
       return this.BadRequest(ctx, "Quiz not found");
     }
+    const isCompleted = JSON.parse(query?.isCompleted || null);
     const quizQuestionList = await QuizDBService.getQuizQuestions(
       user,
       params.quizId,
-      headers
+      headers,
+      isCompleted
     );
     const quizImageAspectRatio = await getQuizImageAspectRatio(headers);
     return this.Ok(ctx, {
