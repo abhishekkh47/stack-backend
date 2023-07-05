@@ -42,11 +42,6 @@ export const PRIMETRUSTAPIS = {
   internalAssetTransfers: `v2/internal-asset-transfers`,
   pendingClosure: (accountId) => `v2/accounts/${accountId}/pending-close`,
 };
-export const COINMARKETCAPAPIS = {
-  historicalPrice: (crypto) =>
-    `v2/cryptocurrency/price-performance-stats/latest?symbol=${crypto}&time_period=90d,365d`,
-  latestPrice: (crypto) => `v2/cryptocurrency/quotes/latest?symbol=${crypto}`,
-};
 
 export const PLAIDAPIS = {
   getLinkToken: "link/token/create",
