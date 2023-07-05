@@ -755,6 +755,9 @@ class AuthController extends BaseController {
           if (!userExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
+          if (userExists.mobile == reqParam.mobile) {
+            return this.BadRequest(ctx, "You cannot enter same mobile number");
+          }
           const checkCellNumberExists = await UserTable.findOne({
             mobile: reqParam.mobile,
           });
