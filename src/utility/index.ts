@@ -8,7 +8,6 @@ export * from "@utility/prime-trust";
 export * from "@utility/plaid";
 export * from "@utility/multer";
 export * from "@utility/user";
-export * from "@utility/coin-market-cap";
 export * from "@utility/uploadImage";
 export * from "@utility/notificationSend";
 export * from "@utility/zoho-crm";

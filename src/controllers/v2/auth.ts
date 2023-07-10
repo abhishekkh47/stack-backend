@@ -811,6 +811,12 @@ class AuthController extends BaseController {
       async (validate) => {
         if (validate) {
           const { mobile, deviceId } = input;
+          const mobileIfExists = await UserTable.findOne({
+            mobile: mobile,
+          });
+          if (mobileIfExists)
+            return this.BadRequest(ctx, "Mobile Already Exists");
+
           AnalyticsService.sendEvent(
             ANALYTICS_EVENTS.PHONE_NUMBER_SUBMITTED,
             undefined,
