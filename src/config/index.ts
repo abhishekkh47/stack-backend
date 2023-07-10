@@ -44,12 +44,6 @@ export default {
   get PRIMETRUSTAPI_URL() {
     return process.env.PRIMETRUSTAPI_URL;
   },
-  get COINMARKETCAPAPI_URL() {
-    return process.env.COINMARKETCAPAPI_URL;
-  },
-  get COINMARKETCAPAPI_KEY() {
-    return process.env.COINMARKETCAPAPI_KEY;
-  },
   get PLAID_CLIENT_ID() {
     return process.env.PLAID_CLIENT_ID;
   },
