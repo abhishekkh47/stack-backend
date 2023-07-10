@@ -721,10 +721,40 @@ class QuizController extends BaseController {
       if (!userIfExists) {
         return this.BadRequest(ctx, "User not found");
       }
-      let quizResultsData = await QuizResult.find({
-        userId: userIfExists._id,
-        isOnBoardingQuiz: false,
-      });
+      let quizResultsData = await QuizResult.aggregate([
+        {
+          $lookup: {
+            from: "quiz",
+            localField: "quizId",
+            foreignField: "_id",
+            as: "quizData",
+          },
+        },
+        {
+          $unwind: {
+            path: "$quizData",
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $match: {
+            $and: [
+              {
+                "quizData.quizNum": {
+                  $exists: true,
+                },
+              },
+              {
+                "quizData.quizNum": {
+                  $ne: 0,
+                },
+              },
+            ],
+            isOnBoardingQuiz: false,
+            userId: userIfExists._id,
+          },
+        },
+      ]).exec();
       const quizCategories = await QuizDBService.listQuizCategories(
         quizResultsData
       );

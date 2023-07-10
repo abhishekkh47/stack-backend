@@ -253,7 +253,7 @@ class UserController extends BaseController {
     try {
       const { user, body } = ctx.request;
       const userExists = await UserTable.findOne({ _id: user._id });
-      if (!userExists || (userExists && userExists.type !== EUserType.TEEN)) {
+      if (!userExists) {
         return this.BadRequest(ctx, "User not found");
       }
       return validationsV4.changeNameValidation(body, ctx, async (validate) => {
