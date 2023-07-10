@@ -21,6 +21,7 @@ import {
   QuizTable,
   DeletedUserTable,
   AdminTable,
+  LeagueTable,
 } from "@app/model";
 import {
   EAction,
@@ -1463,6 +1464,79 @@ class ScriptController extends BaseController {
       return this.Ok(ctx, { data: users });
     } catch (error) {
       return this.Ok(ctx, { message: error.message });
+    }
+  }
+
+  /**
+   * @description Store League in DB
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/store-leagues", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeLeaguesInDb(ctx: any) {
+    try {
+      const { leagues } = ctx.request.body;
+      if (leagues.length === 0) {
+        return this.BadRequest(ctx, "Leagues Not Found");
+      }
+      let allLeagues: any = await LeagueTable.find({});
+      allLeagues = allLeagues.map((x) => {
+        const matchObject = leagues.find((league) => league.name === x.name);
+        return matchObject;
+      });
+      if (allLeagues.length > 0) {
+        return this.BadRequest(ctx, "Same Leagues cannot be added");
+      }
+      await LeagueTable.insertMany(leagues);
+      return this.Ok(ctx, { message: "Leagues Stored Successfully" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description Sync Users with Current League
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/sync-users-with-league", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async syncUsersWithLeague(ctx: any) {
+    try {
+      let users = await UserTable.find({})
+        .select("_id xpPoints leagueId")
+        .sort({ xpPoints: -1 });
+      if (users.length === 0) return this.BadRequest(ctx, "Users not found");
+      const leagues = await LeagueTable.find({}).select(
+        "_id minPoint maxPoint"
+      );
+      let updatedLeague = [];
+      if (leagues.length === 0) return this.BadRequest(ctx, "League not found");
+      users = users.map((user) => {
+        let matchObject = leagues.find(
+          (x) => x.minPoint <= user.xpPoints && x.maxPoint >= user.xpPoints
+        );
+        let bulWriteOperation = {
+          updateOne: {
+            filter: { _id: user._id },
+            update: {
+              $set: {
+                leagueId: matchObject._id,
+              },
+            },
+          },
+        };
+        updatedLeague.push(bulWriteOperation);
+        return user;
+      });
+      await UserTable.bulkWrite(updatedLeague);
+      return this.Ok(ctx, {
+        message: "Leagues Stored Successfully",
+        data: updatedLeague,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
     }
   }
 }

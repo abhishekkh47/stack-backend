@@ -81,6 +81,11 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: null,
       ref: "state",
     },
+    leagueId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      ref: "league",
+    },
     taxIdNo: { type: mongoose.Schema.Types.String, default: null },
     taxState: {
       type: mongoose.Schema.Types.ObjectId,
