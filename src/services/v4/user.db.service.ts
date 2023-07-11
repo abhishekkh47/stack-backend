@@ -5,7 +5,7 @@ import {
   uploadFilesFetch,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
-import { UserTable, ParentChildTable } from "@app/model";
+import { UserTable, ParentChildTable, DripshopTable } from "@app/model";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
@@ -320,6 +320,70 @@ class UserDBService {
       xpPoints: userIfExists.xpPoints,
     };
     return { leaderBoardData, userObject };
+  }
+
+  /**
+   * @description This service is used to update the fuels of user
+   * @param userExists
+   * @param dripshopData
+   * @param fuel
+   */
+  public async redeemDripShop(userExists: any, dripshopData: any, body: any) {
+    const { fuel } = dripshopData;
+    let totalChildFuels = userExists.preLoadedCoins + userExists.quizCoins;
+
+    let updatedCoinQuery: any = {};
+
+    if (totalChildFuels >= fuel) {
+      /**
+       * once true check what to update preloaded or quiz coins or both
+       */
+      if (userExists.preLoadedCoins >= fuel) {
+        updatedCoinQuery = {
+          ...updatedCoinQuery,
+          $set: {
+            preLoadedCoins: userExists.preLoadedCoins - fuel,
+          },
+        };
+      } else {
+        /**
+         * amountLeftAfterPreloaded - contains amount left after removal of preloaded coins from required fuels
+         */
+        let amountLeftAfterPreloaded = fuel - userExists.preLoadedCoins;
+
+        if (amountLeftAfterPreloaded <= userExists.quizCoins) {
+          updatedCoinQuery = {
+            ...updatedCoinQuery,
+            $set: {
+              preLoadedCoins: 0,
+              quizCoins: userExists.quizCoins - amountLeftAfterPreloaded,
+            },
+          };
+        }
+      }
+    } else {
+      throw new NetworkError("ERROR: Insufficient Funds.", 400);
+    }
+    const createdDripshop = await DripshopTable.create({
+      firstName: body.firstName,
+      lastName: body.lastName,
+      redeemedFuels: fuel,
+      userId: userExists._id,
+      productId: dripshopData._id,
+      address: body.address,
+      state: body.state,
+      city: body.city,
+      zipCode: body.zipCode,
+      selectedSize: body.selectedSize || null,
+    });
+    await UserTable.updateOne(
+      {
+        _id: userExists._id,
+      },
+      updatedCoinQuery
+    );
+
+    return createdDripshop;
   }
 }
 

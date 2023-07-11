@@ -4,83 +4,70 @@ import BaseController from "@app/controllers/base";
 import { Route } from "@app/utility";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
 import { HttpMethod } from "@app/types";
-import { DripshopDBService, UserDBService } from "@app/services/v1/index";
+import { DripshopDBService } from "@app/services/v1/index";
+import { UserDBService } from "@app/services/v4/index";
+import { ProductTable } from "@app/model";
 
 class DripshopController extends BaseController {
   /**
-   * @description This method is used to redeem crypto for fuels
+   * @description THis method is used to get list of all products in drip shop
    * @param ctx
-   * @return {*}
+   * @returns {*}
    */
-  @Route({ path: "/redeem-crypto", method: HttpMethod.POST })
+  @Route({ path: "/dripshop-items", method: HttpMethod.GET })
   @Auth()
-  @PrimeTrustJWT(true)
-  public async redeemCrypto(ctx: any) {
-    const user = ctx.request.user;
-    const jwtToken = ctx.request.primeTrustToken;
-    let reqParam = ctx.request.body;
-    return validationsV4.redeemCryptoValidation(
-      reqParam,
-      ctx,
-      async (validate: boolean) => {
-        if (validate) {
-          /**
-           * get user info
-           */
-          let userExists = await UserDBService.getUserInfo(user._id);
-          if (!userExists) {
-            return this.BadRequest(ctx, "User does not exist");
-          }
+  public async getDripshopItems(ctx: any) {
+    const user = await UserTable.findOne({ _id: ctx.request.user._id });
+    if (!user) return this.BadRequest(ctx, "User Not found");
+    const totalFuelOfUser = user.preLoadedCoins + user.quizCoins;
+    const allData = await DripshopDBService.getDripshopData(totalFuelOfUser);
 
-          /**
-           * get the drip shop information for specific drip shop id
-           */
-          let dripshopData = await DripshopDBService.dripshopInfoForId(
-            reqParam.dripshopId
-          );
+    return this.Ok(ctx, { data: allData });
+  }
 
-          /**
-           * service to update coins of user
-           */
-          const { updatedCoinQuery, updateParentCoinQuery } =
-            await UserDBService.getUpdateCoinQuery(userExists, dripshopData);
-
-          /**
-           * internal transfer for redeeming crypto
-           */
-          await DripshopDBService.internalTransforDripshop(
-            userExists._id,
-            userExists.type,
-            dripshopData,
-            jwtToken
-          );
-          await UserTable.updateOne(
-            {
-              _id: userExists._id,
-            },
-            updatedCoinQuery
-          );
-
-          if (updateParentCoinQuery) {
-            await UserTable.updateOne(
-              {
-                _id: userExists.parentId,
-              },
-              updateParentCoinQuery
-            );
-          }
-          const userInfo = await UserDBService.getUserInfo(user._id);
-          const totalStackCoins =
-            userInfo.quizCoins +
-            userInfo.preLoadedCoins +
-            userInfo.parentQuizCoins;
-          return this.Ok(ctx, {
-            message: "Transaction Processed!",
-            totalStackCoins,
-          });
-        }
+  /**
+   * @description THis method is used to
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/dripshop", method: HttpMethod.POST })
+  // @Auth()
+  public async redeemDripshopItems(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userExists = await UserTable.findOne({
+        _id: "63621959efd9812a8dba3247",
+      });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User not found");
       }
-    );
+      return validationsV4.dripShopValidation(
+        body,
+        ctx,
+        async (validate: boolean) => {
+          if (validate) {
+            const productExists = await ProductTable.findOne({
+              _id: body.productId,
+            });
+            if (!productExists) {
+              return this.BadRequest(ctx, "Product not found");
+            }
+            const dripshopDetails = await UserDBService.redeemDripShop(
+              userExists,
+              productExists,
+              body
+            );
+
+            return this.Ok(ctx, {
+              message: "Your reward is on the way",
+              data: dripshopDetails,
+            });
+          }
+        }
+      );
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
   }
 }
 

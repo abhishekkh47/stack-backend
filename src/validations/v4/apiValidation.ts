@@ -128,4 +128,26 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  dripShopValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      firstName: Joi.string().required(),
+      lastName: Joi.string().required(),
+      address: Joi.string().required(),
+      productId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      selectedSize: Joi.string().allow().optional(),
+      city: Joi.string().required(),
+      state: Joi.string().required(),
+      zipCode: Joi.string().required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("dripShopValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };

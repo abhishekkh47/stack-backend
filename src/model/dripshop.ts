@@ -6,26 +6,47 @@ export type IDripshopSchema = MongooseModel<IDripshop> & mongoose.Document;
 
 const schema = new mongoose.Schema<IDripshop>(
   {
-    cryptoId: {
+    productId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      unique: true,
-      ref: "crypto",
+      ref: "product",
     },
-    assetId: {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "user",
+    },
+    selectedSize: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    firstName: {
       type: mongoose.Schema.Types.String,
       required: true,
-      unique: true,
     },
-    requiredFuels: {
-      type: mongoose.Schema.Types.Number,
-      required: false,
-      default: 0,
+    lastName: {
+      type: mongoose.Schema.Types.String,
+      required: true,
     },
-    cryptoToBeRedeemed: {
+    address: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
+    state: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
+    city: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
+    zipCode: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
+    redeemedFuels: {
       type: mongoose.Schema.Types.Number,
-      required: false,
-      default: 0,
+      required: true,
     },
   },
   { timestamps: true }

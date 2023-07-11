@@ -279,5 +279,20 @@
 	"quizReviewValidationWantmoreRequired": "Please enter want more quiz.",
 	"quizReviewValidationWantmoreOnly": "Please enter want more quiz values.",
 	"changeNameValidationFirstnameEmpty": "Please enter first name.",
-	"changeNameValidationFirstnameRequired": "Please enter first name."
+	"changeNameValidationFirstnameRequired": "Please enter first name.",
+	"dripShopValidationFirstnameRequired": "Please enter first name.",
+	"dripShopValidationFirstnameEmpty": "Please enter first name.",
+	"dripShopValidationLastnameRequired": "Please enter last name.",
+	"dripShopValidationLastnameEmpty": "Please enter last name.",
+	"dripShopValidationAddressEmpty": "Please enter address.",
+	"dripShopValidationAddressRequired": "Please enter address.",
+	"dripShopValidationProductidEmpty": "Please enter product id.",
+	"dripShopValidationProductidRequired": "Please enter product id.",
+	"dripShopValidationProductidPattern": "Please enter valid products.",
+	"dripShopValidationCityRequired": "Please enter city.",
+	"dripShopValidationCityEmpty": "Please enter city.",
+	"dripShopValidationStateRequired": "Please enter state.",
+	"dripShopValidationStateEmpty": "Please enter state.",
+	"dripShopValidationZipcodeRequired": "Please enter zip code.",
+	"dripShopValidationZipcodeEmpty": "Please enter zip code."
 }
