@@ -6,7 +6,7 @@ import { Auth, PrimeTrustJWT } from "@app/middleware";
 import { HttpMethod } from "@app/types";
 import { DripshopDBService } from "@app/services/v1/index";
 import { UserDBService } from "@app/services/v4/index";
-import { ProductTable } from "@app/model";
+import { DripshopItemTable } from "@app/model";
 
 class DripshopController extends BaseController {
   /**
@@ -15,12 +15,9 @@ class DripshopController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/dripshop-items", method: HttpMethod.GET })
-  @Auth()
+  // @Auth()
   public async getDripshopItems(ctx: any) {
-    const user = await UserTable.findOne({ _id: ctx.request.user._id });
-    if (!user) return this.BadRequest(ctx, "User Not found");
-    const totalFuelOfUser = user.preLoadedCoins + user.quizCoins;
-    const allData = await DripshopDBService.getDripshopData(totalFuelOfUser);
+    const allData = await DripshopDBService.getDripshopData();
 
     return this.Ok(ctx, { data: allData });
   }
@@ -30,32 +27,37 @@ class DripshopController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/dripshop", method: HttpMethod.POST })
-  // @Auth()
+  @Route({ path: "/dripshop-items/:itemId/redeem", method: HttpMethod.POST })
+  @Auth()
   public async redeemDripshopItems(ctx: any) {
     try {
-      const { user, body } = ctx.request;
+      const { user, body, params } = ctx.request;
       const userExists = await UserTable.findOne({
-        _id: "63621959efd9812a8dba3247",
+        _id: user._id,
       });
       if (!userExists) {
         return this.BadRequest(ctx, "User not found");
+      }
+      const itemExists = await DripshopItemTable.findOne({
+        _id: params.itemId,
+      });
+      if (!itemExists) {
+        return this.BadRequest(ctx, "Product not found");
       }
       return validationsV4.dripShopValidation(
         body,
         ctx,
         async (validate: boolean) => {
           if (validate) {
-            const productExists = await ProductTable.findOne({
-              _id: body.productId,
-            });
-            if (!productExists) {
-              return this.BadRequest(ctx, "Product not found");
-            }
             const dripshopDetails = await UserDBService.redeemDripShop(
               userExists,
-              productExists,
+              itemExists,
               body
+            );
+
+            await DripshopDBService.sendEmailToAdmin(
+              dripshopDetails,
+              userExists
             );
 
             return this.Ok(ctx, {

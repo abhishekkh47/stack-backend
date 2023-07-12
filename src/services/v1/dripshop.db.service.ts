@@ -1,33 +1,26 @@
-import { DripshopTable, ProductTable } from "@app/model";
+import { DripshopTable, DripshopItemTable, AdminTable } from "@app/model";
 import { ObjectId } from "mongodb";
 import { NetworkError } from "@app/middleware";
+import { CONSTANT, sendEmail } from "@app/utility";
 
 class DripshopDBService {
   /**
    * @description get all drip shop data
    */
-  public async getDripshopData(usersFuel: number = null) {
+  public async getDripshopData() {
     const queryGet = [
-      {
-        $addFields: {
-          isRedeem: {
-            $gte: [usersFuel, "$fuel"],
-          },
-        },
-      },
       {
         $project: {
           _id: 1,
           name: 1,
           image: 1,
           fuel: 1,
-          size: 1,
-          isRedeem: 1,
+          sizes: 1,
           description: 1,
         },
       },
     ];
-    let allData = await ProductTable.aggregate(queryGet).exec();
+    let allData = await DripshopItemTable.aggregate(queryGet).exec();
 
     return allData;
   }
@@ -81,20 +74,49 @@ class DripshopDBService {
 
   /**
    * @description add Dripshop Items
-   * @param products
+   * @param items
    * @returns {*}
    */
-  public async addProducts(products: any[]) {
-    let allProducts: any = await ProductTable.find({});
-    allProducts = allProducts.map((x) => {
-      const matchObject = products.find((product) => product.name === x.name);
+  public async addItems(items: any[]) {
+    let allItems: any = await DripshopItemTable.find({});
+    allItems = allItems.map((x) => {
+      const matchObject = items.find((item) => item.name === x.name);
       return matchObject;
     });
-    if (allProducts.length > 0) {
+    if (allItems.length > 0) {
       throw new NetworkError("Same Products cannot be added", 400);
     }
-    const newProducts = await ProductTable.insertMany(products);
-    return newProducts;
+    const newItem = await DripshopItemTable.insertMany(items);
+    return newItem;
+  }
+
+  /**
+   * @description send email to admin regarding dripshop items
+   * @param dripShopDetails
+   * @returns {*}
+   */
+  public async sendEmailToAdmin(dripShopDetails: any, userExists: any) {
+    /**
+     * Send email regarding the details to admin
+     */
+    const data = {
+      firstName: dripShopDetails.firstName,
+      lastName: dripShopDetails.lastName,
+      email: userExists.email,
+      mobile: userExists.mobile,
+      address: dripShopDetails.address,
+      apartment: dripShopDetails.apartment || "-",
+      state: dripShopDetails.state,
+      city: dripShopDetails.city,
+      zipcode: dripShopDetails.zipCode,
+    };
+    const admin = await AdminTable.findOne({});
+    await sendEmail(
+      "ankit.bhojani@mindinventory.com",
+      CONSTANT.DripShopTemplateId,
+      data
+    );
+    return true;
   }
 }
 export default new DripshopDBService();

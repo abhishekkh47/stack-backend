@@ -133,10 +133,8 @@ export const validationsV4 = {
       firstName: Joi.string().required(),
       lastName: Joi.string().required(),
       address: Joi.string().required(),
-      productId: Joi.string()
-        .regex(/^[0-9a-fA-F]{24}$/)
-        .required(),
       selectedSize: Joi.string().allow().optional(),
+      apartment: Joi.string().allow().optional(),
       city: Joi.string().required(),
       state: Joi.string().required(),
       zipCode: Joi.string().required(),

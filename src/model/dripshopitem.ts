@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
-import type { IProduct, MongooseModel } from "@app/types";
+import type { IDripshopItem, MongooseModel } from "@app/types";
 
-export type IProductSchema = MongooseModel<IProduct> & mongoose.Document;
+export type IDripshopItemSchema = MongooseModel<IDripshopItem> &
+  mongoose.Document;
 
-const schema = new mongoose.Schema<IProductSchema>(
+const schema = new mongoose.Schema<IDripshopItemSchema>(
   {
     name: {
       type: mongoose.Schema.Types.String,
@@ -22,7 +23,7 @@ const schema = new mongoose.Schema<IProductSchema>(
       type: mongoose.Schema.Types.String,
       required: true,
     },
-    size: {
+    sizes: {
       type: mongoose.Schema.Types.Array,
       default: [],
       required: true,
@@ -31,4 +32,7 @@ const schema = new mongoose.Schema<IProductSchema>(
   { timestamps: true }
 );
 
-export const ProductTable = mongoose.model<IProductSchema>("product", schema);
+export const DripshopItemTable = mongoose.model<IDripshopItemSchema>(
+  "dripshopitem",
+  schema
+);

@@ -369,10 +369,11 @@ class UserDBService {
       lastName: body.lastName,
       redeemedFuels: fuel,
       userId: userExists._id,
-      productId: dripshopData._id,
+      itemId: dripshopData._id,
       address: body.address,
       state: body.state,
       city: body.city,
+      apartment: body.apartment || null,
       zipCode: body.zipCode,
       selectedSize: body.selectedSize || null,
     });

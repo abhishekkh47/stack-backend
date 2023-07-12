@@ -21,7 +21,7 @@ import {
   QuizTable,
   DeletedUserTable,
   AdminTable,
-  ProductTable,
+  DripshopItemTable,
 } from "@app/model";
 import {
   EAction,
@@ -1377,10 +1377,9 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storeDripShopItems(ctx: any) {
     try {
-      const { products } = ctx.request.body;
-      if (products.length === 0)
-        return this.BadRequest(ctx, "Product not found");
-      const createdProducts = await DripshopDBService.addProducts(products);
+      const { items } = ctx.request.body;
+      if (items.length === 0) return this.BadRequest(ctx, "Product not found");
+      const createdProducts = await DripshopDBService.addItems(items);
       return this.Ok(ctx, { data: createdProducts, message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

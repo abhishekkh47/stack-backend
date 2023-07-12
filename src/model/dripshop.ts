@@ -6,10 +6,10 @@ export type IDripshopSchema = MongooseModel<IDripshop> & mongoose.Document;
 
 const schema = new mongoose.Schema<IDripshop>(
   {
-    productId: {
+    itemId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "product",
+      ref: "dripshopitem",
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -17,6 +17,10 @@ const schema = new mongoose.Schema<IDripshop>(
       ref: "user",
     },
     selectedSize: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    apartment: {
       type: mongoose.Schema.Types.String,
       default: null,
     },

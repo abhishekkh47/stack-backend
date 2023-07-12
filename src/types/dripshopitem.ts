@@ -1,7 +1,7 @@
-export interface IProduct {
+export interface IDripshopItem {
   name: string;
   fuel: number;
-  size: string[];
+  sizes: string[];
   description: string;
   image: string;
 }
