@@ -1376,7 +1376,14 @@ class ScriptController extends BaseController {
   public async syncXPInZoho(ctx: any) {
     try {
       const users = await UserTable.find({
-        xpPoints: { $exists: true },
+        $and: [
+          {
+            xpPoints: { $exists: true },
+          },
+          {
+            xpPoints: { $gt: 0 },
+          },
+        ],
       }).select({
         _id: "-$_id",
         Account_Name: { $concat: ["$firstName", " ", "$lastName"] },
@@ -1384,11 +1391,20 @@ class ScriptController extends BaseController {
         XP: "$xpPoints",
       });
       if (users.length === 0) return this.BadRequest(ctx, "User not found");
-      await zohoCrmService.addAccounts(
-        ctx.request.zohoAccessToken,
-        users,
-        true
-      );
+      const zohoCrmObjectSize = 90;
+      let crmObject;
+      for (let i = 0; i < users.length; i += zohoCrmObjectSize) {
+        crmObject = users.slice(i, i + zohoCrmObjectSize);
+
+        /**
+         * add account to zoho crm
+         */
+        await zohoCrmService.addAccounts(
+          ctx.request.zohoAccessToken,
+          crmObject,
+          true
+        );
+      }
       return this.Ok(ctx, { data: users });
     } catch (error) {
       return this.Ok(ctx, { message: error.message });
