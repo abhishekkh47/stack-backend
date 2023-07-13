@@ -60,16 +60,6 @@ class DripshopController extends BaseController {
            */
           const { updatedCoinQuery, updateParentCoinQuery } =
             await UserDBService.getUpdateCoinQuery(userExists, dripshopData);
-
-          /**
-           * internal transfer for redeeming crypto
-           */
-          await DripshopDBService.internalTransforDripshop(
-            userExists._id,
-            userExists.type,
-            dripshopData,
-            jwtToken
-          );
           await UserTable.updateOne(
             {
               _id: userExists._id,
