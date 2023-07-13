@@ -362,7 +362,7 @@ class UserDBService {
         }
       }
     } else {
-      throw new NetworkError("ERROR: Insufficient Funds.", 400);
+      throw new NetworkError("Insufficient Fuels.", 400);
     }
     const createdDripshop = await DripshopTable.create({
       firstName: body.firstName,
@@ -377,14 +377,15 @@ class UserDBService {
       zipCode: body.zipCode,
       selectedSize: body.selectedSize || null,
     });
-    await UserTable.updateOne(
+    const updatedUser = await UserTable.findOneAndUpdate(
       {
         _id: userExists._id,
       },
-      updatedCoinQuery
+      updatedCoinQuery,
+      { new: true }
     );
 
-    return createdDripshop;
+    return { createdDripshop, updatedUser };
   }
 }
 

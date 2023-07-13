@@ -15,7 +15,7 @@ class DripshopController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/dripshop-items", method: HttpMethod.GET })
-  // @Auth()
+  @Auth()
   public async getDripshopItems(ctx: any) {
     const allData = await DripshopDBService.getDripshopData();
 
@@ -49,20 +49,19 @@ class DripshopController extends BaseController {
         ctx,
         async (validate: boolean) => {
           if (validate) {
-            const dripshopDetails = await UserDBService.redeemDripShop(
-              userExists,
-              itemExists,
-              body
-            );
-
+            const { createdDripshop, updatedUser } =
+              await UserDBService.redeemDripShop(userExists, itemExists, body);
             await DripshopDBService.sendEmailToAdmin(
-              dripshopDetails,
-              userExists
+              createdDripshop,
+              userExists,
+              itemExists
             );
+            const totalFuels =
+              updatedUser.preLoadedCoins + updatedUser.quizCoins;
 
             return this.Ok(ctx, {
               message: "Your reward is on the way",
-              data: dripshopDetails,
+              data: { createdDripshop, totalFuels },
             });
           }
         }

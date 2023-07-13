@@ -84,7 +84,7 @@ class DripshopDBService {
       return matchObject;
     });
     if (allItems.length > 0) {
-      throw new NetworkError("Same Products cannot be added", 400);
+      throw new NetworkError("Same Items cannot be added", 400);
     }
     const newItem = await DripshopItemTable.insertMany(items);
     return newItem;
@@ -95,7 +95,11 @@ class DripshopDBService {
    * @param dripShopDetails
    * @returns {*}
    */
-  public async sendEmailToAdmin(dripShopDetails: any, userExists: any) {
+  public async sendEmailToAdmin(
+    dripShopDetails: any,
+    userExists: any,
+    itemExists: any
+  ) {
     /**
      * Send email regarding the details to admin
      */
@@ -105,17 +109,15 @@ class DripshopDBService {
       email: userExists.email,
       mobile: userExists.mobile,
       address: dripShopDetails.address,
-      apartment: dripShopDetails.apartment || "-",
+      apartment: dripShopDetails.apartment || "N/A",
       state: dripShopDetails.state,
       city: dripShopDetails.city,
       zipcode: dripShopDetails.zipCode,
+      item: itemExists.name,
+      selectedsize: dripShopDetails.selectedSize || "N/A",
     };
     const admin = await AdminTable.findOne({});
-    await sendEmail(
-      "ankit.bhojani@mindinventory.com",
-      CONSTANT.DripShopTemplateId,
-      data
-    );
+    await sendEmail(admin.email, CONSTANT.DripShopTemplateId, data);
     return true;
   }
 }
