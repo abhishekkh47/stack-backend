@@ -279,8 +279,8 @@ class UserDBService {
    * @param userIfExists
    * @returns {*}
    */
-  public async getLeaderboards(userIfExists: any) {
-    let leaderBoardData: any = await UserTable.aggregate([
+  public async getLeaderboards(userIfExists: any, leagueId: string) {
+    let aggregateQuery: any = [
       {
         $setWindowFields: {
           sortBy: {
@@ -297,9 +297,25 @@ class UserDBService {
         $limit: 20,
       },
       {
+        $lookup: {
+          from: "leagues",
+          localField: "leagueId",
+          foreignField: "_id",
+          as: "leagueData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$leagueData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $project: {
           _id: 1,
           type: 1,
+          leagueId: 1,
+          leagueName: "$leagueData.name",
           firstName: 1,
           lastName: 1,
           rank: 1,
@@ -307,7 +323,16 @@ class UserDBService {
           profilePicture: 1,
         },
       },
-    ]).exec();
+    ];
+    if (leagueId) {
+      aggregateQuery.push({
+        $match: {
+          leagueId: userIfExists.leagueId,
+        },
+      });
+    }
+    console.log(aggregateQuery);
+    let leaderBoardData: any = await UserTable.aggregate(aggregateQuery).exec();
     if (leaderBoardData.length === 0) {
       throw new NetworkError("User Not Found", 400);
     }

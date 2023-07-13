@@ -18,6 +18,7 @@ import {
 } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
+import { ObjectId } from "mongodb";
 
 class UserController extends BaseController {
   /**
@@ -227,14 +228,19 @@ class UserController extends BaseController {
   })
   @Auth()
   public async getLeaderboard(ctx: any) {
+    const { user, query } = ctx.request;
     const userIfExists: any = await UserTable.findOne({
-      _id: ctx.request.user._id,
+      _id: user._id,
     });
-    if (!userIfExists) {
+    if (
+      !userIfExists ||
+      (userIfExists && userIfExists.leagueId.toString() !== query.leagueId)
+    ) {
       return this.BadRequest(ctx, "User Not Found");
     }
     const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
-      userIfExists
+      userIfExists,
+      query.leagueId
     );
     return this.Ok(ctx, {
       data: { leaderBoardData, userObject },
