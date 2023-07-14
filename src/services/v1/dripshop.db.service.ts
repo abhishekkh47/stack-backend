@@ -8,7 +8,7 @@ class DripshopDBService {
    * @description get all drip shop data
    */
   public async getDripshopData() {
-    const queryGet = [
+    const queryGet: any = [
       {
         $project: {
           _id: 1,
@@ -17,6 +17,12 @@ class DripshopDBService {
           fuel: 1,
           sizes: 1,
           description: 1,
+          createdAt: 1,
+        },
+      },
+      {
+        $sort: {
+          createdAt: 1,
         },
       },
     ];
