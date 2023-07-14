@@ -21,3 +21,4 @@ export * from "@app/types/userGiftCard";
 export * from "@app/types/dripshop";
 export * from "@app/types/deletedUser";
 export * from "@app/types/league";
+export * from "@app/types/dripshopitem";

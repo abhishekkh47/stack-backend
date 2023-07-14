@@ -112,29 +112,6 @@ class UserDBService {
           };
         }
       }
-    } else if (
-      userExists.parentQuizCoins &&
-      totalChildFuels + userExists.parentQuizCoins >= requiredFuels
-    ) {
-      /**
-       * amountLeftAfterTotalChildCoins - amount left after removal of preloaded and quiz coins from fuels
-       */
-      let amountLeftAfterTotalChildCoins = requiredFuels - totalChildFuels;
-
-      if (amountLeftAfterTotalChildCoins <= userExists.parentQuizCoins) {
-        updatedCoinQuery = {
-          ...updatedCoinQuery,
-          $set: { preLoadedCoins: 0, quizCoins: 0 },
-        };
-
-        updateParentCoinQuery = {
-          ...updateParentCoinQuery,
-          $set: {
-            quizCoins:
-              userExists.parentQuizCoins - amountLeftAfterTotalChildCoins,
-          },
-        };
-      }
     } else {
       throw new NetworkError("ERROR: Insufficient Funds.", 400);
     }

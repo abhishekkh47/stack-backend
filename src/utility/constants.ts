@@ -4,6 +4,7 @@ export const CONSTANT = Object.freeze({
   ResetPasswordTemplateId: "d-272f7e39cb4a4220ac7809d64f99e516",
   HelpCenterTemplateId: "d-614d94dc58d6436eb23d17a7757a9da5",
   RemindParentTemplateId: "d-29e6c014f3604c04b7c7c2d354bda66e",
+  DripShopTemplateId: "d-cabccd32eed84d879877c7d5a21e93da",
 });
 
 export const PRIMETRUSTBASEAPIURL = "";

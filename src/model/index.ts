@@ -27,3 +27,4 @@ export * from "@model/dripshop";
 export * from "@model/deletedUser";
 export * from "@model/quizReview";
 export * from "@model/league";
+export * from "@app/model/dripshopitem";

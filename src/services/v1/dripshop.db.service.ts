@@ -1,24 +1,7 @@
-import {
-  EAction,
-  EStatus,
-  ETransactionStatus,
-  ETransactionType,
-} from "@app/types";
-import { NOTIFICATION } from "@app/utility/constants";
-import {
-  UserActivityTable,
-  ParentChildTable,
-  TransactionTable,
-  DripshopTable,
-} from "@app/model";
-import {
-  generateQuote,
-  executeQuote,
-  internalAssetTransfers,
-} from "@app/utility/prime-trust";
+import { DripshopTable, DripshopItemTable, AdminTable } from "@app/model";
 import { ObjectId } from "mongodb";
-import envData from "@app/config/index";
-import moment from "moment";
+import { NetworkError } from "@app/middleware";
+import { CONSTANT, sendEmail } from "@app/utility";
 
 class DripshopDBService {
   /**
@@ -27,39 +10,17 @@ class DripshopDBService {
   public async getDripshopData() {
     const queryGet = [
       {
-        $lookup: {
-          from: "cryptos",
-          localField: "cryptoId",
-          foreignField: "_id",
-          as: "cryptoInfo",
-        },
-      },
-      {
-        $unwind: { path: "$cryptoInfo", preserveNullAndEmptyArrays: true },
-      },
-      {
-        $redact: {
-          $cond: {
-            if: {
-              $ne: ["$cryptoInfo.disabled", true],
-            },
-            then: "$$KEEP",
-            else: "$$PRUNE",
-          },
-        },
-      },
-      {
         $project: {
-          cryptoId: 1,
-          assetId: 1,
-          requiredFuels: 1,
-          cryptoToBeRedeemed: 1,
-          cryptoName: "$cryptoInfo.name",
-          image: { $ifNull: ["$cryptoInfo.image", null] },
+          _id: 1,
+          name: 1,
+          image: 1,
+          fuel: 1,
+          sizes: 1,
+          description: 1,
         },
       },
     ];
-    let allData = await DripshopTable.aggregate(queryGet).exec();
+    let allData = await DripshopItemTable.aggregate(queryGet).exec();
 
     return allData;
   }
@@ -112,143 +73,51 @@ class DripshopDBService {
   }
 
   /**
-   * @description to get internal transfer for drip shop
-   * @param userId
-   * @param dripshopInfo
-   * @param jwtToken
-   * @param type
+   * @description add Dripshop Items
+   * @param items
+   * @returns {*}
    */
-  public async internalTransforDripshop(
-    userId: any,
-    type: number,
-    dripshopInfo: any,
-    jwtToken: string
+  public async addItems(items: any[]) {
+    let allItems: any = await DripshopItemTable.find({});
+    allItems = allItems.map((x) => {
+      const matchObject = items.find((item) => item.name === x.name);
+      return matchObject;
+    });
+    if (allItems.length > 0) {
+      throw new NetworkError("Same Items cannot be added", 400);
+    }
+    const newItem = await DripshopItemTable.insertMany(items);
+    return newItem;
+  }
+
+  /**
+   * @description send email to admin regarding dripshop items
+   * @param dripShopDetails
+   * @returns {*}
+   */
+  public async sendEmailToAdmin(
+    dripShopDetails: any,
+    userExists: any,
+    itemExists: any
   ) {
-    const { assetId, cryptoId, requiredFuels, cryptoName, cryptoToBeRedeemed } =
-      dripshopInfo;
     /**
-     * get the account info to get account id
+     * Send email regarding the details to admin
      */
-    let getAccountInfo = await ParentChildTable.findOne({
-      $or: [{ userId: userId }, { "teens.childId": userId }],
-    });
-
-    let getAccountId: any =
-      getAccountInfo.teens.length > 0
-        ? await getAccountInfo.teens.find(
-            (x: any) => x.childId.toString() == userId.toString()
-          )
-        : getAccountInfo;
-
-    /**
-     * request quote for execution
-     */
-    const requestQuoteDay: any = {
-      data: {
-        type: "quotes",
-        attributes: {
-          "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": assetId,
-          hot: true,
-          "transaction-type": "buy",
-          total_amount: cryptoToBeRedeemed,
-        },
-      },
+    const data = {
+      firstName: dripShopDetails.firstName,
+      lastName: dripShopDetails.lastName,
+      email: userExists.email,
+      mobile: userExists.mobile,
+      address: dripShopDetails.address,
+      apartment: dripShopDetails.apartment || "N/A",
+      state: dripShopDetails.state,
+      city: dripShopDetails.city,
+      zipcode: dripShopDetails.zipCode,
+      item: itemExists.name,
+      selectedsize: dripShopDetails.selectedSize || "N/A",
     };
-    const generateQuoteResponse: any = await generateQuote(
-      jwtToken,
-      requestQuoteDay
-    );
-    if (generateQuoteResponse.status == 400) {
-      throw Error(generateQuoteResponse.message);
-    }
-
-    /**
-     * Execute a quote
-     */
-    const requestExecuteQuote: any = {
-      data: {
-        type: "quotes",
-        attributes: {
-          "account-id": envData.OPERATIONAL_ACCOUNT,
-          "asset-id": assetId,
-        },
-      },
-    };
-
-    const executeQuoteResponse: any = await executeQuote(
-      jwtToken,
-      generateQuoteResponse.data.data.id,
-      requestExecuteQuote
-    );
-
-    if (executeQuoteResponse.status == 400) {
-      throw Error(executeQuoteResponse.message);
-    }
-
-    /**
-     * for internal transfer of BTC
-     */
-    let internalTransferRequest = {
-      data: {
-        type: "internal-asset-transfers",
-        attributes: {
-          "unit-count": executeQuoteResponse.data.data.attributes["unit-count"],
-          "from-account-id": envData.OPERATIONAL_ACCOUNT,
-          "to-account-id": getAccountId.accountId,
-          "asset-id": assetId,
-          reference: `Redeemed $${cryptoToBeRedeemed} ${cryptoName} for exchange of fuels`,
-          "hot-transfer": true,
-        },
-      },
-    };
-    const internalTransferResponse: any = await internalAssetTransfers(
-      jwtToken,
-      internalTransferRequest
-    );
-
-    if (internalTransferResponse.status == 400) {
-      throw Error(internalTransferResponse.message);
-    }
-
-    /**
-     * array containing transaction
-     */
-
-    await TransactionTable.create({
-      status: ETransactionStatus.SETTLED,
-      userId: userId,
-      executedQuoteId: internalTransferResponse.data.data.id,
-      unitCount: executeQuoteResponse.data.data.attributes["unit-count"],
-      accountId: getAccountId.accountId,
-      amountMod: -cryptoToBeRedeemed,
-      amount: cryptoToBeRedeemed,
-      settledTime: moment().unix(),
-      cryptoId: cryptoId,
-      assetId: assetId,
-      type: ETransactionType.BUY,
-    });
-
-    /**
-     * array containing the activity
-     */
-    await UserActivityTable.create({
-      userId: userId,
-      userType: type,
-      message: NOTIFICATION.DRIP_SHOP_MESSAGE.replace(
-        "{cryptoAmount}",
-        cryptoToBeRedeemed
-      )
-        .replace("{cryptoName}", cryptoName)
-        .replace("{fuelAmount}", requiredFuels),
-      currencyType: null,
-      currencyValue: cryptoToBeRedeemed,
-      action: EAction.BUY_CRYPTO,
-      status: EStatus.PROCESSED,
-      cryptoId: cryptoId,
-      assetId: assetId,
-    });
-
+    const admin = await AdminTable.findOne({});
+    await sendEmail(admin.email, CONSTANT.DripShopTemplateId, data);
     return true;
   }
 }

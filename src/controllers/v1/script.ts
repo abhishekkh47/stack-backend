@@ -22,6 +22,7 @@ import {
   DeletedUserTable,
   AdminTable,
   LeagueTable,
+  DripshopItemTable,
 } from "@app/model";
 import {
   EAction,
@@ -52,6 +53,7 @@ import {
   ScriptService,
   tradingService,
   AuthService,
+  DripshopDBService,
 } from "@app/services/v1";
 import { UserService } from "@app/services/v3";
 import userDbService from "@app/services/v4/user.db.service";
@@ -367,33 +369,6 @@ class ScriptController extends BaseController {
     return this.Ok(ctx, {
       data: allGiftCards,
     });
-  }
-
-  /**
-   * @description This method is used to add the cryptos in the drip shop
-   * @param ctx
-   * @return {*}
-   */
-  @Route({ path: "/add-dripshop-offers", method: HttpMethod.POST })
-  @InternalUserAuth()
-  public async addDripshop(ctx: any) {
-    /**
-     * get all the crypto and push in array to insert all together
-     */
-    const allCrypto = await CryptoTable.find();
-
-    let dripshopData = allCrypto.map((crypto) => {
-      return {
-        cryptoId: crypto._id,
-        assetId: crypto.assetId,
-        requiredFuels: 2000,
-        cryptoToBeRedeemed: 10,
-      };
-    });
-
-    await DripshopTable.insertMany(dripshopData);
-
-    return this.Ok(ctx, { message: "items added to drip shop" });
   }
 
   /**
@@ -1479,6 +1454,23 @@ class ScriptController extends BaseController {
         message: "Leagues Stored Successfully",
         data: updatedLeague,
       });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /*
+   * @description This method is used to sync existing xp of users to zoho
+   * @param ctx
+   */
+  @Route({ path: "/store-dripshop-items", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeDripShopItems(ctx: any) {
+    try {
+      const { items } = ctx.request.body;
+      if (items.length === 0) return this.BadRequest(ctx, "Product not found");
+      const createdProducts = await DripshopDBService.addItems(items);
+      return this.Ok(ctx, { data: createdProducts, message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
