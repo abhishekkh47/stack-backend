@@ -17,12 +17,11 @@ class DripshopDBService {
           fuel: 1,
           sizes: 1,
           description: 1,
-          createdAt: 1,
         },
       },
       {
         $sort: {
-          createdAt: 1,
+          fuel: 1,
         },
       },
     ];
