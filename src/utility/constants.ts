@@ -81,6 +81,8 @@ export const GIFTCARDS = {
 
 export const CASH_USD_ICON = "CASH_USD.png";
 
+export const NEXT_LEAGUE_UNLOCK_IMAGE = "disabled.png";
+
 export const PLAID_ITEM_ERROR = "ITEM_LOGIN_REQUIRED";
 
 export const NOTIFICATION = {

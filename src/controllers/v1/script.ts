@@ -1441,7 +1441,7 @@ class ScriptController extends BaseController {
             filter: { _id: user._id },
             update: {
               $set: {
-                leagueId: matchObject._id,
+                leagueId: matchObject ? matchObject._id : null,
               },
             },
           },

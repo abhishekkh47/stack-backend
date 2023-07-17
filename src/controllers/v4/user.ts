@@ -234,7 +234,9 @@ class UserController extends BaseController {
     });
     if (
       !userIfExists ||
-      (userIfExists && userIfExists.leagueId.toString() !== query.leagueId)
+      (userIfExists &&
+        query.leagueId &&
+        userIfExists.leagueId.toString() !== query.leagueId)
     ) {
       return this.BadRequest(ctx, "User Not Found");
     }

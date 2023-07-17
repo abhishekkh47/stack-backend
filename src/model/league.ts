@@ -10,6 +10,14 @@ const schema = new mongoose.Schema<ILeagueType>(
       type: mongoose.Schema.Types.String,
       required: true,
     },
+    image: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    colorCode: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     minPoint: {
       type: mongoose.Schema.Types.Number,
       required: true,

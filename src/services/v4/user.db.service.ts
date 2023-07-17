@@ -5,7 +5,12 @@ import {
   uploadFilesFetch,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
-import { UserTable, ParentChildTable, DripshopTable } from "@app/model";
+import {
+  UserTable,
+  ParentChildTable,
+  DripshopTable,
+  LeagueTable,
+} from "@app/model";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
@@ -331,7 +336,6 @@ class UserDBService {
         },
       });
     }
-    console.log(aggregateQuery);
     let leaderBoardData: any = await UserTable.aggregate(aggregateQuery).exec();
     if (leaderBoardData.length === 0) {
       throw new NetworkError("User Not Found", 400);
@@ -339,11 +343,19 @@ class UserDBService {
     const userExistsInLeaderBoard = leaderBoardData.find(
       (x) => x._id.toString() === userIfExists._id.toString()
     );
-    let userObject = {
+
+    let userObject: any = {
       _id: userIfExists._id,
       rank: userExistsInLeaderBoard ? userExistsInLeaderBoard.rank : 21,
+      leagueDetails: null,
       xpPoints: userIfExists.xpPoints,
     };
+    if (leagueId && userIfExists.leagueId) {
+      const leagueDetails: any = await LeagueTable.findOne({
+        _id: userIfExists.leagueId,
+      }).select("_id name image colorCode");
+      userObject = { ...userObject, leagueDetails };
+    }
     return { leaderBoardData, userObject };
   }
 
