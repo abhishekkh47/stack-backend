@@ -847,7 +847,100 @@ class QuizDBService {
         $limit: 3,
       },
     ]).exec();
-    if (quizzes.length == 0) throw new NetworkError(`Quiz Not Found`, 400);
+    if (quizzes.length == 0) {
+      const otherCategoryQuizzes = await QuizTopicTable.aggregate([
+        {
+          $match: {
+            type: 2,
+            image: {
+              $ne: null,
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "quizresults",
+            let: {
+              id: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$userId", userId],
+                      },
+                      {
+                        $eq: ["$topicId", "$$id"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "playedQuizzes",
+          },
+        },
+        {
+          $redact: {
+            $cond: {
+              if: {
+                $gt: [
+                  {
+                    $size: "$playedQuizzes",
+                  },
+                  0,
+                ],
+              },
+              then: "$$PRUNE",
+              else: "$$KEEP",
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "quiz",
+            localField: "_id",
+            foreignField: "topicId",
+            as: "quizData",
+          },
+        },
+        {
+          $unwind: {
+            path: "$quizData",
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: "$quizData",
+          },
+        },
+        {
+          $sample: {
+            size: 3,
+          },
+        },
+        {
+          $addFields: {
+            isCompleted: 0,
+            count: 0,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: "$quizName",
+            image: 1,
+            isCompleted: 1,
+            topicId: 1,
+            count: 1,
+          },
+        },
+      ]).exec();
+      return otherCategoryQuizzes;
+    }
     return quizzes;
   }
 }
