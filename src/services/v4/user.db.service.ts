@@ -330,7 +330,7 @@ class UserDBService {
       },
     ];
     if (leagueId) {
-      aggregateQuery.push({
+      aggregateQuery.unshift({
         $match: {
           leagueId: userIfExists.leagueId,
         },
@@ -349,6 +349,8 @@ class UserDBService {
       rank: userExistsInLeaderBoard ? userExistsInLeaderBoard.rank : 21,
       leagueDetails: null,
       xpPoints: userIfExists.xpPoints,
+      firstName: userIfExists.firstName,
+      profilePicture: userIfExists.profilePicture,
     };
     if (leagueId && userIfExists.leagueId) {
       const leagueDetails: any = await LeagueTable.findOne({

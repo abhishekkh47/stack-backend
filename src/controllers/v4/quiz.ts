@@ -574,6 +574,7 @@ class QuizController extends BaseController {
           return this.Ok(ctx, {
             message: "Quiz Results Stored Successfully",
             totalXPPoints: totalXPPoints,
+            updatedXPPoints,
             previousLeague,
             currentLeague,
             nextLeague,
