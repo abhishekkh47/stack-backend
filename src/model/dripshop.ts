@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
-import type { IDripshop, MongooseModel } from "@app/types";
+import type { IDripshopReedem, MongooseModel } from "@app/types";
 
-export type IDripshopSchema = MongooseModel<IDripshop> & mongoose.Document;
+export type IDripshopSchema = MongooseModel<IDripshopReedem> &
+  mongoose.Document;
 
-const schema = new mongoose.Schema<IDripshop>(
+const schema = new mongoose.Schema<IDripshopReedem>(
   {
     itemId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -56,4 +57,8 @@ const schema = new mongoose.Schema<IDripshop>(
   { timestamps: true }
 );
 
-export const DripshopTable = mongoose.model<IDripshop>("dripshop", schema);
+export const DripshopReedemTable = mongoose.model<IDripshopReedem>(
+  "dripshop",
+  schema,
+  "dripshop_redeems"
+);

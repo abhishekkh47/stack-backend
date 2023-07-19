@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export interface IDripshop {
+export interface IDripshopReedem {
   itemId: mongoose.Schema.Types.ObjectId;
   userId: mongoose.Schema.Types.ObjectId;
   selectedSize: string;

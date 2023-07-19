@@ -1,4 +1,4 @@
-import { DripshopTable, DripshopItemTable, AdminTable } from "@app/model";
+import { DripshopReedemTable, DripshopItemTable, AdminTable } from "@app/model";
 import { ObjectId } from "mongodb";
 import { NetworkError } from "@app/middleware";
 import { CONSTANT, sendEmail } from "@app/utility";
@@ -69,7 +69,7 @@ class DripshopDBService {
       },
     ];
 
-    let findDripshopData: any = await DripshopTable.aggregate(
+    let findDripshopData: any = await DripshopReedemTable.aggregate(
       queryFindDripshop
     ).exec();
 

@@ -1,5 +1,5 @@
 import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
-import { DripshopTable } from "@app/model/dripshop";
+import { DripshopReedemTable } from "@app/model/dripshop";
 import moment from "moment";
 import { InternalUserAuth, PrimeTrustJWT } from "@app/middleware";
 import {

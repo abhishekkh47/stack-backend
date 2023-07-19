@@ -5,7 +5,7 @@ import {
   uploadFilesFetch,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
-import { UserTable, ParentChildTable, DripshopTable } from "@app/model";
+import { UserTable, ParentChildTable, DripshopReedemTable } from "@app/model";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
@@ -364,7 +364,7 @@ class UserDBService {
     } else {
       throw new NetworkError("Insufficient Fuels.", 400);
     }
-    const createdDripshop = await DripshopTable.create({
+    const createdDripshop = await DripshopReedemTable.create({
       firstName: body.firstName,
       lastName: body.lastName,
       redeemedFuels: fuel,
