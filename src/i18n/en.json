@@ -294,5 +294,7 @@
 	"dripShopValidationStateRequired": "Please enter state.",
 	"dripShopValidationStateEmpty": "Please enter state.",
 	"dripShopValidationZipcodeRequired": "Please enter zip code.",
-	"dripShopValidationZipcodeEmpty": "Please enter zip code."
+	"dripShopValidationZipcodeEmpty": "Please enter zip code.",
+	"dripShopValidationFirstnamePattern": "Spaces , Digits and Special characters not allowed in first name.",
+	"dripShopValidationLastnamePattern": "Spaces , Digits and Special characters not allowed in last name."
 }
