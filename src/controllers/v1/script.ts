@@ -21,6 +21,7 @@ import {
   QuizTable,
   DeletedUserTable,
   AdminTable,
+  LeagueTable,
   DripshopItemTable,
 } from "@app/model";
 import {
@@ -1386,6 +1387,34 @@ class ScriptController extends BaseController {
   }
 
   /**
+   * @description Store League in DB
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/store-leagues", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeLeaguesInDb(ctx: any) {
+    try {
+      const { leagues } = ctx.request.body;
+      if (leagues.length === 0) {
+        return this.BadRequest(ctx, "Leagues Not Found");
+      }
+      let allLeagues: any = await LeagueTable.find({});
+      allLeagues = allLeagues.map((x) => {
+        const matchObject = leagues.find((league) => league.name === x.name);
+        return matchObject;
+      });
+      if (allLeagues.length > 0) {
+        return this.BadRequest(ctx, "Same Leagues cannot be added");
+      }
+      await LeagueTable.insertMany(leagues);
+      return this.Ok(ctx, { message: "Leagues Stored Successfully" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /*
    * @description This method is used to sync existing xp of users to zoho
    * @param ctx
    */

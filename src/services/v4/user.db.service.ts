@@ -5,12 +5,18 @@ import {
   uploadFilesFetch,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
-import { UserTable, ParentChildTable, DripshopTable } from "@app/model";
+import {
+  UserTable,
+  ParentChildTable,
+  DripshopTable,
+  LeagueTable,
+} from "@app/model";
 import fs from "fs";
 import moment from "moment";
 import path from "path";
 import { EUSERSTATUS, EUserType } from "@app/types";
 import { AuthService } from "@app/services/v1";
+import { LeagueService } from "@app/services/v4";
 
 class UserDBService {
   /**
@@ -279,8 +285,10 @@ class UserDBService {
    * @param userIfExists
    * @returns {*}
    */
-  public async getLeaderboards(userIfExists: any) {
-    let leaderBoardData: any = await UserTable.aggregate([
+  public async getLeaderboards(userIfExists: any, headers: any) {
+    let leagueDetails = null;
+
+    let aggregateQuery: any = [
       {
         $setWindowFields: {
           sortBy: {
@@ -307,18 +315,47 @@ class UserDBService {
           profilePicture: 1,
         },
       },
-    ]).exec();
+    ];
+    if (
+      headers["build-version"] &&
+      parseFloat(headers["build-version"]) >= 1.17 &&
+      userIfExists.xpPoints > 0
+    ) {
+      const leagues = await LeagueTable.find({})
+        .select("_id name image colorCode minPoint maxPoint")
+        .sort({ minPoint: 1 });
+      leagueDetails = LeagueService.getLeaguesBasedOnXP(
+        leagues,
+        userIfExists.xpPoints
+      );
+      aggregateQuery.unshift({
+        $match: {
+          xpPoints: {
+            $lte: leagueDetails.maxPoint,
+            $gte: leagueDetails.minPoint,
+          },
+        },
+      });
+    }
+    let leaderBoardData: any = await UserTable.aggregate(aggregateQuery).exec();
     if (leaderBoardData.length === 0) {
       throw new NetworkError("User Not Found", 400);
     }
     const userExistsInLeaderBoard = leaderBoardData.find(
       (x) => x._id.toString() === userIfExists._id.toString()
     );
-    let userObject = {
+
+    let userObject: any = {
       _id: userIfExists._id,
       rank: userExistsInLeaderBoard ? userExistsInLeaderBoard.rank : 21,
+      leagueDetails: null,
       xpPoints: userIfExists.xpPoints,
+      firstName: userIfExists.firstName,
+      profilePicture: userIfExists.profilePicture,
     };
+    if (leagueDetails) {
+      userObject = { ...userObject, leagueDetails };
+    }
     return { leaderBoardData, userObject };
   }
 
