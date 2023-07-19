@@ -18,7 +18,6 @@ import {
 } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
-import { ObjectId } from "mongodb";
 
 class UserController extends BaseController {
   /**
