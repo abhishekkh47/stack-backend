@@ -825,7 +825,6 @@ class QuizController extends BaseController {
         data: leagues,
       });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, error.message);
     }
   }

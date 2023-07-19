@@ -250,6 +250,7 @@ export const validation = {
         .regex(/^\+[1-9]{1}[0-9]{10,14}$/)
         .required(),
       code: Joi.number().integer().required(),
+      referralCode: Joi.string().optional(),
     });
     const { error } = schema.validate(req, { allowUnknown: true });
     if (error) {

@@ -12,38 +12,39 @@ class LeagueService {
     let currentLeague = leagues.find(
       (x) => x.minPoint <= updatedXPPoints && x.maxPoint >= updatedXPPoints
     );
-    console.log(currentLeague);
     let currentLeagueIndex = leagues.findIndex(
       (x) => x.minPoint <= updatedXPPoints && x.maxPoint >= updatedXPPoints
     );
-    if (!currentLeague) {
-      currentLeague = leagues.find(
-        (data) => data._id.toString() == userIfExists.leagueId.toString()
-      );
+    if (!currentLeague && updatedXPPoints >= 10000) {
+      currentLeague = leagues[leagues.length - 1];
       currentLeagueIndex = leagues.findIndex(
-        (data) => data._id.toString() == userIfExists.leagueId.toString()
+        (data) => data._id.toString() == currentLeague._id.toString()
       );
     }
     previousLeague = leagues[currentLeagueIndex - 1] || null;
     nextLeague = leagues[currentLeagueIndex + 1] || null;
     nextLeague = nextLeague ? JSON.parse(JSON.stringify(nextLeague)) : null;
     if (nextLeague) nextLeague.image = NEXT_LEAGUE_UNLOCK_IMAGE;
+    let existingLeague = leagues.find(
+      (x) =>
+        x.minPoint <= userIfExists.xpPoints &&
+        x.maxPoint >= userIfExists.xpPoints
+    );
     if (
-      userIfExists.leagueId == null ||
-      userIfExists.leagueId.toString() != currentLeague._id.toString()
+      userIfExists.xpPoints == 0 ||
+      existingLeague._id.toString() != currentLeague._id.toString()
     ) {
       isNewLeagueUnlocked = true;
-      await UserTable.findOneAndUpdate(
-        { _id: userIfExists._id },
-        {
-          $set: {
-            leagueId: currentLeague._id,
-          },
-        }
-      );
     }
 
     return { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked };
+  }
+
+  public getLeaguesBasedOnXP(leagues, xpPoint) {
+    let currentLeague = leagues.find(
+      (x) => x.minPoint <= xpPoint && x.maxPoint >= xpPoint
+    );
+    return currentLeague;
   }
 }
 

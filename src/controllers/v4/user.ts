@@ -228,21 +228,13 @@ class UserController extends BaseController {
   })
   @Auth()
   public async getLeaderboard(ctx: any) {
-    const { user, query } = ctx.request;
+    const { user, headers } = ctx.request;
     const userIfExists: any = await UserTable.findOne({
       _id: user._id,
     });
-    if (
-      !userIfExists ||
-      (userIfExists &&
-        query.leagueId &&
-        userIfExists.leagueId.toString() !== query.leagueId)
-    ) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
     const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
       userIfExists,
-      query.leagueId
+      headers
     );
     return this.Ok(ctx, {
       data: { leaderBoardData, userObject },

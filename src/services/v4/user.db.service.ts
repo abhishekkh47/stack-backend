@@ -16,6 +16,7 @@ import moment from "moment";
 import path from "path";
 import { EUSERSTATUS, EUserType } from "@app/types";
 import { AuthService } from "@app/services/v1";
+import { LeagueService } from "@app/services/v4";
 
 class UserDBService {
   /**
@@ -284,7 +285,9 @@ class UserDBService {
    * @param userIfExists
    * @returns {*}
    */
-  public async getLeaderboards(userIfExists: any, leagueId: string) {
+  public async getLeaderboards(userIfExists: any, headers: any) {
+    let leagueDetails = null;
+
     let aggregateQuery: any = [
       {
         $setWindowFields: {
@@ -302,25 +305,9 @@ class UserDBService {
         $limit: 20,
       },
       {
-        $lookup: {
-          from: "leagues",
-          localField: "leagueId",
-          foreignField: "_id",
-          as: "leagueData",
-        },
-      },
-      {
-        $unwind: {
-          path: "$leagueData",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
         $project: {
           _id: 1,
           type: 1,
-          leagueId: 1,
-          leagueName: "$leagueData.name",
           firstName: 1,
           lastName: 1,
           rank: 1,
@@ -329,10 +316,24 @@ class UserDBService {
         },
       },
     ];
-    if (leagueId) {
+    if (
+      headers["build-version"] &&
+      parseFloat(headers["build-version"]) >= 1.17 &&
+      userIfExists.xpPoints > 0
+    ) {
+      const leagues = await LeagueTable.find({})
+        .select("_id name image colorCode minPoint maxPoint")
+        .sort({ minPoint: 1 });
+      leagueDetails = LeagueService.getLeaguesBasedOnXP(
+        leagues,
+        userIfExists.xpPoints
+      );
       aggregateQuery.unshift({
         $match: {
-          leagueId: userIfExists.leagueId,
+          xpPoints: {
+            $lte: leagueDetails.maxPoint,
+            $gte: leagueDetails.minPoint,
+          },
         },
       });
     }
@@ -352,10 +353,7 @@ class UserDBService {
       firstName: userIfExists.firstName,
       profilePicture: userIfExists.profilePicture,
     };
-    if (leagueId && userIfExists.leagueId) {
-      const leagueDetails: any = await LeagueTable.findOne({
-        _id: userIfExists.leagueId,
-      }).select("_id name image colorCode");
+    if (leagueDetails) {
       userObject = { ...userObject, leagueDetails };
     }
     return { leaderBoardData, userObject };

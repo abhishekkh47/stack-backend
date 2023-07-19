@@ -18,7 +18,6 @@ export interface IUser extends IAccount {
   isParentOnboardingReminderSent: boolean;
   isQuizReminderNotificationSent: boolean;
   xpPoints: number;
-  leagueId: string;
 }
 
 export interface IAccount {

@@ -1414,51 +1414,6 @@ class ScriptController extends BaseController {
     }
   }
 
-  /**
-   * @description Sync Users with Current League
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/sync-users-with-league", method: HttpMethod.POST })
-  @InternalUserAuth()
-  public async syncUsersWithLeague(ctx: any) {
-    try {
-      let users = await UserTable.find({})
-        .select("_id xpPoints leagueId")
-        .sort({ xpPoints: -1 });
-      if (users.length === 0) return this.BadRequest(ctx, "Users not found");
-      const leagues = await LeagueTable.find({}).select(
-        "_id minPoint maxPoint"
-      );
-      let updatedLeague = [];
-      if (leagues.length === 0) return this.BadRequest(ctx, "League not found");
-      users = users.map((user) => {
-        let matchObject = leagues.find(
-          (x) => x.minPoint <= user.xpPoints && x.maxPoint >= user.xpPoints
-        );
-        let bulWriteOperation = {
-          updateOne: {
-            filter: { _id: user._id },
-            update: {
-              $set: {
-                leagueId: matchObject ? matchObject._id : null,
-              },
-            },
-          },
-        };
-        updatedLeague.push(bulWriteOperation);
-        return user;
-      });
-      await UserTable.bulkWrite(updatedLeague);
-      return this.Ok(ctx, {
-        message: "Leagues Stored Successfully",
-        data: updatedLeague,
-      });
-    } catch (error) {
-      return this.BadRequest(ctx, error.message);
-    }
-  }
-
   /*
    * @description This method is used to sync existing xp of users to zoho
    * @param ctx

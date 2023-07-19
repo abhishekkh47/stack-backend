@@ -66,20 +66,6 @@ class UserService {
           },
         },
         {
-          $lookup: {
-            from: "leagues",
-            localField: "leagueId",
-            foreignField: "_id",
-            as: "leagueData",
-          },
-        },
-        {
-          $unwind: {
-            path: "$leagueData",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
           $addFields: {
             isParentApproved: 0,
             initialDeposit: 0,
@@ -141,7 +127,6 @@ class UserService {
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
             isRewardDeclined: 1,
-            leagueData: 1,
           },
         },
       ]).exec()
