@@ -130,8 +130,12 @@ export const validationsV4 = {
   },
   dripShopValidation: (req, res, callback) => {
     const schema = Joi.object({
-      firstName: Joi.string().required(),
-      lastName: Joi.string().required(),
+      firstName: Joi.string()
+        .regex(/^[a-zA-Z]+$/)
+        .required(),
+      lastName: Joi.string()
+        .regex(/^[a-zA-Z]+$/)
+        .required(),
       address: Joi.string().required(),
       selectedSize: Joi.string().allow().optional(),
       apartment: Joi.string().allow().optional(),
