@@ -39,13 +39,6 @@ class LeagueService {
 
     return { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked };
   }
-
-  public getLeaguesBasedOnXP(leagues, xpPoint) {
-    let currentLeague = leagues.find(
-      (x) => x.minPoint <= xpPoint && x.maxPoint >= xpPoint
-    );
-    return currentLeague;
-  }
 }
 
 export default new LeagueService();

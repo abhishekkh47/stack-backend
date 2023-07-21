@@ -283,9 +283,10 @@ class UserDBService {
   /**
    * @description This method will return ranking of teens based on xpPoints
    * @param userIfExists
+   * @param query
    * @returns {*}
    */
-  public async getLeaderboards(userIfExists: any, headers: any) {
+  public async getLeaderboards(userIfExists: any, query: any) {
     let leagueDetails = null;
 
     let aggregateQuery: any = [
@@ -316,18 +317,13 @@ class UserDBService {
         },
       },
     ];
-    if (
-      headers["build-version"] &&
-      parseFloat(headers["build-version"]) >= 1.17 &&
-      userIfExists.xpPoints > 0
-    ) {
-      const leagues = await LeagueTable.find({})
-        .select("_id name image colorCode minPoint maxPoint")
-        .sort({ minPoint: 1 });
-      leagueDetails = LeagueService.getLeaguesBasedOnXP(
-        leagues,
-        userIfExists.xpPoints
-      );
+    if (query?.league && userIfExists.xpPoints > 0) {
+      leagueDetails = await LeagueTable.findOne({
+        _id: query.league,
+      }).select("_id name image colorCode minPoint maxPoint");
+      if (!leagueDetails) {
+        throw new NetworkError("Leagues Found", 400);
+      }
       aggregateQuery.unshift({
         $match: {
           xpPoints: {

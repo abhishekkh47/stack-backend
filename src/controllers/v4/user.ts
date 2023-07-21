@@ -227,13 +227,13 @@ class UserController extends BaseController {
   })
   @Auth()
   public async getLeaderboard(ctx: any) {
-    const { user, headers } = ctx.request;
+    const { user, query } = ctx.request;
     const userIfExists: any = await UserTable.findOne({
       _id: user._id,
     });
     const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
       userIfExists,
-      headers
+      query
     );
     return this.Ok(ctx, {
       data: { leaderBoardData, userObject },
