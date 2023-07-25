@@ -128,6 +128,25 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  setProfilePictureLeaderValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      name: Joi.string().required().regex(/\.png$/, { name: 'png_extension', invert: false })
+      .messages({
+        'string.base': `Image name must be a string`,
+        'string.empty': `Image name cannot be empty`,
+        'string.pattern.invert.base': `Image name must end with '.png'`,
+        'any.required': `Image name is required`
+      }),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("setProfilePictureLeaderValidation", error))
+      );
+    }
+    return callback(true);
+  },
   dripShopValidation: (req, res, callback) => {
     const schema = Joi.object({
       firstName: Joi.string()
