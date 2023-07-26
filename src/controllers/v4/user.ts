@@ -216,23 +216,26 @@ class UserController extends BaseController {
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
 
-    /**
+  /**
    * @description This method is for update user's profile picture
    * @param ctx
    * @returns
    */
-    @Route({ path: "/set-profile-picture-leader", method: HttpMethod.POST })
-    @Auth()
-    public async setProfilePictureName(ctx: any) {
-      const { user, body } = ctx.request;
-      const userExists: any = await UserTable.findOne({
-        _id: user._id,
-      });
-      if (!userExists) {
-        return this.BadRequest(ctx, "User Not Found");
-      }
-      
-      return validationsV4.setProfilePictureLeaderValidation(body, ctx, async (validate) => {
+  @Route({ path: "/set-profile-picture-leader", method: HttpMethod.POST })
+  @Auth()
+  public async setProfilePictureName(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+
+    return validationsV4.setProfilePictureLeaderValidation(
+      body,
+      ctx,
+      async (validate) => {
         if (validate) {
           const updatedUser = await UserTable.findOneAndUpdate(
             { _id: userExists._id },
@@ -245,8 +248,9 @@ class UserController extends BaseController {
             message: "Profile Picture name set successfully.",
           });
         }
-      });
-    }
+      }
+    );
+  }
 
   /**
    * @description This method is used to get ranks of all 20 teens based on highest xpPoints
