@@ -267,12 +267,10 @@ class UserController extends BaseController {
     const userIfExists: any = await UserTable.findOne({
       _id: user._id,
     });
-    const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
-      userIfExists,
-      query
-    );
+    const { leaderBoardData, userObject, totalRecords } =
+      await UserDBService.getLeaderboards(userIfExists, query);
     return this.Ok(ctx, {
-      data: { leaderBoardData, userObject },
+      data: { leaderBoardData, userObject, totalRecords },
       message: "Success",
     });
   }

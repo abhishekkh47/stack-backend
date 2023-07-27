@@ -402,7 +402,11 @@ class UserDBService {
     if (leagueDetails) {
       userObject = { ...userObject, leagueDetails };
     }
-    return { leaderBoardData, userObject };
+    return {
+      leaderBoardData,
+      userObject,
+      totalRecords: leaderBoardData.length > 0 ? leaderBoardData[0].total : 0,
+    };
   }
 
   /**
