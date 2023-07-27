@@ -32,7 +32,8 @@ class LeagueService {
     );
     if (
       userIfExists.xpPoints == 0 ||
-      existingLeague._id.toString() != currentLeague._id.toString()
+      (existingLeague &&
+        existingLeague._id.toString() != currentLeague._id.toString())
     ) {
       isNewLeagueUnlocked = true;
     }
