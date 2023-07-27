@@ -3,6 +3,7 @@ import {
   searchAccountInfoByEmail,
   updateAccountToPendingClosure,
   uploadFilesFetch,
+  LIST,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
 import {
@@ -288,7 +289,7 @@ class UserDBService {
    */
   public async getLeaderboards(userIfExists: any, query: any) {
     let leagueDetails = null;
-
+    let userObject = null;
     let aggregateQuery: any = [
       {
         $setWindowFields: {
@@ -299,11 +300,14 @@ class UserDBService {
             rank: {
               $documentNumber: {},
             },
+            total: {
+              $count: {},
+            },
           },
         },
       },
       {
-        $limit: 20,
+        $limit: query?.page ? LIST.limit * parseInt(query?.page) : 20,
       },
       {
         $project: {
@@ -313,6 +317,7 @@ class UserDBService {
           lastName: 1,
           rank: 1,
           xpPoints: 1,
+          total: 1,
           profilePicture: 1,
         },
       },
@@ -332,27 +337,76 @@ class UserDBService {
           },
         },
       });
+      if (query?.page) {
+        const offset = (parseInt(query.page) - 1) * LIST.limit;
+        aggregateQuery.push({ $skip: offset });
+        const userDetails = await UserTable.aggregate([
+          {
+            $match: {
+              xpPoints: {
+                $lte: leagueDetails.maxPoint,
+                $gte: leagueDetails.minPoint,
+              },
+            },
+          },
+          {
+            $setWindowFields: {
+              sortBy: {
+                xpPoints: -1,
+              },
+              output: {
+                rank: {
+                  $documentNumber: {},
+                },
+              },
+            },
+          },
+          {
+            $match: {
+              _id: userIfExists._id,
+            },
+          },
+          {
+            $addFields: {
+              leagueDetails: null,
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              firstName: 1,
+              rank: 1,
+              xpPoints: 1,
+              profilePicture: 1,
+            },
+          },
+        ]).exec();
+        userObject = userDetails.length > 0 ? userDetails[0] : null;
+      }
     }
     let leaderBoardData: any = await UserTable.aggregate(aggregateQuery).exec();
-    if (leaderBoardData.length === 0) {
-      throw new NetworkError("User Not Found", 400);
+    if (!userObject) {
+      const userExistsInLeaderBoard =
+        leaderBoardData?.find(
+          (x) => x._id.toString() === userIfExists._id.toString()
+        ) || null;
+      userObject = {
+        _id: userIfExists._id,
+        rank: userExistsInLeaderBoard ? userExistsInLeaderBoard.rank : 21,
+        leagueDetails: null,
+        xpPoints: userIfExists.xpPoints,
+        firstName: userIfExists.firstName,
+        profilePicture: userIfExists.profilePicture,
+      };
     }
-    const userExistsInLeaderBoard = leaderBoardData.find(
-      (x) => x._id.toString() === userIfExists._id.toString()
-    );
-
-    let userObject: any = {
-      _id: userIfExists._id,
-      rank: userExistsInLeaderBoard ? userExistsInLeaderBoard.rank : 21,
-      leagueDetails: null,
-      xpPoints: userIfExists.xpPoints,
-      firstName: userIfExists.firstName,
-      profilePicture: userIfExists.profilePicture,
-    };
     if (leagueDetails) {
       userObject = { ...userObject, leagueDetails };
     }
-    return { leaderBoardData, userObject };
+    return {
+      leaderBoardData,
+      userObject,
+      totalRecords: leaderBoardData.length > 0 ? leaderBoardData[0].total : 0,
+    };
   }
 
   /**

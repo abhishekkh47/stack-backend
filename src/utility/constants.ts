@@ -69,9 +69,9 @@ export const ZOHOAPIS = {
   deleteAccounts: (id) => `crm/v2/Accounts/${id}`,
 };
 
-export const DROPDOWNLIST = {
+export const LIST = {
   page: 1,
-  limit: 10,
+  limit: 20,
 };
 
 export const GIFTCARDS = {
