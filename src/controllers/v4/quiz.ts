@@ -649,14 +649,14 @@ class QuizController extends BaseController {
    * @return {*}
    */
   @Route({ path: "/quizzes", method: HttpMethod.GET })
-  // @Auth()
+  @Auth()
   public async getQuiz(ctx: any) {
     try {
       const { categoryId, status } = ctx.request.query; //status 1 - Start Journey and 2 - Completed
       if (status && !["1", "2"].includes(status)) {
         return this.BadRequest(ctx, "Please enter valid status");
       }
-      const user = await UserTable.findOne({ _id: "64662c651e21e962d7e5cef1" });
+      const user = await UserTable.findOne({ _id: ctx.request.user._id });
       if (!user) {
         return this.BadRequest(ctx, "User not found");
       }
