@@ -15,6 +15,10 @@ const schema = new mongoose.Schema<IQuizTopicSchema>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    hasStages: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
     /**
      * 0/null - old quiz, 1 - new quiz
      */

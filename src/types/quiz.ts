@@ -5,6 +5,7 @@ export interface IQuizTopic {
   status: number;
   type: number;
   image: string;
+  hasStages: boolean;
 }
 
 export enum EQuizTopicStatus {

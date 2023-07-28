@@ -30,6 +30,8 @@ class QuizDBService {
     categoryId: string = null,
     status: number = null
   ) {
+    console.log(quizIds, "quizIds");
+    console.log(quizIds.length, "quizIds");
     let matchQuery: any = {
       $and: [
         {
