@@ -69,9 +69,9 @@ export const ZOHOAPIS = {
   deleteAccounts: (id) => `crm/v2/Accounts/${id}`,
 };
 
-export const DROPDOWNLIST = {
+export const LIST = {
   page: 1,
-  limit: 10,
+  limit: 20,
 };
 
 export const GIFTCARDS = {
@@ -80,6 +80,8 @@ export const GIFTCARDS = {
 };
 
 export const CASH_USD_ICON = "CASH_USD.png";
+
+export const NEXT_LEAGUE_UNLOCK_IMAGE = "disabled.png";
 
 export const PLAID_ITEM_ERROR = "ITEM_LOGIN_REQUIRED";
 

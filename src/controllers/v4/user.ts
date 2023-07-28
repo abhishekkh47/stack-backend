@@ -217,6 +217,42 @@ class UserController extends BaseController {
   }
 
   /**
+   * @description This method is for update user's profile picture
+   * @param ctx
+   * @returns
+   */
+  @Route({ path: "/set-profile-picture-leader", method: HttpMethod.POST })
+  @Auth()
+  public async setProfilePictureName(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+
+    return validationsV4.setProfilePictureLeaderValidation(
+      body,
+      ctx,
+      async (validate) => {
+        if (validate) {
+          const updatedUser = await UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            {
+              $set: { profilePicture: `leaders/${body.name}` },
+            }
+          );
+          return this.Ok(ctx, {
+            data: updatedUser,
+            message: "Profile Picture name set successfully.",
+          });
+        }
+      }
+    );
+  }
+
+  /**
    * @description This method is used to get ranks of all 20 teens based on highest xpPoints
    * @param ctx
    * @returns {*} => list of teens based on highest ranking xp Points
@@ -227,17 +263,14 @@ class UserController extends BaseController {
   })
   @Auth()
   public async getLeaderboard(ctx: any) {
+    const { user, query } = ctx.request;
     const userIfExists: any = await UserTable.findOne({
-      _id: ctx.request.user._id,
+      _id: user._id,
     });
-    if (!userIfExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const { leaderBoardData, userObject } = await UserDBService.getLeaderboards(
-      userIfExists
-    );
+    const { leaderBoardData, userObject, totalRecords } =
+      await UserDBService.getLeaderboards(userIfExists, query);
     return this.Ok(ctx, {
-      data: { leaderBoardData, userObject },
+      data: { leaderBoardData, userObject, totalRecords },
       message: "Success",
     });
   }

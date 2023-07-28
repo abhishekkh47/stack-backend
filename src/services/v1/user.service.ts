@@ -414,7 +414,7 @@ class UserService {
         if (arrayOfReceiverIds.includes(receiver.referredId.toString())) {
           let notification = await this.sendNotificationForUserReferral(
             userId.toString(),
-            referrals.deviceTokenInfo.deviceToken,
+            referrals.deviceTokenInfo?.deviceToken || null,
             NOTIFICATION.REFERRAL_SENDER_MESSAGE,
             receiver.receiverName
           );

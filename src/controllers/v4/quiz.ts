@@ -1,5 +1,6 @@
 import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
 import {
+  LeagueTable,
   ParentChildTable,
   QuizQuestionResult,
   QuizQuestionTable,
@@ -9,11 +10,16 @@ import {
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
-import { AnalyticsService, QuizDBService } from "@app/services/v4";
+import {
+  AnalyticsService,
+  LeagueService,
+  QuizDBService,
+} from "@app/services/v4";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
   ANALYTICS_EVENTS,
   getQuizImageAspectRatio,
+  NEXT_LEAGUE_UNLOCK_IMAGE,
   QUIZ_LIMIT_REACHED_TEXT,
   Route,
 } from "@app/utility";
@@ -515,6 +521,9 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
+          let leagues = await LeagueTable.find({})
+            .select("_id name image minPoint maxPoint colorCode")
+            .sort({ minPoint: 1 });
           let userIfExists = await UserTable.findOne({ _id: user._id });
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
@@ -542,6 +551,16 @@ class QuizController extends BaseController {
               reqParam,
               quizIfExists
             );
+          const {
+            previousLeague,
+            currentLeague,
+            nextLeague,
+            isNewLeagueUnlocked,
+          } = await LeagueService.getUpdatedLeagueDetailsOfUser(
+            userIfExists,
+            leagues,
+            updatedXPPoints
+          );
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id,
@@ -555,6 +574,11 @@ class QuizController extends BaseController {
           return this.Ok(ctx, {
             message: "Quiz Results Stored Successfully",
             totalXPPoints: totalXPPoints,
+            updatedXPPoints,
+            previousLeague,
+            currentLeague,
+            nextLeague,
+            isNewLeagueUnlocked,
           });
         }
       }
@@ -779,6 +803,26 @@ class QuizController extends BaseController {
           quizzes,
           isQuizLimitReached,
         },
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to store quiz categories
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/leagues", method: HttpMethod.GET })
+  @Auth()
+  public async getLeagues(ctx: any) {
+    try {
+      const leagues = await LeagueTable.find({})
+        .select("_id name image minPoint maxPoint colorCode")
+        .sort({ minPoint: 1 });
+      return this.Ok(ctx, {
+        data: leagues,
       });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

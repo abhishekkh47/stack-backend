@@ -125,6 +125,41 @@ class AuthController extends BaseController {
               ctx.request.zohoAccessToken,
               dataSentInCrm
             );
+
+            /**
+             * Referral flow
+             */
+            let alreadyReferredUser = await UserReferralTable.findOne({
+              "referralArray.referredId": userExists._id,
+            });
+            if (!alreadyReferredUser && reqParam.referralCode) {
+              let checkUserReferralExists = await UserTable.findOne({
+                _id: { $ne: userExists._id },
+                referralCode: reqParam.referralCode,
+              });
+              if (checkUserReferralExists) {
+                let senderName = checkUserReferralExists.lastName
+                  ? checkUserReferralExists.firstName +
+                    " " +
+                    checkUserReferralExists.lastName
+                  : checkUserReferralExists.firstName;
+
+                let receiverName = userExists.lastName
+                  ? userExists.firstName + " " + userExists.lastName
+                  : userExists.firstName;
+                await userService.updateOrCreateUserReferral(
+                  checkUserReferralExists._id,
+                  userExists._id,
+                  senderName,
+                  receiverName
+                );
+                await userService.redeemUserReferral(
+                  checkUserReferralExists._id,
+                  [userExists._id],
+                  reqParam.referralCode
+                );
+              }
+            }
           }
           let response: any = {
             message: "Your mobile number is verified successfully",
