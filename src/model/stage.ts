@@ -16,6 +16,7 @@ const schema = new mongoose.Schema<IStageSchema>(
     description: { type: mongoose.Schema.Types.String, required: true },
     colorCode: { type: mongoose.Schema.Types.String, required: true },
     guidebook: { type: [mongoose.Schema.Types.String], required: true },
+    order: { type: mongoose.Schema.Types.Number, required: true },
   },
   { timestamps: true }
 );

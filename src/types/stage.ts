@@ -7,4 +7,5 @@ export interface IStage {
   description: string;
   guidebook: string[];
   colorCode: string;
+  order: number;
 }
