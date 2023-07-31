@@ -653,6 +653,10 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuiz(ctx: any) {
     try {
+      const user = await UserTable.findOne({ _id: ctx.request.user._id });
+      if (!user) {
+        return this.BadRequest(ctx, "User not found");
+      }
       const { categoryId, status, hasStages } = ctx.request.query; //status 1 - Start Journey and 2 - Completed
       if (hasStages) {
         const quizCategoryIfExists = await QuizTopicTable.findOne({
@@ -662,15 +666,16 @@ class QuizController extends BaseController {
         if (!quizCategoryIfExists) {
           return this.BadRequest(ctx, "Quiz Category Not Found");
         }
-        const stages = await StageTable.find({}).sort({ order: 1 });
+        const stages = await QuizDBService.getStageWiseQuizzes(
+          categoryId,
+          user._id
+        );
+        return this.Ok(ctx, { data: stages });
       } else {
         if (status && !["1", "2"].includes(status)) {
           return this.BadRequest(ctx, "Please enter valid status");
         }
-        const user = await UserTable.findOne({ _id: ctx.request.user._id });
-        if (!user) {
-          return this.BadRequest(ctx, "User not found");
-        }
+
         const quizResult = await QuizResult.find({
           userId: user._id,
           isOnBoardingQuiz: false,

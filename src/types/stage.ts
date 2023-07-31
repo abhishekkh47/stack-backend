@@ -6,6 +6,7 @@ export interface IStage {
   subTitle: string;
   description: string;
   guidebook: string[];
-  colorCode: string;
+  backgroundColor: string;
+  guidebookColor: string;
   order: number;
 }

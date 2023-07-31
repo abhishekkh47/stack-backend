@@ -9,6 +9,7 @@ import {
   QuizResult,
   QuizTable,
   QuizTopicTable,
+  StageTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -158,6 +159,7 @@ class ScriptService {
     let lastQuizName = "";
     let lastQuizImage = "";
     let lastQuizCategory = "";
+    let lastQuizStage = "";
     let quizContentData = [];
     let questionDataArray = [];
     let order = 1;
@@ -171,6 +173,9 @@ class ScriptService {
         }
         if (data["Category"] != "") {
           lastQuizCategory = data["Category"].trimEnd();
+        }
+        if (data["Stage"] != "") {
+          lastQuizStage = data["Stage"].trimEnd();
         }
         if (data["Quiz Title"] == "") {
           ++order;
@@ -253,6 +258,7 @@ class ScriptService {
             quizNum: data["Quiz #"].trimEnd(),
             quizName: lastQuizName,
             image: lastQuizImage,
+            stageName: lastQuizStage,
             questionData: questionDataArray,
           };
           quizContentData.push(quizData);
@@ -297,6 +303,9 @@ class ScriptService {
             ? null
             : parseInt(data.quizNum);
           if (!quizNum) return false;
+          const stageIfExists = await StageTable.findOne({
+            title: data.stageName,
+          });
           const quiz = await QuizTable.findOneAndUpdate(
             { quizNum: quizNum },
             {
@@ -304,6 +313,7 @@ class ScriptService {
                 quizName: data.quizName,
                 topicId: data.topicId,
                 image: data.image,
+                stageId: stageIfExists?._id || null,
               },
             },
             { upsert: true, new: true }
