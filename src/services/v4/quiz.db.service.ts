@@ -364,13 +364,15 @@ class QuizDBService {
     }).populate("quizId");
     let quizDataForCrm = [];
     if (allQuizData.length > 0) {
-      quizDataForCrm = allQuizData.map((res, index) => {
-        return {
-          Quiz_Number: index + 1,
-          Quiz_Name: res.quizId.quizName,
-          Points: res.pointsEarned,
-        };
-      });
+      quizDataForCrm = allQuizData
+        .filter((item) => item.quizId)
+        .map((item, index) => {
+          return {
+            Quiz_Number: index + 1,
+            Quiz_Name: item.quizId.quizName,
+            Points: item.pointsEarned,
+          };
+        });
     }
     let dataSentInCrm: any = [
       {
