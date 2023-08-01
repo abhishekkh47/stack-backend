@@ -1071,7 +1071,7 @@ class QuizDBService {
                   image: "$quizzes.image",
                   topicId: "$quizzes.topicId",
                   stageId: "$quizzes.stageId",
-                  isUnlocked: "$quizzes.isUnlocked",
+                  isCompleted: "$quizzes.isUnlocked",
                   xpPoints: "$quizzes.xpPoints",
                 },
               },
@@ -1087,22 +1087,25 @@ class QuizDBService {
     ];
     let stages = await StageTable.aggregate(query).exec();
     if (stages.length === 0) throw new NetworkError("Stages Not Found", 400);
-    stages = stages.map((stage, index) => {
-      if (index === 0) stage.isUnlocked = true;
-      if (stage.quizzes.length !== 0) {
-        const isAnyQuizUnlocked = stage.quizzes.filter(
-          (x) => x.isUnlocked == true
-        );
-        if (isAnyQuizUnlocked.length === stage.quizzes.length) {
-          if (stages[index + 1]) {
-            stages[index + 1].isUnlocked = true;
+    let index = 0;
+    for (let stage of stages) {
+      if (index === 0) {
+        stage.isUnlocked = true;
+      } else {
+        if (stage.quizzes.length !== 0) {
+          const previousAllQuizUnlocked = stages[index - 1].quizzes.filter(
+            (x) => x.isCompleted == true
+          );
+          const previousAllQuizzes = stages[index - 1].quizzes.length;
+          if (previousAllQuizUnlocked.length === previousAllQuizzes) {
+            stage.isUnlocked = true;
+          } else {
+            stage.isUnlocked = false;
           }
-        } else {
-          stage.isUnlocked = false;
         }
       }
-      return stage;
-    });
+      index++;
+    }
     return stages;
   }
 }

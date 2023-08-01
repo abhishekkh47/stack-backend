@@ -1456,13 +1456,33 @@ class ScriptController extends BaseController {
       }
       let { stages } = ctx.request.body;
       if (stages.length === 0) return this.BadRequest(ctx, "Stage Not Found");
-
+      let bulkWriteQuery = [];
       stages = stages.map((data) => {
         data.categoryId = quizCategoryIfExists._id;
+        let bulkWriteObject = {
+          updateOne: {
+            filter: { title: data.title },
+            update: {
+              $set: {
+                title: data.title,
+                category: quizCategoryIfExists._id,
+                subTitle: data.subTitle,
+                description: data.description,
+                backgroundColor: data.backgroundColor,
+                guidebookColor: data.guidebookColor,
+                order: data.order,
+                guidebook: data.guidebook,
+              },
+            },
+            upsert: true,
+          },
+        };
+        bulkWriteQuery.push(bulkWriteObject);
+
         return data;
       });
 
-      await StageTable.insertMany(stages);
+      await StageTable.bulkWrite(bulkWriteQuery);
 
       return this.Ok(ctx, { message: "Stages Stored Successfully" });
     } catch (error) {
