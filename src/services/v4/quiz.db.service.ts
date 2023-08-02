@@ -706,22 +706,53 @@ class QuizDBService {
     /**
      * isStarted flag - 0 (start Journey) 1 ()
      */
-    let quizCategories: any = await QuizTopicTable.find({
-      type: 2,
-      status: 1,
-    })
-      .select("_id topic image hasStages")
-      .sort({ createdAt: -1 });
+    let quizCategories = await QuizTopicTable.aggregate([
+      {
+        $match: {
+          type: 2,
+          status: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "_id",
+          foreignField: "topicId",
+          as: "quizzes",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          topic: 1,
+          hasStages: 1,
+          image: 1,
+          createdAt: 1,
+          quizzes: 1,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ]).exec();
     if (quizCategories.length === 0) {
       throw new NetworkError(`Quiz Categories not found`, 400);
     }
     quizCategories = quizCategories.map((data) => {
-      let categoryIfExists =
-        quizResultsData.length !== 0
-          ? quizResultsData.find(
-              (x) => x.topicId.toString() == data._id.toString()
-            )
-          : null;
+      let categoryIfExists = false;
+      quizResultsData.length !== 0
+        ? quizResultsData.forEach((quizResult) => {
+            const quizIfExists = data.quizzes.find(
+              (x) => x._id.toString() == quizResult.quizId.toString()
+            );
+            if (quizIfExists) {
+              categoryIfExists = true;
+              return;
+            }
+          })
+        : null;
 
       return {
         _id: data._id,

@@ -1441,31 +1441,37 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storeStagesInDB(ctx: any) {
     try {
-      const categoryTitle = "Start Your Business";
-      let quizCategoryIfExists = await QuizTopicTable.findOne({
-        topic: categoryTitle,
-      });
-      if (!quizCategoryIfExists) {
-        quizCategoryIfExists = await QuizTopicTable.create({
-          topic: categoryTitle,
-          status: 1,
-          hasStages: true,
-          type: 2,
-          image: null,
-        });
-      }
+      const [categoryTitle, categoryImage] = [
+        "Start Your Business",
+        "Rocket_v2.png",
+      ];
+      const quizCategory = await QuizTopicTable.findOneAndUpdate(
+        { topic: categoryTitle },
+        {
+          $set: {
+            topic: categoryTitle,
+            status: 1,
+            hasStages: true,
+            type: 2,
+            image: categoryImage,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+        }
+      );
       let { stages } = ctx.request.body;
       if (stages.length === 0) return this.BadRequest(ctx, "Stage Not Found");
       let bulkWriteQuery = [];
       stages = stages.map((data) => {
-        data.categoryId = quizCategoryIfExists._id;
         let bulkWriteObject = {
           updateOne: {
             filter: { title: data.title },
             update: {
               $set: {
                 title: data.title,
-                category: quizCategoryIfExists._id,
+                category: quizCategory._id,
                 subTitle: data.subTitle,
                 description: data.description,
                 backgroundColor: data.backgroundColor,
