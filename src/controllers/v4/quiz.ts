@@ -159,7 +159,7 @@ class QuizController extends BaseController {
       ],
       isOnBoardingQuiz: false,
     });
-    const dataToSent = {
+    const dataToSend = {
       quizCooldown: 0,
       lastQuizTime: null,
       totalQuestionSolved: 0,
@@ -179,7 +179,7 @@ class QuizController extends BaseController {
      * Get Stack Point Earned
      */
     if (checkQuizExists.length > 0) {
-      dataToSent.totalStackPointsEarned += checkQuizExists[0].sum;
+      dataToSend.totalStackPointsEarned += checkQuizExists[0].sum;
     }
     const newQuizData = await QuizResult.aggregate([
       {
@@ -212,7 +212,7 @@ class QuizController extends BaseController {
       },
     ]).exec();
     if (newQuizData.length > 0) {
-      dataToSent.totalStackPointsEarnedTop += newQuizData[0].sum;
+      dataToSend.totalStackPointsEarnedTop += newQuizData[0].sum;
     }
 
     /**
@@ -221,7 +221,7 @@ class QuizController extends BaseController {
     const getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
       userId: user._id,
     });
-    dataToSent.totalQuestionSolved =
+    dataToSend.totalQuestionSolved =
       checkQuizExists.length > 0 ? getQuizQuestionsCount : 0;
     /**
      * Get Latest Quiz Time
@@ -232,10 +232,10 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
-    dataToSent.lastQuizTime = latestQuiz
+    dataToSend.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
-    return this.Ok(ctx, dataToSent);
+    return this.Ok(ctx, dataToSend);
   }
 
   /**
@@ -463,27 +463,28 @@ class QuizController extends BaseController {
       $or: [{ userId: new mongoose.Types.ObjectId(user._id) }],
       isOnBoardingQuiz: false,
     });
-    const dataToSent = {
+    const dataToSend = {
       quizCooldown: 0,
       lastQuizTime: null,
       totalQuestionSolved: 0,
       totalStackPointsEarned: 0,
       totalStackPointsEarnedTop: userIfExists.preLoadedCoins,
       xpPoints: 0,
+      totalQuizzesCompleted: 0,
     };
     /**
      * Get Stack Point Earned
      */
     // let parentCoins = childExists?.userId?.quizCoins || 0;
-    dataToSent.totalStackPointsEarned += userIfExists.quizCoins;
-    dataToSent.totalStackPointsEarnedTop += userIfExists.quizCoins;
+    dataToSend.totalStackPointsEarned += userIfExists.quizCoins;
+    dataToSend.totalStackPointsEarnedTop += userIfExists.quizCoins;
     /**
      * Get Quiz Question Count
      */
     const getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
       userId: user._id,
     });
-    dataToSent.totalQuestionSolved =
+    dataToSend.totalQuestionSolved =
       checkQuizExists.length > 0 ? getQuizQuestionsCount : 0;
     /**
      * Get Latest Quiz Time
@@ -494,15 +495,21 @@ class QuizController extends BaseController {
     }).sort({
       createdAt: -1,
     });
-    /* userIfExists.type == EUserType.TEEN
-      ? (dataToSent.xpPoints = userIfExists.xpPoints)
-      : (dataToSent.xpPoints = 0);
-     */
-    dataToSent.xpPoints = userIfExists.xpPoints;
-    dataToSent.lastQuizTime = latestQuiz
+
+    dataToSend.xpPoints = userIfExists.xpPoints;
+    dataToSend.lastQuizTime = latestQuiz
       ? moment(latestQuiz.createdAt).unix()
       : null;
-    return this.Ok(ctx, dataToSent);
+
+    /**
+     * Get Latest Quiz Time
+     */
+    const totalQuizzesCompleted = await QuizResult.countDocuments({
+      userId: user._id,
+      isOnBoardingQuiz: false,
+    });
+    dataToSend.totalQuizzesCompleted = totalQuizzesCompleted;
+    return this.Ok(ctx, dataToSend);
   }
 
   /**
