@@ -7,6 +7,7 @@ import {
   QuizResult,
   QuizTable,
   QuizTopicTable,
+  StageTable,
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
@@ -659,35 +660,51 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuiz(ctx: any) {
     try {
-      const { categoryId, status } = ctx.request.query; //status 1 - Start Journey and 2 - Completed
-      if (status && !["1", "2"].includes(status)) {
-        return this.BadRequest(ctx, "Please enter valid status");
-      }
       const user = await UserTable.findOne({ _id: ctx.request.user._id });
       if (!user) {
         return this.BadRequest(ctx, "User not found");
       }
-      const quizResult = await QuizResult.find({
-        userId: user._id,
-        isOnBoardingQuiz: false,
-      });
-      let quizIds = [];
-      if (quizResult.length > 0) {
-        quizIds = quizResult.map((x) => x.quizId);
+      const { categoryId, status, hasStages } = ctx.request.query; //status 1 - Start Journey and 2 - Completed
+      if (hasStages) {
+        const quizCategoryIfExists = await QuizTopicTable.findOne({
+          hasStages: hasStages,
+          _id: categoryId,
+        });
+        if (!quizCategoryIfExists) {
+          return this.BadRequest(ctx, "Quiz Category Not Found");
+        }
+        const stages = await QuizDBService.getStageWiseQuizzes(
+          categoryId,
+          user._id
+        );
+        return this.Ok(ctx, { data: stages });
+      } else {
+        if (status && !["1", "2"].includes(status)) {
+          return this.BadRequest(ctx, "Please enter valid status");
+        }
+
+        const quizResult = await QuizResult.find({
+          userId: user._id,
+          isOnBoardingQuiz: false,
+        });
+        let quizIds = [];
+        if (quizResult.length > 0) {
+          quizIds = quizResult.map((x) => x.quizId);
+        }
+        let completedCount: any = 0;
+        if (categoryId) {
+          completedCount = quizResult.filter(
+            (x) => x.topicId.toString() == categoryId.toString()
+          ).length;
+        }
+        const quizInformation = await QuizDBService.getQuizData(
+          quizIds,
+          categoryId,
+          status
+        );
+        if (!categoryId) return this.Ok(ctx, { data: quizInformation });
+        return this.Ok(ctx, { data: { quizInformation, completedCount } });
       }
-      let completedCount: any = 0;
-      if (categoryId) {
-        completedCount = quizResult.filter(
-          (x) => x.topicId.toString() == categoryId.toString()
-        ).length;
-      }
-      const quizInformation = await QuizDBService.getQuizData(
-        quizIds,
-        categoryId,
-        status
-      );
-      if (!categoryId) return this.Ok(ctx, { data: quizInformation });
-      return this.Ok(ctx, { data: { quizInformation, completedCount } });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

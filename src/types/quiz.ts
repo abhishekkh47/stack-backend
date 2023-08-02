@@ -5,6 +5,7 @@ export interface IQuizTopic {
   status: number;
   type: number;
   image: string;
+  hasStages: boolean;
 }
 
 export enum EQuizTopicStatus {
@@ -52,6 +53,7 @@ export interface IAnswerArray {
 export interface IQuiz {
   quizName: string;
   topicId: mongoose.Schema.Types.ObjectId;
+  stageId: mongoose.Schema.Types.ObjectId;
   videoUrl: string;
   image: string;
   quizNum: number;

@@ -14,6 +14,7 @@ import {
   QuizTopicTable,
   QuizTable,
   UserTable,
+  StageTable,
 } from "@app/model";
 import mongoose from "mongoose";
 import { EUserType, everyCorrectAnswerPoints } from "@app/types";
@@ -705,27 +706,59 @@ class QuizDBService {
     /**
      * isStarted flag - 0 (start Journey) 1 ()
      */
-    let quizCategories: any = await QuizTopicTable.find({
-      type: 2,
-      status: 1,
-    })
-      .select("_id topic image")
-      .sort({ createdAt: -1 });
+    let quizCategories = await QuizTopicTable.aggregate([
+      {
+        $match: {
+          type: 2,
+          status: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "_id",
+          foreignField: "topicId",
+          as: "quizzes",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          topic: 1,
+          hasStages: 1,
+          image: 1,
+          createdAt: 1,
+          quizzes: 1,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ]).exec();
     if (quizCategories.length === 0) {
       throw new NetworkError(`Quiz Categories not found`, 400);
     }
     quizCategories = quizCategories.map((data) => {
-      let categoryIfExists =
-        quizResultsData.length !== 0
-          ? quizResultsData.find(
-              (x) => x.topicId.toString() == data._id.toString()
-            )
-          : null;
+      let categoryIfExists = false;
+      quizResultsData.length !== 0
+        ? quizResultsData.forEach((quizResult) => {
+            const quizIfExists = data.quizzes.find(
+              (x) => x._id.toString() == quizResult.quizId.toString()
+            );
+            if (quizIfExists) {
+              categoryIfExists = true;
+              return;
+            }
+          })
+        : null;
 
       return {
         _id: data._id,
         topic: data.topic,
         image: data.image,
+        hasStages: data.hasStages,
         isStarted: categoryIfExists ? 1 : 0,
       };
     });
@@ -944,6 +977,167 @@ class QuizDBService {
       return otherCategoryQuizzes;
     }
     return quizzes;
+  }
+
+  /**
+   * @description  Get most played category quizzes by user
+   * @param categoryId
+   * @param userId
+   * @returns {*}
+   */
+  public async getStageWiseQuizzes(categoryId: string, userId: string) {
+    const query: any = [
+      {
+        $match: {
+          categoryId: new ObjectId(categoryId),
+        },
+      },
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "_id",
+          foreignField: "stageId",
+          as: "quizzes",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizzes",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "quizresults",
+          let: {
+            quizId: "$quizzes._id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$userId", userId],
+                    },
+                    {
+                      $eq: ["$quizId", "$$quizId"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "quizResults",
+        },
+      },
+      {
+        $addFields: {
+          quizzes: {
+            isUnlocked: {
+              $cond: {
+                if: { $ifNull: ["$quizzes", false] },
+                then: {
+                  $cond: {
+                    if: {
+                      $gt: [
+                        {
+                          $size: "$quizResults",
+                        },
+                        0,
+                      ],
+                    },
+                    then: true,
+                    else: false,
+                  },
+                },
+                else: "$$REMOVE",
+              },
+            },
+            xpPoints: {
+              $cond: {
+                if: { $ifNull: ["$quizzes", false] },
+                then: XP_POINTS.COMPLETED_QUIZ,
+                else: "$$REMOVE",
+              },
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          title: {
+            $first: "$title",
+          },
+          subTitle: {
+            $first: "$subTitle",
+          },
+          categoryId: {
+            $first: "$categoryId",
+          },
+          order: {
+            $first: "$order",
+          },
+          guidebook: {
+            $first: "$guidebook",
+          },
+          backgroundColor: {
+            $first: "$backgroundColor",
+          },
+          guidebookColor: {
+            $first: "$guidebookColor",
+          },
+          description: {
+            $first: "$description",
+          },
+          quizzes: {
+            $push: {
+              $cond: {
+                if: { $eq: [{ $size: { $objectToArray: "$quizzes" } }, 0] },
+                then: "$$REMOVE",
+                else: {
+                  _id: "$quizzes._id",
+                  name: "$quizzes.quizName",
+                  image: "$quizzes.image",
+                  topicId: "$quizzes.topicId",
+                  stageId: "$quizzes.stageId",
+                  isCompleted: "$quizzes.isUnlocked",
+                  xpPoints: "$quizzes.xpPoints",
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $sort: {
+          order: 1,
+        },
+      },
+    ];
+    let stages = await StageTable.aggregate(query).exec();
+    if (stages.length === 0) throw new NetworkError("Stages Not Found", 400);
+    let index = 0;
+    for (let stage of stages) {
+      if (index === 0) {
+        stage.isUnlocked = true;
+      } else {
+        if (stage.quizzes.length !== 0) {
+          const previousAllQuizUnlocked = stages[index - 1].quizzes.filter(
+            (x) => x.isCompleted == true
+          );
+          const previousAllQuizzes = stages[index - 1].quizzes.length;
+          if (previousAllQuizUnlocked.length === previousAllQuizzes) {
+            stage.isUnlocked = true;
+          } else {
+            stage.isUnlocked = false;
+          }
+        }
+      }
+      index++;
+    }
+    return stages;
   }
 }
 

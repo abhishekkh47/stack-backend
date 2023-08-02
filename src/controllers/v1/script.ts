@@ -23,6 +23,7 @@ import {
   AdminTable,
   LeagueTable,
   DripshopItemTable,
+  StageTable,
 } from "@app/model";
 import {
   EAction,
@@ -1426,6 +1427,70 @@ class ScriptController extends BaseController {
       if (items.length === 0) return this.BadRequest(ctx, "Product not found");
       const createdProducts = await DripshopDBService.addItems(items);
       return this.Ok(ctx, { data: createdProducts, message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to store stage in db
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/store-stage", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeStagesInDB(ctx: any) {
+    try {
+      const [categoryTitle, categoryImage] = [
+        "Start Your Business",
+        "Rocket_v2.png",
+      ];
+      const quizCategory = await QuizTopicTable.findOneAndUpdate(
+        { topic: categoryTitle },
+        {
+          $set: {
+            topic: categoryTitle,
+            status: 1,
+            hasStages: true,
+            type: 2,
+            image: categoryImage,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+        }
+      );
+      let { stages } = ctx.request.body;
+      if (stages.length === 0) return this.BadRequest(ctx, "Stage Not Found");
+      let bulkWriteQuery = [];
+      stages = stages.map((data) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: { title: data.title },
+            update: {
+              $set: {
+                title: data.title,
+                category: quizCategory._id,
+                subTitle: data.subTitle,
+                description: data.description,
+                backgroundColor: data.backgroundColor,
+                guidebookColor: data.guidebookColor,
+                order: data.order,
+                guidebook: data.guidebook,
+              },
+            },
+            upsert: true,
+          },
+        };
+        bulkWriteQuery.push(bulkWriteObject);
+
+        return data;
+      });
+
+      await StageTable.bulkWrite(bulkWriteQuery);
+
+      return this.Ok(ctx, { message: "Stages Stored Successfully" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

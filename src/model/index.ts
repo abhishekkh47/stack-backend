@@ -28,3 +28,4 @@ export * from "@model/deletedUser";
 export * from "@model/quizReview";
 export * from "@model/league";
 export * from "@app/model/dripshopitem";
+export * from "@model/stage";
