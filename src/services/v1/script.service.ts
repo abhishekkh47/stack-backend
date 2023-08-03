@@ -351,23 +351,25 @@ class ScriptService {
       let quizCategoryQuery = [];
       let quizQuery = [];
       for await (let data of quizCategoryData) {
-        if (!data["Quiz Number"] || !data["Category"]) {
+        if (!data["Quiz #"] || !data["Category"]) {
           continue;
         }
         let quiz = await QuizTable.findOne({
-          quizNum: parseInt(data["Quiz Number"]),
+          quizNum: parseInt(data["Quiz #"]),
         });
         if (!quiz) {
+          console.log(parseInt(data["Quiz #"]));
           continue;
         }
         let category = await QuizTopicTable.findOne({
-          topic: data["Category"],
+          topic: data["Category"].trimEnd(),
         });
         if (!category) {
           category = await QuizTopicTable.create({
             type: 2,
             status: 1,
-            topic: data["Category"],
+            hasStages: false,
+            topic: data["Category"].trimEnd(),
           });
         }
         let bulkWriteObject = {

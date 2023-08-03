@@ -1107,9 +1107,7 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storeQuizCategory(ctx: any) {
     try {
-      const rows = await ScriptService.readSpreadSheet(
-        envData.CATEGORY_SHEET_GID
-      );
+      const rows = await ScriptService.readSpreadSheet();
       const { isAddedToDB, data }: any =
         await ScriptService.addQuizCategoryContentsToDB(rows);
       if (!isAddedToDB) {
