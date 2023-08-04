@@ -15,6 +15,7 @@ import {
   QuizTable,
   UserTable,
   StageTable,
+  AdminTable,
 } from "@app/model";
 import mongoose from "mongoose";
 import { EUserType, everyCorrectAnswerPoints } from "@app/types";
@@ -679,6 +680,7 @@ class QuizDBService {
    * @returns {boolean}
    */
   public async checkQuizLimitReached(quizResultsData: any, userId: string) {
+    const admin = await AdminTable.findOne({});
     let todaysQuizPlayed = null;
     let isQuizLimitReached = false;
     if (quizResultsData.length > 0) {
@@ -692,7 +694,8 @@ class QuizDBService {
         isOnBoardingQuiz: false,
         userId: userId,
       });
-      isQuizLimitReached = todaysQuizPlayed.length >= 3 ? true : false;
+      isQuizLimitReached =
+        todaysQuizPlayed.length >= admin.quizLimit ? true : false;
     }
     return isQuizLimitReached;
   }

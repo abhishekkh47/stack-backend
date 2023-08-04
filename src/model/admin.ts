@@ -49,6 +49,10 @@ const schema = new mongoose.Schema<IAdminSchema>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    quizLimit: {
+      type: mongoose.Schema.Types.Number,
+      default: 3,
+    },
   },
   { timestamps: true }
 );
