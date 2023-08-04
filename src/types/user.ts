@@ -66,6 +66,7 @@ export interface IAdmin extends IUser {
   giftCryptoAmount: number;
   quizCooldown: object;
   token: string;
+  quizLimit: number;
 }
 
 export interface IUserdraft {
