@@ -664,14 +664,14 @@ class QuizController extends BaseController {
       if (!user) {
         return this.BadRequest(ctx, "User not found");
       }
-      const { categoryId, status } = ctx.request.query; //status 1 - Start Journey and 2 - Completed
+      const { categoryId, status } = ctx.request.query; //status 1 - Start Journey , 2 - Completed and 3 - Stages
       const quizCategoryIfExists = await QuizTopicTable.findOne({
         _id: categoryId,
       });
       if (!quizCategoryIfExists) {
         return this.BadRequest(ctx, "Quiz Category Not Found");
       }
-      if (quizCategoryIfExists.hasStages) {
+      if (quizCategoryIfExists.hasStages && status == "3") {
         const stages = await QuizDBService.getStageWiseQuizzes(
           categoryId,
           user._id
