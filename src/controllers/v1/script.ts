@@ -1459,6 +1459,7 @@ class ScriptController extends BaseController {
           new: true,
         }
       );
+
       let { stages } = ctx.request.body;
       if (stages.length === 0) return this.BadRequest(ctx, "Stage Not Found");
       let bulkWriteQuery = [];
@@ -1469,7 +1470,7 @@ class ScriptController extends BaseController {
             update: {
               $set: {
                 title: data.title,
-                category: quizCategory._id,
+                categoryId: quizCategory._id,
                 subTitle: data.subTitle,
                 description: data.description,
                 backgroundColor: data.backgroundColor,
