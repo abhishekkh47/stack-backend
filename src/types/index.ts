@@ -23,3 +23,4 @@ export * from "@app/types/deletedUser";
 export * from "@app/types/league";
 export * from "@app/types/dripshopitem";
 export * from "@app/types/stage";
+export * from "@app/types/business-profile";

@@ -29,3 +29,5 @@ export * from "@model/quizReview";
 export * from "@model/league";
 export * from "@app/model/dripshopitem";
 export * from "@model/stage";
+export * from "@app/model/interest";
+export * from "@model/impact";
