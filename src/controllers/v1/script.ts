@@ -24,7 +24,6 @@ import {
   LeagueTable,
   DripshopItemTable,
   StageTable,
-  ImpactTable,
 } from "@app/model";
 import {
   EAction,
