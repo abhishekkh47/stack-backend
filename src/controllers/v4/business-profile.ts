@@ -6,23 +6,37 @@ import BaseController from "../base";
 
 class BusinessProfileController extends BaseController {
   /**
-   * @description This method is get impacts and interests for business profile information
+   * @description This method is get impacts for business profile information
    * @param ctx
    * @returns {*}
    */
   @Route({
-    path: "/business/impact-interest-list",
+    path: "/impacts",
     method: HttpMethod.GET,
   })
   @Auth()
-  public async getBusinessProfileList(ctx: any) {
+  public async getImpacts(ctx: any) {
     const impacts = await ImpactTable.find({})
       .select("_id order image title")
       .sort({ order: 1 });
+    return this.Ok(ctx, { message: "Success", data: impacts });
+  }
+
+  /**
+   * @description This method is get interests for business profile information
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/interests",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getInterests(ctx: any) {
     const interests = await InterestTable.find({})
       .select("_id order image title")
       .sort({ order: 1 });
-    return this.Ok(ctx, { message: "Success", data: { impacts, interests } });
+    return this.Ok(ctx, { message: "Success", data: interests });
   }
 }
 

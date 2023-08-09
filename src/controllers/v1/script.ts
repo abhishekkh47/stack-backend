@@ -52,6 +52,7 @@ import {
   zohoCrmService,
   DeviceTokenService,
   ScriptService,
+  BusinessProfileScriptService,
   tradingService,
   AuthService,
   DripshopDBService,
@@ -1508,7 +1509,9 @@ class ScriptController extends BaseController {
       if (impacts.length === 0)
         return this.BadRequest(ctx, "Impacts Not Found");
 
-      const isImpactAddedToDB = await ScriptService.addImpacts(impacts);
+      const isImpactAddedToDB = await BusinessProfileScriptService.addImpacts(
+        impacts
+      );
       if (!isImpactAddedToDB)
         return this.BadRequest(ctx, "Something Went Wrong");
       return this.Ok(ctx, { message: "Impacts Stored Successfully" });
@@ -1530,7 +1533,9 @@ class ScriptController extends BaseController {
       if (interests.length === 0)
         return this.BadRequest(ctx, "Interest Not Found");
 
-      const isImpactAddedToDB = await ScriptService.addInterests(interests);
+      const isImpactAddedToDB = await BusinessProfileScriptService.addInterests(
+        interests
+      );
       if (!isImpactAddedToDB)
         return this.BadRequest(ctx, "Something Went Wrong");
       return this.Ok(ctx, { message: "Interests Stored Successfully" });
