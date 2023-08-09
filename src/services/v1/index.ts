@@ -14,5 +14,6 @@ export { default as DripshopDBService } from "@services/v1/dripshop.db.service";
 export { default as UserDBService } from "@services/v1/user.db.service";
 export { default as UserBankDBService } from "@services/v1/userbank.db.service";
 export { default as DeviceTokenDBService } from "@services/v1/device-token.db.service";
-export { default as ScriptService } from "@services/v1/script.service";
+export { default as ScriptService } from "@services/v1/script.service/index";
+export { default as BusinessProfileScriptService } from "@services/v1/script.service/business-profile";
 export { default as TradingDBService } from "@services/v1/trading.db.service";

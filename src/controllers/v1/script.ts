@@ -52,6 +52,7 @@ import {
   zohoCrmService,
   DeviceTokenService,
   ScriptService,
+  BusinessProfileScriptService,
   tradingService,
   AuthService,
   DripshopDBService,
@@ -1490,6 +1491,54 @@ class ScriptController extends BaseController {
       await StageTable.bulkWrite(bulkWriteQuery);
 
       return this.Ok(ctx, { message: "Stages Stored Successfully" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to add impacts in db
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/store-impacts", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeImpactsInDB(ctx: any) {
+    try {
+      const { impacts } = ctx.request.body;
+      if (impacts.length === 0)
+        return this.BadRequest(ctx, "Impacts Not Found");
+
+      const isImpactAddedToDB = await BusinessProfileScriptService.addImpacts(
+        impacts
+      );
+      if (!isImpactAddedToDB)
+        return this.BadRequest(ctx, "Something Went Wrong");
+      return this.Ok(ctx, { message: "Impacts Stored Successfully" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to add interests in db
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/store-interest", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeInterestInDB(ctx: any) {
+    try {
+      const { interests } = ctx.request.body;
+      if (interests.length === 0)
+        return this.BadRequest(ctx, "Interest Not Found");
+
+      const isImpactAddedToDB = await BusinessProfileScriptService.addInterests(
+        interests
+      );
+      if (!isImpactAddedToDB)
+        return this.BadRequest(ctx, "Something Went Wrong");
+      return this.Ok(ctx, { message: "Interests Stored Successfully" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
