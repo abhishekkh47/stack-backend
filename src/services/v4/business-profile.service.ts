@@ -34,7 +34,6 @@ class BusinessProfileService {
         { upsert: true }
       );
     } catch (error) {
-      console.log(error);
       throw new NetworkError("Something went wrong", 400);
     }
   }
