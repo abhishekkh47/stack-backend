@@ -35,6 +35,20 @@ class UserService {
         { $unwind: { path: "$state", preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
+            from: "business-profiles",
+            localField: "_id",
+            foreignField: "userId",
+            as: "businessProfile",
+          },
+        },
+        {
+          $unwind: {
+            path: "$businessProfile",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
             from: "parentchild",
             localField: "_id",
             foreignField: "userId",
