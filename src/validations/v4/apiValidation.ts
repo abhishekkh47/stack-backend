@@ -186,7 +186,7 @@ export const validationsV4 = {
             .required()
         )
         .required(),
-      description: Joi.string().min(2).required(),
+      description: Joi.string().min(2).max(280).required(),
     });
     const { error } = schema.validate(req);
     if (error) {

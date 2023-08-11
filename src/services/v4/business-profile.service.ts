@@ -33,6 +33,7 @@ class BusinessProfileService {
         },
         { upsert: true }
       );
+      return true;
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
     }
