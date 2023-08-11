@@ -296,5 +296,18 @@
 	"dripShopValidationZipcodeRequired": "Please enter zip code.",
 	"dripShopValidationZipcodeEmpty": "Please enter zip code.",
 	"dripShopValidationFirstnamePattern": "Spaces , Digits and Special characters not allowed in first name.",
-	"dripShopValidationLastnamePattern": "Spaces , Digits and Special characters not allowed in last name."
+	"dripShopValidationLastnamePattern": "Spaces , Digits and Special characters not allowed in last name.",
+	"businessProfileValidationImpactsRequired": "Please select impacts.",
+	"businessProfileValidationImpactsEmpty": "Please select impacts.",
+	"businessProfileValidationImpactsPattern": "Please select valid impacts.",
+	"businessProfileValidationDescriptionRequired": "Please enter description.",
+	"businessProfileValidationDescriptionEmpty": "Please enter description.",
+	"businessProfileValidationDescriptionMin": "Business idea should not be less than 2 characters.",
+	"businessProfileValidationPassionsRequired": "Please select passions.",
+	"businessProfileValidationPassionsBase": "Please select valid passions",
+	"businessProfileValidationPassionsIncludesrequiredunknowns": "Please select valid passions",
+	"businessProfileValidationEmpty": "Please select passions",
+	"businessProfileValidationPattern": "Please select valid passions",
+	"businessProfileValidationPassionsMax": "You can select upto 3 passions max.",
+	"businessProfileValidationDescriptionMax": "Business idea should not be more than 280 characters."
 }

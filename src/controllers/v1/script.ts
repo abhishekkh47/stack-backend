@@ -1521,24 +1521,24 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to add interests in db
+   * @description This method is used to add passions in db
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/store-interest", method: HttpMethod.POST })
+  @Route({ path: "/store-passion", method: HttpMethod.POST })
   @InternalUserAuth()
-  public async storeInterestInDB(ctx: any) {
+  public async storePassionInDB(ctx: any) {
     try {
-      const { interests } = ctx.request.body;
-      if (interests.length === 0)
-        return this.BadRequest(ctx, "Interest Not Found");
+      const { passions } = ctx.request.body;
+      if (passions.length === 0)
+        return this.BadRequest(ctx, "Passion Not Found");
 
-      const isImpactAddedToDB = await BusinessProfileScriptService.addInterests(
-        interests
+      const isImpactAddedToDB = await BusinessProfileScriptService.addPassion(
+        passions
       );
       if (!isImpactAddedToDB)
         return this.BadRequest(ctx, "Something Went Wrong");
-      return this.Ok(ctx, { message: "Interests Stored Successfully" });
+      return this.Ok(ctx, { message: "Passions Stored Successfully" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

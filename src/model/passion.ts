@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
-import type { IInterest, MongooseModel } from "@app/types";
+import type { IPassion, MongooseModel } from "@app/types";
 
-export type IInterestSchema = MongooseModel<IInterest> & mongoose.Document;
+export type IPassionSchema = MongooseModel<IPassion> & mongoose.Document;
 
-const schema = new mongoose.Schema<IInterestSchema>(
+const schema = new mongoose.Schema<IPassionSchema>(
   {
     title: {
       type: mongoose.Schema.Types.String,
@@ -22,7 +22,4 @@ const schema = new mongoose.Schema<IInterestSchema>(
   { timestamps: true }
 );
 
-export const InterestTable = mongoose.model<IInterestSchema>(
-  "interest",
-  schema
-);
+export const PassionTable = mongoose.model<IPassionSchema>("passion", schema);

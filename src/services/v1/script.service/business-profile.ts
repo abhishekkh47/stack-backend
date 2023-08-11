@@ -1,4 +1,4 @@
-import { ImpactTable, InterestTable } from "@app/model";
+import { ImpactTable, PassionTable } from "@app/model";
 
 class BusinessProfileScriptService {
   /**
@@ -36,14 +36,14 @@ class BusinessProfileScriptService {
   }
 
   /**
-   * @dscription This method add all interests in db
-   * @param interests
+   * @dscription This method add all passions in db
+   * @param passions
    * @return {boolean}
    */
-  public async addInterests(interests: any[]) {
+  public async addPassion(passions: any[]) {
     try {
       let bulkWriteQuery = [];
-      interests = interests.map((data) => {
+      passions = passions.map((data) => {
         let bulkWriteObject = {
           updateOne: {
             filter: { title: data.title },
@@ -62,7 +62,7 @@ class BusinessProfileScriptService {
         return data;
       });
 
-      await InterestTable.bulkWrite(bulkWriteQuery);
+      await PassionTable.bulkWrite(bulkWriteQuery);
       return true;
     } catch (error) {
       return false;

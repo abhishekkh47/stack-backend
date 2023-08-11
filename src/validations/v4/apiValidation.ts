@@ -130,13 +130,15 @@ export const validationsV4 = {
   },
   setProfilePictureLeaderValidation: (req, res, callback) => {
     const schema = Joi.object({
-      name: Joi.string().required().regex(/\.png$/, { name: 'png_extension', invert: false })
-      .messages({
-        'string.base': `Image name must be a string`,
-        'string.empty': `Image name cannot be empty`,
-        'string.pattern.invert.base': `Image name must end with '.png'`,
-        'any.required': `Image name is required`
-      }),
+      name: Joi.string()
+        .required()
+        .regex(/\.png$/, { name: "png_extension", invert: false })
+        .messages({
+          "string.base": `Image name must be a string`,
+          "string.empty": `Image name cannot be empty`,
+          "string.pattern.invert.base": `Image name must end with '.png'`,
+          "any.required": `Image name is required`,
+        }),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -167,6 +169,30 @@ export const validationsV4 = {
       return res.throw(
         400,
         res.__(validationMessageKey("dripShopValidation", error))
+      );
+    }
+    return callback(true);
+  },
+  businessProfileValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      impacts: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      passions: Joi.array()
+        .max(3)
+        .items(
+          Joi.string()
+            .regex(/^[0-9a-fA-F]{24}$/)
+            .required()
+        )
+        .required(),
+      description: Joi.string().min(2).max(280).required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("businessProfileValidation", error))
       );
     }
     return callback(true);

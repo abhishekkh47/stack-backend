@@ -5,6 +5,7 @@ import envData from "@app/config/index";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   AdminTable,
+  BusinessProfileTable,
   CryptoTable,
   ParentChildTable,
   TransactionTable,
@@ -36,7 +37,7 @@ import {
   ANALYTICS_EVENTS,
 } from "@app/utility";
 import BaseController from "@app/controllers/base";
-import { AnalyticsService } from "@app/services/v4";
+import { AnalyticsService, BusinessProfileService } from "@app/services/v4";
 
 class UserController extends BaseController {
   /**
@@ -88,6 +89,7 @@ class UserController extends BaseController {
         }
       }
     }
+    const businessProfile = await BusinessProfileService.getBusinessProfile(id);
 
     data = {
       ...data,
@@ -95,6 +97,7 @@ class UserController extends BaseController {
       amcPolicy: CMS_LINKS.AMC_POLICY,
       privacy: CMS_LINKS.PRIVACY_POLICY,
       ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
+      businessProfile,
     };
 
     return this.Ok(ctx, data, true);
