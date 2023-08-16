@@ -797,6 +797,7 @@ class QuizController extends BaseController {
                 },
               },
             ],
+            "quizData.stageId": null,
             isOnBoardingQuiz: false,
             userId: userIfExists._id,
           },
