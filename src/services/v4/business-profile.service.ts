@@ -1,4 +1,9 @@
-import { BusinessProfileTable, ImpactTable, PassionTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  ImpactTable,
+  PassionTable,
+  StageTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
 

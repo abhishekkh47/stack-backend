@@ -10,7 +10,7 @@ import { Route } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "../base";
 import { ObjectId } from "mongodb";
-import { BusinessProfileService } from "@app/services/v4";
+import { BusinessProfileService, QuizDBService } from "@app/services/v4";
 
 class BusinessProfileController extends BaseController {
   /**
@@ -71,7 +71,12 @@ class BusinessProfileController extends BaseController {
               body,
               userIfExists._id
             );
-            return this.Ok(ctx, { message: "Success" });
+            const firstQuizInStage1 =
+              await QuizDBService.getFirstQuizFromStageOne();
+            return this.Ok(ctx, {
+              message: "Success",
+              data: firstQuizInStage1.length > 0 ? firstQuizInStage1[0] : [],
+            });
           }
         }
       );
