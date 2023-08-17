@@ -181,7 +181,7 @@ class ScriptService {
         }
         if (data["Tags"] && data["Tags"] != "") {
           let tags = data["Tags"].split(",");
-          tags = tags.map((data, index) => {
+          tags = tags.map((data) => {
             data = data.trim();
             return data;
           });
