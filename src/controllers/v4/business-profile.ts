@@ -71,11 +71,8 @@ class BusinessProfileController extends BaseController {
               body,
               userIfExists._id
             );
-            const firstQuizInStage1 =
-              await QuizDBService.getFirstQuizFromStageOne();
             return this.Ok(ctx, {
               message: "Success",
-              data: firstQuizInStage1.length > 0 ? firstQuizInStage1[0] : [],
             });
           }
         }
