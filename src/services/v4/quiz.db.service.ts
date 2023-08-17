@@ -1146,6 +1146,54 @@ class QuizDBService {
     }
     return stages;
   }
+
+  /**
+   * @description  Get first quiz from stage 1
+   * @returns {*}
+   */
+  public async getFirstQuizFromStageOne() {
+    const query: any = [
+      {
+        $match: {
+          order: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiz",
+          localField: "_id",
+          foreignField: "stageId",
+          as: "quiz",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quiz",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: {
+          "quiz.quizNum": 1,
+        },
+      },
+      {
+        $limit: 1,
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          subTitle: 1,
+          categoryId: 1,
+          description: 1,
+          quiz: 1,
+        },
+      },
+    ];
+    const quiz = await StageTable.aggregate(query).exec();
+    return quiz;
+  }
 }
 
 export default new QuizDBService();
