@@ -168,7 +168,6 @@ class ScriptService {
     let filterCategory = [];
     await Promise.all(
       await rows.map(async (data, index) => {
-        console.log(data, "data");
         if (data["Quiz Title"] != "") {
           lastQuizName = data["Quiz Title"].trimEnd();
           lastQuizImage = data["Quiz Image"];
