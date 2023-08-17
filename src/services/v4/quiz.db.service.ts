@@ -649,6 +649,7 @@ class QuizDBService {
               },
             },
           ],
+          stageId: null,
         },
       },
       {
@@ -803,6 +804,9 @@ class QuizDBService {
             },
             {
               userId: userId,
+            },
+            {
+              "quizData.stageId": null,
             },
           ],
         },
