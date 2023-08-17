@@ -71,9 +71,7 @@ class BusinessProfileController extends BaseController {
               body,
               userIfExists._id
             );
-            return this.Ok(ctx, {
-              message: "Success",
-            });
+            return this.Ok(ctx, { message: "Success" });
           }
         }
       );
