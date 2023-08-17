@@ -160,6 +160,7 @@ class ScriptService {
     let lastQuizImage = "";
     let lastQuizCategory = "";
     let lastQuizStage = "";
+    let lastQuizTags = "";
     let quizContentData = [];
     let questionDataArray = [];
     let order = 1;
@@ -167,6 +168,7 @@ class ScriptService {
     let filterCategory = [];
     await Promise.all(
       await rows.map(async (data, index) => {
+        console.log(data, "data");
         if (data["Quiz Title"] != "") {
           lastQuizName = data["Quiz Title"].trimEnd();
           lastQuizImage = data["Quiz Image"];
@@ -176,6 +178,14 @@ class ScriptService {
         }
         if (data["Stage"] != "") {
           lastQuizStage = data["Stage"].trimEnd();
+        }
+        if (data["Tags"] && data["Tags"] != "") {
+          let tags = data["Tags"].split(",");
+          tags = tags.map((data, index) => {
+            data = data.trim();
+            return data;
+          });
+          lastQuizTags = tags.join(",");
         }
         if (data["Quiz Title"] == "") {
           ++order;
@@ -259,6 +269,7 @@ class ScriptService {
             quizName: lastQuizName,
             image: lastQuizImage,
             stageName: lastQuizStage,
+            tags: lastQuizTags,
             questionData: questionDataArray,
           };
           quizContentData.push(quizData);
@@ -313,6 +324,7 @@ class ScriptService {
                 quizName: data.quizName,
                 topicId: data.topicId,
                 image: data.image,
+                tags: data.tags,
                 stageId: stageIfExists?._id || null,
               },
             },

@@ -57,6 +57,7 @@ export interface IQuiz {
   videoUrl: string;
   image: string;
   quizNum: number;
+  tags: string;
 }
 
 export interface IQuizResult {

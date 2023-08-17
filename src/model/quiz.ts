@@ -24,6 +24,10 @@ const schema = new mongoose.Schema<IQuizSchema>(
       type: mongoose.Schema.Types.Number,
       default: 0,
     },
+    tags: {
+      type: mongoose.Schema.Types.String,
+      default: "",
+    },
     videoUrl: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
