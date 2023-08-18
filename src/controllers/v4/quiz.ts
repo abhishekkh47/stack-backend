@@ -852,6 +852,25 @@ class QuizController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to get first stage first quiz
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/first-stage/first-quiz", method: HttpMethod.GET })
+  @Auth()
+  public async getFirstQuizFromStageOne(ctx: any) {
+    try {
+      const firstQuizInStage1 = await QuizDBService.getFirstQuizFromStageOne();
+      return this.Ok(ctx, {
+        data: firstQuizInStage1.length > 0 ? firstQuizInStage1[0] : null,
+        message: "Success",
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new QuizController();
