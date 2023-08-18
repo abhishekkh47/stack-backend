@@ -871,6 +871,33 @@ class QuizController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to search quizzes based on quiz name and tags
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/search-quizzes", method: HttpMethod.GET })
+  @Auth()
+  public async searchQuizzes(ctx: any) {
+    try {
+      const { query, user } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      if (!query.text || query.text.trim() == "" || query.text.trim() == ",") {
+        return this.BadRequest(ctx, "Quizz not found");
+      }
+      const quizzes = await QuizDBService.searchQuizByText(
+        query.text,
+        userIfExists._id
+      );
+      return this.Ok(ctx, { data: quizzes, message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new QuizController();

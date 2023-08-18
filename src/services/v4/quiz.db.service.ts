@@ -1194,6 +1194,166 @@ class QuizDBService {
     const quiz = await StageTable.aggregate(query).exec();
     return quiz;
   }
+
+  /**
+   * @description  Search Quiz based on text
+   * @param text
+   * @param userId
+   * @returns {*}
+   */
+  public async searchQuizByText(text: string, userId: any) {
+    const query: any = [
+      {
+        $match: {
+          $and: [
+            {
+              quizNum: {
+                $exists: true,
+              },
+            },
+            {
+              quizNum: {
+                $ne: 0,
+              },
+            },
+            {
+              $or: [
+                {
+                  quizName: {
+                    $regex: text,
+                    $options: "i",
+                  },
+                },
+                {
+                  tags: {
+                    $regex: text,
+                    $options: "i",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "quizresults",
+          let: {
+            quizId: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$userId", userId],
+                    },
+                    {
+                      $eq: ["$quizId", "$$quizId"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "quizPlayed",
+        },
+      },
+      {
+        $lookup: {
+          from: "stages",
+          localField: "stageId",
+          foreignField: "_id",
+          as: "stages",
+        },
+      },
+      {
+        $unwind: {
+          path: "$stages",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "topics",
+        },
+      },
+      {
+        $unwind: {
+          path: "$topics",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          isCompleted: {
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: "$quizPlayed",
+                  },
+                  0,
+                ],
+              },
+              then: false,
+              else: true,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          topicId: 1,
+          image: 1,
+          tags: 1,
+          quizNum: 1,
+          isCompleted: 1,
+          isUnlocked: "$isCompleted",
+          stageId: 1,
+          quizName: 1,
+          topicName: {
+            $cond: {
+              if: {
+                $eq: ["$stageId", null],
+              },
+              then: "$topics.topic",
+              else: {
+                $concat: ["$topics.topic", ": ", "$stages.subTitle"],
+              },
+            },
+          },
+        },
+      },
+    ];
+    const quizzes = await QuizTable.aggregate(query).exec();
+    if (quizzes.length === 0) throw new NetworkError("Quiz not found", 400);
+
+    const anyQuizWithStage = quizzes.find((x) => x.stageId !== null);
+    if (anyQuizWithStage) {
+      const stages = await this.getStageWiseQuizzes(
+        anyQuizWithStage.topicId,
+        userId
+      );
+      if (stages.length > 0) {
+        for (let quiz of quizzes) {
+          if (quiz.stageId) {
+            const findStage = stages.find(
+              (x) => x._id.toString() == quiz.stageId.toString()
+            );
+            quiz.isUnlocked = findStage.isUnlocked;
+          }
+        }
+      }
+    }
+
+    return quizzes;
+  }
 }
 
 export default new QuizDBService();
