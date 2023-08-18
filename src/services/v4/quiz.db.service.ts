@@ -1202,6 +1202,7 @@ class QuizDBService {
    * @returns {*}
    */
   public async searchQuizByText(text: string, userId: any) {
+    const escapedText = text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
     const query: any = [
       {
         $match: {
@@ -1220,13 +1221,13 @@ class QuizDBService {
               $or: [
                 {
                   quizName: {
-                    $regex: text,
+                    $regex: escapedText,
                     $options: "i",
                   },
                 },
                 {
                   tags: {
-                    $regex: text,
+                    $regex: escapedText,
                     $options: "i",
                   },
                 },
