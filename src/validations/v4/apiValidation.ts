@@ -197,4 +197,21 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  suggestTopicValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      topic: Joi.string()
+        .regex(
+          /^(?![\s\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]*$)(?![\d\s]*$)(?![!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~\s]*$)[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~\s]+$z/
+        )
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("suggestTopicValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };

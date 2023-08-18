@@ -1,6 +1,6 @@
 import moment from "moment";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { ParentChildTable, UserTable } from "@app/model";
+import { AdminTable, ParentChildTable, UserTable } from "@app/model";
 import { DeviceTokenService, userService } from "@app/services/v1/index";
 import { UserDBService } from "@app/services/v4";
 import {
@@ -377,6 +377,48 @@ class UserController extends BaseController {
         }
       }
       return this.Ok(ctx, { data: { hasBalance } });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to suggest a quiz topic to jetson team
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/suggest-topic", method: HttpMethod.POST })
+  @Auth()
+  public async suggestQuizTopic(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      return validationsV4.suggestTopicValidation(
+        body,
+        ctx,
+        async (validate) => {
+          if (validate) {
+            let data = {
+              topic: body.topic,
+              fullName: userIfExists.lastName
+                ? userIfExists.firstName + " " + userIfExists.lastName
+                : userIfExists.firstName,
+              email: userIfExists.email,
+            };
+            const admin = await AdminTable.findOne({});
+            /**
+             * TODO Need to design email template for suggested topic
+             */
+            // await sendEmail(admin.email, CONSTANT.DripShopTemplateId, data);
+            return this.Ok(ctx, {
+              message: "Your suggested topic sent successfully!",
+            });
+          }
+        }
+      );
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
