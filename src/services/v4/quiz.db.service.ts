@@ -1187,7 +1187,14 @@ class QuizDBService {
           subTitle: 1,
           categoryId: 1,
           description: 1,
-          quiz: 1,
+          quiz: {
+            _id: "$quiz._id",
+            quizNum: "$quiz.quizNum",
+            image: "$quiz.image",
+            name: "$quiz.quizName",
+            topicId: "$quiz.topicId",
+            stageId: "$quiz.stageId",
+          },
         },
       },
     ];
