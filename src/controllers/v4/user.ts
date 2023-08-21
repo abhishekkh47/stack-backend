@@ -1,8 +1,13 @@
 import moment from "moment";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { AdminTable, ParentChildTable, UserTable } from "@app/model";
+import {
+  AdminTable,
+  ParentChildTable,
+  QuizTopicSuggestionTable,
+  UserTable,
+} from "@app/model";
 import { DeviceTokenService, userService } from "@app/services/v1/index";
-import { UserDBService } from "@app/services/v4";
+import { UserDBService, QuizDBService } from "@app/services/v4";
 import {
   ENOTIFICATIONSETTINGS,
   EUSERSTATUS,
@@ -401,19 +406,13 @@ class UserController extends BaseController {
         ctx,
         async (validate) => {
           if (validate) {
-            let data = {
-              topic: body.topic,
-              fullName: userIfExists.lastName
-                ? userIfExists.firstName + " " + userIfExists.lastName
-                : userIfExists.firstName,
-              email: userIfExists.email,
-            };
-            const admin = await AdminTable.findOne({});
-            /**
-             * TODO Need to design email template for suggested topic
-             */
-            // await sendEmail(admin.email, CONSTANT.DripShopTemplateId, data);
+            const quizSuggestion =
+              await QuizDBService.createQuizTopicSuggestion(
+                userIfExists._id,
+                body.topic
+              );
             return this.Ok(ctx, {
+              data: quizSuggestion,
               message: "Your suggested topic sent successfully!",
             });
           }

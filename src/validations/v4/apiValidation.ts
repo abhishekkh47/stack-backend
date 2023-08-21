@@ -199,11 +199,7 @@ export const validationsV4 = {
   },
   suggestTopicValidation: (req, res, callback) => {
     const schema = Joi.object({
-      topic: Joi.string()
-        .regex(
-          /^(?![\s\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]*$)(?![\d\s]*$)(?![!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~\s]*$)[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~\s]+$z/
-        )
-        .required(),
+      topic: Joi.string().min(2).max(280).required(),
     });
     const { error } = schema.validate(req);
     if (error) {
