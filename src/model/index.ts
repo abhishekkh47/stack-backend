@@ -32,3 +32,4 @@ export * from "@model/stage";
 export * from "@app/model/passion";
 export * from "@model/impact";
 export * from "@model/business-profile";
+export * from "@model/quizTopicSuggestion";

@@ -197,4 +197,17 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  suggestTopicValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      topic: Joi.string().min(2).max(280).required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("suggestTopicValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };
