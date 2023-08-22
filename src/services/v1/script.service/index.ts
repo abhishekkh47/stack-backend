@@ -605,8 +605,8 @@ class ScriptService {
    * @param
    */
   public async getMaximumQuizPlayedUsers() {
-    let todayDate = moment().startOf("day").valueOf();
-    let user = await QuizResult.aggregate([
+    const todayDate = moment().startOf("day").valueOf();
+    const user = await QuizResult.aggregate([
       {
         $match: {
           createdAt: {
