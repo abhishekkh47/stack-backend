@@ -10,6 +10,7 @@ import {
   QuizTable,
   QuizTopicTable,
   StageTable,
+  UserTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -540,18 +541,13 @@ class ScriptService {
    * @description This function is used to convert data to csv
    * @param ctx
    * @param parentChildRecords
+   * @param fields
    */
-  public async convertDataToCsv(ctx: any, parentChildRecords: any) {
-    const fields = [
-      "ParentName",
-      "TeenName",
-      "ParentNumber",
-      "TeenNumber",
-      "ParentCreationDate",
-      "TeenCreationDate",
-      "WhoComesFirst",
-      "TimeBetweenCreation",
-    ];
+  public async convertDataToCsv(
+    ctx: any,
+    parentChildRecords: any,
+    fields: string[]
+  ) {
     const filePath = `uploads/${moment().unix()}.csv`;
     const csv = json2csv.parse(parentChildRecords, fields);
     const combinedStream = new Transform({
@@ -559,7 +555,7 @@ class ScriptService {
         callback(null, chunk);
       },
     });
-    await new Promise((resolve, reject) => {
+    await new Promise(async (resolve, reject) => {
       combinedStream.pipe(fs.createWriteStream(filePath));
       combinedStream.write(csv);
       combinedStream.end();
@@ -567,13 +563,13 @@ class ScriptService {
         reject(err);
       });
       combinedStream.on("finish", function () {
+        ctx.attachment(filePath);
+        ctx.type = "text/csv";
+        ctx.body = fs.createReadStream(filePath);
         resolve(true);
       });
     });
 
-    ctx.attachment(filePath);
-    ctx.type = "text/csv";
-    ctx.body = await fs.createReadStream(filePath);
     return ctx;
   }
 
@@ -602,6 +598,79 @@ class ScriptService {
     await QuizResult.deleteMany({ quizId: { $in: quizQuery } });
     await QuizTable.deleteMany({ _id: { $in: mainQuery } });
     return true;
+  }
+
+  /**
+   * @description This function is used to get users with 7+ quizzes in 60 days
+   * @param
+   */
+  public async getMaximumQuizPlayedUsers() {
+    let todayDate = moment().startOf("day").valueOf();
+    let user = await QuizResult.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(todayDate - 60 * 24 * 60 * 60 * 1000),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          totalQuizzesCompleted: {
+            $sum: 1,
+          },
+        },
+      },
+      {
+        $match: {
+          totalQuizzesCompleted: {
+            $gte: 7,
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: { totalQuizzesCompleted: -1 },
+      },
+      {
+        $project: {
+          _id: 0,
+          FullName: {
+            $cond: {
+              if: {
+                $eq: ["$userData.lastName", null],
+              },
+              then: "$userData.firstName",
+              else: {
+                $concat: ["$userData.firstName", " ", "$userData.lastName"],
+              },
+            },
+          },
+          Email: "$userData.email",
+          Mobile: "$userData.mobile",
+          TotalQuizPlayed: "$totalQuizzesCompleted",
+          CreatedAt: "$userData.createdAt",
+        },
+      },
+    ]).exec();
+    if (user.length === 0) {
+      throw new NetworkError("No User Exists", 400);
+    }
+    return user;
   }
 }
 

@@ -1248,8 +1248,18 @@ class ScriptController extends BaseController {
    */
   @Route({ path: "/export-parentchild-info", method: HttpMethod.GET })
   public async exportParentChildInformation(ctx: any) {
+    const fields = [
+      "ParentName",
+      "TeenName",
+      "ParentNumber",
+      "TeenNumber",
+      "ParentCreationDate",
+      "TeenCreationDate",
+      "WhoComesFirst",
+      "TimeBetweenCreation",
+    ];
     const parentChildRecords = await ScriptService.getParentChildRecords();
-    await ScriptService.convertDataToCsv(ctx, parentChildRecords);
+    await ScriptService.convertDataToCsv(ctx, parentChildRecords, fields);
     return ctx;
   }
 
@@ -1542,6 +1552,25 @@ class ScriptController extends BaseController {
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
+  }
+
+  /**
+   * @description This method is used to export users with quizzes played more than 7 in 60 days
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/export-users/played-quizzes", method: HttpMethod.GET })
+  public async exportUsers(ctx: any) {
+    const user = await ScriptService.getMaximumQuizPlayedUsers();
+    const fields = [
+      "FullName",
+      "Email",
+      "Number",
+      "TotalQuizPlayed",
+      "CreatedAt",
+    ];
+    await ScriptService.convertDataToCsv(ctx, user, fields);
+    return ctx;
   }
 }
 
