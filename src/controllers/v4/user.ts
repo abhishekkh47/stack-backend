@@ -392,7 +392,7 @@ class UserController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/suggest-topic", method: HttpMethod.POST })
+  @Route({ path: "/quiz-topics/suggest", method: HttpMethod.POST })
   @Auth()
   public async suggestQuizTopic(ctx: any) {
     try {
