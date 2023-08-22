@@ -673,7 +673,7 @@ class QuizController extends BaseController {
       }
       if (quizCategoryIfExists.hasStages && status == "3") {
         const stages = await QuizDBService.getStageWiseQuizzes(
-          categoryId,
+          [quizCategoryIfExists._id],
           user._id
         );
         return this.Ok(ctx, { data: stages });
@@ -877,7 +877,7 @@ class QuizController extends BaseController {
    * @param ctx
    * @return {*}
    */
-  @Route({ path: "/search-quizzes", method: HttpMethod.GET })
+  @Route({ path: "/quizzes/search", method: HttpMethod.GET })
   @Auth()
   public async searchQuizzes(ctx: any) {
     try {
@@ -886,10 +886,10 @@ class QuizController extends BaseController {
       if (!userIfExists) {
         return this.BadRequest(ctx, "User not found");
       }
-      if (!query.text || query.text.trim() == "" || query.text.trim() == ",") {
-        return this.BadRequest(ctx, "Quizz not found");
+      if (!query?.text?.trim() || query.text.trim() == ",") {
+        return this.BadRequest(ctx, "Quiz not found");
       }
-      const quizzes = await QuizDBService.searchQuizByText(
+      const quizzes = await QuizDBService.searchQuiz(
         query.text,
         userIfExists._id
       );

@@ -988,15 +988,15 @@ class QuizDBService {
 
   /**
    * @description  Get most played category quizzes by user
-   * @param categoryId
+   * @param categoryIds
    * @param userId
    * @returns {*}
    */
-  public async getStageWiseQuizzes(categoryId: string, userId: string) {
+  public async getStageWiseQuizzes(categoryIds: string[], userId: string) {
     const query: any = [
       {
         $match: {
-          categoryId: new ObjectId(categoryId),
+          categoryId: { $in: categoryIds },
         },
       },
       {
@@ -1201,7 +1201,7 @@ class QuizDBService {
    * @param userId
    * @returns {*}
    */
-  public async searchQuizByText(text: string, userId: any) {
+  public async searchQuiz(text: string, userId: any) {
     const escapedText = text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
     const query: any = [
       {
@@ -1335,12 +1335,20 @@ class QuizDBService {
     const quizzes = await QuizTable.aggregate(query).exec();
     if (quizzes.length === 0) throw new NetworkError("Quiz not found", 400);
 
-    const anyQuizWithStage = quizzes.find((x) => x.stageId !== null);
-    if (anyQuizWithStage) {
-      const stages = await this.getStageWiseQuizzes(
-        anyQuizWithStage.topicId,
-        userId
+    const anyQuizWithStage = quizzes.filter((obj, index) => {
+      return (
+        index ===
+        quizzes.findIndex(
+          (o) =>
+            obj.topicId.toString() === o.topicId.toString() &&
+            obj.stageId !== null
+        )
       );
+    });
+    let topicIds = [];
+    if (anyQuizWithStage.length > 0) {
+      topicIds = anyQuizWithStage.map((x) => x.topicId);
+      const stages = await this.getStageWiseQuizzes(topicIds, userId);
       if (stages.length > 0) {
         for (let quiz of quizzes) {
           if (quiz.stageId) {
