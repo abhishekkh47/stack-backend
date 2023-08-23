@@ -673,7 +673,7 @@ class QuizController extends BaseController {
       }
       if (quizCategoryIfExists.hasStages && status == "3") {
         const stages = await QuizDBService.getStageWiseQuizzes(
-          categoryId,
+          [quizCategoryIfExists._id],
           user._id
         );
         return this.Ok(ctx, { data: stages });
@@ -867,6 +867,33 @@ class QuizController extends BaseController {
         data: firstQuizInStage1.length > 0 ? firstQuizInStage1[0] : null,
         message: "Success",
       });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to search quizzes based on quiz name and tags
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quizzes/search", method: HttpMethod.GET })
+  @Auth()
+  public async searchQuizzes(ctx: any) {
+    try {
+      const { query, user } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      if (!query?.text?.trim() || query.text.trim() == ",") {
+        return this.BadRequest(ctx, "Quiz not found");
+      }
+      const quizzes = await QuizDBService.searchQuiz(
+        query.text,
+        userIfExists._id
+      );
+      return this.Ok(ctx, { data: quizzes, message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
