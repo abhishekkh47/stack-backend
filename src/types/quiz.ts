@@ -8,6 +8,11 @@ export interface IQuizTopic {
   hasStages: boolean;
 }
 
+export interface IQuizTopicSuggestion {
+  topic: string;
+  userId: mongoose.Schema.Types.ObjectId;
+}
+
 export enum EQuizTopicStatus {
   ACTIVE = 1,
   INACTIVE = 0,

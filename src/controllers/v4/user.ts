@@ -1,8 +1,13 @@
 import moment from "moment";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { ParentChildTable, UserTable } from "@app/model";
+import {
+  AdminTable,
+  ParentChildTable,
+  QuizTopicSuggestionTable,
+  UserTable,
+} from "@app/model";
 import { DeviceTokenService, userService } from "@app/services/v1/index";
-import { UserDBService } from "@app/services/v4";
+import { UserDBService, QuizDBService } from "@app/services/v4";
 import {
   ENOTIFICATIONSETTINGS,
   EUSERSTATUS,
@@ -377,6 +382,42 @@ class UserController extends BaseController {
         }
       }
       return this.Ok(ctx, { data: { hasBalance } });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to suggest a quiz topic to jetson team
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/quiz-topics/suggest", method: HttpMethod.POST })
+  @Auth()
+  public async suggestQuizTopic(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      return validationsV4.suggestTopicValidation(
+        body,
+        ctx,
+        async (validate) => {
+          if (validate) {
+            const quizSuggestion =
+              await QuizDBService.createQuizTopicSuggestion(
+                userIfExists._id,
+                body.topic
+              );
+            return this.Ok(ctx, {
+              data: quizSuggestion,
+              message: "Your suggested topic sent successfully!",
+            });
+          }
+        }
+      );
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

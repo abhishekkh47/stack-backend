@@ -797,7 +797,6 @@ class QuizController extends BaseController {
                 },
               },
             ],
-            "quizData.stageId": null,
             isOnBoardingQuiz: false,
             userId: userIfExists._id,
           },
@@ -813,6 +812,7 @@ class QuizController extends BaseController {
       /**
        * Give any 3 random quizzes if quiz not played
        */
+      quizResultsData = quizResultsData.filter((x) => x.stageId == null);
       let quizzes: any;
       if (quizResultsData.length === 0) {
         quizzes = await QuizDBService.getRandomQuiz();

@@ -9,6 +9,7 @@ import {
   UserBanksTable,
   UserTable,
   ParentChildTable,
+  BusinessProfileTable,
 } from "@app/model";
 import { ObjectId } from "mongodb";
 import { EUserType, EUSERSTATUS } from "@app/types";
@@ -368,6 +369,7 @@ class UserService {
       await QuizResult.deleteMany(otherRecordsQuery);
       await TransactionTable.deleteMany(otherRecordsQuery);
       await UserActivityTable.deleteMany(otherRecordsQuery);
+      await BusinessProfileTable.deleteMany(otherRecordsQuery);
       await UserTable.deleteMany(userQuery);
       await ParentChildTable.deleteMany(otherRecordsQuery);
       /**

@@ -1,26 +1,26 @@
 import { NetworkError } from "@app/middleware";
 import {
-  ANALYTICS_EVENTS,
-  XP_POINTS,
-  QUIZ_LIMIT_REACHED_TEXT,
-} from "@app/utility";
-import { ObjectId } from "mongodb";
-import {
-  ParentChildTable,
+  AdminTable,
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
   QuizReview,
-  QuizTopicTable,
   QuizTable,
-  UserTable,
+  QuizTopicSuggestionTable,
+  QuizTopicTable,
   StageTable,
-  AdminTable,
+  UserTable,
 } from "@app/model";
-import mongoose from "mongoose";
-import { EUserType, everyCorrectAnswerPoints } from "@app/types";
-import { quizService } from "@services/v1";
 import { AnalyticsService } from "@app/services/v4";
+import { EUserType, everyCorrectAnswerPoints } from "@app/types";
+import {
+  ANALYTICS_EVENTS,
+  QUIZ_LIMIT_REACHED_TEXT,
+  XP_POINTS,
+} from "@app/utility";
+import { quizService } from "@services/v1";
+import { ObjectId } from "mongodb";
+import mongoose from "mongoose";
 
 class QuizDBService {
   /**
@@ -1187,7 +1187,14 @@ class QuizDBService {
           subTitle: 1,
           categoryId: 1,
           description: 1,
-          quiz: 1,
+          quiz: {
+            _id: "$quiz._id",
+            quizNum: "$quiz.quizNum",
+            image: "$quiz.image",
+            name: "$quiz.quizName",
+            topicId: "$quiz.topicId",
+            stageId: "$quiz.stageId",
+          },
         },
       },
     ];
@@ -1362,6 +1369,39 @@ class QuizDBService {
     }
 
     return quizzes;
+  }
+
+  /*
+   * @description  Create quiz topic and give error once max limit of suggestion reached
+   * @param userId
+   * @returns {*}
+   */
+  public async createQuizTopicSuggestion(userId: string, topic: string) {
+    try {
+      const usersSuggestion = await QuizTopicSuggestionTable.find({
+        userId: userId,
+      });
+      if (usersSuggestion.length >= 10) {
+        throw new NetworkError(
+          "Sorry, You can maximum suggest only upto 10 suggestions.",
+          400
+        );
+      }
+      const isSameSuggestion = usersSuggestion.find((x) => x.topic == topic);
+      if (isSameSuggestion) {
+        throw new NetworkError(
+          "Sorry, You can't submit same suggestion. Try a different one!",
+          400
+        );
+      }
+      const quizTopicSuggestion = await QuizTopicSuggestionTable.create({
+        topic,
+        userId,
+      });
+      return quizTopicSuggestion;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 
