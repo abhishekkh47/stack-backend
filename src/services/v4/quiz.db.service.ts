@@ -29,7 +29,7 @@ class QuizDBService {
    */
   public async getQuizData(
     quizIds: string[],
-    categoryId: string = null,
+    topicId: string = null,
     status: number = null
   ) {
     let matchQuery: any = {
@@ -46,8 +46,8 @@ class QuizDBService {
         },
       ],
     };
-    if (categoryId) {
-      matchQuery = { ...matchQuery, topicId: new ObjectId(categoryId) };
+    if (topicId) {
+      matchQuery = { ...matchQuery, topicId: new ObjectId(topicId) };
     }
     let quizData = await QuizTable.aggregate([
       {
@@ -89,7 +89,7 @@ class QuizDBService {
         },
       },
     ]).exec();
-    if (quizData.length === 0 && !categoryId) {
+    if (quizData.length === 0 && !topicId) {
       throw Error("Quiz Not Found");
     }
     quizData = quizData.sort(() => 0.5 - Math.random());
@@ -988,15 +988,15 @@ class QuizDBService {
 
   /**
    * @description  Get most played category quizzes by user
-   * @param categoryIds
+   * @param topics
    * @param userId
    * @returns {*}
    */
-  public async getStageWiseQuizzes(categoryIds: string[], userId: string) {
+  public async getStageWiseQuizzes(topics: string[], userId: string) {
     const query: any = [
       {
         $match: {
-          categoryId: { $in: categoryIds },
+          categoryId: { $in: topics },
         },
       },
       {
