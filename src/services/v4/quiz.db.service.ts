@@ -29,7 +29,7 @@ class QuizDBService {
    */
   public async getQuizData(
     quizIds: string[],
-    categoryId: string = null,
+    topicId: string = null,
     status: number = null
   ) {
     let matchQuery: any = {
@@ -46,8 +46,8 @@ class QuizDBService {
         },
       ],
     };
-    if (categoryId) {
-      matchQuery = { ...matchQuery, topicId: new ObjectId(categoryId) };
+    if (topicId) {
+      matchQuery = { ...matchQuery, topicId: new ObjectId(topicId) };
     }
     let quizData = await QuizTable.aggregate([
       {
@@ -89,7 +89,7 @@ class QuizDBService {
         },
       },
     ]).exec();
-    if (quizData.length === 0 && !categoryId) {
+    if (quizData.length === 0 && !topicId) {
       throw Error("Quiz Not Found");
     }
     quizData = quizData.sort(() => 0.5 - Math.random());
@@ -988,15 +988,15 @@ class QuizDBService {
 
   /**
    * @description  Get most played category quizzes by user
-   * @param categoryId
+   * @param topics
    * @param userId
    * @returns {*}
    */
-  public async getStageWiseQuizzes(categoryId: string, userId: string) {
+  public async getStageWiseQuizzes(topics: string[], userId: string) {
     const query: any = [
       {
         $match: {
-          categoryId: new ObjectId(categoryId),
+          categoryId: { $in: topics },
         },
       },
       {
@@ -1203,6 +1203,175 @@ class QuizDBService {
   }
 
   /**
+   * @description  Search Quiz based on text
+   * @param text
+   * @param userId
+   * @returns {*}
+   */
+  public async searchQuiz(text: string, userId: any) {
+    const escapedText = text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    const query: any = [
+      {
+        $match: {
+          $and: [
+            {
+              quizNum: {
+                $exists: true,
+              },
+            },
+            {
+              quizNum: {
+                $ne: 0,
+              },
+            },
+            {
+              $or: [
+                {
+                  quizName: {
+                    $regex: escapedText,
+                    $options: "i",
+                  },
+                },
+                {
+                  tags: {
+                    $regex: escapedText,
+                    $options: "i",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "quizresults",
+          let: {
+            quizId: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$userId", userId],
+                    },
+                    {
+                      $eq: ["$quizId", "$$quizId"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "quizPlayed",
+        },
+      },
+      {
+        $lookup: {
+          from: "stages",
+          localField: "stageId",
+          foreignField: "_id",
+          as: "stages",
+        },
+      },
+      {
+        $unwind: {
+          path: "$stages",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "topics",
+        },
+      },
+      {
+        $unwind: {
+          path: "$topics",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          isCompleted: {
+            $cond: {
+              if: {
+                $eq: [
+                  {
+                    $size: "$quizPlayed",
+                  },
+                  0,
+                ],
+              },
+              then: false,
+              else: true,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          topicId: 1,
+          image: 1,
+          tags: 1,
+          quizNum: 1,
+          isCompleted: 1,
+          isUnlocked: "$isCompleted",
+          stageId: 1,
+          quizName: 1,
+          topicName: {
+            $cond: {
+              if: {
+                $eq: ["$stageId", null],
+              },
+              then: "$topics.topic",
+              else: {
+                $concat: ["$topics.topic", ": ", "$stages.subTitle"],
+              },
+            },
+          },
+        },
+      },
+    ];
+    const quizzes = await QuizTable.aggregate(query).exec();
+    if (quizzes.length === 0) throw new NetworkError("Quiz not found", 400);
+
+    const anyQuizWithStage = quizzes.filter((obj, index) => {
+      return (
+        index ===
+        quizzes.findIndex(
+          (o) =>
+            obj.topicId.toString() === o.topicId.toString() &&
+            obj.stageId !== null
+        )
+      );
+    });
+    let topicIds = [];
+    if (anyQuizWithStage.length > 0) {
+      topicIds = anyQuizWithStage.map((x) => x.topicId);
+      const stages = await this.getStageWiseQuizzes(topicIds, userId);
+      if (stages.length > 0) {
+        for (let quiz of quizzes) {
+          if (quiz.stageId) {
+            const findStage = stages.find(
+              (x) => x._id.toString() == quiz.stageId.toString()
+            );
+            quiz.isUnlocked = findStage.isUnlocked;
+          }
+        }
+      }
+    }
+
+    return quizzes;
+  }
+
+  /*
    * @description  Create quiz topic and give error once max limit of suggestion reached
    * @param userId
    * @returns {*}
