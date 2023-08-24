@@ -125,10 +125,10 @@ class BusinessProfileService {
    */
   public async setStreakGoals(userId: string, streakGoalsId: string) {
     try {
-      const streakGoalsExists = await StreakGoalTable.findOne({
+      const streakGoalsIfExists = await StreakGoalTable.findOne({
         _id: streakGoalsId,
       });
-      if (!streakGoalsExists) {
+      if (!streakGoalsIfExists) {
         throw new NetworkError("No Streak Goal Found", 400);
       }
       await BusinessProfileTable.findOneAndUpdate(
@@ -139,6 +139,7 @@ class BusinessProfileService {
           },
         }
       );
+      return true;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
