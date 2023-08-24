@@ -16,4 +16,5 @@ export interface IBusinessProfile {
   impacts: mongoose.Schema.Types.ObjectId;
   passions: mongoose.Types.ObjectId[];
   description: string;
+  streakGoal: mongoose.Schema.Types.ObjectId;
 }

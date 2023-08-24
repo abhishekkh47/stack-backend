@@ -1,4 +1,9 @@
-import { BusinessProfileTable, ImpactTable, PassionTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  ImpactTable,
+  PassionTable,
+  StreakGoalTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
 
@@ -89,6 +94,9 @@ class BusinessProfileService {
           description: {
             $first: "$description",
           },
+          streakGoal: {
+            $first: "$streakGoal",
+          },
           impacts: {
             $first: {
               _id: "$impacts._id",
@@ -107,6 +115,33 @@ class BusinessProfileService {
       },
     ]).exec();
     return businessProfile?.[0] ?? null;
+  }
+
+  /**
+   * @description This method is used to set streak goals
+   * @param userId
+   * @param streakGoalId
+   * @returns {*}
+   */
+  public async setStreakGoals(userId: string, streakGoalsId: string) {
+    try {
+      const streakGoalsExists = await StreakGoalTable.findOne({
+        _id: streakGoalsId,
+      });
+      if (!streakGoalsExists) {
+        throw new NetworkError("No Streak Goal Found", 400);
+      }
+      await BusinessProfileTable.findOneAndUpdate(
+        { userId: userId },
+        {
+          $set: {
+            streakGoal: streakGoalsId,
+          },
+        }
+      );
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 
