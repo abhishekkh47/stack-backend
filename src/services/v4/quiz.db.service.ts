@@ -299,7 +299,7 @@ class QuizDBService {
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
     };
-    await QuizResult.create(dataToCreate);
+    const quizResults = await QuizResult.create(dataToCreate);
     let incrementObj: any = {
       quizCoins: pointsEarnedFromQuiz,
     };
@@ -334,7 +334,11 @@ class QuizDBService {
         user_id: userId,
       }
     );
-    return { totalXPPoints, updatedXPPoints: updatedXP.xpPoints };
+    return {
+      totalXPPoints,
+      updatedXPPoints: updatedXP.xpPoints,
+      quizResults,
+    };
   }
 
   /**

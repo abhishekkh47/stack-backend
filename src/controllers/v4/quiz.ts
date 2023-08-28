@@ -15,6 +15,7 @@ import {
   AnalyticsService,
   LeagueService,
   QuizDBService,
+  BusinessProfileService,
 } from "@app/services/v4";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
@@ -552,7 +553,7 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const { totalXPPoints, updatedXPPoints } =
+          const { totalXPPoints, updatedXPPoints, quizResults } =
             await QuizDBService.storeQuizInformation(
               user._id,
               headers,
@@ -568,6 +569,10 @@ class QuizController extends BaseController {
             userIfExists,
             leagues,
             updatedXPPoints
+          );
+          const streaksDetails = await BusinessProfileService.addStreaks(
+            userIfExists._id,
+            quizResults
           );
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,

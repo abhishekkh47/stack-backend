@@ -34,6 +34,20 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       ref: "streakgoal",
       default: null,
     },
+    streaks: {
+      longestStreak: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      currentStreak: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      updatedStreakDate: {
+        type: mongoose.Schema.Types.String,
+        default: 0,
+      },
+    },
   },
   { timestamps: true }
 );

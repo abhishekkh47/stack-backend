@@ -34,3 +34,4 @@ export * from "@model/impact";
 export * from "@model/business-profile";
 export * from "@model/quizTopicSuggestion";
 export * from "@model/streakGoals";
+export * from "@model/userStreak";

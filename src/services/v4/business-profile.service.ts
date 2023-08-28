@@ -3,9 +3,12 @@ import {
   ImpactTable,
   PassionTable,
   StreakGoalTable,
+  UserStreakTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
+import moment from "moment";
+import { LEVELS } from "@app/utility";
 
 class BusinessProfileService {
   /**
@@ -45,7 +48,7 @@ class BusinessProfileService {
   }
 
   public async getBusinessProfile(id: string) {
-    const businessProfile = await BusinessProfileTable.aggregate([
+    let businessProfile: any = await BusinessProfileTable.aggregate([
       {
         $match: {
           userId: new ObjectId(id),
@@ -111,10 +114,82 @@ class BusinessProfileService {
               image: "$passions.image",
             },
           },
+          streaks: {
+            $first: "$streaks",
+          },
         },
       },
     ]).exec();
-    return businessProfile?.[0] ?? null;
+    if (businessProfile.length === 0) return null;
+    businessProfile = businessProfile[0];
+    let achievements = {};
+    const longestStreak = businessProfile?.streaks?.longestStreak || 0;
+    if (longestStreak >= LEVELS.LEVEL6.maxValue) {
+      const additionalLevels =
+        Math.floor((longestStreak - LEVELS.LEVEL6.maxValue) / 50) + 1;
+      const level = 7 + additionalLevels;
+      const maxValue = LEVELS.LEVEL6.maxValue + additionalLevels * 50;
+
+      achievements = {
+        ...achievements,
+        level,
+        longestStreak,
+        maxValue,
+      };
+    } else {
+      switch (true) {
+        case longestStreak < LEVELS.LEVEL1.maxValue:
+          achievements = {
+            ...achievements,
+            level: LEVELS.LEVEL1.level,
+            longestStreak,
+            maxValue: LEVELS.LEVEL1.maxValue,
+          };
+          break;
+        case longestStreak < LEVELS.LEVEL2.maxValue:
+          achievements = {
+            ...achievements,
+            level: LEVELS.LEVEL2.level,
+            longestStreak,
+            maxValue: LEVELS.LEVEL2.maxValue,
+          };
+          break;
+        case longestStreak < LEVELS.LEVEL3.maxValue:
+          achievements = {
+            ...achievements,
+            level: LEVELS.LEVEL3.level,
+            longestStreak,
+            maxValue: LEVELS.LEVEL3.maxValue,
+          };
+          break;
+        case longestStreak < LEVELS.LEVEL4.maxValue:
+          achievements = {
+            ...achievements,
+            level: LEVELS.LEVEL4.level,
+            longestStreak,
+            maxValue: LEVELS.LEVEL4.maxValue,
+          };
+          break;
+        case longestStreak < LEVELS.LEVEL5.maxValue:
+          achievements = {
+            ...achievements,
+            level: LEVELS.LEVEL5.level,
+            longestStreak,
+            maxValue: LEVELS.LEVEL5.maxValue,
+          };
+          break;
+        case longestStreak < LEVELS.LEVEL6.maxValue:
+          achievements = {
+            ...achievements,
+            level: LEVELS.LEVEL6.level,
+            longestStreak,
+            maxValue: LEVELS.LEVEL6.maxValue,
+          };
+          break;
+      }
+    }
+    businessProfile = { ...businessProfile, achievements };
+    return businessProfile;
   }
 
   /**
@@ -139,6 +214,64 @@ class BusinessProfileService {
           },
         }
       );
+      return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This method is used to add streaks
+   * @param userId
+   * @param quizResults
+   * @returns {*}
+   */
+  public async addStreaks(userId: string, quizResults: any) {
+    try {
+      let isUserStreakCreated = false;
+      let streaks = {};
+      const quizResultsDate = moment(quizResults.createdAt).startOf("day");
+      const businessProfile = await BusinessProfileTable.findOne({ userId });
+      let updatedStreakDate = null;
+      if (businessProfile?.streaks?.updatedStreakDate) {
+        updatedStreakDate = moment(businessProfile.streaks.updatedStreakDate);
+        const differenceBetweenDate = quizResultsDate.diff(
+          updatedStreakDate,
+          "days"
+        );
+        if (differenceBetweenDate === 1) {
+          streaks = {
+            currentStreak: businessProfile.streaks.currentStreak + 1,
+            longestStreak:
+              businessProfile.streaks.longestStreak <=
+              businessProfile.streaks.currentStreak + 1
+                ? businessProfile.streaks.currentStreak + 1
+                : businessProfile.streaks.longestStreak,
+            updatedStreakDate: moment(quizResultsDate).format("YYYY-MM-DD"),
+          };
+          isUserStreakCreated = true;
+        } else if (differenceBetweenDate !== 0 && differenceBetweenDate > 1) {
+          streaks = {
+            currentStreak: 1,
+            longestStreak: businessProfile.streaks.longestStreak,
+            updatedStreakDate: moment(quizResultsDate).format("YYYY-MM-DD"),
+          };
+        }
+      } else {
+        streaks = {
+          ...streaks,
+          currentStreak: 1,
+          longestStreak: 1,
+          updatedStreakDate: moment(quizResultsDate).format("YYYY-MM-DD"),
+        };
+        isUserStreakCreated = true;
+      }
+      if (isUserStreakCreated) {
+        await UserStreakTable.create({
+          userId: userId,
+          streakDate: moment(quizResultsDate).format("YYYY-MM-DD"),
+        });
+      }
       return true;
     } catch (error) {
       throw new NetworkError(error.message, 400);

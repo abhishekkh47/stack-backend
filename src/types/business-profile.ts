@@ -11,10 +11,17 @@ export interface IPassion {
   order: number;
 }
 
+interface IStreak {
+  currentStreak: number;
+  longestStreak: number;
+  updatedStreakDate: string;
+}
+
 export interface IBusinessProfile {
   userId: mongoose.Schema.Types.ObjectId;
   impacts: mongoose.Schema.Types.ObjectId;
   passions: mongoose.Types.ObjectId[];
   description: string;
   streakGoal: mongoose.Schema.Types.ObjectId;
+  streaks: IStreak;
 }
