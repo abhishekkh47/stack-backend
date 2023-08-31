@@ -142,6 +142,7 @@ class UserService {
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
             isRewardDeclined: 1,
+            timezone: 1,
           },
         },
       ]).exec()

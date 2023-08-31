@@ -18,6 +18,7 @@ export interface IUser extends IAccount {
   isParentOnboardingReminderSent: boolean;
   isQuizReminderNotificationSent: boolean;
   xpPoints: number;
+  timezone: string;
 }
 
 export interface IAccount {

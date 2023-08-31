@@ -195,6 +195,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    timezone: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
