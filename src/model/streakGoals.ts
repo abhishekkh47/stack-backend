@@ -13,6 +13,6 @@ const schema = new mongoose.Schema<IStreakGoalSchema>(
 );
 
 export const StreakGoalTable = mongoose.model<IStreakGoalSchema>(
-  "streakgoal",
+  "streak_goal",
   schema
 );
