@@ -572,7 +572,8 @@ class QuizController extends BaseController {
           );
           const streaksDetails = await BusinessProfileService.addStreaks(
             userIfExists._id,
-            quizResults
+            quizResults,
+            userIfExists.timezone
           );
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
@@ -592,6 +593,7 @@ class QuizController extends BaseController {
             currentLeague,
             nextLeague,
             isNewLeagueUnlocked,
+            streaksDetails,
           });
         }
       }

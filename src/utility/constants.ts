@@ -237,3 +237,5 @@ export const LEVELS = {
   LEVEL5: { level: 5, maxValue: 50 },
   LEVEL6: { level: 6, maxValue: 100 },
 };
+
+export const DEFAULT_TIMEZONE = "America/New_York";

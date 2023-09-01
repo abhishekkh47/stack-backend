@@ -11,10 +11,17 @@ export interface IPassion {
   order: number;
 }
 
+interface IUpdatedDay {
+  day: number;
+  month: number;
+  year: number;
+}
+
 interface IStreak {
-  currentStreak: number;
-  longestStreak: number;
-  updatedStreakDate: string;
+  current: number;
+  longest: number;
+  last5days: any[];
+  updatedDate: IUpdatedDay;
 }
 
 export interface IBusinessProfile {
@@ -23,5 +30,5 @@ export interface IBusinessProfile {
   passions: mongoose.Types.ObjectId[];
   description: string;
   streakGoal: mongoose.Schema.Types.ObjectId;
-  streaks: IStreak;
+  streak: IStreak;
 }

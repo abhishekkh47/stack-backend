@@ -2,6 +2,7 @@ import config from "@app/config";
 import crypto from "crypto";
 import { AdminTable, UserTable } from "@app/model";
 import ShortUniqueId from "short-unique-id";
+import { DEFAULT_TIMEZONE } from "./constants";
 
 const getUid = new ShortUniqueId({ length: 7 });
 
@@ -29,6 +30,11 @@ export const get72HoursAhead = (DateTime: any) => {
 export const getMinutesBetweenDates = (startDate, endDate) => {
   const diff = endDate.getTime() - startDate.getTime();
   return diff / 60000;
+};
+
+export const getDaysBetweenDates = (startDate, endDate) => {
+  const diff = endDate - startDate;
+  return diff / (1000 * 60 * 60 * 24);
 };
 
 /**
@@ -117,4 +123,33 @@ export const getQuizImageAspectRatio = async (headers) => {
     return aspectRatio;
   }
   return admin.quizImageAspectRatio[key];
+};
+
+export const convertDateToTimeZone = (
+  date: any,
+  tzString: string = DEFAULT_TIMEZONE
+) => {
+  const dateObject = new Date(
+    (typeof date === "string" ? new Date(date) : date).toLocaleString("en-US", {
+      timeZone: tzString,
+    })
+  );
+  const day = dateObject.getDate().toString().padStart(2, "0");
+  const month = (dateObject.getMonth() + 1).toString().padStart(2, "0");
+  const year = dateObject.getFullYear();
+  return {
+    day,
+    month,
+    year,
+    date: formattedDate(year, month, day),
+  };
+};
+
+export const formattedDate = (year, month, day) => {
+  const date = [
+    year,
+    month.toString().padStart(2, "0"),
+    day.toString().padStart(2, "0"),
+  ].join("-");
+  return new Date(date);
 };

@@ -95,8 +95,17 @@ class BusinessProfileController extends BaseController {
       const { id } = ctx.request.params;
       if (!/^[0-9a-fA-F]{24}$/.test(id))
         return this.BadRequest(ctx, "Business Profile not found.");
+      const userIfExists = await UserTable.findOne({ _id: id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found.");
+      }
+      let statistics = {
+        fuelCount: userIfExists.preLoadedCoins + userIfExists.quizCoins,
+        xpCount: userIfExists.xpPoints,
+      };
       const businessProfile = await BusinessProfileService.getBusinessProfile(
-        id
+        id,
+        statistics
       );
       return this.Ok(ctx, { data: businessProfile });
     } catch (error) {

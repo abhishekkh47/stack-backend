@@ -34,18 +34,32 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       ref: "streakgoal",
       default: null,
     },
-    streaks: {
-      longestStreak: {
+    streak: {
+      longest: {
         type: mongoose.Schema.Types.Number,
         default: 0,
       },
-      currentStreak: {
+      current: {
         type: mongoose.Schema.Types.Number,
         default: 0,
       },
-      updatedStreakDate: {
-        type: mongoose.Schema.Types.String,
-        default: 0,
+      last5days: {
+        type: [mongoose.Schema.Types.Mixed], // Assuming you want to store dates
+        default: [null, null, null, null, null],
+      },
+      updatedDate: {
+        day: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        month: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        year: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
       },
     },
   },

@@ -56,7 +56,7 @@ class UserController extends BaseController {
       $or: [{ parentId: id }, { userId: id }],
       intialDeposit: true,
     });
-
+    let statistics = {};
     if (data) {
       if (checkIntitalDepositDone) {
         data.initialDeposit = 1;
@@ -88,8 +88,16 @@ class UserController extends BaseController {
           data.isRecurring = 1;
         }
       }
+      statistics = {
+        ...statistics,
+        fuelCount: data.preLoadedCoins + data.quizCoins,
+        xpCount: data.xpPoints,
+      };
     }
-    const businessProfile = await BusinessProfileService.getBusinessProfile(id);
+    const businessProfile = await BusinessProfileService.getBusinessProfile(
+      id,
+      statistics
+    );
 
     data = {
       ...data,
