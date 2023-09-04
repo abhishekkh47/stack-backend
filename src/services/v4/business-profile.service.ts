@@ -123,10 +123,10 @@ class BusinessProfileService {
    * @param streakGoalId
    * @returns {*}
    */
-  public async setStreakGoals(userId: string, streakGoalsId: string) {
+  public async setStreakGoal(userId: string, streakGoalId: string) {
     try {
       const streakGoalsIfExists = await StreakGoalTable.findOne({
-        _id: streakGoalsId,
+        _id: streakGoalId,
       });
       if (!streakGoalsIfExists) {
         throw new NetworkError("No Streak Goal Found", 400);
@@ -135,7 +135,7 @@ class BusinessProfileService {
         { userId: userId },
         {
           $set: {
-            streakGoal: streakGoalsId,
+            streakGoal: streakGoalId,
           },
         }
       );

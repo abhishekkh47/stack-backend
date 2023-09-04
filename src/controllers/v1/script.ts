@@ -1586,7 +1586,7 @@ class ScriptController extends BaseController {
     try {
       const { streakGoals } = ctx.request.body;
       if (!streakGoals || streakGoals?.length === 0) {
-        return this.BadRequest(ctx, "No Streak Goals Found");
+        return this.BadRequest(ctx, "No Streak Goals Provided");
       }
       const isStreakGoalsAdded: boolean =
         await StreakScriptService.addStreakGoals(streakGoals);

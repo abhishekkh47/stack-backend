@@ -314,7 +314,7 @@
 	"suggestTopicValidationTopicEmpty": "Please enter suggested topic.",
 	"suggestTopicValidationTopicMin": "Suggested topic must contain minimum 2 characters.",
 	"suggestTopicValidationTopicMax": "Suggested topic must contain maximum 280 characters.",
-	"commitGoalValidationStreakgoalidRequired": "Please enter streak goal.",
-	"commitGoalValidationStreakgoalidEmpty": "Please enter streak goal.",
-	"commitGoalValidationStreakgoalidPattern": "Please enter valid streak goal."
+	"commitStreakGoalValidationStreakgoalidRequired": "Please enter streak goal.",
+	"commitStreakGoalValidationStreakgoalidEmpty": "Please enter streak goal.",
+	"commitStreakGoalValidationStreakgoalidPattern": "Please enter valid streak goal."
 }
