@@ -1223,7 +1223,6 @@ class ScriptController extends BaseController {
       );
       return this.Ok(ctx, { data: quizResults });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, error.message);
     }
   }

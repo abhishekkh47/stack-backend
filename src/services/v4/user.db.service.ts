@@ -577,11 +577,12 @@ class UserDBService {
           userId: userDetails._id,
         }).populate("streakGoal");
         if (
-          businessProfile?.streakGoal &&
-          updatedStreaksDetails.streak.current ==
-            businessProfile?.streakGoal?.day
+          (businessProfile?.streakGoal &&
+            updatedStreaksDetails.streak.current ==
+              businessProfile?.streakGoal?.day) ||
+          isStreakInActiveSinceLast5Days
         ) {
-          isStreakGoalAchieved = true;
+          isStreakGoalAchieved = isStreakInActiveSinceLast5Days ? false : true;
           await BusinessProfileTable.findOneAndUpdate(
             {
               userId: userDetails._id,

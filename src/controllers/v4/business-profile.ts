@@ -104,7 +104,6 @@ class BusinessProfileController extends BaseController {
       );
       return this.Ok(ctx, { data: businessProfile });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, error.message);
     }
   }
