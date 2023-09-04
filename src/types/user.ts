@@ -19,6 +19,7 @@ export interface IUser extends IAccount {
   isQuizReminderNotificationSent: boolean;
   xpPoints: number;
   timezone: string;
+  streak: IStreak;
 }
 
 export interface IAccount {
@@ -147,6 +148,19 @@ export enum ESCREENSTATUS {
   ENTER_PHONE_NO = 8,
   ENTER_PARENT_INFO = 9,
   SUCCESS_TEEN = 10,
+}
+
+interface IUpdatedDay {
+  day: number;
+  month: number;
+  year: number;
+}
+
+interface IStreak {
+  current: number;
+  longest: number;
+  last5days: any[];
+  updatedDate: IUpdatedDay;
 }
 
 export enum EPHONEVERIFIEDSTATUS {

@@ -99,15 +99,46 @@ class BusinessProfileController extends BaseController {
       if (!userIfExists) {
         return this.BadRequest(ctx, "User not found.");
       }
-      let statistics = {
-        fuelCount: userIfExists.preLoadedCoins + userIfExists.quizCoins,
-        xpCount: userIfExists.xpPoints,
-      };
       const businessProfile = await BusinessProfileService.getBusinessProfile(
-        id,
-        statistics
+        id
       );
       return this.Ok(ctx, { data: businessProfile });
+    } catch (error) {
+      console.log(error);
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is commit to the streak goals
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/business-profile/commit-streakgoal",
+    method: HttpMethod.POST,
+  })
+  @Auth()
+  public async commitToStreakGoals(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      return validationsV4.commitStreakGoalValidation(
+        body,
+        ctx,
+        async (validate: boolean) => {
+          if (validate) {
+            await BusinessProfileService.setStreakGoal(
+              userIfExists._id,
+              body.streakGoalId
+            );
+            return this.Ok(ctx, { message: "You have commited your goal" });
+          }
+        }
+      );
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

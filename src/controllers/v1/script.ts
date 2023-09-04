@@ -1,7 +1,7 @@
 import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
 import { DripshopTable } from "@app/model/dripshop";
 import moment from "moment";
-import { InternalUserAuth, PrimeTrustJWT } from "@app/middleware";
+import { InternalUserAuth, PrimeTrustJWT, Auth } from "@app/middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
@@ -1586,13 +1586,30 @@ class ScriptController extends BaseController {
     try {
       const { streakGoals } = ctx.request.body;
       if (!streakGoals || streakGoals?.length === 0) {
-        return this.BadRequest(ctx, "No Streak Goals Found");
+        return this.BadRequest(ctx, "No Streak Goals Provided");
       }
       const isStreakGoalsAdded: boolean =
         await StreakScriptService.addStreakGoals(streakGoals);
       if (!isStreakGoalsAdded)
         return this.BadRequest(ctx, "Something went wrong");
       return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is for aaa
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/aaa", method: HttpMethod.POST })
+  @Auth()
+  public async aaaaa(ctx: any) {
+    try {
+      const user = await UserTable.findOne({ _id: ctx.request.user._id });
+      const streaksDetails = await userDbService.addStreaks(user);
+      return this.Ok(ctx, { message: "Success", data: streaksDetails });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

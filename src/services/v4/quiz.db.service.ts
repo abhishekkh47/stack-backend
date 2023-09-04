@@ -243,8 +243,7 @@ class QuizDBService {
     userId: string,
     headers: object,
     reqParam: any,
-    quizExists: any,
-    isTeen: boolean = null
+    quizExists: any
   ) {
     let quizResultsData = await QuizResult.find({
       userId: userId,
@@ -299,7 +298,7 @@ class QuizDBService {
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
     };
-    const quizResults = await QuizResult.create(dataToCreate);
+    await QuizResult.create(dataToCreate);
     let incrementObj: any = {
       quizCoins: pointsEarnedFromQuiz,
     };
@@ -337,7 +336,6 @@ class QuizDBService {
     return {
       totalXPPoints,
       updatedXPPoints: updatedXP.xpPoints,
-      quizResults,
     };
   }
 

@@ -51,60 +51,10 @@ class UserController extends BaseController {
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     let { data } = await UserService.getProfile(id);
-
-    const checkIntitalDepositDone = await TransactionTable.findOne({
-      $or: [{ parentId: id }, { userId: id }],
-      intialDeposit: true,
-    });
-    let statistics = {};
-    if (data) {
-      if (checkIntitalDepositDone) {
-        data.initialDeposit = 1;
-      }
-      const checkParentExists = await UserTable.findOne({
-        mobile: data.parentMobile ? data.parentMobile : data.mobile,
-      });
-      const checkBankExists =
-        checkParentExists?._id &&
-        (await UserBanksTable.find({
-          userId: checkParentExists._id,
-        }));
-      if (
-        !checkParentExists ||
-        (checkParentExists &&
-          checkParentExists.status !== EUSERSTATUS.KYC_DOCUMENT_VERIFIED)
-      ) {
-        data.isParentApproved = 0;
-      } else {
-        data.isParentApproved = 1;
-      }
-      if (
-        !checkParentExists ||
-        (checkParentExists && checkBankExists.length == 0)
-      ) {
-        data.isRecurring = 0;
-      } else if (checkBankExists.length > 0) {
-        if (data.isRecurring == 1 || data.isRecurring == 0) {
-          data.isRecurring = 1;
-        }
-      }
-      statistics = {
-        ...statistics,
-        fuelCount: data.preLoadedCoins + data.quizCoins,
-        xpCount: data.xpPoints,
-      };
-    }
-    const businessProfile = await BusinessProfileService.getBusinessProfile(
-      id,
-      statistics
-    );
+    const businessProfile = await BusinessProfileService.getBusinessProfile(id);
 
     data = {
       ...data,
-      terms: CMS_LINKS.TERMS,
-      amcPolicy: CMS_LINKS.AMC_POLICY,
-      privacy: CMS_LINKS.PRIVACY_POLICY,
-      ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
       businessProfile,
     };
 

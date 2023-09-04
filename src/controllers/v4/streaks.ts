@@ -22,41 +22,6 @@ class StreaksController extends BaseController {
       .sort({ day: 1 });
     return this.Ok(ctx, { message: "Success", data: streakGoals });
   }
-
-  /**
-   * @description This method is commit to the streak goals
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/streakgoals/commit",
-    method: HttpMethod.POST,
-  })
-  @Auth()
-  public async commitToStreakGoals(ctx: any) {
-    try {
-      const { user, body } = ctx.request;
-      const userIfExists = await UserTable.findOne({ _id: user._id });
-      if (!userIfExists) {
-        return this.BadRequest(ctx, "User not found");
-      }
-      return validationsV4.commitGoalValidation(
-        body,
-        ctx,
-        async (validate: boolean) => {
-          if (validate) {
-            await BusinessProfileService.setStreakGoals(
-              userIfExists._id,
-              body.streakGoalId
-            );
-            return this.Ok(ctx, { message: "You have commited your goal" });
-          }
-        }
-      );
-    } catch (error) {
-      return this.BadRequest(ctx, error.message);
-    }
-  }
 }
 
 export default new StreaksController();

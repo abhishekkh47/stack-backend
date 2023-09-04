@@ -4,6 +4,10 @@ import {
   updateAccountToPendingClosure,
   uploadFilesFetch,
   LIST,
+  LEVELS,
+  convertDateToTimeZone,
+  getDaysBetweenDates,
+  formattedDate,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
 import {
@@ -11,6 +15,7 @@ import {
   ParentChildTable,
   DripshopTable,
   LeagueTable,
+  BusinessProfileTable,
 } from "@app/model";
 import fs from "fs";
 import moment from "moment";
@@ -319,6 +324,9 @@ class UserDBService {
           xpPoints: 1,
           total: 1,
           profilePicture: 1,
+          quizCoins: 1,
+          preLoadedCoins: 1,
+          activeStreak: "$streak.current",
         },
       },
     ];
@@ -473,6 +481,201 @@ class UserDBService {
     );
 
     return { createdDripshop, updatedUser };
+  }
+
+  /**
+   * @description This method is used to add streaks
+   * @param userDetails
+   * @returns {*}
+   */
+  public async addStreaks(userDetails: any) {
+    try {
+      let showStreakScreen = false;
+      /**
+       * Check if streak is inactive since last 5 days
+       */
+      const isStreakInActiveSinceLast5Days =
+        userDetails?.streak?.last5days?.every((value) => value === null) ||
+        false;
+      const reset5daysStreak = [1, null, null, null, null];
+      let streak = {};
+      const currentDate = convertDateToTimeZone(
+        new Date(),
+        userDetails.timezone
+      );
+      const previousStreak = userDetails.streak.current;
+      const isFirstStreak =
+        !userDetails || userDetails?.streak?.updatedDate?.day === 0;
+      const { year, month, day } = userDetails.streak.updatedDate;
+      const startDate = formattedDate(year, month, day);
+      const endDate = new Date(currentDate.date);
+      const difference = getDaysBetweenDates(startDate, endDate);
+      if (isFirstStreak || (!isFirstStreak && difference === 1)) {
+        let last5days: any = [];
+        const earliestNullIndex =
+          userDetails?.streak?.last5days?.indexOf(null) ?? -1;
+        if (earliestNullIndex === -1) {
+          last5days = reset5daysStreak;
+        } else {
+          userDetails.streak.last5days[earliestNullIndex] = 1;
+          last5days = userDetails.streak.last5days;
+        }
+        streak = {
+          ...streak,
+          current: userDetails?.streak?.current + 1,
+          longest:
+            userDetails?.streak?.longest < userDetails?.streak?.current + 1
+              ? userDetails?.streak?.current + 1
+              : userDetails?.streak?.longest,
+          updatedDate: {
+            day: currentDate.day,
+            month: currentDate.month,
+            year: currentDate.year,
+          },
+          last5days,
+        };
+        showStreakScreen = true;
+      } else if (difference > 1) {
+        const last5days = this.modifyLast5DaysStreaks(
+          difference,
+          userDetails.streak.last5days,
+          reset5daysStreak
+        );
+
+        streak = {
+          ...streak,
+          current: 1,
+          longest: userDetails.streak.longest,
+          updatedDate: {
+            day: currentDate.day,
+            month: currentDate.month,
+            year: currentDate.year,
+          },
+          last5days,
+        };
+        showStreakScreen = true;
+      }
+      if (showStreakScreen) {
+        let isStreakGoalAchieved = false;
+        const updatedStreaksDetails = await UserTable.findOneAndUpdate(
+          { _id: userDetails._id },
+          {
+            $set: {
+              streak: streak,
+            },
+          },
+          { upsert: true, new: true }
+        );
+        const dayRange = this.get5DaysOfWeek(
+          updatedStreaksDetails.streak.updatedDate,
+          updatedStreaksDetails.streak.last5days
+        );
+        /**
+         * Check if streak goal is completed or not
+         */
+        const businessProfile: any = await BusinessProfileTable.findOne({
+          userId: userDetails._id,
+        }).populate("streakGoal");
+        if (
+          businessProfile?.streakGoal &&
+          updatedStreaksDetails.streak.current ==
+            businessProfile?.streakGoal?.day
+        ) {
+          isStreakGoalAchieved = true;
+          await BusinessProfileTable.findOneAndUpdate(
+            {
+              userId: userDetails._id,
+            },
+            {
+              $set: {
+                streakGoal: null,
+              },
+            }
+          );
+        }
+        return {
+          showStreakScreen,
+          last5DaysStreak: updatedStreaksDetails.streak.last5days,
+          last5DaysWeek: dayRange,
+          currentStreak: updatedStreaksDetails.streak.current,
+          previousStreak: previousStreak,
+          isStreakGoalAchieved,
+          isStreakInActiveSinceLast5Days,
+        };
+      }
+
+      /**
+       * Give last5days streak and last5days of week
+       */
+      return {
+        showStreakScreen,
+      };
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This method is used to modify the last 5 days array based on certain conditions
+   * @param difference
+   * @param last5days
+   * @param reset5daysStreak
+   * @return {*}
+   */
+  public modifyLast5DaysStreaks(
+    difference: number,
+    last5days: any,
+    reset5daysStreak: any,
+    isStreakAdded: boolean = true
+  ) {
+    let dayStreaks: any = [];
+    const nullCount = last5days.filter((item) => item === null).length;
+    if (difference > nullCount) {
+      dayStreaks = reset5daysStreak;
+    } else {
+      for (let i = 0; i < last5days.length; i++) {
+        if (last5days[i] === null) {
+          if (i <= difference - 1) {
+            last5days[i] = 0;
+          } else if (i === difference && isStreakAdded) {
+            last5days[i] = 1;
+          }
+        }
+      }
+      dayStreaks = last5days;
+    }
+    return dayStreaks;
+  }
+
+  /**
+   * @description This method is used to get5DaysOfWeek and give day range
+   * @param date
+   * @param last5days
+   * @return {*}
+   */
+  public get5DaysOfWeek(date: any, last5days: any) {
+    let dayRange = [];
+    const notNullLast5DaysCount = last5days.filter((x) => x !== null).length;
+    let updatedDate: any = formattedDate(date.year, date.month, date.day);
+    notNullLast5DaysCount === 0
+      ? updatedDate
+      : updatedDate.setDate(updatedDate.getDate() - notNullLast5DaysCount + 1);
+    const daysOfWeek = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    for (let i = 0; i < 5; i++) {
+      const dayIndex = updatedDate.getDay();
+      const dayName = daysOfWeek[dayIndex];
+      dayRange.push(dayName.charAt(0));
+      updatedDate.setDate(updatedDate.getDate() + 1);
+    }
+    return dayRange;
   }
 }
 

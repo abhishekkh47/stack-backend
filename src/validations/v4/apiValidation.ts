@@ -210,7 +210,7 @@ export const validationsV4 = {
     }
     return callback(true);
   },
-  commitGoalValidation: (req, res, callback) => {
+  commitStreakGoalValidation: (req, res, callback) => {
     const schema = Joi.object({
       streakGoalId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
@@ -220,7 +220,7 @@ export const validationsV4 = {
     if (error) {
       return res.throw(
         400,
-        res.__(validationMessageKey("commitGoalValidation", error))
+        res.__(validationMessageKey("commitStreakGoalValidation", error))
       );
     }
     return callback(true);

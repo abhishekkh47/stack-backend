@@ -7,7 +7,6 @@ import {
   QuizResult,
   QuizTable,
   QuizTopicTable,
-  StageTable,
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
@@ -15,7 +14,7 @@ import {
   AnalyticsService,
   LeagueService,
   QuizDBService,
-  BusinessProfileService,
+  UserDBService,
 } from "@app/services/v4";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
@@ -553,7 +552,7 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const { totalXPPoints, updatedXPPoints, quizResults } =
+          const { totalXPPoints, updatedXPPoints } =
             await QuizDBService.storeQuizInformation(
               user._id,
               headers,
@@ -570,11 +569,7 @@ class QuizController extends BaseController {
             leagues,
             updatedXPPoints
           );
-          const streaksDetails = await BusinessProfileService.addStreaks(
-            userIfExists._id,
-            quizResults,
-            userIfExists.timezone
-          );
+          const streaksDetails = await UserDBService.addStreaks(userIfExists);
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id,

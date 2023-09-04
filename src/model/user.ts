@@ -199,6 +199,34 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    streak: {
+      longest: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      current: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      last5days: {
+        type: [mongoose.Schema.Types.Mixed], // Assuming you want to store dates
+        default: [null, null, null, null, null],
+      },
+      updatedDate: {
+        day: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        month: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        year: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+      },
+    },
   },
   { timestamps: true }
 );
