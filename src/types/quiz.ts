@@ -13,6 +13,11 @@ export interface IQuizTopicSuggestion {
   userId: mongoose.Schema.Types.ObjectId;
 }
 
+export interface IQuizSearchInput {
+  searchInput: string;
+  userId: mongoose.Schema.Types.ObjectId;
+}
+
 export enum EQuizTopicStatus {
   ACTIVE = 1,
   INACTIVE = 0,
