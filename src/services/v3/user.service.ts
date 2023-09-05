@@ -131,6 +131,7 @@ class UserService {
             taxIdNo: 1,
             taxState: 1,
             status: 1,
+            streakGoal: 1,
             isOnboardingQuizCompleted: 1,
             dob: 1,
             profilePicture: 1,

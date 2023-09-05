@@ -195,6 +195,11 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    streakGoal: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "streak_goal",
+      default: null,
+    },
   },
   { timestamps: true }
 );

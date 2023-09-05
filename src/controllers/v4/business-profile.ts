@@ -1,16 +1,10 @@
 import { Auth } from "@app/middleware";
-import {
-  BusinessProfileTable,
-  ImpactTable,
-  PassionTable,
-  UserTable,
-} from "@app/model";
+import { ImpactTable, PassionTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "../base";
-import { ObjectId } from "mongodb";
-import { BusinessProfileService, QuizDBService } from "@app/services/v4";
+import { BusinessProfileService } from "@app/services/v4";
 
 class BusinessProfileController extends BaseController {
   /**
@@ -99,41 +93,6 @@ class BusinessProfileController extends BaseController {
         id
       );
       return this.Ok(ctx, { data: businessProfile });
-    } catch (error) {
-      return this.BadRequest(ctx, error.message);
-    }
-  }
-
-  /**
-   * @description This method is commit to the streak goals
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/business-profile/commit-streakgoal",
-    method: HttpMethod.POST,
-  })
-  @Auth()
-  public async commitToStreakGoals(ctx: any) {
-    try {
-      const { user, body } = ctx.request;
-      const userIfExists = await UserTable.findOne({ _id: user._id });
-      if (!userIfExists) {
-        return this.BadRequest(ctx, "User not found");
-      }
-      return validationsV4.commitStreakGoalValidation(
-        body,
-        ctx,
-        async (validate: boolean) => {
-          if (validate) {
-            await BusinessProfileService.setStreakGoal(
-              userIfExists._id,
-              body.streakGoalId
-            );
-            return this.Ok(ctx, { message: "You have commited your goal" });
-          }
-        }
-      );
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

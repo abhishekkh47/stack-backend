@@ -1,9 +1,7 @@
 import { Auth } from "@app/middleware";
-import { StreakGoalTable, UserTable, BusinessProfileTable } from "@app/model";
-import { BusinessProfileService } from "@app/services/v4";
+import { StreakGoalTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
-import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "../base";
 
 class StreaksController extends BaseController {

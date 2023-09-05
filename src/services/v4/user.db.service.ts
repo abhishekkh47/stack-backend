@@ -11,6 +11,7 @@ import {
   ParentChildTable,
   DripshopTable,
   LeagueTable,
+  StreakGoalTable,
 } from "@app/model";
 import fs from "fs";
 import moment from "moment";
@@ -473,6 +474,34 @@ class UserDBService {
     );
 
     return { createdDripshop, updatedUser };
+  }
+
+  /**
+   * @description This method is used to set streak goals
+   * @param userId
+   * @param streakGoalId
+   * @returns {*}
+   */
+  public async setStreakGoal(userId: string, streakGoalId: string) {
+    try {
+      const streakGoalsIfExists = await StreakGoalTable.findOne({
+        _id: streakGoalId,
+      });
+      if (!streakGoalsIfExists) {
+        throw new NetworkError("No Streak Goal Found", 400);
+      }
+      await UserTable.findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: {
+            streakGoal: streakGoalId,
+          },
+        }
+      );
+      return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 
