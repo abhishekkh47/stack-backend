@@ -1,19 +1,7 @@
-import {
-  BusinessProfileTable,
-  ImpactTable,
-  PassionTable,
-  StreakGoalTable,
-  UserTable,
-} from "@app/model";
+import { BusinessProfileTable, ImpactTable, PassionTable } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
-import {
-  LEVELS,
-  convertDateToTimeZone,
-  getDaysBetweenDates,
-  formattedDate,
-} from "@app/utility";
-import { UserDBService } from "../v4/index";
+import { STREAK_LEVELS } from "@app/utility";
 
 class BusinessProfileService {
   /**
@@ -116,9 +104,6 @@ class BusinessProfileService {
           description: {
             $first: "$description",
           },
-          streakGoal: {
-            $first: "$streakGoal",
-          },
           impacts: {
             $first: {
               _id: "$impacts._id",
@@ -147,149 +132,70 @@ class BusinessProfileService {
     if (!businessProfile.streak) {
       return businessProfile;
     }
-    const currentDate = convertDateToTimeZone(
-      new Date(),
-      businessProfile.timezone
-    );
-    const isFirstStreak =
-      !businessProfile || businessProfile?.streak?.updatedDate?.day === 0;
-    const { year, month, day } = businessProfile.streak.updatedDate;
-    const startDate = formattedDate(year, month, day);
-    const endDate = new Date(currentDate.date);
-    const difference = getDaysBetweenDates(startDate, endDate);
-    if (isFirstStreak || (!isFirstStreak && difference <= 1)) {
-    } else {
-      let previousDate: any = endDate.setDate(endDate.getDate() - 1);
-      previousDate = convertDateToTimeZone(
-        new Date(previousDate),
-        businessProfile.timezone
-      );
-      const reset5daysStreaks = [null, null, null, null, null];
-      const last5days = UserDBService.modifyLast5DaysStreaks(
-        difference,
-        businessProfile.streak.last5days,
-        reset5daysStreaks,
-        false
-      );
-      const streak = {
-        current: 0,
-        longest: businessProfile.streak.longest,
-        updatedDate: {
-          day: previousDate.day,
-          month: previousDate.month,
-          year: previousDate.year,
-        },
-        last5days,
-      };
-      await UserTable.findOneAndUpdate(
-        { _id: id },
-        {
-          $set: {
-            streak: streak,
-          },
-        },
-        { upsert: true }
-      );
-    }
     /**
      * Achievements
      */
     let achievements = {};
     const longestStreak = businessProfile?.streak?.longest || 0;
-    if (longestStreak >= LEVELS.LEVEL6.maxValue) {
+    if (longestStreak >= STREAK_LEVELS.LEVEL6.maxValue) {
       const additionalLevels =
-        Math.floor((longestStreak - LEVELS.LEVEL6.maxValue) / 50) + 1;
+        Math.floor((longestStreak - STREAK_LEVELS.LEVEL6.maxValue) / 50) + 1;
       const level = 7 + additionalLevels;
-      const maxValue = LEVELS.LEVEL6.maxValue + additionalLevels * 50;
+      const maxValue = STREAK_LEVELS.LEVEL6.maxValue + additionalLevels * 50;
 
       achievements = {
-        ...achievements,
         level,
         longestStreak,
         maxValue,
       };
     } else {
       switch (true) {
-        case longestStreak < LEVELS.LEVEL1.maxValue:
+        case longestStreak < STREAK_LEVELS.LEVEL1.maxValue:
           achievements = {
-            ...achievements,
-            level: LEVELS.LEVEL1.level,
+            level: STREAK_LEVELS.LEVEL1.level,
             longestStreak,
-            maxValue: LEVELS.LEVEL1.maxValue,
+            maxValue: STREAK_LEVELS.LEVEL1.maxValue,
           };
           break;
-        case longestStreak < LEVELS.LEVEL2.maxValue:
+        case longestStreak < STREAK_LEVELS.LEVEL2.maxValue:
           achievements = {
-            ...achievements,
-            level: LEVELS.LEVEL2.level,
+            level: STREAK_LEVELS.LEVEL2.level,
             longestStreak,
-            maxValue: LEVELS.LEVEL2.maxValue,
+            maxValue: STREAK_LEVELS.LEVEL2.maxValue,
           };
           break;
-        case longestStreak < LEVELS.LEVEL3.maxValue:
+        case longestStreak < STREAK_LEVELS.LEVEL3.maxValue:
           achievements = {
-            ...achievements,
-            level: LEVELS.LEVEL3.level,
+            level: STREAK_LEVELS.LEVEL3.level,
             longestStreak,
-            maxValue: LEVELS.LEVEL3.maxValue,
+            maxValue: STREAK_LEVELS.LEVEL3.maxValue,
           };
           break;
-        case longestStreak < LEVELS.LEVEL4.maxValue:
+        case longestStreak < STREAK_LEVELS.LEVEL4.maxValue:
           achievements = {
-            ...achievements,
-            level: LEVELS.LEVEL4.level,
+            level: STREAK_LEVELS.LEVEL4.level,
             longestStreak,
-            maxValue: LEVELS.LEVEL4.maxValue,
+            maxValue: STREAK_LEVELS.LEVEL4.maxValue,
           };
           break;
-        case longestStreak < LEVELS.LEVEL5.maxValue:
+        case longestStreak < STREAK_LEVELS.LEVEL5.maxValue:
           achievements = {
-            ...achievements,
-            level: LEVELS.LEVEL5.level,
+            level: STREAK_LEVELS.LEVEL5.level,
             longestStreak,
-            maxValue: LEVELS.LEVEL5.maxValue,
+            maxValue: STREAK_LEVELS.LEVEL5.maxValue,
           };
           break;
-        case longestStreak < LEVELS.LEVEL6.maxValue:
+        case longestStreak < STREAK_LEVELS.LEVEL6.maxValue:
           achievements = {
-            ...achievements,
-            level: LEVELS.LEVEL6.level,
+            level: STREAK_LEVELS.LEVEL6.level,
             longestStreak,
-            maxValue: LEVELS.LEVEL6.maxValue,
+            maxValue: STREAK_LEVELS.LEVEL6.maxValue,
           };
           break;
       }
     }
     businessProfile = { ...businessProfile, achievements };
     return businessProfile;
-  }
-
-  /**
-   * @description This method is used to set streak goals
-   * @param userId
-   * @param streakGoalId
-   * @returns {*}
-   */
-  public async setStreakGoal(userId: string, streakGoalId: string) {
-    try {
-      const streakGoalsIfExists = await StreakGoalTable.findOne({
-        _id: streakGoalId,
-      });
-      if (!streakGoalsIfExists) {
-        throw new NetworkError("No Streak Goal Found", 400);
-      }
-      await BusinessProfileTable.findOneAndUpdate(
-        { userId: userId },
-        {
-          $set: {
-            streakGoal: streakGoalId,
-          },
-        }
-      );
-      return true;
-    } catch (error) {
-      throw new NetworkError(error.message, 400);
-    }
   }
 }
 

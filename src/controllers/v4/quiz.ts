@@ -532,7 +532,9 @@ class QuizController extends BaseController {
           let leagues = await LeagueTable.find({})
             .select("_id name image minPoint maxPoint colorCode")
             .sort({ minPoint: 1 });
-          let userIfExists = await UserTable.findOne({ _id: user._id });
+          let userIfExists = await UserTable.findOne({
+            _id: user._id,
+          }).populate("streakGoal");
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }

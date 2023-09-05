@@ -4,7 +4,7 @@ import {
   updateAccountToPendingClosure,
   uploadFilesFetch,
   LIST,
-  LEVELS,
+  FIVE_DAYS_TO_RESET,
   convertDateToTimeZone,
   getDaysBetweenDates,
   formattedDate,
@@ -15,7 +15,7 @@ import {
   ParentChildTable,
   DripshopTable,
   LeagueTable,
-  BusinessProfileTable,
+  StreakGoalTable,
 } from "@app/model";
 import fs from "fs";
 import moment from "moment";
@@ -495,62 +495,50 @@ class UserDBService {
        * Check if streak is inactive since last 5 days
        */
       const isStreakInActiveSinceLast5Days =
-        userDetails?.streak?.last5days?.every((value) => value === null) ||
-        false;
-      const reset5daysStreak = [1, null, null, null, null];
+        userDetails?.streak?.last5days?.every((value) => value === 0) || false;
       let streak = {};
       const currentDate = convertDateToTimeZone(
         new Date(),
         userDetails.timezone
       );
       const previousStreak = userDetails.streak.current;
-      const isFirstStreak =
-        !userDetails || userDetails?.streak?.updatedDate?.day === 0;
-      const { year, month, day } = userDetails.streak.updatedDate;
+      const { year, month, day } = userDetails?.streak?.updatedDate;
+      const isFirstStreak = !userDetails || day === 0;
       const startDate = formattedDate(year, month, day);
       const endDate = new Date(currentDate.date);
-      const difference = getDaysBetweenDates(startDate, endDate);
-      if (isFirstStreak || (!isFirstStreak && difference === 1)) {
+      const diffDays = getDaysBetweenDates(startDate, endDate);
+      if (isFirstStreak || diffDays === 1) {
         let last5days: any = [];
         const earliestNullIndex =
           userDetails?.streak?.last5days?.indexOf(null) ?? -1;
         if (earliestNullIndex === -1) {
-          last5days = reset5daysStreak;
+          last5days = FIVE_DAYS_TO_RESET;
         } else {
-          userDetails.streak.last5days[earliestNullIndex] = 1;
-          last5days = userDetails.streak.last5days;
+          last5days = userDetails.streak.last5days.map((value, index) =>
+            index === earliestNullIndex ? 1 : value
+          );
         }
         streak = {
-          ...streak,
           current: userDetails?.streak?.current + 1,
-          longest:
-            userDetails?.streak?.longest < userDetails?.streak?.current + 1
-              ? userDetails?.streak?.current + 1
-              : userDetails?.streak?.longest,
-          updatedDate: {
-            day: currentDate.day,
-            month: currentDate.month,
-            year: currentDate.year,
-          },
+          longest: Math.max(
+            userDetails?.streak?.current + 1,
+            userDetails?.streak?.longest
+          ),
+          updatedDate: currentDate,
           last5days,
         };
         showStreakScreen = true;
-      } else if (difference > 1) {
+      } else if (diffDays > 1) {
         const last5days = this.modifyLast5DaysStreaks(
-          difference,
+          diffDays,
           userDetails.streak.last5days,
-          reset5daysStreak
+          FIVE_DAYS_TO_RESET
         );
 
         streak = {
-          ...streak,
           current: 1,
           longest: userDetails.streak.longest,
-          updatedDate: {
-            day: currentDate.day,
-            month: currentDate.month,
-            year: currentDate.year,
-          },
+          updatedDate: currentDate,
           last5days,
         };
         showStreakScreen = true;
@@ -573,19 +561,16 @@ class UserDBService {
         /**
          * Check if streak goal is completed or not
          */
-        const businessProfile: any = await BusinessProfileTable.findOne({
-          userId: userDetails._id,
-        }).populate("streakGoal");
         if (
-          (businessProfile?.streakGoal &&
+          (userDetails?.streakGoal &&
             updatedStreaksDetails.streak.current ==
-              businessProfile?.streakGoal?.day) ||
+              userDetails?.streakGoal?.day) ||
           isStreakInActiveSinceLast5Days
         ) {
           isStreakGoalAchieved = isStreakInActiveSinceLast5Days ? false : true;
-          await BusinessProfileTable.findOneAndUpdate(
+          await UserTable.findOneAndUpdate(
             {
-              userId: userDetails._id,
+              _id: userDetails._id,
             },
             {
               $set: {
@@ -617,28 +602,56 @@ class UserDBService {
   }
 
   /**
+   * @description This method is used to set streak goals
+   * @param userId
+   * @param streakGoalId
+   * @returns {*}
+   */
+  public async setStreakGoal(userId: string, streakGoalId: string) {
+    try {
+      const streakGoalsIfExists = await StreakGoalTable.findOne({
+        _id: streakGoalId,
+      });
+      if (!streakGoalsIfExists) {
+        throw new NetworkError("No Streak Goal Found", 400);
+      }
+      await UserTable.findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: {
+            streakGoal: streakGoalId,
+          },
+        }
+      );
+      return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
    * @description This method is used to modify the last 5 days array based on certain conditions
-   * @param difference
+   * @param diffDays
    * @param last5days
    * @param reset5daysStreak
    * @return {*}
    */
   public modifyLast5DaysStreaks(
-    difference: number,
+    diffDays: number,
     last5days: any,
     reset5daysStreak: any,
     isStreakAdded: boolean = true
   ) {
     let dayStreaks: any = [];
     const nullCount = last5days.filter((item) => item === null).length;
-    if (difference > nullCount) {
+    if (diffDays > nullCount) {
       dayStreaks = reset5daysStreak;
     } else {
       for (let i = 0; i < last5days.length; i++) {
         if (last5days[i] === null) {
-          if (i <= difference - 1) {
+          if (i <= diffDays - 1) {
             last5days[i] = 0;
-          } else if (i === difference && isStreakAdded) {
+          } else if (i === diffDays && isStreakAdded) {
             last5days[i] = 1;
           }
         }

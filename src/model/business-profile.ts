@@ -29,11 +29,6 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       type: mongoose.Schema.Types.String,
       required: true,
     },
-    streakGoal: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "streak_goal",
-      default: null,
-    },
   },
   { timestamps: true }
 );

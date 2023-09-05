@@ -11,6 +11,12 @@ import {
   ParentChildTable,
   BusinessProfileTable,
 } from "@app/model";
+import {
+  convertDateToTimeZone,
+  getDaysBetweenDates,
+  formattedDate,
+  ALL_NULL_5_DAYS,
+} from "@app/utility";
 import { ObjectId } from "mongodb";
 import { EUserType, EUSERSTATUS } from "@app/types";
 import { UserDBService } from "../v4";
@@ -131,6 +137,7 @@ class UserService {
             taxIdNo: 1,
             taxState: 1,
             status: 1,
+            streakGoal: 1,
             isOnboardingQuizCompleted: 1,
             dob: 1,
             profilePicture: 1,
@@ -146,6 +153,7 @@ class UserService {
             preLoadedCoins: 1,
             xpPoints: 1,
             timezone: 1,
+            streak: 1,
           },
         },
       ]).exec()
@@ -154,32 +162,43 @@ class UserService {
     if (!data) {
       throw Error("Invalid user ID entered.");
     }
-    let bankUserIds: any = [];
-    bankUserIds.push(data._id);
-    if (data.type == EUserType.TEEN) {
-      const parentChildTable = await ParentChildTable.findOne({
-        "teens.childId": data._id,
-      });
-      if (parentChildTable) {
-        bankUserIds.push(parentChildTable.userId);
-        const parentUser = await UserTable.findOne({
-          _id: parentChildTable.userId,
-        });
-        if (parentUser && parentUser.status === 3) {
-          data.isKycSuccess = true;
-        }
-      }
-    } else {
-      if (data.status === 3) {
-        data.isKycSuccess = true;
+    if (data.streak) {
+      const currentDate = convertDateToTimeZone(new Date(), data.timezone);
+      const { year, month, day } = data?.streak?.updatedDate;
+      const isFirstStreak = day === 0;
+      const startDate = formattedDate(year, month, day);
+      const endDate = new Date(currentDate.date);
+      const diffDays = getDaysBetweenDates(startDate, endDate);
+      if (!(isFirstStreak || diffDays <= 1)) {
+        let previousDate: any = endDate.setDate(endDate.getDate() - 1);
+        previousDate = convertDateToTimeZone(
+          new Date(previousDate),
+          data.timezone
+        );
+        const last5days = UserDBService.modifyLast5DaysStreaks(
+          diffDays,
+          data.streak.last5days,
+          ALL_NULL_5_DAYS,
+          false
+        );
+        const streak = {
+          current: 0,
+          longest: data.streak.longest,
+          updatedDate: previousDate,
+          last5days,
+        };
+        await UserTable.findOneAndUpdate(
+          { _id: data._id },
+          {
+            $set: {
+              streak: streak,
+            },
+          },
+          { upsert: true }
+        );
       }
     }
-    let userBankExists = await UserBanksTable.findOne({
-      userId: { $in: bankUserIds },
-    });
-    if (userBankExists) {
-      data.isBankDetail = true;
-    }
+
     return { data };
   }
 

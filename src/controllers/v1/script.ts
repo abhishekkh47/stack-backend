@@ -1596,23 +1596,6 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
-
-  /**
-   * @description This method is for aaa
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/aaa", method: HttpMethod.POST })
-  @Auth()
-  public async aaaaa(ctx: any) {
-    try {
-      const user = await UserTable.findOne({ _id: ctx.request.user._id });
-      const streaksDetails = await userDbService.addStreaks(user);
-      return this.Ok(ctx, { message: "Success", data: streaksDetails });
-    } catch (error) {
-      return this.BadRequest(ctx, error.message);
-    }
-  }
 }
 
 export default new ScriptController();

@@ -7,6 +7,7 @@ import {
   MongooseModel,
   EPHONEVERIFIEDSTATUS,
 } from "@app/types";
+import { ALL_NULL_5_DAYS } from "@app/utility";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
@@ -210,7 +211,7 @@ const schema = new mongoose.Schema<IUserSchema>(
       },
       last5days: {
         type: [mongoose.Schema.Types.Mixed], // Assuming you want to store dates
-        default: [null, null, null, null, null],
+        default: ALL_NULL_5_DAYS,
       },
       updatedDate: {
         day: {
@@ -226,6 +227,11 @@ const schema = new mongoose.Schema<IUserSchema>(
           default: 0,
         },
       },
+    },
+    streakGoal: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "streak_goal",
+      default: null,
     },
   },
   { timestamps: true }

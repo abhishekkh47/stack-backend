@@ -20,6 +20,7 @@ export interface IUser extends IAccount {
   xpPoints: number;
   timezone: string;
   streak: IStreak;
+  streakGoal: mongoose.Schema.Types.ObjectId;
 }
 
 export interface IAccount {
