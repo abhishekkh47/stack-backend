@@ -209,6 +209,10 @@ const schema = new mongoose.Schema<IUserSchema>(
         type: mongoose.Schema.Types.Number,
         default: 0,
       },
+      isStreakInActive5Days: {
+        type: mongoose.Schema.Types.Boolean,
+        default: false,
+      },
       last5days: {
         type: [mongoose.Schema.Types.Mixed], // Assuming you want to store dates
         default: ALL_NULL_5_DAYS,

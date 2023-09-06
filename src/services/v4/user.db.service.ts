@@ -8,6 +8,7 @@ import {
   convertDateToTimeZone,
   getDaysBetweenDates,
   formattedDate,
+  STREAK_LEVELS,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
 import {
@@ -490,7 +491,7 @@ class UserDBService {
    */
   public async addStreaks(userDetails: any) {
     try {
-      let showStreakScreen = false;
+      let isStreakToBeUpdated = false;
       /**
        * Check if streak is inactive since last 5 days
        */
@@ -501,12 +502,11 @@ class UserDBService {
         new Date(),
         userDetails.timezone
       );
-      const previousStreak = userDetails.streak.current;
+      const currentStreak = userDetails.streak.current;
       const { year, month, day } = userDetails?.streak?.updatedDate;
       const isFirstStreak = !userDetails || day === 0;
       const startDate = formattedDate(year, month, day);
-      const endDate = new Date(currentDate.date);
-      const diffDays = getDaysBetweenDates(startDate, endDate);
+      const diffDays = getDaysBetweenDates(startDate, currentDate.date);
       if (isFirstStreak || diffDays === 1) {
         let last5days: any = [];
         const earliestNullIndex =
@@ -524,27 +524,28 @@ class UserDBService {
             userDetails?.streak?.current + 1,
             userDetails?.streak?.longest
           ),
+          isStreakInActive5Days: false,
           updatedDate: currentDate,
           last5days,
         };
-        showStreakScreen = true;
+        isStreakToBeUpdated = true;
       } else if (diffDays > 1) {
-        const last5days = this.modifyLast5DaysStreaks(
-          diffDays,
-          userDetails.streak.last5days,
-          FIVE_DAYS_TO_RESET
-        );
-
+        const { last5days, isStreakInActive5Days } =
+          this.modifyLast5DaysStreaks(
+            diffDays,
+            userDetails.streak.last5days,
+            FIVE_DAYS_TO_RESET
+          );
         streak = {
           current: 1,
           longest: userDetails.streak.longest,
+          isStreakInActive5Days,
           updatedDate: currentDate,
           last5days,
         };
-        showStreakScreen = true;
+        isStreakToBeUpdated = true;
       }
-      if (showStreakScreen) {
-        let isStreakGoalAchieved = false;
+      if (isStreakToBeUpdated) {
         const updatedStreaksDetails = await UserTable.findOneAndUpdate(
           { _id: userDetails._id },
           {
@@ -565,9 +566,8 @@ class UserDBService {
           (userDetails?.streakGoal &&
             updatedStreaksDetails.streak.current ==
               userDetails?.streakGoal?.day) ||
-          isStreakInActiveSinceLast5Days
+          updatedStreaksDetails.streak.isStreakInActive5Days
         ) {
-          isStreakGoalAchieved = isStreakInActiveSinceLast5Days ? false : true;
           await UserTable.findOneAndUpdate(
             {
               _id: userDetails._id,
@@ -580,22 +580,14 @@ class UserDBService {
           );
         }
         return {
-          showStreakScreen,
           last5DaysStreak: updatedStreaksDetails.streak.last5days,
           last5DaysWeek: dayRange,
           currentStreak: updatedStreaksDetails.streak.current,
-          previousStreak: previousStreak,
-          isStreakGoalAchieved,
+          previousStreak: currentStreak,
           isStreakInActiveSinceLast5Days,
         };
       }
-
-      /**
-       * Give last5days streak and last5days of week
-       */
-      return {
-        showStreakScreen,
-      };
+      return null;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -620,6 +612,7 @@ class UserDBService {
         {
           $set: {
             streakGoal: streakGoalId,
+            streakInActiveDays: false,
           },
         }
       );
@@ -643,22 +636,36 @@ class UserDBService {
     isStreakAdded: boolean = true
   ) {
     let dayStreaks: any = [];
+    let inactiveStreakCount = 0;
     const nullCount = last5days.filter((item) => item === null).length;
     if (diffDays > nullCount) {
       dayStreaks = reset5daysStreak;
+      inactiveStreakCount = nullCount;
+      const checkDiffDays = diffDays - nullCount;
+      if (checkDiffDays < 6) {
+        inactiveStreakCount += checkDiffDays - 1;
+        dayStreaks = dayStreaks.fill(0, 0, checkDiffDays - 1);
+      }
     } else {
-      for (let i = 0; i < last5days.length; i++) {
-        if (last5days[i] === null) {
-          if (i <= diffDays - 1) {
-            last5days[i] = 0;
-          } else if (i === diffDays && isStreakAdded) {
-            last5days[i] = 1;
+      let nullCount = 0;
+      dayStreaks = last5days.map((value) => {
+        if (value === null) {
+          nullCount++;
+          if (nullCount < diffDays) {
+            return 0;
+          } else if (nullCount === diffDays && isStreakAdded) {
+            return 1;
           }
         }
-      }
-      dayStreaks = last5days;
+        return value;
+      });
+      inactiveStreakCount = this.findLastConsecutiveZeroes(dayStreaks);
     }
-    return dayStreaks;
+    console.log(inactiveStreakCount);
+    return {
+      last5days: dayStreaks,
+      isStreakInActive5Days: inactiveStreakCount >= 5 ? true : false,
+    };
   }
 
   /**
@@ -670,10 +677,14 @@ class UserDBService {
   public get5DaysOfWeek(date: any, last5days: any) {
     let dayRange = [];
     const notNullLast5DaysCount = last5days.filter((x) => x !== null).length;
-    let updatedDate: any = formattedDate(date.year, date.month, date.day);
+    let updatedDate: any = new Date(
+      formattedDate(date.year, date.month, date.day)
+    );
+
     notNullLast5DaysCount === 0
       ? updatedDate
       : updatedDate.setDate(updatedDate.getDate() - notNullLast5DaysCount + 1);
+    console.log(notNullLast5DaysCount);
     const daysOfWeek = [
       "Sunday",
       "Monday",
@@ -690,6 +701,95 @@ class UserDBService {
       updatedDate.setDate(updatedDate.getDate() + 1);
     }
     return dayRange;
+  }
+
+  /**
+   * @description This method isused to fetch users streak achievements
+   * @param longestStreak
+   * @returns {*}
+   */
+  public getUserStreaksAchievements(longestStreak: number = 0) {
+    let achievements = {};
+    if (longestStreak >= STREAK_LEVELS.LEVEL6.maxValue) {
+      const additionalLevels =
+        Math.floor((longestStreak - STREAK_LEVELS.LEVEL6.maxValue) / 50) + 1;
+      const level = 7 + additionalLevels;
+      const maxValue = STREAK_LEVELS.LEVEL6.maxValue + additionalLevels * 50;
+
+      achievements = {
+        level,
+        longestStreak,
+        maxValue,
+      };
+    } else {
+      switch (true) {
+        case longestStreak < STREAK_LEVELS.LEVEL1.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL1.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL1.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL2.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL2.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL2.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL3.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL3.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL3.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL4.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL4.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL4.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL5.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL5.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL5.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL6.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL6.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL6.maxValue,
+          };
+          break;
+      }
+    }
+    return achievements;
+  }
+
+  /**
+   * @description This method is used to findLastConsecutiveZeroes
+   * @param dayStreakArray
+   * @returns {*}
+   */
+  public findLastConsecutiveZeroes(dayStreakArray: any) {
+    let maxConsecutiveZeroes = 0;
+    let currentConsecutiveZeroes = 0;
+    for (let i = dayStreakArray.length - 1; i >= 0; i--) {
+      if (dayStreakArray[i] === 0) {
+        currentConsecutiveZeroes++;
+      } else {
+        break;
+      }
+
+      if (currentConsecutiveZeroes > maxConsecutiveZeroes) {
+        maxConsecutiveZeroes = currentConsecutiveZeroes;
+      }
+    }
+    return maxConsecutiveZeroes;
   }
 }
 

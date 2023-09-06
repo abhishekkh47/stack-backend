@@ -32,11 +32,6 @@ export const getMinutesBetweenDates = (startDate, endDate) => {
   return diff / 60000;
 };
 
-export const getDaysBetweenDates = (startDate, endDate) => {
-  const diff = endDate - startDate;
-  return diff / (1000 * 60 * 60 * 24);
-};
-
 /**
  * @description This function use for create validation unique key
  * @param apiTag
@@ -151,5 +146,46 @@ export const formattedDate = (year, month, day) => {
     month.toString().padStart(2, "0"),
     day.toString().padStart(2, "0"),
   ].join("-");
-  return new Date(date);
+  return date;
+};
+
+export const isLeapYear = (year) => {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+};
+
+export const daysInMonth = (year, month) => {
+  const days = [
+    31,
+    28 + (isLeapYear(year) ? 1 : 0),
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+  return days[month - 1];
+};
+
+export const getDaysBetweenDates = (startDate, endDate) => {
+  const [year1, month1, day1] = startDate.split("-").map(Number);
+  const [year2, month2, day2] = endDate.split("-").map(Number);
+
+  const days1 =
+    Array.from({ length: month1 - 1 }, (_, month) =>
+      daysInMonth(year1, month + 1)
+    ).reduce((acc, val) => acc + val, day1) +
+    year1 * 365;
+  const days2 =
+    Array.from({ length: month2 - 1 }, (_, month) =>
+      daysInMonth(year2, month + 1)
+    ).reduce((acc, val) => acc + val, day2) +
+    year2 * 365;
+
+  const diffDays = Math.abs(days2 - days1);
+  return diffDays;
 };

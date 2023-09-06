@@ -1,7 +1,6 @@
 import { BusinessProfileTable, ImpactTable, PassionTable } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
-import { STREAK_LEVELS } from "@app/utility";
 
 class BusinessProfileService {
   /**
@@ -118,84 +117,10 @@ class BusinessProfileService {
               image: "$passions.image",
             },
           },
-          streak: {
-            $first: "$userData.streak",
-          },
-          timezone: {
-            $first: "$userData.timezone",
-          },
         },
       },
     ]).exec();
-    if (businessProfile.length === 0) return null;
-    businessProfile = businessProfile[0];
-    if (!businessProfile.streak) {
-      return businessProfile;
-    }
-    /**
-     * Achievements
-     */
-    let achievements = {};
-    const longestStreak = businessProfile?.streak?.longest || 0;
-    if (longestStreak >= STREAK_LEVELS.LEVEL6.maxValue) {
-      const additionalLevels =
-        Math.floor((longestStreak - STREAK_LEVELS.LEVEL6.maxValue) / 50) + 1;
-      const level = 7 + additionalLevels;
-      const maxValue = STREAK_LEVELS.LEVEL6.maxValue + additionalLevels * 50;
-
-      achievements = {
-        level,
-        longestStreak,
-        maxValue,
-      };
-    } else {
-      switch (true) {
-        case longestStreak < STREAK_LEVELS.LEVEL1.maxValue:
-          achievements = {
-            level: STREAK_LEVELS.LEVEL1.level,
-            longestStreak,
-            maxValue: STREAK_LEVELS.LEVEL1.maxValue,
-          };
-          break;
-        case longestStreak < STREAK_LEVELS.LEVEL2.maxValue:
-          achievements = {
-            level: STREAK_LEVELS.LEVEL2.level,
-            longestStreak,
-            maxValue: STREAK_LEVELS.LEVEL2.maxValue,
-          };
-          break;
-        case longestStreak < STREAK_LEVELS.LEVEL3.maxValue:
-          achievements = {
-            level: STREAK_LEVELS.LEVEL3.level,
-            longestStreak,
-            maxValue: STREAK_LEVELS.LEVEL3.maxValue,
-          };
-          break;
-        case longestStreak < STREAK_LEVELS.LEVEL4.maxValue:
-          achievements = {
-            level: STREAK_LEVELS.LEVEL4.level,
-            longestStreak,
-            maxValue: STREAK_LEVELS.LEVEL4.maxValue,
-          };
-          break;
-        case longestStreak < STREAK_LEVELS.LEVEL5.maxValue:
-          achievements = {
-            level: STREAK_LEVELS.LEVEL5.level,
-            longestStreak,
-            maxValue: STREAK_LEVELS.LEVEL5.maxValue,
-          };
-          break;
-        case longestStreak < STREAK_LEVELS.LEVEL6.maxValue:
-          achievements = {
-            level: STREAK_LEVELS.LEVEL6.level,
-            longestStreak,
-            maxValue: STREAK_LEVELS.LEVEL6.maxValue,
-          };
-          break;
-      }
-    }
-    businessProfile = { ...businessProfile, achievements };
-    return businessProfile;
+    return businessProfile?.[0] ?? null;
   }
 }
 
