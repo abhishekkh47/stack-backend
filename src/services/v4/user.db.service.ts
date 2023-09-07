@@ -503,10 +503,12 @@ class UserDBService {
         userDetails.timezone
       );
       const currentStreak = userDetails.streak.current;
-      const { year, month, day } = userDetails?.streak?.updatedDate;
+      const { day } = userDetails?.streak?.updatedDate;
       const isFirstStreak = !userDetails || day === 0;
-      const startDate = formattedDate(year, month, day);
-      const diffDays = getDaysBetweenDates(startDate, currentDate.date);
+      const diffDays = getDaysBetweenDates(
+        userDetails?.streak?.updatedDate,
+        currentDate
+      );
       if (isFirstStreak || diffDays === 1) {
         let last5days: any = [];
         const earliestNullIndex =
@@ -661,7 +663,6 @@ class UserDBService {
       });
       inactiveStreakCount = this.findLastConsecutiveZeroes(dayStreaks);
     }
-    console.log(inactiveStreakCount);
     return {
       last5days: dayStreaks,
       isStreakInActive5Days: inactiveStreakCount >= 5 ? true : false,
@@ -684,7 +685,6 @@ class UserDBService {
     notNullLast5DaysCount === 0
       ? updatedDate
       : updatedDate.setDate(updatedDate.getDate() - notNullLast5DaysCount + 1);
-    console.log(notNullLast5DaysCount);
     const daysOfWeek = [
       "Sunday",
       "Monday",

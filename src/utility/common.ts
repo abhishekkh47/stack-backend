@@ -129,8 +129,8 @@ export const convertDateToTimeZone = (
       timeZone: tzString,
     })
   );
-  const day = dateObject.getDate().toString().padStart(2, "0");
-  const month = (dateObject.getMonth() + 1).toString().padStart(2, "0");
+  const day = dateObject.getDate();
+  const month = dateObject.getMonth() + 1;
   const year = dateObject.getFullYear();
   return {
     day,
@@ -172,19 +172,16 @@ export const daysInMonth = (year, month) => {
 };
 
 export const getDaysBetweenDates = (startDate, endDate) => {
-  const [year1, month1, day1] = startDate.split("-").map(Number);
-  const [year2, month2, day2] = endDate.split("-").map(Number);
-
   const days1 =
-    Array.from({ length: month1 - 1 }, (_, month) =>
-      daysInMonth(year1, month + 1)
-    ).reduce((acc, val) => acc + val, day1) +
-    year1 * 365;
+    Array.from({ length: startDate.month - 1 }, (_, month) =>
+      daysInMonth(startDate.year, month + 1)
+    ).reduce((acc, val) => acc + val, startDate.day) +
+    startDate.year * 365;
   const days2 =
-    Array.from({ length: month2 - 1 }, (_, month) =>
-      daysInMonth(year2, month + 1)
-    ).reduce((acc, val) => acc + val, day2) +
-    year2 * 365;
+    Array.from({ length: endDate.month - 1 }, (_, month) =>
+      daysInMonth(endDate.year, month + 1)
+    ).reduce((acc, val) => acc + val, endDate.day) +
+    endDate.year * 365;
 
   const diffDays = Math.abs(days2 - days1);
   return diffDays;

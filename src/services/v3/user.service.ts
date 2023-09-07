@@ -14,7 +14,6 @@ import {
 import {
   convertDateToTimeZone,
   getDaysBetweenDates,
-  formattedDate,
   ALL_NULL_5_DAYS,
 } from "@app/utility";
 import { ObjectId } from "mongodb";
@@ -182,10 +181,12 @@ class UserService {
     }
     if (data.streak) {
       const currentDate = convertDateToTimeZone(new Date(), data.timezone);
-      const { year, month, day } = data.streak?.updatedDate;
+      const { day } = data.streak?.updatedDate;
       const isFirstStreak = day === 0;
-      const startDate = formattedDate(year, month, day);
-      const diffDays = getDaysBetweenDates(startDate, currentDate.date);
+      const diffDays = getDaysBetweenDates(
+        data.streak?.updatedDate,
+        currentDate
+      );
       if (!(isFirstStreak || diffDays <= 1)) {
         const endDate = new Date(currentDate.date);
         let previousDate: any = endDate.setDate(endDate.getDate() - 1);
