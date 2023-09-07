@@ -15,6 +15,7 @@ import {
   convertDateToTimeZone,
   getDaysBetweenDates,
   ALL_NULL_5_DAYS,
+  DEFAULT_TIMEZONE,
 } from "@app/utility";
 import { ObjectId } from "mongodb";
 import { EUserType, EUSERSTATUS } from "@app/types";
@@ -180,52 +181,53 @@ class UserService {
       throw Error("Invalid user ID entered.");
     }
     if (data.streak) {
-      if (data.timezone) {
-        const currentDate = convertDateToTimeZone(new Date(), data.timezone);
-        const { day } = data.streak?.updatedDate;
-        const isFirstStreak = day === 0;
-        const diffDays = getDaysBetweenDates(
-          data.streak?.updatedDate,
-          currentDate
+      const currentDate = convertDateToTimeZone(
+        new Date(),
+        data?.timezone || DEFAULT_TIMEZONE
+      );
+      const { day } = data.streak?.updatedDate;
+      const isFirstStreak = day === 0;
+      const diffDays = getDaysBetweenDates(
+        data.streak?.updatedDate,
+        currentDate
+      );
+      if (!(isFirstStreak || diffDays <= 1)) {
+        const endDate = new Date(currentDate.date);
+        let previousDate: any = endDate.setDate(endDate.getDate() - 1);
+        previousDate = convertDateToTimeZone(
+          new Date(previousDate),
+          data.timezone
         );
-        if (!(isFirstStreak || diffDays <= 1)) {
-          const endDate = new Date(currentDate.date);
-          let previousDate: any = endDate.setDate(endDate.getDate() - 1);
-          previousDate = convertDateToTimeZone(
-            new Date(previousDate),
-            data.timezone
+        const { last5days, isStreakInActive5Days } =
+          UserDBService.modifyLast5DaysStreaks(
+            diffDays,
+            data.streak.last5days,
+            ALL_NULL_5_DAYS,
+            false
           );
-          const { last5days, isStreakInActive5Days } =
-            UserDBService.modifyLast5DaysStreaks(
-              diffDays,
-              data.streak.last5days,
-              ALL_NULL_5_DAYS,
-              false
-            );
-          const streak = {
-            current: 0,
-            longest: data.streak.longest,
-            updatedDate: previousDate,
-            isStreakInActive5Days,
-            last5days,
+        const streak = {
+          current: 0,
+          longest: data.streak.longest,
+          updatedDate: previousDate,
+          isStreakInActive5Days,
+          last5days,
+        };
+        let updateStreakQuery: any = {
+          streak,
+        };
+        if (isStreakInActive5Days) {
+          updateStreakQuery = {
+            ...updateStreakQuery,
+            streakGoal: null,
           };
-          let updateStreakQuery: any = {
-            streak,
-          };
-          if (isStreakInActive5Days) {
-            updateStreakQuery = {
-              ...updateStreakQuery,
-              streakGoal: null,
-            };
-          }
-          await UserTable.findOneAndUpdate(
-            { _id: data._id },
-            {
-              $set: updateStreakQuery,
-            },
-            { upsert: true }
-          );
         }
+        await UserTable.findOneAndUpdate(
+          { _id: data._id },
+          {
+            $set: updateStreakQuery,
+          },
+          { upsert: true }
+        );
       }
       const achievements = UserDBService.getUserStreaksAchievements(
         data.streak.longest
