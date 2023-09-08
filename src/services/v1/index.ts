@@ -17,3 +17,4 @@ export { default as DeviceTokenDBService } from "@services/v1/device-token.db.se
 export { default as ScriptService } from "@services/v1/script.service/index";
 export { default as BusinessProfileScriptService } from "@services/v1/script.service/business-profile";
 export { default as TradingDBService } from "@services/v1/trading.db.service";
+export { default as StreakScriptService } from "@app/services/v1/script.service/streaks";

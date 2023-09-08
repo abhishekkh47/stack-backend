@@ -5,6 +5,7 @@ import DripshopController from "@controllers/v4/dripshop";
 import { getRouteDict } from "@app/utility";
 import WebHookController from "@app/controllers/v4/webhook";
 import BusinessProfileController from "@app/controllers/v4/business-profile";
+import StreaksController from "@app/controllers/v4/streaks";
 
 const routeDict = getRouteDict("4.0.0", [
   AuthController,
@@ -13,6 +14,7 @@ const routeDict = getRouteDict("4.0.0", [
   DripshopController,
   WebHookController,
   BusinessProfileController,
+  StreaksController,
 ]);
 
 export default routeDict;

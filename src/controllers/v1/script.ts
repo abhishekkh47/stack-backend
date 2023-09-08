@@ -24,6 +24,7 @@ import {
   LeagueTable,
   DripshopItemTable,
   StageTable,
+  StreakGoalTable,
 } from "@app/model";
 import {
   EAction,
@@ -56,6 +57,7 @@ import {
   tradingService,
   AuthService,
   DripshopDBService,
+  StreakScriptService,
 } from "@app/services/v1";
 import { UserService } from "@app/services/v3";
 import userDbService from "@app/services/v4/user.db.service";
@@ -1571,6 +1573,29 @@ class ScriptController extends BaseController {
     ];
     await ScriptService.convertDataToCsv(ctx, user, fields);
     return ctx;
+  }
+
+  /**
+   * @description This method is add streak goals in db
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/streakgoals", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeStreakGoals(ctx: any) {
+    try {
+      const { streakGoals } = ctx.request.body;
+      if (!streakGoals || streakGoals?.length === 0) {
+        return this.BadRequest(ctx, "No Streak Goals Provided");
+      }
+      const isStreakGoalsAdded: boolean =
+        await StreakScriptService.addStreakGoals(streakGoals);
+      if (!isStreakGoalsAdded)
+        return this.BadRequest(ctx, "Something went wrong");
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
   }
 }
 
