@@ -424,6 +424,43 @@ class UserController extends BaseController {
   }
 
   /**
+   * @description This method is used to suggest a quiz topic to jetson team
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-timezone", method: HttpMethod.PUT })
+  @Auth()
+  public async updateUserTimezone(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) return this.BadRequest(ctx, "User not found");
+      return validationsV4.updateTimezoneValidation(
+        body,
+        ctx,
+        async (validate) => {
+          if (validate) {
+            await UserTable.findOneAndUpdate(
+              { _id: user._id },
+              {
+                $set: {
+                  timezone: body.timezone,
+                },
+              }
+            );
+            return this.Ok(ctx, {
+              data: body.timezone,
+              message: "Timezone updated successfully",
+            });
+          }
+        }
+      );
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
    * @description This method is commit to the streak goals
    * @param ctx
    * @returns {*}

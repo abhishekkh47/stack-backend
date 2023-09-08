@@ -2,6 +2,7 @@ import config from "@app/config";
 import crypto from "crypto";
 import { AdminTable, UserTable } from "@app/model";
 import ShortUniqueId from "short-unique-id";
+import { DEFAULT_TIMEZONE } from "./constants";
 
 const getUid = new ShortUniqueId({ length: 7 });
 
@@ -117,4 +118,71 @@ export const getQuizImageAspectRatio = async (headers) => {
     return aspectRatio;
   }
   return admin.quizImageAspectRatio[key];
+};
+
+export const convertDateToTimeZone = (
+  date: any,
+  tzString: string = DEFAULT_TIMEZONE
+) => {
+  const dateObject = new Date(
+    (typeof date === "string" ? new Date(date) : date).toLocaleString("en-US", {
+      timeZone: tzString,
+    })
+  );
+  const day = dateObject.getDate();
+  const month = dateObject.getMonth() + 1;
+  const year = dateObject.getFullYear();
+  return {
+    day,
+    month,
+    year,
+    date: formattedDate(year, month, day),
+  };
+};
+
+export const formattedDate = (year, month, day) => {
+  const date = [
+    year,
+    month.toString().padStart(2, "0"),
+    day.toString().padStart(2, "0"),
+  ].join("-");
+  return date;
+};
+
+export const isLeapYear = (year) => {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+};
+
+export const daysInMonth = (year, month) => {
+  const days = [
+    31,
+    28 + (isLeapYear(year) ? 1 : 0),
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+  return days[month - 1];
+};
+
+export const getDaysBetweenDates = (startDate, endDate) => {
+  const days1 =
+    Array.from({ length: startDate.month - 1 }, (_, month) =>
+      daysInMonth(startDate.year, month + 1)
+    ).reduce((acc, val) => acc + val, startDate.day) +
+    startDate.year * 365;
+  const days2 =
+    Array.from({ length: endDate.month - 1 }, (_, month) =>
+      daysInMonth(endDate.year, month + 1)
+    ).reduce((acc, val) => acc + val, endDate.day) +
+    endDate.year * 365;
+
+  const diffDays = Math.abs(days2 - days1);
+  return diffDays;
 };

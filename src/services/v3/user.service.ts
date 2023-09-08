@@ -11,6 +11,12 @@ import {
   ParentChildTable,
   BusinessProfileTable,
 } from "@app/model";
+import {
+  convertDateToTimeZone,
+  getDaysBetweenDates,
+  ALL_NULL_5_DAYS,
+  DEFAULT_TIMEZONE,
+} from "@app/utility";
 import { ObjectId } from "mongodb";
 import { EUserType, EUSERSTATUS } from "@app/types";
 import { UserDBService } from "../v4";
@@ -50,13 +56,29 @@ class UserService {
         },
         {
           $lookup: {
+            from: "streak_goals",
+            localField: "streakGoal",
+            foreignField: "_id",
+            as: "streakGoal",
+          },
+        },
+        {
+          $unwind: {
+            path: "$streakGoal",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
             from: "parentchild",
             localField: "_id",
             foreignField: "userId",
             as: "parentchild",
           },
         },
-        { $unwind: { path: "$parentchild", preserveNullAndEmptyArrays: true } },
+        {
+          $unwind: { path: "$parentchild", preserveNullAndEmptyArrays: true },
+        },
         {
           $lookup: {
             from: "users",
@@ -131,7 +153,10 @@ class UserService {
             taxIdNo: 1,
             taxState: 1,
             status: 1,
-            streakGoal: 1,
+            streakGoal: {
+              _id: "$streakGoal._id",
+              day: "$streakGoal.day",
+            },
             isOnboardingQuizCompleted: 1,
             dob: 1,
             profilePicture: 1,
@@ -143,40 +168,73 @@ class UserService {
             isKycDocumentUploaded: 1,
             initialDeposit: 1,
             isRewardDeclined: 1,
+            quizCoins: 1,
+            preLoadedCoins: 1,
+            xpPoints: 1,
+            timezone: 1,
+            streak: 1,
           },
         },
       ]).exec()
     )[0];
-
     if (!data) {
       throw Error("Invalid user ID entered.");
     }
-    let bankUserIds: any = [];
-    bankUserIds.push(data._id);
-    if (data.type == EUserType.TEEN) {
-      const parentChildTable = await ParentChildTable.findOne({
-        "teens.childId": data._id,
-      });
-      if (parentChildTable) {
-        bankUserIds.push(parentChildTable.userId);
-        const parentUser = await UserTable.findOne({
-          _id: parentChildTable.userId,
-        });
-        if (parentUser && parentUser.status === 3) {
-          data.isKycSuccess = true;
+    if (data.streak) {
+      const currentDate = convertDateToTimeZone(
+        new Date(),
+        data?.timezone || DEFAULT_TIMEZONE
+      );
+      const { day } = data.streak?.updatedDate;
+      const isFirstStreak = day === 0;
+      const diffDays = getDaysBetweenDates(
+        data.streak?.updatedDate,
+        currentDate
+      );
+      if (!(isFirstStreak || diffDays <= 1)) {
+        const endDate = new Date(currentDate.date);
+        let previousDate: any = endDate.setDate(endDate.getDate() - 1);
+        previousDate = convertDateToTimeZone(
+          new Date(previousDate),
+          data.timezone
+        );
+        const { last5days, isStreakInActive5Days } =
+          UserDBService.modifyLast5DaysStreaks(
+            diffDays,
+            data.streak.last5days,
+            ALL_NULL_5_DAYS,
+            false
+          );
+        const streak = {
+          current: 0,
+          longest: data.streak.longest,
+          updatedDate: previousDate,
+          isStreakInActive5Days,
+          last5days,
+        };
+        let updateStreakQuery: any = {
+          streak,
+        };
+        if (isStreakInActive5Days) {
+          updateStreakQuery = {
+            ...updateStreakQuery,
+            streakGoal: null,
+          };
         }
+        await UserTable.findOneAndUpdate(
+          { _id: data._id },
+          {
+            $set: updateStreakQuery,
+          },
+          { upsert: true }
+        );
       }
-    } else {
-      if (data.status === 3) {
-        data.isKycSuccess = true;
-      }
+      const achievements = UserDBService.getUserStreaksAchievements(
+        data.streak.longest
+      );
+      data = { ...data, achievements };
     }
-    let userBankExists = await UserBanksTable.findOne({
-      userId: { $in: bankUserIds },
-    });
-    if (userBankExists) {
-      data.isBankDetail = true;
-    }
+
     return { data };
   }
 

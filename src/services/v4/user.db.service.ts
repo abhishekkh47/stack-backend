@@ -4,6 +4,11 @@ import {
   updateAccountToPendingClosure,
   uploadFilesFetch,
   LIST,
+  FIVE_DAYS_TO_RESET,
+  convertDateToTimeZone,
+  getDaysBetweenDates,
+  formattedDate,
+  STREAK_LEVELS,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
 import {
@@ -320,6 +325,9 @@ class UserDBService {
           xpPoints: 1,
           total: 1,
           profilePicture: 1,
+          quizCoins: 1,
+          preLoadedCoins: 1,
+          activeStreak: "$streak.current",
         },
       },
     ];
@@ -477,6 +485,117 @@ class UserDBService {
   }
 
   /**
+   * @description This method is used to add streaks
+   * @param userDetails
+   * @returns {*}
+   */
+  public async addStreaks(userDetails: any) {
+    try {
+      let isStreakToBeUpdated = false;
+      /**
+       * Check if streak is inactive since last 5 days
+       */
+      const isStreakInActiveSinceLast5Days =
+        userDetails?.streak?.last5days?.every((value) => value === 0) || false;
+      let streak = {};
+      const currentDate = convertDateToTimeZone(
+        new Date(),
+        userDetails.timezone
+      );
+      const currentStreak = userDetails.streak.current;
+      const { day } = userDetails?.streak?.updatedDate;
+      const isFirstStreak = !userDetails || day === 0;
+      const diffDays = getDaysBetweenDates(
+        userDetails?.streak?.updatedDate,
+        currentDate
+      );
+      if (isFirstStreak || diffDays === 1) {
+        let last5days: any = [];
+        const earliestNullIndex =
+          userDetails?.streak?.last5days?.indexOf(null) ?? -1;
+        if (earliestNullIndex === -1) {
+          last5days = FIVE_DAYS_TO_RESET;
+        } else {
+          last5days = userDetails.streak.last5days.map((value, index) =>
+            index === earliestNullIndex ? 1 : value
+          );
+        }
+        streak = {
+          current: userDetails?.streak?.current + 1,
+          longest: Math.max(
+            userDetails?.streak?.current + 1,
+            userDetails?.streak?.longest
+          ),
+          isStreakInActive5Days: false,
+          updatedDate: currentDate,
+          last5days,
+        };
+        isStreakToBeUpdated = true;
+      } else if (diffDays > 1) {
+        const { last5days, isStreakInActive5Days } =
+          this.modifyLast5DaysStreaks(
+            diffDays,
+            userDetails.streak.last5days,
+            FIVE_DAYS_TO_RESET
+          );
+        streak = {
+          current: 1,
+          longest: userDetails.streak.longest,
+          isStreakInActive5Days,
+          updatedDate: currentDate,
+          last5days,
+        };
+        isStreakToBeUpdated = true;
+      }
+      if (isStreakToBeUpdated) {
+        const updatedStreaksDetails = await UserTable.findOneAndUpdate(
+          { _id: userDetails._id },
+          {
+            $set: {
+              streak: streak,
+            },
+          },
+          { upsert: true, new: true }
+        );
+        const dayRange = this.get5DaysOfWeek(
+          updatedStreaksDetails.streak.updatedDate,
+          updatedStreaksDetails.streak.last5days
+        );
+        /**
+         * Check if streak goal is completed or not
+         */
+        if (
+          (userDetails?.streakGoal &&
+            updatedStreaksDetails.streak.current ==
+              userDetails?.streakGoal?.day) ||
+          updatedStreaksDetails.streak.isStreakInActive5Days
+        ) {
+          await UserTable.findOneAndUpdate(
+            {
+              _id: userDetails._id,
+            },
+            {
+              $set: {
+                streakGoal: null,
+              },
+            }
+          );
+        }
+        return {
+          last5DaysStreak: updatedStreaksDetails.streak.last5days,
+          last5DaysWeek: dayRange,
+          currentStreak: updatedStreaksDetails.streak.current,
+          previousStreak: currentStreak,
+          isStreakInActiveSinceLast5Days,
+        };
+      }
+      return null;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
    * @description This method is used to set streak goals
    * @param userId
    * @param streakGoalId
@@ -495,6 +614,7 @@ class UserDBService {
         {
           $set: {
             streakGoal: streakGoalId,
+            streakInActiveDays: false,
           },
         }
       );
@@ -502,6 +622,174 @@ class UserDBService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description This method is used to modify the last 5 days array based on certain conditions
+   * @param diffDays
+   * @param last5days
+   * @param reset5daysStreak
+   * @return {*}
+   */
+  public modifyLast5DaysStreaks(
+    diffDays: number,
+    last5days: any,
+    reset5daysStreak: any,
+    isStreakAdded: boolean = true
+  ) {
+    let dayStreaks: any = [];
+    let inactiveStreakCount = 0;
+    const nullCount = last5days.filter((item) => item === null).length;
+    if (diffDays > nullCount) {
+      dayStreaks = reset5daysStreak;
+      inactiveStreakCount = nullCount;
+      const checkDiffDays = diffDays - nullCount;
+      if (checkDiffDays < 6) {
+        inactiveStreakCount += checkDiffDays - 1;
+        dayStreaks = dayStreaks.fill(0, 0, checkDiffDays - 1);
+      }
+    } else {
+      let nullCount = 0;
+      dayStreaks = last5days.map((value) => {
+        if (value === null) {
+          nullCount++;
+          if (nullCount < diffDays) {
+            return 0;
+          } else if (nullCount === diffDays && isStreakAdded) {
+            return 1;
+          }
+        }
+        return value;
+      });
+      inactiveStreakCount = this.findLastConsecutiveZeroes(dayStreaks);
+    }
+    return {
+      last5days: dayStreaks,
+      isStreakInActive5Days: inactiveStreakCount >= 5 ? true : false,
+    };
+  }
+
+  /**
+   * @description This method is used to get5DaysOfWeek and give day range
+   * @param date
+   * @param last5days
+   * @return {*}
+   */
+  public get5DaysOfWeek(date: any, last5days: any) {
+    let dayRange = [];
+    const notNullLast5DaysCount = last5days.filter((x) => x !== null).length;
+    let updatedDate: any = new Date(
+      formattedDate(date.year, date.month, date.day)
+    );
+
+    notNullLast5DaysCount === 0
+      ? updatedDate
+      : updatedDate.setDate(updatedDate.getDate() - notNullLast5DaysCount + 1);
+    const daysOfWeek = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    for (let i = 0; i < 5; i++) {
+      const dayIndex = updatedDate.getDay();
+      const dayName = daysOfWeek[dayIndex];
+      dayRange.push(dayName.charAt(0));
+      updatedDate.setDate(updatedDate.getDate() + 1);
+    }
+    return dayRange;
+  }
+
+  /**
+   * @description This method isused to fetch users streak achievements
+   * @param longestStreak
+   * @returns {*}
+   */
+  public getUserStreaksAchievements(longestStreak: number = 0) {
+    let achievements = {};
+    if (longestStreak >= STREAK_LEVELS.LEVEL6.maxValue) {
+      const additionalLevels =
+        Math.floor((longestStreak - STREAK_LEVELS.LEVEL6.maxValue) / 50) + 1;
+      const level = 7 + additionalLevels;
+      const maxValue = STREAK_LEVELS.LEVEL6.maxValue + additionalLevels * 50;
+
+      achievements = {
+        level,
+        longestStreak,
+        maxValue,
+      };
+    } else {
+      switch (true) {
+        case longestStreak < STREAK_LEVELS.LEVEL1.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL1.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL1.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL2.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL2.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL2.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL3.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL3.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL3.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL4.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL4.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL4.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL5.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL5.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL5.maxValue,
+          };
+          break;
+        case longestStreak < STREAK_LEVELS.LEVEL6.maxValue:
+          achievements = {
+            level: STREAK_LEVELS.LEVEL6.level,
+            longestStreak,
+            maxValue: STREAK_LEVELS.LEVEL6.maxValue,
+          };
+          break;
+      }
+    }
+    return achievements;
+  }
+
+  /**
+   * @description This method is used to findLastConsecutiveZeroes
+   * @param dayStreakArray
+   * @returns {*}
+   */
+  public findLastConsecutiveZeroes(dayStreakArray: any) {
+    let maxConsecutiveZeroes = 0;
+    let currentConsecutiveZeroes = 0;
+    for (let i = dayStreakArray.length - 1; i >= 0; i--) {
+      if (dayStreakArray[i] === 0) {
+        currentConsecutiveZeroes++;
+      } else {
+        break;
+      }
+
+      if (currentConsecutiveZeroes > maxConsecutiveZeroes) {
+        maxConsecutiveZeroes = currentConsecutiveZeroes;
+      }
+    }
+    return maxConsecutiveZeroes;
   }
 }
 

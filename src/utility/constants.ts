@@ -228,3 +228,16 @@ export const XP_POINTS = {
   COMPLETED_QUIZ: 10,
   REFERRAL: 20,
 };
+
+export const STREAK_LEVELS = {
+  LEVEL1: { level: 1, maxValue: 3 },
+  LEVEL2: { level: 2, maxValue: 7 },
+  LEVEL3: { level: 3, maxValue: 14 },
+  LEVEL4: { level: 4, maxValue: 30 },
+  LEVEL5: { level: 5, maxValue: 50 },
+  LEVEL6: { level: 6, maxValue: 100 },
+};
+
+export const DEFAULT_TIMEZONE = "America/New_York";
+export const ALL_NULL_5_DAYS = [null, null, null, null, null];
+export const FIVE_DAYS_TO_RESET = [1, null, null, null, null];

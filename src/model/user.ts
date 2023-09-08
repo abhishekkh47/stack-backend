@@ -7,6 +7,7 @@ import {
   MongooseModel,
   EPHONEVERIFIEDSTATUS,
 } from "@app/types";
+import { ALL_NULL_5_DAYS } from "@app/utility";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
@@ -194,6 +195,42 @@ const schema = new mongoose.Schema<IUserSchema>(
     isQuizReminderNotificationSent: {
       type: mongoose.Schema.Types.Boolean,
       default: false,
+    },
+    timezone: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    streak: {
+      longest: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      current: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      isStreakInActive5Days: {
+        type: mongoose.Schema.Types.Boolean,
+        default: false,
+      },
+      last5days: {
+        type: [mongoose.Schema.Types.Mixed], // Assuming you want to store dates
+        default: ALL_NULL_5_DAYS,
+      },
+      updatedDate: {
+        day: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        month: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        year: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+      },
     },
     streakGoal: {
       type: mongoose.Schema.Types.ObjectId,

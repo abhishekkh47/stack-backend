@@ -18,6 +18,8 @@ export interface IUser extends IAccount {
   isParentOnboardingReminderSent: boolean;
   isQuizReminderNotificationSent: boolean;
   xpPoints: number;
+  timezone: string;
+  streak: IStreak;
   streakGoal: mongoose.Schema.Types.ObjectId;
 }
 
@@ -147,6 +149,20 @@ export enum ESCREENSTATUS {
   ENTER_PHONE_NO = 8,
   ENTER_PARENT_INFO = 9,
   SUCCESS_TEEN = 10,
+}
+
+interface IUpdatedDay {
+  day: number;
+  month: number;
+  year: number;
+}
+
+interface IStreak {
+  current: number;
+  longest: number;
+  last5days: any[];
+  updatedDate: IUpdatedDay;
+  isStreakInActive5Days: number;
 }
 
 export enum EPHONEVERIFIEDSTATUS {

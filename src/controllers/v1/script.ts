@@ -1,7 +1,7 @@
 import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
 import { DripshopTable } from "@app/model/dripshop";
 import moment from "moment";
-import { InternalUserAuth, PrimeTrustJWT } from "@app/middleware";
+import { InternalUserAuth, PrimeTrustJWT, Auth } from "@app/middleware";
 import {
   CryptoPriceTable,
   CryptoTable,
@@ -1223,7 +1223,6 @@ class ScriptController extends BaseController {
       );
       return this.Ok(ctx, { data: quizResults });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, error.message);
     }
   }

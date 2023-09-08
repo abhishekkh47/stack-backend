@@ -225,4 +225,19 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  updateTimezoneValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      timezone: Joi.string()
+        .regex(/^[A-Za-z_]+\/[A-Za-z_]+$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("updateTimezoneValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };
