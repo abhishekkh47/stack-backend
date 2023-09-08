@@ -399,14 +399,6 @@ class UserController extends BaseController {
       userDraft.initialDeposit = 1;
     }
 
-    data = {
-      ...data,
-      terms: CMS_LINKS.TERMS,
-      amcPolicy: CMS_LINKS.AMC_POLICY,
-      privacy: CMS_LINKS.PRIVACY_POLICY,
-      ptUserAgreement: CMS_LINKS.PRIME_TRUST_USER_AGREEMENT,
-    };
-
     return this.Ok(ctx, userDraft ? userDraft : data, true);
   }
 

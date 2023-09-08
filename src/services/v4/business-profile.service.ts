@@ -40,7 +40,7 @@ class BusinessProfileService {
   }
 
   public async getBusinessProfile(id: string) {
-    const businessProfile = await BusinessProfileTable.aggregate([
+    let businessProfile: any = await BusinessProfileTable.aggregate([
       {
         $match: {
           userId: new ObjectId(id),
@@ -77,6 +77,20 @@ class BusinessProfileService {
       {
         $unwind: {
           path: "$passions",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userData",
           preserveNullAndEmptyArrays: true,
         },
       },

@@ -1,16 +1,10 @@
 import { Auth } from "@app/middleware";
-import {
-  BusinessProfileTable,
-  ImpactTable,
-  PassionTable,
-  UserTable,
-} from "@app/model";
+import { ImpactTable, PassionTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "../base";
-import { ObjectId } from "mongodb";
-import { BusinessProfileService, QuizDBService } from "@app/services/v4";
+import { BusinessProfileService } from "@app/services/v4";
 
 class BusinessProfileController extends BaseController {
   /**
@@ -95,6 +89,10 @@ class BusinessProfileController extends BaseController {
       const { id } = ctx.request.params;
       if (!/^[0-9a-fA-F]{24}$/.test(id))
         return this.BadRequest(ctx, "Business Profile not found.");
+      const userIfExists = await UserTable.findOne({ _id: id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found.");
+      }
       const businessProfile = await BusinessProfileService.getBusinessProfile(
         id
       );

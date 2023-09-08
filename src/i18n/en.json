@@ -313,5 +313,11 @@
 	"suggestTopicValidationTopicRequired": "Please enter suggested topic.",
 	"suggestTopicValidationTopicEmpty": "Please enter suggested topic.",
 	"suggestTopicValidationTopicMin": "Suggested topic must contain minimum 2 characters.",
-	"suggestTopicValidationTopicMax": "Suggested topic must contain maximum 280 characters."
+	"suggestTopicValidationTopicMax": "Suggested topic must contain maximum 280 characters.",
+	"commitStreakGoalValidationStreakgoalidRequired": "Please enter streak goal.",
+	"commitStreakGoalValidationStreakgoalidEmpty": "Please enter streak goal.",
+	"commitStreakGoalValidationStreakgoalidPattern": "Please enter valid streak goal.",
+	"updateTimezoneValidationTimezoneRequired": "Please enter timezone.",
+	"updateTimezoneValidationTimezoneEmpty": "Please enter timezone.",
+	"updateTimezoneValidationTimezonePattern": "Please enter valid timezone."
 }

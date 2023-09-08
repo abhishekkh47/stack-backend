@@ -243,8 +243,7 @@ class QuizDBService {
     userId: string,
     headers: object,
     reqParam: any,
-    quizExists: any,
-    isTeen: boolean = null
+    quizExists: any
   ) {
     let quizResultsData = await QuizResult.find({
       userId: userId,
@@ -334,7 +333,10 @@ class QuizDBService {
         user_id: userId,
       }
     );
-    return { totalXPPoints, updatedXPPoints: updatedXP.xpPoints };
+    return {
+      totalXPPoints,
+      updatedXPPoints: updatedXP.xpPoints,
+    };
   }
 
   /**

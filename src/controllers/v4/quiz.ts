@@ -7,7 +7,6 @@ import {
   QuizResult,
   QuizTable,
   QuizTopicTable,
-  StageTable,
   UserTable,
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
@@ -533,7 +532,9 @@ class QuizController extends BaseController {
           let leagues = await LeagueTable.find({})
             .select("_id name image minPoint maxPoint colorCode")
             .sort({ minPoint: 1 });
-          let userIfExists = await UserTable.findOne({ _id: user._id });
+          let userIfExists = await UserTable.findOne({
+            _id: user._id,
+          }).populate("streakGoal");
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
@@ -570,6 +571,7 @@ class QuizController extends BaseController {
             leagues,
             updatedXPPoints
           );
+          const streaksDetails = await UserDBService.addStreaks(userIfExists);
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id,
@@ -588,6 +590,7 @@ class QuizController extends BaseController {
             currentLeague,
             nextLeague,
             isNewLeagueUnlocked,
+            streaksDetails,
           });
         }
       }
