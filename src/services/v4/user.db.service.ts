@@ -526,13 +526,13 @@ class UserDBService {
             userDetails?.streak?.current + 1,
             userDetails?.streak?.longest
           ),
-          isStreakInActive5Days: false,
+          isStreakInactive5Days: false,
           updatedDate: currentDate,
           last5days,
         };
         isStreakToBeUpdated = true;
       } else if (diffDays > 1) {
-        const { last5days, isStreakInActive5Days } =
+        const { last5days, isStreakInactive5Days } =
           this.modifyLast5DaysStreaks(
             diffDays,
             userDetails.streak.last5days,
@@ -541,7 +541,7 @@ class UserDBService {
         streak = {
           current: 1,
           longest: userDetails.streak.longest,
-          isStreakInActive5Days,
+          isStreakInactive5Days,
           updatedDate: currentDate,
           last5days,
         };
@@ -568,7 +568,7 @@ class UserDBService {
           (userDetails?.streakGoal &&
             updatedStreaksDetails.streak.current ==
               userDetails?.streakGoal?.day) ||
-          updatedStreaksDetails.streak.isStreakInActive5Days
+          updatedStreaksDetails.streak.isStreakInactive5Days
         ) {
           await UserTable.findOneAndUpdate(
             {
@@ -665,7 +665,7 @@ class UserDBService {
     }
     return {
       last5days: dayStreaks,
-      isStreakInActive5Days: inactiveStreakCount >= 5 ? true : false,
+      isStreakInactive5Days: inactiveStreakCount >= 5 ? true : false,
     };
   }
 
