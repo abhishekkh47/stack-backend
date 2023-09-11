@@ -241,3 +241,13 @@ export const STREAK_LEVELS = {
 export const DEFAULT_TIMEZONE = "America/New_York";
 export const ALL_NULL_5_DAYS = [null, null, null, null, null];
 export const FIVE_DAYS_TO_RESET = [1, null, null, null, null];
+export const REFERRAL_SOURCES = [
+  "store",
+  "google",
+  "news",
+  "instagram",
+  "tiktok",
+  "linkedin",
+  "youtube",
+  "mouth",
+];
