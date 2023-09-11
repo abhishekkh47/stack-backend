@@ -173,6 +173,7 @@ class UserService {
             xpPoints: 1,
             timezone: 1,
             streak: 1,
+            referralSource: 1,
           },
         },
       ]).exec()
