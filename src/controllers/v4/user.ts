@@ -20,6 +20,7 @@ import {
   uploadFileS3,
   getBalance,
   getAssetTotals,
+  REFERRAL_SOURCES,
 } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
@@ -490,6 +491,42 @@ class UserController extends BaseController {
           }
         }
       );
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to store referralSources
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/set-referral-source",
+    method: HttpMethod.POST,
+  })
+  @Auth()
+  public async storeReferralSource(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      if (
+        !body.referralSource ||
+        !REFERRAL_SOURCES.includes(body.referralSource)
+      ) {
+        return this.BadRequest(ctx, "No Referral Source Provided");
+      }
+      const updatedUser = await UserTable.findOneAndUpdate(
+        { _id: userIfExists._id },
+        {
+          $set: { referralSource: body.referralSource },
+        },
+        { new: true }
+      );
+      return this.Ok(ctx, { message: "Success", data: updatedUser });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

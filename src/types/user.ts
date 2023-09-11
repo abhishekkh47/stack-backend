@@ -21,6 +21,7 @@ export interface IUser extends IAccount {
   timezone: string;
   streak: IStreak;
   streakGoal: mongoose.Schema.Types.ObjectId;
+  referralSource: string;
 }
 
 export interface IAccount {

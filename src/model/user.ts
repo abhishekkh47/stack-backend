@@ -237,6 +237,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       ref: "streak_goal",
       default: null,
     },
+    referralSource: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
   },
   { timestamps: true }
 );
