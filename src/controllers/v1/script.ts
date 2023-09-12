@@ -1596,6 +1596,57 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to mark a set of users to launchpad approved users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/launchpad-approve", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async approveLaunchpadToUsers(ctx: any) {
+    try {
+      const { emails } = ctx.request.body;
+      if (!emails || emails?.length === 0) {
+        return this.BadRequest(ctx, "No Emails Provided");
+      }
+      const allUsers = await UserTable.find({
+        email: { $in: emails },
+      });
+      if (allUsers.length === 0) {
+        return this.BadRequest(ctx, "No Emails Found.");
+      }
+
+      const foundEmails = allUsers.map((user) => user.email);
+      const notFoundEmails = emails.filter(
+        (email) => !foundEmails.includes(email)
+      );
+
+      if (notFoundEmails.length > 0) {
+        return this.BadRequest(
+          ctx,
+          `These emails do not exist in the database:- ${notFoundEmails.join(
+            ", "
+          )}`
+        );
+      }
+
+      await UserTable.updateMany(
+        {
+          email: { $in: emails },
+        },
+        {
+          $set: {
+            isLaunchpadApproved: false,
+          },
+        }
+      );
+
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new ScriptController();
