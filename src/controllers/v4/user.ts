@@ -531,6 +531,29 @@ class UserController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to check if current user is launchpad intern or not
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/is-launchpad-approved",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async checkLaunchpadUserStatus(ctx: any) {
+    const { user } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id }).select(
+      "_id isLaunchpadApproved"
+    );
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User not found");
+    }
+    return this.Ok(ctx, {
+      data: { isLaunchpadApproved: userIfExists.isLaunchpadApproved },
+    });
+  }
 }
 
 export default new UserController();
