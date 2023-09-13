@@ -685,6 +685,9 @@ class QuizDBService {
   public async checkQuizLimitReached(quizResultsData: any, userId: string) {
     const admin = await AdminTable.findOne({});
     let todaysQuizPlayed = null;
+    const user = await UserTable.findOne({ _id: userId }).select(
+      "_id isLaunchpadApproved"
+    );
     let isQuizLimitReached = false;
     if (quizResultsData.length > 0) {
       const todayStart = new Date().setUTCHours(0, 0, 0, 0);
@@ -698,7 +701,11 @@ class QuizDBService {
         userId: userId,
       });
       isQuizLimitReached =
-        todaysQuizPlayed.length >= admin.quizLimit ? true : false;
+        todaysQuizPlayed.length >= admin.quizLimit
+          ? user.isLaunchpadApproved
+            ? false
+            : true
+          : false;
     }
     return isQuizLimitReached;
   }
