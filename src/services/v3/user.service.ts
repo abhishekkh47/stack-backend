@@ -194,12 +194,16 @@ class UserService {
       );
       if (!(isFirstStreak || diffDays <= 1)) {
         const endDate = new Date(currentDate.date);
-        let previousDate: any = endDate.setDate(endDate.getDate() - 1);
-        previousDate = convertDateToTimeZone(
-          new Date(previousDate),
-          data.timezone
+        let previousDate: any = new Date(
+          endDate.setDate(endDate.getDate() - 1)
         );
-        const { last5days, isStreakInActive5Days } =
+        previousDate = {
+          ...previousDate,
+          day: previousDate.getDate(),
+          month: previousDate.getMonth() + 1,
+          year: previousDate.getFullYear(),
+        };
+        const { last5days, isStreakInactive5Days } =
           UserDBService.modifyLast5DaysStreaks(
             diffDays,
             data.streak.last5days,
@@ -210,13 +214,13 @@ class UserService {
           current: 0,
           longest: data.streak.longest,
           updatedDate: previousDate,
-          isStreakInActive5Days,
+          isStreakInactive5Days,
           last5days,
         };
         let updateStreakQuery: any = {
           streak,
         };
-        if (isStreakInActive5Days) {
+        if (isStreakInactive5Days) {
           updateStreakQuery = {
             ...updateStreakQuery,
             streakGoal: null,

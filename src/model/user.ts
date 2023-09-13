@@ -209,7 +209,7 @@ const schema = new mongoose.Schema<IUserSchema>(
         type: mongoose.Schema.Types.Number,
         default: 0,
       },
-      isStreakInActive5Days: {
+      isStreakInactive5Days: {
         type: mongoose.Schema.Types.Boolean,
         default: false,
       },
