@@ -164,7 +164,7 @@ interface IStreak {
   longest: number;
   last5days: any[];
   updatedDate: IUpdatedDay;
-  isStreakInActive5Days: number;
+  isStreakInactive5Days: number;
 }
 
 export enum EPHONEVERIFIEDSTATUS {
