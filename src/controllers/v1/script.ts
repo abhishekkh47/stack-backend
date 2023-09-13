@@ -1637,7 +1637,7 @@ class ScriptController extends BaseController {
         },
         {
           $set: {
-            isLaunchpadApproved: false,
+            isLaunchpadApproved: true,
           },
         }
       );
