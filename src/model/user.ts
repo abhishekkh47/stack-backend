@@ -241,6 +241,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    isLaunchpadApproved: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
