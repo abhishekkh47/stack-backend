@@ -79,12 +79,23 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quizquestions",
+          localField: "_id",
+          foreignField: "quizId",
+          as: "quizQuestions",
+        },
+      },
+      {
         $project: {
           _id: 1,
           image: 1,
           name: "$quizName",
           isCompleted: 1,
           xpPoints: 1,
+          fuelCount: {
+            $multiply: [everyCorrectAnswerPoints, { $size: "$quizQuestions" }],
+          },
           topicId: 1,
         },
       },
@@ -1024,6 +1035,14 @@ class QuizDBService {
       },
       {
         $lookup: {
+          from: "quizquestions",
+          localField: "quizzes._id",
+          foreignField: "quizId",
+          as: "quizzes.quizQuestions",
+        },
+      },
+      {
+        $lookup: {
           from: "quizresults",
           let: {
             quizId: "$quizzes._id",
@@ -1077,6 +1096,18 @@ class QuizDBService {
                 else: "$$REMOVE",
               },
             },
+            fuelCount: {
+              $cond: {
+                if: { $ifNull: ["$quizzes", false] },
+                then: {
+                  $multiply: [
+                    everyCorrectAnswerPoints,
+                    { $size: "$quizzes.quizQuestions" },
+                  ],
+                },
+                else: "$$REMOVE",
+              },
+            },
           },
         },
       },
@@ -1120,6 +1151,7 @@ class QuizDBService {
                   stageId: "$quizzes.stageId",
                   isCompleted: "$quizzes.isUnlocked",
                   xpPoints: "$quizzes.xpPoints",
+                  fuelCount: "$quizzes.fuelCount",
                 },
               },
             },
