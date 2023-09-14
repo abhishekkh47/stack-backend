@@ -16,6 +16,7 @@ import {
   ParentChildTable,
   DripshopTable,
   LeagueTable,
+  SearchHistoryTable,
   StreakGoalTable,
 } from "@app/model";
 import fs from "fs";
@@ -482,6 +483,29 @@ class UserDBService {
     );
 
     return { createdDripshop, updatedUser };
+  }
+
+  /**
+   * @description This service is used to store users search input
+   * @param userId
+   * @param searchInput
+   * @returns {boolean}
+   */
+  public async storeUsersSearchInput(userId: string, searchInput: string) {
+    const userSearchInput = await SearchHistoryTable.find({ userId });
+    const isSearchInputValid =
+      userSearchInput.length === 0 ||
+      !userSearchInput.some(
+        (x) => x.searchInput.toLowerCase() === searchInput.toLowerCase()
+      );
+    if (isSearchInputValid) {
+      await SearchHistoryTable.create({
+        userId,
+        searchInput: searchInput.toLowerCase(),
+      });
+      return true;
+    }
+    return false;
   }
 
   /**

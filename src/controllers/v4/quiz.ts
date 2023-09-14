@@ -893,6 +893,7 @@ class QuizController extends BaseController {
       if (!query?.text?.trim() || query.text.trim() == ",") {
         return this.BadRequest(ctx, "Quiz not found");
       }
+      await UserDBService.storeUsersSearchInput(userIfExists._id, query.text);
       const quizzes = await QuizDBService.searchQuiz(
         query.text,
         userIfExists._id
