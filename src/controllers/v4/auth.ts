@@ -6,7 +6,13 @@ import {
   ParentChildTable,
   UserReferralTable,
 } from "@app/model";
-import { TokenService, zohoCrmService, userService } from "@app/services/v1";
+import {
+  TokenService,
+  zohoCrmService,
+  userService,
+  SocialService,
+  DeviceTokenService,
+} from "@app/services/v1";
 import { AnalyticsService } from "@app/services/v4";
 import {
   EOTPVERIFICATION,
@@ -28,6 +34,9 @@ import {
 import { validation } from "@app/validations/v1/apiValidation";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
+import { validationsV3 } from "@app/validations/v3/apiValidation";
+import { UserService } from "@app/services/v3";
+import { BusinessProfileService } from "@app/services/v4";
 
 class AuthController extends BaseController {
   /**
@@ -499,6 +508,97 @@ class AuthController extends BaseController {
     } catch (error) {
       return this.BadRequest(ctx, "Something went wrong");
     }
+  }
+
+  /**
+   * @description This method will be used to verify social id token and email in case of user registration and if email not verified create a user
+   */
+  @Route({ path: "/check-user-signup", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
+  public async checkSignUp(ctx: any) {
+    const reqParam = ctx.request.body;
+    return validationsV3.checkUserSignupValidation(
+      reqParam,
+      ctx,
+      async (validate: boolean) => {
+        if (validate) {
+          try {
+            const { email, deviceToken, deviceId } = reqParam;
+            let accountCreated = false;
+            let userExists = await UserTable.findOne({ email });
+            await SocialService.verifySocial(reqParam);
+
+            if (!userExists) {
+              const uniqueReferralCode = await makeUniqueReferalCode();
+              const createQuery: any = {
+                email: reqParam.email,
+                firstName: reqParam.firstName ? reqParam.firstName : null,
+                lastName: reqParam.lastName ? reqParam.lastName : null,
+                dob: reqParam.dob,
+                type: reqParam.type,
+                referralCode: uniqueReferralCode,
+              };
+              userExists = await UserTable.create(createQuery);
+
+              accountCreated = true;
+
+              // for sensitive identify calls, we need to await to make sure it waits.
+              AnalyticsService.identifyOnce(userExists._id, {
+                Email: userExists.email,
+              });
+
+              AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.SIGNED_UP_SSO,
+                undefined,
+                {
+                  device_id: deviceId,
+                  user_id: userExists._id,
+                }
+              );
+
+              let dataSentInCrm: any = {
+                Account_Name: reqParam.firstName + " " + reqParam.lastName,
+                First_Name: reqParam.firstName,
+                Last_Name: reqParam.lastName ? reqParam.lastName : null,
+                Email: reqParam.email,
+              };
+
+              await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+            }
+
+            const { token, refreshToken } = await TokenService.generateToken(
+              userExists
+            );
+
+            let { data: profileData } = await UserService.getProfile(
+              userExists._id
+            );
+            const businessProfile =
+              await BusinessProfileService.getBusinessProfile(userExists._id);
+            profileData = { ...profileData, businessProfile };
+
+            if (deviceToken) {
+              await DeviceTokenService.addDeviceTokenIfNeeded(
+                userExists._id,
+                deviceToken
+              );
+            }
+            return this.Ok(ctx, {
+              token,
+              refreshToken,
+              profileData: profileData,
+              message: "Success",
+              accountCreated,
+            });
+          } catch (error) {
+            return this.BadRequest(ctx, error.message);
+          }
+        }
+      }
+    );
   }
 }
 
