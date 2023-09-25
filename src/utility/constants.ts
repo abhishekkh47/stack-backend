@@ -251,3 +251,5 @@ export const REFERRAL_SOURCES = [
   "youtube",
   "mouth",
 ];
+
+export const DEFAULT_LIFE = 3;

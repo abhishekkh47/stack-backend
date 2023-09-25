@@ -46,6 +46,7 @@ import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
+  DEFAULT_LIFE,
 } from "@app/utility";
 import BaseController from ".././base";
 import {
@@ -1642,6 +1643,27 @@ class ScriptController extends BaseController {
         }
       );
 
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to set default life to users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/set-default-life", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async setDefaultLifeToUser(ctx: any) {
+    try {
+      await UserTable.updateMany(
+        {},
+        {
+          $set: { life: DEFAULT_LIFE },
+        }
+      );
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

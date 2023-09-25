@@ -8,6 +8,7 @@ import {
   convertDateToTimeZone,
   getDaysBetweenDates,
   formattedDate,
+  DEFAULT_LIFE,
   STREAK_LEVELS,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
@@ -814,6 +815,55 @@ class UserDBService {
       }
     }
     return maxConsecutiveZeroes;
+  }
+
+  /**
+   * @description This method is used to refill heart
+   * @param user
+   * @returns {*}
+   */
+  public async refillHearts(user: any, fuel: number) {
+    if (user.life === DEFAULT_LIFE) {
+      throw new NetworkError("You already have 3 lives", 400);
+    }
+    const totalFuels = user.quizCoins + user.preLoadedCoins;
+    if (totalFuels < fuel) {
+      throw new NetworkError(
+        "You dont have sufficient fuels to refill heart",
+        400
+      );
+    }
+    let updateQuery: any = { life: DEFAULT_LIFE };
+    if (totalFuels >= fuel) {
+      /**
+       * once true check what to update preloaded or quiz coins or both
+       */
+      if (user.preLoadedCoins >= fuel) {
+        updateQuery = {
+          ...updateQuery,
+          preLoadedCoins: user.preLoadedCoins - fuel,
+        };
+      } else {
+        const amountLeftAfterPreloaded = fuel - user.preLoadedCoins;
+
+        if (amountLeftAfterPreloaded <= user.quizCoins) {
+          updateQuery = {
+            ...updateQuery,
+            preLoadedCoins: 0,
+            quizCoins: user.quizCoins - amountLeftAfterPreloaded,
+          };
+        }
+      }
+    }
+    await UserTable.findOneAndUpdate(
+      {
+        _id: user._id,
+      },
+      {
+        $set: updateQuery,
+      }
+    );
+    return true;
   }
 }
 

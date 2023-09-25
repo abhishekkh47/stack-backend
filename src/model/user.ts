@@ -245,6 +245,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    life: {
+      type: mongoose.Schema.Types.Number,
+      default: 3,
+    },
   },
   { timestamps: true }
 );

@@ -554,6 +554,28 @@ class UserController extends BaseController {
       data: { isLaunchpadApproved: userIfExists.isLaunchpadApproved },
     });
   }
+
+  /**
+   * @description This method is used to refill the heart
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/refill-heart",
+    method: HttpMethod.POST,
+  })
+  @Auth()
+  public async refillHeartInUsers(ctx: any) {
+    const { user } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User not found");
+    }
+    await UserDBService.refillHearts(userIfExists, 300);
+    return this.Ok(ctx, {
+      message: "Success",
+    });
+  }
 }
 
 export default new UserController();

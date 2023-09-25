@@ -23,6 +23,7 @@ export interface IUser extends IAccount {
   streakGoal: mongoose.Schema.Types.ObjectId;
   referralSource: string;
   isLaunchpadApproved: boolean;
+  life: number;
 }
 
 export interface IAccount {
