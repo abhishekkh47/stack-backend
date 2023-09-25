@@ -519,14 +519,14 @@ class UserController extends BaseController {
       ) {
         return this.BadRequest(ctx, "No Referral Source Provided");
       }
-      const updatedUser = await UserTable.findOneAndUpdate(
+      await UserTable.findOneAndUpdate(
         { _id: userIfExists._id },
         {
           $set: { referralSource: body.referralSource },
         },
         { new: true }
       );
-      return this.Ok(ctx, { message: "Success", data: updatedUser });
+      return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
