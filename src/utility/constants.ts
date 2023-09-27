@@ -253,3 +253,4 @@ export const REFERRAL_SOURCES = [
 ];
 
 export const DEFAULT_LIFE = 3;
+export const REFILL_INTERVAL = 4 * 3600 * 1000;

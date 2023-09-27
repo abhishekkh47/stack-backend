@@ -10,6 +10,7 @@ import {
   formattedDate,
   DEFAULT_LIFE,
   STREAK_LEVELS,
+  REFILL_INTERVAL,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
 import {
@@ -818,12 +819,12 @@ class UserDBService {
   }
 
   /**
-   * @description This method is used to refill heart
+   * @description This method is used to refill all hearts in exchange of fuel.
    * @param user
    * @returns {*}
    */
-  public async refillHearts(user: any, fuel: number) {
-    if (user.life === DEFAULT_LIFE) {
+  public async refillHeartsAndRedeemFuels(user: any, fuel: number) {
+    if (user.lifeCount === DEFAULT_LIFE) {
       throw new NetworkError("You already have 3 lives", 400);
     }
     const totalFuels = user.quizCoins + user.preLoadedCoins;
@@ -833,7 +834,7 @@ class UserDBService {
         400
       );
     }
-    let updateQuery: any = { life: DEFAULT_LIFE };
+    let updateQuery: any = { lifeCount: DEFAULT_LIFE };
     if (totalFuels >= fuel) {
       /**
        * once true check what to update preloaded or quiz coins or both
@@ -864,6 +865,40 @@ class UserDBService {
       }
     );
     return true;
+  }
+
+  /**
+   * @description This method is used to refill heart and update renewLifeAt field
+   * @param user
+   * @returns {*}
+   */
+  public getUsersLatestLifeData(user: any) {
+    const currentTime = Date.now();
+    let renewLifeAt = null;
+    let lifeCount = 0;
+    if (!user.renewLifeAt) {
+      renewLifeAt = currentTime + REFILL_INTERVAL;
+      return {
+        renewLifeAt,
+      };
+    }
+    if (currentTime < Number(user.renewLifeAt)) {
+      return null;
+    }
+    const numOfLivesToRefill =
+      1 +
+      Math.floor((currentTime - Number(user.renewLifeAt)) / REFILL_INTERVAL);
+    lifeCount = Math.min(user.lifeCount + numOfLivesToRefill, 3);
+    if (lifeCount < 3) {
+      renewLifeAt =
+        Number(user.renewLifeAt) + numOfLivesToRefill * REFILL_INTERVAL;
+    } else {
+      renewLifeAt = null;
+    }
+    return {
+      renewLifeAt,
+      lifeCount,
+    };
   }
 }
 

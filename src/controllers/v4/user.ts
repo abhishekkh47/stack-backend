@@ -565,13 +565,13 @@ class UserController extends BaseController {
     method: HttpMethod.POST,
   })
   @Auth()
-  public async refillHeartInUsers(ctx: any) {
+  public async refillAllLives(ctx: any) {
     const { user } = ctx.request;
     const userIfExists = await UserTable.findOne({ _id: user._id });
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
     }
-    await UserDBService.refillHearts(userIfExists, 300);
+    await UserDBService.refillHeartsAndRedeemFuels(userIfExists, 300);
     return this.Ok(ctx, {
       message: "Success",
     });

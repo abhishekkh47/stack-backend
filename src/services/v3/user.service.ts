@@ -16,6 +16,7 @@ import {
   getDaysBetweenDates,
   ALL_NULL_5_DAYS,
   DEFAULT_TIMEZONE,
+  DEFAULT_LIFE,
 } from "@app/utility";
 import { ObjectId } from "mongodb";
 import { EUserType, EUSERSTATUS } from "@app/types";
@@ -102,6 +103,8 @@ class UserService {
             timezone: 1,
             streak: 1,
             referralSource: 1,
+            lifeCount: 1,
+            renewLifeAt: 1,
           },
         },
       ]).exec()
@@ -166,6 +169,23 @@ class UserService {
         data.streak.longest
       );
       data = { ...data, achievements };
+    }
+    if (data.lifeCount !== DEFAULT_LIFE) {
+      const updatedData = UserDBService.getUsersLatestLifeData(data);
+      if (updatedData) {
+        await UserTable.findOneAndUpdate(
+          {
+            _id: data._id,
+          },
+          updatedData,
+          { new: true }
+        );
+        data = {
+          ...data,
+          renewLifeAt: updatedData.renewLifeAt,
+          lifeCount: updatedData.lifeCount,
+        };
+      }
     }
 
     return { data };

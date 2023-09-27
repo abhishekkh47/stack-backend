@@ -903,6 +903,57 @@ class QuizController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to deduct life and update renewLifeAt based on currentTime
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz/deduct-life", method: HttpMethod.POST })
+  @Auth()
+  public async deductLifeOfUser(ctx: any) {
+    try {
+      const { user } = ctx.request;
+      let userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      if (userIfExists.lifeCount === 0) {
+        return this.BadRequest(ctx, "You are already out of hearts");
+      }
+      userIfExists = await UserTable.findOneAndUpdate(
+        {
+          _id: user._id,
+        },
+        {
+          $inc: {
+            lifeCount: -1,
+          },
+        },
+        { new: true }
+      );
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      const updatedData = UserDBService.getUsersLatestLifeData(userIfExists);
+      if (updatedData) {
+        userIfExists = await UserTable.findOneAndUpdate(
+          {
+            _id: user._id,
+          },
+          updatedData,
+          { new: true }
+        );
+      }
+      const { lifeCount, renewLifeAt, quizCoins, preLoadedCoins } =
+        userIfExists;
+      return this.Ok(ctx, {
+        data: { lifeCount, renewLifeAt, quizCoins, preLoadedCoins },
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new QuizController();

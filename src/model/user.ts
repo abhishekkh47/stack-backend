@@ -245,9 +245,13 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
-    life: {
+    lifeCount: {
       type: mongoose.Schema.Types.Number,
       default: 3,
+    },
+    renewLifeAt: {
+      type: mongoose.Schema.Types.String,
+      default: null,
     },
   },
   { timestamps: true }

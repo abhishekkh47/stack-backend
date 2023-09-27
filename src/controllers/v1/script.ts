@@ -1661,7 +1661,7 @@ class ScriptController extends BaseController {
       await UserTable.updateMany(
         {},
         {
-          $set: { life: DEFAULT_LIFE },
+          $set: { lifeCount: DEFAULT_LIFE, renewLifeAt: null },
         }
       );
       return this.Ok(ctx, { message: "Success" });
