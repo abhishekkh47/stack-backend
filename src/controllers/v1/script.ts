@@ -1647,6 +1647,35 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to import simulations
+   * @param ctx
+   */
+  @Route({ path: "/import-simulations", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeSimulations(ctx: any) {
+    try {
+      const { simulationNums } = ctx.request.body;
+      if (simulationNums.length === 0) {
+        return this.BadRequest(ctx, "Please enter input quiz numbers");
+      }
+      const rows = await ScriptService.readSpreadSheet("1740973852");
+
+      const hasStagesTopic = await QuizTopicTable.findOne({ hasStages: true });
+      const stages = await StageTable.find({});
+      await ScriptService.storeSimulationsIntoDB(
+        rows,
+        simulationNums,
+        hasStagesTopic,
+        stages
+      );
+      console.log(rows);
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
 }
 
 export default new ScriptController();

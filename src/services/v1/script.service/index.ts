@@ -672,6 +672,33 @@ class ScriptService {
     }
     return user;
   }
+
+  /**
+   * @description This function is add simulations into db
+   * @param rows
+   * @param topic
+   * @param stages
+   */
+  public async storeSimulationsIntoDB(
+    rows: any,
+    simulationNums: any,
+    topic: any,
+    stages: any
+  ) {
+    try {
+      rows = rows.filter((x) => simulationNums.includes(x["Simulation #"]));
+      let simulationTitle = "";
+      let simulationImage = "";
+      let topicId = "";
+      let stageId = "";
+      let characterName = "";
+      let characterImage = "";
+      let simulationDataArray = [];
+      await Promise.all(await rows.map(async (data, index) => {}));
+    } catch (error) {
+      throw new NetworkError("Something Went Wrong", 400);
+    }
+  }
 }
 
 export default new ScriptService();

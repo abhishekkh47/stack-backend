@@ -13,7 +13,7 @@ const schema = new mongoose.Schema<IQuizSchema>(
     },
     stageId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "quizTopic",
+      ref: "stage",
       default: null,
     },
     image: {
