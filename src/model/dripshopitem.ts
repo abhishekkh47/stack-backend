@@ -28,6 +28,10 @@ const schema = new mongoose.Schema<IDripshopItemSchema>(
       default: [],
       required: true,
     },
+    shippable: {
+      type: mongoose.Schema.Types.Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

@@ -4,4 +4,5 @@ export interface IDripshopItem {
   sizes: string[];
   description: string;
   image: string;
+  shippable: boolean;
 }
