@@ -1365,7 +1365,7 @@ class QuizDBService {
           isCompleted: 1,
           isUnlocked: "$isCompleted",
           stageId: 1,
-          quizName: 1,
+          name: "$quizName",
           topicName: {
             $cond: {
               if: {
@@ -1381,7 +1381,7 @@ class QuizDBService {
       },
     ];
     const quizzes = await QuizTable.aggregate(query).exec();
-    if (quizzes.length === 0) throw new NetworkError("Quiz not found", 400);
+    if (quizzes.length === 0) return [];
 
     const anyQuizWithStage = quizzes.filter((obj, index) => {
       return (
