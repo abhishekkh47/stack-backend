@@ -407,13 +407,11 @@ class UserController extends BaseController {
         ctx,
         async (validate) => {
           if (validate) {
-            const quizSuggestion =
-              await QuizDBService.createQuizTopicSuggestion(
-                userIfExists._id,
-                body.topic
-              );
+            await QuizDBService.createQuizTopicSuggestion(
+              userIfExists._id,
+              body.topic
+            );
             return this.Ok(ctx, {
-              data: quizSuggestion,
               message: "Your suggested topic sent successfully!",
             });
           }
