@@ -16,6 +16,7 @@ import { EUserType, everyCorrectAnswerPoints } from "@app/types";
 import {
   ANALYTICS_EVENTS,
   QUIZ_LIMIT_REACHED_TEXT,
+  QUIZ_TYPE,
   XP_POINTS,
 } from "@app/utility";
 import { quizService } from "@services/v1";
@@ -1012,13 +1013,16 @@ class QuizDBService {
    * @param userId
    * @returns {*}
    */
-  public async getStageWiseQuizzes(topics: string[], userId: string) {
+  public async getStageWiseQuizzes(
+    topics: string[],
+    userId: string,
+    isNormalQuiz: boolean
+  ) {
+    let matchedQuery: any = { categoryId: { $in: topics } };
+    if (isNormalQuiz) {
+      matchedQuery = { ...matchedQuery, "quizzes.quizType": QUIZ_TYPE.NORMAL };
+    }
     const query: any = [
-      {
-        $match: {
-          categoryId: { $in: topics },
-        },
-      },
       {
         $lookup: {
           from: "quiz",
@@ -1032,6 +1036,9 @@ class QuizDBService {
           path: "$quizzes",
           preserveNullAndEmptyArrays: true,
         },
+      },
+      {
+        $match: matchedQuery,
       },
       {
         $lookup: {
@@ -1152,6 +1159,8 @@ class QuizDBService {
                   isCompleted: "$quizzes.isUnlocked",
                   xpPoints: "$quizzes.xpPoints",
                   fuelCount: "$quizzes.fuelCount",
+                  quizType: "$quizzes.quizType",
+                  isUnlocked: "$quizzes.isUnlocked",
                 },
               },
             },
@@ -1182,6 +1191,15 @@ class QuizDBService {
             stage.isUnlocked = false;
           }
         }
+      }
+      const currentStageAllQuizCompleted = stages[index].quizzes.every(
+        (x) => x.isCompleted == true && x.quizType == 1
+      );
+      const simulationQuizIndex = stage.quizzes.findIndex(
+        (x) => x.quizType == 2 && x.isCompleted == false
+      );
+      if (currentStageAllQuizCompleted && currentStageAllQuizCompleted !== -1) {
+        stage[simulationQuizIndex].isUnlocked = true;
       }
       index++;
     }
@@ -1396,7 +1414,7 @@ class QuizDBService {
     let topicIds = [];
     if (anyQuizWithStage.length > 0) {
       topicIds = anyQuizWithStage.map((x) => x.topicId);
-      const stages = await this.getStageWiseQuizzes(topicIds, userId);
+      const stages = await this.getStageWiseQuizzes(topicIds, userId, false);
       if (stages.length > 0) {
         for (let quiz of quizzes) {
           if (quiz.stageId) {

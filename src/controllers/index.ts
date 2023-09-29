@@ -7,6 +7,7 @@ import routerDictV1 from "./v1";
 import routerDictV1_1 from "./v2";
 import routerDictV3 from "./v3";
 import routerDictV4 from "./v4";
+import routerDictV5 from "./v5";
 import { HttpMethod } from "@app/types";
 
 const router = new Router();
@@ -46,7 +47,9 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
       {}
     );
     const firstRouteForKey =
-      routesForKey.filter((x) => x.version === "4.0.0").length > 0
+      routesForKey.filter((x) => x.version === "5.0.0").length > 0
+        ? routesForKey.filter((x) => x.version === "5.0.0")[0]
+        : routesForKey.filter((x) => x.version === "4.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "4.0.0")[0]
         : routesForKey.filter((x) => x.version === "3.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "3.0.0")[0]
@@ -81,6 +84,12 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
   });
 };
 
-setRoutes(router, [routerDictV1, routerDictV1_1, routerDictV3, routerDictV4]);
+setRoutes(router, [
+  routerDictV1,
+  routerDictV1_1,
+  routerDictV3,
+  routerDictV4,
+  routerDictV5,
+]);
 
 export default Compose([router.routes(), router.allowedMethods()]);

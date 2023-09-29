@@ -34,6 +34,8 @@ export interface IQuizQuestion {
   isOnboardingFlowQuiz: boolean;
   question_image_title: string;
   order: number;
+  correctStatement: string;
+  incorrectStatement: string;
 }
 
 export enum EQuizQuestionType {
@@ -68,6 +70,9 @@ export interface IQuiz {
   image: string;
   quizNum: number;
   tags: string;
+  quizType: number;
+  characterName: string;
+  characterImage: string;
 }
 
 export interface IQuizResult {
@@ -89,28 +94,4 @@ export interface IQuizReview {
 
 export interface IQuizQuestionResult extends IQuizResult {
   quizQuestionId: mongoose.Schema.Types.ObjectId;
-}
-
-interface SimulationQuestions {
-  question: string;
-  correctStatement: string;
-  incorrectStatement: string;
-  answers: SimulationAnswers[];
-}
-
-interface SimulationAnswers {
-  title: string;
-  statement: string;
-  correctAnswer: number;
-}
-
-export interface ISimulationMaster {
-  topicId: mongoose.Schema.Types.ObjectId;
-  stageId: mongoose.Schema.Types.ObjectId;
-  quizId: mongoose.Schema.Types.ObjectId;
-  title: string;
-  image: string;
-  characterName: string;
-  characterImage: string;
-  simulationQuestions: SimulationQuestions[];
 }

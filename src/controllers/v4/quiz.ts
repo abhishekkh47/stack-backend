@@ -678,7 +678,8 @@ class QuizController extends BaseController {
       if (quizCategoryIfExists.hasStages && status == "3") {
         const stages = await QuizDBService.getStageWiseQuizzes(
           [quizCategoryIfExists._id],
-          user._id
+          user._id,
+          true
         );
         return this.Ok(ctx, { data: stages });
       } else {

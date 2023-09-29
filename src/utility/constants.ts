@@ -251,3 +251,8 @@ export const REFERRAL_SOURCES = [
   "youtube",
   "mouth",
 ];
+
+export const QUIZ_TYPE = {
+  NORMAL: 1,
+  SIMULATION: 2,
+};

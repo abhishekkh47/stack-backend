@@ -29,6 +29,12 @@ const schema = new mongoose.Schema<IQuizSchema>(
       default: "",
     },
     videoUrl: { type: mongoose.Schema.Types.String, default: null },
+    /**
+     * 1 - quiz , 2 - simulation
+     */
+    quizType: { type: mongoose.Schema.Types.Number, default: 1 },
+    characterName: { type: mongoose.Schema.Types.String, default: null },
+    characterImage: { type: mongoose.Schema.Types.String, default: null },
   },
   { timestamps: true }
 );
