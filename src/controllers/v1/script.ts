@@ -1660,7 +1660,9 @@ class ScriptController extends BaseController {
       if (simulationNums.length === 0) {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
-      const rows = await ScriptService.readSpreadSheet("1740973852");
+      const rows = await ScriptService.readSpreadSheet(
+        envData.SIMULATION_QUIZ_GID
+      );
       let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
         "_id topic"
       );

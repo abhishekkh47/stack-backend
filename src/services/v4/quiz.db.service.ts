@@ -17,6 +17,7 @@ import {
   ANALYTICS_EVENTS,
   QUIZ_LIMIT_REACHED_TEXT,
   QUIZ_TYPE,
+  SIMULATION_QUIZ_FUEL,
   XP_POINTS,
 } from "@app/utility";
 import { quizService } from "@services/v1";
@@ -195,7 +196,7 @@ class QuizDBService {
       quizId: quizId,
     })
       .select(
-        "_id order quizId text answer_array points question_image question_type answer_type"
+        "_id order quizId text answer_array points question_image question_type answer_type correctStatement incorrectStatement"
       )
       .sort({ order: 1 });
     return quizQuestionList;
@@ -272,36 +273,40 @@ class QuizDBService {
     /**
      * Check question acutally exists in that quiz
      */
-    const quizQuestions = [];
-    let queExistsFlag = true;
-    if (reqParam.solvedQuestions.length > 0) {
-      for (const solvedQue of reqParam.solvedQuestions) {
-        const queExists = await QuizQuestionTable.findOne({
-          _id: solvedQue,
-        });
-        if (!queExists) {
-          queExistsFlag = false;
-          break;
+    if (quizExists.quizType === QUIZ_TYPE.NORMAL) {
+      const quizQuestions = [];
+      let queExistsFlag = true;
+      if (reqParam.solvedQuestions.length > 0) {
+        for (const solvedQue of reqParam.solvedQuestions) {
+          const queExists = await QuizQuestionTable.findOne({
+            _id: solvedQue,
+          });
+          if (!queExists) {
+            queExistsFlag = false;
+            break;
+          }
+          quizQuestions.push({
+            topicId: quizExists.topicId,
+            quizId: quizExists._id,
+            userId: userId,
+            quizQuestionId: solvedQue,
+            pointsEarned: queExists.points,
+          });
         }
-        quizQuestions.push({
-          topicId: quizExists.topicId,
-          quizId: quizExists._id,
-          userId: userId,
-          quizQuestionId: solvedQue,
-          pointsEarned: queExists.points,
-        });
       }
+      if (queExistsFlag === false) {
+        throw new NetworkError("Question Doesn't Exists in db", 400);
+      }
+      /**
+       * Add Question Result and Quiz Result
+       */
+      await QuizQuestionResult.insertMany(quizQuestions);
     }
-    if (queExistsFlag === false) {
-      throw new NetworkError("Question Doesn't Exists in db", 400);
-    }
-    /**
-     * Add Question Result and Quiz Result
-     */
-    await QuizQuestionResult.insertMany(quizQuestions);
 
     const pointsEarnedFromQuiz =
-      everyCorrectAnswerPoints * reqParam.solvedQuestions.length;
+      quizExists.quizType === QUIZ_TYPE.NORMAL
+        ? everyCorrectAnswerPoints * reqParam.solvedQuestions.length
+        : SIMULATION_QUIZ_FUEL;
 
     const dataToCreate = {
       topicId: quizExists.topicId,
@@ -319,7 +324,10 @@ class QuizDBService {
     };
     const correctAnswerXPPointsEarned =
       reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
-    totalXPPoints = correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ;
+    totalXPPoints =
+      quizExists.quizType === QUIZ_TYPE.NORMAL
+        ? correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ
+        : XP_POINTS.SIMULATION_QUIZ;
     incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
     query = {
       ...query,
@@ -1161,6 +1169,8 @@ class QuizDBService {
                   fuelCount: "$quizzes.fuelCount",
                   quizType: "$quizzes.quizType",
                   isUnlocked: "$quizzes.isUnlocked",
+                  characterName: "$quizzes.characterName",
+                  characterImage: "$quizzes.characterImage",
                 },
               },
             },
@@ -1185,21 +1195,37 @@ class QuizDBService {
             (x) => x.isCompleted == true
           );
           const previousAllQuizzes = stages[index - 1].quizzes.length;
-          if (previousAllQuizUnlocked.length === previousAllQuizzes) {
+          if (
+            stages[index - 1].isUnlocked === true &&
+            previousAllQuizUnlocked.length === previousAllQuizzes
+          ) {
             stage.isUnlocked = true;
           } else {
             stage.isUnlocked = false;
           }
         }
       }
-      const currentStageAllQuizCompleted = stages[index].quizzes.every(
-        (x) => x.isCompleted == true && x.quizType == 1
+      // Filter quizzes of quizType 1 in the current stage
+      const allNormalQuizzesInStage = stages[index].quizzes.filter(
+        (x) => x.quizType === QUIZ_TYPE.NORMAL
       );
+
+      // Check if all normal quizzes in the current stage are completed
+      const allNormalQuizzesCompleted = allNormalQuizzesInStage.every(
+        (x) => x.isCompleted == true
+      );
+
+      // Find the index of the first quizType 2 quiz that is not completed
       const simulationQuizIndex = stage.quizzes.findIndex(
-        (x) => x.quizType == 2 && x.isCompleted == false
+        (x) => x.quizType == QUIZ_TYPE.SIMULATION && x.isCompleted == false
       );
-      if (currentStageAllQuizCompleted && currentStageAllQuizCompleted !== -1) {
-        stage[simulationQuizIndex].isUnlocked = true;
+      // Unlock the simulation quiz if the conditions are met
+      if (
+        stage.isUnlocked &&
+        allNormalQuizzesCompleted &&
+        simulationQuizIndex !== -1
+      ) {
+        stages[index].quizzes[simulationQuizIndex].isUnlocked = true;
       }
       index++;
     }

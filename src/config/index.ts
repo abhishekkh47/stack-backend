@@ -146,4 +146,7 @@ export default {
   get CATEGORY_SHEET_GID() {
     return process.env.CATEGORY_SHEET_GID;
   },
+  get SIMULATION_QUIZ_GID() {
+    return process.env.SIMULATION_QUIZ_GID;
+  },
 };
