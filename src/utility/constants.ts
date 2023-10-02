@@ -227,6 +227,7 @@ export const XP_POINTS = {
   CORRECT_ANSWER: 5,
   COMPLETED_QUIZ: 10,
   REFERRAL: 20,
+  SIMULATION_QUIZ: 150,
 };
 
 export const STREAK_LEVELS = {
@@ -251,3 +252,10 @@ export const REFERRAL_SOURCES = [
   "youtube",
   "mouth",
 ];
+
+export const QUIZ_TYPE = {
+  NORMAL: 1,
+  SIMULATION: 2,
+};
+
+export const SIMULATION_QUIZ_FUEL = 100;

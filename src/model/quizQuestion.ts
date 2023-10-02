@@ -73,6 +73,14 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
       type: mongoose.Schema.Types.Number,
       default: 0,
     },
+    correctStatement: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
+    incorrectStatement: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

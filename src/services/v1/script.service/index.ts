@@ -17,6 +17,7 @@ import json2csv from "json2csv";
 import fs from "fs";
 import { Transform } from "stream";
 import moment from "moment";
+import { QUIZ_TYPE } from "@app/utility";
 
 class ScriptService {
   public async sandboxApproveKYC(
@@ -119,7 +120,6 @@ class ScriptService {
     const sheet = gid ? document.sheetsById[gid] : document.sheetsByIndex[0];
     await sheet.loadCells();
     let rows = await sheet.getRows();
-    if (gid) return rows;
     const rowsCount = sheet.rowCount;
     const columnsCount = sheet.columnCount;
     rows.forEach(function (element) {
@@ -326,6 +326,9 @@ class ScriptService {
                 image: data.image,
                 tags: data.tags,
                 stageId: stageIfExists?._id || null,
+                quizType: data.quizType || QUIZ_TYPE.NORMAL,
+                characterName: data.characterName || null,
+                characterImage: data.characterImage || null,
               },
             },
             { upsert: true, new: true }
@@ -370,7 +373,6 @@ class ScriptService {
           quizNum: parseInt(data["Quiz #"]),
         });
         if (!quiz) {
-          console.log(parseInt(data["Quiz #"]));
           continue;
         }
         let category = await QuizTopicTable.findOne({
@@ -671,6 +673,165 @@ class ScriptService {
       throw new NetworkError("No User Exists", 400);
     }
     return user;
+  }
+
+  /**
+   * @description This function is add simulations into db
+   * @param rows
+   * @param topic
+   * @param stages
+   */
+  public async convertSimulationSpreadSheetToJSON(
+    topicId: any,
+    simulationNums: any,
+    rows: any,
+    allTopics: any
+  ) {
+    try {
+      rows = rows.filter((x) => simulationNums.includes(x["Simulation #"]));
+      let simulationTitle = "";
+      let simulationImage = "";
+      let lastQuizCategory = "";
+      let lastQuizStage = "";
+      let order = 1;
+      let characterName = "";
+      let characterImage = "";
+      let categories = [];
+      let simulationContentData = [];
+      let questionDataArray = [];
+      let filterCategory = [];
+      await Promise.all(
+        await rows.map(async (data, index) => {
+          if (data["Simulation Title"] != "") {
+            simulationTitle = data["Simulation Title"].trimEnd();
+          }
+          if (data["Simulation Image"] != "") {
+            simulationImage = data["Simulation Image"].trimEnd();
+          }
+          if (data["Category"] != "") {
+            lastQuizCategory = data["Category"].trimEnd();
+          }
+          if (data["Stage"] != "") {
+            lastQuizStage = data["Stage"].trimEnd();
+          }
+          if (data["Character"] != "") {
+            characterName = data["Character"].trimEnd();
+          }
+          if (data["Character Image"] != "") {
+            characterImage = data["Character Image"].trimEnd();
+          }
+          if (data["Simulation Title"] == "") {
+            ++order;
+          } else {
+            order = 1;
+          }
+          let questionData = {
+            text: data["Prompt"].trimEnd(),
+            question_image: null,
+            order: order,
+            points: 20,
+            question_type: 2,
+            answer_type: 2,
+            answer_array: [
+              {
+                name: data["Option A"].trimEnd(),
+                image: null,
+                correct_answer:
+                  data["correctAnswer"] == data["Response A"] ? 1 : 0,
+                statement: data["Response A"],
+              },
+              {
+                name: data["Option B"].trimEnd(),
+                image: null,
+                correct_answer:
+                  data["correctAnswer"] == data["Response B"] ? 1 : 0,
+                statement: data["Response B"],
+              },
+              {
+                name: data["Option C"].trimEnd(),
+                image: null,
+                correct_answer:
+                  data["correctAnswer"] == data["Response C"] ? 1 : 0,
+                statement: data["Response C"],
+              },
+              {
+                name: data["Option D"].trimEnd(),
+                image: null,
+                correct_answer:
+                  data["correctAnswer"] == data["Response D"] ? 1 : 0,
+                statement: data["Response D"],
+              },
+            ],
+            correctStatement: data["Response if correct"],
+            incorrectStatement: data["Response if incorrect"],
+          };
+          questionDataArray.push(questionData);
+          if (
+            rows[index + 1] == undefined ||
+            rows[index + 1]["Simulation #"] !== data["Simulation #"]
+          ) {
+            if (lastQuizCategory) {
+              const isCategoryExists = allTopics.find(
+                (x) => x.topic == lastQuizCategory
+              );
+              if (!isCategoryExists) {
+                categories.push({
+                  topic: lastQuizCategory,
+                  image: null,
+                  status: 1,
+                  type: 2,
+                });
+                filterCategory.push({
+                  key: data["Simulation #"],
+                  value: lastQuizCategory,
+                });
+                topicId = null;
+              } else {
+                topicId = isCategoryExists._id;
+              }
+            }
+            let quizData = {
+              topicId: topicId,
+              quizNum: data["Simulation #"].trimEnd(),
+              quizName: simulationTitle,
+              image: simulationImage,
+              quizType: QUIZ_TYPE.SIMULATION,
+              stageName: lastQuizStage,
+              characterName: characterName,
+              characterImage: characterImage,
+              tags: null,
+              questionData: questionDataArray,
+            };
+            simulationContentData.push(quizData);
+            questionDataArray = [];
+          }
+        })
+      );
+      if (categories.length > 0) {
+        categories = Array.from(
+          new Set(categories.map((item) => item.topic))
+        ).map((topic) => categories.find((item) => item.topic === topic));
+        const createdCategories = await QuizTopicTable.insertMany(categories);
+        simulationContentData.map((quizData) => {
+          if (quizData.topicId == null) {
+            const checkIfCategoryMatched = filterCategory.find(
+              (x) => x.key == quizData.quizNum
+            );
+            if (checkIfCategoryMatched) {
+              const filteredCategory = createdCategories.find(
+                (x) => x.topic == checkIfCategoryMatched.value
+              );
+              if (filteredCategory) {
+                quizData.topicId = filteredCategory._id;
+              }
+            }
+          }
+        });
+      }
+      return simulationContentData;
+    } catch (error) {
+      throw new NetworkError("Something Went Wrong", 400);
+    }
   }
 }
 

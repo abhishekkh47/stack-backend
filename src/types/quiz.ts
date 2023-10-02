@@ -34,6 +34,8 @@ export interface IQuizQuestion {
   isOnboardingFlowQuiz: boolean;
   question_image_title: string;
   order: number;
+  correctStatement: string;
+  incorrectStatement: string;
 }
 
 export enum EQuizQuestionType {
@@ -68,6 +70,9 @@ export interface IQuiz {
   image: string;
   quizNum: number;
   tags: string;
+  quizType: number;
+  characterName: string;
+  characterImage: string;
 }
 
 export interface IQuizResult {
