@@ -30,6 +30,10 @@ const schema = new mongoose.Schema<IQuizResultSchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
+    numOfIncorrectAnswers: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

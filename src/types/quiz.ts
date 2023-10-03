@@ -81,6 +81,7 @@ export interface IQuizResult {
   quizId: mongoose.Schema.Types.ObjectId;
   pointsEarned: number;
   isOnBoardingQuiz: boolean;
+  numOfIncorrectAnswers: number;
 }
 
 export interface IQuizReview {

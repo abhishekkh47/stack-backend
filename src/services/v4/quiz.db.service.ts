@@ -314,6 +314,7 @@ class QuizDBService {
       userId: userId,
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
+      numOfIncorrectAnswers: reqParam.numOfIncorrectAnswers || 0,
     };
     await QuizResult.create(dataToCreate);
     let incrementObj: any = {
