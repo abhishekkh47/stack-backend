@@ -8,7 +8,7 @@ class DripshopDBService {
    * @description get all drip shop data
    * @param matchedCondition
    */
-  public async getDripshopData(matchedCondition: any = null) {
+  public async getDripshopData() {
     const queryGet: any = [
       {
         $project: {
@@ -18,7 +18,6 @@ class DripshopDBService {
           fuel: 1,
           sizes: 1,
           description: 1,
-          shippable: 1,
         },
       },
       {
@@ -27,9 +26,6 @@ class DripshopDBService {
         },
       },
     ];
-    if (matchedCondition) {
-      queryGet.push({ $match: { shippable: true } });
-    }
     let allData = await DripshopItemTable.aggregate(queryGet).exec();
 
     return allData;

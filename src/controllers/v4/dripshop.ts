@@ -17,9 +17,7 @@ class DripshopController extends BaseController {
   @Route({ path: "/dripshop-items", method: HttpMethod.GET })
   @Auth()
   public async getDripshopItems(ctx: any) {
-    const allData = await DripshopDBService.getDripshopData({
-      shippable: false,
-    });
+    const allData = await DripshopDBService.getDripshopData();
 
     return this.Ok(ctx, { data: allData });
   }
