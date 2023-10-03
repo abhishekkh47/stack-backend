@@ -227,6 +227,7 @@ export const XP_POINTS = {
   CORRECT_ANSWER: 5,
   COMPLETED_QUIZ: 10,
   REFERRAL: 20,
+  SIMULATION_QUIZ: 150,
 };
 
 export const STREAK_LEVELS = {
@@ -254,3 +255,9 @@ export const REFERRAL_SOURCES = [
 
 export const DEFAULT_LIFE = 3;
 export const REFILL_INTERVAL = 4 * 3600 * 1000;
+export const QUIZ_TYPE = {
+  NORMAL: 1,
+  SIMULATION: 2,
+};
+
+export const SIMULATION_QUIZ_FUEL = 100;

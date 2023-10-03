@@ -18,7 +18,7 @@ class DripshopController extends BaseController {
   @Auth()
   public async getDripshopItems(ctx: any) {
     const allData = await DripshopDBService.getDripshopData();
-
+    allData.shift();
     return this.Ok(ctx, { data: allData });
   }
 
