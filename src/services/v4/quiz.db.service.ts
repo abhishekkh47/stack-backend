@@ -357,6 +357,7 @@ class QuizDBService {
     return {
       totalXPPoints,
       updatedXPPoints: updatedXP.xpPoints,
+      totalFuel: pointsEarnedFromQuiz,
     };
   }
 
