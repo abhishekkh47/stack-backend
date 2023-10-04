@@ -314,6 +314,7 @@ class QuizDBService {
       userId: userId,
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
+      numOfIncorrectAnswers: reqParam.numOfIncorrectAnswers || 0,
     };
     await QuizResult.create(dataToCreate);
     let incrementObj: any = {
@@ -1204,6 +1205,17 @@ class QuizDBService {
             stage.isUnlocked = false;
           }
         }
+      }
+      if (stage.isUnlocked) {
+        stage.quizzes.forEach((quiz) => {
+          if (quiz.quizType === QUIZ_TYPE.NORMAL) {
+            quiz.isUnlocked = true;
+          }
+        });
+      } else {
+        stage.quizzes.forEach((quiz) => {
+          quiz.isUnlocked = false;
+        });
       }
       // Filter quizzes of quizType 1 in the current stage
       const allNormalQuizzesInStage = stages[index].quizzes.filter(
