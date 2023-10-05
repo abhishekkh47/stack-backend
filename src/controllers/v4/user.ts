@@ -21,6 +21,7 @@ import {
   getBalance,
   getAssetTotals,
   REFERRAL_SOURCES,
+  REFILL_LIFE_FUEL,
 } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
@@ -554,12 +555,12 @@ class UserController extends BaseController {
   }
 
   /**
-   * @description This method is used to refill the heart
+   * @description This method is used to refill the life
    * @param ctx
    * @returns {*}
    */
   @Route({
-    path: "/refill-heart",
+    path: "/refill-life",
     method: HttpMethod.POST,
   })
   @Auth()
@@ -569,10 +570,60 @@ class UserController extends BaseController {
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
     }
-    await UserDBService.refillHeartsAndRedeemFuels(userIfExists, 300);
+    await UserDBService.refillLifeWithFuel(userIfExists, REFILL_LIFE_FUEL);
     return this.Ok(ctx, {
       message: "Success",
     });
+  }
+
+  /**
+   * @description This method is used to deduct life and update renewLifeAt based on currentTime
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/deduct-life", method: HttpMethod.POST })
+  @Auth()
+  public async deductLifeOfUser(ctx: any) {
+    try {
+      const { user } = ctx.request;
+      let userIfExists = await UserTable.findOne({ _id: user._id });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      if (userIfExists.lifeCount === 0) {
+        return this.BadRequest(ctx, "You are already out of life");
+      }
+      userIfExists = await UserTable.findOneAndUpdate(
+        {
+          _id: user._id,
+        },
+        {
+          $inc: {
+            lifeCount: -1,
+          },
+        },
+        { new: true }
+      );
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "User not found");
+      }
+      let dataToSend = {
+        quizCoins: userIfExists.quizCoins,
+        preLoadedCoins: userIfExists.preLoadedCoins,
+      };
+      const updatedData = await UserDBService.getUsersLatestLifeData(
+        userIfExists
+      );
+      console.log(updatedData);
+      if (updatedData) {
+        dataToSend = { ...dataToSend, ...updatedData };
+      }
+      return this.Ok(ctx, {
+        data: dataToSend,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
   }
 }
 

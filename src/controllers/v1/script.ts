@@ -46,7 +46,7 @@ import {
   GIFTCARDS,
   NOTIFICATION,
   NOTIFICATION_KEYS,
-  DEFAULT_LIFE,
+  DEFAULT_LIFE_COUNT,
 } from "@app/utility";
 import BaseController from ".././base";
 import {
@@ -1650,18 +1650,18 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to set default life to users
+   * @description This method is used to set default life count to users
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/set-default-life", method: HttpMethod.POST })
+  @Route({ path: "/set-default-life-count", method: HttpMethod.POST })
   @InternalUserAuth()
-  public async setDefaultLifeToUser(ctx: any) {
+  public async setDefaultLifeCountToUser(ctx: any) {
     try {
       await UserTable.updateMany(
         {},
         {
-          $set: { lifeCount: DEFAULT_LIFE, renewLifeAt: null },
+          $set: { lifeCount: DEFAULT_LIFE_COUNT, renewLifeAt: null },
         }
       );
       return this.Ok(ctx, { message: "Success" });

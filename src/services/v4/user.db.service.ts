@@ -8,7 +8,7 @@ import {
   convertDateToTimeZone,
   getDaysBetweenDates,
   formattedDate,
-  DEFAULT_LIFE,
+  DEFAULT_LIFE_COUNT,
   STREAK_LEVELS,
   REFILL_INTERVAL,
 } from "@app/utility/index";
@@ -819,22 +819,22 @@ class UserDBService {
   }
 
   /**
-   * @description This method is used to refill all hearts in exchange of fuel.
+   * @description This method is used to refill all life in exchange of fuel.
    * @param user
    * @returns {*}
    */
-  public async refillHeartsAndRedeemFuels(user: any, fuel: number) {
-    if (user.lifeCount === DEFAULT_LIFE) {
+  public async refillLifeWithFuel(user: any, fuel: number) {
+    if (user.lifeCount === DEFAULT_LIFE_COUNT) {
       throw new NetworkError("You already have 3 lives", 400);
     }
     const totalFuels = user.quizCoins + user.preLoadedCoins;
     if (totalFuels < fuel) {
       throw new NetworkError(
-        "You dont have sufficient fuels to refill heart",
+        "You dont have sufficient fuels to refill life",
         400
       );
     }
-    let updateQuery: any = { lifeCount: DEFAULT_LIFE };
+    let updateQuery: any = { lifeCount: DEFAULT_LIFE_COUNT };
     if (totalFuels >= fuel) {
       /**
        * once true check what to update preloaded or quiz coins or both
@@ -868,18 +868,20 @@ class UserDBService {
   }
 
   /**
-   * @description This method is used to refill heart and update renewLifeAt field
+   * @description This method is used to refill life and update renewLifeAt field
    * @param user
    * @returns {*}
    */
-  public getUsersLatestLifeData(user: any) {
+  public async getUsersLatestLifeData(user: any) {
     const currentTime = Date.now();
     let renewLifeAt = null;
     let lifeCount = 0;
     if (!user.renewLifeAt) {
       renewLifeAt = currentTime + REFILL_INTERVAL;
+      await this.refillLifeIfNeeded(user, { renewLifeAt });
       return {
         renewLifeAt,
+        lifeCount: user.lifeCount,
       };
     }
     if (currentTime < Number(user.renewLifeAt)) {
@@ -895,10 +897,28 @@ class UserDBService {
     } else {
       renewLifeAt = null;
     }
+    await this.refillLifeIfNeeded(user, { renewLifeAt, lifeCount });
     return {
       renewLifeAt,
       lifeCount,
     };
+  }
+
+  /**
+   * @description This method is used to refill life in users
+   * @param user
+   * @param updatedData
+   * @returns {*}
+   */
+  public async refillLifeIfNeeded(user: any, updatedData: any) {
+    await UserTable.findOneAndUpdate(
+      {
+        _id: user._id,
+      },
+      updatedData,
+      { new: true }
+    );
+    return updatedData;
   }
 }
 

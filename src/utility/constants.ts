@@ -253,7 +253,7 @@ export const REFERRAL_SOURCES = [
   "mouth",
 ];
 
-export const DEFAULT_LIFE = 3;
+export const DEFAULT_LIFE_COUNT = 3;
 export const REFILL_INTERVAL = 4 * 3600 * 1000;
 export const QUIZ_TYPE = {
   NORMAL: 1,
@@ -261,3 +261,5 @@ export const QUIZ_TYPE = {
 };
 
 export const SIMULATION_QUIZ_FUEL = 100;
+export const REFILL_LIFE_FUEL = 300;
+export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
