@@ -1129,6 +1129,11 @@ class QuizDBService {
         },
       },
       {
+        $sort: {
+          "quizzes.quizType": 1,
+        },
+      },
+      {
         $group: {
           _id: "$_id",
           title: {
@@ -1254,6 +1259,7 @@ class QuizDBService {
       {
         $match: {
           order: 1,
+          quizType: QUIZ_TYPE.NORMAL,
         },
       },
       {
