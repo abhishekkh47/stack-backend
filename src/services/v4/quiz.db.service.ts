@@ -1259,7 +1259,6 @@ class QuizDBService {
       {
         $match: {
           order: 1,
-          quizType: QUIZ_TYPE.NORMAL,
         },
       },
       {
@@ -1274,6 +1273,11 @@ class QuizDBService {
         $unwind: {
           path: "$quiz",
           preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          "quiz.quizType": QUIZ_TYPE.NORMAL,
         },
       },
       {
