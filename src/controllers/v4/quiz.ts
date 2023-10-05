@@ -554,7 +554,7 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const { totalXPPoints, updatedXPPoints } =
+          const { totalXPPoints, updatedXPPoints, totalFuel } =
             await QuizDBService.storeQuizInformation(
               user._id,
               headers,
@@ -585,6 +585,7 @@ class QuizController extends BaseController {
           return this.Ok(ctx, {
             message: "Quiz Results Stored Successfully",
             totalXPPoints: totalXPPoints,
+            totalFuel,
             updatedXPPoints,
             previousLeague,
             currentLeague,
