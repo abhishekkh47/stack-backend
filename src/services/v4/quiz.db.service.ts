@@ -1129,6 +1129,11 @@ class QuizDBService {
         },
       },
       {
+        $sort: {
+          "quizzes.quizType": 1,
+        },
+      },
+      {
         $group: {
           _id: "$_id",
           title: {
@@ -1268,6 +1273,11 @@ class QuizDBService {
         $unwind: {
           path: "$quiz",
           preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          "quiz.quizType": QUIZ_TYPE.NORMAL,
         },
       },
       {
