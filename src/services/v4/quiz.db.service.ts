@@ -1117,10 +1117,16 @@ class QuizDBService {
               $cond: {
                 if: { $ifNull: ["$quizzes", false] },
                 then: {
-                  $multiply: [
-                    everyCorrectAnswerPoints,
-                    { $size: "$quizzes.quizQuestions" },
-                  ],
+                  $cond: {
+                    if: { $eq: ["$quizzes.quizType", QUIZ_TYPE.SIMULATION] },
+                    then: SIMULATION_QUIZ_FUEL,
+                    else: {
+                      $multiply: [
+                        everyCorrectAnswerPoints,
+                        { $size: "$quizzes.quizQuestions" },
+                      ],
+                    },
+                  },
                 },
                 else: "$$REMOVE",
               },
