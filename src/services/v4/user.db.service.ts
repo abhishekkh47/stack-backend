@@ -11,6 +11,7 @@ import {
   DEFAULT_LIFE_COUNT,
   STREAK_LEVELS,
   REFILL_INTERVAL,
+  REFILL_LIFE_FUEL,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
 import {
@@ -823,29 +824,29 @@ class UserDBService {
    * @param user
    * @returns {*}
    */
-  public async refillLifeWithFuel(user: any, fuel: number) {
+  public async refillLifeWithFuel(user: any) {
     if (user.lifeCount === DEFAULT_LIFE_COUNT) {
       throw new NetworkError("You already have 3 lives", 400);
     }
     const totalFuels = user.quizCoins + user.preLoadedCoins;
-    if (totalFuels < fuel) {
+    if (totalFuels < REFILL_LIFE_FUEL) {
       throw new NetworkError(
         "You dont have sufficient fuels to refill life",
         400
       );
     }
     let updateQuery: any = { lifeCount: DEFAULT_LIFE_COUNT };
-    if (totalFuels >= fuel) {
+    if (totalFuels >= REFILL_LIFE_FUEL) {
       /**
        * once true check what to update preloaded or quiz coins or both
        */
-      if (user.preLoadedCoins >= fuel) {
+      if (user.preLoadedCoins >= REFILL_LIFE_FUEL) {
         updateQuery = {
           ...updateQuery,
-          preLoadedCoins: user.preLoadedCoins - fuel,
+          preLoadedCoins: user.preLoadedCoins - REFILL_LIFE_FUEL,
         };
       } else {
-        const amountLeftAfterPreloaded = fuel - user.preLoadedCoins;
+        const amountLeftAfterPreloaded = REFILL_LIFE_FUEL - user.preLoadedCoins;
 
         if (amountLeftAfterPreloaded <= user.quizCoins) {
           updateQuery = {

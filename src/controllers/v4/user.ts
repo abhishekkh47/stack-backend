@@ -21,7 +21,6 @@ import {
   getBalance,
   getAssetTotals,
   REFERRAL_SOURCES,
-  REFILL_LIFE_FUEL,
 } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
@@ -570,7 +569,7 @@ class UserController extends BaseController {
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
     }
-    await UserDBService.refillLifeWithFuel(userIfExists, REFILL_LIFE_FUEL);
+    await UserDBService.refillLifeWithFuel(userIfExists);
     return this.Ok(ctx, {
       message: "Success",
     });
@@ -614,7 +613,6 @@ class UserController extends BaseController {
       const updatedData = await UserDBService.getUsersLatestLifeData(
         userIfExists
       );
-      console.log(updatedData);
       if (updatedData) {
         dataToSend = { ...dataToSend, ...updatedData };
       }

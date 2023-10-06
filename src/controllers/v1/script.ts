@@ -1656,7 +1656,7 @@ class ScriptController extends BaseController {
    */
   @Route({ path: "/set-default-life-count", method: HttpMethod.POST })
   @InternalUserAuth()
-  public async setDefaultLifeCountToUser(ctx: any) {
+  public async setDefaultLife(ctx: any) {
     try {
       await UserTable.updateMany(
         {},
