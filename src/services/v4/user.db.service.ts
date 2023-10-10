@@ -878,23 +878,27 @@ class UserDBService {
     let renewLifeAt = null;
     let lifeCount = 0;
     if (!user.renewLifeAt) {
-      renewLifeAt = currentTime + REFILL_INTERVAL;
+      renewLifeAt = new Date(currentTime + REFILL_INTERVAL).toISOString();
       await this.refillLifeIfNeeded(user, { renewLifeAt });
       return {
         renewLifeAt,
         lifeCount: user.lifeCount,
       };
     }
-    if (currentTime < Number(user.renewLifeAt)) {
-      return null;
+    let usersRenewLifeAt = new Date(user.renewLifeAt).valueOf();
+    if (currentTime < usersRenewLifeAt) {
+      return {
+        renewLifeAt: user.renewLifeAt,
+        lifeCount: user.lifeCount,
+      };
     }
     const numOfLivesToRefill =
-      1 +
-      Math.floor((currentTime - Number(user.renewLifeAt)) / REFILL_INTERVAL);
+      1 + Math.floor((currentTime - usersRenewLifeAt) / REFILL_INTERVAL);
     lifeCount = Math.min(user.lifeCount + numOfLivesToRefill, 3);
     if (lifeCount < 3) {
-      renewLifeAt =
-        Number(user.renewLifeAt) + numOfLivesToRefill * REFILL_INTERVAL;
+      renewLifeAt = new Date(
+        usersRenewLifeAt + numOfLivesToRefill * REFILL_INTERVAL
+      ).toISOString();
     } else {
       renewLifeAt = null;
     }
