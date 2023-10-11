@@ -1517,6 +1517,155 @@ class QuizDBService {
       throw new NetworkError(error.message, 400);
     }
   }
+
+  /**
+   * @description  This method is used to give quiz recommendations to user based on played quizzes
+   * @param userId
+   * @returns {*}
+   */
+  public async getQuizRecommendations(userId: string) {
+    try {
+      let quizRecommendations = [];
+      const quizzes = await QuizTable.aggregate([
+        {
+          $match: {
+            $and: [
+              {
+                quizNum: {
+                  $exists: true,
+                },
+              },
+              {
+                quizNum: {
+                  $ne: 0,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "quizresults",
+            let: {
+              quizId: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$userId", new ObjectId(userId)],
+                      },
+                      {
+                        $eq: ["$quizId", "$$quizId"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "quizPlayed",
+          },
+        },
+        {
+          $redact: {
+            $cond: {
+              if: {
+                $gt: [
+                  {
+                    $size: "$quizPlayed",
+                  },
+                  0,
+                ],
+              },
+              then: "$$PRUNE",
+              else: "$$KEEP",
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "stages",
+            localField: "stageId",
+            foreignField: "_id",
+            as: "stages",
+          },
+        },
+        {
+          $unwind: {
+            path: "$stages",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            sortOnStage: {
+              $cond: {
+                if: { $ifNull: ["$stageId", false] },
+                then: 0,
+                else: 1,
+              },
+            },
+          },
+        },
+        {
+          $sort: {
+            sortOnStage: -1,
+            "stages.order": 1,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            userId: 1,
+            quizNum: 1,
+            name: "$quizName",
+            quizType: 1,
+            sortOnStage: 1,
+            image: 1,
+            order: { $ifNull: ["$stages.order", null] },
+            stageId: 1,
+          },
+        },
+      ]).exec();
+      if (quizzes.length === 0) return [];
+      // const currentStage = quizzes[0].stageId;
+      const stageQuizRecommendations = quizzes.filter((x) => x.stageId);
+      let otherCategoryRecommendationsLength = 0;
+      if (stageQuizRecommendations.length > 0) {
+        const normalQuizRecommendations = stageQuizRecommendations.filter(
+          (x) => x.quizType == QUIZ_TYPE.NORMAL
+        );
+        const simulationQuizRecommendations = stageQuizRecommendations.filter(
+          (x) => x.quizType == QUIZ_TYPE.SIMULATION
+        );
+        if (normalQuizRecommendations.length >= 2) {
+          quizRecommendations = normalQuizRecommendations.slice(0, 2);
+          otherCategoryRecommendationsLength = 1;
+        } else if (normalQuizRecommendations.length === 1) {
+          quizRecommendations = normalQuizRecommendations;
+          otherCategoryRecommendationsLength = 2;
+        } else if (normalQuizRecommendations.length === 0) {
+          quizRecommendations = simulationQuizRecommendations;
+          otherCategoryRecommendationsLength = 2;
+        }
+      } else {
+        otherCategoryRecommendationsLength = 3;
+      }
+      const otherCategoryRecommendations = quizzes
+        .filter((x) => x.stageId == null)
+        .slice(0, otherCategoryRecommendationsLength);
+      if (otherCategoryRecommendations.length > 0) {
+        quizRecommendations = quizRecommendations.concat(
+          otherCategoryRecommendations
+        );
+      }
+      return quizRecommendations;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
 }
 
 export default new QuizDBService();
