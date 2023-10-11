@@ -6,6 +6,7 @@ import { CONSTANT, sendEmail } from "@app/utility";
 class DripshopDBService {
   /**
    * @description get all drip shop data
+   * @param matchedCondition
    */
   public async getDripshopData() {
     const queryGet: any = [
@@ -84,9 +85,8 @@ class DripshopDBService {
    */
   public async addItems(items: any[]) {
     let allItems: any = await DripshopItemTable.find({});
-    allItems = allItems.map((x) => {
-      const matchObject = items.find((item) => item.name === x.name);
-      return matchObject;
+    allItems = allItems.filter((item) => {
+      return items.some((x) => x.name === item.name);
     });
     if (allItems.length > 0) {
       throw new NetworkError("Same Items cannot be added", 400);

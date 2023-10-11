@@ -8,7 +8,10 @@ import {
   convertDateToTimeZone,
   getDaysBetweenDates,
   formattedDate,
+  DEFAULT_LIFE_COUNT,
   STREAK_LEVELS,
+  REFILL_INTERVAL,
+  REFILL_LIFE_FUEL,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
 import {
@@ -814,6 +817,113 @@ class UserDBService {
       }
     }
     return maxConsecutiveZeroes;
+  }
+
+  /**
+   * @description This method is used to refill all life in exchange of fuel.
+   * @param user
+   * @returns {*}
+   */
+  public async refillLifeWithFuel(user: any) {
+    if (user.lifeCount === DEFAULT_LIFE_COUNT) {
+      throw new NetworkError("You already have 3 lives", 400);
+    }
+    const totalFuels = user.quizCoins + user.preLoadedCoins;
+    if (totalFuels < REFILL_LIFE_FUEL) {
+      throw new NetworkError(
+        "You dont have sufficient fuels to refill life",
+        400
+      );
+    }
+    let updateQuery: any = { lifeCount: DEFAULT_LIFE_COUNT };
+    if (totalFuels >= REFILL_LIFE_FUEL) {
+      /**
+       * once true check what to update preloaded or quiz coins or both
+       */
+      if (user.preLoadedCoins >= REFILL_LIFE_FUEL) {
+        updateQuery = {
+          ...updateQuery,
+          preLoadedCoins: user.preLoadedCoins - REFILL_LIFE_FUEL,
+        };
+      } else {
+        const amountLeftAfterPreloaded = REFILL_LIFE_FUEL - user.preLoadedCoins;
+
+        if (amountLeftAfterPreloaded <= user.quizCoins) {
+          updateQuery = {
+            ...updateQuery,
+            preLoadedCoins: 0,
+            quizCoins: user.quizCoins - amountLeftAfterPreloaded,
+          };
+        }
+      }
+    }
+    await UserTable.findOneAndUpdate(
+      {
+        _id: user._id,
+      },
+      {
+        $set: updateQuery,
+      }
+    );
+    return true;
+  }
+
+  /**
+   * @description This method is used to refill life and update renewLifeAt field
+   * @param user
+   * @returns {*}
+   */
+  public async getUsersLatestLifeData(user: any) {
+    const currentTime = Date.now();
+    let renewLifeAt = null;
+    let lifeCount = 0;
+    if (!user.renewLifeAt) {
+      renewLifeAt = new Date(currentTime + REFILL_INTERVAL).toISOString();
+      await this.refillLifeIfNeeded(user, { renewLifeAt });
+      return {
+        renewLifeAt,
+        lifeCount: user.lifeCount,
+      };
+    }
+    let usersRenewLifeAt = new Date(user.renewLifeAt).valueOf();
+    if (currentTime < usersRenewLifeAt) {
+      return {
+        renewLifeAt: user.renewLifeAt,
+        lifeCount: user.lifeCount,
+      };
+    }
+    const numOfLivesToRefill =
+      1 + Math.floor((currentTime - usersRenewLifeAt) / REFILL_INTERVAL);
+    lifeCount = Math.min(user.lifeCount + numOfLivesToRefill, 3);
+    if (lifeCount < 3) {
+      renewLifeAt = new Date(
+        usersRenewLifeAt + numOfLivesToRefill * REFILL_INTERVAL
+      ).toISOString();
+    } else {
+      renewLifeAt = null;
+    }
+    await this.refillLifeIfNeeded(user, { renewLifeAt, lifeCount });
+    return {
+      renewLifeAt,
+      lifeCount,
+    };
+  }
+
+  /**
+   * @description This method is used to refill life in users
+   * @param user
+   * @param updatedData
+   * @returns {*}
+   */
+  public async refillLifeIfNeeded(user: any, updatedData: any) {
+    await UserTable.findOneAndUpdate(
+      {
+        _id: user._id,
+      },
+      updatedData,
+      { new: true }
+    );
+    return updatedData;
   }
 }
 

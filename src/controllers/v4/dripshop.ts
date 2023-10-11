@@ -7,6 +7,7 @@ import { HttpMethod } from "@app/types";
 import { DripshopDBService } from "@app/services/v1/index";
 import { UserDBService } from "@app/services/v4/index";
 import { DripshopItemTable } from "@app/model";
+import { REFILL_HEARTS_ITEM_NAME } from "@app/utility/constants";
 
 class DripshopController extends BaseController {
   /**
@@ -17,8 +18,8 @@ class DripshopController extends BaseController {
   @Route({ path: "/dripshop-items", method: HttpMethod.GET })
   @Auth()
   public async getDripshopItems(ctx: any) {
-    const allData = await DripshopDBService.getDripshopData();
-
+    let allData = await DripshopDBService.getDripshopData();
+    allData = allData.filter((item) => item.name !== REFILL_HEARTS_ITEM_NAME);
     return this.Ok(ctx, { data: allData });
   }
 
