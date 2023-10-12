@@ -100,9 +100,11 @@ export const validationsV4 = {
       quizId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
         .required(),
-      funLevel: Joi.number().valid(1, 2, 3, 4, 5).required(),
-      difficultyLevel: Joi.number().valid(1, 2, 3, 4, 5).required(),
-      wantMore: Joi.number().valid(0, 1).required(),
+      funLevel: Joi.number().valid(1, 2, 3, 4, 5).optional(),
+      difficultyLevel: Joi.number().valid(1, 2, 3, 4, 5).optional(),
+      wantMore: Joi.number().valid(0, 1).optional(),
+      ratings: Joi.number().valid(1, 2, 3, 4, 5).optional(),
+      feedback: Joi.array().items(Joi.string()).unique().min(1).max(5),
     });
 
     const { error } = schema.validate(req);
