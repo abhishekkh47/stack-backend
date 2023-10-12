@@ -1603,8 +1603,8 @@ class QuizDBService {
             sortOnStage: {
               $cond: {
                 if: { $ifNull: ["$stageId", false] },
-                then: 0,
-                else: 1,
+                then: 1,
+                else: 0,
               },
             },
           },
@@ -1630,8 +1630,10 @@ class QuizDBService {
         },
       ]).exec();
       if (quizzes.length === 0) return [];
-      // const currentStage = quizzes[0].stageId;
-      const stageQuizRecommendations = quizzes.filter((x) => x.stageId);
+      const currentStage = quizzes[0].stageId;
+      const stageQuizRecommendations = quizzes.filter(
+        (x) => x.stageId && x.stageId.toString() == currentStage.toString()
+      );
       let otherCategoryRecommendationsLength = 0;
       if (stageQuizRecommendations.length > 0) {
         const normalQuizRecommendations = stageQuizRecommendations.filter(

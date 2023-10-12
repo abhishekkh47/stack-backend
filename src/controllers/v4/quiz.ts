@@ -572,6 +572,9 @@ class QuizController extends BaseController {
             updatedXPPoints
           );
           const streaksDetails = await UserDBService.addStreaks(userIfExists);
+          const quizRecommendations = quizIfExists.stageId
+            ? await QuizDBService.getQuizRecommendations(userIfExists._id)
+            : [];
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id,
@@ -592,6 +595,7 @@ class QuizController extends BaseController {
             nextLeague,
             isNewLeagueUnlocked,
             streaksDetails,
+            quizRecommendations,
           });
         }
       }
