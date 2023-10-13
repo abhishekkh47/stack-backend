@@ -575,10 +575,6 @@ class QuizDBService {
     if (!quizResultExists) {
       throw new NetworkError("You haven't played this quiz yet!", 400);
     }
-    let quizReviewAlreadyExists = await QuizReview.findOne({
-      quizId: reqParam.quizId,
-      userId: user._id,
-    });
     let quizReviewQuery: any = {
       userId: user._id,
       quizId: reqParam.quizId,

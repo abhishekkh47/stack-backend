@@ -27,6 +27,7 @@ const schema = new mongoose.Schema<IQuizReviewSchema>(
       type: mongoose.Schema.Types.Number,
       enum: [1, 2, 3, 4, 5],
       required: false,
+      default: null, //Here null means not given review yet
     },
     /**
      * Fun level must be from 1 to 5 only
@@ -35,6 +36,7 @@ const schema = new mongoose.Schema<IQuizReviewSchema>(
       type: mongoose.Schema.Types.Number,
       enum: [1, 2, 3, 4, 5],
       required: false,
+      default: null, //Here null means not given review yet
     },
     /**
      * Want more 0 - no and 1 - yes
@@ -43,16 +45,18 @@ const schema = new mongoose.Schema<IQuizReviewSchema>(
       type: mongoose.Schema.Types.Number,
       enum: [0, 1],
       required: false,
+      default: null, //Here null means not given review yet
     },
     ratings: {
       type: mongoose.Schema.Types.Number,
+      enum: [1, 2, 3, 4, 5],
       required: false,
-      default: 0,
+      default: null,
     },
     feedback: {
       type: mongoose.Schema.Types.Array,
       required: false,
-      default: null,
+      default: [],
     },
   },
   {
