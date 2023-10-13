@@ -1523,7 +1523,7 @@ class QuizDBService {
    * @param userId
    * @returns {*}
    */
-  public async getQuizRecommendations(userId: string) {
+  public async getQuizRecommendations(userId: string, currentCategory: string) {
     try {
       let quizRecommendations = [];
       const quizzes = await QuizTable.aggregate([
@@ -1541,6 +1541,14 @@ class QuizDBService {
                 },
               },
             ],
+          },
+        },
+        {
+          $lookup: {
+            from: "quizquestions",
+            localField: "_id",
+            foreignField: "quizId",
+            as: "quizQuestions",
           },
         },
         {
@@ -1607,6 +1615,18 @@ class QuizDBService {
                 else: 0,
               },
             },
+            fuelCount: {
+              $cond: {
+                if: { $eq: ["$quizzes.quizType", QUIZ_TYPE.SIMULATION] },
+                then: SIMULATION_QUIZ_FUEL,
+                else: {
+                  $multiply: [
+                    everyCorrectAnswerPoints,
+                    { $size: "$quizQuestions" },
+                  ],
+                },
+              },
+            },
           },
         },
         {
@@ -1620,9 +1640,11 @@ class QuizDBService {
             _id: 1,
             userId: 1,
             quizNum: 1,
+            topicId: 1,
             name: "$quizName",
             quizType: 1,
             sortOnStage: 1,
+            fuelCount: 1,
             image: 1,
             order: { $ifNull: ["$stages.order", null] },
             stageId: 1,
@@ -1630,17 +1652,17 @@ class QuizDBService {
         },
       ]).exec();
       if (quizzes.length === 0) return [];
-      const currentStage = quizzes[0].stageId;
+      const stageId = quizzes[0].stageId;
       const stageQuizRecommendations = quizzes.filter(
-        (x) => x.stageId && x.stageId.toString() == currentStage.toString()
+        (x) => x.stageId && x.stageId.toString() == stageId.toString()
       );
       let otherCategoryRecommendationsLength = 0;
       if (stageQuizRecommendations.length > 0) {
         const normalQuizRecommendations = stageQuizRecommendations.filter(
-          (x) => x.quizType == QUIZ_TYPE.NORMAL
+          (x) => x.quizType === QUIZ_TYPE.NORMAL
         );
         const simulationQuizRecommendations = stageQuizRecommendations.filter(
-          (x) => x.quizType == QUIZ_TYPE.SIMULATION
+          (x) => x.quizType === QUIZ_TYPE.SIMULATION
         );
         if (normalQuizRecommendations.length >= 2) {
           quizRecommendations = normalQuizRecommendations.slice(0, 2);
@@ -1655,13 +1677,29 @@ class QuizDBService {
       } else {
         otherCategoryRecommendationsLength = 3;
       }
-      const otherCategoryRecommendations = quizzes
-        .filter((x) => x.stageId == null)
+      const currentCategoryQuizRecommendations = quizzes
+        .filter(
+          (x) =>
+            !x.stageId && x.topicId.toString() === currentCategory.toString()
+        )
         .slice(0, otherCategoryRecommendationsLength);
-      if (otherCategoryRecommendations.length > 0) {
+      if (currentCategoryQuizRecommendations.length > 0) {
         quizRecommendations = quizRecommendations.concat(
-          otherCategoryRecommendations
+          currentCategoryQuizRecommendations
         );
+      }
+      if (quizRecommendations.length < 3) {
+        const otherCategoryRecommendations = quizzes
+          .filter(
+            (x) =>
+              !x.stageId && x.topicId.toString() !== currentCategory.toString()
+          )
+          .slice(0, 3 - quizRecommendations.length);
+        if (otherCategoryRecommendations.length > 0) {
+          quizRecommendations = quizRecommendations.concat(
+            otherCategoryRecommendations
+          );
+        }
       }
       return quizRecommendations;
     } catch (error) {

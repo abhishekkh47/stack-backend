@@ -538,7 +538,7 @@ class QuizController extends BaseController {
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
-          const quizIfExists = await QuizTable.findOne({
+          const quizIfExists: any = await QuizTable.findOne({
             _id: reqParam.quizId,
           });
           if (!quizIfExists) {
@@ -572,9 +572,11 @@ class QuizController extends BaseController {
             updatedXPPoints
           );
           const streaksDetails = await UserDBService.addStreaks(userIfExists);
-          const quizRecommendations = quizIfExists.stageId
-            ? await QuizDBService.getQuizRecommendations(userIfExists._id)
-            : [];
+          const quizRecommendations =
+            await QuizDBService.getQuizRecommendations(
+              userIfExists._id,
+              quizIfExists.topicId
+            );
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id,
