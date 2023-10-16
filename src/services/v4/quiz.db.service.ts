@@ -590,21 +590,39 @@ class QuizDBService {
     if (!quizResultExists) {
       throw new NetworkError("You haven't played this quiz yet!", 400);
     }
-    let quizReviewAlreadyExists = await QuizReview.findOne({
-      quizId: reqParam.quizId,
-      userId: user._id,
-    });
-    if (quizReviewAlreadyExists) {
-      throw new NetworkError("Quiz Already Exists", 400);
-    }
-    const createdQuizReview = await QuizReview.create({
+    let quizReviewQuery: any = {
       userId: user._id,
       quizId: reqParam.quizId,
       quizName: quizExists.quizName,
-      funLevel: reqParam.funLevel,
-      difficultyLevel: reqParam.difficultyLevel,
-      wantMore: reqParam.wantMore,
-    });
+    };
+    if (reqParam.funLevel || reqParam.difficultyLevel || reqParam.wantMore) {
+      quizReviewQuery = {
+        ...quizReviewQuery,
+        funLevel: reqParam.funLevel,
+        difficultyLevel: reqParam.difficultyLevel,
+        wantMore: reqParam.wantMore,
+      };
+    }
+    /**
+     * Separate API call for the below feedback review
+     */
+    if (reqParam.ratings || reqParam.feedback) {
+      quizReviewQuery = {
+        ...quizReviewQuery,
+        ratings: reqParam.ratings,
+        feedback: reqParam.feedback,
+      };
+    }
+    const createdQuizReview = await QuizReview.findOneAndUpdate(
+      {
+        userId: user._id,
+      },
+      quizReviewQuery,
+      {
+        upsert: true,
+        new: true,
+      }
+    );
     return createdQuizReview;
   }
 
