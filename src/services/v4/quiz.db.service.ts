@@ -591,7 +591,7 @@ class QuizDBService {
     /**
      * Separate API call for the below feedback review
      */
-    if (reqParam.ratings || reqParam.feedback) {
+    if (reqParam.ratings || reqParam.feedback.length > 0) {
       quizReviewQuery = {
         ...quizReviewQuery,
         ratings: reqParam.ratings,

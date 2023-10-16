@@ -738,18 +738,22 @@ class QuizController extends BaseController {
           /**
            * Track amplitude quiz review
            */
-          AnalyticsService.sendEvent(
-            ANALYTICS_EVENTS.CHALLENGE_REVIEW_SUBMITTED,
-            {
-              "Challenge Name": createdQuizReview.quizName,
-              "Difficulty Level": createdQuizReview.difficultyLevel,
-              "Fun Level": createdQuizReview.funLevel,
-              "Want More": createdQuizReview.wantMore ? "Yes" : "No",
-            },
-            {
-              user_id: userIfExists._id,
-            }
-          );
+          if (
+            createdQuizReview.ratings ||
+            createdQuizReview.feedback.length > 0
+          ) {
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.CHALLENGE_REVIEW_SUBMITTED,
+              {
+                "Challenge Name": createdQuizReview.quizName,
+                Rating: createdQuizReview.ratings,
+                Feedback: createdQuizReview.feedback,
+              },
+              {
+                user_id: userIfExists._id,
+              }
+            );
+          }
           return this.Ok(ctx, {
             message: "Quiz Review Stored Successfully",
             data: createdQuizReview,
