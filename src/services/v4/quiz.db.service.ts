@@ -89,10 +89,25 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "quizTopics",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopics",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $project: {
           _id: 1,
           image: 1,
           name: "$quizName",
+          topicName: "$quizTopics.topic",
           isCompleted: 1,
           xpPoints: 1,
           fuelCount: {
@@ -1060,6 +1075,20 @@ class QuizDBService {
       },
       {
         $lookup: {
+          from: "quiztopics",
+          localField: "quizzes.topicId",
+          foreignField: "_id",
+          as: "quizzes.quizTopics",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizzes.quizTopics",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
           from: "quizresults",
           let: {
             quizId: "$quizzes._id",
@@ -1184,6 +1213,7 @@ class QuizDBService {
                   isUnlocked: "$quizzes.isUnlocked",
                   characterName: "$quizzes.characterName",
                   characterImage: "$quizzes.characterImage",
+                  topicName: "$quizzes.quizTopics.topic",
                 },
               },
             },
@@ -1526,7 +1556,7 @@ class QuizDBService {
   public async getQuizRecommendations(userId: string, currentCategory: string) {
     try {
       let quizRecommendations = [];
-      const quizzes = await QuizTable.aggregate([
+      let quizzes = await QuizTable.aggregate([
         {
           $match: {
             $and: [
@@ -1549,6 +1579,20 @@ class QuizDBService {
             localField: "_id",
             foreignField: "quizId",
             as: "quizQuestions",
+          },
+        },
+        {
+          $lookup: {
+            from: "quiztopics",
+            localField: "topicId",
+            foreignField: "_id",
+            as: "quizTopics",
+          },
+        },
+        {
+          $unwind: {
+            path: "$quizTopics",
+            preserveNullAndEmptyArrays: true,
           },
         },
         {
@@ -1610,29 +1654,77 @@ class QuizDBService {
           $addFields: {
             sortOnStage: {
               $cond: {
-                if: { $ifNull: ["$stageId", false] },
+                if: {
+                  $ifNull: ["$stageId", false],
+                },
                 then: 1,
                 else: 0,
-              },
-            },
-            fuelCount: {
-              $cond: {
-                if: { $eq: ["$quizzes.quizType", QUIZ_TYPE.SIMULATION] },
-                then: SIMULATION_QUIZ_FUEL,
-                else: {
-                  $multiply: [
-                    everyCorrectAnswerPoints,
-                    { $size: "$quizQuestions" },
-                  ],
-                },
               },
             },
           },
         },
         {
+          $group: {
+            _id: "$stageId",
+            hasQuizTypeNormal: {
+              $max: {
+                $cond: {
+                  if: {
+                    $eq: ["$quizType", 1],
+                  },
+                  then: 1,
+                  else: 0,
+                },
+              },
+            },
+            docs: {
+              $push: "$$ROOT",
+            },
+          },
+        },
+        {
+          $unwind: {
+            path: "$docs",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $match: {
+            $or: [
+              {
+                _id: null,
+              },
+              {
+                _id: {
+                  $ne: null,
+                },
+                hasQuizTypeNormal: 1,
+                "docs.quizType": {
+                  $ne: 2,
+                },
+              },
+              {
+                _id: {
+                  $ne: null,
+                },
+                hasQuizTypeNormal: 0,
+                "docs.quizType": {
+                  $ne: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: "$docs",
+          },
+        },
+        {
           $sort: {
-            sortOnStage: -1,
+            "quiztopics.createdAt": -1,
             "stages.order": 1,
+            sortOnStage: -1,
           },
         },
         {
@@ -1646,37 +1738,31 @@ class QuizDBService {
             sortOnStage: 1,
             fuelCount: 1,
             image: 1,
-            order: { $ifNull: ["$stages.order", null] },
+            order: {
+              $ifNull: ["$stages.order", null],
+            },
             stageId: 1,
           },
         },
       ]).exec();
       if (quizzes.length === 0) return [];
-      const stageId = quizzes[0].stageId;
+      const stageId = quizzes[0]?.stageId?.toString() || null;
       const stageQuizRecommendations = quizzes.filter(
-        (x) => x.stageId && x.stageId.toString() == stageId.toString()
+        (x) => x.stageId && x.stageId.toString() == stageId
       );
       let otherCategoryRecommendationsLength = 0;
       if (stageQuizRecommendations.length > 0) {
-        const normalQuizRecommendations = stageQuizRecommendations.filter(
-          (x) => x.quizType === QUIZ_TYPE.NORMAL
+        quizRecommendations = stageQuizRecommendations.slice(
+          0,
+          stageQuizRecommendations.length >= 2
+            ? 2
+            : 3 - stageQuizRecommendations.length
         );
-        const simulationQuizRecommendations = stageQuizRecommendations.filter(
-          (x) => x.quizType === QUIZ_TYPE.SIMULATION
-        );
-        if (normalQuizRecommendations.length >= 2) {
-          quizRecommendations = normalQuizRecommendations.slice(0, 2);
-          otherCategoryRecommendationsLength = 1;
-        } else if (normalQuizRecommendations.length === 1) {
-          quizRecommendations = normalQuizRecommendations;
-          otherCategoryRecommendationsLength = 2;
-        } else if (normalQuizRecommendations.length === 0) {
-          quizRecommendations = simulationQuizRecommendations;
-          otherCategoryRecommendationsLength = 2;
-        }
-      } else {
-        otherCategoryRecommendationsLength = 3;
       }
+      otherCategoryRecommendationsLength =
+        stageQuizRecommendations.length >= 2
+          ? 1
+          : 3 - stageQuizRecommendations.length;
       const currentCategoryQuizRecommendations = quizzes
         .filter(
           (x) =>
