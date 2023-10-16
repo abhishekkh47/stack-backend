@@ -1782,17 +1782,9 @@ class QuizDBService {
       );
       let otherCategoryRecommendationsLength = 0;
       if (stageQuizRecommendations.length > 0) {
-        quizRecommendations = stageQuizRecommendations.slice(
-          0,
-          stageQuizRecommendations.length >= 2
-            ? 2
-            : 3 - stageQuizRecommendations.length
-        );
+        quizRecommendations = stageQuizRecommendations.slice(0, 2);
       }
-      otherCategoryRecommendationsLength =
-        stageQuizRecommendations.length >= 2
-          ? 1
-          : 3 - stageQuizRecommendations.length;
+      otherCategoryRecommendationsLength = 3 - quizRecommendations.length;
       const currentCategoryQuizRecommendations = quizzes
         .filter(
           (x) =>
