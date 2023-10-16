@@ -1679,6 +1679,18 @@ class QuizDBService {
                 else: 0,
               },
             },
+            fuelCount: {
+              $cond: {
+                if: { $eq: ["$quizzes.quizType", QUIZ_TYPE.SIMULATION] },
+                then: SIMULATION_QUIZ_FUEL,
+                else: {
+                  $multiply: [
+                    everyCorrectAnswerPoints,
+                    { $size: "$quizQuestions" },
+                  ],
+                },
+              },
+            },
           },
         },
         {
@@ -1740,7 +1752,7 @@ class QuizDBService {
         },
         {
           $sort: {
-            "quiztopics.createdAt": -1,
+            "quizTopics.createdAt": -1,
             "stages.order": 1,
             sortOnStage: -1,
           },
