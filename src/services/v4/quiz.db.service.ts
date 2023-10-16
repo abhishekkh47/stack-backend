@@ -89,10 +89,25 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "quizTopics",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopics",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $project: {
           _id: 1,
           image: 1,
           name: "$quizName",
+          topicName: "$quizTopics.topic",
           isCompleted: 1,
           xpPoints: 1,
           fuelCount: {
@@ -1078,6 +1093,20 @@ class QuizDBService {
       },
       {
         $lookup: {
+          from: "quiztopics",
+          localField: "quizzes.topicId",
+          foreignField: "_id",
+          as: "quizzes.quizTopics",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizzes.quizTopics",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
           from: "quizresults",
           let: {
             quizId: "$quizzes._id",
@@ -1202,6 +1231,7 @@ class QuizDBService {
                   isUnlocked: "$quizzes.isUnlocked",
                   characterName: "$quizzes.characterName",
                   characterImage: "$quizzes.characterImage",
+                  topicName: "$quizzes.quizTopics.topic",
                 },
               },
             },
@@ -1531,6 +1561,255 @@ class QuizDBService {
         userId,
       });
       return quizTopicSuggestion;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description  This method is used to give quiz recommendations to user based on played quizzes
+   * @param userId
+   * @returns {*}
+   */
+  public async getQuizRecommendations(userId: string, currentCategory: string) {
+    try {
+      let quizRecommendations = [];
+      let quizzes = await QuizTable.aggregate([
+        {
+          $match: {
+            $and: [
+              {
+                quizNum: {
+                  $exists: true,
+                },
+              },
+              {
+                quizNum: {
+                  $ne: 0,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "quizquestions",
+            localField: "_id",
+            foreignField: "quizId",
+            as: "quizQuestions",
+          },
+        },
+        {
+          $lookup: {
+            from: "quiztopics",
+            localField: "topicId",
+            foreignField: "_id",
+            as: "quizTopics",
+          },
+        },
+        {
+          $unwind: {
+            path: "$quizTopics",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "quizresults",
+            let: {
+              quizId: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$userId", new ObjectId(userId)],
+                      },
+                      {
+                        $eq: ["$quizId", "$$quizId"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "quizPlayed",
+          },
+        },
+        {
+          $redact: {
+            $cond: {
+              if: {
+                $gt: [
+                  {
+                    $size: "$quizPlayed",
+                  },
+                  0,
+                ],
+              },
+              then: "$$PRUNE",
+              else: "$$KEEP",
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "stages",
+            localField: "stageId",
+            foreignField: "_id",
+            as: "stages",
+          },
+        },
+        {
+          $unwind: {
+            path: "$stages",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $addFields: {
+            sortOnStage: {
+              $cond: {
+                if: {
+                  $ifNull: ["$stageId", false],
+                },
+                then: 1,
+                else: 0,
+              },
+            },
+            fuelCount: {
+              $cond: {
+                if: { $eq: ["$quizzes.quizType", QUIZ_TYPE.SIMULATION] },
+                then: SIMULATION_QUIZ_FUEL,
+                else: {
+                  $multiply: [
+                    everyCorrectAnswerPoints,
+                    { $size: "$quizQuestions" },
+                  ],
+                },
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$stageId",
+            hasQuizTypeNormal: {
+              $max: {
+                $cond: {
+                  if: {
+                    $eq: ["$quizType", 1],
+                  },
+                  then: 1,
+                  else: 0,
+                },
+              },
+            },
+            docs: {
+              $push: "$$ROOT",
+            },
+          },
+        },
+        {
+          $unwind: {
+            path: "$docs",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $match: {
+            $or: [
+              {
+                _id: null,
+              },
+              {
+                _id: {
+                  $ne: null,
+                },
+                hasQuizTypeNormal: 1,
+                "docs.quizType": {
+                  $ne: 2,
+                },
+              },
+              {
+                _id: {
+                  $ne: null,
+                },
+                hasQuizTypeNormal: 0,
+                "docs.quizType": {
+                  $ne: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: "$docs",
+          },
+        },
+        {
+          $sort: {
+            "quizTopics.createdAt": -1,
+            "stages.order": 1,
+            sortOnStage: -1,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            userId: 1,
+            quizNum: 1,
+            topicId: 1,
+            name: "$quizName",
+            quizType: 1,
+            sortOnStage: 1,
+            fuelCount: 1,
+            image: 1,
+            order: {
+              $ifNull: ["$stages.order", null],
+            },
+            stageId: 1,
+          },
+        },
+      ]).exec();
+      if (quizzes.length === 0) return [];
+      const stageId = quizzes[0]?.stageId?.toString() || null;
+      const stageQuizRecommendations = quizzes.filter(
+        (x) => x.stageId && x.stageId.toString() == stageId
+      );
+      let otherCategoryRecommendationsLength = 0;
+      if (stageQuizRecommendations.length > 0) {
+        quizRecommendations = stageQuizRecommendations.slice(0, 2);
+      }
+      otherCategoryRecommendationsLength = 3 - quizRecommendations.length;
+      const currentCategoryQuizRecommendations = quizzes
+        .filter(
+          (x) =>
+            !x.stageId && x.topicId.toString() === currentCategory.toString()
+        )
+        .slice(0, otherCategoryRecommendationsLength);
+      if (currentCategoryQuizRecommendations.length > 0) {
+        quizRecommendations = quizRecommendations.concat(
+          currentCategoryQuizRecommendations
+        );
+      }
+      if (quizRecommendations.length < 3) {
+        const otherCategoryRecommendations = quizzes
+          .filter(
+            (x) =>
+              !x.stageId && x.topicId.toString() !== currentCategory.toString()
+          )
+          .slice(0, 3 - quizRecommendations.length);
+        if (otherCategoryRecommendations.length > 0) {
+          quizRecommendations = quizRecommendations.concat(
+            otherCategoryRecommendations
+          );
+        }
+      }
+      return quizRecommendations;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
