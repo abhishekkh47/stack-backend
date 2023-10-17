@@ -1330,6 +1330,20 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiztopics",
+          localField: "quiz.topicId",
+          foreignField: "_id",
+          as: "quiz.quizTopics",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quiz.quizTopics",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $match: {
           "quiz.quizType": QUIZ_TYPE.NORMAL,
         },
@@ -1356,6 +1370,7 @@ class QuizDBService {
             name: "$quiz.quizName",
             topicId: "$quiz.topicId",
             stageId: "$quiz.stageId",
+            topicName: "$quiz.quizTopics.topic",
           },
         },
       },
@@ -1763,7 +1778,10 @@ class QuizDBService {
             userId: 1,
             quizNum: 1,
             topicId: 1,
+            characterImage: 1,
+            characterName: 1,
             name: "$quizName",
+            topicName: "$quizTopics.topic",
             quizType: 1,
             sortOnStage: 1,
             fuelCount: 1,
@@ -1780,28 +1798,50 @@ class QuizDBService {
       const stageQuizRecommendations = quizzes.filter(
         (x) => x.stageId && x.stageId.toString() == stageId
       );
+      let isStageQuizIncluded = false;
       let otherCategoryRecommendationsLength = 0;
       if (stageQuizRecommendations.length > 0) {
+        isStageQuizIncluded = true;
         quizRecommendations = stageQuizRecommendations.slice(0, 2);
+      } else {
+        quizRecommendations = quizzes.slice(0, 2);
       }
+
+      let quizRecommendationsIds = quizRecommendations.map((recommendation) =>
+        recommendation._id.toString()
+      );
+
       otherCategoryRecommendationsLength = 3 - quizRecommendations.length;
       const currentCategoryQuizRecommendations = quizzes
-        .filter(
-          (x) =>
-            !x.stageId && x.topicId.toString() === currentCategory.toString()
-        )
+        .filter((x) => {
+          const matchedCondition =
+            x.topicId.toString() === currentCategory.toString() &&
+            !quizRecommendationsIds.includes(x._id.toString());
+          if (isStageQuizIncluded) {
+            return matchedCondition && !x.stageId;
+          }
+          return matchedCondition;
+        })
         .slice(0, otherCategoryRecommendationsLength);
       if (currentCategoryQuizRecommendations.length > 0) {
         quizRecommendations = quizRecommendations.concat(
           currentCategoryQuizRecommendations
         );
+        quizRecommendationsIds = quizRecommendations.map((recommendation) =>
+          recommendation._id.toString()
+        );
       }
       if (quizRecommendations.length < 3) {
         const otherCategoryRecommendations = quizzes
-          .filter(
-            (x) =>
-              !x.stageId && x.topicId.toString() !== currentCategory.toString()
-          )
+          .filter((x) => {
+            const matchedCondition =
+              x.topicId.toString() !== currentCategory.toString() &&
+              !quizRecommendationsIds.includes(x._id.toString());
+            if (isStageQuizIncluded) {
+              return matchedCondition && !x.stageId;
+            }
+            return matchedCondition;
+          })
           .slice(0, 3 - quizRecommendations.length);
         if (otherCategoryRecommendations.length > 0) {
           quizRecommendations = quizRecommendations.concat(
