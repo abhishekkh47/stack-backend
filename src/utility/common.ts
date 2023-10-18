@@ -2,7 +2,7 @@ import config from "@app/config";
 import crypto from "crypto";
 import { AdminTable, UserTable } from "@app/model";
 import ShortUniqueId from "short-unique-id";
-import { DEFAULT_TIMEZONE } from "./constants";
+import { DEFAULT_TIMEZONE, QUIZ_CATEGORIES_COLORS } from "./constants";
 
 const getUid = new ShortUniqueId({ length: 7 });
 
@@ -185,4 +185,9 @@ export const getDaysBetweenDates = (startDate, endDate) => {
 
   const diffDays = Math.abs(days2 - days1);
   return diffDays;
+};
+
+export const getQuizBackgroundColor = (indexNumber) => {
+  const colorIndex = indexNumber % QUIZ_CATEGORIES_COLORS.length;
+  return QUIZ_CATEGORIES_COLORS[colorIndex];
 };

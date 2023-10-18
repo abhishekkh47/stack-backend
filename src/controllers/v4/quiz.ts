@@ -538,7 +538,7 @@ class QuizController extends BaseController {
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
-          const quizIfExists = await QuizTable.findOne({
+          const quizIfExists: any = await QuizTable.findOne({
             _id: reqParam.quizId,
           });
           if (!quizIfExists) {
@@ -572,6 +572,11 @@ class QuizController extends BaseController {
             updatedXPPoints
           );
           const streaksDetails = await UserDBService.addStreaks(userIfExists);
+          const quizRecommendations =
+            await QuizDBService.getQuizRecommendations(
+              userIfExists._id,
+              quizIfExists.topicId
+            );
           const dataForCrm = await QuizDBService.getQuizDataForCrm(
             userIfExists,
             user._id,
@@ -592,6 +597,7 @@ class QuizController extends BaseController {
             nextLeague,
             isNewLeagueUnlocked,
             streaksDetails,
+            quizRecommendations,
           });
         }
       }
@@ -738,18 +744,22 @@ class QuizController extends BaseController {
           /**
            * Track amplitude quiz review
            */
-          AnalyticsService.sendEvent(
-            ANALYTICS_EVENTS.CHALLENGE_REVIEW_SUBMITTED,
-            {
-              "Challenge Name": createdQuizReview.quizName,
-              "Difficulty Level": createdQuizReview.difficultyLevel,
-              "Fun Level": createdQuizReview.funLevel,
-              "Want More": createdQuizReview.wantMore ? "Yes" : "No",
-            },
-            {
-              user_id: userIfExists._id,
-            }
-          );
+          if (
+            createdQuizReview.ratings ||
+            createdQuizReview.feedback.length > 0
+          ) {
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.CHALLENGE_REVIEW_SUBMITTED,
+              {
+                "Challenge Name": createdQuizReview.quizName,
+                Rating: createdQuizReview.ratings,
+                Feedback: createdQuizReview.feedback,
+              },
+              {
+                user_id: userIfExists._id,
+              }
+            );
+          }
           return this.Ok(ctx, {
             message: "Quiz Review Stored Successfully",
             data: createdQuizReview,

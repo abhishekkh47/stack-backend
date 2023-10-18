@@ -91,6 +91,8 @@ export interface IQuizReview {
   difficultyLevel: number;
   funLevel: number;
   wantMore: number;
+  ratings: number;
+  feedback: string[];
 }
 
 export interface IQuizQuestionResult extends IQuizResult {
