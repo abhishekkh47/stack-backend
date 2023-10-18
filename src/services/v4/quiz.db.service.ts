@@ -19,6 +19,7 @@ import {
   QUIZ_TYPE,
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
+  getQuizBackgroundColor,
 } from "@app/utility";
 import { quizService } from "@services/v1";
 import { ObjectId } from "mongodb";
@@ -808,7 +809,7 @@ class QuizDBService {
     if (quizCategories.length === 0) {
       throw new NetworkError(`Quiz Categories not found`, 400);
     }
-    quizCategories = quizCategories.map((data) => {
+    quizCategories = quizCategories.map((data: any, index: number) => {
       let categoryIfExists = false;
       quizResultsData.length !== 0
         ? quizResultsData.forEach((quizResult) => {
@@ -821,6 +822,7 @@ class QuizDBService {
             }
           })
         : null;
+      const colorsInformation = getQuizBackgroundColor(index);
 
       return {
         _id: data._id,
@@ -828,6 +830,7 @@ class QuizDBService {
         image: data.image,
         hasStages: data.hasStages,
         isStarted: categoryIfExists ? 1 : 0,
+        colorsInformation: { ...colorsInformation },
       };
     });
     return quizCategories;
