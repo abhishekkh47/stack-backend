@@ -259,3 +259,66 @@ export const QUIZ_TYPE = {
 };
 
 export const SIMULATION_QUIZ_FUEL = 100;
+
+export const QUIZ_CATEGORIES_COLORS = [
+  {
+    colors: ["#56ABF9", "#191E96"],
+    locations: [0.08, 0.9],
+    angle: 45,
+  },
+  {
+    colors: ["#9D85FF", "#5F25DB"],
+    locations: [0.08, 0.9],
+    angle: 45,
+  },
+  {
+    colors: ["#78FFD6", "#007991"],
+    locations: [0.08, 0.9],
+    angle: 45,
+  },
+  {
+    colors: ["#FDC830", "#F37335"],
+    locations: [0.04, 1],
+    angle: 87,
+  },
+  {
+    colors: ["#E100FF", "#7F00FF"],
+    locations: [0.08, 0.9],
+    angle: 45,
+  },
+  {
+    colors: ["#38C17F", "#1BB068", "#75EDA6"],
+    locations: [0.0177, 0.09, 1],
+    angle: 262,
+  },
+  {
+    colors: ["#FF512F", "#DD2476"],
+    locations: [0.09, 1],
+    angle: 87,
+  },
+  {
+    colors: ["#C770F0", "#B200F1"],
+    locations: [0.08, 0.9],
+    angle: 45,
+  },
+  {
+    colors: ["#FF3352", "#7815F9"],
+    locations: [0, 0.9],
+    angle: 87,
+  },
+  {
+    colors: ["#A5FECB", "#20BDFF", "#5433FF"],
+    locations: [0.1, 0.5, 1],
+    angle: 120,
+  },
+  {
+    colors: ["#FF4B1F", "#FF4B1F"],
+    locations: [1, 1],
+    angle: 0,
+  },
+  {
+    colors: ["#FF8048", "#9249F1"],
+    locations: [0.08, 0.9],
+    angle: 45,
+  },
+];
