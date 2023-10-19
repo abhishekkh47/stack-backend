@@ -7,7 +7,11 @@ import {
   UserTable,
 } from "@app/model";
 import { DeviceTokenService, userService } from "@app/services/v1/index";
-import { UserDBService, QuizDBService } from "@app/services/v4";
+import {
+  UserDBService,
+  QuizDBService,
+  AnalyticsService,
+} from "@app/services/v4";
 import {
   ENOTIFICATIONSETTINGS,
   EUSERSTATUS,
@@ -21,6 +25,7 @@ import {
   getBalance,
   getAssetTotals,
   REFERRAL_SOURCES,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
@@ -481,9 +486,21 @@ class UserController extends BaseController {
         ctx,
         async (validate: boolean) => {
           if (validate) {
-            await UserDBService.setStreakGoal(
+            const streakGoal = await UserDBService.setStreakGoal(
               userIfExists._id,
               body.streakGoalId
+            );
+            /**
+             * Amplitude Track Streak Goal Submitted
+             */
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.STREAK_GOAL_SUBMITTED,
+              {
+                "Streak Goal": `${streakGoal.day} Days Streak`,
+              },
+              {
+                user_id: userIfExists._id,
+              }
             );
             return this.Ok(ctx, { message: "You have commited your goal" });
           }
@@ -524,6 +541,9 @@ class UserController extends BaseController {
         },
         { new: true }
       );
+      await AnalyticsService.identifyOnce(userIfExists._id, {
+        Source: body.referralSource,
+      });
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
