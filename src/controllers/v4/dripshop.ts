@@ -7,7 +7,11 @@ import { HttpMethod } from "@app/types";
 import { DripshopDBService } from "@app/services/v1/index";
 import { UserDBService } from "@app/services/v4/index";
 import { DripshopItemTable } from "@app/model";
-import { REFILL_HEARTS_ITEM_NAME } from "@app/utility/constants";
+import { AnalyticsService } from "@app/services/v4";
+import {
+  REFILL_HEARTS_ITEM_NAME,
+  ANALYTICS_EVENTS,
+} from "@app/utility/constants";
 
 class DripshopController extends BaseController {
   /**
@@ -52,6 +56,18 @@ class DripshopController extends BaseController {
           if (validate) {
             const { createdDripshop, updatedUser } =
               await UserDBService.redeemDripShop(userExists, itemExists, body);
+            /**
+             * Amplitude Track Dripshop Redeemed Event
+             */
+            AnalyticsService.sendEvent(
+              ANALYTICS_EVENTS.DRIP_SHOP_REDEEMED,
+              {
+                "Item Name": itemExists.name,
+              },
+              {
+                user_id: userExists._id,
+              }
+            );
             await DripshopDBService.sendEmailToAdmin(
               createdDripshop,
               userExists,

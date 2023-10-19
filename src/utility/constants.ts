@@ -221,6 +221,7 @@ export const ANALYTICS_EVENTS = {
   CHALLENGE_REVIEW_SUBMITTED: "Challenge Review Submitted",
   KYC_APPROVED: "KYC Approved",
   KYC_SUBMITTED: "KYC Submitted",
+  DRIP_SHOP_REDEEMED: "Drip Shop Redeemed",
 };
 
 export const XP_POINTS = {
