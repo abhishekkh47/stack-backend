@@ -645,7 +645,7 @@ class UserDBService {
           },
         }
       );
-      return true;
+      return streakGoalsIfExists;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

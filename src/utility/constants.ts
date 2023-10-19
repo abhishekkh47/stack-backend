@@ -222,6 +222,7 @@ export const ANALYTICS_EVENTS = {
   KYC_APPROVED: "KYC Approved",
   KYC_SUBMITTED: "KYC Submitted",
   DRIP_SHOP_REDEEMED: "Drip Shop Redeemed",
+  STREAK_GOAL_SUBMITTED: "Streak Goal Submitted",
 };
 
 export const XP_POINTS = {
