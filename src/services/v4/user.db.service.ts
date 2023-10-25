@@ -835,7 +835,7 @@ class UserDBService {
         400
       );
     }
-    let updateQuery: any = { lifeCount: DEFAULT_LIFE_COUNT };
+    let updateQuery: any = { lifeCount: DEFAULT_LIFE_COUNT, renewLifeAt: null };
     if (totalFuels >= REFILL_LIFE_FUEL) {
       /**
        * once true check what to update preloaded or quiz coins or both
