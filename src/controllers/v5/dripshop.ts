@@ -2,6 +2,7 @@ import BaseController from "@app/controllers/base";
 import { Route } from "@app/utility";
 import { Auth } from "@app/middleware";
 import { HttpMethod } from "@app/types";
+import { UserTable } from "@app/model";
 import { DripshopDBService } from "@app/services/v1/index";
 
 class DripshopController extends BaseController {
@@ -13,7 +14,10 @@ class DripshopController extends BaseController {
   @Route({ path: "/dripshop-items", method: HttpMethod.GET })
   @Auth()
   public async getDripshopItems(ctx: any) {
-    const allData = await DripshopDBService.getDripshopData();
+    const { user } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) return this.BadRequest(ctx, "User not found");
+    const allData = await DripshopDBService.getDripshopData(userIfExists);
 
     return this.Ok(ctx, { data: allData });
   }

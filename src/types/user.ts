@@ -25,6 +25,7 @@ export interface IUser extends IAccount {
   isLaunchpadApproved: boolean;
   lifeCount: number;
   renewLifeAt: string;
+  streakFreezeCount: number;
 }
 
 export interface IAccount {

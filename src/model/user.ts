@@ -253,6 +253,11 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Date,
       default: null,
     },
+    streakFreezeCount: {
+      type: mongoose.Schema.Types.Number,
+      max: 2,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

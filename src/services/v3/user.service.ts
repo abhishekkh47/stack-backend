@@ -105,6 +105,7 @@ class UserService {
             referralSource: 1,
             lifeCount: 1,
             renewLifeAt: 1,
+            streakFreezeCount: 1,
           },
         },
       ]).exec()

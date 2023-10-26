@@ -554,13 +554,18 @@ class QuizController extends BaseController {
               "You cannot submit the same quiz again"
             );
           }
-          const { totalXPPoints, updatedXPPoints, totalFuel } =
-            await QuizDBService.storeQuizInformation(
-              user._id,
-              headers,
-              reqParam,
-              quizIfExists
-            );
+          const {
+            totalXPPoints,
+            updatedXPPoints,
+            totalFuel,
+            isGiftedStreakFreeze,
+          } = await QuizDBService.storeQuizInformation(
+            user._id,
+            headers,
+            reqParam,
+            quizIfExists,
+            userIfExists.streakFreezeCount
+          );
           const {
             previousLeague,
             currentLeague,
@@ -598,6 +603,7 @@ class QuizController extends BaseController {
             isNewLeagueUnlocked,
             streaksDetails,
             quizRecommendations,
+            isGiftedStreakFreeze,
           });
         }
       }

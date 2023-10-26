@@ -1,28 +1,80 @@
 import { DripshopTable, DripshopItemTable, AdminTable } from "@app/model";
 import { ObjectId } from "mongodb";
 import { NetworkError } from "@app/middleware";
-import { CONSTANT, sendEmail } from "@app/utility";
+import {
+  CONSTANT,
+  DEFAULT_LIFE_COUNT,
+  REFILL_HEARTS_ITEM_NAME,
+  STREAK_FREEZE_NAME,
+  sendEmail,
+  MAX_STREAK_FREEZE,
+} from "@app/utility";
 
 class DripshopDBService {
   /**
    * @description get all drip shop data
-   * @param matchedCondition
+   * @param userIfExists
    */
-  public async getDripshopData() {
+  public async getDripshopData(userIfExists: any = null) {
     const queryGet: any = [
+      {
+        $sort: {
+          fuel: 1,
+        },
+      },
       {
         $project: {
           _id: 1,
           name: 1,
           image: 1,
-          fuel: 1,
+          fuel: {
+            $cond: {
+              if: {
+                $eq: ["$name", REFILL_HEARTS_ITEM_NAME],
+              },
+              then: {
+                $cond: {
+                  if: {
+                    $eq: [userIfExists.lifeCount, DEFAULT_LIFE_COUNT],
+                  },
+                  then: 0,
+                  else: "$fuel",
+                },
+              },
+              else: {
+                $cond: {
+                  if: {
+                    $eq: ["$name", STREAK_FREEZE_NAME],
+                  },
+                  then: {
+                    $switch: {
+                      branches: [
+                        {
+                          case: {
+                            $eq: [
+                              userIfExists.streakFreezeCount,
+                              MAX_STREAK_FREEZE,
+                            ],
+                          },
+                          then: 0,
+                        },
+                        {
+                          case: { $eq: [userIfExists.streakFreezeCount, 1] },
+                          then: {
+                            $divide: ["$fuel", 2],
+                          },
+                        },
+                      ],
+                      default: "$fuel",
+                    },
+                  },
+                  else: "$fuel",
+                },
+              },
+            },
+          },
           sizes: 1,
           description: 1,
-        },
-      },
-      {
-        $sort: {
-          fuel: 1,
         },
       },
     ];

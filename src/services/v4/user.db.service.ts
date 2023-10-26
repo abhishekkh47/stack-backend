@@ -11,6 +11,8 @@ import {
   DEFAULT_LIFE_COUNT,
   STREAK_LEVELS,
   REFILL_INTERVAL,
+  MAX_STREAK_FREEZE,
+  STREAK_FREEZE_FUEL,
   REFILL_LIFE_FUEL,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
@@ -924,6 +926,59 @@ class UserDBService {
       { new: true }
     );
     return updatedData;
+  }
+
+  /**
+   * @description This method is used to refill all streakFreeze in exchange of fuel.
+   * @param user
+   * @returns {*}
+   */
+  public async refillStreakFreezeWithFuel(user: any) {
+    if (user.streakFreezeCount >= MAX_STREAK_FREEZE) {
+      throw new NetworkError("You already have 2 streak freeze", 400);
+    }
+    const fuelToBeDeducted =
+      user.streakFreezeCount === 0
+        ? STREAK_FREEZE_FUEL
+        : STREAK_FREEZE_FUEL / 2;
+    const totalFuels = user.quizCoins + user.preLoadedCoins;
+    if (totalFuels < fuelToBeDeducted) {
+      throw new NetworkError(
+        "You dont have sufficient fuels to refill streak freeze",
+        400
+      );
+    }
+    let updateQuery: any = { streakFreezeCount: MAX_STREAK_FREEZE };
+    if (totalFuels >= fuelToBeDeducted) {
+      /**
+       * once true check what to update preloaded or quiz coins or both
+       */
+      if (user.preLoadedCoins >= fuelToBeDeducted) {
+        updateQuery = {
+          ...updateQuery,
+          preLoadedCoins: user.preLoadedCoins - fuelToBeDeducted,
+        };
+      } else {
+        const amountLeftAfterPreloaded = fuelToBeDeducted - user.preLoadedCoins;
+
+        if (amountLeftAfterPreloaded <= user.quizCoins) {
+          updateQuery = {
+            ...updateQuery,
+            preLoadedCoins: 0,
+            quizCoins: user.quizCoins - amountLeftAfterPreloaded,
+          };
+        }
+      }
+    }
+    await UserTable.findOneAndUpdate(
+      {
+        _id: user._id,
+      },
+      {
+        $set: updateQuery,
+      }
+    );
+    return true;
   }
 }
 
