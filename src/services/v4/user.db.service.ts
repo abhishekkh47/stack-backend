@@ -689,6 +689,7 @@ class UserDBService {
     isStreakAdded: boolean = true,
     streakFreezeEquipped: number = 0
   ) {
+    let streakFreezeCount = streakFreezeEquipped;
     let dayStreaks: any = [];
     let inactiveStreakCount = 0;
     const nullCount = last5days.filter((item) => item === null).length;
@@ -697,12 +698,15 @@ class UserDBService {
       inactiveStreakCount = nullCount;
       const checkDiffDays = diffDays - nullCount;
       if (checkDiffDays < 6) {
+        if (nullCount > 0 && streakFreezeCount > 0) {
+          streakFreezeCount--;
+          dayStreaks = dayStreaks.fill(2, 0, streakFreezeCount);
+        }
         inactiveStreakCount += checkDiffDays - 1;
-        dayStreaks = dayStreaks.fill(0, 0, checkDiffDays - 1);
+        dayStreaks = dayStreaks.fill(0, streakFreezeCount, checkDiffDays - 1);
       }
     } else {
       let nullCount = 0;
-      let streakFreezeCount = streakFreezeEquipped;
       dayStreaks = last5days.map((value) => {
         if (value === null) {
           nullCount++;
