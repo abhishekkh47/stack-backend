@@ -521,6 +521,10 @@ class UserDBService {
   public async addStreaks(userDetails: any) {
     try {
       let isStreakToBeUpdated = false;
+      const latestStreakFreezeCount = await UserTable.findOne({
+        _id: userDetails._id,
+      }).select("_id streakFreezeCount");
+      let streakFreezeEquipped = 0;
       /**
        * Check if streak is inactive since last 5 days
        */
@@ -561,15 +565,30 @@ class UserDBService {
         };
         isStreakToBeUpdated = true;
       } else if (diffDays > 1) {
+        let currentStreakValue = 1;
+        let longestStreakValue = userDetails.streak.longest;
+        if (latestStreakFreezeCount.streakFreezeCount > 0) {
+          streakFreezeEquipped =
+            diffDays > 2 ? latestStreakFreezeCount.streakFreezeCount : 1;
+          if (diffDays - streakFreezeEquipped <= 1) {
+            currentStreakValue = userDetails.streak.current + 1;
+            longestStreakValue = Math.max(
+              currentStreakValue,
+              userDetails?.streak?.longest
+            );
+          }
+        }
         const { last5days, isStreakInactive5Days } =
           this.modifyLast5DaysStreaks(
             diffDays,
             userDetails.streak.last5days,
-            FIVE_DAYS_TO_RESET
+            FIVE_DAYS_TO_RESET,
+            true,
+            streakFreezeEquipped
           );
         streak = {
-          current: 1,
-          longest: userDetails.streak.longest,
+          current: currentStreakValue,
+          longest: longestStreakValue,
           isStreakInactive5Days,
           updatedDate: currentDate,
           last5days,
@@ -582,6 +601,9 @@ class UserDBService {
           {
             $set: {
               streak: streak,
+              streakFreezeCount:
+                latestStreakFreezeCount.streakFreezeCount -
+                streakFreezeEquipped,
             },
           },
           { upsert: true, new: true }
@@ -664,7 +686,8 @@ class UserDBService {
     diffDays: number,
     last5days: any,
     reset5daysStreak: any,
-    isStreakAdded: boolean = true
+    isStreakAdded: boolean = true,
+    streakFreezeEquipped: number = 0
   ) {
     let dayStreaks: any = [];
     let inactiveStreakCount = 0;
@@ -679,11 +702,17 @@ class UserDBService {
       }
     } else {
       let nullCount = 0;
+      let streakFreezeCount = streakFreezeEquipped;
       dayStreaks = last5days.map((value) => {
         if (value === null) {
           nullCount++;
           if (nullCount < diffDays) {
-            return 0;
+            if (streakFreezeCount > 0) {
+              streakFreezeCount--;
+              return 2;
+            } else {
+              return 0;
+            }
           } else if (nullCount === diffDays && isStreakAdded) {
             return 1;
           }

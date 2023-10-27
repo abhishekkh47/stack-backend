@@ -124,6 +124,12 @@ class UserService {
         data.streak?.updatedDate,
         currentDate
       );
+      let streakFreezeEquipped =
+        data.streakFreezeCount === 0
+          ? 0
+          : diffDays > 2
+          ? data.streakFreezeCount
+          : 1;
       if (!(isFirstStreak || diffDays <= 1)) {
         const endDate = new Date(currentDate.date);
         let previousDate: any = new Date(
@@ -140,10 +146,12 @@ class UserService {
             diffDays,
             data.streak.last5days,
             ALL_NULL_5_DAYS,
-            false
+            false,
+            streakFreezeEquipped
           );
         const streak = {
-          current: 0,
+          current:
+            diffDays - streakFreezeEquipped <= 1 ? data.streak.current : 0,
           longest: data.streak.longest,
           updatedDate: previousDate,
           isStreakInactive5Days,
@@ -151,6 +159,7 @@ class UserService {
         };
         let updateStreakQuery: any = {
           streak,
+          streakFreezeCount: data.streakFreezeCount - streakFreezeEquipped,
         };
         if (isStreakInactive5Days) {
           updateStreakQuery = {

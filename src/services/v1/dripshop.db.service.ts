@@ -51,12 +51,9 @@ class DripshopDBService {
                       branches: [
                         {
                           case: {
-                            $eq: [
-                              userIfExists.streakFreezeCount,
-                              MAX_STREAK_FREEZE,
-                            ],
+                            $eq: [userIfExists.streakFreezeCount, 0],
                           },
-                          then: 0,
+                          then: "$fuel",
                         },
                         {
                           case: { $eq: [userIfExists.streakFreezeCount, 1] },
@@ -65,7 +62,7 @@ class DripshopDBService {
                           },
                         },
                       ],
-                      default: "$fuel",
+                      default: 0,
                     },
                   },
                   else: "$fuel",
