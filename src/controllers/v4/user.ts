@@ -643,28 +643,6 @@ class UserController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
-
-  /**
-   * @description This method is used to refill the streak freeze
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/refill-streak-freeze",
-    method: HttpMethod.POST,
-  })
-  @Auth()
-  public async refillStreakFreeze(ctx: any) {
-    const { user } = ctx.request;
-    const userIfExists = await UserTable.findOne({ _id: user._id });
-    if (!userIfExists) {
-      return this.BadRequest(ctx, "User not found");
-    }
-    await UserDBService.refillStreakFreezeWithFuel(userIfExists);
-    return this.Ok(ctx, {
-      message: "Success",
-    });
-  }
 }
 
 export default new UserController();

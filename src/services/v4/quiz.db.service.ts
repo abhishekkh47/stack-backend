@@ -15,12 +15,11 @@ import { AnalyticsService } from "@app/services/v4";
 import { EUserType, everyCorrectAnswerPoints } from "@app/types";
 import {
   ANALYTICS_EVENTS,
+  getQuizBackgroundColor,
   QUIZ_LIMIT_REACHED_TEXT,
   QUIZ_TYPE,
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
-  MAX_STREAK_FREEZE,
-  getQuizBackgroundColor,
 } from "@app/utility";
 import { quizService } from "@services/v1";
 import { ObjectId } from "mongodb";
@@ -266,21 +265,21 @@ class QuizDBService {
   /**
    * @description store quiz results data
    * @param userId
-   * @param streakFreezeCount
    */
   public async storeQuizInformation(
     userId: string,
     headers: object,
     reqParam: any,
-    quizExists: any,
-    streakFreezeCount: number
+    quizExists: any
   ) {
     let quizResultsData = await QuizResult.find({
       userId: userId,
       isOnBoardingQuiz: false,
     });
-    const { isQuizLimitReached, todaysQuizPlayed }: any =
-      await this.checkQuizLimitReached(quizResultsData, userId, true);
+    const isQuizLimitReached = await this.checkQuizLimitReached(
+      quizResultsData,
+      userId
+    );
     if (isQuizLimitReached) {
       throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
     }
@@ -345,14 +344,6 @@ class QuizDBService {
         ? correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ
         : XP_POINTS.SIMULATION_QUIZ;
     incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
-    let isGiftedStreakFreeze = false;
-    if (
-      todaysQuizPlayed.length === 1 &&
-      streakFreezeCount !== MAX_STREAK_FREEZE
-    ) {
-      isGiftedStreakFreeze = true;
-      incrementObj = { ...incrementObj, streakFreezeCount: 1 };
-    }
     query = {
       ...query,
       $inc: incrementObj,
@@ -381,7 +372,6 @@ class QuizDBService {
       totalXPPoints,
       updatedXPPoints: updatedXP.xpPoints,
       totalFuel: pointsEarnedFromQuiz,
-      isGiftedStreakFreeze,
     };
   }
 
@@ -746,11 +736,7 @@ class QuizDBService {
    * @param userId
    * @returns {boolean}
    */
-  public async checkQuizLimitReached(
-    quizResultsData: any,
-    userId: string,
-    getTodaysQuizInResponse: boolean = false
-  ) {
+  public async checkQuizLimitReached(quizResultsData: any, userId: string) {
     const admin = await AdminTable.findOne({});
     let todaysQuizPlayed = [];
     const user = await UserTable.findOne({ _id: userId }).select(
@@ -774,12 +760,6 @@ class QuizDBService {
             ? false
             : true
           : false;
-    }
-    if (getTodaysQuizInResponse) {
-      return {
-        isQuizLimitReached,
-        todaysQuizPlayed,
-      };
     }
     return isQuizLimitReached;
   }
