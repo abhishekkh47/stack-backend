@@ -1543,6 +1543,8 @@ class QuizDBService {
               (x) => x._id.toString() == quiz.stageId.toString()
             );
             quiz.isUnlocked = findStage.isUnlocked;
+          } else {
+            quiz.isUnlocked = true;
           }
         }
       }
