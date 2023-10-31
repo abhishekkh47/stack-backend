@@ -1699,7 +1699,7 @@ class QuizDBService {
             },
             fuelCount: {
               $cond: {
-                if: { $eq: ["$quizzes.quizType", QUIZ_TYPE.SIMULATION] },
+                if: { $eq: ["$quizType", QUIZ_TYPE.SIMULATION] },
                 then: SIMULATION_QUIZ_FUEL,
                 else: {
                   $multiply: [
@@ -1796,6 +1796,7 @@ class QuizDBService {
           },
         },
       ]).exec();
+      console.log(quizzes, "quizzes");
       if (quizzes.length === 0) return [];
       const stageId = quizzes[0]?.stageId?.toString() || null;
       const stageQuizRecommendations = quizzes.filter(
