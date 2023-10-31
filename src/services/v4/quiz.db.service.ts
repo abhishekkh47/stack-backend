@@ -1796,7 +1796,6 @@ class QuizDBService {
           },
         },
       ]).exec();
-      console.log(quizzes, "quizzes");
       if (quizzes.length === 0) return [];
       const stageId = quizzes[0]?.stageId?.toString() || null;
       const stageQuizRecommendations = quizzes.filter(
