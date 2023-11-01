@@ -155,18 +155,18 @@ export enum ESCREENSTATUS {
   SUCCESS_TEEN = 10,
 }
 
-interface IUpdatedDay {
+export interface IMDY {
   day: number;
   month: number;
   year: number;
 }
 
-interface IStreak {
+export interface IStreak {
   current: number;
   longest: number;
   last5days: any[];
-  updatedDate: IUpdatedDay;
-  isStreakInactive5Days: number;
+  updatedDate: IMDY;
+  isStreakInactive5Days: boolean;
 }
 
 export enum EPHONEVERIFIEDSTATUS {

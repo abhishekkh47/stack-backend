@@ -25,9 +25,9 @@ import {
 import fs from "fs";
 import moment from "moment";
 import path from "path";
-import { EUSERSTATUS, EUserType } from "@app/types";
+import { EUSERSTATUS, EUserType, IMDY, IStreak } from "@app/types";
 import { AuthService } from "@app/services/v1";
-import { LeagueService } from "@app/services/v4";
+import { AnalyticsService, LeagueService } from "@app/services/v4";
 
 class UserDBService {
   /**
@@ -569,7 +569,7 @@ class UserDBService {
           current: 1,
           longest: userDetails.streak.longest,
           isStreakInactive5Days,
-          updatedDate: currentDate,
+          updatedDate: currentDate as IMDY,
           last5days,
         };
         isStreakToBeUpdated = true;
@@ -584,6 +584,7 @@ class UserDBService {
           },
           { upsert: true, new: true }
         );
+        AnalyticsService.identifyStreak(userDetails._id, streak as IStreak);
         const dayRange = this.get5DaysOfWeek(
           updatedStreaksDetails.streak.updatedDate,
           updatedStreaksDetails.streak.last5days
