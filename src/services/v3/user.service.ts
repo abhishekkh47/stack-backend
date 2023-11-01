@@ -19,8 +19,8 @@ import {
   DEFAULT_LIFE_COUNT,
 } from "@app/utility";
 import { ObjectId } from "mongodb";
-import { EUserType, EUSERSTATUS } from "@app/types";
-import { UserDBService } from "../v4";
+import { EUserType, EUSERSTATUS, IMDY } from "@app/types";
+import { AnalyticsService, UserDBService } from "../v4";
 import userDbService from "../v4/user.db.service";
 
 class UserService {
@@ -143,8 +143,8 @@ class UserService {
           );
         const streak = {
           current: 0,
-          longest: data.streak.longest,
-          updatedDate: previousDate,
+          longest: data.streak.longest as number,
+          updatedDate: previousDate as IMDY,
           isStreakInactive5Days,
           last5days,
         };
@@ -164,6 +164,7 @@ class UserService {
           },
           { upsert: true }
         );
+        AnalyticsService.identifyStreak(userId, streak);
       }
       const achievements = UserDBService.getUserStreaksAchievements(
         data.streak.longest
