@@ -1,5 +1,7 @@
 import * as amplitude from "@amplitude/analytics-node";
 import Config from "@app/config";
+import { IStreak } from "@app/types";
+import { formatMDY } from "@app/utility/date";
 
 class AnalyticsService {
   /**
@@ -45,5 +47,19 @@ class AnalyticsService {
     // Track in amplitude
     amplitude.track(event, props, opts);
   }
+
+  /**
+   * identify Streaks
+   */
+  public async identifyStreak(
+    userId: Object,
+    streak: IStreak,
+  ) {
+    this.identifyOnce(userId, {
+      Streaks: streak.current,
+      StreaksUpdatedAt: formatMDY(streak.updatedDate, 'MM/DD/YYYY')
+    })
+  }
 }
+
 export default new AnalyticsService();
