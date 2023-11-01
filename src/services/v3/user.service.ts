@@ -147,6 +147,7 @@ class UserService {
           updatedDate: previousDate as IMDY,
           isStreakInactive5Days,
           last5days,
+          freezeCount: 0,
         };
         let updateStreakQuery: any = {
           streak,

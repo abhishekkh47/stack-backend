@@ -10,7 +10,7 @@ import {
   MAX_STREAK_FREEZE,
   STREAK_FREEZE_FUEL,
 } from "@app/utility";
-import { UserDBService as UserDBServiceV4 } from "../v4";
+import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
 
 class UserDBService {
   /**
@@ -94,7 +94,6 @@ class UserDBService {
             referralSource: 1,
             lifeCount: 1,
             renewLifeAt: 1,
-            streakFreezeCount: 1,
           },
         },
       ]).exec()
@@ -103,6 +102,7 @@ class UserDBService {
       throw Error("Invalid user ID entered.");
     }
     if (data.streak) {
+      const { freezeCount } = data.streak;
       const currentDate = convertDateToTimeZone(
         new Date(),
         data?.timezone || DEFAULT_TIMEZONE
@@ -114,18 +114,13 @@ class UserDBService {
         currentDate
       );
       let streakFreezeEquipped =
-        data.streakFreezeCount === 0
-          ? 0
-          : diffDays > 2
-          ? data.streakFreezeCount
-          : 1;
+        freezeCount === 0 ? 0 : diffDays > MAX_STREAK_FREEZE ? freezeCount : 1;
       if (!(isFirstStreak || diffDays <= 1)) {
         const endDate = new Date(currentDate.date);
         let previousDate: any = new Date(
           endDate.setDate(endDate.getDate() - 1)
         );
         previousDate = {
-          ...previousDate,
           day: previousDate.getDate(),
           month: previousDate.getMonth() + 1,
           year: previousDate.getFullYear(),
@@ -145,10 +140,10 @@ class UserDBService {
           updatedDate: previousDate,
           isStreakInactive5Days,
           last5days,
+          freezeCount: freezeCount - streakFreezeEquipped,
         };
         let updateStreakQuery: any = {
           streak,
-          streakFreezeCount: data.streakFreezeCount - streakFreezeEquipped,
         };
         if (isStreakInactive5Days) {
           updateStreakQuery = {
@@ -156,13 +151,15 @@ class UserDBService {
             streakGoal: null,
           };
         }
-        await UserTable.findOneAndUpdate(
+        const updatedStreak = await UserTable.findOneAndUpdate(
           { _id: data._id },
           {
             $set: updateStreakQuery,
           },
-          { upsert: true }
+          { upsert: true, new: true }
         );
+        data = { ...data, streak: updatedStreak.streak };
+        AnalyticsService.identifyStreak(userId, streak);
       }
       const achievements = UserDBServiceV4.getUserStreaksAchievements(
         data.streak.longest
@@ -187,16 +184,19 @@ class UserDBService {
    * @returns {*}
    */
   public async refillStreakFreezeWithFuel(user: any) {
-    if (user.streakFreezeCount >= MAX_STREAK_FREEZE) {
+    const {
+      streak: { freezeCount },
+    } = user;
+    if (freezeCount >= MAX_STREAK_FREEZE) {
       throw new NetworkError(
         `You already have ${MAX_STREAK_FREEZE} streak freeze`,
         400
       );
     }
     const fuelToBeDeducted =
-      user.streakFreezeCount === 0
+      freezeCount === 0
         ? STREAK_FREEZE_FUEL
-        : STREAK_FREEZE_FUEL / 2;
+        : STREAK_FREEZE_FUEL / MAX_STREAK_FREEZE;
     const totalFuels = user.quizCoins + user.preLoadedCoins;
     if (totalFuels < fuelToBeDeducted) {
       throw new NetworkError(
@@ -204,7 +204,7 @@ class UserDBService {
         400
       );
     }
-    let updateQuery: any = { streakFreezeCount: MAX_STREAK_FREEZE };
+    let updateQuery: any = { "streak.freezeCount": MAX_STREAK_FREEZE };
     if (totalFuels >= fuelToBeDeducted) {
       /**
        * once true check what to update preloaded or quiz coins or both

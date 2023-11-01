@@ -25,7 +25,6 @@ export interface IUser extends IAccount {
   isLaunchpadApproved: boolean;
   lifeCount: number;
   renewLifeAt: string;
-  streakFreezeCount: number;
 }
 
 export interface IAccount {
@@ -168,6 +167,7 @@ export interface IStreak {
   last5days: any[];
   updatedDate: IMDY;
   isStreakInactive5Days: boolean;
+  freezeCount: number;
 }
 
 export enum EPHONEVERIFIEDSTATUS {

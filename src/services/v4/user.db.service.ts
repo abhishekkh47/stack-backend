@@ -521,10 +521,12 @@ class UserDBService {
   public async addStreaks(userDetails: any) {
     try {
       let isStreakToBeUpdated = false;
-      const latestStreakFreezeCount = await UserTable.findOne({
+      const {
+        streak: { freezeCount: latestStreakFreezeCount },
+      } = await UserTable.findOne({
         _id: userDetails._id,
-      }).select("_id streakFreezeCount");
-      let streakFreezeEquipped = 0;
+      }).select("_id streak");
+      let streakFreezeToConsume = 0;
       /**
        * Check if streak is inactive since last 5 days
        */
@@ -567,10 +569,10 @@ class UserDBService {
       } else if (diffDays > 1) {
         let currentStreakValue = 1;
         let longestStreakValue = userDetails.streak.longest;
-        if (latestStreakFreezeCount.streakFreezeCount > 0) {
-          streakFreezeEquipped =
-            diffDays > 2 ? latestStreakFreezeCount.streakFreezeCount : 1;
-          if (diffDays - streakFreezeEquipped <= 1) {
+        if (latestStreakFreezeCount > 0) {
+          streakFreezeToConsume =
+            diffDays > MAX_STREAK_FREEZE ? latestStreakFreezeCount : 1;
+          if (diffDays - streakFreezeToConsume <= 1) {
             currentStreakValue = userDetails.streak.current + 1;
             longestStreakValue = Math.max(
               currentStreakValue,
@@ -584,7 +586,7 @@ class UserDBService {
             userDetails.streak.last5days,
             FIVE_DAYS_TO_RESET,
             true,
-            streakFreezeEquipped
+            streakFreezeToConsume
           );
         streak = {
           current: currentStreakValue,
@@ -592,6 +594,7 @@ class UserDBService {
           isStreakInactive5Days,
           updatedDate: currentDate as IMDY,
           last5days,
+          freezeCount: latestStreakFreezeCount - streakFreezeToConsume,
         };
         isStreakToBeUpdated = true;
       }
@@ -600,10 +603,7 @@ class UserDBService {
           { _id: userDetails._id },
           {
             $set: {
-              streak: streak,
-              streakFreezeCount:
-                latestStreakFreezeCount.streakFreezeCount -
-                streakFreezeEquipped,
+              streak,
             },
           },
           { upsert: true, new: true }
@@ -701,7 +701,7 @@ class UserDBService {
       if (checkDiffDays < 6) {
         if (nullCount > 0 && streakFreezeCount > 0) {
           streakFreezeCount--;
-          dayStreaks = dayStreaks.fill(2, 0, streakFreezeCount);
+          dayStreaks = dayStreaks.fill(MAX_STREAK_FREEZE, 0, streakFreezeCount);
         }
         inactiveStreakCount += checkDiffDays - 1;
         dayStreaks = dayStreaks.fill(0, streakFreezeCount, checkDiffDays - 1);
@@ -714,7 +714,7 @@ class UserDBService {
           if (nullCount < diffDays) {
             if (streakFreezeCount > 0) {
               streakFreezeCount--;
-              return 2;
+              return MAX_STREAK_FREEZE;
             } else {
               return 0;
             }

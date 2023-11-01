@@ -23,7 +23,6 @@ class QuizDBService {
   /**
    * @description store quiz results data
    * @param userIfExists
-   * @param streakFreezeCount
    */
   public async storeQuizInformation(
     userIfExists: any,
@@ -104,12 +103,12 @@ class QuizDBService {
         : XP_POINTS.SIMULATION_QUIZ;
     incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
     let isGiftedStreakFreeze = false;
-    if (
-      quizResultsData.length === 1 &&
-      userIfExists.streakFreezeCount !== MAX_STREAK_FREEZE
-    ) {
+    const {
+      streak: { freezeCount },
+    } = userIfExists;
+    if (quizResultsData.length === 1 && freezeCount !== MAX_STREAK_FREEZE) {
       isGiftedStreakFreeze = true;
-      incrementObj = { ...incrementObj, streakFreezeCount: 1 };
+      incrementObj = { ...incrementObj, "streak.freezeCount": 1 };
     }
     query = {
       ...query,
