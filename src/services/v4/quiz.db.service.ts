@@ -1500,6 +1500,9 @@ class QuizDBService {
           tags: 1,
           quizNum: 1,
           isCompleted: 1,
+          quizType: 1,
+          characterImage: 1,
+          characterName: 1,
           isUnlocked: "$isCompleted",
           stageId: 1,
           name: "$quizName",
@@ -1530,21 +1533,29 @@ class QuizDBService {
         )
       );
     });
+
     let topicIds = [];
+    let stages = [];
     if (anyQuizWithStage.length > 0) {
       topicIds = anyQuizWithStage.map((x) => x.topicId);
-      const stages = await this.getStageWiseQuizzes(topicIds, userId, false);
-      if (stages.length > 0) {
-        for (let quiz of quizzes) {
-          if (quiz.stageId) {
-            const findStage = stages.find(
-              (x) => x._id.toString() == quiz.stageId.toString()
-            );
-            quiz.isUnlocked = findStage.isUnlocked;
-          } else {
-            quiz.isUnlocked = true;
-          }
+      stages = await this.getStageWiseQuizzes(topicIds, userId, false);
+    }
+
+    for (let quiz of quizzes) {
+      if (quiz.stageId) {
+        const findStage = stages.find(
+          (x) => x._id.toString() == quiz.stageId.toString()
+        );
+        if (findStage?.isUnlocked) {
+          const filterQuiz = findStage.quizzes.find(
+            (x) => x._id.toString() == quiz._id.toString()
+          );
+          quiz.isUnlocked = filterQuiz.isUnlocked;
+        } else {
+          quiz.isUnlocked = false;
         }
+      } else {
+        quiz.isUnlocked = true;
       }
     }
 

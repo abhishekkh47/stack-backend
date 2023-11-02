@@ -129,7 +129,6 @@ class UserService {
           endDate.setDate(endDate.getDate() - 1)
         );
         previousDate = {
-          ...previousDate,
           day: previousDate.getDate(),
           month: previousDate.getMonth() + 1,
           year: previousDate.getFullYear(),
@@ -158,13 +157,14 @@ class UserService {
             streakGoal: null,
           };
         }
-        await UserTable.findOneAndUpdate(
+        const updatedStreak = await UserTable.findOneAndUpdate(
           { _id: data._id },
           {
             $set: updateStreakQuery,
           },
-          { upsert: true }
+          { upsert: true, new: true }
         );
+        data = { ...data, streak: updatedStreak.streak };
         AnalyticsService.identifyStreak(userId, streak);
       }
       const achievements = UserDBService.getUserStreaksAchievements(
