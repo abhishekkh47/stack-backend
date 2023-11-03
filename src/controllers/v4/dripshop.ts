@@ -10,6 +10,7 @@ import { DripshopItemTable } from "@app/model";
 import { AnalyticsService } from "@app/services/v4";
 import {
   REFILL_HEARTS_ITEM_NAME,
+  STREAK_FREEZE_NAME,
   ANALYTICS_EVENTS,
 } from "@app/utility/constants";
 
@@ -23,7 +24,11 @@ class DripshopController extends BaseController {
   @Auth()
   public async getDripshopItems(ctx: any) {
     let allData = await DripshopDBService.getDripshopData();
-    allData = allData.filter((item) => item.name !== REFILL_HEARTS_ITEM_NAME);
+    allData = allData.filter(
+      (item) =>
+        item.name !== REFILL_HEARTS_ITEM_NAME &&
+        item.name !== STREAK_FREEZE_NAME
+    );
     return this.Ok(ctx, { data: allData });
   }
 

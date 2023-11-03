@@ -7,7 +7,7 @@ import {
   MongooseModel,
   EPHONEVERIFIEDSTATUS,
 } from "@app/types";
-import { ALL_NULL_5_DAYS } from "@app/utility";
+import { ALL_NULL_5_DAYS, MAX_STREAK_FREEZE } from "@app/utility";
 
 export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
 
@@ -230,6 +230,11 @@ const schema = new mongoose.Schema<IUserSchema>(
           type: mongoose.Schema.Types.Number,
           default: 0,
         },
+      },
+      freezeCount: {
+        type: mongoose.Schema.Types.Number,
+        max: MAX_STREAK_FREEZE,
+        default: 0,
       },
     },
     streakGoal: {

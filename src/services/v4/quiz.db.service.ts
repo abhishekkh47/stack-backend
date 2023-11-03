@@ -15,11 +15,11 @@ import { AnalyticsService } from "@app/services/v4";
 import { EUserType, everyCorrectAnswerPoints } from "@app/types";
 import {
   ANALYTICS_EVENTS,
+  getQuizBackgroundColor,
   QUIZ_LIMIT_REACHED_TEXT,
   QUIZ_TYPE,
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
-  getQuizBackgroundColor,
 } from "@app/utility";
 import { quizService } from "@services/v1";
 import { ObjectId } from "mongodb";
@@ -265,8 +265,6 @@ class QuizDBService {
   /**
    * @description store quiz results data
    * @param userId
-   * @param childExists
-   * @param userIfExists
    */
   public async storeQuizInformation(
     userId: string,
@@ -740,7 +738,7 @@ class QuizDBService {
    */
   public async checkQuizLimitReached(quizResultsData: any, userId: string) {
     const admin = await AdminTable.findOne({});
-    let todaysQuizPlayed = null;
+    let todaysQuizPlayed = [];
     const user = await UserTable.findOne({ _id: userId }).select(
       "_id isLaunchpadApproved"
     );

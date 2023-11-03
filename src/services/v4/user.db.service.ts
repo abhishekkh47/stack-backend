@@ -11,6 +11,8 @@ import {
   DEFAULT_LIFE_COUNT,
   STREAK_LEVELS,
   REFILL_INTERVAL,
+  MAX_STREAK_FREEZE,
+  STREAK_FREEZE_FUEL,
   REFILL_LIFE_FUEL,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
@@ -519,6 +521,12 @@ class UserDBService {
   public async addStreaks(userDetails: any) {
     try {
       let isStreakToBeUpdated = false;
+      const {
+        streak: { freezeCount: latestStreakFreezeCount },
+      } = await UserTable.findOne({
+        _id: userDetails._id,
+      }).select("_id streak");
+      let streakFreezeToConsume = 0;
       /**
        * Check if streak is inactive since last 5 days
        */
@@ -556,21 +564,38 @@ class UserDBService {
           isStreakInactive5Days: false,
           updatedDate: currentDate,
           last5days,
+          freezeCount: userDetails?.streak?.freezeCount || 0,
         };
         isStreakToBeUpdated = true;
       } else if (diffDays > 1) {
+        let currentStreakValue = 1;
+        let longestStreakValue = userDetails.streak.longest;
+        if (latestStreakFreezeCount > 0) {
+          streakFreezeToConsume =
+            diffDays > MAX_STREAK_FREEZE ? latestStreakFreezeCount : 1;
+          if (diffDays - streakFreezeToConsume <= 1) {
+            currentStreakValue = userDetails.streak.current + 1;
+            longestStreakValue = Math.max(
+              currentStreakValue,
+              userDetails?.streak?.longest
+            );
+          }
+        }
         const { last5days, isStreakInactive5Days } =
           this.modifyLast5DaysStreaks(
             diffDays,
             userDetails.streak.last5days,
-            FIVE_DAYS_TO_RESET
+            FIVE_DAYS_TO_RESET,
+            true,
+            streakFreezeToConsume
           );
         streak = {
-          current: 1,
-          longest: userDetails.streak.longest,
+          current: currentStreakValue,
+          longest: longestStreakValue,
           isStreakInactive5Days,
           updatedDate: currentDate as IMDY,
           last5days,
+          freezeCount: latestStreakFreezeCount - streakFreezeToConsume,
         };
         isStreakToBeUpdated = true;
       }
@@ -579,7 +604,7 @@ class UserDBService {
           { _id: userDetails._id },
           {
             $set: {
-              streak: streak,
+              streak,
             },
           },
           { upsert: true, new: true }
@@ -663,8 +688,10 @@ class UserDBService {
     diffDays: number,
     last5days: any,
     reset5daysStreak: any,
-    isStreakAdded: boolean = true
+    isStreakAdded: boolean = true,
+    streakFreezeEquipped: number = 0
   ) {
+    let streakFreezeCount = streakFreezeEquipped;
     let dayStreaks: any = [];
     let inactiveStreakCount = 0;
     const nullCount = last5days.filter((item) => item === null).length;
@@ -673,8 +700,12 @@ class UserDBService {
       inactiveStreakCount = nullCount;
       const checkDiffDays = diffDays - nullCount;
       if (checkDiffDays < 6) {
+        if (nullCount > 0 && streakFreezeCount > 0) {
+          streakFreezeCount--;
+          dayStreaks = dayStreaks.fill(MAX_STREAK_FREEZE, 0, streakFreezeCount);
+        }
         inactiveStreakCount += checkDiffDays - 1;
-        dayStreaks = dayStreaks.fill(0, 0, checkDiffDays - 1);
+        dayStreaks = dayStreaks.fill(0, streakFreezeCount, checkDiffDays - 1);
       }
     } else {
       let nullCount = 0;
@@ -682,7 +713,12 @@ class UserDBService {
         if (value === null) {
           nullCount++;
           if (nullCount < diffDays) {
-            return 0;
+            if (streakFreezeCount > 0) {
+              streakFreezeCount--;
+              return MAX_STREAK_FREEZE;
+            } else {
+              return 0;
+            }
           } else if (nullCount === diffDays && isStreakAdded) {
             return 1;
           }

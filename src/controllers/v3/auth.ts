@@ -26,7 +26,7 @@ import { validation } from "@app/validations/v1/apiValidation";
 import { validations } from "@app/validations/v2/apiValidation";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
 import BaseController from "@app/controllers/base";
-import UserController from "../v3/user";
+import UserController from "../v5/user";
 
 class AuthController extends BaseController {
   /**

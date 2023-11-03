@@ -4,7 +4,6 @@ import { Auth } from "@app/middleware";
 import { HttpMethod } from "@app/types";
 import { UserTable } from "@app/model";
 import { DripshopDBService } from "@app/services/v1/index";
-import { STREAK_FREEZE_NAME } from "@app/utility/constants";
 
 class DripshopController extends BaseController {
   /**
@@ -18,8 +17,7 @@ class DripshopController extends BaseController {
     const { user } = ctx.request;
     const userIfExists = await UserTable.findOne({ _id: user._id });
     if (!userIfExists) return this.BadRequest(ctx, "User not found");
-    let allData = await DripshopDBService.getDripshopData();
-    allData = allData.filter((item) => item.name !== STREAK_FREEZE_NAME);
+    const allData = await DripshopDBService.getDripshopData();
 
     return this.Ok(ctx, { data: allData });
   }

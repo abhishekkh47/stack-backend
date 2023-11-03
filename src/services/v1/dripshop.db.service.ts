@@ -1,15 +1,20 @@
-import { DripshopTable, DripshopItemTable, AdminTable } from "@app/model";
-import { ObjectId } from "mongodb";
 import { NetworkError } from "@app/middleware";
+import { AdminTable, DripshopItemTable, DripshopTable } from "@app/model";
 import { CONSTANT, sendEmail } from "@app/utility";
+import { ObjectId } from "mongodb";
 
 class DripshopDBService {
   /**
    * @description get all drip shop data
-   * @param matchedCondition
+   * @param userIfExists
    */
   public async getDripshopData() {
     const queryGet: any = [
+      {
+        $sort: {
+          fuel: 1,
+        },
+      },
       {
         $project: {
           _id: 1,
@@ -18,11 +23,6 @@ class DripshopDBService {
           fuel: 1,
           sizes: 1,
           description: 1,
-        },
-      },
-      {
-        $sort: {
-          fuel: 1,
         },
       },
     ];

@@ -1710,6 +1710,28 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
+
+  /**
+   * @description This method is used to store freezecount
+   * @param ctx
+   */
+  @Route({ path: "/store-freezecount", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeFreezeCount(ctx: any) {
+    try {
+      await UserTable.updateMany(
+        {},
+        {
+          $set: {
+            "streak.freezeCount": 0,
+          },
+        }
+      );
+      return this.Ok(ctx, { message: "Success", data: true });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
 }
 
 export default new ScriptController();
