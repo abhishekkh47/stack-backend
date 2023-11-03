@@ -1,66 +1,26 @@
-import fs from "fs";
-import moment from "moment";
-import path from "path";
 import envData from "@app/config/index";
+import BaseController from "@app/controllers/base";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import {
-  AdminTable,
-  BusinessProfileTable,
-  CryptoTable,
-  ParentChildTable,
-  TransactionTable,
-  UserBanksTable,
-  UserTable,
-} from "@app/model";
-import { DeviceTokenService, zohoCrmService } from "@app/services/v1";
-import { UserService } from "@app/services/v3";
+import { ParentChildTable, UserTable } from "@app/model";
+import { zohoCrmService } from "@app/services/v1";
 import userService from "@app/services/v3/user.service";
+import { AnalyticsService } from "@app/services/v4";
+import { EUSERSTATUS, EUserType, HttpMethod } from "@app/types";
 import {
-  ETransactionStatus,
-  ETransactionType,
-  EUSERSTATUS,
-  EUserType,
-  HttpMethod,
-} from "@app/types";
-import {
+  ANALYTICS_EVENTS,
   createAccount,
   kycDocumentChecks,
+  PARENT_SIGNUP_FUNNEL,
   removeImage,
   Route,
   uploadFileS3,
   uploadFilesFetch,
   uploadIdProof,
-  CMS_LINKS,
-  NOTIFICATION,
-  NOTIFICATION_KEYS,
-  PARENT_SIGNUP_FUNNEL,
-  ANALYTICS_EVENTS,
 } from "@app/utility";
-import BaseController from "@app/controllers/base";
-import { AnalyticsService, BusinessProfileService } from "@app/services/v4";
+import fs from "fs";
+import path from "path";
 
 class UserController extends BaseController {
-  /**
-   * @description This method is used to view profile for both parent and child
-   * @param ctx
-   */
-  @Route({ path: "/get-profile/:id", method: HttpMethod.GET })
-  @Auth()
-  public async getProfile(ctx: any) {
-    const { id } = ctx.request.params;
-    if (!/^[0-9a-fA-F]{24}$/.test(id))
-      return this.BadRequest(ctx, "Enter valid ID.");
-    let { data } = await UserService.getProfile(id);
-    const businessProfile = await BusinessProfileService.getBusinessProfile(id);
-
-    data = {
-      ...data,
-      businessProfile,
-    };
-
-    return this.Ok(ctx, data, true);
-  }
-
   /**
    * @description This method is used to delete the user information
    * @param ctx

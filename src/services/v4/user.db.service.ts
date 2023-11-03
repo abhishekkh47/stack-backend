@@ -564,6 +564,7 @@ class UserDBService {
           isStreakInactive5Days: false,
           updatedDate: currentDate,
           last5days,
+          freezeCount: userDetails?.streak?.freezeCount || 0,
         };
         isStreakToBeUpdated = true;
       } else if (diffDays > 1) {
