@@ -1,10 +1,10 @@
 import BaseController from "@app/controllers/base";
 import { Auth } from "@app/middleware";
-import { UserTable } from "@app/model";
+import { QuizResult, UserTable } from "@app/model";
 import { UserDBService } from "@app/services/v6";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
-import { BusinessProfileService } from "@app/services/v4";
+import { BusinessProfileService, QuizDBService } from "@app/services/v4";
 
 class UserController extends BaseController {
   /**
@@ -47,6 +47,35 @@ class UserController extends BaseController {
     return this.Ok(ctx, {
       message: "Success",
     });
+  }
+
+  /**
+   * @description This method is used to get quiz recommendatios
+   * @param ctx
+   * @return {*}
+   */
+  @Route({ path: "/quiz-recommendations", method: HttpMethod.GET })
+  @Auth()
+  public async quizRecommendations(ctx: any) {
+    try {
+      const userIfExists = await UserTable.findOne({
+        _id: ctx.request.user._id,
+      });
+      if (!userIfExists) {
+        return this.BadRequest(ctx, "Something went wrong");
+      }
+      const lastQuizPlayed: any = await QuizResult.findOne({
+        userId: userIfExists._id,
+        isOnBoardingQuiz: false,
+      }).sort({ createdAt: -1 });
+      const quizzes = await QuizDBService.getQuizRecommendations(
+        userIfExists._id,
+        lastQuizPlayed?.topicId || null
+      );
+      return this.Ok(ctx, { data: quizzes, message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
   }
 }
 

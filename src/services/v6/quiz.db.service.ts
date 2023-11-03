@@ -141,6 +141,25 @@ class QuizDBService {
       isGiftedStreakFreeze,
     };
   }
+
+  /**
+   * @description This method is used to check today quiz played or not
+   * @param userId
+   * @returns {*}
+   */
+  public async checkQuizPlayedToday(userId: string) {
+    const todayStart = new Date().setUTCHours(0, 0, 0, 0);
+    const todayEnd = new Date().setUTCHours(23, 59, 59, 999);
+    const todaysQuizPlayed = await QuizResult.find({
+      createdAt: {
+        $gte: todayStart,
+        $lte: todayEnd,
+      },
+      isOnBoardingQuiz: false,
+      userId: userId,
+    });
+    return todaysQuizPlayed.length > 0 ? true : false;
+  }
 }
 
 export default new QuizDBService();
