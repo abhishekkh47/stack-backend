@@ -113,7 +113,7 @@ class UserDBService {
         data.streak?.updatedDate,
         currentDate
       );
-      let streakFreezeEquipped =
+      let sttreakFreezeToConsume =
         freezeCount === 0 ? 0 : diffDays > MAX_STREAK_FREEZE ? freezeCount : 1;
       if (!(isFirstStreak || diffDays <= 1)) {
         const endDate = new Date(currentDate.date);
@@ -131,16 +131,16 @@ class UserDBService {
             data.streak.last5days,
             ALL_NULL_5_DAYS,
             false,
-            streakFreezeEquipped
+            sttreakFreezeToConsume
           );
         const streak = {
           current:
-            diffDays - streakFreezeEquipped <= 1 ? data.streak.current : 0,
+            diffDays - sttreakFreezeToConsume <= 1 ? data.streak.current : 0,
           longest: data.streak.longest,
           updatedDate: previousDate,
           isStreakInactive5Days,
           last5days,
-          freezeCount: freezeCount - streakFreezeEquipped,
+          freezeCount: freezeCount - sttreakFreezeToConsume,
         };
         let updateStreakQuery: any = {
           streak,

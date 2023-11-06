@@ -1720,7 +1720,7 @@ class ScriptController extends BaseController {
   public async storeFreezeCount(ctx: any) {
     try {
       await UserTable.updateMany(
-        {},
+        { "streak.freezeCount": { $exists: false } },
         {
           $set: {
             "streak.freezeCount": 0,
