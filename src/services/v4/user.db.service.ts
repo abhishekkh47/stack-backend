@@ -700,12 +700,21 @@ class UserDBService {
       inactiveStreakCount = nullCount;
       const checkDiffDays = diffDays - nullCount;
       if (checkDiffDays < 6) {
-        if (nullCount > 0 && streakFreezeCount > 0) {
-          streakFreezeCount--;
-          dayStreaks = dayStreaks.fill(MAX_STREAK_FREEZE, 0, streakFreezeCount);
-        }
         inactiveStreakCount += checkDiffDays - 1;
-        dayStreaks = dayStreaks.fill(0, streakFreezeCount, checkDiffDays - 1);
+        dayStreaks = dayStreaks.fill(0, 0, checkDiffDays - 1);
+        let zeroCount = 0;
+        if (streakFreezeCount > 0) {
+          streakFreezeCount = Math.abs(nullCount - streakFreezeCount);
+          dayStreaks = dayStreaks.map((element) => {
+            if (element === 0) {
+              zeroCount++;
+              if (zeroCount <= streakFreezeCount) {
+                return MAX_STREAK_FREEZE;
+              }
+            }
+            return element;
+          });
+        }
       }
     } else {
       let nullCount = 0;
