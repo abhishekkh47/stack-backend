@@ -750,7 +750,7 @@ class UserDBService {
    */
   public get5DaysOfWeek(date: any, last5days: any) {
     let dayRange = [];
-    const notNullLast5DaysCount = last5days.filter((x) => x !== null).length;
+    const notNullLast5DaysCount = (last5days || []).filter((x) => x !== null).length;
     let updatedDate: any = new Date(
       formattedDate(date.year, date.month, date.day)
     );
