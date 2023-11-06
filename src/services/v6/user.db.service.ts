@@ -95,6 +95,7 @@ class UserDBService {
             referralSource: 1,
             lifeCount: 1,
             renewLifeAt: 1,
+            last5DaysStreak: "$streak.last5days",
           },
         },
       ]).exec()
