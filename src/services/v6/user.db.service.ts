@@ -11,6 +11,7 @@ import {
   STREAK_FREEZE_FUEL,
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
+import { QuizDBService } from "../v6";
 
 class UserDBService {
   /**
@@ -94,6 +95,7 @@ class UserDBService {
             referralSource: 1,
             lifeCount: 1,
             renewLifeAt: 1,
+            last5DaysStreak: "$streak.last5days",
           },
         },
       ]).exec()
@@ -164,7 +166,11 @@ class UserDBService {
       const achievements = UserDBServiceV4.getUserStreaksAchievements(
         data.streak.longest
       );
-      data = { ...data, achievements };
+      const dayRange = UserDBServiceV4.get5DaysOfWeek(
+        currentDate,
+        data.streak.last5days
+      );
+      data = { ...data, achievements, last5DaysWeek: dayRange };
     }
     if (data.lifeCount !== DEFAULT_LIFE_COUNT) {
       const updatedData = await UserDBServiceV4.getUsersLatestLifeData(data);
@@ -175,6 +181,8 @@ class UserDBService {
         };
       }
     }
+    let isQuizPlayedToday = await QuizDBService.checkQuizPlayedToday(data._id);
+    data = { ...data, isQuizPlayedToday };
 
     return { data };
   }

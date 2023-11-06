@@ -1600,7 +1600,10 @@ class QuizDBService {
    * @param userId
    * @returns {*}
    */
-  public async getQuizRecommendations(userId: string, currentCategory: string) {
+  public async getQuizRecommendations(
+    userId: string,
+    currentCategory: string = null
+  ) {
     try {
       let quizRecommendations = [];
       let quizzes = await QuizTable.aggregate([
@@ -1829,7 +1832,8 @@ class QuizDBService {
       const currentCategoryQuizRecommendations = quizzes
         .filter((x) => {
           const matchedCondition =
-            x.topicId.toString() === currentCategory.toString() &&
+            (!currentCategory ||
+              x.topicId.toString() == currentCategory.toString()) &&
             !quizRecommendationsIds.includes(x._id.toString());
           if (isStageQuizIncluded) {
             return matchedCondition && !x.stageId;
@@ -1849,7 +1853,8 @@ class QuizDBService {
         const otherCategoryRecommendations = quizzes
           .filter((x) => {
             const matchedCondition =
-              x.topicId.toString() !== currentCategory.toString() &&
+              (!currentCategory ||
+                x.topicId.toString() !== currentCategory.toString()) &&
               !quizRecommendationsIds.includes(x._id.toString());
             if (isStageQuizIncluded) {
               return matchedCondition && !x.stageId;
