@@ -689,9 +689,9 @@ class UserDBService {
     last5days: any,
     reset5daysStreak: any,
     isStreakAdded: boolean = true,
-    sttreakFreezeToConsume: number = 0
+    streakFreezeToConsume: number = 0
   ) {
-    let streakFreezeCount = sttreakFreezeToConsume;
+    let streakFreezeCount = streakFreezeToConsume;
     let dayStreaks: any = [];
     let inactiveStreakCount = 0;
     const nullCount = last5days.filter((item) => item === null).length;
