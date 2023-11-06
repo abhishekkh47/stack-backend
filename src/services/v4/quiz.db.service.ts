@@ -1832,7 +1832,8 @@ class QuizDBService {
       const currentCategoryQuizRecommendations = quizzes
         .filter((x) => {
           const matchedCondition =
-            (!currentCategory || x.topicId.toString() !== currentCategory) &&
+            (!currentCategory ||
+              x.topicId.toString() == currentCategory.toString()) &&
             !quizRecommendationsIds.includes(x._id.toString());
           if (isStageQuizIncluded) {
             return matchedCondition && !x.stageId;
@@ -1852,7 +1853,8 @@ class QuizDBService {
         const otherCategoryRecommendations = quizzes
           .filter((x) => {
             const matchedCondition =
-              (!currentCategory || x.topicId.toString() !== currentCategory) &&
+              (!currentCategory ||
+                x.topicId.toString() !== currentCategory.toString()) &&
               !quizRecommendationsIds.includes(x._id.toString());
             if (isStageQuizIncluded) {
               return matchedCondition && !x.stageId;
