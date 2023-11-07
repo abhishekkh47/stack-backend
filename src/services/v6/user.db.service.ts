@@ -130,7 +130,7 @@ class UserDBService {
         const { last5days, isStreakInactive5Days } =
           UserDBServiceV4.modifyLast5DaysStreaks(
             diffDays,
-            data.streak.last5days,
+            data?.streak?.last5days || [],
             ALL_NULL_5_DAYS,
             false,
             streakFreezeToConsume

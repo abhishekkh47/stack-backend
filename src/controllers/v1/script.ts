@@ -47,6 +47,7 @@ import {
   NOTIFICATION,
   NOTIFICATION_KEYS,
   DEFAULT_LIFE_COUNT,
+  ALL_NULL_5_DAYS,
 } from "@app/utility";
 import BaseController from ".././base";
 import {
@@ -1724,6 +1725,47 @@ class ScriptController extends BaseController {
         {
           $set: {
             "streak.freezeCount": 0,
+          },
+        }
+      );
+      return this.Ok(ctx, { message: "Success", data: true });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to update streak object for existing users
+   * @param ctx
+   */
+  @Route({ path: "/set-default-streak", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async setDefaultStreaks(ctx: any) {
+    try {
+      await UserTable.updateMany(
+        { streak: { $exists: false } },
+        {
+          $set: {
+            streak: {
+              current: 0,
+              longest: 0,
+              updatedDate: {
+                day: 0,
+                month: 0,
+                year: 0,
+              },
+              isStreakInactive5Days: false,
+              last5days: ALL_NULL_5_DAYS,
+              freezeCount: 0,
+            },
+          },
+        }
+      );
+      await UserTable.updateMany(
+        { streak: { $exists: true }, "streak.last5days": { $exists: false } },
+        {
+          $set: {
+            "streak.last5days": ALL_NULL_5_DAYS,
           },
         }
       );
