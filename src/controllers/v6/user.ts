@@ -62,7 +62,7 @@ class UserController extends BaseController {
         _id: ctx.request.user._id,
       });
       if (!userIfExists) {
-        return this.BadRequest(ctx, "Something went wrong");
+        return this.BadRequest(ctx, "User not found");
       }
       const lastQuizPlayed: any = await QuizResult.findOne({
         userId: userIfExists._id,

@@ -136,7 +136,7 @@ class UserService {
         const { last5days, isStreakInactive5Days } =
           UserDBService.modifyLast5DaysStreaks(
             diffDays,
-            data.streak.last5days,
+            data?.streak?.last5days || [],
             ALL_NULL_5_DAYS,
             false
           );

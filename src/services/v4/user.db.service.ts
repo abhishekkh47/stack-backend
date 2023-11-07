@@ -584,7 +584,7 @@ class UserDBService {
         const { last5days, isStreakInactive5Days } =
           this.modifyLast5DaysStreaks(
             diffDays,
-            userDetails.streak.last5days,
+            userDetails?.streak?.last5days || [],
             FIVE_DAYS_TO_RESET,
             true,
             streakFreezeToConsume
@@ -694,7 +694,7 @@ class UserDBService {
     let streakFreezeCount = streakFreezeEquipped;
     let dayStreaks: any = [];
     let inactiveStreakCount = 0;
-    const nullCount = last5days.filter((item) => item === null).length;
+    const nullCount = (last5days || []).filter((item) => item === null).length;
     if (diffDays > nullCount) {
       dayStreaks = reset5daysStreak;
       inactiveStreakCount = nullCount;
@@ -750,7 +750,9 @@ class UserDBService {
    */
   public get5DaysOfWeek(date: any, last5days: any) {
     let dayRange = [];
-    const notNullLast5DaysCount = (last5days || []).filter((x) => x !== null).length;
+    const notNullLast5DaysCount = (last5days || []).filter(
+      (x) => x !== null
+    ).length;
     let updatedDate: any = new Date(
       formattedDate(date.year, date.month, date.day)
     );

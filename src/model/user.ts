@@ -214,8 +214,10 @@ const schema = new mongoose.Schema<IUserSchema>(
         default: false,
       },
       last5days: {
-        type: [mongoose.Schema.Types.Mixed], // Assuming you want to store dates
-        default: ALL_NULL_5_DAYS,
+        type: [mongoose.Schema.Types.Mixed],
+        default: function () {
+          return ALL_NULL_5_DAYS;
+        },
       },
       updatedDate: {
         day: {
