@@ -1771,7 +1771,6 @@ class ScriptController extends BaseController {
       );
       return this.Ok(ctx, { message: "Success", data: true });
     } catch (error) {
-      console.log(error);
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
