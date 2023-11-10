@@ -717,12 +717,29 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "quizTopicData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopicData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
         $project: {
           _id: 1,
           isCompleted: 1,
           name: "$quizName",
           topicId: 1,
+          topicName: "$quizTopicData.topic",
           image: 1,
+          characterImage: 1,
+          characterName: 1,
         },
       },
     ]).exec();
@@ -941,11 +958,28 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiztopics",
+          localField: "quizzes.topicId",
+          foreignField: "_id",
+          as: "quizTopicData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopicData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
         $project: {
           _id: "$quizzes._id",
           name: "$quizzes.quizName",
           image: "$quizzes.image",
           isCompleted: 1,
+          topicName: "$quizTopicData.topic",
+          characterImage: "$quizzes.characterImage",
+          characterName: "$quizzes.characterName",
           topicId: "$quizzes.topicId",
           count: 1,
         },
@@ -1506,7 +1540,8 @@ class QuizDBService {
           isUnlocked: "$isCompleted",
           stageId: 1,
           name: "$quizName",
-          topicName: {
+          topicName: "$topics.topic",
+          stageName: {
             $cond: {
               if: {
                 $eq: ["$stageId", null],
