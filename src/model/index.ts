@@ -36,3 +36,4 @@ export * from "@model/quizTopicSuggestion";
 export * from "@model/searchHistory";
 export * from "@model/streakGoals";
 export * from "@model/community";
+export * from "@app/model/userCommunity";

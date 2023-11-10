@@ -242,4 +242,43 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  createCommunityValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      name: Joi.string()
+        .regex(/^[a-zA-Z]+$/)
+        .required(),
+      googlePlaceId: Joi.string()
+        .regex(/^[A-Za-z0-9-_]+$/)
+        .required(),
+      createdBy: Joi.string()
+        .regex(/^[[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("createCommunityValidation", error))
+      );
+    }
+    return callback(true);
+  },
+  joinCommunityValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      userId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+      communityId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("joinCommunityValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };

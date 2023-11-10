@@ -321,5 +321,9 @@
 	"updateTimezoneValidationTimezoneEmpty": "Please enter timezone.",
 	"updateTimezoneValidationTimezonePattern": "Please enter valid timezone.",
 	"quizReviewValidationRatingsOnly": "Please enter ratings.",
-	"quizReviewValidationFeedbackBase": "Please enter feedback."
+	"quizReviewValidationFeedbackBase": "Please enter feedback.",
+	"createCommunityValidationGoogleplaceidPattern": "Please enter a valid googlePlaceId",
+    "createCommunityValidationCreatedbyPattern": "Please enter a correct userId",
+    "joinCommunityValidationUseridRequired": "Please enter a valid userId",
+    "createCommunityValidationNamePattern": "Please enter a valid community name"
 }
