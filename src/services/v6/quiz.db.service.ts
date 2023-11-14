@@ -30,6 +30,7 @@ class QuizDBService {
     reqParam: any,
     quizExists: any
   ) {
+    const { solvedQuestions } = reqParam;
     let quizResultsData = await QuizResult.find({
       userId: userIfExists._id,
       isOnBoardingQuiz: false,
@@ -45,30 +46,24 @@ class QuizDBService {
     /**
      * Check question acutally exists in that quiz
      */
-    if (quizExists.quizType === QUIZ_TYPE.NORMAL) {
-      const quizQuestions = [];
-      let queExistsFlag = true;
-      if (reqParam.solvedQuestions.length > 0) {
-        for (const solvedQue of reqParam.solvedQuestions) {
-          const queExists = await QuizQuestionTable.findOne({
-            _id: solvedQue,
-          });
-          if (!queExists) {
-            queExistsFlag = false;
-            break;
-          }
-          quizQuestions.push({
-            topicId: quizExists.topicId,
-            quizId: quizExists._id,
-            userId: userIfExists._id,
-            quizQuestionId: solvedQue,
-            pointsEarned: queExists.points,
-          });
-        }
-      }
-      if (queExistsFlag === false) {
+    if (quizExists.quizType === QUIZ_TYPE.NORMAL && solvedQuestions.length > 0) {
+
+      const questionsIfExist = await QuizQuestionTable.find({
+        _id: { $in: solvedQuestions }
+      });
+
+      if (questionsIfExist.length < solvedQuestions.length) {
         throw new NetworkError("Question Doesn't Exists in db", 400);
       }
+
+      const quizQuestions = questionsIfExist.map((que) => ({
+        topicId: quizExists.topicId,
+        quizId: quizExists._id,
+        userId: userIfExists._id,
+        quizQuestionId: que._id,
+        pointsEarned: que.points,
+      }))
+
       /**
        * Add Question Result and Quiz Result
        */
@@ -80,15 +75,14 @@ class QuizDBService {
         ? everyCorrectAnswerPoints * reqParam.solvedQuestions.length
         : SIMULATION_QUIZ_FUEL;
 
-    const dataToCreate = {
+    await QuizResult.create({
       topicId: quizExists.topicId,
       quizId: quizExists._id,
       userId: userIfExists._id,
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
       numOfIncorrectAnswers: reqParam.numOfIncorrectAnswers || 0,
-    };
-    await QuizResult.create(dataToCreate);
+    });
     let incrementObj: any = {
       quizCoins: pointsEarnedFromQuiz,
     };
