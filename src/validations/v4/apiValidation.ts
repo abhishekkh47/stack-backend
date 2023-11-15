@@ -250,9 +250,6 @@ export const validationsV4 = {
       googlePlaceId: Joi.string()
         .regex(/^[A-Za-z0-9-_]+$/)
         .required(),
-      createdBy: Joi.string()
-        .regex(/^[[0-9a-fA-F]{24}$/)
-        .required(),
     });
     const { error } = schema.validate(req);
     if (error) {
@@ -265,9 +262,6 @@ export const validationsV4 = {
   },
   joinCommunityValidation: (req, res, callback) => {
     const schema = Joi.object({
-      userId: Joi.string()
-        .regex(/^[0-9a-fA-F]{24}$/)
-        .required(),
       communityId: Joi.string()
         .regex(/^[0-9a-fA-F]{24}$/)
         .required(),

@@ -323,7 +323,9 @@
 	"quizReviewValidationRatingsOnly": "Please enter ratings.",
 	"quizReviewValidationFeedbackBase": "Please enter feedback.",
 	"createCommunityValidationGoogleplaceidPattern": "Please enter a valid googlePlaceId",
-    "createCommunityValidationCreatedbyPattern": "Please enter a correct userId",
-    "joinCommunityValidationUseridRequired": "Please enter a valid userId",
-    "createCommunityValidationNamePattern": "Please enter a valid community name"
+	"createCommunityValidationNamePattern": "Please enter a valid community name",
+	"createCommunityValidationNameRequired": "Please enter community name.",
+	"createCommunityValidationNameEmpty": "createCommunityValidationNameEmpty",
+	"createCommunityValidationGoogleplaceidRequired": "createCommunityValidationGoogleplaceidRequired",
+	"createCommunityValidationGoogleplaceidEmpty": "createCommunityValidationGoogleplaceidEmpty"
 }

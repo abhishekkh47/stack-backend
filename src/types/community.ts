@@ -16,5 +16,5 @@ export interface IUserCommunity {
   isVP: mongoose.Schema.Types.ObjectId;
   userId: mongoose.Schema.Types.ObjectId;
   reward: number;
-  isClaimed: boolean;
+  isClaimed: number;
 }

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import type { IUserCommunity, MongooseModel } from "@app/types";
+import { COMMUNITY_CHALLENGE_CLAIM_STATUS } from "@app/utility/constants";
 export type IUserCommunitySchema = MongooseModel<IUserCommunity> &
   mongoose.Document;
 const schema = new mongoose.Schema<IUserCommunity>(
@@ -23,9 +24,14 @@ const schema = new mongoose.Schema<IUserCommunity>(
       required: true,
     },
     isClaimed: {
-      type: mongoose.Schema.Types.Boolean,
+      type: mongoose.Schema.Types.Number,
+      enum: [
+        COMMUNITY_CHALLENGE_CLAIM_STATUS.NOT_STARTED,
+        COMMUNITY_CHALLENGE_CLAIM_STATUS.PENDING,
+        COMMUNITY_CHALLENGE_CLAIM_STATUS.COMPLETED,
+      ],
+      default: COMMUNITY_CHALLENGE_CLAIM_STATUS.NOT_STARTED,
       required: true,
-      default: false,
     },
   },
   { timestamps: true }
