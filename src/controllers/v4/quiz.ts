@@ -529,31 +529,28 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          let leagues = await LeagueTable.find({})
-            .select("_id name image minPoint maxPoint colorCode")
-            .sort({ minPoint: 1 });
-          let userIfExists = await UserTable.findOne({
-            _id: user._id,
-          }).populate("streakGoal");
+          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] = await Promise.all([
+            LeagueTable.find({})
+              .select("_id name image minPoint maxPoint colorCode")
+              .sort({ minPoint: 1 }),
+            UserTable.findOne({ _id: user._id }).populate("streakGoal"),
+            QuizTable.findOne({ _id: reqParam.quizId }),
+            QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
+          ]);
+
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
-          const quizIfExists: any = await QuizTable.findOne({
-            _id: reqParam.quizId,
-          });
           if (!quizIfExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
           }
-          const quizResultsIfExists = await QuizResult.findOne({
-            userId: user._id,
-            quizId: reqParam.quizId,
-          });
           if (quizResultsIfExists) {
             return this.BadRequest(
               ctx,
               "You cannot submit the same quiz again"
             );
           }
+
           const { totalXPPoints, updatedXPPoints, totalFuel } =
             await QuizDBService.storeQuizInformation(
               user._id,
@@ -561,32 +558,30 @@ class QuizController extends BaseController {
               reqParam,
               quizIfExists
             );
-          const {
-            previousLeague,
-            currentLeague,
-            nextLeague,
-            isNewLeagueUnlocked,
-          } = await LeagueService.getUpdatedLeagueDetailsOfUser(
-            userIfExists,
-            leagues,
-            updatedXPPoints
-          );
-          const streaksDetails = await UserDBService.addStreaks(userIfExists);
-          const quizRecommendations =
-            await QuizDBService.getQuizRecommendations(
-              userIfExists._id,
-              quizIfExists.topicId
+
+          const [
+            { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked },
+            streaksDetails,
+            quizRecommendations
+          ] = await Promise.all([
+            LeagueService.getUpdatedLeagueDetailsOfUser(userIfExists, leagues, updatedXPPoints),
+            UserDBService.addStreaks(userIfExists),
+            QuizDBService.getQuizRecommendations(userIfExists._id, quizIfExists.topicId.toString())
+          ]);
+
+          (async () => {
+            const dataForCrm = await QuizDBService.getQuizDataForCrm(
+              userIfExists,
+              user._id,
+              updatedXPPoints
             );
-          const dataForCrm = await QuizDBService.getQuizDataForCrm(
-            userIfExists,
-            user._id,
-            updatedXPPoints
-          );
-          await zohoCrmService.addAccounts(
-            ctx.request.zohoAccessToken,
-            dataForCrm,
-            true
-          );
+            zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataForCrm,
+              true
+            );
+          })();
+
           return this.Ok(ctx, {
             message: "Quiz Results Stored Successfully",
             totalXPPoints: totalXPPoints,
@@ -818,25 +813,17 @@ class QuizController extends BaseController {
           },
         },
       ]).exec();
-      const quizCategories = await QuizDBService.listQuizCategories(
-        quizResultsData
-      );
-      const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
-        quizResultsData,
-        userIfExists._id
-      );
-      /**
-       * Give any 3 random quizzes if quiz not played
-       */
+
       quizResultsData = quizResultsData.filter((x) => x.stageId == null);
-      let quizzes: any;
-      if (quizResultsData.length === 0) {
-        quizzes = await QuizDBService.getRandomQuiz();
-      } else {
-        quizzes = await QuizDBService.getMostPlayedCategoryQuizzes(
+
+      const [quizCategories, isQuizLimitReached, quizzes] = await Promise.all([
+        QuizDBService.listQuizCategories(quizResultsData),
+        QuizDBService.checkQuizLimitReached(quizResultsData, userIfExists._id),
+        // Give any 3 random quizzes if quiz not played
+        quizResultsData.length === 0 ? QuizDBService.getRandomQuiz() : QuizDBService.getMostPlayedCategoryQuizzes(
           userIfExists._id
-        );
-      }
+        )
+      ])
       return this.Ok(ctx, {
         data: {
           categories: quizCategories,
