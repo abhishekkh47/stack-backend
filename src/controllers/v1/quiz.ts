@@ -1,7 +1,7 @@
 import Koa from "koa";
 import moment from "moment";
 import mongoose from "mongoose";
-import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -18,10 +18,9 @@ import {
   everyCorrectAnswerPoints,
   HttpMethod,
 } from "@app/types";
-import { QUIZ_LIMIT_REACHED_TEXT, Route } from "@app/utility";
+import { Route } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
 import BaseController from "@app/controllers/base";
-import { QuizDBService } from "@app/services/v4";
 
 class QuizController extends BaseController {
   /**
@@ -230,24 +229,12 @@ class QuizController extends BaseController {
   @Auth()
   public getQuestionList(ctx: any) {
     const reqParam = ctx.params;
-    const { user, headers } = ctx.request;
+    const { user } = ctx.request;
     return validation.getUserQuizDataValidation(
       reqParam,
       ctx,
       async (validate) => {
         if (validate) {
-          let quizResultsData = await QuizResult.find({
-            userId: user._id,
-            topicId: reqParam.topicId,
-            isOnBoardingQuiz: false,
-          });
-          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
-            quizResultsData,
-            user._id
-          );
-          if (isQuizLimitReached) {
-            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
-          }
           const quizIds: any = [];
           const quizCheckCompleted = await QuizResult.find(
             {
@@ -293,7 +280,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    const { user, headers } = ctx.request;
+    const { user } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -313,17 +300,6 @@ class QuizController extends BaseController {
               ctx,
               "You cannot submit the same quiz again"
             );
-          }
-          let quizResultsData = await QuizResult.find({
-            userId: user._id,
-            isOnBoardingQuiz: false,
-          });
-          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
-            quizResultsData,
-            user._id
-          );
-          if (isQuizLimitReached) {
-            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
           /**
            * Check question acutally exists in that quiz
