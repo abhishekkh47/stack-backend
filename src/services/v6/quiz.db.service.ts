@@ -3,6 +3,7 @@ import {
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
+  UserCommunityTable,
   UserTable,
 } from "@app/model";
 import {
@@ -102,6 +103,22 @@ class QuizDBService {
         ? correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ
         : XP_POINTS.SIMULATION_QUIZ;
     incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
+    /**
+     * If user is in community, please add xp accordingly for that community
+     */
+    let usersCommunityIfExists = await UserCommunityTable.findOne({
+      userId: userIfExists._id,
+    });
+    if (usersCommunityIfExists) {
+      await UserCommunityTable.findOneAndUpdate(
+        { _id: usersCommunityIfExists._id },
+        {
+          $inc: {
+            xpPoints: totalXPPoints,
+          },
+        }
+      );
+    }
     let isGiftedStreakFreeze = false;
     const {
       streak: { freezeCount },

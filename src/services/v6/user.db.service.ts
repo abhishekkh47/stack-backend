@@ -11,7 +11,7 @@ import {
   STREAK_FREEZE_FUEL,
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
-import { QuizDBService } from "../v6";
+import { QuizDBService, CommunityDBService } from "../v6";
 
 class UserDBService {
   /**
@@ -65,6 +65,34 @@ class UserDBService {
           },
         },
         {
+          $lookup: {
+            from: "user_communities",
+            localField: "_id",
+            foreignField: "userId",
+            as: "userCommunity",
+          },
+        },
+        {
+          $unwind: {
+            path: "$userCommunity",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "communities",
+            localField: "userCommunity.communityId",
+            foreignField: "_id",
+            as: "communityDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$communityDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $project: {
             _id: 1,
             email: 1,
@@ -96,6 +124,8 @@ class UserDBService {
             lifeCount: 1,
             renewLifeAt: 1,
             last5DaysStreak: "$streak.last5days",
+            communityDetails: 1,
+            isClaimed: "$userCommunity.isClaimed",
           },
         },
       ]).exec()
@@ -183,6 +213,17 @@ class UserDBService {
     }
     let isQuizPlayedToday = await QuizDBService.checkQuizPlayedToday(data._id);
     data = { ...data, isQuizPlayedToday };
+
+    /**
+     * If user exists in community
+     */
+    if (data.communityDetails) {
+      let isGoalAchieved =
+        await CommunityDBService.checkCommunityGoalAchievedOrNot(
+          data.communityDetails
+        );
+      data = { ...data, isGoalAchieved };
+    }
 
     return { data };
   }

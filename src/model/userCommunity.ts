@@ -24,13 +24,8 @@ const schema = new mongoose.Schema<IUserCommunity>(
       required: true,
     },
     isClaimed: {
-      type: mongoose.Schema.Types.Number,
-      enum: [
-        COMMUNITY_CHALLENGE_CLAIM_STATUS.NOT_STARTED,
-        COMMUNITY_CHALLENGE_CLAIM_STATUS.PENDING,
-        COMMUNITY_CHALLENGE_CLAIM_STATUS.COMPLETED,
-      ],
-      default: COMMUNITY_CHALLENGE_CLAIM_STATUS.NOT_STARTED,
+      type: mongoose.Schema.Types.Boolean,
+      default: COMMUNITY_CHALLENGE_CLAIM_STATUS.PENDING,
       required: true,
     },
   },

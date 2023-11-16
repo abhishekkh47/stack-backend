@@ -12,19 +12,23 @@ class CommunityController extends BaseController {
    * @description This method is used to view profile for both parent and child
    * @param ctx
    */
-  @Route({ path: "/community", method: HttpMethod.POST })
+  @Route({ path: "/join-or-create", method: HttpMethod.POST })
   @Auth()
   public async createCommunity(ctx: any) {
     const { body, user } = ctx.request;
     const [userIfExists, communityIfExists, userIfExistsInCommunity] =
       await Promise.all([
         UserTable.findOne({ _id: user._id }),
-        CommunityTable.findOne({ name: body.name }),
+        CommunityTable.findOne({
+          $or: [{ name: body.name }, { googlePlaceId: body.googlePlaceId }],
+        }),
         UserCommunityTable.findOne({
           userId: user._id,
         }),
       ]);
     if (!userIfExists) return this.BadRequest(ctx, "User not found");
+    if (userIfExistsInCommunity)
+      return this.BadRequest(ctx, "You are already a part of one community.");
 
     return validationsV4.createCommunityValidation(
       body,
@@ -63,20 +67,33 @@ class CommunityController extends BaseController {
         UserTable.findOne({ _id: user._id }),
         CommunityTable.findOne({
           _id: query.communityId,
-        }),
+        }).select("_id name type challenge"),
       ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       if (!communityIfExists)
         return this.BadRequest(ctx, "This community does not exist");
-      const { leaderBoardData, totalRecords, userObject } =
-        await CommunityDBService.getCommunityLeaderboard(
-          communityIfExists._id,
-          query,
-          userIfExists._id
-        );
+      const {
+        leaderBoardData,
+        totalRecords,
+        userObject,
+        totalXPPoints,
+        weeklyChallengeDate,
+      } = await CommunityDBService.getCommunityLeaderboard(
+        communityIfExists._id,
+        query,
+        userIfExists._id
+      );
+
       return this.Ok(ctx, {
         message: "Success",
-        data: { leaderBoardData, totalRecords, userObject },
+        data: {
+          leaderBoardData,
+          totalRecords,
+          userObject,
+          totalXPPoints,
+          weeklyChallengeDate,
+          communityDetails: communityIfExists,
+        },
       });
     } catch (error) {
       return this.BadRequest(ctx, "Something went wrong");

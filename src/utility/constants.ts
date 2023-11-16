@@ -337,9 +337,9 @@ export const CHALLENGE_XP_INITIAL_GOAL = 1000;
 export const CHALLENGE_XP_INCREMENT = 250;
 export const CHALLENGE_FUEL_INITIAL_REWARD = 50;
 export const CHALLENGE_FUEL_INCREMENT = 25;
+export const RALLY_COMMUNITY_CHALLENGE_GOAL = 5;
 export const CHALLENGE_TYPE = ["rally_community", "weekly_xp"];
 export const COMMUNITY_CHALLENGE_CLAIM_STATUS = {
-  NOT_STARTED: 0,
-  PENDING: 1,
-  COMPLETED: 2,
+  PENDING: false,
+  CLAIMED: true,
 };

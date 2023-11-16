@@ -1,9 +1,8 @@
 import { CommunityTable, UserCommunityTable } from "@app/model";
 import {
-  CHALLENGE_XP_INITIAL_GOAL,
-  COMMUNITY_CHALLENGE_CLAIM_STATUS,
   CHALLENGE_TYPE,
   LIST,
+  RALLY_COMMUNITY_CHALLENGE_GOAL,
 } from "@app/utility/constants";
 class CommunityDBService {
   /**
@@ -39,11 +38,10 @@ class CommunityDBService {
    */
   public async joinCommunity(userId: any, community: any) {
     let isVP = false;
-    let isClaimed = COMMUNITY_CHALLENGE_CLAIM_STATUS.NOT_STARTED;
     const numberOfCommunityMembers = await UserCommunityTable.count({
       communityId: community._id,
     });
-    if (numberOfCommunityMembers <= 5) {
+    if (numberOfCommunityMembers < 5) {
       isVP = true;
     }
     /**
@@ -54,7 +52,6 @@ class CommunityDBService {
       community.challenge.type === CHALLENGE_TYPE[0] &&
       numberOfCommunityMembers === 5
     ) {
-      isClaimed = COMMUNITY_CHALLENGE_CLAIM_STATUS.PENDING;
       /**
        * TODO FOR SQS MESSAGE
        */
@@ -63,7 +60,6 @@ class CommunityDBService {
       userId: userId,
       communityId: community._id,
       isVP: isVP,
-      isClaimed,
     });
     return response;
   }
@@ -78,6 +74,23 @@ class CommunityDBService {
     query: any,
     userId: any
   ) {
+    const now = new Date();
+    const startOfWeek = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - (now.getDay() - 1),
+      0,
+      0,
+      0
+    );
+    const endOfWeek = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + (7 - now.getDay()),
+      23,
+      59,
+      59
+    );
     const offset = (parseInt(query.page) - 1) * LIST.limit;
     const aggregateQuery: any = [
       {
@@ -86,6 +99,20 @@ class CommunityDBService {
         },
       },
       {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
         $setWindowFields: {
           sortBy: {
             xpPoints: -1,
@@ -97,36 +124,45 @@ class CommunityDBService {
             total: {
               $count: {},
             },
+            totalXPPoints: {
+              $sum: "$xpPoints",
+            },
           },
         },
       },
       {
-        $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userData",
+        $addFields: {
+          isNewUser: {
+            $cond: {
+              if: {
+                $and: [
+                  {
+                    $gte: ["$createdAt", startOfWeek],
+                  },
+                  {
+                    $lte: ["$createdAt", endOfWeek],
+                  },
+                ],
+              },
+              then: true,
+              else: false,
+            },
+          },
         },
       },
-      {
-        $unwind: {
-          path: "$userData",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $limit: query?.page ? LIST.limit * parseInt(query?.page) : 20,
-      },
-      { $skip: offset },
+
       {
         $project: {
           _id: "$userData._id",
           xpPoints: 1,
           rank: 1,
+          isNewUser: 1,
           firstName: "$userData.firstName",
           isVP: 1,
           lastName: "$userData.lastName",
           total: 1,
+          totalXPPoints: 1,
+          communityId: 1,
           profilePicture: "$userData.profilePicture",
           quizCoins: "$userData.quizCoins",
           preLoadedCoins: "$userData.preLoadedCoins",
@@ -134,10 +170,75 @@ class CommunityDBService {
         },
       },
     ];
-    const userDetails = await UserCommunityTable.aggregate([
+    let userQuery = JSON.parse(JSON.stringify(aggregateQuery));
+    userQuery = userQuery.slice(1);
+    userQuery.push({
+      $match: {
+        _id: userId,
+        communityId: communityId,
+      },
+    });
+    aggregateQuery.push(
+      {
+        $limit: query?.page ? LIST.limit * parseInt(query?.page) : 20,
+      },
+      { $skip: offset }
+    );
+    const userDetails = await UserCommunityTable.aggregate(userQuery).exec();
+    const leaderBoardData = await UserCommunityTable.aggregate(
+      aggregateQuery
+    ).exec();
+
+    /**
+     * Weekly challenge Date Logic
+     */
+    const todayDate = new Date();
+    let weeklyChallengeDate = null;
+    if (leaderBoardData[0].total >= RALLY_COMMUNITY_CHALLENGE_GOAL) {
+      let daysUntilNextMonday = 1 - todayDate.getDay();
+      if (daysUntilNextMonday <= 0) {
+        daysUntilNextMonday += 7;
+      }
+      const nextMonday = new Date(todayDate);
+      nextMonday.setHours(0, 0, 0, 0);
+      nextMonday.setDate(todayDate.getDate() + daysUntilNextMonday);
+      weeklyChallengeDate = nextMonday;
+    }
+
+    return {
+      leaderBoardData,
+      userObject: userDetails.length > 0 ? userDetails[0] : null,
+      totalRecords: leaderBoardData.length > 0 ? leaderBoardData[0].total : 0,
+      totalXPPoints:
+        leaderBoardData.length > 0 ? leaderBoardData[0].totalXPPoints : 0,
+      weeklyChallengeDate,
+    };
+  }
+
+  /**
+   * @description This method is used to return boolean for community goal achieved or not
+   * @param communityDetails
+   */
+  public async checkCommunityGoalAchievedOrNot(communityDetails: any) {
+    let isGoalAchieved = false;
+    const userCommunityDetails: any = await UserCommunityTable.aggregate([
       {
         $match: {
-          communityId,
+          communityId: communityDetails._id,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$userData",
+          preserveNullAndEmptyArrays: false,
         },
       },
       {
@@ -152,53 +253,27 @@ class CommunityDBService {
             total: {
               $count: {},
             },
+            totalXPPoints: {
+              $sum: "$xpPoints",
+            },
           },
         },
       },
-      {
-        $lookup: {
-          from: "users",
-          localField: "userId",
-          foreignField: "_id",
-          as: "userData",
-        },
-      },
-      {
-        $unwind: {
-          path: "$userData",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $project: {
-          _id: "$userData._id",
-          xpPoints: 1,
-          rank: 1,
-          firstName: "$userData.firstName",
-          isVP: 1,
-          lastName: "$userData.lastName",
-          total: 1,
-          profilePicture: "$userData.profilePicture",
-          quizCoins: "$userData.quizCoins",
-          preLoadedCoins: "$userData.preLoadedCoins",
-          activeStreak: "$userData.streak.current",
-        },
-      },
-      {
-        $match: {
-          _id: userId,
-        },
-      },
     ]).exec();
-    const leaderBoardData = await UserCommunityTable.aggregate(
-      aggregateQuery
-    ).exec();
-
-    return {
-      leaderBoardData,
-      userObject: userDetails.length > 0 ? userDetails[0] : null,
-      totalRecords: leaderBoardData.length > 0 ? leaderBoardData[0].total : 0,
-    };
+    if (userCommunityDetails.length === 0) return isGoalAchieved;
+    if (communityDetails.challenge.type === CHALLENGE_TYPE[0]) {
+      if (userCommunityDetails[0].total >= RALLY_COMMUNITY_CHALLENGE_GOAL) {
+        isGoalAchieved = true;
+      }
+    } else {
+      if (
+        communityDetails.challenge.xpGoal <=
+        userCommunityDetails[0].totalXPPoints
+      ) {
+        isGoalAchieved = true;
+      }
+    }
+    return isGoalAchieved;
   }
 }
 export default new CommunityDBService();
