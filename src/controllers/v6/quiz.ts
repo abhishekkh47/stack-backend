@@ -29,25 +29,20 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          let leagues = await LeagueTable.find({})
-            .select("_id name image minPoint maxPoint colorCode")
-            .sort({ minPoint: 1 });
-          let userIfExists = await UserTable.findOne({
-            _id: user._id,
-          }).populate("streakGoal");
+          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] = await Promise.all([
+            LeagueTable.find({})
+              .select("_id name image minPoint maxPoint colorCode")
+              .sort({ minPoint: 1 }),
+            UserTable.findOne({ _id: user._id }).populate("streakGoal"),
+            QuizTable.findOne({ _id: reqParam.quizId }),
+            QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
+          ]);
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
-          const quizIfExists: any = await QuizTable.findOne({
-            _id: reqParam.quizId,
-          });
           if (!quizIfExists) {
             return this.BadRequest(ctx, "Quiz Details Doesn't Exists");
           }
-          const quizResultsIfExists = await QuizResult.findOne({
-            userId: user._id,
-            quizId: reqParam.quizId,
-          });
           if (quizResultsIfExists) {
             return this.BadRequest(
               ctx,
@@ -65,32 +60,29 @@ class QuizController extends BaseController {
             reqParam,
             quizIfExists
           );
-          const {
-            previousLeague,
-            currentLeague,
-            nextLeague,
-            isNewLeagueUnlocked,
-          } = await LeagueService.getUpdatedLeagueDetailsOfUser(
-            userIfExists,
-            leagues,
-            updatedXPPoints
-          );
-          const streaksDetails = await UserDBService.addStreaks(userIfExists);
-          const quizRecommendations =
-            await QuizDBServiceV4.getQuizRecommendations(
-              userIfExists._id,
-              quizIfExists.topicId
+          const [
+            { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked },
+            streaksDetails,
+            quizRecommendations
+          ] = await Promise.all([
+            LeagueService.getUpdatedLeagueDetailsOfUser(userIfExists, leagues, updatedXPPoints),
+            UserDBService.addStreaks(userIfExists),
+            QuizDBServiceV4.getQuizRecommendations(userIfExists._id, quizIfExists.topicId.toString())
+          ]);
+
+          (async () => {
+            const dataForCrm = await QuizDBServiceV4.getQuizDataForCrm(
+              userIfExists,
+              user._id,
+              updatedXPPoints
             );
-          const dataForCrm = await QuizDBServiceV4.getQuizDataForCrm(
-            userIfExists,
-            user._id,
-            updatedXPPoints
-          );
-          await zohoCrmService.addAccounts(
-            ctx.request.zohoAccessToken,
-            dataForCrm,
-            true
-          );
+
+            zohoCrmService.addAccounts(
+              ctx.request.zohoAccessToken,
+              dataForCrm,
+              true
+            );
+          })();
           return this.Ok(ctx, {
             message: "Quiz Results Stored Successfully",
             totalXPPoints: totalXPPoints,

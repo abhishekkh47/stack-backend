@@ -272,6 +272,7 @@ class QuizDBService {
     reqParam: any,
     quizExists: any
   ) {
+    const { solvedQuestions } = reqParam;
     let quizResultsData = await QuizResult.find({
       userId: userId,
       isOnBoardingQuiz: false,
@@ -287,30 +288,24 @@ class QuizDBService {
     /**
      * Check question acutally exists in that quiz
      */
-    if (quizExists.quizType === QUIZ_TYPE.NORMAL) {
-      const quizQuestions = [];
-      let queExistsFlag = true;
-      if (reqParam.solvedQuestions.length > 0) {
-        for (const solvedQue of reqParam.solvedQuestions) {
-          const queExists = await QuizQuestionTable.findOne({
-            _id: solvedQue,
-          });
-          if (!queExists) {
-            queExistsFlag = false;
-            break;
-          }
-          quizQuestions.push({
-            topicId: quizExists.topicId,
-            quizId: quizExists._id,
-            userId: userId,
-            quizQuestionId: solvedQue,
-            pointsEarned: queExists.points,
-          });
-        }
-      }
-      if (queExistsFlag === false) {
+    if (quizExists.quizType === QUIZ_TYPE.NORMAL && solvedQuestions.length > 0) {
+
+      const questionsIfExist = await QuizQuestionTable.find({
+        _id: { $in: solvedQuestions }
+      });
+
+      if (questionsIfExist.length < solvedQuestions.length) {
         throw new NetworkError("Question Doesn't Exists in db", 400);
       }
+
+      const quizQuestions = questionsIfExist.map((que) => ({
+        topicId: quizExists.topicId,
+        quizId: quizExists._id,
+        userId: userId,
+        quizQuestionId: que._id,
+        pointsEarned: que.points,
+      }))
+
       /**
        * Add Question Result and Quiz Result
        */
@@ -322,15 +317,14 @@ class QuizDBService {
         ? everyCorrectAnswerPoints * reqParam.solvedQuestions.length
         : SIMULATION_QUIZ_FUEL;
 
-    const dataToCreate = {
+    await QuizResult.create({
       topicId: quizExists.topicId,
       quizId: quizExists._id,
       userId: userId,
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
       numOfIncorrectAnswers: reqParam.numOfIncorrectAnswers || 0,
-    };
-    await QuizResult.create(dataToCreate);
+    });
     let incrementObj: any = {
       quizCoins: pointsEarnedFromQuiz,
     };
@@ -717,12 +711,29 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiztopics",
+          localField: "topicId",
+          foreignField: "_id",
+          as: "quizTopicData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopicData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
         $project: {
           _id: 1,
           isCompleted: 1,
           name: "$quizName",
           topicId: 1,
+          topicName: "$quizTopicData.topic",
           image: 1,
+          characterImage: 1,
+          characterName: 1,
         },
       },
     ]).exec();
@@ -737,11 +748,12 @@ class QuizDBService {
    * @returns {boolean}
    */
   public async checkQuizLimitReached(quizResultsData: any, userId: string) {
-    const admin = await AdminTable.findOne({});
+    const [admin, user] = await Promise.all([
+      AdminTable.findOne({}),
+      UserTable.findOne({ _id: userId }).select("_id isLaunchpadApproved")
+    ]);
+
     let todaysQuizPlayed = [];
-    const user = await UserTable.findOne({ _id: userId }).select(
-      "_id isLaunchpadApproved"
-    );
     let isQuizLimitReached = false;
     if (quizResultsData.length > 0) {
       const todayStart = new Date().setUTCHours(0, 0, 0, 0);
@@ -941,11 +953,28 @@ class QuizDBService {
         },
       },
       {
+        $lookup: {
+          from: "quiztopics",
+          localField: "quizzes.topicId",
+          foreignField: "_id",
+          as: "quizTopicData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$quizTopicData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
         $project: {
           _id: "$quizzes._id",
           name: "$quizzes.quizName",
           image: "$quizzes.image",
           isCompleted: 1,
+          topicName: "$quizTopicData.topic",
+          characterImage: "$quizzes.characterImage",
+          characterName: "$quizzes.characterName",
           topicId: "$quizzes.topicId",
           count: 1,
         },
@@ -1506,7 +1535,8 @@ class QuizDBService {
           isUnlocked: "$isCompleted",
           stageId: 1,
           name: "$quizName",
-          topicName: {
+          topicName: "$topics.topic",
+          stageName: {
             $cond: {
               if: {
                 $eq: ["$stageId", null],
