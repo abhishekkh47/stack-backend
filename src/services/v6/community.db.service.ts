@@ -1,8 +1,10 @@
-import { CommunityTable, UserCommunityTable } from "@app/model";
+import { NetworkError } from "@app/middleware";
+import { CommunityTable, UserCommunityTable, UserTable } from "@app/model";
 import {
   CHALLENGE_TYPE,
   LIST,
   RALLY_COMMUNITY_CHALLENGE_GOAL,
+  COMMUNITY_CHALLENGE_CLAIM_STATUS,
 } from "@app/utility/constants";
 class CommunityDBService {
   /**
@@ -274,6 +276,139 @@ class CommunityDBService {
       }
     }
     return isGoalAchieved;
+  }
+
+  /**
+   * @description This method is used to return claim reward based on community challenges
+   * @param userDetails
+   * @param userCommunityDetails
+   */
+  public async claimReward(userDetails: any, userCommunityDetails: any) {
+    try {
+      if (
+        userCommunityDetails.isClaimed ===
+        COMMUNITY_CHALLENGE_CLAIM_STATUS.CLAIMED
+      ) {
+        throw new NetworkError("You already had claimed reward", 400);
+      }
+      const totalMembersInCommunity = await this.getTotalMembersInCommunity(
+        userCommunityDetails.communityId
+      );
+      if (
+        totalMembersInCommunity.length === 0 ||
+        totalMembersInCommunity.length < 5
+      ) {
+        throw new NetworkError("You are not eligible", 400);
+      }
+      if (totalMembersInCommunity[0].challengeType === CHALLENGE_TYPE[0]) {
+        throw new NetworkError(
+          "You need to be in weekly challenge in order to get reward",
+          400
+        );
+      }
+      const { reward } = totalMembersInCommunity[0].community.challenge;
+      if (totalMembersInCommunity[0].totalXPPoints < reward) {
+        throw new NetworkError("Your goal is not achieved yet.", 400);
+      }
+      /**
+       * Time to gift reward
+       */
+      const updatedUser = await UserTable.findOneAndUpdate(
+        { _id: userDetails._id },
+        {
+          $inc: {
+            preLoadedCoins: reward,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+      await UserCommunityTable.updateOne(
+        { userId: userDetails._id },
+        {
+          $set: {
+            isClaimed: COMMUNITY_CHALLENGE_CLAIM_STATUS.CLAIMED,
+          },
+        }
+      );
+      return updatedUser;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This method is used to get total members in community
+   * @param communityId
+   * @returns {boolean}
+   */
+  public async getTotalMembersInCommunity(communityId: any) {
+    try {
+      let userCommunities: any = await UserCommunityTable.aggregate([
+        {
+          $match: {
+            communityId: communityId,
+          },
+        },
+        {
+          $setWindowFields: {
+            sortBy: {
+              xpPoints: -1,
+            },
+            output: {
+              rank: {
+                $documentNumber: {},
+              },
+              totalXPPoints: {
+                $sum: "$xpPoints",
+              },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "communities",
+            localField: "communityId",
+            foreignField: "_id",
+            as: "community",
+          },
+        },
+        {
+          $unwind: {
+            path: "$community",
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "_id",
+            as: "userDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$userDetails",
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            userDetails: "$userDetails",
+            isClaimed: 1,
+            community: "$community",
+            totalXPPoints: 1,
+            challengeType: "$community.challenge.type",
+          },
+        },
+      ]).exec();
+      return userCommunities;
+    } catch (error) {
+      throw new NetworkError("Something went wrong", 400);
+    }
   }
 }
 export default new CommunityDBService();

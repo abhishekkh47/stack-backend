@@ -1,5 +1,5 @@
 import { NetworkError } from "@app/middleware/error.middleware";
-import { UserTable } from "@app/model";
+import { DripshopTable, UserCommunityTable, UserTable } from "@app/model";
 import { ObjectId } from "mongodb";
 import {
   convertDateToTimeZone,
@@ -9,6 +9,7 @@ import {
   DEFAULT_LIFE_COUNT,
   MAX_STREAK_FREEZE,
   STREAK_FREEZE_FUEL,
+  COMMUNITY_CHALLENGE_CLAIM_STATUS,
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
 import { QuizDBService, CommunityDBService } from "../v6";
@@ -284,6 +285,93 @@ class UserDBService {
       }
     );
     return true;
+  }
+
+  /**
+   * @description This service is used to update the fuels of user
+   * @param userExists
+   * @param dripshopData
+   * @param fuel
+   */
+  public async redeemDripShop(
+    userExists: any,
+    dripshopData: any,
+    body: any,
+    isClaimed: boolean
+  ) {
+    const { fuel } = dripshopData;
+    let totalChildFuels = userExists.preLoadedCoins + userExists.quizCoins;
+
+    let updatedCoinQuery: any = {};
+
+    if (!isClaimed) {
+      if (totalChildFuels >= fuel) {
+        /**
+         * once true check what to update preloaded or quiz coins or both
+         */
+        if (userExists.preLoadedCoins >= fuel) {
+          updatedCoinQuery = {
+            ...updatedCoinQuery,
+            $set: {
+              preLoadedCoins: userExists.preLoadedCoins - fuel,
+            },
+          };
+        } else {
+          /**
+           * amountLeftAfterPreloaded - contains amount left after removal of preloaded coins from required fuels
+           */
+          let amountLeftAfterPreloaded = fuel - userExists.preLoadedCoins;
+
+          if (amountLeftAfterPreloaded <= userExists.quizCoins) {
+            updatedCoinQuery = {
+              ...updatedCoinQuery,
+              $set: {
+                preLoadedCoins: 0,
+                quizCoins: userExists.quizCoins - amountLeftAfterPreloaded,
+              },
+            };
+          }
+        }
+      } else {
+        throw new NetworkError("Insufficient Fuels.", 400);
+      }
+    }
+
+    const createdDripshop = await DripshopTable.create({
+      firstName: body.firstName,
+      lastName: body.lastName,
+      redeemedFuels: fuel,
+      userId: userExists._id,
+      itemId: dripshopData._id,
+      address: body.address,
+      state: body.state,
+      city: body.city,
+      apartment: body.apartment || null,
+      zipCode: body.zipCode,
+      selectedSize: body.selectedSize || null,
+    });
+    let updatedUser = null;
+    if (!isClaimed) {
+      updatedUser = await UserTable.findOneAndUpdate(
+        {
+          _id: userExists._id,
+        },
+        updatedCoinQuery,
+        { new: true }
+      );
+    } else {
+      await UserCommunityTable.findOneAndUpdate(
+        {
+          userId: userExists._id,
+        },
+        { isClaimed: COMMUNITY_CHALLENGE_CLAIM_STATUS.CLAIMED }
+      );
+    }
+
+    return {
+      createdDripshop,
+      updatedUser: isClaimed ? userExists : updatedUser,
+    };
   }
 }
 

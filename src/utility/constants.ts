@@ -343,3 +343,30 @@ export const COMMUNITY_CHALLENGE_CLAIM_STATUS = {
   PENDING: false,
   CLAIMED: true,
 };
+export const RALLY_COMMUNITY_REWARD = "Inspire Pack";
+export const WEEKLY_CHALLENGE_REWARD_LIST = [
+  {
+    xpGoal: 1000,
+    fuel: 50,
+  },
+  {
+    xpGoal: 1250,
+    fuel: 75,
+  },
+  {
+    xpGoal: 1500,
+    fuel: 100,
+  },
+  {
+    xpGoal: 1750,
+    fuel: 150,
+  },
+  {
+    xpGoal: 2000,
+    fuel: 175,
+  },
+  {
+    xpGoal: 2250,
+    fuel: 200,
+  },
+];
