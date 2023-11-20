@@ -43,7 +43,7 @@ class CommunityDBService {
     const numberOfCommunityMembers = await UserCommunityTable.count({
       communityId: community._id,
     });
-    if (numberOfCommunityMembers < 5) {
+    if (numberOfCommunityMembers < RALLY_COMMUNITY_CHALLENGE_GOAL) {
       isVP = true;
     }
     /**
@@ -52,7 +52,7 @@ class CommunityDBService {
      */
     if (
       community.challenge.type === CHALLENGE_TYPE[0] &&
-      numberOfCommunityMembers === 5
+      numberOfCommunityMembers === RALLY_COMMUNITY_CHALLENGE_GOAL
     ) {
       /**
        * TODO FOR SQS MESSAGE
@@ -296,7 +296,7 @@ class CommunityDBService {
       );
       if (
         totalMembersInCommunity.length === 0 ||
-        totalMembersInCommunity.length < 5
+        totalMembersInCommunity.length < RALLY_COMMUNITY_CHALLENGE_GOAL
       ) {
         throw new NetworkError("You are not eligible", 400);
       }
@@ -406,6 +406,46 @@ class CommunityDBService {
         },
       ]).exec();
       return userCommunities;
+    } catch (error) {
+      throw new NetworkError("Something went wrong", 400);
+    }
+  }
+
+  /**
+   * @description This method is used to get total members in community
+   * @param communityId
+   * @returns {boolean}
+   */
+  public async updateCommunityToLatestChallenge(communityDetails: any) {
+    try {
+      const totalMembersInCommunity: any = this.getTotalMembersInCommunity(
+        communityDetails._id
+      );
+      if (totalMembersInCommunity.length < RALLY_COMMUNITY_CHALLENGE_GOAL) {
+        if (
+          (communityDetails.challenge.type === CHALLENGE_TYPE[0] &&
+            communityDetails.challenge.endAt) ||
+          communityDetails.challenge.type === CHALLENGE_TYPE[1]
+        ) {
+          communityDetails = await CommunityTable.findOneAndUpdate(
+            {
+              _id: communityDetails._id,
+            },
+            {
+              $set: {
+                challenge: {
+                  type: CHALLENGE_TYPE[0],
+                  xpGoal: 0,
+                  endAt: null,
+                  reward: 0,
+                },
+              },
+            },
+            { new: true }
+          );
+        }
+      }
+      return communityDetails;
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
     }

@@ -54,6 +54,10 @@ export const PLAIDAPIS = {
   unlinkBankAccount: "/item/remove",
 };
 
+export const GOOGLEAPIS = {
+  placeApi: "https://maps.googleapis.com/maps/api/place/autocomplete/json",
+};
+
 export const GIFTCARDAPIS = {
   getAllGiftCards: (page, limit) => `api/giftcards?page=${page}&limit=${limit}`,
   countGiftCards: "api/giftcards/count",

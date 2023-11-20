@@ -149,4 +149,7 @@ export default {
   get SIMULATION_QUIZ_GID() {
     return process.env.SIMULATION_QUIZ_GID;
   },
+  get GOOGLE_PLACE_KEY() {
+    return process.env.GOOGLE_PLACE_KEY;
+  },
 };

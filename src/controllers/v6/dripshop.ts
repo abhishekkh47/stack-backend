@@ -126,14 +126,14 @@ class DripshopController extends BaseController {
    * @returns {*}
    */
   @Route({ path: "/claim-reward", method: HttpMethod.POST })
-  // @Auth()
+  @Auth()
   public async claimRewardInChallenge(ctx: any) {
     try {
       const { user } = ctx.request;
       const [userIfExists, userExistsInCommunity] = await Promise.all([
-        UserTable.findOne({ _id: "6502ce7b3768fe7e8bef7353" }),
+        UserTable.findOne({ _id: user._id }),
         UserCommunityTable.findOne({
-          userId: "6502ce7b3768fe7e8bef7353",
+          userId: user._id,
         }),
       ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
