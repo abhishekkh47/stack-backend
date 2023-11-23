@@ -1409,8 +1409,8 @@ class AuthController extends BaseController {
     if (!user) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    let token = getJwtToken(await AuthService.getJwtAuthInfo(user));
-    return this.Ok(ctx, { token });
+    const { token, refreshToken: newRefreshToken } = await TokenService.generateToken(user);
+    return this.Ok(ctx, { token, refreshToken: newRefreshToken });
   }
 
   @Route({ path: "/check-email/:mobile", method: HttpMethod.GET })
