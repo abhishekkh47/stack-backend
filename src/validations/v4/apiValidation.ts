@@ -244,9 +244,7 @@ export const validationsV4 = {
   },
   createCommunityValidation: (req, res, callback) => {
     const schema = Joi.object({
-      name: Joi.string()
-        .regex(/^[a-zA-Z]+$/)
-        .required(),
+      name: Joi.string().required(),
       googlePlaceId: Joi.string()
         .regex(/^[A-Za-z0-9-_]+$/)
         .required(),

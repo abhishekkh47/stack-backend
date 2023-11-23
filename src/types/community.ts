@@ -9,6 +9,7 @@ export interface ICommunity {
     endAt: Date;
     duration: number;
   };
+  isStepFunctionScheduled: boolean;
 }
 export interface IUserCommunity {
   communityId: mongoose.Schema.Types.ObjectId;

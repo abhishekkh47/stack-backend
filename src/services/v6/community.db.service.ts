@@ -6,6 +6,7 @@ import {
   RALLY_COMMUNITY_CHALLENGE_GOAL,
   COMMUNITY_CHALLENGE_CLAIM_STATUS,
 } from "@app/utility/constants";
+import { executeWeeklyChallengeStepFunction } from "@app/utility";
 class CommunityDBService {
   /**
    * @description create new community
@@ -46,23 +47,41 @@ class CommunityDBService {
     if (numberOfCommunityMembers < RALLY_COMMUNITY_CHALLENGE_GOAL) {
       isVP = true;
     }
-    /**
-     * Challenge finishes
-     * Send SQS message here
-     */
-    if (
-      community.challenge.type === CHALLENGE_TYPE[0] &&
-      numberOfCommunityMembers === RALLY_COMMUNITY_CHALLENGE_GOAL
-    ) {
-      /**
-       * TODO FOR SQS MESSAGE
-       */
-    }
     const response = await UserCommunityTable.create({
       userId: userId,
       communityId: community._id,
       isVP: isVP,
     });
+    /**
+     * Challenge finishes
+     * Execute Step function here
+     */
+    if (
+      community.challenge.type === CHALLENGE_TYPE[0] &&
+      numberOfCommunityMembers === RALLY_COMMUNITY_CHALLENGE_GOAL - 1
+    ) {
+      const nextChallengeDate = this.getNextChallengeDate();
+      const isScheduled = executeWeeklyChallengeStepFunction(
+        `${CHALLENGE_TYPE[0]} completed`,
+        community._id,
+        nextChallengeDate
+      );
+      if (isScheduled) {
+        let challengeEndDate = new Date(nextChallengeDate);
+        challengeEndDate = new Date(challengeEndDate.getTime() - 1000);
+        challengeEndDate.setHours(23, 59, 59, 0);
+        await CommunityTable.updateOne(
+          { _id: community._id },
+          {
+            $set: {
+              isStepFunctionScheduled: true,
+              endAt: challengeEndDate.toISOString(),
+            },
+          }
+        );
+      }
+    }
+
     return response;
   }
 
@@ -72,7 +91,7 @@ class CommunityDBService {
    * @returns {*}
    */
   public async getCommunityLeaderboard(
-    communityId: any,
+    community: any,
     query: any,
     userId: any
   ) {
@@ -97,7 +116,7 @@ class CommunityDBService {
     const aggregateQuery: any = [
       {
         $match: {
-          communityId,
+          communityId: community._id,
         },
       },
       {
@@ -152,7 +171,6 @@ class CommunityDBService {
           },
         },
       },
-
       {
         $project: {
           _id: "$userData._id",
@@ -177,7 +195,7 @@ class CommunityDBService {
     userQuery.push({
       $match: {
         _id: userId,
-        communityId: communityId,
+        communityId: community._id,
       },
     });
     aggregateQuery.push(
@@ -194,17 +212,34 @@ class CommunityDBService {
     /**
      * Weekly challenge Date Logic
      */
-    const todayDate = new Date();
     let weeklyChallengeDate = null;
-    if (leaderBoardData[0].total >= RALLY_COMMUNITY_CHALLENGE_GOAL) {
-      let daysUntilNextMonday = 1 - todayDate.getDay();
-      if (daysUntilNextMonday <= 0) {
-        daysUntilNextMonday += 7;
+    if (
+      leaderBoardData.length > 0 &&
+      leaderBoardData[0].total >= RALLY_COMMUNITY_CHALLENGE_GOAL &&
+      !community.isStepFunctionScheduled
+    ) {
+      weeklyChallengeDate = this.getNextChallengeDate();
+      if (
+        community.challenge.type === CHALLENGE_TYPE[0] ||
+        (community.challenge.type === CHALLENGE_TYPE[1] &&
+          leaderBoardData[0].totalXPPoints >= community.challenge.xpGoal)
+      ) {
+        const isScheduled = executeWeeklyChallengeStepFunction(
+          `${community.challenge.type} completed`,
+          community._id,
+          weeklyChallengeDate
+        );
+        if (isScheduled) {
+          await CommunityTable.updateOne(
+            { _id: community._id },
+            {
+              $set: {
+                isStepFunctionScheduled: true,
+              },
+            }
+          );
+        }
       }
-      const nextMonday = new Date(todayDate);
-      nextMonday.setHours(0, 0, 0, 0);
-      nextMonday.setDate(todayDate.getDate() + daysUntilNextMonday);
-      weeklyChallengeDate = nextMonday;
     }
 
     return {
@@ -262,11 +297,14 @@ class CommunityDBService {
         },
       },
     ]).exec();
-    if (userCommunityDetails.length === 0) return isGoalAchieved;
+    if (
+      userCommunityDetails.length === 0 ||
+      userCommunityDetails[0].total < RALLY_COMMUNITY_CHALLENGE_GOAL
+    ) {
+      return isGoalAchieved;
+    }
     if (communityDetails.challenge.type === CHALLENGE_TYPE[0]) {
-      if (userCommunityDetails[0].total >= RALLY_COMMUNITY_CHALLENGE_GOAL) {
-        isGoalAchieved = true;
-      }
+      isGoalAchieved = true;
     } else {
       if (
         communityDetails.challenge.xpGoal <=
@@ -285,14 +323,18 @@ class CommunityDBService {
    */
   public async claimReward(userDetails: any, userCommunityDetails: any) {
     try {
+      const today = new Date(); // Get today's date
       if (
         userCommunityDetails.isClaimed ===
         COMMUNITY_CHALLENGE_CLAIM_STATUS.CLAIMED
       ) {
         throw new NetworkError("You already had claimed reward", 400);
       }
+      if (today > new Date(userCommunityDetails.communityId.challenge.endAt)) {
+        throw new NetworkError("Your challenge is already completed", 400);
+      }
       const totalMembersInCommunity = await this.getTotalMembersInCommunity(
-        userCommunityDetails.communityId
+        userCommunityDetails.communityId._id
       );
       if (
         totalMembersInCommunity.length === 0 ||
@@ -306,8 +348,8 @@ class CommunityDBService {
           400
         );
       }
-      const { reward } = totalMembersInCommunity[0].community.challenge;
-      if (totalMembersInCommunity[0].totalXPPoints < reward) {
+      const { xpGoal, reward } = totalMembersInCommunity[0].community.challenge;
+      if (totalMembersInCommunity[0].totalXPPoints < xpGoal) {
         throw new NetworkError("Your goal is not achieved yet.", 400);
       }
       /**
@@ -446,6 +488,26 @@ class CommunityDBService {
         }
       }
       return communityDetails;
+    } catch (error) {
+      throw new NetworkError("Something went wrong", 400);
+    }
+  }
+
+  /**
+   * @description This method is used to get next monday date
+   * @returns {Date}
+   */
+  public getNextChallengeDate() {
+    try {
+      const todayDate = new Date();
+      let daysUntilNextMonday = 1 - todayDate.getDay();
+      if (daysUntilNextMonday <= 0) {
+        daysUntilNextMonday += 7;
+      }
+      const nextMonday = new Date(todayDate);
+      nextMonday.setHours(0, 0, 0, 0);
+      nextMonday.setDate(todayDate.getDate() + daysUntilNextMonday);
+      return nextMonday.toISOString();
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
     }

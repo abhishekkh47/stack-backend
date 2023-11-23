@@ -152,4 +152,7 @@ export default {
   get GOOGLE_PLACE_KEY() {
     return process.env.GOOGLE_PLACE_KEY;
   },
+  get WEEKLY_CHALLENGE_STATE_MACHINE_ARN() {
+    return process.env.WEEKLY_CHALLENGE_STATE_MACHINE_ARN;
+  },
 };

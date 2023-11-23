@@ -3,6 +3,12 @@ import crypto from "crypto";
 import { AdminTable, UserTable } from "@app/model";
 import ShortUniqueId from "short-unique-id";
 import { DEFAULT_TIMEZONE, QUIZ_CATEGORIES_COLORS } from "./constants";
+import aws from "aws-sdk";
+const stepFunctions = new aws.StepFunctions({
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_KEY,
+  region: "us-west-2",
+});
 
 const getUid = new ShortUniqueId({ length: 7 });
 
@@ -190,4 +196,33 @@ export const getDaysBetweenDates = (startDate, endDate) => {
 export const getQuizBackgroundColor = (indexNumber) => {
   const colorIndex = indexNumber % QUIZ_CATEGORIES_COLORS.length;
   return QUIZ_CATEGORIES_COLORS[colorIndex];
+};
+
+export const executeWeeklyChallengeStepFunction = (
+  message: string,
+  communityId: string,
+  timestamp: string
+) => {
+  const executionInput = {
+    timestamp,
+    communityId,
+    message,
+  };
+  const executionParams = {
+    stateMachineArn: config.WEEKLY_CHALLENGE_STATE_MACHINE_ARN,
+    input: JSON.stringify(executionInput),
+  };
+  const isMessageSent = stepFunctions.startExecution(
+    executionParams,
+    (err, data) => {
+      if (err) {
+        console.error("Error starting execution:", err);
+        return false;
+      } else {
+        console.log("Execution started:", data.executionArn);
+        return true;
+      }
+    }
+  );
+  return isMessageSent;
 };

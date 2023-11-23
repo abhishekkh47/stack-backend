@@ -1,5 +1,6 @@
 import { NetworkError } from "@app/middleware";
 import {
+  CommunityTable,
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
@@ -18,7 +19,9 @@ import {
   QUIZ_TYPE,
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
+  executeWeeklyChallengeStepFunction,
 } from "@app/utility";
+import { CommunityDBService } from "@app/services/v6";
 
 class QuizDBService {
   /**
@@ -47,10 +50,12 @@ class QuizDBService {
     /**
      * Check question acutally exists in that quiz
      */
-    if (quizExists.quizType === QUIZ_TYPE.NORMAL && solvedQuestions.length > 0) {
-
+    if (
+      quizExists.quizType === QUIZ_TYPE.NORMAL &&
+      solvedQuestions.length > 0
+    ) {
       const questionsIfExist = await QuizQuestionTable.find({
-        _id: { $in: solvedQuestions }
+        _id: { $in: solvedQuestions },
       });
 
       if (questionsIfExist.length < solvedQuestions.length) {
@@ -63,7 +68,7 @@ class QuizDBService {
         userId: userIfExists._id,
         quizQuestionId: que._id,
         pointsEarned: que.points,
-      }))
+      }));
 
       /**
        * Add Question Result and Quiz Result
@@ -100,9 +105,9 @@ class QuizDBService {
     /**
      * If user is in community, please add xp accordingly for that community
      */
-    let usersCommunityIfExists = await UserCommunityTable.findOne({
+    let usersCommunityIfExists: any = await UserCommunityTable.findOne({
       userId: userIfExists._id,
-    });
+    }).populate("communityId");
     if (usersCommunityIfExists) {
       await UserCommunityTable.findOneAndUpdate(
         { _id: usersCommunityIfExists._id },
@@ -112,6 +117,31 @@ class QuizDBService {
           },
         }
       );
+      const isGoalAchieved =
+        await CommunityDBService.checkCommunityGoalAchievedOrNot(
+          usersCommunityIfExists.communityId
+        );
+      if (
+        isGoalAchieved &&
+        !usersCommunityIfExists.communityId.isStepFunctionScheduled
+      ) {
+        const nextChallengeDate = CommunityDBService.getNextChallengeDate();
+        const isScheduled = executeWeeklyChallengeStepFunction(
+          `${usersCommunityIfExists.communityId.challenge.type} completed`,
+          usersCommunityIfExists.communityId,
+          nextChallengeDate
+        );
+        if (isScheduled) {
+          await CommunityTable.updateOne(
+            { _id: usersCommunityIfExists.communityId },
+            {
+              $set: {
+                isStepFunctionScheduled: true,
+              },
+            }
+          );
+        }
+      }
     }
     let isGiftedStreakFreeze = false;
     const {

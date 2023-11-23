@@ -38,6 +38,10 @@ const schema = new mongoose.Schema<ICommunity>(
         default: 0,
       },
     },
+    isStepFunctionScheduled: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

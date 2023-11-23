@@ -23,9 +23,7 @@ class CommunityController extends BaseController {
     const [userIfExists, communityIfExists, userIfExistsInCommunity] =
       await Promise.all([
         UserTable.findOne({ _id: user._id }),
-        CommunityTable.findOne({
-          $or: [{ name: body.name }, { googlePlaceId: body.googlePlaceId }],
-        }),
+        CommunityTable.findOne({ googlePlaceId: body.googlePlaceId }),
         UserCommunityTable.findOne({
           userId: user._id,
         }),
@@ -71,7 +69,7 @@ class CommunityController extends BaseController {
         UserTable.findOne({ _id: user._id }),
         CommunityTable.findOne({
           _id: query.communityId,
-        }).select("_id name type challenge"),
+        }).select("_id name challenge isStepFunctionScheduled"),
       ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       if (!communityIfExists)
@@ -87,7 +85,7 @@ class CommunityController extends BaseController {
         totalXPPoints,
         weeklyChallengeDate,
       } = await CommunityDBService.getCommunityLeaderboard(
-        communityIfExists._id,
+        communityIfExists,
         query,
         userIfExists._id
       );

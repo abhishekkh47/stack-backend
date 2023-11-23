@@ -11,6 +11,7 @@ import {
   CHALLENGE_TYPE,
   ANALYTICS_EVENTS,
   RALLY_COMMUNITY_REWARD,
+  RALLY_COMMUNITY_CHALLENGE_GOAL,
 } from "@app/utility/constants";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -64,6 +65,7 @@ class DripshopController extends BaseController {
         ctx,
         async (validate: boolean) => {
           if (validate) {
+            const today = new Date();
             if (
               userExistsInCommunity &&
               userExistsInCommunity.isClaimed ===
@@ -75,8 +77,9 @@ class DripshopController extends BaseController {
                   userExistsInCommunity.communityId
                 );
               if (
-                totalMembers.length >= 5 &&
-                totalMembers[0].challengeType === CHALLENGE_TYPE[0]
+                totalMembers.length >= RALLY_COMMUNITY_CHALLENGE_GOAL &&
+                totalMembers[0].challengeType === CHALLENGE_TYPE[0] &&
+                today <= new Date(totalMembers[0].community.challenge.endAt)
               ) {
                 isClaimed = true;
               }
@@ -134,7 +137,7 @@ class DripshopController extends BaseController {
         UserTable.findOne({ _id: user._id }),
         UserCommunityTable.findOne({
           userId: user._id,
-        }),
+        }).populate("communityId"),
       ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       if (!userExistsInCommunity)
