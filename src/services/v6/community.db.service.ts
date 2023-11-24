@@ -190,12 +190,10 @@ class CommunityDBService {
         },
       },
     ];
-    let userQuery = JSON.parse(JSON.stringify(aggregateQuery));
-    userQuery = userQuery.slice(1);
+    let userQuery: any = [...aggregateQuery];
     userQuery.push({
       $match: {
         _id: userId,
-        communityId: community._id,
       },
     });
     aggregateQuery.push(
