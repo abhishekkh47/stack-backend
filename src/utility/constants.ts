@@ -326,3 +326,5 @@ export const QUIZ_CATEGORIES_COLORS = [
     angle: 45,
   },
 ];
+
+export const STREAK_FREEZE_NAME = "Streak Freeze";

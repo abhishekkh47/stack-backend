@@ -1,5 +1,5 @@
 import BaseController from "@app/controllers/base";
-import { Route } from "@app/utility";
+import { Route, STREAK_FREEZE_NAME } from "@app/utility";
 import { Auth } from "@app/middleware";
 import { HttpMethod } from "@app/types";
 import { DripshopDBService } from "@app/services/v1/index";
@@ -13,8 +13,8 @@ class DripshopController extends BaseController {
   @Route({ path: "/dripshop-items", method: HttpMethod.GET })
   @Auth()
   public async getDripshopItems(ctx: any) {
-    const allData = await DripshopDBService.getDripshopData();
-
+    let allData = await DripshopDBService.getDripshopData();
+    allData = allData.filter((item) => item.name !== STREAK_FREEZE_NAME);
     return this.Ok(ctx, { data: allData });
   }
 }
