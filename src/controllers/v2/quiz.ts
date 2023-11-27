@@ -1,4 +1,4 @@
-import { Auth, NetworkError } from "@app/middleware";
+import { Auth } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -9,12 +9,11 @@ import {
 } from "@app/model";
 import { quizService } from "@app/services/v1/index";
 import { EUserType, HttpMethod } from "@app/types";
-import { QUIZ_LIMIT_REACHED_TEXT, Route } from "@app/utility";
+import { Route } from "@app/utility";
 import { validations } from "@app/validations/v2/apiValidation";
 import moment from "moment";
 import mongoose from "mongoose";
 import BaseController from "@app/controllers/base";
-import { QuizDBService } from "@app/services/v4";
 
 class QuizController extends BaseController {
   /**
@@ -138,25 +137,12 @@ class QuizController extends BaseController {
   @Auth()
   public getQuestionList(ctx: any) {
     const reqParam = ctx.request.body;
-    const { user, headers } = ctx.request;
+    const { user } = ctx.request;
     return validations.getUserQuizDataValidation(
       reqParam,
       ctx,
       async (validate) => {
         if (validate) {
-          let quizResultsData = await QuizResult.find({
-            userId: ctx.request.body.userId
-              ? ctx.request.body.userId
-              : user._id,
-            isOnBoardingQuiz: false,
-          });
-          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
-            quizResultsData,
-            ctx.request.body.userId ? ctx.request.body.userId : user._id
-          );
-          if (isQuizLimitReached) {
-            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
-          }
           const quizIds: any = [];
           const quizCheckCompleted = await QuizResult.find(
             {

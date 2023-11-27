@@ -1,6 +1,6 @@
 import moment from "moment";
 import mongoose from "mongoose";
-import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   ParentChildTable,
   QuizQuestionResult,
@@ -11,11 +11,10 @@ import {
 } from "@app/model";
 import { quizService, zohoCrmService } from "@app/services/v1";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
-import { QUIZ_LIMIT_REACHED_TEXT, Route } from "@app/utility";
+import { Route } from "@app/utility";
 import BaseController from "@app/controllers/base";
 import { validation } from "@app/validations/v1/apiValidation";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
-import { QuizDBService } from "@app/services/v4";
 
 class QuizController extends BaseController {
   /**
@@ -266,7 +265,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    const { user, headers } = ctx.request;
+    const { user } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -292,17 +291,6 @@ class QuizController extends BaseController {
               ctx,
               "You cannot submit the same quiz again"
             );
-          }
-          let quizResultsData = await QuizResult.find({
-            userId: user._id,
-            isOnBoardingQuiz: false,
-          });
-          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
-            quizResultsData,
-            user._id
-          );
-          if (isQuizLimitReached) {
-            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
           /**
            * Check question acutally exists in that quiz

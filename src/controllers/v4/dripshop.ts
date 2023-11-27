@@ -10,8 +10,8 @@ import { DripshopItemTable } from "@app/model";
 import { AnalyticsService } from "@app/services/v4";
 import {
   REFILL_HEARTS_ITEM_NAME,
-  STREAK_FREEZE_NAME,
   ANALYTICS_EVENTS,
+  STREAK_FREEZE_NAME,
 } from "@app/utility/constants";
 
 class DripshopController extends BaseController {
