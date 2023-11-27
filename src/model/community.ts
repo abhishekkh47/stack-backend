@@ -38,8 +38,9 @@ const schema = new mongoose.Schema<ICommunity>(
         default: 0,
       },
     },
-    isStepFunctionScheduled: {
+    isNextChallengeScheduled: {
       type: mongoose.Schema.Types.Boolean,
+      required: true,
       default: false,
     },
   },

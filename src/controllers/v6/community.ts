@@ -69,7 +69,7 @@ class CommunityController extends BaseController {
         UserTable.findOne({ _id: user._id }),
         CommunityTable.findOne({
           _id: query.communityId,
-        }).select("_id name challenge isStepFunctionScheduled"),
+        }).select("_id name challenge isNextChallengeScheduled"),
       ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       if (!communityIfExists)
@@ -102,6 +102,7 @@ class CommunityController extends BaseController {
         },
       });
     } catch (error) {
+      console.log(error.message);
       return this.BadRequest(ctx, "Something went wrong");
     }
   }

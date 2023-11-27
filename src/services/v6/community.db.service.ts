@@ -74,7 +74,7 @@ class CommunityDBService {
           { _id: community._id },
           {
             $set: {
-              isStepFunctionScheduled: true,
+              isNextChallengeScheduled: true,
               endAt: challengeEndDate.toISOString(),
             },
           }
@@ -214,7 +214,7 @@ class CommunityDBService {
     if (
       leaderBoardData.length > 0 &&
       leaderBoardData[0].total >= RALLY_COMMUNITY_CHALLENGE_GOAL &&
-      !community.isStepFunctionScheduled
+      !community.isNextChallengeScheduled
     ) {
       weeklyChallengeDate = this.getNextChallengeDate();
       if (
@@ -232,7 +232,7 @@ class CommunityDBService {
             { _id: community._id },
             {
               $set: {
-                isStepFunctionScheduled: true,
+                isNextChallengeScheduled: true,
               },
             }
           );

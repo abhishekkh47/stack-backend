@@ -123,7 +123,7 @@ class QuizDBService {
         );
       if (
         isGoalAchieved &&
-        !usersCommunityIfExists.communityId.isStepFunctionScheduled
+        !usersCommunityIfExists.communityId.isNextChallengeScheduled
       ) {
         const nextChallengeDate = CommunityDBService.getNextChallengeDate();
         const isScheduled = executeWeeklyChallengeStepFunction(
@@ -136,7 +136,7 @@ class QuizDBService {
             { _id: usersCommunityIfExists.communityId },
             {
               $set: {
-                isStepFunctionScheduled: true,
+                isNextChallengeScheduled: true,
               },
             }
           );
