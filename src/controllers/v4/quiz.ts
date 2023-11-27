@@ -1,4 +1,4 @@
-import { Auth, NetworkError, PrimeTrustJWT } from "@app/middleware";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   LeagueTable,
   ParentChildTable,
@@ -20,8 +20,6 @@ import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
 import {
   ANALYTICS_EVENTS,
   getQuizImageAspectRatio,
-  NEXT_LEAGUE_UNLOCK_IMAGE,
-  QUIZ_LIMIT_REACHED_TEXT,
   Route,
 } from "@app/utility";
 import moment from "moment";
@@ -132,7 +130,7 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-result", method: HttpMethod.POST })
   @Auth()
   public async getQuizInformation(ctx: any) {
-    const { user, headers } = ctx.request;
+    const { user } = ctx.request;
     const userIfExists = await UserTable.findOne({ _id: user._id });
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
@@ -249,7 +247,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public postCurrentQuizResult(ctx: any) {
     const reqParam = ctx.request.body;
-    const { user, headers } = ctx.request;
+    const { user } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -272,17 +270,6 @@ class QuizController extends BaseController {
               ctx,
               "You cannot submit the same quiz again"
             );
-          }
-          let quizResultsData = await QuizResult.find({
-            userId: user._id,
-            isOnBoardingQuiz: false,
-          });
-          const isQuizLimitReached = await QuizDBService.checkQuizLimitReached(
-            quizResultsData,
-            user._id
-          );
-          if (isQuizLimitReached) {
-            throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
           }
           /**
            * Check question acutally exists in that quiz
@@ -455,7 +442,7 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-result/me", method: HttpMethod.GET })
   @Auth()
   public async getQuizResultsInformation(ctx: any) {
-    const { user, headers } = ctx.request;
+    const { user } = ctx.request;
     const userIfExists = await UserTable.findOne({ _id: user._id });
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
@@ -816,9 +803,8 @@ class QuizController extends BaseController {
 
       quizResultsData = quizResultsData.filter((x) => x.stageId == null);
 
-      const [quizCategories, isQuizLimitReached, quizzes] = await Promise.all([
+      const [quizCategories, quizzes] = await Promise.all([
         QuizDBService.listQuizCategories(quizResultsData),
-        QuizDBService.checkQuizLimitReached(quizResultsData, userIfExists._id),
         // Give any 3 random quizzes if quiz not played
         quizResultsData.length === 0 ? QuizDBService.getRandomQuiz() : QuizDBService.getMostPlayedCategoryQuizzes(
           userIfExists._id
@@ -828,7 +814,6 @@ class QuizController extends BaseController {
         data: {
           categories: quizCategories,
           quizzes,
-          isQuizLimitReached,
         },
       });
     } catch (error) {

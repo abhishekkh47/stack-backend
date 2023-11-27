@@ -13,7 +13,6 @@ import { everyCorrectAnswerPoints } from "@app/types";
 import {
   ANALYTICS_EVENTS,
   MAX_STREAK_FREEZE,
-  QUIZ_LIMIT_REACHED_TEXT,
   QUIZ_TYPE,
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
@@ -35,21 +34,16 @@ class QuizDBService {
       userId: userIfExists._id,
       isOnBoardingQuiz: false,
     });
-    const isQuizLimitReached = await QuizDBServiceV4.checkQuizLimitReached(
-      quizResultsData,
-      userIfExists._id
-    );
-    if (isQuizLimitReached) {
-      throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
-    }
     let totalXPPoints = 0;
     /**
      * Check question acutally exists in that quiz
      */
-    if (quizExists.quizType === QUIZ_TYPE.NORMAL && solvedQuestions.length > 0) {
-
+    if (
+      quizExists.quizType === QUIZ_TYPE.NORMAL &&
+      solvedQuestions.length > 0
+    ) {
       const questionsIfExist = await QuizQuestionTable.find({
-        _id: { $in: solvedQuestions }
+        _id: { $in: solvedQuestions },
       });
 
       if (questionsIfExist.length < solvedQuestions.length) {
@@ -62,7 +56,7 @@ class QuizDBService {
         userId: userIfExists._id,
         quizQuestionId: que._id,
         pointsEarned: que.points,
-      }))
+      }));
 
       /**
        * Add Question Result and Quiz Result
