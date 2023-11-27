@@ -112,7 +112,8 @@ class CommunityDBService {
       59,
       59
     );
-    const offset = (parseInt(query.page) - 1) * LIST.limit;
+    const page = isNaN(parseInt(query?.page)) ? 1 : parseInt(query?.page);
+    const offset = (page - 1) * LIST.limit;
     const aggregateQuery: any = [
       {
         $match: {
@@ -198,7 +199,7 @@ class CommunityDBService {
     });
     aggregateQuery.push(
       {
-        $limit: query?.page ? LIST.limit * parseInt(query?.page) : 20,
+        $limit: page ? LIST.limit * page : LIST.limit,
       },
       { $skip: offset }
     );
