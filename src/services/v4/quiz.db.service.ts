@@ -1,6 +1,5 @@
 import { NetworkError } from "@app/middleware";
 import {
-  AdminTable,
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
@@ -16,7 +15,6 @@ import { EUserType, everyCorrectAnswerPoints } from "@app/types";
 import {
   ANALYTICS_EVENTS,
   getQuizBackgroundColor,
-  QUIZ_LIMIT_REACHED_TEXT,
   QUIZ_TYPE,
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
@@ -136,17 +134,6 @@ class QuizDBService {
     topicId: string,
     headers: object
   ) {
-    let quizResultsData = await QuizResult.find({
-      userId: userId,
-      isOnBoardingQuiz: false,
-    });
-    const isQuizLimitReached = await this.checkQuizLimitReached(
-      quizResultsData,
-      userId
-    );
-    if (isQuizLimitReached) {
-      throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
-    }
     const quizIds: any = [];
     const quizCheckCompleted = await QuizResult.find(
       {
@@ -191,23 +178,6 @@ class QuizDBService {
     headers: object,
     isCompleted: any = null
   ) {
-    const query = {
-      userId: userId,
-      isOnBoardingQuiz: false,
-    };
-    let quizResultsData = await QuizResult.find({
-      userId: userId,
-      isOnBoardingQuiz: false,
-    });
-    if (!isCompleted) {
-      const isQuizLimitReached = await this.checkQuizLimitReached(
-        quizResultsData,
-        userId
-      );
-      if (isQuizLimitReached) {
-        throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
-      }
-    }
     const quizQuestionList = await QuizQuestionTable.find({
       quizId: quizId,
     })
@@ -273,25 +243,16 @@ class QuizDBService {
     quizExists: any
   ) {
     const { solvedQuestions } = reqParam;
-    let quizResultsData = await QuizResult.find({
-      userId: userId,
-      isOnBoardingQuiz: false,
-    });
-    const isQuizLimitReached = await this.checkQuizLimitReached(
-      quizResultsData,
-      userId
-    );
-    if (isQuizLimitReached) {
-      throw new NetworkError(QUIZ_LIMIT_REACHED_TEXT, 400);
-    }
     let totalXPPoints = 0;
     /**
      * Check question acutally exists in that quiz
      */
-    if (quizExists.quizType === QUIZ_TYPE.NORMAL && solvedQuestions.length > 0) {
-
+    if (
+      quizExists.quizType === QUIZ_TYPE.NORMAL &&
+      solvedQuestions.length > 0
+    ) {
       const questionsIfExist = await QuizQuestionTable.find({
-        _id: { $in: solvedQuestions }
+        _id: { $in: solvedQuestions },
       });
 
       if (questionsIfExist.length < solvedQuestions.length) {
@@ -304,7 +265,7 @@ class QuizDBService {
         userId: userId,
         quizQuestionId: que._id,
         pointsEarned: que.points,
-      }))
+      }));
 
       /**
        * Add Question Result and Quiz Result
@@ -739,41 +700,6 @@ class QuizDBService {
     ]).exec();
     if (quizzes.length == 0) throw new NetworkError(`Quiz Not Found`, 400);
     return quizzes;
-  }
-
-  /**
-   * @description  Check Quiz Limit Reached
-   * @param quizResultsData
-   * @param userId
-   * @returns {boolean}
-   */
-  public async checkQuizLimitReached(quizResultsData: any, userId: string) {
-    const [admin, user] = await Promise.all([
-      AdminTable.findOne({}),
-      UserTable.findOne({ _id: userId }).select("_id isLaunchpadApproved")
-    ]);
-
-    let todaysQuizPlayed = [];
-    let isQuizLimitReached = false;
-    if (quizResultsData.length > 0) {
-      const todayStart = new Date().setUTCHours(0, 0, 0, 0);
-      const todayEnd = new Date().setUTCHours(23, 59, 59, 999);
-      todaysQuizPlayed = await QuizResult.find({
-        createdAt: {
-          $gte: todayStart,
-          $lte: todayEnd,
-        },
-        isOnBoardingQuiz: false,
-        userId: userId,
-      });
-      isQuizLimitReached =
-        todaysQuizPlayed.length >= admin.quizLimit
-          ? user.isLaunchpadApproved
-            ? false
-            : true
-          : false;
-    }
-    return isQuizLimitReached;
   }
 
   /**

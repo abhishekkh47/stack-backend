@@ -1,10 +1,9 @@
 import BaseController from "@app/controllers/base";
-import { Route } from "@app/utility";
+import { Route, STREAK_FREEZE_NAME } from "@app/utility";
 import { Auth } from "@app/middleware";
 import { HttpMethod } from "@app/types";
 import { UserTable } from "@app/model";
 import { DripshopDBService } from "@app/services/v1/index";
-import { STREAK_FREEZE_NAME } from "@app/utility/constants";
 
 class DripshopController extends BaseController {
   /**
