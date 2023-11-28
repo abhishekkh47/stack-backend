@@ -95,7 +95,6 @@ class UserDBService {
             referralSource: 1,
             lifeCount: 1,
             renewLifeAt: 1,
-            last5DaysStreak: "$streak.last5days",
           },
         },
       ]).exec()
@@ -153,7 +152,7 @@ class UserDBService {
             streakGoal: null,
           };
         }
-        const updatedStreak = await UserTable.findOneAndUpdate(
+        const updatedStreak: any = await UserTable.findOneAndUpdate(
           { _id: data._id },
           {
             $set: updateStreakQuery,
@@ -167,7 +166,7 @@ class UserDBService {
         data.streak.longest
       );
       const dayRange = UserDBServiceV4.get5DaysOfWeek(
-        currentDate,
+        data.streak.updatedDate,
         data.streak.last5days
       );
       data = { ...data, achievements, last5DaysWeek: dayRange };
