@@ -36,6 +36,7 @@ import { validationsV4 } from "@app/validations/v4/apiValidation";
 import BaseController from "@app/controllers/base";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
 import { UserService } from "@app/services/v3";
+import { UserDBService } from "@app/services/v6";
 import { BusinessProfileService } from "@app/services/v4";
 
 class AuthController extends BaseController {
@@ -574,7 +575,7 @@ class AuthController extends BaseController {
               userExists
             );
 
-            let { data: profileData } = await UserService.getProfile(
+            let { data: profileData } = await UserDBService.getProfile(
               userExists._id
             );
             const businessProfile =
