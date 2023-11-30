@@ -1,5 +1,10 @@
 import { NetworkError } from "@app/middleware/error.middleware";
-import { DripshopTable, UserCommunityTable, UserTable } from "@app/model";
+import {
+  DripshopTable,
+  UserCommunityTable,
+  UserTable,
+  DripshopItemTable,
+} from "@app/model";
 import { ObjectId } from "mongodb";
 import {
   convertDateToTimeZone,
@@ -10,6 +15,7 @@ import {
   MAX_STREAK_FREEZE,
   STREAK_FREEZE_FUEL,
   COMMUNITY_CHALLENGE_CLAIM_STATUS,
+  RALLY_COMMUNITY_REWARD,
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
 import { QuizDBService, CommunityDBService } from "../v6";
@@ -184,7 +190,7 @@ class UserDBService {
             streakGoal: null,
           };
         }
-        const updatedStreak = await UserTable.findOneAndUpdate(
+        const updatedStreak: any = await UserTable.findOneAndUpdate(
           { _id: data._id },
           {
             $set: updateStreakQuery,
@@ -198,7 +204,7 @@ class UserDBService {
         data.streak.longest
       );
       const dayRange = UserDBServiceV4.get5DaysOfWeek(
-        currentDate,
+        data.streak.updatedDate,
         data.streak.last5days
       );
       data = { ...data, achievements, last5DaysWeek: dayRange };
@@ -212,8 +218,11 @@ class UserDBService {
         };
       }
     }
+    const rallyCommunityReward = await DripshopItemTable.findOne({
+      name: RALLY_COMMUNITY_REWARD,
+    });
     let isQuizPlayedToday = await QuizDBService.checkQuizPlayedToday(data._id);
-    data = { ...data, isQuizPlayedToday };
+    data = { ...data, isQuizPlayedToday, rallyCommunityReward };
 
     /**
      * If user exists in community
