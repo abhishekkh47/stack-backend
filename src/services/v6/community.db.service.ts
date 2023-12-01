@@ -75,7 +75,7 @@ class CommunityDBService {
           {
             $set: {
               isNextChallengeScheduled: true,
-              endAt: challengeEndDate.toISOString(),
+              "challenge.endAt": challengeEndDate.toISOString(),
             },
           }
         );
@@ -229,11 +229,15 @@ class CommunityDBService {
           weeklyChallengeDate
         );
         if (isScheduled) {
+          weeklyChallengeDate = new Date(weeklyChallengeDate);
+          weeklyChallengeDate = new Date(weeklyChallengeDate.getTime() - 1000);
+          weeklyChallengeDate.setHours(23, 59, 59, 0);
           await CommunityTable.updateOne(
             { _id: community._id },
             {
               $set: {
                 isNextChallengeScheduled: true,
+                "challenge.endAt": weeklyChallengeDate.toISOString(),
               },
             }
           );

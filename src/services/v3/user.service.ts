@@ -10,6 +10,7 @@ import {
   UserTable,
   ParentChildTable,
   BusinessProfileTable,
+  UserCommunityTable,
 } from "@app/model";
 import {
   convertDateToTimeZone,
@@ -376,6 +377,7 @@ class UserService {
       await TransactionTable.deleteMany(otherRecordsQuery);
       await UserActivityTable.deleteMany(otherRecordsQuery);
       await BusinessProfileTable.deleteMany(otherRecordsQuery);
+      await UserCommunityTable.deleteMany(otherRecordsQuery);
       await UserTable.deleteMany(userQuery);
       await ParentChildTable.deleteMany(otherRecordsQuery);
       /**

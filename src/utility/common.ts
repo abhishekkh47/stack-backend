@@ -7,7 +7,7 @@ import aws from "aws-sdk";
 const stepFunctions = new aws.StepFunctions({
   accessKeyId: process.env.AWS_ACCESS_KEY,
   secretAccessKey: process.env.AWS_SECRET_KEY,
-  region: "us-west-2",
+  region: "us-east-1",
 });
 
 const getUid = new ShortUniqueId({ length: 7 });
