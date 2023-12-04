@@ -463,9 +463,8 @@ class CommunityDBService {
    */
   public async updateCommunityToLatestChallenge(communityDetails: any) {
     try {
-      const totalMembersInCommunity: any = this.getTotalMembersInCommunity(
-        communityDetails._id
-      );
+      const totalMembersInCommunity: any =
+        await this.getTotalMembersInCommunity(communityDetails._id);
       if (totalMembersInCommunity.length < RALLY_COMMUNITY_CHALLENGE_GOAL) {
         if (
           (communityDetails.challenge.type === CHALLENGE_TYPE[0] &&

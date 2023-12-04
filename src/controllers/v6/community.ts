@@ -102,7 +102,6 @@ class CommunityController extends BaseController {
         },
       });
     } catch (error) {
-      console.log(error.message);
       return this.BadRequest(ctx, "Something went wrong");
     }
   }
