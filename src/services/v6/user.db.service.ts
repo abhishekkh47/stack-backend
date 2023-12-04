@@ -166,7 +166,9 @@ class UserDBService {
         data.streak.longest
       );
       const dayRange = UserDBServiceV4.get5DaysOfWeek(
-        data.streak.updatedDate,
+        data.streak.updatedDate.day !== 0
+          ? data.streak.updatedDate
+          : currentDate,
         data.streak.last5days
       );
       data = { ...data, achievements, last5DaysWeek: dayRange };
