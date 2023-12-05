@@ -1,5 +1,6 @@
 import { NetworkError } from "@app/middleware";
 import { CommunityTable, UserCommunityTable, UserTable } from "@app/model";
+import config from "@app/config";
 import {
   CHALLENGE_TYPE,
   LIST,
@@ -501,15 +502,18 @@ class CommunityDBService {
    */
   public getNextChallengeDate() {
     try {
-      const todayDate = new Date();
+      let todayDate = new Date();      
       let daysUntilNextMonday = 1 - todayDate.getDay();
       if (daysUntilNextMonday <= 0) {
         daysUntilNextMonday += 7;
       }
-      const nextMonday = new Date(todayDate);
-      nextMonday.setHours(0, 0, 0, 0);
-      nextMonday.setDate(todayDate.getDate() + daysUntilNextMonday);
-      return nextMonday.toISOString();
+      if (config.APP_ENVIRONMENT == "STAGING") {
+        todayDate.setMinutes(todayDate.getMinutes() + 15);
+      } else {
+        todayDate.setHours(0, 0, 0, 0);
+        todayDate.setDate(todayDate.getDate() + daysUntilNextMonday);
+      }
+      return todayDate.toISOString();
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
     }
