@@ -54,6 +54,10 @@ export const PLAIDAPIS = {
   unlinkBankAccount: "/item/remove",
 };
 
+export const GOOGLEAPIS = {
+  placeApi: "https://maps.googleapis.com/maps/api/place/autocomplete/json",
+};
+
 export const GIFTCARDAPIS = {
   getAllGiftCards: (page, limit) => `api/giftcards?page=${page}&limit=${limit}`,
   countGiftCards: "api/giftcards/count",
@@ -330,3 +334,41 @@ export const QUIZ_CATEGORIES_COLORS = [
 export const MAX_STREAK_FREEZE = 2;
 export const STREAK_FREEZE_FUEL = 200;
 export const STREAK_FREEZE_NAME = "Streak Freeze";
+export const CHALLENGE_DURATION = 1; // 1 week
+export const CHALLENGE_XP_INITIAL_GOAL = 1000;
+export const CHALLENGE_XP_INCREMENT = 250;
+export const CHALLENGE_FUEL_INITIAL_REWARD = 50;
+export const CHALLENGE_FUEL_INCREMENT = 25;
+export const RALLY_COMMUNITY_CHALLENGE_GOAL = 5;
+export const CHALLENGE_TYPE = ["rally_community", "weekly_xp"];
+export const COMMUNITY_CHALLENGE_CLAIM_STATUS = {
+  PENDING: false,
+  CLAIMED: true,
+};
+export const RALLY_COMMUNITY_REWARD = "Inspire Pack";
+export const WEEKLY_CHALLENGE_REWARD_LIST = [
+  {
+    xpGoal: 1000,
+    fuel: 50,
+  },
+  {
+    xpGoal: 1250,
+    fuel: 75,
+  },
+  {
+    xpGoal: 1500,
+    fuel: 100,
+  },
+  {
+    xpGoal: 1750,
+    fuel: 150,
+  },
+  {
+    xpGoal: 2000,
+    fuel: 175,
+  },
+  {
+    xpGoal: 2250,
+    fuel: 200,
+  },
+];

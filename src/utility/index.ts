@@ -15,3 +15,4 @@ export * from "@utility/banks";
 export * from "@utility/gift-card";
 export * from "@utility/route";
 export * from "@utility/constants";
+export * from "@utility/googleapi";

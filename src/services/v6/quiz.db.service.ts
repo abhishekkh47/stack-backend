@@ -1,8 +1,10 @@
 import { NetworkError } from "@app/middleware";
 import {
+  CommunityTable,
   QuizQuestionResult,
   QuizQuestionTable,
   QuizResult,
+  UserCommunityTable,
   UserTable,
 } from "@app/model";
 import {
@@ -16,7 +18,9 @@ import {
   QUIZ_TYPE,
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
+  executeWeeklyChallengeStepFunction,
 } from "@app/utility";
+import { CommunityDBService } from "@app/services/v6";
 
 class QuizDBService {
   /**
@@ -90,6 +94,47 @@ class QuizDBService {
         ? correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ
         : XP_POINTS.SIMULATION_QUIZ;
     incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
+    /**
+     * If user is in community, please add xp accordingly for that community
+     */
+    let usersCommunityIfExists: any = await UserCommunityTable.findOne({
+      userId: userIfExists._id,
+    }).populate("communityId");
+    if (usersCommunityIfExists) {
+      await UserCommunityTable.findOneAndUpdate(
+        { _id: usersCommunityIfExists._id },
+        {
+          $inc: {
+            xpPoints: totalXPPoints,
+          },
+        }
+      );
+      const isGoalAchieved =
+        await CommunityDBService.checkCommunityGoalAchievedOrNot(
+          usersCommunityIfExists.communityId
+        );
+      if (
+        isGoalAchieved &&
+        !usersCommunityIfExists.communityId.isNextChallengeScheduled
+      ) {
+        const nextChallengeDate = CommunityDBService.getNextChallengeDate();
+        const isScheduled = executeWeeklyChallengeStepFunction(
+          `${usersCommunityIfExists.communityId.challenge.type} completed`,
+          usersCommunityIfExists.communityId,
+          nextChallengeDate
+        );
+        if (isScheduled) {
+          await CommunityTable.updateOne(
+            { _id: usersCommunityIfExists.communityId },
+            {
+              $set: {
+                isNextChallengeScheduled: true,
+              },
+            }
+          );
+        }
+      }
+    }
     let isGiftedStreakFreeze = false;
     const {
       streak: { freezeCount },

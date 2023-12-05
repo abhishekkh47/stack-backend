@@ -321,5 +321,11 @@
 	"updateTimezoneValidationTimezoneEmpty": "Please enter timezone.",
 	"updateTimezoneValidationTimezonePattern": "Please enter valid timezone.",
 	"quizReviewValidationRatingsOnly": "Please enter ratings.",
-	"quizReviewValidationFeedbackBase": "Please enter feedback."
+	"quizReviewValidationFeedbackBase": "Please enter feedback.",
+	"createCommunityValidationGoogleplaceidPattern": "Please enter a valid googlePlaceId",
+	"createCommunityValidationNamePattern": "Please enter a valid community name",
+	"createCommunityValidationNameRequired": "Please enter community name.",
+	"createCommunityValidationNameEmpty": "createCommunityValidationNameEmpty",
+	"createCommunityValidationGoogleplaceidRequired": "createCommunityValidationGoogleplaceidRequired",
+	"createCommunityValidationGoogleplaceidEmpty": "createCommunityValidationGoogleplaceidEmpty"
 }

@@ -242,4 +242,20 @@ export const validationsV4 = {
     }
     return callback(true);
   },
+  createCommunityValidation: (req, res, callback) => {
+    const schema = Joi.object({
+      name: Joi.string().required(),
+      googlePlaceId: Joi.string()
+        .regex(/^[A-Za-z0-9-_]+$/)
+        .required(),
+    });
+    const { error } = schema.validate(req);
+    if (error) {
+      return res.throw(
+        400,
+        res.__(validationMessageKey("createCommunityValidation", error))
+      );
+    }
+    return callback(true);
+  },
 };
