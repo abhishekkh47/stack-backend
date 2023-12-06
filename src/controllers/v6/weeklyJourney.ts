@@ -44,14 +44,6 @@ class WeeklyJourneyController extends BaseController {
     const { user, body } = ctx.request;
     const userIfExists = await UserTable.findOne({ _id: user._id });
     if (!userIfExists) return this.BadRequest(ctx, "User not found");
-    /*
-    * body = {
-        title: 'Business Idea',
-        description: 'randomText',
-        type: 'image'/'text'
-        }
-    */
-    // const response = await BusinessProfileTable.
   }
 }
 
