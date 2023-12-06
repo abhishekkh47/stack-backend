@@ -26,3 +26,4 @@ export * from "@app/types/stage";
 export * from "@app/types/business-profile";
 export * from "@app/types/streaks";
 export * from "@app/types/community";
+export * from "@app/types/weeklyJourney";

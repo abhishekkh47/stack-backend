@@ -155,4 +155,7 @@ export default {
   get WEEKLY_CHALLENGE_STATE_MACHINE_ARN() {
     return process.env.WEEKLY_CHALLENGE_STATE_MACHINE_ARN;
   },
+  get STORY_SHEET_GID() {
+    return process.env.STORY_SHEET_GID;
+  },  
 };

@@ -262,6 +262,7 @@ export const REFILL_INTERVAL = 4 * 3600 * 1000;
 export const QUIZ_TYPE = {
   NORMAL: 1,
   SIMULATION: 2,
+  STORY: 3,
 };
 
 export const SIMULATION_QUIZ_FUEL = 100;
