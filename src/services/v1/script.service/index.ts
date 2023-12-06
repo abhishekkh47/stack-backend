@@ -833,6 +833,182 @@ class ScriptService {
       throw new NetworkError("Something Went Wrong", 400);
     }
   }
+
+  /**
+   * @description This function is add simulations into db
+   * @param rows
+   * @param topic
+   * @param stages
+   */
+  public async convertStorySpreadSheetToJSON(
+    topicId: any,
+    storyNums: any,
+    rows: any,
+    allTopics: any
+  ) {
+    try {
+      rows = rows.filter((x) => storyNums.includes(x["Story #"]));
+      let storyTitle = "";
+      let storyImage = "";
+      let lastStoryCategory = "";
+      let lastStoryStage = "";
+      let order = 1;
+      let characterName = "";
+      let characterImage = "";
+      let categories = [];
+      let storyContentData = [];
+      let questionDataArray = [];
+      let filterCategory = [];
+      let questionData = null;
+      await Promise.all(
+        await rows.map(async (data, index) => {
+          if (data["Story Title"] != "") {
+            storyTitle = data["Story Title"].trimEnd();
+          }
+          if (data["Story Image"] != "") {
+            storyImage = data["Story Image"].trimEnd();
+          }
+          if (data["Category"] != "") {
+            lastStoryCategory = data["Category"].trimEnd();
+          }
+          if (data["Stage"] != "") {
+            lastStoryStage = data["Stage"].trimEnd();
+          }
+          if (!data["Character"]) {
+            characterName = null; //data["Character"].trimEnd();
+          }
+          if (!data["Character Image"]) {
+            characterImage = null; //data["Character Image"].trimEnd();
+          }
+          if (data["Story Title"] == "") {
+            ++order;
+          } else {
+            order = 1;
+          }
+          if (data["Prompt Type"].trimEnd() == "Description") {
+            questionData = {
+              text: data["Text"].trimEnd(),
+              question_image: null,
+              order: order,
+              points: 0,
+              question_type: null,
+              answer_type: null,
+              answer_array: null,
+              correctStatement: null,
+              incorrectStatement: null,
+            };
+          } else {
+            questionData = {
+              text: data["Text"].trimEnd(),
+              question_image: null,
+              order: order,
+              points: 20,
+              question_type: 2,
+              answer_type: 2,
+              answer_array: [
+                {
+                  name: data["A"].trimEnd(),
+                  image: data["Image A"].trimEnd(),
+                  correct_answer:
+                    data["correctAnswer"] == data["Response A"] ? 1 : 0,
+                  statement: null,
+                },
+                {
+                  name: data["B"].trimEnd(),
+                  image: data["Image B"].trimEnd(),
+                  correct_answer:
+                    data["correctAnswer"] == data["Response B"] ? 1 : 0,
+                  statement: null,
+                },
+                {
+                  name: data["C"].trimEnd(),
+                  image: data["Image C"].trimEnd(),
+                  correct_answer:
+                    data["correctAnswer"] == data["Response C"] ? 1 : 0,
+                  statement: null,
+                },
+                {
+                  name: data["D"].trimEnd(),
+                  image: data["Image D"].trimEnd(),
+                  correct_answer:
+                    data["correctAnswer"] == data["Response D"] ? 1 : 0,
+                  statement: null,
+                },
+              ],
+              correctStatement: data["Explanation"],
+              incorrectStatement: data["Explanation"],
+            };
+          }
+          questionDataArray.push(questionData);
+          if (
+            rows[index + 1] == undefined ||
+            rows[index + 1]["Story #"] !== data["Story #"]
+          ) {
+            if (lastStoryCategory) {
+              const isCategoryExists = allTopics.find(
+                (x) => x.topic == lastStoryCategory
+              );
+              if (!isCategoryExists) {
+                categories.push({
+                  topic: lastStoryCategory,
+                  image: null,
+                  status: 1,
+                  type: 2,
+                });
+                filterCategory.push({
+                  key: data["Story #"],
+                  value: lastStoryCategory,
+                });
+                topicId = null;
+              } else {
+                topicId = isCategoryExists._id;
+              }
+            }
+            let quizData = {
+              topicId: topicId,
+              quizNum: data["Story #"].trimEnd(),
+              quizName: storyTitle,
+              image: storyImage,
+              quizType: QUIZ_TYPE.STORY,
+              stageName: lastStoryStage,
+              characterName: characterName,
+              characterImage: characterImage,
+              tags: null,
+              questionData: questionDataArray,
+            };
+            storyContentData.push(quizData);
+            questionDataArray = [];
+          }
+        })
+      );
+      console.log("storyContentData : ", storyContentData)
+      if (categories.length > 0) {
+        categories = Array.from(
+          new Set(categories.map((item) => item.topic))
+        ).map((topic) => categories.find((item) => item.topic === topic));
+        const createdCategories = await QuizTopicTable.insertMany(categories);
+        storyContentData.map((quizData) => {
+          if (quizData.topicId == null) {
+            const checkIfCategoryMatched = filterCategory.find(
+              (x) => x.key == quizData.quizNum
+            );
+            if (checkIfCategoryMatched) {
+              const filteredCategory = createdCategories.find(
+                (x) => x.topic == checkIfCategoryMatched.value
+              );
+              if (filteredCategory) {
+                quizData.topicId = filteredCategory._id;
+              }
+            }
+          }
+        });
+      }
+      return storyContentData;
+    } catch (error) {
+      console.log("ERROR in convertStorySpreadSheetToJSON : "+error);
+      throw new NetworkError("Something Went Wrong", 400);
+    }
+  }
 }
 
 export default new ScriptService();
