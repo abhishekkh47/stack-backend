@@ -140,6 +140,7 @@ class CommunityController extends BaseController {
               name: item.structured_formatting.main_text,
               placeId: item.place_id,
               address: item.structured_formatting.secondary_text,
+              state: item.terms[item.terms.length -2].value
             };
           })
         );
