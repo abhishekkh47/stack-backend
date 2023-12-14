@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 import type { IWeeklyJourneyResults, MongooseModel } from "@app/types";
 
-export type IWeeklyJourneyResultsSchema = MongooseModel<IWeeklyJourneyResults> & mongoose.Document;
+export type IWeeklyJourneyResultsSchema = MongooseModel<IWeeklyJourneyResults> &
+  mongoose.Document;
 const schema = new mongoose.Schema<IWeeklyJourneyResults>(
   {
     weeklyJourneyId: {
@@ -10,8 +11,9 @@ const schema = new mongoose.Schema<IWeeklyJourneyResults>(
       required: true,
     },
     userId: {
-      type: mongoose.Schema.Types.Number,
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
+      ref: "user",
     },
     actionNum: {
       type: mongoose.Schema.Types.Number,
@@ -19,9 +21,12 @@ const schema = new mongoose.Schema<IWeeklyJourneyResults>(
     },
     actionInput: {
       type: mongoose.Schema.Types.String,
-        default: 0,
+      default: null,
     },
   },
   { timestamps: true }
 );
-export const WeeklyJourneyResultsTable = mongoose.model<IWeeklyJourneyResults>("weekly_journey_results", schema);
+export const WeeklyJourneyResultsTable = mongoose.model<IWeeklyJourneyResults>(
+  "weekly_journey_results",
+  schema
+);

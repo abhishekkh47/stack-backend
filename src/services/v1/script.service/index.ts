@@ -11,6 +11,7 @@ import {
   QuizTopicTable,
   StageTable,
   UserTable,
+  WeeklyJourneyTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -875,10 +876,10 @@ class ScriptService {
             lastStoryStage = data["Stage"].trimEnd();
           }
           if (!data["Character"]) {
-            characterName = null; //data["Character"].trimEnd();
+            characterName = null;
           }
           if (!data["Character Image"]) {
-            characterImage = null; //data["Character Image"].trimEnd();
+            characterImage = null;
           }
           if (data["Story Title"] == "") {
             ++order;
@@ -891,7 +892,7 @@ class ScriptService {
               question_image: null,
               order: order,
               points: 0,
-              question_type: null,
+              question_type: 4,
               answer_type: null,
               answer_array: null,
               correctStatement: null,
@@ -909,29 +910,25 @@ class ScriptService {
                 {
                   name: data["A"].trimEnd(),
                   image: data["Image A"].trimEnd(),
-                  correct_answer:
-                    data["correctAnswer"] == data["Response A"] ? 1 : 0,
+                  correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["B"].trimEnd(),
                   image: data["Image B"].trimEnd(),
-                  correct_answer:
-                    data["correctAnswer"] == data["Response B"] ? 1 : 0,
+                  correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["C"].trimEnd(),
                   image: data["Image C"].trimEnd(),
-                  correct_answer:
-                    data["correctAnswer"] == data["Response C"] ? 1 : 0,
+                  correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["D"].trimEnd(),
                   image: data["Image D"].trimEnd(),
-                  correct_answer:
-                    data["correctAnswer"] == data["Response D"] ? 1 : 0,
+                  correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
                   statement: null,
                 },
               ],
@@ -981,7 +978,7 @@ class ScriptService {
           }
         })
       );
-      console.log("storyContentData : ", storyContentData)
+
       if (categories.length > 0) {
         categories = Array.from(
           new Set(categories.map((item) => item.topic))
@@ -1005,8 +1002,92 @@ class ScriptService {
       }
       return storyContentData;
     } catch (error) {
-      console.log("ERROR in convertStorySpreadSheetToJSON : "+error);
       throw new NetworkError("Something Went Wrong", 400);
+    }
+  }
+
+  /**
+   * @description This function process the weekly challenges
+   * @param weeklyChallenges
+   * @returns {array}
+   */
+  public async processWeeklyChallenges(weeklyChallenges: any) {
+    const processedChallenges = [];
+
+    weeklyChallenges.forEach((week) => {
+      const {
+        week: weekNum,
+        title,
+        dailyChallenges,
+        rewardType,
+        reward,
+      } = week;
+
+      dailyChallenges.forEach((day) => {
+        const { day: dayNum, actions } = day;
+        const processedDay = {
+          week: weekNum,
+          title,
+          day: dayNum,
+          actions,
+          rewardType: null,
+          reward: null,
+        };
+        processedChallenges.push(processedDay);
+      });
+
+      const extraDay = {
+        week: weekNum,
+        title,
+        day: 7,
+        actions: null,
+        rewardType,
+        reward,
+      };
+      processedChallenges.push(extraDay);
+    });
+
+    return processedChallenges;
+  }
+
+  /**
+   * @description This function is add simulations into db
+   * @param dailyChallenges
+   */
+  public async addweeklyDataToDB(dailyChallenges: any) {
+    try {
+      let dailyChallengesData = [];
+      await Promise.all(
+        dailyChallenges.map(async (data: any) => {
+          const weekNum = isNaN(parseInt(data.week))
+            ? null
+            : parseInt(data.week);
+          const dayNum = isNaN(parseInt(data.week)) ? null : parseInt(data.day);
+          if (!weekNum || !dayNum) return false;
+
+          let bulkWriteObject = {
+            updateOne: {
+              filter: { week: data.week, day: data.day },
+              update: {
+                $set: {
+                  ...data,
+                  week: data.week,
+                  day: data.day,
+                },
+              },
+              upsert: true,
+            },
+          };
+          dailyChallengesData.push(bulkWriteObject);
+        })
+      );
+
+      const weeklyChallenges = await WeeklyJourneyTable.bulkWrite(
+        dailyChallengesData
+      );
+      return true;
+    } catch (err) {
+      return false;
     }
   }
 }

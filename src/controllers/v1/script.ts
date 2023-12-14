@@ -1780,17 +1780,15 @@ class ScriptController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/import-stories", method: HttpMethod.POST })
-  // @InternalUserAuth()
+  @InternalUserAuth()
   public async storeStories(ctx: any) {
     try {
       const { storyNums } = ctx.request.body;
       if (storyNums.length === 0) {
         return this.BadRequest(ctx, "Please enter input story numbers");
       }
-      const rows = await ScriptService.readSpreadSheet(
-        envData.STORY_SHEET_GID
-      );
-      let allStories = await QuizTopicTable.find({ type: 2, status: 1 }).select(    // allTopics
+      const rows = await ScriptService.readSpreadSheet(envData.STORY_SHEET_GID);
+      let allStories = await QuizTopicTable.find({ type: 2, status: 1 }).select(
         "_id topic"
       );
       const hasStagesTopic = await QuizTopicTable.findOne({ hasStages: true });
@@ -1808,11 +1806,38 @@ class ScriptController extends BaseController {
         storiesContentData
       );
       if (!isAddedToDb) {
-        return this.BadRequest(ctx, "Something Went Wrong DB : "+isAddedToDb);
+        return this.BadRequest(ctx, "Something Went Wrong");
       }
       return this.Ok(ctx, { message: "Success", data: true });
     } catch (error) {
-      return this.BadRequest(ctx, "Something Went Wrong : "+error);
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to import simulations
+   * @param ctx
+   */
+  @Route({ path: "/import-weekly-challenges", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeWeeklyChallenges(ctx: any) {
+    try {
+      const { weeklyChallenges } = ctx.request.body;
+      if (!weeklyChallenges) {
+        return this.BadRequest(ctx, "Please provide weekly challenges");
+      }
+      const dailyChallenges = await ScriptService.processWeeklyChallenges(
+        weeklyChallenges
+      );
+      const isAddedToDb = await ScriptService.addweeklyDataToDB(
+        dailyChallenges
+      );
+      if (!isAddedToDb) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: true });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
 }

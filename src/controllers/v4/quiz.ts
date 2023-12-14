@@ -17,11 +17,7 @@ import {
   UserDBService,
 } from "@app/services/v4";
 import { everyCorrectAnswerPoints, HttpMethod, EUserType } from "@app/types";
-import {
-  ANALYTICS_EVENTS,
-  getQuizImageAspectRatio,
-  Route,
-} from "@app/utility";
+import { ANALYTICS_EVENTS, getQuizImageAspectRatio, Route } from "@app/utility";
 import moment from "moment";
 import mongoose from "mongoose";
 import BaseController from "@app/controllers/base";
@@ -516,14 +512,15 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] = await Promise.all([
-            LeagueTable.find({})
-              .select("_id name image minPoint maxPoint colorCode")
-              .sort({ minPoint: 1 }),
-            UserTable.findOne({ _id: user._id }).populate("streakGoal"),
-            QuizTable.findOne({ _id: reqParam.quizId }),
-            QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
-          ]);
+          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] =
+            await Promise.all([
+              LeagueTable.find({})
+                .select("_id name image minPoint maxPoint colorCode")
+                .sort({ minPoint: 1 }),
+              UserTable.findOne({ _id: user._id }).populate("streakGoal"),
+              QuizTable.findOne({ _id: reqParam.quizId }),
+              QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
+            ]);
 
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
@@ -549,11 +546,18 @@ class QuizController extends BaseController {
           const [
             { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked },
             streaksDetails,
-            quizRecommendations
+            quizRecommendations,
           ] = await Promise.all([
-            LeagueService.getUpdatedLeagueDetailsOfUser(userIfExists, leagues, updatedXPPoints),
+            LeagueService.getUpdatedLeagueDetailsOfUser(
+              userIfExists,
+              leagues,
+              updatedXPPoints
+            ),
             UserDBService.addStreaks(userIfExists),
-            QuizDBService.getQuizRecommendations(userIfExists._id, quizIfExists.topicId.toString())
+            QuizDBService.getQuizRecommendations(
+              userIfExists._id,
+              quizIfExists.topicId.toString()
+            ),
           ]);
 
           (async () => {
@@ -806,10 +810,10 @@ class QuizController extends BaseController {
       const [quizCategories, quizzes] = await Promise.all([
         QuizDBService.listQuizCategories(quizResultsData),
         // Give any 3 random quizzes if quiz not played
-        quizResultsData.length === 0 ? QuizDBService.getRandomQuiz() : QuizDBService.getMostPlayedCategoryQuizzes(
-          userIfExists._id
-        )
-      ])
+        quizResultsData.length === 0
+          ? QuizDBService.getRandomQuiz()
+          : QuizDBService.getMostPlayedCategoryQuizzes(userIfExists._id),
+      ]);
       return this.Ok(ctx, {
         data: {
           categories: quizCategories,
