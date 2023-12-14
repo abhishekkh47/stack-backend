@@ -14,8 +14,9 @@ class TwilioService {
   sendSMS(phoneNo: string, message: string) {
     return new Promise((resolve, reject) => {
       const client = require("twilio")(
-        config.TWILIO_ACCOUNT_SID,
-        config.TWILIO_AUTH_TOKEN
+        config.TWILIO_API_KEY,
+        config.TWILIO_API_SECRET,
+        { accountSid: config.TWILIO_ACCOUNT_SID }
       );
       client.messages
         .create({
