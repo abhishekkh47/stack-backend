@@ -1024,11 +1024,12 @@ class ScriptService {
       } = week;
 
       dailyChallenges.forEach((day) => {
-        const { day: dayNum, actions } = day;
+        const { day: dayNum, actions, dailyGoal } = day;
         const processedDay = {
           week: weekNum,
           title,
           day: dayNum,
+          dailyGoal,
           actions,
           rewardType: null,
           reward: null,
@@ -1040,6 +1041,7 @@ class ScriptService {
         week: weekNum,
         title,
         day: 7,
+        dailyGoal: null,
         actions: null,
         rewardType,
         reward,

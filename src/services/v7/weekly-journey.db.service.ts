@@ -1,6 +1,6 @@
 import { NetworkError } from "@app/middleware";
 import {
-  WeeklyJourneyResultsTable,
+  WeeklyJourneyResultTable,
   QuizTable,
   DripshopItemTable,
   QuizResult,
@@ -25,7 +25,7 @@ class WeeklyJourneyDBService {
         upcomingChallenge = JSON.parse(JSON.stringify(upcomingChallenge));
         Object.assign(upcomingChallenge[0].weeklyJourney, { actionNum: 1 });
       } else {
-        let userJourney = await WeeklyJourneyResultsTable.aggregate([
+        let userJourney = await WeeklyJourneyResultTable.aggregate([
           {
             $match: {
               userId: userProgress[0].userId,
@@ -52,6 +52,7 @@ class WeeklyJourneyDBService {
               "weeklyJourney.title": 1,
               "weeklyJourney.week": 1,
               "weeklyJourney.day": 1,
+              "weeklyJourney.dailyGoal": 1,
               "weeklyJourney.actions": 1,
               "weeklyJourney.rewardType": 1,
               "weeklyJourney.reward": 1,
@@ -60,20 +61,21 @@ class WeeklyJourneyDBService {
         ]).exec();
 
         upcomingChallenge = [...userJourney];
+        const currentWeeklyJourney = userJourney[0].weeklyJourney;
         if (
-          userJourney[0].weeklyJourney?.actionNum <
-          userJourney[0].weeklyJourney?.actions?.length
+          currentWeeklyJourney?.actionNum <
+          currentWeeklyJourney?.actions?.length
         ) {
           upcomingChallenge = userJourney;
           upcomingChallenge[0].weeklyJourney.actionNum =
             upcomingChallenge[0].weeklyJourney.actionNum + 1;
         } else {
-          if (userJourney[0].weeklyJourney.day < 7) {
+          if (currentWeeklyJourney.day < 7) {
             upcomingChallenge[0].weeklyJourney = weeklyJourneyDetails.filter(
               (dailyChallenge) => {
                 return (
-                  dailyChallenge.week == userJourney[0].weeklyJourney.week &&
-                  dailyChallenge.day == userJourney[0].weeklyJourney.day + 1
+                  dailyChallenge.week == currentWeeklyJourney.week &&
+                  dailyChallenge.day == currentWeeklyJourney.day + 1
                 );
               }
             )[0];
@@ -83,8 +85,7 @@ class WeeklyJourneyDBService {
             upcomingChallenge[0].weeklyJourney = weeklyJourneyDetails.filter(
               (dailyChallenge) => {
                 return (
-                  dailyChallenge.week ==
-                    userJourney[0].weeklyJourney.week + 1 &&
+                  dailyChallenge.week == currentWeeklyJourney.week + 1 &&
                   dailyChallenge.day == 1
                 );
               }
@@ -98,41 +99,37 @@ class WeeklyJourneyDBService {
       let upcomingQuizId = null;
       let upcomingQuizDetails = null;
       let upcomingWeek = upcomingChallenge[0].weeklyJourney;
-      let rewardDetails = null;
       let upcomingActionNum = upcomingChallenge[0].weeklyJourney.actionNum - 1;
 
       if (upcomingWeek.actions != null) {
         let correctAction = false;
         upcomingQuizId = upcomingWeek.actions[upcomingActionNum].quizId;
-        correctAction = await this.getAction(upcomingQuizId);
+        correctAction = await this.getAction(userId, upcomingQuizId);
         while (correctAction == true) {
           upcomingActionNum = upcomingActionNum + 1;
           upcomingQuizId = upcomingWeek.actions[upcomingActionNum].quizId;
-          correctAction = await this.getAction(upcomingQuizId);
+          correctAction = await this.getAction(userId, upcomingQuizId);
         }
         upcomingQuizDetails = await QuizTable.find({
           _id: upcomingQuizId,
-        })
-          .select("quizName quizType topicId ")
-          .populate("topicId", "topic");
-        upcomingChallenge[0].weeklyJourney.actions[
-          upcomingActionNum
-        ].quizDetails = upcomingQuizDetails;
+        }).select("quizName quizType topicId ");
+        upcomingWeek.actions[upcomingActionNum].quizDetails =
+          upcomingQuizDetails[0];
       } else {
-        rewardDetails = await DripshopItemTable.find({
+        const rewardDetails = await DripshopItemTable.find({
           _id: upcomingWeek.reward,
         }).select("name image description");
-        upcomingChallenge[0].weeklyJourney.rewardDetails = rewardDetails;
+        upcomingWeek.rewardDetails = rewardDetails[0];
       }
-      upcomingChallenge[0].weeklyJourney.actionNum = upcomingActionNum + 1;
+      upcomingWeek.actionNum = upcomingActionNum + 1;
       return upcomingChallenge[0];
     } catch (err) {
-      console.log("ERROR : ", err);
+      throw new NetworkError("Quiz Not Found", 400);
     }
   }
 
-  public async getAction(quizId: any) {
-    const res = await QuizResult.find({ quizId });
+  public async getAction(userId: any, quizId: any) {
+    const res = await QuizResult.find({ userId, quizId });
     return res.length > 0 ? true : false;
   }
 }

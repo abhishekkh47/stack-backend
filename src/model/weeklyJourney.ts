@@ -18,6 +18,10 @@ const schema = new mongoose.Schema<IWeeklyJourney>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
+    dailyGoal: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
     actions: {
       actionNum: {
         type: mongoose.Schema.Types.Number,
@@ -28,7 +32,7 @@ const schema = new mongoose.Schema<IWeeklyJourney>(
        */
       type: {
         type: mongoose.Schema.Types.Number,
-        default: 0,
+        default: 1,
       },
       quizId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -37,7 +41,11 @@ const schema = new mongoose.Schema<IWeeklyJourney>(
       },
       taskName: {
         type: mongoose.Schema.Types.String,
-        default: 0,
+        default: null,
+      },
+      key: {
+        type: mongoose.Schema.Types.String,
+        default: null,
       },
       actionInput: {
         type: mongoose.Schema.Types.String,
@@ -52,14 +60,12 @@ const schema = new mongoose.Schema<IWeeklyJourney>(
      * 1 - dripshopid and 2 - fuels
      */
     rewardType: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
+      type: mongoose.Schema.Types.Number,
+      default: 0,
     },
     reward: {
       type: mongoose.Schema.Types.Mixed,
-      required: true,
-      default: false,
+      default: null,
     },
   },
   { timestamps: true }

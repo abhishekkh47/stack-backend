@@ -16,4 +16,10 @@ export interface IBusinessProfile {
   impacts: mongoose.Schema.Types.ObjectId;
   passions: mongoose.Types.ObjectId[];
   description: string;
+  businessLogo: string;
+  businessName: string;
+  competitors: string;
+  keyDifferentiators: string;
+  targetAudience: string;
+  coreStrategy: string;
 }

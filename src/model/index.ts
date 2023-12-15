@@ -38,4 +38,4 @@ export * from "@model/streakGoals";
 export * from "@model/community";
 export * from "@app/model/userCommunity";
 export * from "@app/model/weeklyJourney";
-export * from "@app/model/weeklyJourneyResults";
+export * from "@app/model/weeklyJourneyResult";

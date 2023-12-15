@@ -1,12 +1,10 @@
 import BaseController from "@app/controllers/base";
 import { Auth } from "@app/middleware";
 import { UserTable } from "@app/model";
-import { WeeklyJourneyTable, WeeklyJourneyResultsTable } from "@app/model";
+import { WeeklyJourneyTable, WeeklyJourneyResultTable } from "@app/model";
 import { WeeklyJourneyDBService } from "@app/services/v7";
 import { HttpMethod } from "@app/types";
-import { Route, searchSchools } from "@app/utility";
-import { BusinessProfileService } from "@app/services/v4";
-import { validationsV4 } from "@app/validations/v4/apiValidation";
+import { Route } from "@app/utility";
 
 class WeeklyJourneyController extends BaseController {
   /**
@@ -22,8 +20,8 @@ class WeeklyJourneyController extends BaseController {
         UserTable.findOne({ _id: user._id }),
         WeeklyJourneyTable.find({})
           .sort({ week: 1, day: 1 })
-          .select("_id day week actions reward rewardType title"),
-        WeeklyJourneyResultsTable.find({ userId: user._id }).sort({
+          .select("_id day week dailyGoal actions reward rewardType title"),
+        WeeklyJourneyResultTable.find({ userId: user._id }).sort({
           createdAt: -1,
         }),
       ]);
