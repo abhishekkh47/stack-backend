@@ -7,7 +7,7 @@ Joi = Joi.defaults((schema) =>
 
 import { validationMessageKey } from "@app/utility";
 export const validationsV7 = {
-  businessProfileValidation: (req, res, callback) => {
+  businessJourneyProfileValidation: (req, res, callback) => {
     const schema = Joi.object({
       key: Joi.string().min(2).max(280).required(),
       value: Joi.string().min(2).max(280).required(),

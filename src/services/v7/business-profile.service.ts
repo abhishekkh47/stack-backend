@@ -1,4 +1,9 @@
-import { BusinessProfileTable, ImpactTable, PassionTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  ImpactTable,
+  PassionTable,
+  WeeklyJourneyResultTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
 
@@ -22,6 +27,16 @@ class BusinessProfileService {
         },
         { upsert: true }
       );
+
+      if (data.weeklyJourneyId) {
+        const dataToCreate = {
+          weeklyJourneyId: data.weeklyJourneyId,
+          actionNum: data.actionNum,
+          userId: userId,
+          actionInput: data.key,
+        };
+        await WeeklyJourneyResultTable.create(dataToCreate);
+      }
       return true;
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
@@ -53,41 +68,77 @@ class BusinessProfileService {
         },
       },
       {
-        $project: {
-          _id: "$_id",
-          userId: "$userId",
-          businessPlans: [
+        $addFields: {
+          allBusinessPlans: [
             {
               key: "description",
               type: "text",
               value: "$description",
+              sectionTitle: "Business Description",
+              sheetTitle: "Add your business decription",
             },
             {
               key: "businessLogo",
               type: "image",
               value: "$businessLogo",
+              sectionTitle: "Busines Logo",
+              sheetTitle: "Upload your business logo",
             },
             {
               key: "businessName",
               type: "text",
               value: "$businessName",
+              sectionTitle: "Business Name",
+              sheetTitle: "Add your business name",
             },
             {
               key: "competitors",
               type: "text",
               value: "$competitors",
+              sectionTitle: "Core Competitors",
+              sheetTitle: "Add your core competitors",
             },
             {
               key: "keyDifferentiators",
               type: "text",
               value: "$keyDifferentiators",
+              sectionTitle: "Key Differentiators",
+              sheetTitle: "Add your key differentiators",
             },
             {
               key: "targetAudience",
               type: "text",
               value: "$targetAudience",
+              sectionTitle: "Target Audience",
+              sheetTitle: "Add your target audience",
             },
           ],
+        },
+      },
+      {
+        $addFields: {
+          filteredBusinessPlans: {
+            $filter: {
+              input: "$allBusinessPlans",
+              as: "plan",
+              cond: {
+                $and: [
+                  { $ne: ["$$plan.value", undefined] },
+                  { $ne: ["$$plan.value", null] },
+                  { $ne: [{ $type: "$$plan.value" }, "missing"] },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: "$_id",
+          userId: "$userId",
+          impacts: 1,
+          passions: 1,
+          businessPlans: "$filteredBusinessPlans",
         },
       },
     ]).exec();

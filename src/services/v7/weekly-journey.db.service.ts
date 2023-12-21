@@ -5,6 +5,9 @@ import {
   DripshopItemTable,
   QuizResult,
 } from "@app/model";
+import { QUIZ_TYPE, SIMULATION_QUIZ_FUEL, XP_POINTS } from "@app/utility";
+import { everyCorrectAnswerPoints } from "@app/types";
+import { ObjectId } from "mongodb";
 class WeeklyJourneyDBService {
   /**
    * @description create new community
@@ -31,6 +34,12 @@ class WeeklyJourneyDBService {
               userId: userProgress[0].userId,
             },
           },
+          {
+            $sort: {
+              createdAt: -1,
+            },
+          },
+          { $limit: 1 },
           {
             $lookup: {
               from: "weekly_journeys",
@@ -70,7 +79,7 @@ class WeeklyJourneyDBService {
           upcomingChallenge[0].weeklyJourney.actionNum =
             upcomingChallenge[0].weeklyJourney.actionNum + 1;
         } else {
-          if (currentWeeklyJourney.day < 7) {
+          if (currentWeeklyJourney.day < 6) {
             upcomingChallenge[0].weeklyJourney = weeklyJourneyDetails.filter(
               (dailyChallenge) => {
                 return (
@@ -97,7 +106,6 @@ class WeeklyJourneyDBService {
       }
 
       let upcomingQuizId = null;
-      let upcomingQuizDetails = null;
       let upcomingWeek = upcomingChallenge[0].weeklyJourney;
       let upcomingActionNum = upcomingChallenge[0].weeklyJourney.actionNum - 1;
 
@@ -110,27 +118,149 @@ class WeeklyJourneyDBService {
           upcomingQuizId = upcomingWeek.actions[upcomingActionNum].quizId;
           correctAction = await this.getAction(userId, upcomingQuizId);
         }
-        upcomingQuizDetails = await QuizTable.find({
-          _id: upcomingQuizId,
-        }).select("quizName quizType topicId ");
-        upcomingWeek.actions[upcomingActionNum].quizDetails =
-          upcomingQuizDetails[0];
-      } else {
-        const rewardDetails = await DripshopItemTable.find({
-          _id: upcomingWeek.reward,
-        }).select("name image description");
-        upcomingWeek.rewardDetails = rewardDetails[0];
+
+        const newData = await QuizTable.aggregate([
+          {
+            $match: {
+              _id: new ObjectId(upcomingQuizId),
+            },
+          },
+          {
+            $lookup: {
+              from: "quizquestions",
+              localField: "_id",
+              foreignField: "quizId",
+              as: "quizQuestions",
+            },
+          },
+          {
+            $lookup: {
+              from: "quiztopics",
+              localField: "topicId",
+              foreignField: "_id",
+              as: "quizTopics",
+            },
+          },
+          {
+            $addFields: {
+              quizQuestionsFiltered: {
+                $filter: {
+                  input: "$quizQuestions",
+                  as: "question",
+                  cond: {
+                    $and: [
+                      {
+                        $eq: ["$$question.question_type", 2],
+                      },
+                      {
+                        $eq: ["$quizType", 3],
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+          {
+            $addFields: {
+              quizQuestionsLength: { $size: "$quizQuestionsFiltered" },
+            },
+          },
+          {
+            $addFields: {
+              isUnlocked: false,
+              xpPoints: XP_POINTS.COMPLETED_QUIZ,
+              fuelCount: {
+                $cond: {
+                  if: { $eq: ["quizType", QUIZ_TYPE.SIMULATION] },
+                  then: SIMULATION_QUIZ_FUEL,
+                  else: {
+                    $cond: {
+                      if: { $eq: ["quizType", QUIZ_TYPE.STORY] },
+                      then: {
+                        $multiply: [
+                          everyCorrectAnswerPoints,
+                          "$quizQuestionsLength",
+                        ],
+                      },
+                      else: {
+                        $multiply: [
+                          everyCorrectAnswerPoints,
+                          { $size: "$quizQuestions" },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              _id: upcomingQuizId,
+              name: "$quizName",
+              image: 1,
+              topicId: 1,
+              stageId: 1,
+              isCompleted: 1,
+              xpPoints: 1,
+              fuelCount: 1,
+              quizType: 1,
+              isUnlocked: 1,
+              characterName: 1,
+              characterImage: 1,
+              topicName: { $arrayElemAt: ["$quizTopics.topic", 0] },
+            },
+          },
+        ]);
+
+        upcomingWeek.actions[upcomingActionNum].quizDetails = newData[0];
       }
       upcomingWeek.actionNum = upcomingActionNum + 1;
       return upcomingChallenge[0];
     } catch (err) {
-      throw new NetworkError("Quiz Not Found", 400);
+      throw new NetworkError("Daily Challenge Not Found ", 400);
     }
   }
 
   public async getAction(userId: any, quizId: any) {
     const res = await QuizResult.find({ userId, quizId });
     return res.length > 0 ? true : false;
+  }
+  public async getWeekDetails(
+    weeklyJourneyDetails: any,
+    userNextChallenge: any
+  ) {
+    try {
+      const groupedByWeek = weeklyJourneyDetails.reduce((acc, item) => {
+        const week = item.week;
+        if (
+          !acc[week] &&
+          item.day == 7 &&
+          userNextChallenge.weeklyJourney.week > week
+        ) {
+          acc[week] = {
+            id: item._id,
+            week,
+            title: item.title,
+            reward: item.reward,
+          };
+        } else if (!acc[week] && item.day == 7) {
+          acc[week] = {
+            id: item._id,
+            week,
+            title: item.title,
+          };
+        }
+        return acc;
+      }, {});
+
+      // Create an array of weeks
+      const arrayOfWeeks = Object.values(groupedByWeek);
+      return arrayOfWeeks;
+    } catch (err) {
+      throw new NetworkError("Quiz Not Found", 400);
+    }
   }
 }
 export default new WeeklyJourneyDBService();

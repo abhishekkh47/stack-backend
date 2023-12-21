@@ -867,7 +867,7 @@ class ScriptService {
             storyTitle = data["Story Title"].trimEnd();
           }
           if (data["Story Image"] != "") {
-            storyImage = data["Story Image"].trimEnd();
+            storyImage = data["Story Image"]?.trimEnd();
           }
           if (data["Category"] != "") {
             lastStoryCategory = data["Category"].trimEnd();
@@ -909,25 +909,25 @@ class ScriptService {
               answer_array: [
                 {
                   name: data["A"].trimEnd(),
-                  image: data["Image A"].trimEnd(),
+                  image: data["Image A"]?.trimEnd(),
                   correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["B"].trimEnd(),
-                  image: data["Image B"].trimEnd(),
+                  image: data["Image B"]?.trimEnd(),
                   correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["C"].trimEnd(),
-                  image: data["Image C"].trimEnd(),
+                  image: data["Image C"]?.trimEnd(),
                   correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["D"].trimEnd(),
-                  image: data["Image D"].trimEnd(),
+                  image: data["Image D"]?.trimEnd(),
                   correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
                   statement: null,
                 },

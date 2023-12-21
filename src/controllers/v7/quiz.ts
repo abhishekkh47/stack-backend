@@ -7,7 +7,7 @@ import {
   QuizDBService as QuizDBServiceV4,
   UserDBService,
 } from "@app/services/v4";
-import { QuizDBService } from "@app/services/v6";
+import { QuizDBService } from "@app/services/v7";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";

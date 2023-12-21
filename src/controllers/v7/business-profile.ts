@@ -1,11 +1,23 @@
 import { Auth } from "@app/middleware";
-import { UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  QuizTable,
+  WeeklyJourneyResultTable,
+} from "@app/model";
 import { HttpMethod } from "@app/types";
-import { Route } from "@app/utility";
+import {
+  Route,
+  uploadFileS3,
+  removeImage,
+  uploadBusinessInformation,
+  uploadBusinessInformationData,
+} from "@app/utility";
 import { validationsV7 } from "@app/validations/v7/apiValidation";
 import BaseController from "../base";
 import { BusinessProfileService } from "@app/services/v7";
-
+import { UserDBService } from "@app/services/v6";
+import { ObjectId } from "mongodb";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -13,7 +25,7 @@ class BusinessProfileController extends BaseController {
    * @returns {*}
    */
   @Route({
-    path: "/business-information",
+    path: "/business-journey-information",
     method: HttpMethod.POST,
   })
   @Auth()
@@ -22,14 +34,14 @@ class BusinessProfileController extends BaseController {
       const { body, user } = ctx.request;
       const userIfExists = await UserTable.findOne({ _id: user._id });
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
-      return validationsV7.businessProfileValidation(
+      return validationsV7.businessJourneyProfileValidation(
         body,
         ctx,
         async (validate: boolean) => {
           if (validate) {
             await BusinessProfileService.addOrEditBusinessProfile(
               body,
-              userIfExists._id
+              user._id
             );
             return this.Ok(ctx, { message: "Success" });
           }
@@ -66,6 +78,61 @@ class BusinessProfileController extends BaseController {
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
+  }
+
+  /**
+   * @description This method is for update user's profile picture
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/update-business-logo",
+    method: HttpMethod.POST,
+    middleware: [uploadBusinessInformation.single("businessLogo")],
+  })
+  @Auth()
+  public async updateBusinessLogo(ctx: any) {
+    const reqParam = ctx.request.body;
+    const { user } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const businessProfileExists = await BusinessProfileTable.findOne({
+      userId: user._id,
+    });
+    const file = ctx.request.file;
+    if (!file) {
+      return this.BadRequest(ctx, "Image is not selected");
+    }
+    const imageName =
+      file && file.key
+        ? file.key.split("/").length > 0
+          ? file.key.split("/")[1]
+          : null
+        : null;
+    if (businessProfileExists.businessLogo) {
+      await removeImage(userExists._id, businessProfileExists.businessLogo);
+    }
+    await BusinessProfileTable.updateOne(
+      { userId: userExists._id },
+      {
+        $set: { businessLogo: imageName },
+      },
+      { upsert: true }
+    );
+    if (reqParam?.weeklyJourneyId) {
+      const dataToCreate = {
+        weeklyJourneyId: reqParam.weeklyJourneyId,
+        actionNum: 3,
+        userId: user._id,
+        actionInput: imageName,
+      };
+      await WeeklyJourneyResultTable.create(dataToCreate);
+    }
+    return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
 }
 

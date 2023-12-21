@@ -641,8 +641,22 @@ class UserDBService {
           previousStreak: currentStreak,
           isStreakInActiveSinceLast5Days,
         };
+      } else {
+        const updatedStreaksDetails = await UserTable.find({
+          _id: userDetails._id,
+        });
+        const dayRange = this.get5DaysOfWeek(
+          updatedStreaksDetails[0].streak.updatedDate,
+          updatedStreaksDetails[0].streak.last5days
+        );
+        return {
+          last5DaysStreak: updatedStreaksDetails[0].streak.last5days,
+          last5DaysWeek: dayRange,
+          currentStreak: updatedStreaksDetails[0].streak.current,
+          previousStreak: currentStreak,
+          isStreakInActiveSinceLast5Days,
+        };
       }
-      return null;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

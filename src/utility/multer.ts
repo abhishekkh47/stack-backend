@@ -39,6 +39,63 @@ export const uploadFileS3 = multer({
     return cb(null, true);
   },
 });
+export const uploadBusinessInformation = multer({
+  storage: multerS3({
+    s3,
+    bucket: "stack-business-information/business-logo",
+    key: async (req, file, cb) => {
+      const response = await verifyToken(req.headers["x-access-token"]);
+      if (response && response.status && response.status === 401) {
+        return cb(new NetworkError("Unauthorised User", 401));
+      }
+      return cb(
+        null,
+        `${response._id}/${file.fieldname}_${Date.now().toString()}.${
+          file.originalname.split(".")[1]
+        }`
+      );
+    },
+  }),
+  limit: { fileSize: 5000000 },
+  fileFilter(req, file, cb) {
+    if (!checkValidImageExtension(file))
+      return cb(
+        new Error(
+          "Please upload a Image of valid extension of jpg or pdf format only."
+        )
+      );
+    return cb(null, true);
+  },
+});
+
+export const uploadBusinessInformationData = multer({
+  storage: multerS3({
+    s3,
+    bucket: `stack-business-information/business-logo`,
+    key: async (req, file, cb) => {
+      const response = await verifyToken(req.headers["x-access-token"]);
+      if (response && response.status && response.status === 401) {
+        return cb(new NetworkError("Unauthorised User", 401));
+      }
+      return cb(
+        null,
+        `${response._id}/${file.fieldname}_${Date.now().toString()}.${
+          file.originalname.split(".")[1]
+        }`
+      );
+    },
+  }),
+  limit: { fileSize: 5000000 },
+  fileFilter(req, file, cb) {
+    if (!checkValidImageExtension(file))
+      return cb(
+        new Error(
+          "Please upload a Image of valid extension of jpg or pdf format only."
+        )
+      );
+    return cb(null, true);
+  },
+});
 export const uploadIdProof = multer({
   storage: multer.diskStorage({
     destination: function (req, file, cb) {

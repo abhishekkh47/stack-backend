@@ -25,6 +25,7 @@ import {
   DripshopItemTable,
   StageTable,
   StreakGoalTable,
+  BusinessProfileTable,
 } from "@app/model";
 import {
   EAction,
@@ -1839,6 +1840,30 @@ class ScriptController extends BaseController {
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
+  }
+
+  /**
+   * @description This script is used to update the businessProfile for old users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-business-profile", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateBusinessProfile(ctx: any) {
+    await BusinessProfileTable.updateMany(
+      {},
+      {
+        $set: {
+          businessLogo: null,
+          businessName: null,
+          competitors: null,
+          keyDifferentiators: null,
+          targetAudience: null,
+          coreStrategy: null,
+        },
+      }
+    );
+    return this.Ok(ctx, { message: "Success" });
   }
 }
 

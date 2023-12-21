@@ -26,13 +26,20 @@ class WeeklyJourneyController extends BaseController {
         }),
       ]);
     if (!userIfExists) return this.BadRequest(ctx, "User not found");
-    let userNextChallenge = await WeeklyJourneyDBService.getUserNextChallenge(
+    if (!weeklyJourneyDetails)
+      return this.BadRequest(ctx, "weeklyJourneyDetails not found");
+
+    const userNextChallenge = await WeeklyJourneyDBService.getUserNextChallenge(
       user._id,
       weeklyJourneyDetails,
       userProgress
     );
+    const getWeeklyDetails = await WeeklyJourneyDBService.getWeekDetails(
+      weeklyJourneyDetails,
+      userNextChallenge
+    );
     return this.Ok(ctx, {
-      data: userNextChallenge,
+      data: { weeks: getWeeklyDetails, currentDay: userNextChallenge },
       message: "Success",
     });
   }

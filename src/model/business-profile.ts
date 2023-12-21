@@ -28,24 +28,37 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
     description: {
       type: mongoose.Schema.Types.String,
       required: true,
+      default: null,
     },
     businessLogo: {
       type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
     },
     businessName: {
       type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
     },
     competitors: {
       type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
     },
     keyDifferentiators: {
       type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
     },
     targetAudience: {
       type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
     },
     coreStrategy: {
       type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
     },
   },
   { timestamps: true }
