@@ -123,8 +123,8 @@ class BusinessProfileService {
               as: "plan",
               cond: {
                 $and: [
-                  { $ne: ["$$plan.value", undefined] },
                   { $ne: ["$$plan.value", null] },
+                  { $ne: ["$$plan.value", undefined] },
                   { $ne: [{ $type: "$$plan.value" }, "missing"] },
                 ],
               },

@@ -57,6 +57,7 @@ class WeeklyJourneyDBService {
           {
             $project: {
               userId: 1,
+              "weeklyJourney._id": "$weeklyJourney._id",
               "weeklyJourney.actionNum": "$actionNum",
               "weeklyJourney.title": 1,
               "weeklyJourney.week": 1,

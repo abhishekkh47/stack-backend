@@ -144,9 +144,9 @@ class QuizDBService {
     }
     let isGiftedStreakFreeze = false;
     const {
-      streak: { freezeCount },
+      streak: { freezeCount, current },
     } = userIfExists;
-    if (quizResultsData.length === 1 && freezeCount !== MAX_STREAK_FREEZE) {
+    if (quizResultsData.length >= 1 && freezeCount == 0 && current >= 1) {
       isGiftedStreakFreeze = true;
       incrementObj = { ...incrementObj, "streak.freezeCount": 1 };
     }
