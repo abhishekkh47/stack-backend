@@ -38,6 +38,7 @@ import { validationsV3 } from "@app/validations/v3/apiValidation";
 import { UserService } from "@app/services/v3";
 import { UserDBService } from "@app/services/v6";
 import { BusinessProfileService } from "@app/services/v4";
+import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
 
 class AuthController extends BaseController {
   /**
@@ -579,7 +580,7 @@ class AuthController extends BaseController {
               userExists._id
             );
             const businessProfile =
-              await BusinessProfileService.getBusinessProfile(userExists._id);
+              await BusinessProfileServiceV7.getBusinessProfile(userExists._id);
             profileData = { ...profileData, businessProfile };
 
             if (deviceToken) {

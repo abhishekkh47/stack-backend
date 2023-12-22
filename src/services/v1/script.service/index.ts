@@ -19,6 +19,7 @@ import fs from "fs";
 import { Transform } from "stream";
 import moment from "moment";
 import { QUIZ_TYPE } from "@app/utility";
+import { everyCorrectAnswerPoints } from "@app/types";
 
 class ScriptService {
   public async sandboxApproveKYC(
@@ -1023,8 +1024,32 @@ class ScriptService {
         reward,
       } = week;
 
-      dailyChallenges.forEach((day) => {
+      dailyChallenges.forEach(async (day) => {
         const { day: dayNum, actions, dailyGoal } = day;
+        const processedActions = await Promise.all(
+          actions.map(async (action) => {
+            if (action.type == 4 || action.type == 2) {
+              return action;
+            } else {
+              const { quizId } = action;
+              const quizCount = await QuizQuestionTable.countDocuments({
+                quizId: quizId,
+              });
+
+              if (action.type == 3) {
+                return {
+                  ...action,
+                  reward: (quizCount / 4) * everyCorrectAnswerPoints,
+                };
+              } else {
+                return {
+                  ...action,
+                  reward: quizCount * everyCorrectAnswerPoints,
+                };
+              }
+            }
+          })
+        );
         const processedDay = {
           week: weekNum,
           title,

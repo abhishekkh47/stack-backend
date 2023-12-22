@@ -35,10 +35,6 @@ class QuizDBService {
     quizExists: any
   ) {
     const { solvedQuestions } = reqParam;
-    let quizResultsData = await QuizResult.find({
-      userId: userIfExists._id,
-      isOnBoardingQuiz: false,
-    });
     let totalXPPoints = 0;
     /**
      * Check question acutally exists in that quiz
@@ -74,7 +70,7 @@ class QuizDBService {
         ? everyCorrectAnswerPoints * reqParam.solvedQuestions.length
         : SIMULATION_QUIZ_FUEL;
 
-    await QuizResult.create({
+    let quizResultsData = await QuizResult.create({
       topicId: quizExists.topicId,
       quizId: quizExists._id,
       userId: userIfExists._id,
@@ -146,7 +142,12 @@ class QuizDBService {
     const {
       streak: { freezeCount, current },
     } = userIfExists;
-    if (quizResultsData.length >= 1 && freezeCount == 0 && current >= 1) {
+    if (
+      quizResultsData &&
+      freezeCount == 0 &&
+      current >= 0 &&
+      freezeCount <= MAX_STREAK_FREEZE
+    ) {
       isGiftedStreakFreeze = true;
       incrementObj = { ...incrementObj, "streak.freezeCount": 1 };
     }
@@ -179,6 +180,7 @@ class QuizDBService {
       updatedXPPoints: updatedXP.xpPoints,
       totalFuel: pointsEarnedFromQuiz,
       isGiftedStreakFreeze,
+      updatedUser: updatedXP,
     };
   }
 }

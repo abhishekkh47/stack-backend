@@ -42,7 +42,7 @@ export const uploadFileS3 = multer({
 export const uploadBusinessInformation = multer({
   storage: multerS3({
     s3,
-    bucket: "stack-business-information/business-logo",
+    bucket: "stack-business-information/businessLogo",
     key: async (req, file, cb) => {
       const response = await verifyToken(req.headers["x-access-token"]);
       if (response && response.status && response.status === 401) {

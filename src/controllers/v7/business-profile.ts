@@ -123,10 +123,10 @@ class BusinessProfileController extends BaseController {
       },
       { upsert: true }
     );
-    if (reqParam?.weeklyJourneyId) {
+    if (ctx?.request?.body?.weeklyJourneyId) {
       const dataToCreate = {
-        weeklyJourneyId: reqParam.weeklyJourneyId,
-        actionNum: 3,
+        weeklyJourneyId: ctx.request.body.weeklyJourneyId,
+        actionNum: ctx.request.body.actionNum,
         userId: user._id,
         actionInput: imageName,
       };

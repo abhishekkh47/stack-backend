@@ -55,6 +55,7 @@ class QuizController extends BaseController {
             updatedXPPoints,
             totalFuel,
             isGiftedStreakFreeze,
+            updatedUser,
           } = await QuizDBService.storeQuizInformation(
             userIfExists,
             headers,
@@ -67,20 +68,20 @@ class QuizController extends BaseController {
             quizRecommendations,
           ] = await Promise.all([
             LeagueService.getUpdatedLeagueDetailsOfUser(
-              userIfExists,
+              updatedUser,
               leagues,
               updatedXPPoints
             ),
-            UserDBService.addStreaks(userIfExists),
+            UserDBService.addStreaks(updatedUser),
             QuizDBServiceV4.getQuizRecommendations(
-              userIfExists._id,
+              updatedUser._id,
               quizIfExists.topicId.toString()
             ),
           ]);
 
           (async () => {
             const dataForCrm = await QuizDBServiceV4.getQuizDataForCrm(
-              userIfExists,
+              updatedUser,
               user._id,
               updatedXPPoints
             );
