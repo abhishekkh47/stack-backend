@@ -243,6 +243,21 @@ class CommunityDBService {
             }
           );
         }
+      } else if (
+        leaderBoardData[0].totalXPPoints < community.challenge.xpGoal &&
+        new Date(community.challenge.endAt) < new Date()
+      ) {
+        weeklyChallengeDate = new Date(weeklyChallengeDate);
+        weeklyChallengeDate = new Date(weeklyChallengeDate.getTime() - 1000);
+        weeklyChallengeDate.setHours(23, 59, 59, 0);
+        await CommunityTable.updateOne(
+          { _id: community._id },
+          {
+            $set: {
+              "challenge.endAt": weeklyChallengeDate.toISOString(),
+            },
+          }
+        );
       }
     }
 
@@ -502,7 +517,7 @@ class CommunityDBService {
    */
   public getNextChallengeDate() {
     try {
-      let todayDate = new Date();      
+      let todayDate = new Date();
       let daysUntilNextMonday = 1 - todayDate.getDay();
       if (daysUntilNextMonday <= 0) {
         daysUntilNextMonday += 7;

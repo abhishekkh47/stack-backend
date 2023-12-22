@@ -35,8 +35,11 @@ export default {
   get TWILIO_ACCOUNT_SID() {
     return process.env.TWILIO_ACCOUNT_SID;
   },
-  get TWILIO_AUTH_TOKEN() {
-    return process.env.TWILIO_AUTH_TOKEN;
+  get TWILIO_API_KEY() {
+    return process.env.TWILIO_API_KEY;
+  },
+  get TWILIO_API_SECRET() {
+    return process.env.TWILIO_API_SECRET;
   },
   get TWILIO_PHONE_NUMBER() {
     return process.env.TWILIO_PHONE_NUMBER;
