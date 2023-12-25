@@ -40,7 +40,8 @@ class QuizDBService {
      * Check question acutally exists in that quiz
      */
     if (
-      quizExists.quizType === QUIZ_TYPE.NORMAL &&
+      (quizExists.quizType === QUIZ_TYPE.NORMAL ||
+        quizExists.quizType === QUIZ_TYPE.NORMAL) &&
       solvedQuestions.length > 0
     ) {
       const questionsIfExist = await QuizQuestionTable.find({
@@ -66,7 +67,8 @@ class QuizDBService {
     }
 
     const pointsEarnedFromQuiz =
-      quizExists.quizType === QUIZ_TYPE.NORMAL
+      quizExists.quizType === QUIZ_TYPE.NORMAL ||
+      quizExists.quizType === QUIZ_TYPE.STORY
         ? everyCorrectAnswerPoints * reqParam.solvedQuestions.length
         : SIMULATION_QUIZ_FUEL;
 
@@ -93,7 +95,8 @@ class QuizDBService {
     const correctAnswerXPPointsEarned =
       reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
     totalXPPoints =
-      quizExists.quizType === QUIZ_TYPE.NORMAL
+      quizExists.quizType === QUIZ_TYPE.NORMAL ||
+      quizExists.quizType === QUIZ_TYPE.STORY
         ? correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ
         : XP_POINTS.SIMULATION_QUIZ;
     incrementObj = { ...incrementObj, xpPoints: totalXPPoints };

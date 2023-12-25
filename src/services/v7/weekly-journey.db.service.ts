@@ -173,11 +173,11 @@ class WeeklyJourneyDBService {
               xpPoints: XP_POINTS.COMPLETED_QUIZ,
               fuelCount: {
                 $cond: {
-                  if: { $eq: ["quizType", QUIZ_TYPE.SIMULATION] },
+                  if: { $eq: ["$quizType", QUIZ_TYPE.SIMULATION] },
                   then: SIMULATION_QUIZ_FUEL,
                   else: {
                     $cond: {
-                      if: { $eq: ["quizType", QUIZ_TYPE.STORY] },
+                      if: { $eq: ["$quizType", QUIZ_TYPE.STORY] },
                       then: {
                         $multiply: [
                           everyCorrectAnswerPoints,

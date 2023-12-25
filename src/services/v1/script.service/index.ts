@@ -904,7 +904,7 @@ class ScriptService {
               text: data["Text"].trimEnd(),
               question_image: null,
               order: order,
-              points: 20,
+              points: 10,
               question_type: 2,
               answer_type: 2,
               answer_array: [
