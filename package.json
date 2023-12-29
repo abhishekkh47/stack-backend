@@ -100,12 +100,12 @@
     "typescript": "^4.6.3"
   },
   "_moduleAliases": {
-    "@app": "./src",
-    "@services": "./src/services",
-    "@controllers": "./src/controllers",
-    "@model": "./src/model",
-    "@middleware": "./src/middleware",
-    "@utility": "./src/utility"
+    "@app": "./build",
+    "@services": "./build/services",
+    "@controllers": "./build/controllers",
+    "@model": "./build/model",
+    "@middleware": "./build/middleware",
+    "@utility": "./build/utility"
   },
   "husky": {
     "hooks": {
