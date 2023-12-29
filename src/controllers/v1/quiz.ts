@@ -30,7 +30,7 @@ class QuizController extends BaseController {
    */
   @Route({ path: "/quiz-topics", method: HttpMethod.GET })
   @Auth()
-  public async getQuizTopics(ctx: Koa.Context) {
+  public async getQuizTopics(ctx: Koa.Context | any) {
     const quizTopics = await QuizTopicTable.find({
       status: EQuizTopicStatus.ACTIVE,
     })
@@ -51,7 +51,7 @@ class QuizController extends BaseController {
    */
   @Route({ path: "/quiz-topics", method: HttpMethod.POST })
   @Auth()
-  public async addQuizTopics(ctx: Koa.Context) {
+  public async addQuizTopics(ctx: Koa.Context | any) {
     if (!ctx.request.body.topic) {
       return this.BadRequest(ctx, "Please Enter Topic Name");
     }
@@ -82,7 +82,7 @@ class QuizController extends BaseController {
    */
   @Route({ path: "/quiz", method: HttpMethod.POST })
   // @Auth()
-  public async createQuiz(ctx: Koa.Context) {
+  public async createQuiz(ctx: Koa.Context | any) {
     await QuizTable.create(ctx.request.body);
 
     return this.Created(ctx, {
@@ -101,7 +101,7 @@ class QuizController extends BaseController {
    */
   @Route({ path: "/quiz-question", method: HttpMethod.POST })
   // @Auth()
-  public async createQuizQuestion(ctx: Koa.Context) {
+  public async createQuizQuestion(ctx: Koa.Context | any) {
     await QuizQuestionTable.create(ctx.request.body);
 
     return this.Created(ctx, {

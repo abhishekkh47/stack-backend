@@ -538,10 +538,9 @@ class UserController extends BaseController {
         { _id: userIfExists._id },
         {
           $set: { referralSource: body.referralSource },
-        },
-        { new: true }
+        }
       );
-      await AnalyticsService.identifyOnce(userIfExists._id, {
+      AnalyticsService.identifyOnce(userIfExists._id, {
         Source: body.referralSource,
       });
       return this.Ok(ctx, { message: "Success" });

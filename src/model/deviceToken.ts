@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 
 import type { IDeviceToken, MongooseModel } from "@app/types";
 
-export type IDeviceTokenSchema = MongooseModel<IDeviceToken> &
-  mongoose.Document;
+export type IDeviceTokenSchema = MongooseModel<any> & mongoose.Document;
 
 const schema = new mongoose.Schema<IDeviceTokenSchema>(
   {

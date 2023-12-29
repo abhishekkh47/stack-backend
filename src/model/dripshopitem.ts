@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 
 import type { IDripshopItem, MongooseModel } from "@app/types";
 
-export type IDripshopItemSchema = MongooseModel<IDripshopItem> &
-  mongoose.Document;
+export type IDripshopItemSchema = MongooseModel<any> & mongoose.Document;
 
 const schema = new mongoose.Schema<IDripshopItemSchema>(
   {

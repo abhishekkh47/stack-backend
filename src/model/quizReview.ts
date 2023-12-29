@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 import type { IQuizReview, MongooseModel } from "@app/types";
 
-export type IQuizReviewSchema = MongooseModel<IQuizReview> & mongoose.Document;
+export type IQuizReviewSchema = MongooseModel<any> & mongoose.Document;
 
 const schema = new mongoose.Schema<IQuizReviewSchema>(
   {

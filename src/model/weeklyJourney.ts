@@ -43,6 +43,10 @@ const schema = new mongoose.Schema<IWeeklyJourney>(
         type: mongoose.Schema.Types.String,
         default: null,
       },
+      tip: {
+        type: mongoose.Schema.Types.String,
+        default: null,
+      },
       key: {
         type: mongoose.Schema.Types.String,
         default: null,

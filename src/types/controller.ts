@@ -14,7 +14,7 @@ export interface IControllerRoute {
   order?: number;
   method: HttpMethod;
   path: string;
-  handler: (ctx: Koa.Context) => Promise<void>;
+  handler: (ctx: Koa.Context | any) => Promise<void>;
   middleware?: Koa.Middleware | Koa.Middleware[];
 }
 
