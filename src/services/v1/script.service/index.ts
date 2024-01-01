@@ -879,44 +879,40 @@ class ScriptService {
       }
       fs.mkdirSync(outputPath);
       await Promise.all(
-        rows.map(async (data) => {
+        rows.map(async (data, index) => {
           let currentPromptStyle =
             PROMPT_STYLE[Number(data["Prompt Style"].trimEnd())];
           if (data["Prompt Type"]?.trimEnd() == "Description") {
             promptList.descriptions.push({
-              prompt: data["Image Prompt"].trimEnd(),
+              prompt: data["Image Prompt"]?.trimEnd(),
               promptStyle: currentPromptStyle,
+              imageName: `story ${data["Story #"]} ${index}`,
             });
           } else {
-            promptList.questions.push(
-              {
-                prompt: data["Prompt A"]?.trimEnd(),
-                promptStyle: currentPromptStyle,
-              },
-              {
-                prompt: data["Prompt B"]?.trimEnd(),
-                promptStyle: currentPromptStyle,
-              },
-              {
-                prompt: data["Prompt C"]?.trimEnd(),
-                promptStyle: currentPromptStyle,
-              },
-              {
-                prompt: data["Prompt D"]?.trimEnd(),
-                promptStyle: currentPromptStyle,
-              }
-            );
+            const prompts = [
+              "Prompt A",
+              "Prompt B",
+              "Prompt C",
+              "Prompt D",
+            ].map((promptKey) => ({
+              prompt: data[promptKey]?.trimEnd(),
+              promptStyle: currentPromptStyle,
+              imageName: `story ${data["Story #"]} ${index} ${promptKey.slice(
+                -1
+              )}`,
+            }));
+            promptList.questions.push(...prompts);
           }
         })
       );
       for (let i = 0; i < promptList.descriptions.length; i++) {
-        const generatedImage = await this.getImage(
+        await this.getImage(
           STORY_QUESTION_TYPE.DESCRIPTION,
           promptList.descriptions[i]
         );
       }
       for (let i = 0; i < promptList.questions.length; i++) {
-        const generatedImage = await this.getImage(
+        await this.getImage(
           STORY_QUESTION_TYPE.QUESTION,
           promptList.questions[i]
         );
@@ -924,13 +920,13 @@ class ScriptService {
       await Promise.all(
         await rows.map(async (data, index) => {
           if (data["Story Title"] != "") {
-            storyTitle = data["Story Title"].trimEnd();
+            storyTitle = data["Story Title"]?.trimEnd();
           }
           if (data["Story Image"] != "") {
             storyImage = data["Story Image"]?.trimEnd();
           }
           if (data["Category"] != "") {
-            lastStoryCategory = data["Category"].trimEnd();
+            lastStoryCategory = data["Category"]?.trimEnd();
           }
           if (data["Stage"] != "") {
             lastStoryStage = data["Stage"].trimEnd();
@@ -949,7 +945,7 @@ class ScriptService {
           if (data["Prompt Type"].trimEnd() == "Description") {
             questionData = {
               text: data["Text"].trimEnd(),
-              question_image: `${data["Image Prompt"]?.trimEnd()}.png`,
+              question_image: `story ${data["Story #"]} ${index}.png`,
               order: order,
               points: 0,
               question_type: 4,
@@ -969,25 +965,25 @@ class ScriptService {
               answer_array: [
                 {
                   name: data["A"].trimEnd(),
-                  image: `${data["Prompt A"]?.trimEnd()}.png`,
+                  image: `story ${data["Story #"]} ${index} A.png`,
                   correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["B"].trimEnd(),
-                  image: `${data["Prompt B"]?.trimEnd()}.png`,
+                  image: `story ${data["Story #"]} ${index} B.png`,
                   correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["C"].trimEnd(),
-                  image: `${data["Prompt C"]?.trimEnd()}.png`,
+                  image: `story ${data["Story #"]} ${index} C.png`,
                   correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["D"].trimEnd(),
-                  image: `${data["Prompt D"]?.trimEnd()}.png`,
+                  image: `story ${data["Story #"]} ${index} D.png`,
                   correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
                   statement: null,
                 },
@@ -1188,7 +1184,7 @@ class ScriptService {
       if (myImage) {
         const outputPath = path.join(
           __dirname,
-          `/midJourneyImages/${prompts.prompt}.png`
+          `/midJourneyImages/${prompts.imageName}.png`
         );
         await downloadImage(myImage.uri, outputPath)
           .then(() => {
@@ -1196,13 +1192,17 @@ class ScriptService {
           })
           .catch(console.error);
         if (questionType == STORY_QUESTION_TYPE.DESCRIPTION) {
-          sharp(outputPath).resize(390, 518);
+          sharp(outputPath)
+            .resize({ fit: "inside", width: 390, height: 518 })
+            .png({ quality: 40 });
         } else {
-          sharp(outputPath).resize(160, 160);
+          sharp(outputPath)
+            .resize({ fit: "inside", width: 160, height: 160 })
+            .png({ quality: 40 });
         }
-        uploadQuizImages(prompts.prompt, outputPath);
+        uploadQuizImages(prompts.imageName, outputPath);
       }
-      return `${prompts.prompt}.png`;
+      return `${prompts.imageName}.png`;
     } catch (error) {
       throw new NetworkError("Something Went Wrong", 400);
     }
