@@ -659,6 +659,11 @@ class QuizDBService {
                 $ne: 0,
               },
             },
+            {
+              quizType: {
+                $ne: 3,
+              },
+            },
           ],
           stageId: null,
         },
@@ -810,6 +815,11 @@ class QuizDBService {
             },
             {
               "quizData.stageId": null,
+            },
+            {
+              "quizData.quizType": {
+                $ne: 3,
+              },
             },
           ],
         },

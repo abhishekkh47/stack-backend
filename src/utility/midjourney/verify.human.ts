@@ -12,12 +12,10 @@ export class VerifyHuman {
   }
 
   async verify(imageUri: string, categories: string[]) {
-    console.log("verify----start", imageUri, categories);
     const imageCates = await this.inference.imageClassification({
       data: await (await this.config.fetch(imageUri)).blob(),
       model: "google/vit-base-patch16-224",
     });
-    console.log("verify----response", { imageCates });
     for (const imageCate of imageCates) {
       const { label } = imageCate;
       for (const category of categories) {

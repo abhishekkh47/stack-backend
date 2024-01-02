@@ -58,9 +58,7 @@ export async function generateImageUpscale(prompt: string) {
   if (Upscale) {
     const outputPath = path.join(__dirname, "Q2.png");
     downloadImage(Upscale.uri, outputPath)
-      .then(() => {
-        console.log(`Image downloaded to ${outputPath}`);
-      })
+      .then(() => {})
       .catch(console.error);
   }
   client.Close();

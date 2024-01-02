@@ -507,7 +507,7 @@ export class WsMessage {
   }
 
   protected async log(...args: any[]) {
-    this.config.Debug && console.info(...args, new Date().toISOString());
+    this.config.Debug; //&& console.info(...args, new Date().toISOString());
   }
 
   emit(event: string, message: any) {

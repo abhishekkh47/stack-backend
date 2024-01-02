@@ -1006,7 +1006,7 @@ class ScriptService {
                   topic: lastStoryCategory,
                   image: null,
                   status: 1,
-                  type: 2,
+                  type: 3,
                 });
                 filterCategory.push({
                   key: data["Story #"],
@@ -1175,7 +1175,7 @@ class ScriptService {
   public async getImage(questionType: number, prompts: any) {
     try {
       const imagineRes = await generateImage(
-        `${prompts.prompt} ${prompts.promptStyle}`
+        `${prompts.prompt} ${prompts.promptStyle} --fast`
       );
       const myImage = await UpscaleImage(imagineRes);
       if (!imagineRes) {

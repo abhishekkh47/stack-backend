@@ -53,7 +53,7 @@ export class MidjourneyMessage {
   private queue = async.queue(this.processRequest, 1);
 
   protected log(...args: any[]) {
-    this.config.Debug && console.log(...args, new Date().toISOString());
+    this.config.Debug; //&& console.log(...args, new Date().toISOString());
   }
   async FilterMessages(
     timestamp: number,

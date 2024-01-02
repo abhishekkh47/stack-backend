@@ -20,7 +20,7 @@ const schema = new mongoose.Schema<IQuizTopicSchema>(
       default: false,
     },
     /**
-     * 0/null - old quiz, 1 - new quiz
+     * 0/null - old quiz, 1 - new quiz, 3 Story quizzes
      */
     type: {
       type: mongoose.Schema.Types.Number,
