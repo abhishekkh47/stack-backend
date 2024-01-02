@@ -27,25 +27,15 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
     ],
     description: {
       type: mongoose.Schema.Types.String,
-      required: true,
+      required: false,
       default: null,
     },
-    businessLogo: {
+    companyName: {
       type: mongoose.Schema.Types.String,
       required: false,
       default: null,
     },
-    businessName: {
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
-    competitors: {
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
-    keyDifferentiators: {
+    companyLogo: {
       type: mongoose.Schema.Types.String,
       required: false,
       default: null,
@@ -55,7 +45,107 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: null,
     },
-    coreStrategy: {
+    competitors: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    keyDifferentiator: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    xForY: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    headline: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    valueCreators: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    colorsAndAesthetic: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    callToAction: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    linkYourBlog: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    linkYourWebsite: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    appName: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    homescreenImage: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    customerDiscovery: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    socialFeedback: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    productUpdate: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    mvpHomeScreen: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    socialMediaAccountLink: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    firstPostLink: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    favoriteComment: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    aspiringSocialAccount: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    socialCampaignTheme: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
+    firstSocialCampaign: {
       type: mongoose.Schema.Types.String,
       required: false,
       default: null,

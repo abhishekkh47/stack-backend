@@ -59,7 +59,7 @@ import { AnalyticsService } from "@app/services/v4";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
-  public async handleLogin(ctx: Koa.Context) {
+  public async handleLogin(ctx: Koa.Context | any) {
     const reqParam = ctx.request.body;
     return validation.loginValidation(
       reqParam,

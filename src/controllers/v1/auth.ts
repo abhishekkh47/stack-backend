@@ -60,7 +60,7 @@ import UserController from "./user";
 
 class AuthController extends BaseController {
   @Route({ path: "/login", method: HttpMethod.POST })
-  public async handleLogin(ctx: Koa.Context) {
+  public async handleLogin(ctx: Koa.Context | any) {
     const reqParam = ctx.request.body;
     return validation.loginValidation(
       reqParam,
@@ -683,7 +683,7 @@ class AuthController extends BaseController {
   }
 
   @Route({ path: "/token-login", method: HttpMethod.POST })
-  public async handleTokenLogin(ctx: Koa.Context) {
+  public async handleTokenLogin(ctx: Koa.Context | any) {
     const token = ctx.request.body.token;
     if (!token) {
       return this.BadRequest(ctx, "Token required");
@@ -1409,7 +1409,8 @@ class AuthController extends BaseController {
     if (!user) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const { token, refreshToken: newRefreshToken } = await TokenService.generateToken(user);
+    const { token, refreshToken: newRefreshToken } =
+      await TokenService.generateToken(user);
     return this.Ok(ctx, { token, refreshToken: newRefreshToken });
   }
 

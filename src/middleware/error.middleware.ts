@@ -3,7 +3,7 @@ import * as Koa from "koa";
 import { logger } from "@app/utility";
 import multer from "multer";
 
-export const errorHandler = async (ctx: Koa.Context, next: Koa.Next) => {
+export const errorHandler = async (ctx: Koa.Context | any, next: Koa.Next) => {
   try {
     await next();
   } catch (e) {

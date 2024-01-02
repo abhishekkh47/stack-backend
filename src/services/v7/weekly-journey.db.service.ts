@@ -244,7 +244,11 @@ class WeeklyJourneyDBService {
             id: item._id,
             week,
             title: item.title,
-            reward: item.reward,
+            reward: {
+              description: item.reward,
+              image: null,
+              name: "1:1 Mentorship with a Startup Founder",
+            },
           };
         } else if (!acc[week] && item.day == 7) {
           acc[week] = {

@@ -9,6 +9,7 @@ export interface IWeeklyJourney {
     type: number;
     quizId: number;
     taskName: string;
+    tip: string;
     actionInput: string;
     reward: number;
   };

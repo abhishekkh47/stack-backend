@@ -1,6 +1,6 @@
 import Koa from "koa";
 
-export const notFoundHandler = async (ctx: Koa.Context) => {
+export const notFoundHandler = async (ctx: Koa.Context | any) => {
   if (ctx.path === "/alive") {
     ctx.body = {
       status: "ok",

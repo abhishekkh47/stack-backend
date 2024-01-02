@@ -1,5 +1,7 @@
 import { ParentChildTable } from "@app/model/parentChild";
 import axios from "axios";
+import * as path from "path";
+import sharp from "sharp";
 import { ObjectId } from "mongodb";
 import envData from "@app/config";
 import { GoogleSpreadsheet } from "google-spreadsheet";
@@ -18,7 +20,15 @@ import json2csv from "json2csv";
 import fs from "fs";
 import { Transform } from "stream";
 import moment from "moment";
-import { QUIZ_TYPE } from "@app/utility";
+import {
+  QUIZ_TYPE,
+  STORY_QUESTION_TYPE,
+  generateImage,
+  UpscaleImage,
+  downloadImage,
+  uploadQuizImages,
+  PROMPT_STYLE,
+} from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 
 class ScriptService {
@@ -862,16 +872,61 @@ class ScriptService {
       let questionDataArray = [];
       let filterCategory = [];
       let questionData = null;
+      let promptList = { descriptions: [], questions: [] };
+      const outputPath = path.join(__dirname, `/midJourneyImages`);
+      if (fs.existsSync(outputPath)) {
+        fs.rmdirSync(outputPath, { recursive: true });
+      }
+      fs.mkdirSync(outputPath);
+      await Promise.all(
+        rows.map(async (data, index) => {
+          let currentPromptStyle =
+            PROMPT_STYLE[Number(data["Prompt Style"].trimEnd())];
+          if (data["Prompt Type"]?.trimEnd() == "Description") {
+            promptList.descriptions.push({
+              prompt: data["Image Prompt"]?.trimEnd(),
+              promptStyle: currentPromptStyle,
+              imageName: `story ${data["Story #"]} ${index}`,
+            });
+          } else {
+            const prompts = [
+              "Prompt A",
+              "Prompt B",
+              "Prompt C",
+              "Prompt D",
+            ].map((promptKey) => ({
+              prompt: data[promptKey]?.trimEnd(),
+              promptStyle: currentPromptStyle,
+              imageName: `story ${data["Story #"]} ${index} ${promptKey.slice(
+                -1
+              )}`,
+            }));
+            promptList.questions.push(...prompts);
+          }
+        })
+      );
+      for (let i = 0; i < promptList.descriptions.length; i++) {
+        await this.getImage(
+          STORY_QUESTION_TYPE.DESCRIPTION,
+          promptList.descriptions[i]
+        );
+      }
+      for (let i = 0; i < promptList.questions.length; i++) {
+        await this.getImage(
+          STORY_QUESTION_TYPE.QUESTION,
+          promptList.questions[i]
+        );
+      }
       await Promise.all(
         await rows.map(async (data, index) => {
           if (data["Story Title"] != "") {
-            storyTitle = data["Story Title"].trimEnd();
+            storyTitle = data["Story Title"]?.trimEnd();
           }
           if (data["Story Image"] != "") {
             storyImage = data["Story Image"]?.trimEnd();
           }
           if (data["Category"] != "") {
-            lastStoryCategory = data["Category"].trimEnd();
+            lastStoryCategory = data["Category"]?.trimEnd();
           }
           if (data["Stage"] != "") {
             lastStoryStage = data["Stage"].trimEnd();
@@ -890,7 +945,7 @@ class ScriptService {
           if (data["Prompt Type"].trimEnd() == "Description") {
             questionData = {
               text: data["Text"].trimEnd(),
-              question_image: null,
+              question_image: `story ${data["Story #"]} ${index}.png`,
               order: order,
               points: 0,
               question_type: 4,
@@ -910,25 +965,25 @@ class ScriptService {
               answer_array: [
                 {
                   name: data["A"].trimEnd(),
-                  image: data["Image A"]?.trimEnd(),
+                  image: `story ${data["Story #"]} ${index} A.png`,
                   correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["B"].trimEnd(),
-                  image: data["Image B"]?.trimEnd(),
+                  image: `story ${data["Story #"]} ${index} B.png`,
                   correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["C"].trimEnd(),
-                  image: data["Image C"]?.trimEnd(),
+                  image: `story ${data["Story #"]} ${index} C.png`,
                   correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["D"].trimEnd(),
-                  image: data["Image D"]?.trimEnd(),
+                  image: `story ${data["Story #"]} ${index} D.png`,
                   correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
                   statement: null,
                 },
@@ -951,7 +1006,7 @@ class ScriptService {
                   topic: lastStoryCategory,
                   image: null,
                   status: 1,
-                  type: 2,
+                  type: 3,
                 });
                 filterCategory.push({
                   key: data["Story #"],
@@ -1001,9 +1056,10 @@ class ScriptService {
           }
         });
       }
+      fs.rmdirSync(outputPath, { recursive: true });
       return storyContentData;
     } catch (error) {
-      throw new NetworkError("Something Went Wrong", 400);
+      throw new NetworkError("Something Went Wrong ", 400);
     }
   }
 
@@ -1013,66 +1069,64 @@ class ScriptService {
    * @returns {array}
    */
   public async processWeeklyChallenges(weeklyChallenges: any) {
-    const processedChallenges = [];
+    let processedChallenges = [];
 
-    weeklyChallenges.forEach((week) => {
-      const {
-        week: weekNum,
-        title,
-        dailyChallenges,
-        rewardType,
-        reward,
-      } = week;
+    await Promise.all(
+      weeklyChallenges.map(async (weeks) => {
+        const { week, title, dailyChallenges, rewardType, reward } = weeks;
 
-      dailyChallenges.forEach(async (day) => {
-        const { day: dayNum, actions, dailyGoal } = day;
-        const processedActions = await Promise.all(
-          actions.map(async (action) => {
-            if (action.type == 4 || action.type == 2) {
-              return action;
-            } else {
-              const { quizId } = action;
-              const quizCount = await QuizQuestionTable.countDocuments({
-                quizId: quizId,
-              });
+        await Promise.all(
+          dailyChallenges.map(async (days) => {
+            const { day, actions, dailyGoal } = days;
+            const processedActions = await Promise.all(
+              actions.map(async (action) => {
+                if (action.type == 4 || action.type == 2) {
+                  return action;
+                } else {
+                  const { quizId } = action;
+                  const quizCount = await QuizQuestionTable.countDocuments({
+                    quizId: quizId,
+                  });
 
-              if (action.type == 3) {
-                return {
-                  ...action,
-                  reward: (quizCount / 4) * everyCorrectAnswerPoints,
-                };
-              } else {
-                return {
-                  ...action,
-                  reward: quizCount * everyCorrectAnswerPoints,
-                };
-              }
-            }
+                  if (action.type == 3) {
+                    return {
+                      ...action,
+                      reward: (quizCount / 4) * everyCorrectAnswerPoints,
+                    };
+                  } else {
+                    return {
+                      ...action,
+                      reward: quizCount * everyCorrectAnswerPoints,
+                    };
+                  }
+                }
+              })
+            );
+            const processedDay = {
+              week,
+              title,
+              day,
+              dailyGoal,
+              actions: processedActions,
+              rewardType: null,
+              reward: null,
+            };
+            processedChallenges.push(processedDay);
           })
         );
-        const processedDay = {
-          week: weekNum,
-          title,
-          day: dayNum,
-          dailyGoal,
-          actions,
-          rewardType: null,
-          reward: null,
-        };
-        processedChallenges.push(processedDay);
-      });
 
-      const extraDay = {
-        week: weekNum,
-        title,
-        day: 7,
-        dailyGoal: null,
-        actions: null,
-        rewardType,
-        reward,
-      };
-      processedChallenges.push(extraDay);
-    });
+        const extraDay = {
+          week,
+          title,
+          day: 7,
+          dailyGoal: null,
+          actions: null,
+          rewardType,
+          reward,
+        };
+        processedChallenges.push(extraDay);
+      })
+    );
 
     return processedChallenges;
   }
@@ -1115,6 +1169,42 @@ class ScriptService {
       return true;
     } catch (err) {
       return false;
+    }
+  }
+
+  public async getImage(questionType: number, prompts: any) {
+    try {
+      const imagineRes = await generateImage(
+        `${prompts.prompt} ${prompts.promptStyle} --fast`
+      );
+      const myImage = await UpscaleImage(imagineRes);
+      if (!imagineRes) {
+        throw new NetworkError("Something Went Wrong in myImage", 400);
+      }
+      if (myImage) {
+        const outputPath = path.join(
+          __dirname,
+          `/midJourneyImages/${prompts.imageName}.png`
+        );
+        await downloadImage(myImage.uri, outputPath)
+          .then(() => {
+            console.log(`Image downloaded to ${outputPath}`);
+          })
+          .catch(console.error);
+        if (questionType == STORY_QUESTION_TYPE.DESCRIPTION) {
+          sharp(outputPath)
+            .resize({ fit: "inside", width: 390, height: 518 })
+            .png({ quality: 40 });
+        } else {
+          sharp(outputPath)
+            .resize({ fit: "inside", width: 160, height: 160 })
+            .png({ quality: 40 });
+        }
+        uploadQuizImages(prompts.imageName, outputPath);
+      }
+      return `${prompts.imageName}.png`;
+    } catch (error) {
+      throw new NetworkError("Something Went Wrong", 400);
     }
   }
 }

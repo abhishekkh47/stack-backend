@@ -41,7 +41,7 @@ class QuizDBService {
      */
     if (
       (quizExists.quizType === QUIZ_TYPE.NORMAL ||
-        quizExists.quizType === QUIZ_TYPE.NORMAL) &&
+        quizExists.quizType === QUIZ_TYPE.STORY) &&
       solvedQuestions.length > 0
     ) {
       const questionsIfExist = await QuizQuestionTable.find({

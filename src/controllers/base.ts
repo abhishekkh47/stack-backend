@@ -12,30 +12,30 @@ class BaseController implements IController {
     }
   }
 
-  protected Ok<T>(ctx: Koa.Context, data: T, flag: boolean = null) {
+  protected Ok<T>(ctx: Koa.Context | any, data: T, flag: boolean = null) {
     ctx.status = 200;
     ctx.body = flag ? { data, status: 200 } : { ...data, status: 200 };
   }
 
-  protected Created<T>(ctx: Koa.Context, data: T) {
+  protected Created<T>(ctx: Koa.Context | any, data: T) {
     ctx.status = 201;
     ctx.body = { ...data, status: 201 };
   }
 
-  protected NoContent(ctx: Koa.Context) {
+  protected NoContent(ctx: Koa.Context | any) {
     ctx.status = 203;
     ctx.body = {};
   }
 
-  protected NotFound(ctx: Koa.Context, message?: string) {
+  protected NotFound(ctx: Koa.Context | any, message?: string) {
     ctx.throw(404, { status: 404, message: message || "Not found" });
   }
 
-  protected BadRequest(ctx: Koa.Context, message?: any) {
+  protected BadRequest(ctx: Koa.Context | any, message?: any) {
     ctx.throw(400, { status: 400, message: message || "Bad request" });
   }
 
-  protected UnAuthorized(ctx: Koa.Context, message?: string) {
+  protected UnAuthorized(ctx: Koa.Context | any, message?: string) {
     ctx.throw(401, { status: 401, message: message || "Unauthorized" });
   }
 
@@ -45,7 +45,7 @@ class BaseController implements IController {
    * @param message
    * @description This method is only used for webhook
    */
-  protected OkWebhook(ctx: Koa.Context, message?: string) {
+  protected OkWebhook(ctx: Koa.Context | any, message?: string) {
     ctx.status = 200;
     ctx.body = { message: message, status: 200 };
   }

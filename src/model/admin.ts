@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 import type { IAdmin, MongooseModel } from "@app/types";
 
-export type IAdminSchema = MongooseModel<IAdmin> & mongoose.Document;
+export type IAdminSchema = MongooseModel<any> & mongoose.Document;
 
 const schema = new mongoose.Schema<IAdminSchema>(
   {

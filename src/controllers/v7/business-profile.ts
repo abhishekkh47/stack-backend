@@ -10,8 +10,10 @@ import {
   Route,
   uploadFileS3,
   removeImage,
-  uploadBusinessInformation,
-  uploadBusinessInformationData,
+  uploadCompanyLogo,
+  uploadHomeScreenImage,
+  uploadSocialFeedback,
+  uploadMvpHomeScreen,
 } from "@app/utility";
 import { validationsV7 } from "@app/validations/v7/apiValidation";
 import BaseController from "../base";
@@ -81,18 +83,17 @@ class BusinessProfileController extends BaseController {
   }
 
   /**
-   * @description This method is for update user's profile picture
+   * @description This method is for update user's company logo
    * @param ctx
    * @returns
    */
   @Route({
-    path: "/update-business-logo",
+    path: "/update-company-logo",
     method: HttpMethod.POST,
-    middleware: [uploadBusinessInformation.single("businessLogo")],
+    middleware: [uploadCompanyLogo.single("companyLogo")],
   })
   @Auth()
-  public async updateBusinessLogo(ctx: any) {
-    const reqParam = ctx.request.body;
+  public async updateCompanyLogo(ctx: any) {
     const { user } = ctx.request;
     const userExists: any = await UserTable.findOne({
       _id: user._id,
@@ -113,13 +114,175 @@ class BusinessProfileController extends BaseController {
           ? file.key.split("/")[1]
           : null
         : null;
-    if (businessProfileExists.businessLogo) {
-      await removeImage(userExists._id, businessProfileExists.businessLogo);
+    if (businessProfileExists.companyLogo) {
+      await removeImage(userExists._id, businessProfileExists.companyLogo);
     }
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { businessLogo: imageName },
+        $set: { companyLogo: imageName },
+      },
+      { upsert: true }
+    );
+    if (ctx?.request?.body?.weeklyJourneyId) {
+      const dataToCreate = {
+        weeklyJourneyId: ctx.request.body.weeklyJourneyId,
+        actionNum: ctx.request.body.actionNum,
+        userId: user._id,
+        actionInput: imageName,
+      };
+      await WeeklyJourneyResultTable.create(dataToCreate);
+    }
+    return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is for update user's homescreen Image
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/update-homescreen-image",
+    method: HttpMethod.POST,
+    middleware: [uploadHomeScreenImage.single("homescreenImage")],
+  })
+  @Auth()
+  public async updateHomescreenImage(ctx: any) {
+    const { user } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const businessProfileExists = await BusinessProfileTable.findOne({
+      userId: user._id,
+    });
+    const file = ctx.request.file;
+    if (!file) {
+      return this.BadRequest(ctx, "Image is not selected");
+    }
+    const imageName =
+      file && file.key
+        ? file.key.split("/").length > 0
+          ? file.key.split("/")[1]
+          : null
+        : null;
+    if (businessProfileExists.homescreenImage) {
+      await removeImage(userExists._id, businessProfileExists.homescreenImage);
+    }
+    await BusinessProfileTable.updateOne(
+      { userId: userExists._id },
+      {
+        $set: { homescreenImage: imageName },
+      },
+      { upsert: true }
+    );
+    if (ctx?.request?.body?.weeklyJourneyId) {
+      const dataToCreate = {
+        weeklyJourneyId: ctx.request.body.weeklyJourneyId,
+        actionNum: ctx.request.body.actionNum,
+        userId: user._id,
+        actionInput: imageName,
+      };
+      await WeeklyJourneyResultTable.create(dataToCreate);
+    }
+    return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is for upload social feedback image
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/update-social-feedback",
+    method: HttpMethod.POST,
+    middleware: [uploadSocialFeedback.single("socialFeedback")],
+  })
+  @Auth()
+  public async updateSocialFeedbackImage(ctx: any) {
+    const { user } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const businessProfileExists = await BusinessProfileTable.findOne({
+      userId: user._id,
+    });
+    const file = ctx.request.file;
+    if (!file) {
+      return this.BadRequest(ctx, "Image is not selected");
+    }
+    const imageName =
+      file && file.key
+        ? file.key.split("/").length > 0
+          ? file.key.split("/")[1]
+          : null
+        : null;
+    if (businessProfileExists.socialFeedback) {
+      await removeImage(userExists._id, businessProfileExists.socialFeedback);
+    }
+    await BusinessProfileTable.updateOne(
+      { userId: userExists._id },
+      {
+        $set: { socialFeedback: imageName },
+      },
+      { upsert: true }
+    );
+    if (ctx?.request?.body?.weeklyJourneyId) {
+      const dataToCreate = {
+        weeklyJourneyId: ctx.request.body.weeklyJourneyId,
+        actionNum: ctx.request.body.actionNum,
+        userId: user._id,
+        actionInput: imageName,
+      };
+      await WeeklyJourneyResultTable.create(dataToCreate);
+    }
+    return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is for update user's MVP homescreen Image
+   * @param ctx
+   * @returns
+   */
+  @Route({
+    path: "/update-mvp-homescreen",
+    method: HttpMethod.POST,
+    middleware: [uploadMvpHomeScreen.single("mvpHomeScreen")],
+  })
+  @Auth()
+  public async updateMVPHomeScreenImage(ctx: any) {
+    const { user } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const businessProfileExists = await BusinessProfileTable.findOne({
+      userId: user._id,
+    });
+    const file = ctx.request.file;
+    if (!file) {
+      return this.BadRequest(ctx, "Image is not selected");
+    }
+    const imageName =
+      file && file.key
+        ? file.key.split("/").length > 0
+          ? file.key.split("/")[1]
+          : null
+        : null;
+    if (businessProfileExists.mvpHomeScreen) {
+      await removeImage(userExists._id, businessProfileExists.mvpHomeScreen);
+    }
+    await BusinessProfileTable.updateOne(
+      { userId: userExists._id },
+      {
+        $set: { mvpHomeScreen: imageName },
       },
       { upsert: true }
     );
