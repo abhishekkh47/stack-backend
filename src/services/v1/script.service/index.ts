@@ -865,6 +865,7 @@ class ScriptService {
       let lastStoryCategory = "";
       let lastStoryStage = "";
       let order = 1;
+      let descriptionNum = 0;
       let characterName = "";
       let characterImage = "";
       let categories = [];
@@ -881,12 +882,12 @@ class ScriptService {
       await Promise.all(
         rows.map(async (data, index) => {
           let currentPromptStyle =
-            PROMPT_STYLE[Number(data["Prompt Style"].trimEnd())];
+            PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
           if (data["Prompt Type"]?.trimEnd() == "Description") {
             promptList.descriptions.push({
               prompt: data["Image Prompt"]?.trimEnd(),
               promptStyle: currentPromptStyle,
-              imageName: `story ${data["Story #"]} ${index}`,
+              imageName: `s${data["Story #"]}_d${index + 1}`,
             });
           } else {
             const prompts = [
@@ -897,20 +898,20 @@ class ScriptService {
             ].map((promptKey) => ({
               prompt: data[promptKey]?.trimEnd(),
               promptStyle: currentPromptStyle,
-              imageName: `story ${data["Story #"]} ${index} ${promptKey.slice(
-                -1
-              )}`,
+              imageName: `s${data["Story #"]}_q${(index + 1) / 4}_${promptKey
+                .slice(-1)
+                .toLocaleLowerCase()}`,
             }));
             promptList.questions.push(...prompts);
           }
         })
       );
-      for (let i = 0; i < promptList.descriptions.length; i++) {
-        await this.getImage(
-          STORY_QUESTION_TYPE.DESCRIPTION,
-          promptList.descriptions[i]
-        );
-      }
+      // for (let i = 0; i < promptList.descriptions.length; i++) {
+      //   await this.getImage(
+      //     STORY_QUESTION_TYPE.DESCRIPTION,
+      //     promptList.descriptions[i]
+      //   );
+      // }
       for (let i = 0; i < promptList.questions.length; i++) {
         await this.getImage(
           STORY_QUESTION_TYPE.QUESTION,
@@ -929,7 +930,7 @@ class ScriptService {
             lastStoryCategory = data["Category"]?.trimEnd();
           }
           if (data["Stage"] != "") {
-            lastStoryStage = data["Stage"].trimEnd();
+            lastStoryStage = data["Stage"]?.trimEnd();
           }
           if (!data["Character"]) {
             characterName = null;
@@ -942,10 +943,10 @@ class ScriptService {
           } else {
             order = 1;
           }
-          if (data["Prompt Type"].trimEnd() == "Description") {
+          if (data["Prompt Type"]?.trimEnd() == "Description") {
             questionData = {
-              text: data["Text"].trimEnd(),
-              question_image: `story ${data["Story #"]} ${index}.png`,
+              text: data["Text"]?.trimEnd(),
+              question_image: `s${data["Story #"]}_d${++descriptionNum}.png`,
               order: order,
               points: 0,
               question_type: 4,
@@ -956,7 +957,7 @@ class ScriptService {
             };
           } else {
             questionData = {
-              text: data["Text"].trimEnd(),
+              text: data["Text"]?.trimEnd(),
               question_image: null,
               order: order,
               points: 10,
@@ -964,26 +965,26 @@ class ScriptService {
               answer_type: 2,
               answer_array: [
                 {
-                  name: data["A"].trimEnd(),
-                  image: `story ${data["Story #"]} ${index} A.png`,
+                  name: data["A"]?.trimEnd(),
+                  image: `s${data["Story #"]}_q${(index + 1) / 4}_a.png`,
                   correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
                   statement: null,
                 },
                 {
-                  name: data["B"].trimEnd(),
-                  image: `story ${data["Story #"]} ${index} B.png`,
+                  name: data["B"]?.trimEnd(),
+                  image: `s${data["Story #"]}_q${(index + 1) / 4}_b.png`,
                   correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
                   statement: null,
                 },
                 {
-                  name: data["C"].trimEnd(),
-                  image: `story ${data["Story #"]} ${index} C.png`,
+                  name: data["C"]?.trimEnd(),
+                  image: `s${data["Story #"]}_q${(index + 1) / 4}_c.png`,
                   correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
                   statement: null,
                 },
                 {
-                  name: data["D"].trimEnd(),
-                  image: `story ${data["Story #"]} ${index} D.png`,
+                  name: data["D"]?.trimEnd(),
+                  image: `s${data["Story #"]}_q${(index + 1) / 4}_d.png`,
                   correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
                   statement: null,
                 },
@@ -1080,22 +1081,32 @@ class ScriptService {
             const { day, actions, dailyGoal } = days;
             const processedActions = await Promise.all(
               actions.map(async (action) => {
-                if (action.type == 4 || action.type == 2) {
+                if (action.type == 4) {
                   return action;
                 } else {
-                  const { quizId } = action;
+                  const { quizNum } = action;
+                  const quizId = await QuizTable.find({
+                    quizNum,
+                  }).select("quizId");
                   const quizCount = await QuizQuestionTable.countDocuments({
-                    quizId: quizId,
+                    quizId: quizId[0],
                   });
 
-                  if (action.type == 3) {
+                  if (action.type == 2) {
                     return {
                       ...action,
+                      quizId: quizId[0]._id,
+                    };
+                  } else if (action.type == 3) {
+                    return {
+                      ...action,
+                      quizId: quizId[0]._id,
                       reward: (quizCount / 4) * everyCorrectAnswerPoints,
                     };
                   } else {
                     return {
                       ...action,
+                      quizId: quizId[0]._id,
                       reward: quizCount * everyCorrectAnswerPoints,
                     };
                   }

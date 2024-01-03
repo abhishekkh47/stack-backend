@@ -1871,7 +1871,7 @@ class ScriptController extends BaseController {
           customerDiscovery: null,
           socialFeedback: null,
           productUpdate: null,
-          MVPHomeScreen: null,
+          mvpHomeScreen: null,
           socialMediaAccountLink: null,
           firstPostLink: null,
           favoriteComment: null,
