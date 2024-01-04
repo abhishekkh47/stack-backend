@@ -1060,7 +1060,7 @@ class ScriptService {
       fs.rmdirSync(outputPath, { recursive: true });
       return storyContentData;
     } catch (error) {
-      throw new NetworkError("Something Went Wrong ", 400);
+      throw new NetworkError(error.message, 400);
     }
   }
 
@@ -1215,7 +1215,7 @@ class ScriptService {
       }
       return `${prompts.imageName}.png`;
     } catch (error) {
-      throw new NetworkError("Something Went Wrong", 400);
+      throw new NetworkError(error.message, 400);
     }
   }
 }
