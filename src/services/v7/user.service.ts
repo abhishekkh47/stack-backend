@@ -13,8 +13,11 @@ import {
   UserCommunityTable,
   WeeklyJourneyResultTable,
 } from "@app/model";
+import { XP_POINTS, MAX_STREAK_FREEZE, ANALYTICS_EVENTS } from "@app/utility";
 import { EUserType, EUSERSTATUS } from "@app/types";
 import { UserDBService } from "../v4";
+import { NetworkError } from "@app/middleware";
+import { AnalyticsService } from "@app/services/v4";
 import userDbService from "../v4/user.db.service";
 
 class UserService {
@@ -173,6 +176,61 @@ class UserService {
       return true;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * @description This service is used to delete all the user related information
+   * @param userIfExists
+   * @param data
+   */
+  public async updateUserScore(userIfExists: any, data: any) {
+    try {
+      let incrementObj: any = {
+        quizCoins: XP_POINTS.COMPLETED_ACTION,
+      };
+      let query: any = {
+        $inc: incrementObj,
+      };
+      let totalXPPoints = 100;
+      incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
+      let isGiftedStreakFreeze = false;
+      const {
+        streak: { freezeCount, current },
+      } = userIfExists;
+      if (
+        freezeCount == 0 &&
+        current >= 0 &&
+        freezeCount <= MAX_STREAK_FREEZE
+      ) {
+        isGiftedStreakFreeze = true;
+        incrementObj = { ...incrementObj, "streak.freezeCount": 1 };
+      }
+      query = {
+        ...query,
+        $inc: incrementObj,
+        $set: { isQuizReminderNotificationSent: false },
+      };
+      const updatedXP: any = await UserTable.findOneAndUpdate(
+        { _id: userIfExists._id },
+        query,
+        {
+          new: true,
+        }
+      );
+      AnalyticsService.sendEvent(
+        ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
+        {
+          "Challenge Name": data.taskName,
+          "Challenge Score": 100,
+        },
+        {
+          device_id: data.deviceId,
+          user_id: userIfExists._id,
+        }
+      );
+    } catch (error) {
+      throw new NetworkError("Something went wrong" + error, 400);
     }
   }
 }

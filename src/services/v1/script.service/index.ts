@@ -28,6 +28,7 @@ import {
   downloadImage,
   uploadQuizImages,
   PROMPT_STYLE,
+  XP_POINTS,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 
@@ -1082,6 +1083,10 @@ class ScriptService {
             const processedActions = await Promise.all(
               actions.map(async (action) => {
                 if (action.type == 4) {
+                  return {
+                    ...action,
+                    reward: XP_POINTS.COMPLETED_ACTION,
+                  };
                   return action;
                 } else {
                   const { quizNum } = action;
@@ -1096,6 +1101,7 @@ class ScriptService {
                     return {
                       ...action,
                       quizId: quizId[0]._id,
+                      reward: XP_POINTS.SIMULATION_QUIZ,
                     };
                   } else if (action.type == 3) {
                     return {
@@ -1186,7 +1192,7 @@ class ScriptService {
   public async getImage(questionType: number, prompts: any) {
     try {
       const imagineRes = await generateImage(
-        `${prompts.prompt} ${prompts.promptStyle} --fast`
+        `${prompts.prompt} ${prompts.promptStyle} --relax`
       );
       const myImage = await UpscaleImage(imagineRes);
       if (!imagineRes) {
