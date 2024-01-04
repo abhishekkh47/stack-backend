@@ -1,9 +1,6 @@
-import {
-  BusinessProfileTable,
-  ImpactTable,
-  PassionTable,
-  WeeklyJourneyResultTable,
-} from "@app/model";
+import { BusinessProfileTable, WeeklyJourneyResultTable } from "@app/model";
+import { AnalyticsService } from "@app/services/v4";
+import { ANALYTICS_EVENTS } from "@app/utility";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
 
@@ -36,6 +33,17 @@ class BusinessProfileService {
           actionInput: data.key,
         };
         await WeeklyJourneyResultTable.create(dataToCreate);
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
+          {
+            "Challenge Name": data.taskName,
+            "Challenge Score": 100,
+          },
+          {
+            device_id: data.deviceId,
+            user_id: userId,
+          }
+        );
       }
       return true;
     } catch (error) {
@@ -74,201 +82,200 @@ class BusinessProfileService {
               key: "description",
               type: "text",
               value: "$description",
-              sectionTitle: "Business Description",
-              sheetTitle: "Add your business decription",
+              title: "Business Description",
+              description: "Add your business decription",
             },
             {
               key: "companyName",
               type: "text",
               value: "$companyName",
-              sectionTitle: "Company Name",
-              sheetTitle: "Pro-tip: be unique but easy to spell and read.",
+              title: "Company Name",
+              description: "Pro-tip: be unique but easy to spell and read.",
             },
             {
               key: "companyLogo",
               type: "image",
               value: "$companyLogo",
-              sectionTitle: "Business Logo",
-              sheetTitle:
+              title: "Business Logo",
+              description:
                 "Pro-tip: the most iconic logos are remarkably simple.",
             },
             {
               key: "targetAudience",
               type: "text",
               value: "$targetAudience",
-              sectionTitle: "Target Audience",
-              sheetTitle:
+              title: "Target Audience",
+              description:
                 "Pro-tip: be specific! Include age, wealth, activities and interests.",
             },
             {
               key: "competitors",
               type: "text",
               value: "$competitors",
-              sectionTitle: "Top 5 Competitors",
-              sheetTitle:
+              title: "Top 5 Competitors",
+              description:
                 "Pro-tip: choose both big companies and tiny startups.",
             },
             {
               key: "keyDifferentiator",
               type: "text",
               value: "$keyDifferentiator",
-              sectionTitle: "Key Differentiator",
-              sheetTitle:
+              title: "Key Differentiator",
+              description:
                 "Pro-tip: choose one, specific aspect of your product or your audience.",
             },
             {
               key: "xForY",
               type: "text",
               value: "$xForY",
-              sectionTitle: "X For Y Pitch",
-              sheetTitle:
+              title: "X For Y Pitch",
+              description:
                 "Pro-tip: choose a company most people are likely to know.",
             },
             {
               key: "headline",
               type: "text",
               value: "$headline",
-              sectionTitle: "Headline",
-              sheetTitle:
+              title: "Headline",
+              description:
                 "Pro-tip: make it short (10 words or less) and catchy!",
             },
             {
               key: "valueCreators",
               type: "text",
               value: "$valueCreators",
-              sectionTitle: "Top 3 Value Creators",
-              sheetTitle: "Pro-tip: make each value creator than three words",
+              title: "Top 3 Value Creators",
+              description: "Pro-tip: make each value creator than three words",
             },
             {
               key: "colorsAndAesthetic",
               type: "text",
               value: "$colorsAndAesthetic",
-              sectionTitle: "Brand Colors & Aesthetic",
-              sheetTitle:
+              title: "Brand Colors & Aesthetic",
+              description:
                 "Pro-tip: consider the specifics of your audience in choosing brand colors and aesthetic",
             },
             {
               key: "callToAction",
               type: "text",
               value: "$callToAction",
-              sectionTitle: "Enter your call-to-action",
-              sheetTitle:
+              title: "Enter your call-to-action",
+              description:
                 'Examples:\nApple iPhone: "Buy Now"\nAmazon Prime:"See Deals"\nOpenAI API: "Try ChatGPT Plus"',
             },
             {
               key: "linkYourBlog",
               type: "text",
               value: "$linkYourBlog",
-              sectionTitle: "Link Your Blog",
-              sheetTitle:
+              title: "Link Your Blog",
+              description:
                 'Pro-tip: "join waitlist" can be a very effective CTA before you launch your product',
             },
             {
               key: "linkYourWebsite",
               type: "text",
               value: "$linkYourWebsite",
-              sectionTitle: "Link Your Website",
-              sheetTitle:
+              title: "Link Your Website",
+              description:
                 'Pro-tip: "join waitlist" can be a very effective CTA before you launch your product',
             },
             {
               key: "appName",
               type: "text",
               value: "$appName",
-              sectionTitle: "Enter the app's name that inspires you",
-              sheetTitle:
+              title: "Enter the app's name that inspires you",
+              description:
                 "Pro-tip: your inspo app does not have to be a competitor",
             },
             {
               key: "homescreenImage",
               type: "image",
               value: "$homescreenImage",
-              sectionTitle: "Upload picture of your homescreen/homepage",
-              sheetTitle:
+              title: "Upload picture of your homescreen/homepage",
+              description:
                 "Pro-tip: don't start from scratch, find a great template to start from",
             },
             {
               key: "customerDiscovery",
               type: "text",
               value: "$customerDiscovery",
-              sectionTitle: "Enter one takeaway based on customer discovery",
-              sheetTitle:
+              title: "Enter one takeaway based on customer discovery",
+              description:
                 "Pro-tip: don't start from scratch, find a great template to start from",
             },
             {
               key: "socialFeedback",
               type: "image",
               value: "$socialFeedback",
-              sectionTitle: "Upload picture of social feedback",
-              sheetTitle:
+              title: "Upload picture of social feedback",
+              description:
                 "Pro-tip: use Instagram, Tiktok or LinkedIn to aggregate votes, comments and likes that give you product insights",
             },
             {
               key: "productUpdate",
               type: "text",
               value: "$productUpdate",
-              sectionTitle:
-                "Define one product update from the feedback you received",
-              sheetTitle:
+              title: "Define one product update from the feedback you received",
+              description:
                 "Pro-tip: if you recieved multiple insights, decide what one change would have the most impact",
             },
             {
               key: "mvpHomeScreen",
-              type: "text",
+              type: "image",
               value: "$mvpHomeScreen",
-              sectionTitle: "Upload a picture of your MVP homescreen",
-              sheetTitle:
+              title: "Upload a picture of your MVP homescreen",
+              description:
                 "Pro-tip: less is more, don't try to accomplish too much!",
             },
             {
               key: "socialMediaAccountLink",
               type: "text",
               value: "$socialMediaAccountLink",
-              sectionTitle:
+              title:
                 "Add link to social media account on TikTok, Instagram, LinkedIn, etc",
-              sheetTitle:
+              description:
                 "Pro-tip: choose ONLY ONE social media platform where you think you can win the most attention of your target audience",
             },
             {
               key: "firstPostLink",
               type: "text",
               value: "$firstPostLink",
-              sectionTitle:
+              title:
                 "Add link to your first post on TikTok, Instagram, LinkedIn, etc",
-              sheetTitle:
+              description:
                 "Pro-tip: write a post that gives helpful information about the problem you are solving",
             },
             {
               key: "favoriteComment",
               type: "text",
               value: "$favoriteComment",
-              sectionTitle: "Enter your favorite comment on your post",
-              sheetTitle:
+              title: "Enter your favorite comment on your post",
+              description:
                 "Pro-tip: on social, giving in the form of likes, comments and shares = long-term equity",
             },
             {
               key: "aspiringSocialAccount",
               type: "text",
               value: "$aspiringSocialAccount",
-              sectionTitle:
+              title:
                 "Link one of the social media accounts that you aspire to be like, and has a similar audience",
-              sheetTitle:
+              description:
                 "Pro-tip: on social, giving in the form of likes, comments and shares = long-term equity",
             },
             {
               key: "socialCampaignTheme",
               type: "text",
               value: "$socialCampaignTheme",
-              sectionTitle: "Enter the theme of your social media campaigne",
-              sheetTitle:
+              title: "Enter the theme of your social media campaigne",
+              description:
                 "Pro-tip: social media campaigns are a series of posts with a similar theme of how they help or entertain a user",
             },
             {
               key: "firstSocialCampaign",
               type: "text",
               value: "$firstSocialCampaign",
-              sectionTitle: "Link the post of your first social campaign",
-              sheetTitle:
+              title: "Link the post of your first social campaign",
+              description:
                 "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
             },
           ],
