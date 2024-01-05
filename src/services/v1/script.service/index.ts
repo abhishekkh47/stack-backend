@@ -29,6 +29,7 @@ import {
   uploadQuizImages,
   PROMPT_STYLE,
   XP_POINTS,
+  COMPLETED_ACTION_REWARD,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 
@@ -884,7 +885,10 @@ class ScriptService {
         rows.map(async (data, index) => {
           let currentPromptStyle =
             PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
-          if (data["Prompt Type"]?.trimEnd() == "Description") {
+          if (
+            data["Image Prompt"]?.trimEnd() &&
+            data["Prompt Type"]?.trimEnd() == "Description"
+          ) {
             promptList.descriptions.push({
               prompt: data["Image Prompt"]?.trimEnd(),
               promptStyle: currentPromptStyle,
@@ -907,12 +911,12 @@ class ScriptService {
           }
         })
       );
-      // for (let i = 0; i < promptList.descriptions.length; i++) {
-      //   await this.getImage(
-      //     STORY_QUESTION_TYPE.DESCRIPTION,
-      //     promptList.descriptions[i]
-      //   );
-      // }
+      for (let i = 0; i < promptList.descriptions.length; i++) {
+        await this.getImage(
+          STORY_QUESTION_TYPE.DESCRIPTION,
+          promptList.descriptions[i]
+        );
+      }
       for (let i = 0; i < promptList.questions.length; i++) {
         await this.getImage(
           STORY_QUESTION_TYPE.QUESTION,
@@ -1037,27 +1041,6 @@ class ScriptService {
         })
       );
 
-      if (categories.length > 0) {
-        categories = Array.from(
-          new Set(categories.map((item) => item.topic))
-        ).map((topic) => categories.find((item) => item.topic === topic));
-        const createdCategories = await QuizTopicTable.insertMany(categories);
-        storyContentData.map((quizData) => {
-          if (quizData.topicId == null) {
-            const checkIfCategoryMatched = filterCategory.find(
-              (x) => x.key == quizData.quizNum
-            );
-            if (checkIfCategoryMatched) {
-              const filteredCategory = createdCategories.find(
-                (x) => x.topic == checkIfCategoryMatched.value
-              );
-              if (filteredCategory) {
-                quizData.topicId = filteredCategory._id;
-              }
-            }
-          }
-        });
-      }
       fs.rmdirSync(outputPath, { recursive: true });
       return storyContentData;
     } catch (error) {
@@ -1085,9 +1068,8 @@ class ScriptService {
                 if (action.type == 4) {
                   return {
                     ...action,
-                    reward: XP_POINTS.COMPLETED_ACTION,
+                    reward: COMPLETED_ACTION_REWARD,
                   };
-                  return action;
                 } else {
                   const { quizNum } = action;
                   const quizId = await QuizTable.find({
@@ -1223,6 +1205,114 @@ class ScriptService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+  /**
+   * @description This function convert spreadsheet data to JSON by filtering with quiz # for weekly journey
+   * @param quizNums
+   * @param rows
+   * @returns {*}
+   */
+  public async convertWeeklyQuizSpreadSheetToJSON(quizNums: any, rows: any) {
+    rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
+    let lastQuizName = "";
+    let lastQuizImage = "";
+    let lastQuizCategory = "";
+    let lastQuizStage = "";
+    let lastQuizTags = "";
+    let quizContentData = [];
+    let questionDataArray = [];
+    let order = 1;
+    await Promise.all(
+      await rows.map(async (data, index) => {
+        if (data["Quiz Title"] != "") {
+          lastQuizName = data["Quiz Title"].trimEnd();
+          lastQuizImage = data["Quiz Image"];
+        }
+        if (data["Category"] != "") {
+          lastQuizCategory = data["Category"].trimEnd();
+        }
+        if (data["Stage"] != "") {
+          lastQuizStage = data["Stage"].trimEnd();
+        }
+        if (data["Tags"] && data["Tags"] != "") {
+          let tags = data["Tags"].split(",");
+          tags = tags.map((data) => {
+            data = data.trim();
+            return data;
+          });
+          lastQuizTags = tags.join(",");
+        }
+        if (data["Quiz Title"] == "") {
+          ++order;
+        } else {
+          order = 1;
+        }
+        let questionData = {
+          text: data["Question"].trimEnd(),
+          question_image: null,
+          order: order,
+          points: 10,
+          question_type: 2,
+          answer_type: 2,
+          answer_array: [
+            {
+              name: data["A"].trimEnd(),
+              image: data["Image A"],
+              correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
+              statement:
+                data["correctAnswer"] == data["A"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
+            },
+            {
+              name: data["B"].trimEnd(),
+              image: data["Image B"],
+              correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
+              statement:
+                data["correctAnswer"] == data["B"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
+            },
+            {
+              name: data["C"].trimEnd(),
+              image: data["Image C"],
+              correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
+              statement:
+                data["correctAnswer"] == data["C"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
+            },
+            {
+              name: data["D"].trimEnd(),
+              image: data["Image D"],
+              correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
+              statement:
+                data["correctAnswer"] == data["D"]
+                  ? data["Explanation"].trimEnd()
+                  : null,
+            },
+          ],
+        };
+        questionDataArray.push(questionData);
+        if (
+          rows[index + 1] == undefined ||
+          rows[index + 1]["Quiz #"] !== data["Quiz #"]
+        ) {
+          let quizData = {
+            topicId: null,
+            quizNum: data["Quiz #"].trimEnd(),
+            quizName: lastQuizName,
+            image: lastQuizImage,
+            stageName: lastQuizStage,
+            tags: lastQuizTags,
+            questionData: questionDataArray,
+          };
+          quizContentData.push(quizData);
+          questionDataArray = [];
+        }
+      })
+    );
+    return quizContentData;
   }
 }
 

@@ -232,8 +232,8 @@ export const XP_POINTS = {
   COMPLETED_QUIZ: 10,
   REFERRAL: 20,
   SIMULATION_QUIZ: 50,
-  COMPLETED_ACTION: 100,
 };
+export const COMPLETED_ACTION_REWARD = 100;
 
 export const STREAK_LEVELS = {
   LEVEL1: { level: 1, maxValue: 3 },

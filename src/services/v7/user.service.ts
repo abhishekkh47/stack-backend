@@ -13,7 +13,11 @@ import {
   UserCommunityTable,
   WeeklyJourneyResultTable,
 } from "@app/model";
-import { XP_POINTS, MAX_STREAK_FREEZE, ANALYTICS_EVENTS } from "@app/utility";
+import {
+  MAX_STREAK_FREEZE,
+  ANALYTICS_EVENTS,
+  COMPLETED_ACTION_REWARD,
+} from "@app/utility";
 import { EUserType, EUSERSTATUS } from "@app/types";
 import { UserDBService } from "../v4";
 import { NetworkError } from "@app/middleware";
@@ -180,20 +184,18 @@ class UserService {
   }
 
   /**
-   * @description This service is used to delete all the user related information
+   * @description This service is used to update user score on completion of thrid task of daily challenge
    * @param userIfExists
    * @param data
    */
   public async updateUserScore(userIfExists: any, data: any) {
     try {
       let incrementObj: any = {
-        quizCoins: XP_POINTS.COMPLETED_ACTION,
+        quizCoins: COMPLETED_ACTION_REWARD,
       };
       let query: any = {
         $inc: incrementObj,
       };
-      let totalXPPoints = 100;
-      incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
       let isGiftedStreakFreeze = false;
       const {
         streak: { freezeCount, current },
