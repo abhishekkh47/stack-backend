@@ -1914,6 +1914,40 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }
+
+  /**
+   * @description This method is used to add passions in db
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/import-passion-and-category", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storePassionAndProblemsInDB(ctx: any) {
+    try {
+      const { passions } = ctx.request.body;
+      const rows = await ScriptService.readSpreadSheet(
+        envData.PASSION_SHEET_GID,
+        envData.PASSION_SHEET_ID
+      );
+      if (rows.length === 0) return this.BadRequest(ctx, "Passion Not Found");
+      const passionsContentData =
+        await BusinessProfileScriptService.convertPassionSpreadSheetToJSON(
+          rows
+        );
+      const isPassionAddedToDB =
+        await BusinessProfileScriptService.addPassionAndProblemCategory(
+          passionsContentData
+        );
+      if (!isPassionAddedToDB)
+        return this.BadRequest(ctx, "Something Went Wrong");
+      return this.Ok(ctx, {
+        message: "Passions Stored Successfully",
+        data: isPassionAddedToDB,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new ScriptController();

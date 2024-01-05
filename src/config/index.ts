@@ -160,5 +160,11 @@ export default {
   },
   get STORY_SHEET_GID() {
     return process.env.STORY_SHEET_GID;
-  },  
+  },
+  get PASSION_SHEET_ID() {
+    return process.env.PASSION_SHEET_ID;
+  },
+  get PASSION_SHEET_GID() {
+    return process.env.PASSION_SHEET_GID;
+  },
 };

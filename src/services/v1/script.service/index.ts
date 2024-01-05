@@ -124,8 +124,13 @@ class ScriptService {
    * @param gid GridId of sheet
    * @returns {*}
    */
-  public async readSpreadSheet(gid: string = null) {
-    const document = new GoogleSpreadsheet(envData.SHEET_ID);
+  public async readSpreadSheet(gid: string = null, sheetId: string = null) {
+    let document = null;
+    if (sheetId == envData.PASSION_SHEET_ID) {
+      document = new GoogleSpreadsheet(envData.PASSION_SHEET_ID);
+    } else {
+      document = new GoogleSpreadsheet(envData.SHEET_ID);
+    }
     await document.useServiceAccountAuth({
       client_email: envData.CLIENT_EMAIL,
       private_key: envData.GOOGLE_SERVICEACCOUNT_PRIVATE_KEY,
