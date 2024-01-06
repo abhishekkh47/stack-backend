@@ -18,8 +18,7 @@ import {
 import { validationsV7 } from "@app/validations/v7/apiValidation";
 import BaseController from "../base";
 import { BusinessProfileService } from "@app/services/v7";
-import { UserDBService } from "@app/services/v6";
-import { ObjectId } from "mongodb";
+import { UserService } from "@app/services/v7";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -43,7 +42,7 @@ class BusinessProfileController extends BaseController {
           if (validate) {
             await BusinessProfileService.addOrEditBusinessProfile(
               body,
-              user._id
+              userIfExists
             );
             return this.Ok(ctx, { message: "Success" });
           }
@@ -132,6 +131,7 @@ class BusinessProfileController extends BaseController {
         actionInput: imageName,
       };
       await WeeklyJourneyResultTable.create(dataToCreate);
+      UserService.updateUserScore(userExists, ctx.request.body);
     }
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
@@ -186,6 +186,7 @@ class BusinessProfileController extends BaseController {
         actionInput: imageName,
       };
       await WeeklyJourneyResultTable.create(dataToCreate);
+      UserService.updateUserScore(userExists, ctx.request.body);
     }
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
@@ -240,6 +241,7 @@ class BusinessProfileController extends BaseController {
         actionInput: imageName,
       };
       await WeeklyJourneyResultTable.create(dataToCreate);
+      UserService.updateUserScore(userExists, ctx.request.body);
     }
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
@@ -294,6 +296,7 @@ class BusinessProfileController extends BaseController {
         actionInput: imageName,
       };
       await WeeklyJourneyResultTable.create(dataToCreate);
+      UserService.updateUserScore(userExists, ctx.request.body);
     }
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }

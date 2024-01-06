@@ -1811,7 +1811,7 @@ class ScriptController extends BaseController {
       }
       return this.Ok(ctx, { message: "Success", data: true });
     } catch (error) {
-      return this.BadRequest(ctx, "Something Went Wrong");
+      return this.BadRequest(ctx, error.message);
     }
   }
 
@@ -1882,6 +1882,37 @@ class ScriptController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is used to store new 1.27 new quiz content
+   * @param ctx
+   */
+  @Route({ path: "/import-weekly-quiz", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeWeeklyQuiz(ctx: any) {
+    try {
+      const { quizNums } = ctx.request.body;
+      if (quizNums.length === 0) {
+        return this.BadRequest(ctx, "Please enter input quiz numbers");
+      }
+      const rows = await ScriptService.readSpreadSheet();
+      const quizContentData =
+        await ScriptService.convertWeeklyQuizSpreadSheetToJSON(quizNums, rows);
+      if (quizContentData.length === 0) {
+        return this.BadRequest(ctx, "Quiz Content Not Found");
+      }
+      const isAddedToDb = await ScriptService.addQuizContentsToDB(
+        quizContentData
+      );
+      if (!isAddedToDb) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: quizContentData });
+    } catch (error) {
+      console.log(error);
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
   }
 }
 

@@ -1,8 +1,13 @@
-import { BusinessProfileTable, WeeklyJourneyResultTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  WeeklyJourneyResultTable,
+  UserTable,
+} from "@app/model";
 import { AnalyticsService } from "@app/services/v4";
-import { ANALYTICS_EVENTS } from "@app/utility";
+import { ANALYTICS_EVENTS, MAX_STREAK_FREEZE } from "@app/utility";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
+import { UserService } from "@app/services/v7";
 
 class BusinessProfileService {
   /**
@@ -11,13 +16,13 @@ class BusinessProfileService {
    * @param userProgress
    * @returns {*}
    */
-  public async addOrEditBusinessProfile(data: any, userId: string) {
+  public async addOrEditBusinessProfile(data: any, userIfExists: any) {
     try {
       let obj = {};
       obj[data.key] = data.value;
       await BusinessProfileTable.findOneAndUpdate(
         {
-          userId: userId,
+          userId: userIfExists._id,
         },
         {
           $set: obj,
@@ -29,21 +34,12 @@ class BusinessProfileService {
         const dataToCreate = {
           weeklyJourneyId: data.weeklyJourneyId,
           actionNum: data.actionNum,
-          userId: userId,
+          userId: userIfExists._id,
           actionInput: data.key,
         };
         await WeeklyJourneyResultTable.create(dataToCreate);
-        AnalyticsService.sendEvent(
-          ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
-          {
-            "Challenge Name": data.taskName,
-            "Challenge Score": 100,
-          },
-          {
-            device_id: data.deviceId,
-            user_id: userId,
-          }
-        );
+
+        UserService.updateUserScore(userIfExists, data);
       }
       return true;
     } catch (error) {

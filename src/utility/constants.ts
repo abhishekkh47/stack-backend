@@ -231,8 +231,9 @@ export const XP_POINTS = {
   CORRECT_ANSWER: 5,
   COMPLETED_QUIZ: 10,
   REFERRAL: 20,
-  SIMULATION_QUIZ: 150,
+  SIMULATION_QUIZ: 50,
 };
+export const COMPLETED_ACTION_REWARD = 100;
 
 export const STREAK_LEVELS = {
   LEVEL1: { level: 1, maxValue: 3 },
@@ -269,7 +270,7 @@ export const STORY_QUESTION_TYPE = {
   QUESTION: 2,
 };
 
-export const SIMULATION_QUIZ_FUEL = 100;
+export const SIMULATION_QUIZ_FUEL = 50;
 export const REFILL_LIFE_FUEL = 300;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 
@@ -381,6 +382,6 @@ export const WEEKLY_CHALLENGE_REWARD_LIST = [
 export const PROMPT_STYLE = [
   "in the style of 3d vector realistic animation, soft lighting --v 6",
   "in the style of pixel art, idyllic --v 6",
-  "in the style of cyberpunk, vibrant futurism, photo-realistic, neon light --v 6",
+  "in the style of cyberpunk, vibrant futurism, photo-realistic --v 6",
   "in the style of photo-realistic, soft lighting, studio photography --v 6",
 ];

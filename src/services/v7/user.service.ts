@@ -13,8 +13,15 @@ import {
   UserCommunityTable,
   WeeklyJourneyResultTable,
 } from "@app/model";
+import {
+  MAX_STREAK_FREEZE,
+  ANALYTICS_EVENTS,
+  COMPLETED_ACTION_REWARD,
+} from "@app/utility";
 import { EUserType, EUSERSTATUS } from "@app/types";
 import { UserDBService } from "../v4";
+import { NetworkError } from "@app/middleware";
+import { AnalyticsService } from "@app/services/v4";
 import userDbService from "../v4/user.db.service";
 
 class UserService {
@@ -173,6 +180,59 @@ class UserService {
       return true;
     } catch (error) {
       return false;
+    }
+  }
+
+  /**
+   * @description This service is used to update user score on completion of thrid task of daily challenge
+   * @param userIfExists
+   * @param data
+   */
+  public async updateUserScore(userIfExists: any, data: any) {
+    try {
+      let incrementObj: any = {
+        quizCoins: COMPLETED_ACTION_REWARD,
+      };
+      let query: any = {
+        $inc: incrementObj,
+      };
+      let isGiftedStreakFreeze = false;
+      const {
+        streak: { freezeCount, current },
+      } = userIfExists;
+      if (
+        freezeCount == 0 &&
+        current >= 0 &&
+        freezeCount <= MAX_STREAK_FREEZE
+      ) {
+        isGiftedStreakFreeze = true;
+        incrementObj = { ...incrementObj, "streak.freezeCount": 1 };
+      }
+      query = {
+        ...query,
+        $inc: incrementObj,
+        $set: { isQuizReminderNotificationSent: false },
+      };
+      const updatedXP: any = await UserTable.findOneAndUpdate(
+        { _id: userIfExists._id },
+        query,
+        {
+          new: true,
+        }
+      );
+      AnalyticsService.sendEvent(
+        ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
+        {
+          "Challenge Name": data.taskName,
+          "Challenge Score": 100,
+        },
+        {
+          device_id: data.deviceId,
+          user_id: userIfExists._id,
+        }
+      );
+    } catch (error) {
+      throw new NetworkError("Something went wrong" + error, 400);
     }
   }
 }

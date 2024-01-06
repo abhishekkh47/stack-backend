@@ -70,6 +70,13 @@ class WeeklyJourneyDBService {
           },
         ]).exec();
 
+        if (
+          userJourney[0].weeklyJourney.week == 4 &&
+          userJourney[0].weeklyJourney.day == 6 &&
+          userJourney[0].weeklyJourney.actionNum == 3
+        ) {
+          return [];
+        }
         upcomingChallenge = [...userJourney];
         const currentWeeklyJourney = userJourney[0].weeklyJourney;
         if (
@@ -235,11 +242,13 @@ class WeeklyJourneyDBService {
     try {
       const groupedByWeek = weeklyJourneyDetails.reduce((acc, item) => {
         const week = item.week;
-        if (
-          !acc[week] &&
-          item.day == 7 &&
-          userNextChallenge.weeklyJourney.week > week
-        ) {
+        let userWeek = 0;
+        if (!userNextChallenge.length) {
+          userWeek = 5;
+        } else {
+          userNextChallenge.weeklyJourney.week;
+        }
+        if (!acc[week] && item.day == 7 && userWeek > week) {
           acc[week] = {
             id: item._id,
             week,

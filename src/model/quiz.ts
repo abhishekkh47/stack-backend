@@ -10,6 +10,7 @@ const schema = new mongoose.Schema<IQuizSchema>(
     topicId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "quizTopic",
+      default: null,
     },
     stageId: {
       type: mongoose.Schema.Types.ObjectId,
