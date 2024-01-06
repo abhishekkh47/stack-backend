@@ -1299,7 +1299,7 @@ class ScriptService {
           rows[index + 1]["Quiz #"] !== data["Quiz #"]
         ) {
           let quizData = {
-            topicId: null,
+            topicId: new ObjectId('6594011ab1fc7ea1f458e8c8'),
             quizNum: data["Quiz #"].trimEnd(),
             quizName: lastQuizName,
             image: lastQuizImage,
