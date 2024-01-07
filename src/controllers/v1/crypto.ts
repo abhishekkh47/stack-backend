@@ -14,7 +14,7 @@ import BaseController from "@app/controllers/base";
 
 class CryptocurrencyController extends BaseController {
   @Route({ path: "/add-crypto", method: HttpMethod.POST })
-  public async addCrypto(ctx: Koa.Context) {
+  public async addCrypto(ctx: Koa.Context | any) {
     const input = ctx.request.body;
     return validation.addCryptoInputValidation(
       input,

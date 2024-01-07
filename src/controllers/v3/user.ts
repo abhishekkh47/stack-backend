@@ -4,6 +4,7 @@ import { Auth, PrimeTrustJWT } from "@app/middleware";
 import { ParentChildTable, UserTable } from "@app/model";
 import { zohoCrmService } from "@app/services/v1";
 import userService from "@app/services/v3/user.service";
+import userServiceV7 from "@app/services/v7/user.service";
 import { AnalyticsService } from "@app/services/v4";
 import { EUSERSTATUS, EUserType, HttpMethod } from "@app/types";
 import {
@@ -36,7 +37,7 @@ class UserController extends BaseController {
       if (!userExists) {
         return this.BadRequest(ctx, "User not found");
       }
-      const isDetailsDeleted = await userService.deleteUserData(
+      const isDetailsDeleted = await userServiceV7.deleteUserData(
         userExists,
         zohoAccessToken,
         primeTrustToken

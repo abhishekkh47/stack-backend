@@ -327,5 +327,7 @@
 	"createCommunityValidationNameRequired": "Please enter community name.",
 	"createCommunityValidationNameEmpty": "createCommunityValidationNameEmpty",
 	"createCommunityValidationGoogleplaceidRequired": "createCommunityValidationGoogleplaceidRequired",
-	"createCommunityValidationGoogleplaceidEmpty": "createCommunityValidationGoogleplaceidEmpty"
+	"createCommunityValidationGoogleplaceidEmpty": "createCommunityValidationGoogleplaceidEmpty",
+	"businessProfileValidationKeyRequired": "businessProfileValidationKeyRequired",
+	"businessProfileValidationValueRequired": "businessProfileValidationValueRequired"
 }

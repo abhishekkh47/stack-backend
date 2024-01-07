@@ -39,6 +39,121 @@ export const uploadFileS3 = multer({
     return cb(null, true);
   },
 });
+export const uploadCompanyLogo = multer({
+  storage: multerS3({
+    s3,
+    bucket: "stack-business-information/companyLogo",
+    key: async (req, file, cb) => {
+      const response = await verifyToken(req.headers["x-access-token"]);
+      if (response && response.status && response.status === 401) {
+        return cb(new NetworkError("Unauthorised User", 401));
+      }
+      return cb(
+        null,
+        `${response._id}/${file.fieldname}_${Date.now().toString()}.${
+          file.originalname.split(".")[1]
+        }`
+      );
+    },
+  }),
+  limit: { fileSize: 5000000 },
+  fileFilter(req, file, cb) {
+    if (!checkValidImageExtension(file))
+      return cb(
+        new Error(
+          "Please upload a Image of valid extension of jpg or pdf format only."
+        )
+      );
+    return cb(null, true);
+  },
+});
+
+export const uploadHomeScreenImage = multer({
+  storage: multerS3({
+    s3,
+    bucket: `stack-business-information/home-screen-image`,
+    key: async (req, file, cb) => {
+      const response = await verifyToken(req.headers["x-access-token"]);
+      if (response && response.status && response.status === 401) {
+        return cb(new NetworkError("Unauthorised User", 401));
+      }
+      return cb(
+        null,
+        `${response._id}/${file.fieldname}_${Date.now().toString()}.${
+          file.originalname.split(".")[1]
+        }`
+      );
+    },
+  }),
+  limit: { fileSize: 5000000 },
+  fileFilter(req, file, cb) {
+    if (!checkValidImageExtension(file))
+      return cb(
+        new Error(
+          "Please upload a Image of valid extension of jpg or pdf format only."
+        )
+      );
+    return cb(null, true);
+  },
+});
+
+export const uploadSocialFeedback = multer({
+  storage: multerS3({
+    s3,
+    bucket: `stack-business-information/social-feedback`,
+    key: async (req, file, cb) => {
+      const response = await verifyToken(req.headers["x-access-token"]);
+      if (response && response.status && response.status === 401) {
+        return cb(new NetworkError("Unauthorised User", 401));
+      }
+      return cb(
+        null,
+        `${response._id}/${file.fieldname}_${Date.now().toString()}.${
+          file.originalname.split(".")[1]
+        }`
+      );
+    },
+  }),
+  limit: { fileSize: 5000000 },
+  fileFilter(req, file, cb) {
+    if (!checkValidImageExtension(file))
+      return cb(
+        new Error(
+          "Please upload a Image of valid extension of jpg or pdf format only."
+        )
+      );
+    return cb(null, true);
+  },
+});
+
+export const uploadMvpHomeScreen = multer({
+  storage: multerS3({
+    s3,
+    bucket: `stack-business-information/mvp-home-screen`,
+    key: async (req, file, cb) => {
+      const response = await verifyToken(req.headers["x-access-token"]);
+      if (response && response.status && response.status === 401) {
+        return cb(new NetworkError("Unauthorised User", 401));
+      }
+      return cb(
+        null,
+        `${response._id}/${file.fieldname}_${Date.now().toString()}.${
+          file.originalname.split(".")[1]
+        }`
+      );
+    },
+  }),
+  limit: { fileSize: 5000000 },
+  fileFilter(req, file, cb) {
+    if (!checkValidImageExtension(file))
+      return cb(
+        new Error(
+          "Please upload a Image of valid extension of jpg or pdf format only."
+        )
+      );
+    return cb(null, true);
+  },
+});
 export const uploadIdProof = multer({
   storage: multer.diskStorage({
     destination: function (req, file, cb) {
@@ -76,4 +191,24 @@ export const removeImage = (userId: string, imageName: string) => {
       return true;
     }
   );
+};
+export const uploadQuizImages = (prompt: any, outputPath: any) => {
+  const fileContent = fs.readFileSync(outputPath);
+
+  const params = {
+    Bucket: "stack-images/quiz_images",
+    Key: `${prompt}.png`,
+    Body: fileContent,
+  };
+
+  s3.upload(params, function (err, data) {
+    if (err) {
+      throw err;
+    }
+    return {
+      response_code: 200,
+      response_message: "Success",
+      response_data: data,
+    };
+  });
 };

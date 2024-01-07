@@ -29,14 +29,15 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] = await Promise.all([
-            LeagueTable.find({})
-              .select("_id name image minPoint maxPoint colorCode")
-              .sort({ minPoint: 1 }),
-            UserTable.findOne({ _id: user._id }).populate("streakGoal"),
-            QuizTable.findOne({ _id: reqParam.quizId }),
-            QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
-          ]);
+          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] =
+            await Promise.all([
+              LeagueTable.find({})
+                .select("_id name image minPoint maxPoint colorCode")
+                .sort({ minPoint: 1 }),
+              UserTable.findOne({ _id: user._id }).populate("streakGoal"),
+              QuizTable.findOne({ _id: reqParam.quizId }),
+              QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
+            ]);
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
@@ -63,11 +64,18 @@ class QuizController extends BaseController {
           const [
             { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked },
             streaksDetails,
-            quizRecommendations
+            quizRecommendations,
           ] = await Promise.all([
-            LeagueService.getUpdatedLeagueDetailsOfUser(userIfExists, leagues, updatedXPPoints),
+            LeagueService.getUpdatedLeagueDetailsOfUser(
+              userIfExists,
+              leagues,
+              updatedXPPoints
+            ),
             UserDBService.addStreaks(userIfExists),
-            QuizDBServiceV4.getQuizRecommendations(userIfExists._id, quizIfExists.topicId.toString())
+            QuizDBServiceV4.getQuizRecommendations(
+              userIfExists._id,
+              quizIfExists.topicId.toString()
+            ),
           ]);
 
           (async () => {

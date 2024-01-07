@@ -13,7 +13,7 @@ class VideoController extends BaseController {
    */
   @Route({ path: "/generic-reels", method: HttpMethod.GET })
   @Auth()
-  public async getVideos(ctx: Koa.Context) {
+  public async getVideos(ctx: Koa.Context | any) {
     let videos: any = await VideosTable.find(
       {},
       {

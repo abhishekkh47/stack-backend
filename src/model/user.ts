@@ -9,7 +9,7 @@ import {
 } from "@app/types";
 import { ALL_NULL_5_DAYS, MAX_STREAK_FREEZE } from "@app/utility";
 
-export type IUserSchema = MongooseModel<IUser> & mongoose.Document;
+export type IUserSchema = MongooseModel<any> & mongoose.Document;
 
 const schema = new mongoose.Schema<IUserSchema>(
   {

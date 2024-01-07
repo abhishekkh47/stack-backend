@@ -22,7 +22,7 @@ const schema = new mongoose.Schema<IQuizQuestionSchema>(
       required: true,
     },
     /**
-     * 1 - BEST_ANSWER, 2 - FILL_IN_BLANKS , 3 - TRUE_FALSE,
+     * 1 - BEST_ANSWER, 2 - FILL_IN_BLANKS , 3 - TRUE_FALSE, 4-STORY_DESCRIPTION
      */
     question_type: {
       type: mongoose.Schema.Types.Number,

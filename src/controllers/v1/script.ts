@@ -25,6 +25,7 @@ import {
   DripshopItemTable,
   StageTable,
   StreakGoalTable,
+  BusinessProfileTable,
 } from "@app/model";
 import {
   EAction,
@@ -1771,6 +1772,145 @@ class ScriptController extends BaseController {
       );
       return this.Ok(ctx, { message: "Success", data: true });
     } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This method is used to import simulations
+   * @param ctx
+   */
+  @Route({ path: "/import-stories", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeStories(ctx: any) {
+    try {
+      const { storyNums } = ctx.request.body;
+      if (storyNums.length === 0) {
+        return this.BadRequest(ctx, "Please enter input story numbers");
+      }
+      const rows = await ScriptService.readSpreadSheet(envData.STORY_SHEET_GID);
+      let allStories = await QuizTopicTable.find({ type: 2, status: 1 }).select(
+        "_id topic"
+      );
+      const hasStagesTopic = await QuizTopicTable.findOne({ hasStages: true });
+      const storiesContentData =
+        await ScriptService.convertStorySpreadSheetToJSON(
+          hasStagesTopic,
+          storyNums,
+          rows,
+          allStories
+        );
+      if (storiesContentData.length === 0) {
+        return this.BadRequest(ctx, "Story Content Not Found");
+      }
+      const isAddedToDb = await ScriptService.addQuizContentsToDB(
+        storiesContentData
+      );
+      if (!isAddedToDb) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: true });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to import simulations
+   * @param ctx
+   */
+  @Route({ path: "/import-weekly-challenges", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeWeeklyChallenges(ctx: any) {
+    try {
+      const { weeklyChallenges } = ctx.request.body;
+      if (!weeklyChallenges) {
+        return this.BadRequest(ctx, "Please provide weekly challenges");
+      }
+      const dailyChallenges = await ScriptService.processWeeklyChallenges(
+        weeklyChallenges
+      );
+      const isAddedToDb = await ScriptService.addweeklyDataToDB(
+        dailyChallenges
+      );
+      if (!isAddedToDb) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: true });
+    } catch (error) {
+      return this.BadRequest(ctx, "Something Went Wrong");
+    }
+  }
+
+  /**
+   * @description This script is used to update the businessProfile for old users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-business-profile", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateBusinessProfile(ctx: any) {
+    await BusinessProfileTable.updateMany(
+      {},
+      {
+        $set: {
+          companyName: null,
+          companyLogo: null,
+          targetAudience: null,
+          competitors: null,
+          keyDifferentiator: null,
+          xForY: null,
+          headline: null,
+          valueCreators: null,
+          colorsAndAesthetic: null,
+          callToAction: null,
+          linkYourBlog: null,
+          linkYourWebsite: null,
+          appName: null,
+          homescreenImage: null,
+          customerDiscovery: null,
+          socialFeedback: null,
+          productUpdate: null,
+          mvpHomeScreen: null,
+          socialMediaAccountLink: null,
+          firstPostLink: null,
+          favoriteComment: null,
+          aspiringSocialAccount: null,
+          socialCampaignTheme: null,
+          firstSocialCampaign: null,
+        },
+      }
+    );
+    return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is used to store new 1.27 new quiz content
+   * @param ctx
+   */
+  @Route({ path: "/import-weekly-quiz", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeWeeklyQuiz(ctx: any) {
+    try {
+      const { quizNums } = ctx.request.body;
+      if (quizNums.length === 0) {
+        return this.BadRequest(ctx, "Please enter input quiz numbers");
+      }
+      const rows = await ScriptService.readSpreadSheet();
+      const quizContentData =
+        await ScriptService.convertWeeklyQuizSpreadSheetToJSON(quizNums, rows);
+      if (quizContentData.length === 0) {
+        return this.BadRequest(ctx, "Quiz Content Not Found");
+      }
+      const isAddedToDb = await ScriptService.addQuizContentsToDB(
+        quizContentData
+      );
+      if (!isAddedToDb) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: quizContentData });
+    } catch (error) {
+      console.log(error);
       return this.BadRequest(ctx, "Something Went Wrong");
     }
   }

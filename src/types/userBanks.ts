@@ -1,6 +1,7 @@
+import mongoose from "mongoose";
 export interface IBankAccount {
-  userId: string;
-  parentId: string;
+  userId: mongoose.Schema.Types.ObjectId;
+  parentId: mongoose.Schema.Types.ObjectId;
   isDefault: number;
   processorToken: string;
   accessToken: string;

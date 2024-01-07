@@ -10,6 +10,7 @@ const schema = new mongoose.Schema<IQuizSchema>(
     topicId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "quizTopic",
+      default: null,
     },
     stageId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -30,7 +31,7 @@ const schema = new mongoose.Schema<IQuizSchema>(
     },
     videoUrl: { type: mongoose.Schema.Types.String, default: null },
     /**
-     * 1 - quiz , 2 - simulation
+     * 1 - quiz , 2 - simulation , 3 - story
      */
     quizType: { type: mongoose.Schema.Types.Number, default: 1 },
     characterName: { type: mongoose.Schema.Types.String, default: null },
