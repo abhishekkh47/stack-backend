@@ -1775,6 +1775,14 @@ class QuizDBService {
             stageId: 1,
           },
         },
+        {
+          $match: {
+            $and: [
+              { image: { $ne: null } },  // Exclude documents where 'image' is null
+              { image: { $ne: "" } }     // Exclude documents where 'image' is an empty string
+            ]
+          },
+        },
       ]).exec();
       if (quizzes.length === 0) return [];
       const stageId = quizzes[0]?.stageId?.toString() || null;
