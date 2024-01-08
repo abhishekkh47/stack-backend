@@ -221,7 +221,7 @@ class UserService {
         }
       );
       AnalyticsService.sendEvent(
-        ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
+        ANALYTICS_EVENTS.ACTION_COMPLETED,
         {
           "Challenge Name": data.taskName,
           "Challenge Score": 100,

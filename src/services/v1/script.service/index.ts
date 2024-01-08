@@ -868,7 +868,6 @@ class ScriptService {
     try {
       rows = rows.filter((x) => storyNums.includes(x["Story #"]));
       let storyTitle = "";
-      let storyImage = "";
       let lastStoryCategory = "";
       let lastStoryStage = "";
       let order = 1;
@@ -908,11 +907,13 @@ class ScriptService {
             ].map((promptKey) => ({
               prompt: data[promptKey]?.trimEnd(),
               promptStyle: currentPromptStyle,
-              imageName: `s${data["Story #"]}_q${(index + 1) / 4}_${promptKey
-                .slice(-1)
-                .toLocaleLowerCase()}`,
+              imageName: `s${data["Story #"]}_q${Math.ceil(
+                (index + 1) / 4
+              )}_${promptKey.slice(-1).toLocaleLowerCase()}`,
             }));
-            promptList.questions.push(...prompts);
+            if (prompts[0].prompt) {
+              promptList.questions.push(...prompts);
+            }
           }
         })
       );
@@ -932,9 +933,6 @@ class ScriptService {
         await rows.map(async (data, index) => {
           if (data["Story Title"] != "") {
             storyTitle = data["Story Title"]?.trimEnd();
-          }
-          if (data["Story Image"] != "") {
-            storyImage = data["Story Image"]?.trimEnd();
           }
           if (data["Category"] != "") {
             lastStoryCategory = data["Category"]?.trimEnd();
@@ -1032,7 +1030,7 @@ class ScriptService {
               topicId: topicId,
               quizNum: data["Story #"].trimEnd(),
               quizName: storyTitle,
-              image: storyImage,
+              image: null,
               quizType: QUIZ_TYPE.STORY,
               stageName: lastStoryStage,
               characterName: characterName,
@@ -1179,7 +1177,7 @@ class ScriptService {
   public async getImage(questionType: number, prompts: any) {
     try {
       const imagineRes = await generateImage(
-        `${prompts.prompt} ${prompts.promptStyle} --relax`
+        `${prompts.prompt} ${prompts.promptStyle}`
       );
       const myImage = await UpscaleImage(imagineRes);
       if (!imagineRes) {
@@ -1220,7 +1218,6 @@ class ScriptService {
   public async convertWeeklyQuizSpreadSheetToJSON(quizNums: any, rows: any) {
     rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
     let lastQuizName = "";
-    let lastQuizImage = "";
     let lastQuizCategory = "";
     let lastQuizStage = "";
     let lastQuizTags = "";
@@ -1231,7 +1228,6 @@ class ScriptService {
       await rows.map(async (data, index) => {
         if (data["Quiz Title"] != "") {
           lastQuizName = data["Quiz Title"].trimEnd();
-          lastQuizImage = data["Quiz Image"];
         }
         if (data["Category"] != "") {
           lastQuizCategory = data["Category"].trimEnd();
@@ -1304,10 +1300,10 @@ class ScriptService {
           rows[index + 1]["Quiz #"] !== data["Quiz #"]
         ) {
           let quizData = {
-            topicId: null,
+            topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
             quizNum: data["Quiz #"].trimEnd(),
             quizName: lastQuizName,
-            image: lastQuizImage,
+            image: null,
             stageName: lastQuizStage,
             tags: lastQuizTags,
             questionData: questionDataArray,
