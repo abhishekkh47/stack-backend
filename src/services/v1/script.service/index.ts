@@ -902,11 +902,13 @@ class ScriptService {
             ].map((promptKey) => ({
               prompt: data[promptKey]?.trimEnd(),
               promptStyle: currentPromptStyle,
-              imageName: `s${data["Story #"]}_q${(index + 1) / 4}_${promptKey
-                .slice(-1)
-                .toLocaleLowerCase()}`,
+              imageName: `s${data["Story #"]}_q${Math.ceil(
+                (index + 1) / 4
+              )}_${promptKey.slice(-1).toLocaleLowerCase()}`,
             }));
-            promptList.questions.push(...prompts);
+            if (prompts[0].prompt) {
+              promptList.questions.push(...prompts);
+            }
           }
         })
       );
@@ -1170,7 +1172,7 @@ class ScriptService {
   public async getImage(questionType: number, prompts: any) {
     try {
       const imagineRes = await generateImage(
-        `${prompts.prompt} ${prompts.promptStyle} --relax`
+        `${prompts.prompt} ${prompts.promptStyle}`
       );
       const myImage = await UpscaleImage(imagineRes);
       if (!imagineRes) {
@@ -1293,7 +1295,7 @@ class ScriptService {
           rows[index + 1]["Quiz #"] !== data["Quiz #"]
         ) {
           let quizData = {
-            topicId: new ObjectId('6594011ab1fc7ea1f458e8c8'),
+            topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
             quizNum: data["Quiz #"].trimEnd(),
             quizName: lastQuizName,
             image: null,
