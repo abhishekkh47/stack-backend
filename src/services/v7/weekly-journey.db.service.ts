@@ -75,7 +75,7 @@ class WeeklyJourneyDBService {
           userJourney[0].weeklyJourney.day == 7 &&
           userJourney[0].weeklyJourney.actionNum == 3
         ) {
-          return [];
+          return null;
         }
         upcomingChallenge = [...userJourney];
         const currentWeeklyJourney = userJourney[0].weeklyJourney;
@@ -256,7 +256,7 @@ class WeeklyJourneyDBService {
       const groupedByWeek = weeklyJourneyDetails.reduce((acc, item) => {
         const week = item.week;
         let userWeek = 0;
-        if (!userNextChallenge.weeklyJourney) {
+        if (!userNextChallenge?.weeklyJourney) {
           userWeek = 5;
         } else {
           userWeek = userNextChallenge.weeklyJourney.week;
@@ -265,7 +265,7 @@ class WeeklyJourneyDBService {
           !acc[week] &&
           item.day == 7 &&
           (userWeek > week ||
-            (userWeek == week && userNextChallenge.weeklyJourney.day == 7))
+            (userWeek == week && userNextChallenge?.weeklyJourney.day == 7))
         ) {
           acc[week] = {
             id: item._id,

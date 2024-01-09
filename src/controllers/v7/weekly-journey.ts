@@ -39,7 +39,11 @@ class WeeklyJourneyController extends BaseController {
       userNextChallenge
     );
     return this.Ok(ctx, {
-      data: { weeks: getWeeklyDetails, currentDay: userNextChallenge },
+      data: {
+        weeks: getWeeklyDetails,
+        currentDay: userNextChallenge,
+        businessJourneyCompleted: userNextChallenge ? false : true,
+      },
       message: "Success",
     });
   }
