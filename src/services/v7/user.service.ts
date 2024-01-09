@@ -232,7 +232,7 @@ class UserService {
         }
       );
     } catch (error) {
-      throw new NetworkError("Something went wrong" + error, 400);
+      throw new NetworkError("Something went wrong", 400);
     }
   }
 }
