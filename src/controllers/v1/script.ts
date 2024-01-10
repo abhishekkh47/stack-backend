@@ -1924,7 +1924,6 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storePassionAndProblemsInDB(ctx: any) {
     try {
-      const { passions } = ctx.request.body;
       const rows = await ScriptService.readSpreadSheet(
         envData.PASSION_SHEET_GID,
         envData.PASSION_SHEET_ID

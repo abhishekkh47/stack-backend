@@ -11,18 +11,12 @@ export interface IPassion {
   order: number;
 }
 
-export interface IPassionSubCategory {
-  subCategory: string;
-  passionId: mongoose.Schema.Types.ObjectId;
-  subCategoryImage: string;
-  problem: string[];
-}
-
 export interface IBusinessProfile {
   userId: mongoose.Schema.Types.ObjectId;
   impacts: mongoose.Schema.Types.ObjectId;
   passions: mongoose.Types.ObjectId[];
   description: string;
+  marketOpportunity: string;
   companyName: string;
   companyLogo: string;
   targetAudience: string;

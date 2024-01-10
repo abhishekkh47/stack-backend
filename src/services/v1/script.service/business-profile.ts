@@ -1,4 +1,4 @@
-import { ImpactTable, PassionTable, PassionSubCategoryTable } from "@app/model";
+import { ImpactTable, PassionTable, BusinessPassionTable } from "@app/model";
 
 class BusinessProfileScriptService {
   /**
@@ -91,8 +91,8 @@ class BusinessProfileScriptService {
 
       if (!tempData[item.Passion].category[item["Sub-Category"]]) {
         tempData[item.Passion].category[item["Sub-Category"]] = {
-          "sub-category": item["Sub-Category"],
-          "Sub-Category Image": item["Sub-Category Image"],
+          title: item["Sub-Category"],
+          image: item["Sub-Category Image"],
           problem: [],
         };
       }
@@ -128,6 +128,7 @@ class BusinessProfileScriptService {
                 title: data.title,
                 order: data.order,
                 image: data.image,
+                subCategory: data.category,
               },
             },
             upsert: true,
@@ -136,37 +137,8 @@ class BusinessProfileScriptService {
         passionsBulkWriteQuery.push(bulkWriteObject);
       });
 
-      await PassionTable.bulkWrite(passionsBulkWriteQuery);
-
-      let passionCategoryBulkWriteQuery = [];
-      await Promise.all(
-        passions.map(async (data) => {
-          let passionIfExists = await PassionTable.find({ title: data.title });
-          await Promise.all(
-            data.category.map((sub_category) => {
-              let bulkWriteObject = {
-                updateOne: {
-                  filter: { subCategory: sub_category["sub-category"] },
-                  update: {
-                    $set: {
-                      subCategory: sub_category["sub-category"],
-                      subCategoryImage: sub_category["Sub-Category Image"],
-                      passionId: passionIfExists[0]._id,
-                      problem: sub_category.problem,
-                    },
-                  },
-                  upsert: true,
-                },
-              };
-              passionCategoryBulkWriteQuery.push(bulkWriteObject);
-            })
-          );
-        })
-      );
-      const passionCategoryRespone = await PassionSubCategoryTable.bulkWrite(
-        passionCategoryBulkWriteQuery
-      );
-      return passionCategoryBulkWriteQuery; //true;
+      await BusinessPassionTable.bulkWrite(passionsBulkWriteQuery);
+      return true;
     } catch (error) {
       return error;
     }

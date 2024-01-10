@@ -249,14 +249,17 @@ export const DEFAULT_TIMEZONE = "America/New_York";
 export const ALL_NULL_5_DAYS = [null, null, null, null, null];
 export const FIVE_DAYS_TO_RESET = [1, null, null, null, null];
 export const REFERRAL_SOURCES = [
-  "store",
-  "google",
-  "news",
-  "instagram",
-  "tiktok",
-  "linkedin",
-  "youtube",
-  "mouth",
+  "App Store",
+  "Google Search",
+  "News/article/blog",
+  "Email",
+  "Schools/clubs",
+  "Friends/family",
+  "Linkedin",
+  "Tiktok/Instagram/Youtube",
+  "Social Media",
+  "Mouth",
+  "Don't Be A Cog Podcast",
 ];
 
 export const DEFAULT_LIFE_COUNT = 3;

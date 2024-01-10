@@ -3,8 +3,6 @@ import {
   WeeklyJourneyResultTable,
   UserTable,
 } from "@app/model";
-import { AnalyticsService } from "@app/services/v4";
-import { ANALYTICS_EVENTS, MAX_STREAK_FREEZE } from "@app/utility";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
 import { UserService } from "@app/services/v7";
@@ -305,6 +303,23 @@ class BusinessProfileService {
       },
     ]).exec();
     return businessProfile?.[0] ?? null;
+  }
+
+  /**
+   * @description this will generate business idea using OpenAI GPT
+   * @param data
+   * @returns {*}
+   */
+  public async generateBusinessIdea(data: any) {
+    try {
+      const businessIdeaGenerated = {
+        description: data.passion,
+        marketOpportunity: data.problem,
+      };
+      return businessIdeaGenerated;
+    } catch (error) {
+      throw new NetworkError("Something went wrong", 400);
+    }
   }
 }
 export default new BusinessProfileService();

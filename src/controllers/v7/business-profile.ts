@@ -4,6 +4,7 @@ import {
   UserTable,
   QuizTable,
   WeeklyJourneyResultTable,
+  BusinessPassionTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
@@ -19,6 +20,7 @@ import { validationsV7 } from "@app/validations/v7/apiValidation";
 import BaseController from "../base";
 import { BusinessProfileService } from "@app/services/v7";
 import { UserService } from "@app/services/v7";
+import businessProfileService from "@app/services/v7/business-profile.service";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -299,6 +301,56 @@ class BusinessProfileController extends BaseController {
       UserService.updateUserScore(userExists, ctx.request.body);
     }
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is get passions for business profile information
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/business-passions",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getBusinessPassions(ctx: any) {
+    const { user } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const passions = await BusinessPassionTable.find({})
+      .select("_id order image title subCategory")
+      .sort({ order: 1 });
+    return this.Ok(ctx, { message: "Success", data: passions });
+  }
+
+  /**
+   * @description This method is to generate business-idea using OpenAI GPT
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/generate-business-idea",
+    method: HttpMethod.POST,
+  })
+  @Auth()
+  public async getBusinessIdea(ctx: any) {
+    const { user, body } = ctx.request;
+    console.log("REQPARAM BUSINESS GEN : ", body);
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+
+    const businessIdea = await businessProfileService.generateBusinessIdea(
+      body
+    );
+    return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
 }
 
