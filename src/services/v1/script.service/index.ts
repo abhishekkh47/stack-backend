@@ -1135,30 +1135,26 @@ class ScriptService {
   public async addweeklyDataToDB(dailyChallenges: any) {
     try {
       let dailyChallengesData = [];
-      await Promise.all(
-        dailyChallenges.map(async (data: any) => {
-          const weekNum = isNaN(parseInt(data.week))
-            ? null
-            : parseInt(data.week);
-          const dayNum = isNaN(parseInt(data.week)) ? null : parseInt(data.day);
-          if (!weekNum || !dayNum) return false;
+      dailyChallenges.map(async (data: any) => {
+        const weekNum = isNaN(parseInt(data.week)) ? null : parseInt(data.week);
+        const dayNum = isNaN(parseInt(data.week)) ? null : parseInt(data.day);
+        if (!weekNum || !dayNum) return false;
 
-          let bulkWriteObject = {
-            updateOne: {
-              filter: { week: data.week, day: data.day },
-              update: {
-                $set: {
-                  ...data,
-                  week: data.week,
-                  day: data.day,
-                },
+        let bulkWriteObject = {
+          updateOne: {
+            filter: { week: data.week, day: data.day },
+            update: {
+              $set: {
+                ...data,
+                week: data.week,
+                day: data.day,
               },
-              upsert: true,
             },
-          };
-          dailyChallengesData.push(bulkWriteObject);
-        })
-      );
+            upsert: true,
+          },
+        };
+        dailyChallengesData.push(bulkWriteObject);
+      });
 
       const weeklyChallenges = await WeeklyJourneyTable.bulkWrite(
         dailyChallengesData
