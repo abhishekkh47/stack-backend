@@ -71,7 +71,7 @@ export const uploadCompanyLogo = multer({
 export const uploadHomeScreenImage = multer({
   storage: multerS3({
     s3,
-    bucket: `stack-business-information/home-screen-image`,
+    bucket: `stack-business-information/homescreenImage`,
     key: async (req, file, cb) => {
       const response = await verifyToken(req.headers["x-access-token"]);
       if (response && response.status && response.status === 401) {
@@ -100,7 +100,7 @@ export const uploadHomeScreenImage = multer({
 export const uploadSocialFeedback = multer({
   storage: multerS3({
     s3,
-    bucket: `stack-business-information/social-feedback`,
+    bucket: `stack-business-information/socialFeedback`,
     key: async (req, file, cb) => {
       const response = await verifyToken(req.headers["x-access-token"]);
       if (response && response.status && response.status === 401) {
@@ -129,7 +129,7 @@ export const uploadSocialFeedback = multer({
 export const uploadMvpHomeScreen = multer({
   storage: multerS3({
     s3,
-    bucket: `stack-business-information/mvp-home-screen`,
+    bucket: `stack-business-information/mvpHomeScreen`,
     key: async (req, file, cb) => {
       const response = await verifyToken(req.headers["x-access-token"]);
       if (response && response.status && response.status === 401) {
