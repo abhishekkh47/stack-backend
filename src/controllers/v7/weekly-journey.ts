@@ -39,7 +39,25 @@ class WeeklyJourneyController extends BaseController {
       userNextChallenge
     );
     return this.Ok(ctx, {
-      data: { weeks: getWeeklyDetails, currentDay: userNextChallenge },
+      data: {
+        weeks: getWeeklyDetails,
+        currentDay: userNextChallenge,
+        businessJourneyCompleted: userNextChallenge ? false : true,
+      },
+      message: "Success",
+    });
+  }
+
+  @Route({ path: "/claim-weekly-reward", method: HttpMethod.POST })
+  @Auth()
+  public async claimWeeklyReward(ctx: any) {
+    const { user } = ctx.request;
+    const reqParam = ctx.request.body;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) return this.BadRequest(ctx, "User not found");
+
+    await WeeklyJourneyDBService.storeWeeklyReward(user._id, reqParam);
+    return this.Ok(ctx, {
       message: "Success",
     });
   }

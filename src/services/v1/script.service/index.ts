@@ -1021,7 +1021,7 @@ class ScriptService {
                   key: data["Story #"],
                   value: lastStoryCategory,
                 });
-                topicId = null;
+                topicId = new ObjectId("6594011ab1fc7ea1f458e8c8");
               } else {
                 topicId = isCategoryExists._id;
               }
