@@ -167,4 +167,7 @@ export default {
   get PASSION_SHEET_GID() {
     return process.env.PASSION_SHEET_GID;
   },
+  get OPENAI_API_KEY() {
+    return process.env.OPENAI_API_KEY;
+  },
 };

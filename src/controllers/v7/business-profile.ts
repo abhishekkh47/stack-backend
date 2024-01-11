@@ -2,25 +2,19 @@ import { Auth } from "@app/middleware";
 import {
   BusinessProfileTable,
   UserTable,
-  QuizTable,
   WeeklyJourneyResultTable,
-  BusinessPassionTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
   Route,
-  uploadFileS3,
   removeImage,
   uploadCompanyLogo,
   uploadHomeScreenImage,
   uploadSocialFeedback,
   uploadMvpHomeScreen,
 } from "@app/utility";
-import { validationsV7 } from "@app/validations/v7/apiValidation";
 import BaseController from "../base";
-import { BusinessProfileService } from "@app/services/v7";
-import { UserService } from "@app/services/v7";
-import businessProfileService from "@app/services/v7/business-profile.service";
+import { BusinessProfileService, UserService } from "@app/services/v7";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -37,19 +31,8 @@ class BusinessProfileController extends BaseController {
       const { body, user } = ctx.request;
       const userIfExists = await UserTable.findOne({ _id: user._id });
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
-      return validationsV7.businessJourneyProfileValidation(
-        body,
-        ctx,
-        async (validate: boolean) => {
-          if (validate) {
-            await BusinessProfileService.addOrEditBusinessProfile(
-              body,
-              userIfExists
-            );
-            return this.Ok(ctx, { message: "Success" });
-          }
-        }
-      );
+      await BusinessProfileService.addOrEditBusinessProfile(body, userIfExists);
+      return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
@@ -304,27 +287,26 @@ class BusinessProfileController extends BaseController {
   }
 
   /**
-   * @description This method is get passions for business profile information
+   * @description This method is get passions, aspects and related problem
    * @param ctx
    * @returns {*}
    */
   @Route({
-    path: "/business-passions",
+    path: "/business-idea-preference",
     method: HttpMethod.GET,
   })
   @Auth()
-  public async getBusinessPassions(ctx: any) {
-    const { user } = ctx.request;
+  public async getBusinessIdeaPreference(ctx: any) {
+    const { user, query } = ctx.request;
     const userExists: any = await UserTable.findOne({
       _id: user._id,
     });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const passions = await BusinessPassionTable.find({})
-      .select("_id order image title subCategory")
-      .sort({ order: 1 });
-    return this.Ok(ctx, { message: "Success", data: passions });
+    const businessPreference =
+      await BusinessProfileService.getBusinessPreference(query);
+    return this.Ok(ctx, { message: "Success", data: businessPreference });
   }
 
   /**
@@ -339,15 +321,13 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getBusinessIdea(ctx: any) {
     const { user, body } = ctx.request;
-    console.log("REQPARAM BUSINESS GEN : ", body);
     const userExists: any = await UserTable.findOne({
       _id: user._id,
     });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-
-    const businessIdea = await businessProfileService.generateBusinessIdea(
+    const businessIdea = await BusinessProfileService.generateBusinessIdea(
       body
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });

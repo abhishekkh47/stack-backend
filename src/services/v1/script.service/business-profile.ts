@@ -1,4 +1,9 @@
-import { ImpactTable, PassionTable, BusinessPassionTable } from "@app/model";
+import {
+  ImpactTable,
+  PassionTable,
+  BusinessPassionTable,
+  BusinessPassionAspectTable,
+} from "@app/model";
 
 class BusinessProfileScriptService {
   /**
@@ -128,7 +133,6 @@ class BusinessProfileScriptService {
                 title: data.title,
                 order: data.order,
                 image: data.image,
-                subCategory: data.category,
               },
             },
             upsert: true,
@@ -138,6 +142,32 @@ class BusinessProfileScriptService {
       });
 
       await BusinessPassionTable.bulkWrite(passionsBulkWriteQuery);
+      let passionCategoryBulkWriteQuery = [];
+      await Promise.all(
+        passions.map(async (data) => {
+          let passionIfExists = await BusinessPassionTable.find({
+            title: data.title,
+          });
+          data.category.map((sub_category) => {
+            let bulkWriteObject = {
+              updateOne: {
+                filter: { aspect: sub_category["title"] },
+                update: {
+                  $set: {
+                    aspect: sub_category["title"],
+                    aspectImage: sub_category["image"],
+                    businessPassionId: passionIfExists[0]._id,
+                    problems: sub_category.problem,
+                  },
+                },
+                upsert: true,
+              },
+            };
+            passionCategoryBulkWriteQuery.push(bulkWriteObject);
+          });
+        })
+      );
+      await BusinessPassionAspectTable.bulkWrite(passionCategoryBulkWriteQuery);
       return true;
     } catch (error) {
       return error;

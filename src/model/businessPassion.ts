@@ -19,22 +19,6 @@ const schema = new mongoose.Schema<IBusinessPassionSchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
-    subCategory: {
-      title: {
-        type: mongoose.Schema.Types.String,
-        required: true,
-      },
-      image: {
-        type: mongoose.Schema.Types.String,
-        required: true,
-      },
-      problem: [
-        {
-          type: mongoose.Schema.Types.String,
-          required: true,
-        },
-      ],
-    },
   },
   { timestamps: true }
 );

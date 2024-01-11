@@ -1,11 +1,15 @@
 import {
   BusinessProfileTable,
   WeeklyJourneyResultTable,
-  UserTable,
+  BusinessPassionTable,
+  BusinessPassionAspectTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
 import { UserService } from "@app/services/v7";
+import envData from "@app/config";
+import OpenAI from "openai";
+import { SYSTEM_DATA, SYSTEM, USER, BUSINESS_PREFERENCE } from "@app/utility";
 
 class BusinessProfileService {
   /**
@@ -17,7 +21,13 @@ class BusinessProfileService {
   public async addOrEditBusinessProfile(data: any, userIfExists: any) {
     try {
       let obj = {};
-      obj[data.key] = data.value;
+      // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
+      if (data.businessIdeaInfo) {
+        obj[data.businessIdeaInfo[0].key] = data[0].value;
+        obj[data.businessIdeaInfo[1].key] = data[1].value;
+      } else {
+        obj[data.key] = data.value;
+      }
       await BusinessProfileTable.findOneAndUpdate(
         {
           userId: userIfExists._id,
@@ -312,13 +322,78 @@ class BusinessProfileService {
    */
   public async generateBusinessIdea(data: any) {
     try {
-      const businessIdeaGenerated = {
-        description: data.passion,
-        marketOpportunity: data.problem,
-      };
-      return businessIdeaGenerated;
+      const prompt = `category: ${data.category}; problem: ${data.problem}.**`;
+      const openai = new OpenAI({
+        apiKey: envData.OPENAI_API_KEY,
+      });
+
+      let response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: SYSTEM,
+            content: SYSTEM_DATA,
+          },
+          {
+            role: USER,
+            content: prompt,
+          },
+        ],
+        temperature: 1,
+        max_tokens: 256,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+      });
+
+      let newResponse = JSON.parse(response.choices[0].message.content);
+      newResponse.map((idea) => (idea["image"] = null));
+      return newResponse;
     } catch (error) {
-      throw new NetworkError("Something went wrong", 400);
+      throw new NetworkError(
+        "Error Occured while generating Business Idea",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description this will return array of passions/aspect/problems
+   * @param data
+   * @returns {*}
+   */
+  public async getBusinessPreference(data: any) {
+    try {
+      let response = [];
+      if (data.key == BUSINESS_PREFERENCE.PASSION) {
+        response = await BusinessPassionTable.find({})
+          .select("image title")
+          .sort({ order: 1 });
+      } else if (data.key == BUSINESS_PREFERENCE.ASPECT) {
+        const aspectsData = await BusinessPassionAspectTable.find({
+          businessPassionId: data._id,
+        }).select("aspect aspectImage");
+        response = aspectsData.map((aspect) => ({
+          _id: aspect._id,
+          title: aspect.aspect,
+          image: aspect.aspectImage,
+        }));
+      } else if (data.key == BUSINESS_PREFERENCE.PROBLEM) {
+        let order = 0;
+        const problemsData = await BusinessPassionAspectTable.find({
+          _id: data._id,
+        }).select("problems");
+        problemsData[0].problems.map((problem) => {
+          response.push({
+            _id: ++order,
+            title: problem,
+            image: null,
+          });
+        });
+      }
+      return response;
+    } catch (error) {
+      throw new NetworkError("Something Went Wrong", 400);
     }
   }
 }

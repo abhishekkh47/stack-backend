@@ -1878,6 +1878,7 @@ class ScriptController extends BaseController {
           aspiringSocialAccount: null,
           socialCampaignTheme: null,
           firstSocialCampaign: null,
+          marketOpportunity: null,
         },
       }
     );
