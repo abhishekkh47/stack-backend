@@ -23,8 +23,8 @@ class BusinessProfileService {
       let obj = {};
       // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
       if (data.businessIdeaInfo) {
-        obj[data.businessIdeaInfo[0].key] = data[0].value;
-        obj[data.businessIdeaInfo[1].key] = data[1].value;
+        obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
+        obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
       } else {
         obj[data.key] = data.value;
       }
@@ -320,9 +320,8 @@ class BusinessProfileService {
    * @param data
    * @returns {*}
    */
-  public async generateBusinessIdea(data: any) {
+  public async generateBusinessIdea(prompt: string) {
     try {
-      const prompt = `category: ${data.category}; problem: ${data.problem}.**`;
       const openai = new OpenAI({
         apiKey: envData.OPENAI_API_KEY,
       });

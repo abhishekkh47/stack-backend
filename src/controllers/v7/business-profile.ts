@@ -316,19 +316,51 @@ class BusinessProfileController extends BaseController {
    */
   @Route({
     path: "/generate-business-idea",
-    method: HttpMethod.POST,
+    method: HttpMethod.GET,
   })
   @Auth()
   public async getBusinessIdea(ctx: any) {
-    const { user, body } = ctx.request;
+    const { user, query } = ctx.request;
     const userExists: any = await UserTable.findOne({
       _id: user._id,
     });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (!query.category || !query.problem) {
+      return this.BadRequest(ctx, "Provide a Category and Problem");
+    }
+    const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
-      body
+      prompt
+    );
+    return this.Ok(ctx, { message: "Success", data: businessIdea });
+  }
+
+  /**
+   * @description This method is to maximize user provided business-idea
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/maximize-business-idea",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async maximizeBusinessIdea(ctx: any) {
+    const { user, query } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!query.idea) {
+      return this.BadRequest(ctx, "Please provide your Business Idea");
+    }
+    const prompt = `problem: ${query.idea}.**`;
+    const businessIdea = await BusinessProfileService.generateBusinessIdea(
+      prompt
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }

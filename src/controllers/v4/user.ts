@@ -25,7 +25,6 @@ import {
   getBalance,
   getAssetTotals,
   REFERRAL_SOURCES,
-  NEW_REFERRAL_SOURCES,
   ANALYTICS_EVENTS,
 } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
@@ -531,8 +530,7 @@ class UserController extends BaseController {
       }
       if (
         !body.referralSource ||
-        !REFERRAL_SOURCES.includes(body.referralSource) ||
-        !NEW_REFERRAL_SOURCES.includes(body.referralSource)
+        !REFERRAL_SOURCES.includes(body.referralSource)
       ) {
         return this.BadRequest(ctx, "No Referral Source Provided");
       }
