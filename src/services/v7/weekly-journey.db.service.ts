@@ -311,6 +311,7 @@ class WeeklyJourneyDBService {
       };
       await WeeklyJourneyResultTable.findOneAndUpdate(
         {
+          userId: userId,
           weeklyJourneyId: reqParam.weeklyJourneyId,
         },
         updatedData,
