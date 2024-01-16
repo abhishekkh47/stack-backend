@@ -68,7 +68,7 @@ class QuizController extends BaseController {
             quizRecommendations,
           ] = await Promise.all([
             LeagueService.getUpdatedLeagueDetailsOfUser(
-              updatedUser,
+              userIfExists,
               leagues,
               updatedXPPoints
             ),
