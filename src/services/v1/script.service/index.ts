@@ -14,6 +14,7 @@ import {
   StageTable,
   UserTable,
   WeeklyJourneyTable,
+  WeeklyJourneyResultTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1314,6 +1315,96 @@ class ScriptService {
       })
     );
     return quizContentData;
+  }
+
+  /**
+   * @description This function create new records for weekly-rewards for existing users
+   * @returns {*}
+   */
+  public async updateWeeklyRewardStatus() {
+    const [day7Challenges, day1Challenges] = await Promise.all([
+      WeeklyJourneyTable.find({
+        $or: [{ week: 1 }, { week: 2 }, { week: 3 }],
+        day: 7,
+      }).sort({ week: 1 }),
+      WeeklyJourneyTable.find({
+        $or: [{ week: 2 }, { week: 3 }, { week: 4 }],
+        day: 1,
+      }).sort({ week: 1 }),
+    ]);
+    let newRecords = [];
+
+    day7Challenges.map(async (day7Challenge, idx) => {
+      const deletedRecords = await WeeklyJourneyResultTable.deleteMany({
+        weeklyJourneyId: `${day7Challenge._id}`,
+      });
+      let userDetails = await WeeklyJourneyResultTable.aggregate([
+        {
+          $match: {
+            weeklyJourneyId: day1Challenges[idx]._id,
+          },
+        },
+        {
+          $group: {
+            _id: "$userId",
+            createdAt: { $first: "$createdAt" },
+            updatedAt: { $first: "$updatedAt" },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            users: {
+              $push: {
+                userId: "$_id",
+                createdAt: "$createdAt",
+                updatedAt: "$updatedAt",
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            users: 1,
+          },
+        },
+      ]).exec();
+      let users = userDetails[0]?.users;
+      if (users?.length) {
+        for (let i = 0; i < users.length; i++) {
+          let record = {
+            updateOne: {
+              filter: {
+                weeklyJourneyId: `${day7Challenge._id}`,
+                userId: users[i].userId,
+              },
+              update: {
+                $set: {
+                  weeklyJourneyId: `${day7Challenge._id}`,
+                  userId: users[i].userId,
+                  actionNum: 3,
+                  actionInput: null,
+                  createdAt: new Date(users[i].createdAt).setSeconds(
+                    new Date(users[i].createdAt).getMilliseconds() - 1
+                  ),
+                  updatedAt: new Date(users[i].updatedAt).setSeconds(
+                    new Date(users[i].updatedAt).getMilliseconds() - 1
+                  ),
+                  __v: 0,
+                },
+              },
+              upsert: true,
+            },
+          };
+          newRecords.push(record);
+        }
+        const insertedRecords = await WeeklyJourneyResultTable.bulkWrite(
+          newRecords
+        );
+      }
+    });
+    return true;
   }
 }
 

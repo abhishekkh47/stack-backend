@@ -1917,6 +1917,26 @@ class ScriptController extends BaseController {
   }
 
   /**
+   * @description This method is used to weekly-reward record in DB for existing users
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-weekly-journey-result", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateWeeklyJourneyResult(ctx: any) {
+    try {
+      const usersUpdated = await ScriptService.updateWeeklyRewardStatus();
+      if (!usersUpdated) return this.BadRequest(ctx, "Something Went Wrong");
+      return this.Ok(ctx, {
+        message: "Weekly Rewards Stored Successfully",
+        data: usersUpdated,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
    * @description This method is used to add passions in db
    * @param ctx
    * @returns {*}
