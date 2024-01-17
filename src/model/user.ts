@@ -216,7 +216,7 @@ const schema = new mongoose.Schema<IUserSchema>(
       last5days: {
         type: [mongoose.Schema.Types.Mixed],
         default: function () {
-          return ALL_NULL_5_DAYS;
+          return Array.from(ALL_NULL_5_DAYS);
         },
       },
       updatedDate: {
