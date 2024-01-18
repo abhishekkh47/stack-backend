@@ -345,10 +345,23 @@ class BusinessProfileService {
         presence_penalty: 0,
       });
 
+      if (!Array.isArray(response.choices[0].message.content)) {
+        throw new NetworkError(
+          "Please provide a valid business description and try again",
+          400
+        );
+      }
+
       let newResponse = JSON.parse(response.choices[0].message.content);
       newResponse.map((idea) => (idea["image"] = null));
       return newResponse;
     } catch (error) {
+      if (
+        error.message ==
+        "Please provide a valid business description and try again"
+      ) {
+        throw new NetworkError(error.message, 400);
+      }
       throw new NetworkError(
         "Error Occured while generating Business Idea",
         400
