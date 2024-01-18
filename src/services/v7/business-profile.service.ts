@@ -9,7 +9,7 @@ import { ObjectId } from "mongodb";
 import { UserService } from "@app/services/v7";
 import envData from "@app/config";
 import OpenAI from "openai";
-import { SYSTEM_DATA, SYSTEM, USER, BUSINESS_PREFERENCE } from "@app/utility";
+import { SYSTEM, USER, BUSINESS_PREFERENCE } from "@app/utility";
 
 class BusinessProfileService {
   /**
@@ -320,7 +320,7 @@ class BusinessProfileService {
    * @param data
    * @returns {*}
    */
-  public async generateBusinessIdea(prompt: string) {
+  public async generateBusinessIdea(systemInput: string, prompt: string) {
     try {
       const openai = new OpenAI({
         apiKey: envData.OPENAI_API_KEY,
@@ -331,7 +331,7 @@ class BusinessProfileService {
         messages: [
           {
             role: SYSTEM,
-            content: SYSTEM_DATA,
+            content: systemInput,
           },
           {
             role: USER,

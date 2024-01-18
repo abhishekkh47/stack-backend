@@ -15,6 +15,7 @@ import {
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
+import { SYSTEM_INPUT } from "@app/utility";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -332,6 +333,7 @@ class BusinessProfileController extends BaseController {
     }
     const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
+      SYSTEM_INPUT.SYSTEM,
       prompt
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
@@ -360,6 +362,7 @@ class BusinessProfileController extends BaseController {
     }
     const prompt = `problem: ${query.idea}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
+      SYSTEM_INPUT.USER,
       prompt
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
