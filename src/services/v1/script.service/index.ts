@@ -14,6 +14,7 @@ import {
   StageTable,
   UserTable,
   WeeklyJourneyTable,
+  WeeklyJourneyResultTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -863,7 +864,6 @@ class ScriptService {
     try {
       rows = rows.filter((x) => storyNums.includes(x["Story #"]));
       let storyTitle = "";
-      let storyImage = "";
       let lastStoryCategory = "";
       let lastStoryStage = "";
       let order = 1;
@@ -903,11 +903,13 @@ class ScriptService {
             ].map((promptKey) => ({
               prompt: data[promptKey]?.trimEnd(),
               promptStyle: currentPromptStyle,
-              imageName: `s${data["Story #"]}_q${(index + 1) / 4}_${promptKey
-                .slice(-1)
-                .toLocaleLowerCase()}`,
+              imageName: `s${data["Story #"]}_q${Math.ceil(
+                (index + 1) / 4
+              )}_${promptKey.slice(-1).toLocaleLowerCase()}`,
             }));
-            promptList.questions.push(...prompts);
+            if (prompts[0].prompt) {
+              promptList.questions.push(...prompts);
+            }
           }
         })
       );
@@ -927,9 +929,6 @@ class ScriptService {
         await rows.map(async (data, index) => {
           if (data["Story Title"] != "") {
             storyTitle = data["Story Title"]?.trimEnd();
-          }
-          if (data["Story Image"] != "") {
-            storyImage = data["Story Image"]?.trimEnd();
           }
           if (data["Category"] != "") {
             lastStoryCategory = data["Category"]?.trimEnd();
@@ -1018,7 +1017,7 @@ class ScriptService {
                   key: data["Story #"],
                   value: lastStoryCategory,
                 });
-                topicId = null;
+                topicId = new ObjectId("6594011ab1fc7ea1f458e8c8");
               } else {
                 topicId = isCategoryExists._id;
               }
@@ -1027,7 +1026,7 @@ class ScriptService {
               topicId: topicId,
               quizNum: data["Story #"].trimEnd(),
               quizName: storyTitle,
-              image: storyImage,
+              image: null,
               quizType: QUIZ_TYPE.STORY,
               stageName: lastStoryStage,
               characterName: characterName,
@@ -1137,30 +1136,26 @@ class ScriptService {
   public async addweeklyDataToDB(dailyChallenges: any) {
     try {
       let dailyChallengesData = [];
-      await Promise.all(
-        dailyChallenges.map(async (data: any) => {
-          const weekNum = isNaN(parseInt(data.week))
-            ? null
-            : parseInt(data.week);
-          const dayNum = isNaN(parseInt(data.week)) ? null : parseInt(data.day);
-          if (!weekNum || !dayNum) return false;
+      dailyChallenges.map(async (data: any) => {
+        const weekNum = isNaN(parseInt(data.week)) ? null : parseInt(data.week);
+        const dayNum = isNaN(parseInt(data.week)) ? null : parseInt(data.day);
+        if (!weekNum || !dayNum) return false;
 
-          let bulkWriteObject = {
-            updateOne: {
-              filter: { week: data.week, day: data.day },
-              update: {
-                $set: {
-                  ...data,
-                  week: data.week,
-                  day: data.day,
-                },
+        let bulkWriteObject = {
+          updateOne: {
+            filter: { week: data.week, day: data.day },
+            update: {
+              $set: {
+                ...data,
+                week: data.week,
+                day: data.day,
               },
-              upsert: true,
             },
-          };
-          dailyChallengesData.push(bulkWriteObject);
-        })
-      );
+            upsert: true,
+          },
+        };
+        dailyChallengesData.push(bulkWriteObject);
+      });
 
       const weeklyChallenges = await WeeklyJourneyTable.bulkWrite(
         dailyChallengesData
@@ -1174,7 +1169,7 @@ class ScriptService {
   public async getImage(questionType: number, prompts: any) {
     try {
       const imagineRes = await generateImage(
-        `${prompts.prompt} ${prompts.promptStyle} --relax`
+        `${prompts.prompt} ${prompts.promptStyle}`
       );
       const myImage = await UpscaleImage(imagineRes);
       if (!imagineRes) {
@@ -1215,7 +1210,6 @@ class ScriptService {
   public async convertWeeklyQuizSpreadSheetToJSON(quizNums: any, rows: any) {
     rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
     let lastQuizName = "";
-    let lastQuizImage = "";
     let lastQuizCategory = "";
     let lastQuizStage = "";
     let lastQuizTags = "";
@@ -1226,7 +1220,6 @@ class ScriptService {
       await rows.map(async (data, index) => {
         if (data["Quiz Title"] != "") {
           lastQuizName = data["Quiz Title"].trimEnd();
-          lastQuizImage = data["Quiz Image"];
         }
         if (data["Category"] != "") {
           lastQuizCategory = data["Category"].trimEnd();
@@ -1299,10 +1292,10 @@ class ScriptService {
           rows[index + 1]["Quiz #"] !== data["Quiz #"]
         ) {
           let quizData = {
-            topicId: null,
+            topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
             quizNum: data["Quiz #"].trimEnd(),
             quizName: lastQuizName,
-            image: lastQuizImage,
+            image: null,
             stageName: lastQuizStage,
             tags: lastQuizTags,
             questionData: questionDataArray,
@@ -1313,6 +1306,96 @@ class ScriptService {
       })
     );
     return quizContentData;
+  }
+
+  /**
+   * @description This function create new records for weekly-rewards for existing users
+   * @returns {*}
+   */
+  public async updateWeeklyRewardStatus() {
+    const [day7Challenges, day1Challenges] = await Promise.all([
+      WeeklyJourneyTable.find({
+        $or: [{ week: 1 }, { week: 2 }, { week: 3 }],
+        day: 7,
+      }).sort({ week: 1 }),
+      WeeklyJourneyTable.find({
+        $or: [{ week: 2 }, { week: 3 }, { week: 4 }],
+        day: 1,
+      }).sort({ week: 1 }),
+    ]);
+    let newRecords = [];
+
+    day7Challenges.map(async (day7Challenge, idx) => {
+      const deletedRecords = await WeeklyJourneyResultTable.deleteMany({
+        weeklyJourneyId: `${day7Challenge._id}`,
+      });
+      let userDetails = await WeeklyJourneyResultTable.aggregate([
+        {
+          $match: {
+            weeklyJourneyId: day1Challenges[idx]._id,
+          },
+        },
+        {
+          $group: {
+            _id: "$userId",
+            createdAt: { $first: "$createdAt" },
+            updatedAt: { $first: "$updatedAt" },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            users: {
+              $push: {
+                userId: "$_id",
+                createdAt: "$createdAt",
+                updatedAt: "$updatedAt",
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            users: 1,
+          },
+        },
+      ]).exec();
+      let users = userDetails[0]?.users;
+      if (users?.length) {
+        for (let i = 0; i < users.length; i++) {
+          let record = {
+            updateOne: {
+              filter: {
+                weeklyJourneyId: `${day7Challenge._id}`,
+                userId: users[i].userId,
+              },
+              update: {
+                $set: {
+                  weeklyJourneyId: `${day7Challenge._id}`,
+                  userId: users[i].userId,
+                  actionNum: 3,
+                  actionInput: null,
+                  createdAt: new Date(users[i].createdAt).setSeconds(
+                    new Date(users[i].createdAt).getMilliseconds() - 1
+                  ),
+                  updatedAt: new Date(users[i].updatedAt).setSeconds(
+                    new Date(users[i].updatedAt).getMilliseconds() - 1
+                  ),
+                  __v: 0,
+                },
+              },
+              upsert: true,
+            },
+          };
+          newRecords.push(record);
+        }
+        const insertedRecords = await WeeklyJourneyResultTable.bulkWrite(
+          newRecords
+        );
+      }
+    });
+    return true;
   }
 }
 

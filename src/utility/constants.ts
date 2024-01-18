@@ -225,6 +225,7 @@ export const ANALYTICS_EVENTS = {
   KYC_SUBMITTED: "KYC Submitted",
   DRIP_SHOP_REDEEMED: "Drip Shop Redeemed",
   STREAK_GOAL_SUBMITTED: "Streak Goal Submitted",
+  ACTION_COMPLETED: "Action Completed",
 };
 
 export const XP_POINTS = {
@@ -385,3 +386,5 @@ export const PROMPT_STYLE = [
   "in the style of cyberpunk, vibrant futurism, photo-realistic --v 6",
   "in the style of photo-realistic, soft lighting, studio photography --v 6",
 ];
+
+export const WEEKLY_REWARD_ACTION_NUM = 3;

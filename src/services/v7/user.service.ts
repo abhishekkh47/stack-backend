@@ -221,7 +221,7 @@ class UserService {
         }
       );
       AnalyticsService.sendEvent(
-        ANALYTICS_EVENTS.CHALLENGE_COMPLETED,
+        ANALYTICS_EVENTS.ACTION_COMPLETED,
         {
           "Challenge Name": data.taskName,
           "Challenge Score": 100,
@@ -232,7 +232,7 @@ class UserService {
         }
       );
     } catch (error) {
-      throw new NetworkError("Something went wrong" + error, 400);
+      throw new NetworkError("Something went wrong", 400);
     }
   }
 }
