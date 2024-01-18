@@ -403,7 +403,8 @@ export const BUSINESS_PREFERENCE = {
 export const SYSTEM = "system";
 export const USER = "user";
 
-export const SYSTEM_DATA = `"“dataset1” below contains a list of business descriptions, the corresponding category of that business, the problem that business solves as well as an indication of how many potential customer that business may have.
+export const SYSTEM_INPUT = {
+  SYSTEM: `"“dataset1” below contains a list of business descriptions, the corresponding category of that business, the problem that business solves as well as an indication of how many potential customer that business may have.
 I want you to write a business description as well as an indication of how many potential customer that business may have  that closely follows the format of the business descriptions in “dataset1"".  These are all one sentence, short but unique businesses.
 You will write three different business descriptions and potential customers for the category and problem provided by user prompt.
 
@@ -459,4 +460,113 @@ A group rideshare app offering on-demand 15-passenger van bookings for consumers
 An AI-driven fitness app providing personalized coaching for runners.        Fitness/Working Out        Developing a personalized nutrition plan.        About 22 million fitness app users in the U.S., many of whom are runners, might specifically seek AI-driven apps for personalized nutrition plans.
 A fintech app for contractors and freelancers to transact using an exclusive digital currency.        Cryptocurrency        Identifying scams and fraud schemes.        Over 5.7 million freelancers in the U.S. could potentially use a fintech app for transactions in a digital currency, focusing on avoiding scams and fraud schemes.
 A mobile app assisting consumers with low credit scores in credit recovery through personalized plans.        Financial Literacy        Managing credit and debt.        Approximately 68 million Americans with poor or fair credit scores could benefit from credit recovery mobile apps.
-A fintech mobile app automating savings and investing them in gold.        Budgeting/Saving        Setting and achieving financial goals.        The personal finance app market includes around 30 million users globally interested in apps that automate savings and investments in gold."`;
+A fintech mobile app automating savings and investing them in gold.        Budgeting/Saving        Setting and achieving financial goals.        The personal finance app market includes around 30 million users globally interested in apps that automate savings and investments in gold."`,
+
+  USER: `“dataset1” below contains a list of business descriptions as well as an indication of how many potential customer that business may have. “input” below contains words associated with a business. 
+I want you to write a one sentence, short but unique business descriptions as well as an indication of how many potential customer that business may have by incorporating or directly associating the words in the “input” in user prompt.  
+You will write three different business descriptions and potential customers for the category and problem provided by user prompt.
+  
+The format of the three business descriptions and potential customer should be an array containing three elements: The response should only contain the array.
+[{"businessDescription": [insert business description],"opportunityHighlight": [insert potential customers datapoint]]
+
+dataset1:
+“A gamified and story-driven application teaching coding in Python, HTML, CSS, or JavaScript.
+WHY THIS?
+Over 6 million individuals learn the coding languages Python, HTML, CSS, or JavaScript each year.”
+
+“An AI shopping assistant integrated into e-commerce platforms to personalize customer shopping experiences.
+WHY THIS?
+Approximately 1.8 billion people globally shop online.”
+
+“A LinkedIn post generator optimizing posts for audience engagement and personal branding.
+WHY THIS?
+Over 310 million monthly active users are on LinkedIn.”
+
+“A mobile app providing theft protection, insurance, roadside assistance, and on-demand repairs for e-bike owners.
+WHY THIS?
+More than 5 million e-bikes were sold globally in 2023.”
+
+“A digital Bitcoin art marketplace leveraging smart contracts and the Lightning Network for digital art asset exchanges.
+WHY THIS?
+The digital art market has over 1 million active buyers.”
+
+“A virtual poker app designed for friend groups, featuring chat and video interfaces for a social gaming experience.
+WHY THIS?
+An estimated 100 million people worldwide play poker.”
+
+“A text-to-audio app utilizing AI to customize human-like emotions in audio content.
+WHY THIS?
+There are 400 million audiobook listeners globally.”
+
+“A travel credit card tailored to the unique needs of Generation Z.
+WHY THIS?
+67 million Generation Z individuals are in the U.S.”
+
+“A brokerage firm enabling users to build custom ETFs based on their investment preferences and risk profile.
+WHY THIS?
+56% of Americans own stocks.”
+
+“A voice-to-action AI agent acting as a personal assistant, managing administrative tasks and life organization.
+WHY THIS?
+110 million users in the U.S. utilize virtual assistants.”
+
+“A fintech platform allowing Mexican nationals to earn US Dollars and pay in Mexican Pesos.
+WHY THIS?
+Over 1.5 million Mexican nationals currently live and work in the U.S.”
+
+“A marketplace streamlining the acquisition and transaction process of small businesses.
+WHY THIS?
+Annually, around 2.5 million small businesses are sold in the U.S.”
+
+“A marketplace for rare coins and precious metals, using auction data and historical pricing for accurate valuations.
+WHY THIS?
+There are over 5 million active collectors of coins and precious metals in the U.S.”
+
+“An AI-driven shopping platform where users can find clothing items based on inputted styles or looks.
+WHY THIS?
+390 million people globally prioritize sustainability as their number one driver for purchasing clothing.”
+
+“An AI-driven video game designer generating new maps, terrains, and resources for unpredictable gameplay.
+WHY THIS?
+Popular video games like Fortnite and Call of Duty have over 400 million users.”
+
+“A platform identifying the best plane ticket deals using exclusively credit card points.
+WHY THIS?
+18.9 million credit card holders redeemed points for airplane miles in 2023.”
+
+“An AI-driven news content writer focusing on niche current events for cost-effective article creation.
+WHY THIS?
+There are approximately 1.5 million digital news subscribers in the U.S..”
+
+“An app leveraging AI to create and share photos of users in imaginary situations on social media.
+WHY THIS?
+159 million Americans use photo editing apps each year.”
+
+“An AI-driven math tutor incorporating speech, text, and image recognition for personalized learning.
+WHY THIS?
+10.2 million students use math tutoring services each year.”
+
+“An AI-driven marketplace offering back-office tasks like lead generation or financial modeling at competitive prices.
+WHY THIS?
+Approx. 8 million small businesses use lead generation services each year.”
+
+“An AI and gamified nutrition coach allowing meal logging through photo recognition.
+WHY THIS?
+There are over 100 million health app users in the U.S..”
+
+“An AI-driven video animation creator transforming text inputs into short-form animations.
+WHY THIS?
+Over 40 million creators worldwide use video editing software.”
+
+“A multiplayer development platform providing game servers, matchmaking, and DDoS mitigation.
+WHY THIS?
+The global eSports audience is 474 million people.”
+
+“An AI search engine for academic research, answering questions with included citations.
+WHY THIS?
+38 million college students have expressed a need for more diverse educational resources.”
+
+“A mobile application optimizing app usage time for mental health benefits.
+WHY THIS?
+An estimated 200 million health app users are interested in apps for managing screen time.”`,
+};
