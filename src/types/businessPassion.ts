@@ -3,6 +3,7 @@ export interface IBusinessPassion {
   title: string;
   image: string;
   order: number;
+  businessImages: string[];
 }
 
 export interface IBusinessPassionAspect {

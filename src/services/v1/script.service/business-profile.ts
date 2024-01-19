@@ -90,6 +90,11 @@ class BusinessProfileScriptService {
           title: item.Passion,
           image: item["Passion Cover Image"],
           order: ++order,
+          businessImages: [
+            item["Business Image 1"],
+            item["Business Image 2"],
+            item["Business Image 3"],
+          ],
           category: {},
         };
       }
@@ -133,6 +138,7 @@ class BusinessProfileScriptService {
                 title: data.title,
                 order: data.order,
                 image: data.image,
+                businessImages: data.businessImages,
               },
             },
             upsert: true,

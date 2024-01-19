@@ -325,30 +325,37 @@ class BusinessProfileService {
    * @param data
    * @returns {*}
    */
-  public async generateBusinessIdea(systemInput: string, prompt: string) {
+  public async generateBusinessIdea(
+    systemInput: string,
+    prompt: string,
+    passion: string
+  ) {
     try {
       const openai = new OpenAI({
         apiKey: envData.OPENAI_API_KEY,
       });
 
-      let response = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: SYSTEM,
-            content: systemInput,
-          },
-          {
-            role: USER,
-            content: prompt,
-          },
-        ],
-        temperature: 1,
-        max_tokens: 256,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-      });
+      let [response, images] = await Promise.all([
+        openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: SYSTEM,
+              content: systemInput,
+            },
+            {
+              role: USER,
+              content: prompt,
+            },
+          ],
+          temperature: 1,
+          max_tokens: 256,
+          top_p: 1,
+          frequency_penalty: 0,
+          presence_penalty: 0,
+        }),
+        await BusinessPassionTable.find({ title: passion }),
+      ]);
 
       if (
         !response.choices[0].message.content.includes("businessDescription") ||
@@ -358,7 +365,9 @@ class BusinessProfileService {
       }
 
       let newResponse = JSON.parse(response.choices[0].message.content);
-      newResponse.map((idea) => (idea["image"] = null));
+      newResponse.map(
+        (idea, idx) => (idea["image"] = images[0].businessImages[idx])
+      );
       return newResponse;
     } catch (error) {
       if (error.message == INVALID_DESCRIPTION_ERROR) {
