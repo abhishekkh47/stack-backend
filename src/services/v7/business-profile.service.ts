@@ -9,7 +9,12 @@ import { ObjectId } from "mongodb";
 import { UserService } from "@app/services/v7";
 import envData from "@app/config";
 import OpenAI from "openai";
-import { SYSTEM, USER, BUSINESS_PREFERENCE } from "@app/utility";
+import {
+  SYSTEM,
+  USER,
+  BUSINESS_PREFERENCE,
+  INVALID_DESCRIPTION_ERROR,
+} from "@app/utility";
 
 class BusinessProfileService {
   /**
@@ -345,10 +350,20 @@ class BusinessProfileService {
         presence_penalty: 0,
       });
 
+      if (
+        !response.choices[0].message.content.includes("businessDescription") ||
+        !response.choices[0].message.content.includes("opportunityHighlight")
+      ) {
+        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      }
+
       let newResponse = JSON.parse(response.choices[0].message.content);
       newResponse.map((idea) => (idea["image"] = null));
       return newResponse;
     } catch (error) {
+      if (error.message == INVALID_DESCRIPTION_ERROR) {
+        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      }
       throw new NetworkError(
         "Error Occured while generating Business Idea",
         400

@@ -570,3 +570,6 @@ WHY THIS?
 WHY THIS?
 An estimated 200 million health app users are interested in apps for managing screen time.”`,
 };
+
+export const INVALID_DESCRIPTION_ERROR =
+  "Please provide a valid business description and try again";
