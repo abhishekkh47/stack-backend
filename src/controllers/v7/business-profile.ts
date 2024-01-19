@@ -334,7 +334,8 @@ class BusinessProfileController extends BaseController {
     const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       SYSTEM_INPUT.SYSTEM,
-      prompt
+      prompt,
+      query.passion
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
@@ -363,7 +364,8 @@ class BusinessProfileController extends BaseController {
     const prompt = `problem: ${query.idea}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       SYSTEM_INPUT.USER,
-      prompt
+      prompt,
+      "maximize"
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }

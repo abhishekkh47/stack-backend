@@ -19,6 +19,12 @@ const schema = new mongoose.Schema<IBusinessPassionSchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
     },
+    businessImages: [
+      {
+        type: mongoose.Schema.Types.String,
+        required: true,
+      },
+    ],
   },
   { timestamps: true }
 );
