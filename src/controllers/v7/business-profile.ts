@@ -15,7 +15,8 @@ import {
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
-import { SYSTEM_INPUT } from "@app/utility";
+import { SYSTEM_INPUT, ANALYTICS_EVENTS } from "@app/utility";
+import { AnalyticsService } from "@app/services/v4";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -337,6 +338,33 @@ class BusinessProfileController extends BaseController {
       prompt,
       query.passion
     );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.PASSION_SUBMITTED,
+      {
+        "Item Name": query.passion,
+      },
+      {
+        user_id: userExists._id,
+      }
+    );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.SUB_PASSION_SUBMITTED,
+      {
+        "Item Name": query.category,
+      },
+      {
+        user_id: userExists._id,
+      }
+    );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.PROBLEM_SUBMITTED,
+      {
+        "Item Name": query.problem,
+      },
+      {
+        user_id: userExists._id,
+      }
+    );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
 
@@ -366,6 +394,15 @@ class BusinessProfileController extends BaseController {
       SYSTEM_INPUT.USER,
       prompt,
       "maximize"
+    );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,
+      {
+        "Item Name": query.idea,
+      },
+      {
+        user_id: userExists._id,
+      }
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }

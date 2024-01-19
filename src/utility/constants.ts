@@ -226,6 +226,11 @@ export const ANALYTICS_EVENTS = {
   DRIP_SHOP_REDEEMED: "Drip Shop Redeemed",
   STREAK_GOAL_SUBMITTED: "Streak Goal Submitted",
   ACTION_COMPLETED: "Action Completed",
+  PASSION_SUBMITTED: "Passion Submitted",
+  SUB_PASSION_SUBMITTED: "Sub-Passion Submitted",
+  PROBLEM_SUBMITTED: "Problem Submitted",
+  BUSINESS_IDEA_SUBMITTED: "Business Idea Submitted",
+  BUSINESS_IDEA_SELECTED: "Business Idea Selected",
 };
 
 export const XP_POINTS = {
@@ -573,3 +578,8 @@ An estimated 200 million health app users are interested in apps for managing sc
 
 export const INVALID_DESCRIPTION_ERROR =
   "Please provide a valid business description and try again";
+export const MAXIMIZE_BUSINESS_IMAGES = [
+  "maximize_1.png",
+  "maximize_2.png",
+  "maximize_3.png",
+];

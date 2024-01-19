@@ -14,7 +14,10 @@ import {
   USER,
   BUSINESS_PREFERENCE,
   INVALID_DESCRIPTION_ERROR,
+  ANALYTICS_EVENTS,
+  MAXIMIZE_BUSINESS_IMAGES,
 } from "@app/utility";
+import { AnalyticsService } from "@app/services/v4";
 
 class BusinessProfileService {
   /**
@@ -30,6 +33,15 @@ class BusinessProfileService {
       if (data.businessIdeaInfo) {
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
+          {
+            "Item Name": data.businessIdeaInfo[0].value,
+          },
+          {
+            user_id: userIfExists._id,
+          }
+        );
       } else {
         obj[data.key] = data.value;
       }
@@ -365,9 +377,15 @@ class BusinessProfileService {
       }
 
       let newResponse = JSON.parse(response.choices[0].message.content);
-      newResponse.map(
-        (idea, idx) => (idea["image"] = images[0].businessImages[idx])
-      );
+      if (!images.length) {
+        newResponse.map(
+          (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
+        );
+      } else {
+        newResponse.map(
+          (idea, idx) => (idea["image"] = images[0].businessImages[idx])
+        );
+      }
       return newResponse;
     } catch (error) {
       if (error.message == INVALID_DESCRIPTION_ERROR) {
