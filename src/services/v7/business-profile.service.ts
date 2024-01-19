@@ -321,6 +321,8 @@ class BusinessProfileService {
    * @returns {*}
    */
   public async generateBusinessIdea(systemInput: string, prompt: string) {
+    const invalidDescriptionError =
+      "Please provide a valid business description and try again";
     try {
       const openai = new OpenAI({
         apiKey: envData.OPENAI_API_KEY,
@@ -346,20 +348,14 @@ class BusinessProfileService {
       });
 
       if (!Array.isArray(response.choices[0].message.content)) {
-        throw new NetworkError(
-          "Please provide a valid business description and try again",
-          400
-        );
+        throw new NetworkError(invalidDescriptionError, 400);
       }
 
       let newResponse = JSON.parse(response.choices[0].message.content);
       newResponse.map((idea) => (idea["image"] = null));
       return newResponse;
     } catch (error) {
-      if (
-        error.message ==
-        "Please provide a valid business description and try again"
-      ) {
+      if (error.message == invalidDescriptionError) {
         throw new NetworkError(error.message, 400);
       }
       throw new NetworkError(
