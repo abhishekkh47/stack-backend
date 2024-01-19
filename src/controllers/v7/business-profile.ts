@@ -2,23 +2,21 @@ import { Auth } from "@app/middleware";
 import {
   BusinessProfileTable,
   UserTable,
-  QuizTable,
   WeeklyJourneyResultTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
   Route,
-  uploadFileS3,
   removeImage,
   uploadCompanyLogo,
   uploadHomeScreenImage,
   uploadSocialFeedback,
   uploadMvpHomeScreen,
 } from "@app/utility";
-import { validationsV7 } from "@app/validations/v7/apiValidation";
 import BaseController from "../base";
-import { BusinessProfileService } from "@app/services/v7";
-import { UserService } from "@app/services/v7";
+import { BusinessProfileService, UserService } from "@app/services/v7";
+import { SYSTEM_INPUT, ANALYTICS_EVENTS } from "@app/utility";
+import { AnalyticsService } from "@app/services/v4";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -35,19 +33,8 @@ class BusinessProfileController extends BaseController {
       const { body, user } = ctx.request;
       const userIfExists = await UserTable.findOne({ _id: user._id });
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
-      return validationsV7.businessJourneyProfileValidation(
-        body,
-        ctx,
-        async (validate: boolean) => {
-          if (validate) {
-            await BusinessProfileService.addOrEditBusinessProfile(
-              body,
-              userIfExists
-            );
-            return this.Ok(ctx, { message: "Success" });
-          }
-        }
-      );
+      await BusinessProfileService.addOrEditBusinessProfile(body, userIfExists);
+      return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
@@ -299,6 +286,125 @@ class BusinessProfileController extends BaseController {
       UserService.updateUserScore(userExists, ctx.request.body);
     }
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+  }
+
+  /**
+   * @description This method is get passions, aspects and related problem
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/business-idea-preference",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getBusinessIdeaPreference(ctx: any) {
+    const { user, query } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const businessPreference =
+      await BusinessProfileService.getBusinessPreference(query);
+    return this.Ok(ctx, { message: "Success", data: businessPreference });
+  }
+
+  /**
+   * @description This method is to generate business-idea using OpenAI GPT
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/generate-business-idea",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getBusinessIdea(ctx: any) {
+    const { user, query } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!query.category || !query.problem) {
+      return this.BadRequest(ctx, "Provide a Category and Problem");
+    }
+    const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
+    const businessIdea = await BusinessProfileService.generateBusinessIdea(
+      SYSTEM_INPUT.SYSTEM,
+      prompt,
+      query.passion
+    );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.PASSION_SUBMITTED,
+      {
+        "Item Name": query.passion,
+      },
+      {
+        user_id: userExists._id,
+      }
+    );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.SUB_PASSION_SUBMITTED,
+      {
+        "Item Name": query.category,
+      },
+      {
+        user_id: userExists._id,
+      }
+    );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.PROBLEM_SUBMITTED,
+      {
+        "Item Name": query.problem,
+      },
+      {
+        user_id: userExists._id,
+      }
+    );
+    return this.Ok(ctx, { message: "Success", data: businessIdea });
+  }
+
+  /**
+   * @description This method is to maximize user provided business-idea
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/maximize-business-idea",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async maximizeBusinessIdea(ctx: any) {
+    const { user, query } = ctx.request;
+    const userExists: any = await UserTable.findOne({
+      _id: user._id,
+    });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!query.idea) {
+      return this.BadRequest(ctx, "Please provide your Business Idea");
+    }
+    const prompt = `problem: ${query.idea}.**`;
+    const businessIdea = await BusinessProfileService.generateBusinessIdea(
+      SYSTEM_INPUT.USER,
+      prompt,
+      "maximize"
+    );
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,
+      {
+        "Item Name": query.idea,
+      },
+      {
+        user_id: userExists._id,
+      }
+    );
+    return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
 }
 

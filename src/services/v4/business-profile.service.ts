@@ -29,6 +29,7 @@ class BusinessProfileService {
             impacts: impactIfExists._id,
             passions: data.passions,
             description: data.description,
+            marketOpportunity: data.marketOpportunity,
           },
         },
         { upsert: true }

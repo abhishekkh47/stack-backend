@@ -39,3 +39,5 @@ export * from "@model/community";
 export * from "@app/model/userCommunity";
 export * from "@app/model/weeklyJourney";
 export * from "@app/model/weeklyJourneyResult";
+export * from "@app/model/businessPassion";
+export * from "@app/model/businessPassionAspect";

@@ -1,13 +1,23 @@
 import {
   BusinessProfileTable,
   WeeklyJourneyResultTable,
-  UserTable,
+  BusinessPassionTable,
+  BusinessPassionAspectTable,
 } from "@app/model";
-import { AnalyticsService } from "@app/services/v4";
-import { ANALYTICS_EVENTS, MAX_STREAK_FREEZE } from "@app/utility";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
 import { UserService } from "@app/services/v7";
+import envData from "@app/config";
+import OpenAI from "openai";
+import {
+  SYSTEM,
+  USER,
+  BUSINESS_PREFERENCE,
+  INVALID_DESCRIPTION_ERROR,
+  ANALYTICS_EVENTS,
+  MAXIMIZE_BUSINESS_IMAGES,
+} from "@app/utility";
+import { AnalyticsService } from "@app/services/v4";
 
 class BusinessProfileService {
   /**
@@ -19,7 +29,22 @@ class BusinessProfileService {
   public async addOrEditBusinessProfile(data: any, userIfExists: any) {
     try {
       let obj = {};
-      obj[data.key] = data.value;
+      // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
+      if (data.businessIdeaInfo) {
+        obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
+        obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
+          {
+            "Item Name": data.businessIdeaInfo[0].value,
+          },
+          {
+            user_id: userIfExists._id,
+          }
+        );
+      } else {
+        obj[data.key] = data.value;
+      }
       await BusinessProfileTable.findOneAndUpdate(
         {
           userId: userIfExists._id,
@@ -305,6 +330,112 @@ class BusinessProfileService {
       },
     ]).exec();
     return businessProfile?.[0] ?? null;
+  }
+
+  /**
+   * @description this will generate business idea using OpenAI GPT
+   * @param data
+   * @returns {*}
+   */
+  public async generateBusinessIdea(
+    systemInput: string,
+    prompt: string,
+    passion: string
+  ) {
+    try {
+      const openai = new OpenAI({
+        apiKey: envData.OPENAI_API_KEY,
+      });
+
+      let [response, images] = await Promise.all([
+        openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: SYSTEM,
+              content: systemInput,
+            },
+            {
+              role: USER,
+              content: prompt,
+            },
+          ],
+          temperature: 1,
+          max_tokens: 256,
+          top_p: 1,
+          frequency_penalty: 0,
+          presence_penalty: 0,
+        }),
+        await BusinessPassionTable.find({ title: passion }),
+      ]);
+
+      if (
+        !response.choices[0].message.content.includes("businessDescription") ||
+        !response.choices[0].message.content.includes("opportunityHighlight")
+      ) {
+        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      }
+
+      let newResponse = JSON.parse(response.choices[0].message.content);
+      if (!images.length) {
+        newResponse.map(
+          (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
+        );
+      } else {
+        newResponse.map(
+          (idea, idx) => (idea["image"] = images[0].businessImages[idx])
+        );
+      }
+      return newResponse;
+    } catch (error) {
+      if (error.message == INVALID_DESCRIPTION_ERROR) {
+        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      }
+      throw new NetworkError(
+        "Error Occured while generating Business Idea",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description this will return array of passions/aspect/problems
+   * @param data
+   * @returns {*}
+   */
+  public async getBusinessPreference(data: any) {
+    try {
+      let response = [];
+      if (data.key == BUSINESS_PREFERENCE.PASSION) {
+        response = await BusinessPassionTable.find({})
+          .select("image title")
+          .sort({ order: 1 });
+      } else if (data.key == BUSINESS_PREFERENCE.ASPECT) {
+        const aspectsData = await BusinessPassionAspectTable.find({
+          businessPassionId: data._id,
+        }).select("aspect aspectImage");
+        response = aspectsData.map((aspect) => ({
+          _id: aspect._id,
+          title: aspect.aspect,
+          image: aspect.aspectImage,
+        }));
+      } else if (data.key == BUSINESS_PREFERENCE.PROBLEM) {
+        let order = 0;
+        const problemsData = await BusinessPassionAspectTable.find({
+          _id: data._id,
+        }).select("problems");
+        problemsData[0].problems.map((problem) => {
+          response.push({
+            _id: ++order,
+            title: problem,
+            image: null,
+          });
+        });
+      }
+      return response;
+    } catch (error) {
+      throw new NetworkError("Something Went Wrong", 400);
+    }
   }
 }
 export default new BusinessProfileService();
