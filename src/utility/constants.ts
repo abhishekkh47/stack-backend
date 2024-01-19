@@ -578,3 +578,8 @@ An estimated 200 million health app users are interested in apps for managing sc
 
 export const INVALID_DESCRIPTION_ERROR =
   "Please provide a valid business description and try again";
+export const MAXIMIZE_BUSINESS_IMAGES = [
+  "maximize_1.png",
+  "maximize_2.png",
+  "maximize_3.png",
+];
