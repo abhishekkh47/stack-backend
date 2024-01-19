@@ -14,7 +14,9 @@ import {
   USER,
   BUSINESS_PREFERENCE,
   INVALID_DESCRIPTION_ERROR,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
+import { AnalyticsService } from "@app/services/v4";
 
 class BusinessProfileService {
   /**
@@ -30,6 +32,15 @@ class BusinessProfileService {
       if (data.businessIdeaInfo) {
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
+          {
+            "Item Name": data.businessIdeaInfo[0].value,
+          },
+          {
+            user_id: userIfExists._id,
+          }
+        );
       } else {
         obj[data.key] = data.value;
       }

@@ -226,6 +226,11 @@ export const ANALYTICS_EVENTS = {
   DRIP_SHOP_REDEEMED: "Drip Shop Redeemed",
   STREAK_GOAL_SUBMITTED: "Streak Goal Submitted",
   ACTION_COMPLETED: "Action Completed",
+  PASSION_SUBMITTED: "Passion Submitted",
+  SUB_PASSION_SUBMITTED: "Sub-Passion Submitted",
+  PROBLEM_SUBMITTED: "Problem Submitted",
+  BUSINESS_IDEA_SUBMITTED: "Business Idea Submitted",
+  BUSINESS_IDEA_SELECTED: "Business Idea Selected",
 };
 
 export const XP_POINTS = {
