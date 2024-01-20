@@ -1386,6 +1386,7 @@ class ScriptService {
                 },
               },
               upsert: true,
+              timestamps: false
             },
           };
           newRecords.push(record);
