@@ -5,6 +5,7 @@ import {
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
   WEEKLY_REWARD_ACTION_NUM,
+  WEEKLY_JOURNEY_ACTION_DETAILS,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 import { ObjectId } from "mongodb";
@@ -225,6 +226,14 @@ class WeeklyJourneyDBService {
         upcomingWeek.actions[upcomingActionNum].quizDetails = newData[0];
       }
       upcomingWeek.actionNum = upcomingActionNum + 1;
+      if (upcomingWeek.actionNum == 3) {
+        Object.assign(upcomingWeek.actions[upcomingActionNum], {
+          actionDetails:
+            WEEKLY_JOURNEY_ACTION_DETAILS[
+              upcomingWeek.actions[upcomingActionNum].key
+            ],
+        });
+      }
       return upcomingChallenge[0];
     } catch (err) {
       throw new NetworkError("Daily Challenge Not Found ", 400);

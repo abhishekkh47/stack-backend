@@ -343,30 +343,9 @@ class BusinessProfileService {
     passion: string
   ) {
     try {
-      const openai = new OpenAI({
-        apiKey: envData.OPENAI_API_KEY,
-      });
-
       let [response, images] = await Promise.all([
-        openai.chat.completions.create({
-          model: "gpt-4",
-          messages: [
-            {
-              role: SYSTEM,
-              content: systemInput,
-            },
-            {
-              role: USER,
-              content: prompt,
-            },
-          ],
-          temperature: 1,
-          max_tokens: 256,
-          top_p: 1,
-          frequency_penalty: 0,
-          presence_penalty: 0,
-        }),
-        await BusinessPassionTable.find({ title: passion }),
+        this.generateSuggestions(systemInput, prompt),
+        BusinessPassionTable.find({ title: passion }),
       ]);
 
       if (
@@ -435,6 +414,41 @@ class BusinessProfileService {
       return response;
     } catch (error) {
       throw new NetworkError("Something Went Wrong", 400);
+    }
+  }
+
+  /**
+   * @description this will generate suggestions using OpenAI API based on user inputs
+   * @param data
+   * @returns {*}
+   */
+  public async generateSuggestions(systemInput: string, prompt: string) {
+    try {
+      const openai = new OpenAI({
+        apiKey: envData.OPENAI_API_KEY,
+      });
+
+      let response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: SYSTEM,
+            content: systemInput,
+          },
+          {
+            role: USER,
+            content: prompt,
+          },
+        ],
+        temperature: 1,
+        max_tokens: 256,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+      });
+      return response;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }

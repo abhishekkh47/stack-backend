@@ -12,10 +12,12 @@ import {
   uploadHomeScreenImage,
   uploadSocialFeedback,
   uploadMvpHomeScreen,
+  SYSTEM_INPUT,
+  ANALYTICS_EVENTS,
+  BUSINESS_ACTIONS,
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
-import { SYSTEM_INPUT, ANALYTICS_EVENTS } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 class BusinessProfileController extends BaseController {
   /**
@@ -329,7 +331,7 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (!query.category || !query.problem) {
+    if (!query.category || !query.problem || !query.passion) {
       return this.BadRequest(ctx, "Provide a Category and Problem");
     }
     const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
@@ -405,6 +407,37 @@ class BusinessProfileController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
+  }
+
+  /**
+   * @description This method is to generate suggestions from OpenAI-API based on based on user input
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/get-ai-suggestion",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getAISuggestion(ctx: any) {
+    const { user, query, body } = ctx.request;
+    const [userExists, userBusinessProfile] = await Promise.all([
+      UserTable.findOne({ _id: body._id }),
+      BusinessProfileTable.find({ userId: body._id }),
+    ]);
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!query.key) {
+      return this.BadRequest(ctx, "Please provide a valid requirement");
+    }
+    const prompt = `${userBusinessProfile[0].description}.**`;
+    let response = await BusinessProfileService.generateSuggestions(
+      SYSTEM_INPUT[BUSINESS_ACTIONS[query.key]],
+      prompt
+    );
+    response = JSON.parse(response.choices[0].message.content);
+    return this.Ok(ctx, { message: "Success", data: response });
   }
 }
 
