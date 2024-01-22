@@ -1364,6 +1364,8 @@ class ScriptService {
       let users = userDetails[0]?.users;
       if (users?.length) {
         for (let i = 0; i < users.length; i++) {
+          let overwrittenDate = new Date(users[i].createdAt)
+          overwrittenDate.setSeconds(overwrittenDate.getSeconds() - 1);
           let record = {
             updateOne: {
               filter: {
@@ -1376,16 +1378,13 @@ class ScriptService {
                   userId: users[i].userId,
                   actionNum: 3,
                   actionInput: null,
-                  createdAt: new Date(users[i].createdAt).setSeconds(
-                    new Date(users[i].createdAt).getMilliseconds() - 1
-                  ),
-                  updatedAt: new Date(users[i].updatedAt).setSeconds(
-                    new Date(users[i].updatedAt).getMilliseconds() - 1
-                  ),
+                  createdAt: overwrittenDate,
+                  updatedAt: overwrittenDate,
                   __v: 0,
                 },
               },
               upsert: true,
+              timestamps: false
             },
           };
           newRecords.push(record);
