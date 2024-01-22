@@ -420,7 +420,7 @@ export const BUSINESS_ACTIONS = {
   companyName: "COMPANY_NAME",
   companyLogo: "COMPANY_LOGO",
   targetAudience: "TARGET_AUDIENCE",
-  competitors: "COMPETITION",
+  competitors: "COMPETITORS",
   keyDifferentiator: "KEY_DIFFERENTIATOR",
   xForY: "X_FOR_Y",
 };

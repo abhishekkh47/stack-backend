@@ -14,7 +14,6 @@ import {
   uploadMvpHomeScreen,
   SYSTEM_INPUT,
   ANALYTICS_EVENTS,
-  BUSINESS_ACTIONS,
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
@@ -420,10 +419,10 @@ class BusinessProfileController extends BaseController {
   })
   @Auth()
   public async getAISuggestion(ctx: any) {
-    const { user, query, body } = ctx.request;
+    const { user, query } = ctx.request;
     const [userExists, userBusinessProfile] = await Promise.all([
-      UserTable.findOne({ _id: body._id }),
-      BusinessProfileTable.find({ userId: body._id }),
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }),
     ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
@@ -431,12 +430,13 @@ class BusinessProfileController extends BaseController {
     if (!query.key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
-    const prompt = `${userBusinessProfile[0].description}.**`;
-    let response = await BusinessProfileService.generateSuggestions(
-      SYSTEM_INPUT[BUSINESS_ACTIONS[query.key]],
-      prompt
+    let response = await BusinessProfileService.generateAISuggestions(
+      userExists,
+      query.key,
+      userBusinessProfile,
+      query.actionInput,
+      query.isRetry
     );
-    response = JSON.parse(response.choices[0].message.content);
     return this.Ok(ctx, { message: "Success", data: response });
   }
 }

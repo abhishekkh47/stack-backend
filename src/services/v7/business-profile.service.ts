@@ -3,6 +3,7 @@ import {
   WeeklyJourneyResultTable,
   BusinessPassionTable,
   BusinessPassionAspectTable,
+  UserTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
@@ -16,6 +17,8 @@ import {
   INVALID_DESCRIPTION_ERROR,
   ANALYTICS_EVENTS,
   MAXIMIZE_BUSINESS_IMAGES,
+  SYSTEM_INPUT,
+  BUSINESS_ACTIONS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -343,8 +346,8 @@ class BusinessProfileService {
     passion: string
   ) {
     try {
-      let [response, images] = await Promise.all([
-        this.generateSuggestions(systemInput, prompt),
+      let [response, businessPassionImages] = await Promise.all([
+        this.generateTextSuggestions(systemInput, prompt),
         BusinessPassionTable.find({ title: passion }),
       ]);
 
@@ -356,13 +359,14 @@ class BusinessProfileService {
       }
 
       let newResponse = JSON.parse(response.choices[0].message.content);
-      if (!images.length) {
+      if (!businessPassionImages.length) {
         newResponse.map(
           (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
         );
       } else {
         newResponse.map(
-          (idea, idx) => (idea["image"] = images[0].businessImages[idx])
+          (idea, idx) =>
+            (idea["image"] = businessPassionImages[0].businessImages[idx])
         );
       }
       return newResponse;
@@ -418,17 +422,71 @@ class BusinessProfileService {
   }
 
   /**
+   * @description this will generate business idea using OpenAI GPT
+   * @param data
+   * @returns {*}
+   */
+  public async generateAISuggestions(
+    userExists: any,
+    key: string,
+    userBusinessProfile: any,
+    actionInput: string,
+    isRetry: boolean = false
+  ) {
+    try {
+      let response = null;
+      let prompt = null;
+      if (key == "companyLogo") {
+        prompt = `Business Name:${
+          userBusinessProfile.companyName
+        }, Business Description: ${userBusinessProfile.description} ${
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]]
+        }`;
+      } else {
+        prompt = userBusinessProfile.description;
+      }
+      if (actionInput == "text") {
+        response = await this.generateTextSuggestions(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+          prompt
+        );
+        response = JSON.parse(response.choices[0].message.content);
+      } else {
+        response = await Promise.all(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]].map(async (prompt) => {
+            return this.generateImageSuggestions(
+              `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description} ${prompt}`
+            );
+          })
+        );
+      }
+      if (response && isRetry) {
+        const user = await UserTable.find({ _id: userExists._id });
+      }
+      return response;
+    } catch (error) {
+      if (error.message == INVALID_DESCRIPTION_ERROR) {
+        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      }
+      throw new NetworkError(
+        "Error Occured while generating suggestions : " + error.message,
+        400
+      );
+    }
+  }
+
+  /**
    * @description this will generate suggestions using OpenAI API based on user inputs
    * @param data
    * @returns {*}
    */
-  public async generateSuggestions(systemInput: string, prompt: string) {
+  public async generateTextSuggestions(systemInput: string, prompt: string) {
     try {
       const openai = new OpenAI({
         apiKey: envData.OPENAI_API_KEY,
       });
 
-      let response = await openai.chat.completions.create({
+      const response = await openai.chat.completions.create({
         model: "gpt-4",
         messages: [
           {
@@ -445,6 +503,29 @@ class BusinessProfileService {
         top_p: 1,
         frequency_penalty: 0,
         presence_penalty: 0,
+      });
+      return response;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this will generate suggestions using OpenAI API based on user inputs
+   * @param data
+   * @returns {*}
+   */
+  public async generateImageSuggestions(prompt: string) {
+    try {
+      const openai = new OpenAI({
+        apiKey: envData.OPENAI_API_KEY,
+      });
+
+      const response = await openai.images.generate({
+        model: "dall-e-2",
+        prompt: prompt,
+        n: 1,
+        size: "256x256",
       });
       return response;
     } catch (error) {
