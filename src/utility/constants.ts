@@ -407,6 +407,10 @@ export const BUSINESS_PREFERENCE = {
 };
 export const SYSTEM = "system";
 export const USER = "user";
+export const SUGGESTION_FORMAT = {
+  TEXT: "text",
+  IMAGE: "image",
+};
 
 export const INVALID_DESCRIPTION_ERROR =
   "Please provide a valid business description and try again";
@@ -427,6 +431,7 @@ export const BUSINESS_ACTIONS = {
 
 export const WEEKLY_JOURNEY_ACTION_DETAILS = {
   companyName: {
+    key: "companyName",
     title: "Creating Your Business Name",
     steps: [
       "Brainstorming brand name associations",
@@ -434,8 +439,11 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Checking domain name availability",
     ],
     hourseSaved: "5",
+    week: 1,
+    day: 1,
   },
   companyLogo: {
+    key: "companyLogo",
     title: "Creating Your Logo",
     steps: [
       "Gathering brand identity inspiration",
@@ -443,8 +451,11 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Finalizing logo design options",
     ],
     hourseSaved: "18",
+    week: 1,
+    day: 2,
   },
   targetAudience: {
+    key: "targetAudience",
     title: "Creating Your Target Audience",
     steps: [
       "Identifying demographic traits",
@@ -452,8 +463,11 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Defining your ideal customer profile",
     ],
     hourseSaved: "8",
+    week: 1,
+    day: 3,
   },
   competitors: {
+    key: "competitors",
     title: "Recognizing Your Top-5 Competitors",
     steps: [
       "Identifying key players in your market",
@@ -461,8 +475,11 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Ranking based on relevance and impact",
     ],
     hourseSaved: "10",
+    week: 1,
+    day: 4,
   },
   keyDifferentiator: {
+    key: "keyDifferentiator",
     title: "Defining Your Key Differentiator",
     steps: [
       "Analyzing your unique business features",
@@ -470,8 +487,11 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Crafting a compelling value proposition",
     ],
     hourseSaved: "14",
+    week: 1,
+    day: 5,
   },
   xForY: {
+    key: "xForY",
     title: "Crafting Your X for Y pitch",
     steps: [
       "Selecting well known companies",
@@ -479,6 +499,8 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Refining the pitch for clarity and impact",
     ],
     hourseSaved: "10",
+    week: 1,
+    day: 6,
   },
 };
 

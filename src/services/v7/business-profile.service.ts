@@ -22,6 +22,7 @@ import {
   generateImage,
   UpscaleImage,
   IMAGE_ACTIONS,
+  SUGGESTION_FORMAT,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -448,7 +449,7 @@ class BusinessProfileService {
       } else {
         prompt = userBusinessProfile.description;
       }
-      if (actionInput == "text") {
+      if (actionInput == SUGGESTION_FORMAT.TEXT) {
         response = await this.generateTextSuggestions(
           SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
           prompt

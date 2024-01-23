@@ -1,15 +1,27 @@
 import BaseController from "@app/controllers/base";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { LeagueTable, QuizResult, QuizTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  LeagueTable,
+  QuizResult,
+  QuizTable,
+  UserTable,
+  WeeklyJourneyTable,
+} from "@app/model";
 import { zohoCrmService } from "@app/services/v1";
 import {
   LeagueService,
   QuizDBService as QuizDBServiceV4,
   UserDBService,
 } from "@app/services/v4";
-import { QuizDBService } from "@app/services/v7";
+import { QuizDBService, BusinessProfileService } from "@app/services/v7";
 import { HttpMethod } from "@app/types";
-import { Route } from "@app/utility";
+import {
+  Route,
+  SUGGESTION_FORMAT,
+  WEEKLY_JOURNEY_ACTION_DETAILS,
+  IMAGE_ACTIONS,
+} from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
 
 class QuizController extends BaseController {
@@ -29,15 +41,23 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] =
-            await Promise.all([
-              LeagueTable.find({})
-                .select("_id name image minPoint maxPoint colorCode")
-                .sort({ minPoint: 1 }),
-              UserTable.findOne({ _id: user._id }).populate("streakGoal"),
-              QuizTable.findOne({ _id: reqParam.quizId }),
-              QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
-            ]);
+          const [
+            leagues,
+            userIfExists,
+            quizIfExists,
+            quizResultsIfExists,
+            curentWeeklyJournetDetails,
+            userBusinessProfile,
+          ] = await Promise.all([
+            LeagueTable.find({})
+              .select("_id name image minPoint maxPoint colorCode")
+              .sort({ minPoint: 1 }),
+            UserTable.findOne({ _id: user._id }).populate("streakGoal"),
+            QuizTable.findOne({ _id: reqParam.quizId }),
+            QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
+            WeeklyJourneyTable.findOne({ _id: reqParam.weeklyJourneyId }),
+            BusinessProfileTable.findOne({ _id: user._id }),
+          ]);
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
@@ -48,6 +68,23 @@ class QuizController extends BaseController {
             return this.BadRequest(
               ctx,
               "You cannot submit the same quiz again"
+            );
+          }
+          /*
+           * If the upcoming action is to upload company logo
+           * we will generate the logo using midjourney from here
+           * and store them in DB (-> db not yet created for this)
+           */
+
+          if (
+            curentWeeklyJournetDetails.week == 1 &&
+            curentWeeklyJournetDetails.day == 2
+          ) {
+            BusinessProfileService.generateAISuggestions(
+              userIfExists,
+              "companyLogo",
+              userBusinessProfile,
+              SUGGESTION_FORMAT.IMAGE
             );
           }
           const {
