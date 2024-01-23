@@ -19,6 +19,9 @@ import {
   MAXIMIZE_BUSINESS_IMAGES,
   SYSTEM_INPUT,
   BUSINESS_ACTIONS,
+  generateImage,
+  UpscaleImage,
+  IMAGE_ACTIONS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -436,7 +439,7 @@ class BusinessProfileService {
     try {
       let response = null;
       let prompt = null;
-      if (key == "companyLogo") {
+      if (IMAGE_ACTIONS.includes(key)) {
         prompt = `Business Name:${
           userBusinessProfile.companyName
         }, Business Description: ${userBusinessProfile.description} ${
@@ -452,16 +455,25 @@ class BusinessProfileService {
         );
         response = JSON.parse(response.choices[0].message.content);
       } else {
-        response = await Promise.all(
-          SYSTEM_INPUT[BUSINESS_ACTIONS[key]].map(async (prompt) => {
-            return this.generateImageSuggestions(
-              `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description} ${prompt}`
-            );
-          })
+        const imagePrompt = await this.generateTextSuggestions(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+          prompt
         );
+        const response1 = await this.generateImageSuggestions(
+          imagePrompt.choices[0].message.content
+        );
+        response = [...response1];
       }
       if (response && isRetry) {
-        const user = await UserTable.find({ _id: userExists._id });
+        const user = await UserTable.findByIdAndUpdate(
+          { _id: userExists._id },
+          {
+            $inc: {
+              quizCoins: -200,
+            },
+          },
+          { new: true }
+        );
       }
       return response;
     } catch (error) {
@@ -517,17 +529,15 @@ class BusinessProfileService {
    */
   public async generateImageSuggestions(prompt: string) {
     try {
-      const openai = new OpenAI({
-        apiKey: envData.OPENAI_API_KEY,
-      });
-
-      const response = await openai.images.generate({
-        model: "dall-e-2",
-        prompt: prompt,
-        n: 1,
-        size: "256x256",
-      });
-      return response;
+      const imagineRes = await generateImage(prompt);
+      if (!imagineRes) {
+        throw new NetworkError("Something Went Wrong in myImage", 400);
+      }
+      const imageData1 = await UpscaleImage(imagineRes, 1);
+      const imageData2 = await UpscaleImage(imagineRes, 2);
+      const imageData3 = await UpscaleImage(imagineRes, 3);
+      const imageData4 = await UpscaleImage(imagineRes, 4);
+      return [imageData1.uri, imageData2.uri, imageData3.uri, imageData4.uri];
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

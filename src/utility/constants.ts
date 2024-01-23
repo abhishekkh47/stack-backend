@@ -481,3 +481,5 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
     hourseSaved: "10",
   },
 };
+
+export const IMAGE_ACTIONS = ["companyLogo"];

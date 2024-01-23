@@ -31,7 +31,7 @@ export async function generateImage(prompt) {
   client.Close();
   return Imagine;
 }
-export async function UpscaleImage(Imagine) {
+export async function UpscaleImage(Imagine, upscaleIndex: 1 | 2 | 3 | 4 = 2) {
   const client = new Midjourney({
     ServerId: <string>process.env.SERVER_ID,
     ChannelId: <string>process.env.CHANNEL_ID,
@@ -42,7 +42,7 @@ export async function UpscaleImage(Imagine) {
   });
   await client.Connect(); // required
   const Upscale = await client.Upscale({
-    index: 2,
+    index: upscaleIndex,
     msgId: <string>Imagine.id,
     hash: <string>Imagine.hash,
     flags: Imagine.flags,

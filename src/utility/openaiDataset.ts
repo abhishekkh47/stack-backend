@@ -240,21 +240,55 @@ export const SYSTEM_INPUT = {
   - Suggestion: Eden
   - Explanation: a place known for being paradise and associated with love"`,
 
-  COMPANY_LOGO: [
-    `Based on the business name and business description provided, I want you to generate a business logo using below given Logo prompt
+  COMPANY_LOGO_: [
+    `Based on the business name and business description provided, I want you to generate a business logo using below given Logo prompt. Make sure that if logo contains any text, it should be in english language words only. 
   Logo prompt:"[INSERT FIRST LETTER OF BUSINESS NAME]" simple logo, duotone, modern, one bright color, black background`,
 
-    `Based on the business name and business description provided, I want you to generate a business logo using below given Logo prompt
+    `Based on the business name and business description provided, I want you to generate a business logo using below given Logo prompt. Make sure that if logo contains any text, it should be in english language words only.
   Logo prompt"[INSERT BUSINESS NAME]" simple logo, duotone, bright colors`,
 
-    `Logo prompt:"I want you to write one thing that is directly associated with the business description provided and would make a good logo for that business description. For example a business that involved an investing app might be directly associated with a bull or a bag of money, or a business that was a dating app might be a heart. The provided thing should be a maximum of two words (do not include an explanation of why you chose this).
+    `Logo prompt:"I want you to write one thing that is directly associated with the business description provided and would make a good logo for that business description. For example a business that involved an investing app might be directly associated with a bull or a bag of money, or a business that was a dating app might be a heart. The provided thing should be a maximum of two words (do not include an explanation of why you chose this). Make sure that if logo contains any text, it should be in english language words only.
   You will insert thing into the following quote as [THING]: simple vector graphic logo of [THING], flat, 2d, vibrant colors"`,
 
-    `Logo prompt:"I want you to write one thing that is directly associated with the business description provided and would make a good logo for that business description. For example a business that involved an investing app might be directly associated with a bull or a bag of money, or a business that was a dating app might be a heart. The provided thing should be a maximum of two words (do not include an explanation of why you chose this).
+    `Logo prompt:"I want you to write one thing that is directly associated with the business description provided and would make a good logo for that business description. For example a business that involved an investing app might be directly associated with a bull or a bag of money, or a business that was a dating app might be a heart. The provided thing should be a maximum of two words (do not include an explanation of why you chose this). Make sure that if logo contains any text, it should be in english language words only.
   You will insert thing into the following quote as [THING]: simple vector graphic logo of [THING], flat, 2d`,
   ],
 
-  TARGET_AUDIENCE: `"Based on the business description provided in the user prompt, you will write three potential, very specific target audiences. Each separate target audience description will be formatted as one sentence where each characteristics of the target audience will be separated by a comma. each target audience description should be no longer than 45 words. Each will highlight the 3-5 most important characteristics of the specific target audience potentially including age, gender, activities relating to social media habits (specific accounts they follow or groups, channels, #hashtags they are active members of or specific aspects of their own social media profile), specific jobs (including title and type of company), relationship status, wealth/income (specific not general), or other clubs, organizations, activities, habits that are all hyper-specific or niche. Here are 3 examples: 
+  COMPANY_LOGO: `"Provide a 1-5 word visual description of an engaging and distinctive object that vividly represents the core service or theme of the following business description. The visual description should include one of the specified design styles and an object that is not only directly related to the business but also visually striking and easily identifiable. The object should be something that can be rendered in a simple yet captivating manner in a logo design. Include a color if it enhances the visual appeal and relevance. Choose both a design style and an object that have unmistakable and exciting associations with the business description. Replace OBJECT with the chosen object and STYLE with the chosen style in the following format: 'simple logo of OBJECT, STYLE --v 6.0'. Avoid generic or abstract concepts in favor of concrete and visually stimulating elements.
+
+  Styles: pixel art, contemporary 3d, synthwave, low poly art, flat, vibrant color
+  
+  Business description: [INSERT BUSINESS DESCRIPTION]
+  
+  Provide only the output without quotations or an explanation.
+  
+  Illustrative examples:
+  
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education
+  Object: green bull
+  Style: contemporary 3d 
+  Output: simple logo of green bull, contemporary 3d --v 6.0
+  
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  Object: headphones
+  Style: synthwave
+  Output: simple logo of headphones, synthwave --v 6.0
+  
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them
+  Object: sports car
+  Style: pixel art
+  Output: simple logo of sports car, pixel art --v 6.0
+  
+  Example 4
+  Business description: a dating app that pairs users based on their vision of their perfect married life
+  Object: diamond ring
+  Style: low poly art
+  Output: simple logo of diamond ring, low poly art --v 6.0"`,
+
+  TARGET_AUDIENCE: `"Based on the business description provided in the user prompt, you will write three potential, very specific target audiences. Each separate target audience description will be formatted as one sentence where each characteristics of the target audience will be separated by a comma. The response should be an array containing three Target Audience strings. each target audience description should be no longer than 45 words. Each will highlight the 3-5 most important characteristics of the specific target audience potentially including age, gender, activities relating to social media habits (specific accounts they follow or groups, channels, #hashtags they are active members of or specific aspects of their own social media profile), specific jobs (including title and type of company), relationship status, wealth/income (specific not general), or other clubs, organizations, activities, habits that are all hyper-specific or niche. Here are 3 examples: 
 
   Example 1:
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal.
@@ -268,7 +302,7 @@ export const SYSTEM_INPUT = {
   Business description: a dating app that pairs users based on their vision of their perfect married life
   Target audience: 30-35 year old single females, members of Soulcycle, barry's bootcamp, Orangetheory, Pure Barre, equinox, followers of @kimkardashian @taylorswift @kayla_itsines on instagram`,
 
-  COMPETITORS: `"Based on the business description provided in the user prompt, I want you to provide the 5 most direct competitors. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. The competitors will be provided without explanation in the following format: ""Competitor1, Competitor2, Competitor3, Competitor4, Competitor5"". below are 3 illustrative examples:
+  COMPETITORS: `"Based on the business description provided in the user prompt, I want you to provide the 5 most direct competitors. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. The response should be an array containing all 5 competitors name without any explanation. below are 3 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
