@@ -46,7 +46,7 @@ class QuizController extends BaseController {
             userIfExists,
             quizIfExists,
             quizResultsIfExists,
-            curentWeeklyJournetDetails,
+            curentWeeklyJourneyDetails,
             userBusinessProfile,
           ] = await Promise.all([
             LeagueTable.find({})
@@ -77,8 +77,8 @@ class QuizController extends BaseController {
            */
 
           if (
-            curentWeeklyJournetDetails.week == 1 &&
-            curentWeeklyJournetDetails.day == 2
+            curentWeeklyJourneyDetails.week == 1 &&
+            curentWeeklyJourneyDetails.day == 2
           ) {
             BusinessProfileService.generateAISuggestions(
               userIfExists,
