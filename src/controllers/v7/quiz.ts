@@ -35,7 +35,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public storeQuizResults(ctx: any) {
     const reqParam = ctx.request.body;
-    const { user, headers } = ctx.request;
+    const { user, headers, query } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -56,7 +56,7 @@ class QuizController extends BaseController {
             QuizTable.findOne({ _id: reqParam.quizId }),
             QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
             WeeklyJourneyTable.findOne({ _id: reqParam.weeklyJourneyId }),
-            BusinessProfileTable.findOne({ _id: user._id }),
+            BusinessProfileTable.findOne({ userId: user._id }),
           ]);
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
@@ -73,7 +73,7 @@ class QuizController extends BaseController {
           /*
            * If the upcoming action is to upload company logo
            * we will generate the logo using midjourney from here
-           * and store them in DB (-> db not yet created for this)
+           * and store them in DB
            */
 
           if (

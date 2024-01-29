@@ -1879,6 +1879,9 @@ class ScriptController extends BaseController {
           socialCampaignTheme: null,
           firstSocialCampaign: null,
           marketOpportunity: null,
+          aiGeneratedSuggestions: null,
+          isRetry: false,
+          hoursSaved: 0,
         },
       }
     );

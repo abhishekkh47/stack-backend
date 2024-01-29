@@ -319,4 +319,48 @@ export const SYSTEM_INPUT = {
   Example 4
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   Competitors: Shopify, HubSpot, Buildspace, Beta Blox, StartItUp`,
+
+  KEY_DIFFERENTIATOR: `"Based on the business description provided in the user prompt, I want you to write 3 distinct potential core differentiators for. These core differentiators will be based on the incumbents of the industry and adjacent products. They will identify opportunities either through product differentiation or distribution. The core differentiator should be one concise phrase and emulate the examples provided below. Below are 4 illustrative examples:
+
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  Core differentiator: Creating a social eco-system for existing school and college communities
+  Explanation: While many incumbents have investing apps with gamified education and social investing, the distribution channel of high school and college students is unique while occupying a large population of people interesting in learning about investing and a social finance community.
+  
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  Core differentiator: A rich content library of musical sounds and beats for endless creation.
+  Explanation: While many incumbents have easy to use software for music editing, few of them focus on a large library of sounds and beats. Differentiating on a rich content library has proven successful in other industries like design (Canva) and education (Coursera) while music is one of the most common hobbies in the world (big market).
+  
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  Core differentiator: increased accessibility and service convenience by providing an at-home distribution 
+  Explanation: For routine car maintenance, all current incumbent have a phyical location that consumers are required to go to, in order to provide services like tire rotation, oil changes, replaing air conditioning filters, etc. This model greatly increases accessibility and convenience for the end user.
+  
+  Example 4
+  Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event
+  Core differentiator: during-event ticket sales 
+  Explanation: ticket platforms currently only users to buy tickets prior to the event, whereas a service that allowed reselling during the event, opens up additonal revenue options for the event host as well increased ticket availability to event users.`,
+
+  X_FOR_Y: `"Based on the business description provided in the user prompt, I want you to write a metaphorical ""[COMPANY] for [THING]"" often referred to as ""X for Y"". The [COMPANY] you choose must be a well-known company that people would be farmiliar with. The [THING] should be directly related to the industry or niche based on the business description I provide. You will NOT include an explanation in your response. Below are 4 illustrative examples:
+
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  X for Y: Duolingo for investing
+  Explanation: Duolingo includes many of the same features such as gamified education and a social community but for a different industry
+  
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  X for Y: Canva for music
+  Explanation: Canva is well known for its rich library of templates and designs but for digital design instead of music.
+  
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  X for Y: Rover for routine car maintenance
+  Explanation: Rover also includes a monthly subscription fee for a common and routine service, but is a dog walking app not a car maintenance platform.
+  
+  Example 4
+  Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event
+  X for Y: Hoteltonight for event tickets
+  Explanation: Hoteltonight also focuses on last minute luxury deals but is a hotel booking platform, not event ticketing.`,
 };

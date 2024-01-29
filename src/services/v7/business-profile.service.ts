@@ -23,6 +23,7 @@ import {
   UpscaleImage,
   IMAGE_ACTIONS,
   SUGGESTION_FORMAT,
+  IS_RETRY,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -51,6 +52,7 @@ class BusinessProfileService {
         );
       } else {
         obj[data.key] = data.value;
+        obj["isRetry"] = false;
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -333,6 +335,7 @@ class BusinessProfileService {
           impacts: 1,
           passions: 1,
           businessPlans: "$filteredBusinessPlans",
+          hoursSaved: 1,
         },
       },
     ]).exec();
@@ -435,48 +438,63 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     actionInput: string,
-    isRetry: boolean = false
+    isRetry: any = false
   ) {
     try {
       let response = null;
-      let prompt = null;
-      if (IMAGE_ACTIONS.includes(key)) {
-        prompt = `Business Name:${
-          userBusinessProfile.companyName
-        }, Business Description: ${userBusinessProfile.description} ${
-          SYSTEM_INPUT[BUSINESS_ACTIONS[key]]
-        }`;
-      } else {
-        prompt = userBusinessProfile.description;
+      if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
+        let prompt = null;
+        if (IMAGE_ACTIONS.includes(key)) {
+          prompt = `Business Name:${
+            userBusinessProfile.companyName
+          }, Business Description: ${userBusinessProfile.description} ${
+            SYSTEM_INPUT[BUSINESS_ACTIONS[key]]
+          }`;
+        } else {
+          prompt = userBusinessProfile.description;
+        }
+        if (actionInput == SUGGESTION_FORMAT.TEXT) {
+          response = await this.generateTextSuggestions(
+            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+            prompt
+          );
+          response = JSON.parse(response.choices[0].message.content);
+        } else {
+          const imagePrompt = await this.generateTextSuggestions(
+            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+            prompt
+          );
+          const response1 = await this.generateImageSuggestions(
+            imagePrompt.choices[0].message.content
+          );
+          response = [...response1];
+        }
+        if (response && isRetry == IS_RETRY.TRUE) {
+          await UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            {
+              $inc: {
+                quizCoins: -200,
+              },
+            }
+          );
+        } else {
+          await BusinessProfileTable.findOneAndUpdate(
+            { userId: userExists._id },
+            {
+              $set: {
+                aiGeneratedSuggestions: response,
+                isRetry: true,
+              },
+            }
+          );
+        }
+        return { suggestions: response, isRetry: true };
       }
-      if (actionInput == SUGGESTION_FORMAT.TEXT) {
-        response = await this.generateTextSuggestions(
-          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-          prompt
-        );
-        response = JSON.parse(response.choices[0].message.content);
-      } else {
-        const imagePrompt = await this.generateTextSuggestions(
-          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-          prompt
-        );
-        const response1 = await this.generateImageSuggestions(
-          imagePrompt.choices[0].message.content
-        );
-        response = [...response1];
-      }
-      if (response && isRetry) {
-        const user = await UserTable.findByIdAndUpdate(
-          { _id: userExists._id },
-          {
-            $inc: {
-              quizCoins: -200,
-            },
-          },
-          { new: true }
-        );
-      }
-      return response;
+      return {
+        suggestions: userBusinessProfile.aiGeneratedSuggestions,
+        isRetry: true,
+      };
     } catch (error) {
       if (error.message == INVALID_DESCRIPTION_ERROR) {
         throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);

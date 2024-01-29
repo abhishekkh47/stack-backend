@@ -107,7 +107,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { companyLogo: imageName },
+        $set: { companyLogo: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -162,7 +162,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { homescreenImage: imageName },
+        $set: { homescreenImage: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -217,7 +217,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { socialFeedback: imageName },
+        $set: { socialFeedback: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -272,7 +272,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { mvpHomeScreen: imageName },
+        $set: { mvpHomeScreen: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -414,7 +414,7 @@ class BusinessProfileController extends BaseController {
    * @returns {*}
    */
   @Route({
-    path: "/get-ai-suggestion",
+    path: "/get-ai-suggestions",
     method: HttpMethod.GET,
   })
   @Auth()

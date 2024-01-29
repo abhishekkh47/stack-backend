@@ -438,9 +438,10 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Using best practice naming principles",
       "Checking domain name availability",
     ],
-    hourseSaved: "5",
+    hoursSaved: 33,
     week: 1,
     day: 1,
+    placeHolderText: "Enter name...",
   },
   companyLogo: {
     key: "companyLogo",
@@ -450,9 +451,10 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Sketching and refining design concepts",
       "Finalizing logo design options",
     ],
-    hourseSaved: "18",
+    hoursSaved: 51,
     week: 1,
     day: 2,
+    placeHolderText: null,
   },
   targetAudience: {
     key: "targetAudience",
@@ -462,9 +464,10 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Understanding psychographic behaviors",
       "Defining your ideal customer profile",
     ],
-    hourseSaved: "8",
+    hoursSaved: 59,
     week: 1,
     day: 3,
+    placeHolderText: "Enter description...",
   },
   competitors: {
     key: "competitors",
@@ -474,9 +477,10 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Analyzing strengths and weaknesses",
       "Ranking based on relevance and impact",
     ],
-    hourseSaved: "10",
+    hoursSaved: 68,
     week: 1,
     day: 4,
+    placeHolderText: "Enter description...",
   },
   keyDifferentiator: {
     key: "keyDifferentiator",
@@ -486,9 +490,10 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Researching market whitespace",
       "Crafting a compelling value proposition",
     ],
-    hourseSaved: "14",
+    hoursSaved: 82,
     week: 1,
     day: 5,
+    placeHolderText: "Enter description...",
   },
   xForY: {
     key: "xForY",
@@ -498,10 +503,15 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
       "Connecting your product or service",
       "Refining the pitch for clarity and impact",
     ],
-    hourseSaved: "10",
+    hoursSaved: 92,
     week: 1,
     day: 6,
+    placeHolderText: "Enter pitch...",
   },
 };
 
 export const IMAGE_ACTIONS = ["companyLogo"];
+export const IS_RETRY = {
+  TRUE: "true",
+  FALSE: "false",
+};

@@ -155,6 +155,23 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: null,
     },
+    aiGeneratedSuggestions: [
+      {
+        type: mongoose.Schema.Types.String,
+        required: false,
+        default: null,
+      },
+    ],
+    isRetry: {
+      type: mongoose.Schema.Types.Boolean,
+      required: false,
+      default: false,
+    },
+    hoursSaved: {
+      type: mongoose.Schema.Types.Number,
+      required: false,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

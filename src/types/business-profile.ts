@@ -41,4 +41,7 @@ export interface IBusinessProfile {
   aspiringSocialAccount: string;
   socialCampaignTheme: string;
   firstSocialCampaign: string;
+  aiGeneratedSuggestions: string[];
+  isRetry: boolean;
+  hoursSaved: number;
 }
