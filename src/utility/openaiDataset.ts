@@ -302,25 +302,25 @@ export const SYSTEM_INPUT = {
   Business description: a dating app that pairs users based on their vision of their perfect married life
   Target audience: 30-35 year old single females, members of Soulcycle, barry's bootcamp, Orangetheory, Pure Barre, equinox, followers of @kimkardashian @taylorswift @kayla_itsines on instagram`,
 
-  COMPETITORS: `"Based on the business description provided in the user prompt, I want you to provide the 5 most direct competitors. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. The response should be an array containing all 5 competitors name without any explanation. below are 3 illustrative examples:
+  COMPETITORS: `"Based on the business description provided in the user prompt, I want you to provide the 5 most direct competitors. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. The response should be an array containing a single string having all 5 competitors name without any explanation as provided in below examples. below are 3 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
-  Competitors: Robinhood, TD Ameritrade, Stash, Bloom, Stockpile
+  Competitors: ["Robinhood, TD Ameritrade, Stash, Bloom, Stockpile"]
   
   Example 2
   Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
-  Competitors: Audacity, GarageBand, Mayk.it, sunhou.se, Volta
+  Competitors: ["Audacity, GarageBand, Mayk.it, sunhou.se, Volta"]
   
   Example 3
   Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
-  Competitors: Jiffy Lube, Valvoline, Wrench, ServiceUp, Get Spiffy
+  Competitors: ["Jiffy Lube, Valvoline, Wrench, ServiceUp, Get Spiffy"]
   
   Example 4
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
-  Competitors: Shopify, HubSpot, Buildspace, Beta Blox, StartItUp`,
+  Competitors: ["Shopify, HubSpot, Buildspace, Beta Blox, StartItUp"]`,
 
-  KEY_DIFFERENTIATOR: `"Based on the business description provided in the user prompt, I want you to write 3 distinct potential core differentiators for. These core differentiators will be based on the incumbents of the industry and adjacent products. They will identify opportunities either through product differentiation or distribution. The core differentiator should be one concise phrase and emulate the examples provided below. Below are 4 illustrative examples:
+  KEY_DIFFERENTIATOR: `"Based on the business description provided in the user prompt, I want you to write 3 distinct potential core differentiators for. These core differentiators will be based on the incumbents of the industry and adjacent products. They will identify opportunities either through product differentiation or distribution. The core differentiator should be one concise phrase and emulate the examples provided below. The response should be an array containing three core differentiators strings. Below are 4 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -342,7 +342,7 @@ export const SYSTEM_INPUT = {
   Core differentiator: during-event ticket sales 
   Explanation: ticket platforms currently only users to buy tickets prior to the event, whereas a service that allowed reselling during the event, opens up additonal revenue options for the event host as well increased ticket availability to event users.`,
 
-  X_FOR_Y: `"Based on the business description provided in the user prompt, I want you to write a metaphorical ""[COMPANY] for [THING]"" often referred to as ""X for Y"". The [COMPANY] you choose must be a well-known company that people would be farmiliar with. The [THING] should be directly related to the industry or niche based on the business description I provide. You will NOT include an explanation in your response. Below are 4 illustrative examples:
+  X_FOR_Y: `"Based on the business description provided in the user prompt, I want you to write 4 metaphorical ""[COMPANY] for [THING]"" often referred to as ""X for Y"". The [COMPANY] you choose must be a well-known company that people would be farmiliar with. The [THING] should be directly related to the industry or niche based on the business description provided in user prompt. The response should be an array containing four generated strings. You will NOT include an explanation in your response. Below are 4 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.

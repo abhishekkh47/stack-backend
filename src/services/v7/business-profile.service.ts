@@ -24,6 +24,8 @@ import {
   IMAGE_ACTIONS,
   SUGGESTION_FORMAT,
   IS_RETRY,
+  WEEKLY_JOURNEY_ACTION_DETAILS,
+  DEDUCT_RETRY_FUEL,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -54,6 +56,7 @@ class BusinessProfileService {
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
+        obj["hoursSaved"] = WEEKLY_JOURNEY_ACTION_DETAILS[data.key].hoursSaved;
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -556,21 +559,20 @@ class BusinessProfileService {
             { _id: userExists._id },
             {
               $inc: {
-                quizCoins: -200,
-              },
-            }
-          );
-        } else {
-          await BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            {
-              $set: {
-                aiGeneratedSuggestions: response,
-                isRetry: true,
+                quizCoins: DEDUCT_RETRY_FUEL,
               },
             }
           );
         }
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          {
+            $set: {
+              aiGeneratedSuggestions: response,
+              isRetry: true,
+            },
+          }
+        );
         return { suggestions: response, isRetry: true };
       }
       return {
