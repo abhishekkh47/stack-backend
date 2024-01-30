@@ -1971,6 +1971,39 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to add action screen copywriting to DB
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/import-action-screen-copy", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async storeActionCopy(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.ACTION_SCREEN_COPY_SHEET_GID,
+        envData.ACTION_SCREEN_COPY_SHEET_ID
+      );
+      if (rows.length === 0) return this.BadRequest(ctx, "Passion Not Found");
+      const actionScreenCopyData =
+        await BusinessProfileScriptService.convertActionScreenCopySheetToJSON(
+          rows
+        );
+      const isActionScreenCopyAddedToDB =
+        await BusinessProfileScriptService.addActionScreenCopyToDB(
+          actionScreenCopyData
+        );
+      if (!isActionScreenCopyAddedToDB)
+        return this.BadRequest(ctx, "Something Went Wrong");
+      return this.Ok(ctx, {
+        message: "Passions Stored Successfully",
+        data: isActionScreenCopyAddedToDB,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new ScriptController();

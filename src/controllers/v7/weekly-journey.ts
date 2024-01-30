@@ -1,7 +1,12 @@
 import BaseController from "@app/controllers/base";
 import { Auth } from "@app/middleware";
 import { UserTable } from "@app/model";
-import { WeeklyJourneyTable, WeeklyJourneyResultTable } from "@app/model";
+import {
+  WeeklyJourneyTable,
+  WeeklyJourneyResultTable,
+  ActionScreenCopyTable,
+  BusinessProfileTable,
+} from "@app/model";
 import { WeeklyJourneyDBService } from "@app/services/v7";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
@@ -15,16 +20,23 @@ class WeeklyJourneyController extends BaseController {
   @Auth()
   public async getWeeklyJourney(ctx: any) {
     const { user } = ctx.request;
-    const [userIfExists, weeklyJourneyDetails, userProgress] =
-      await Promise.all([
-        UserTable.findOne({ _id: user._id }),
-        WeeklyJourneyTable.find({})
-          .sort({ week: 1, day: 1 })
-          .select("_id day week dailyGoal actions reward rewardType title"),
-        WeeklyJourneyResultTable.find({ userId: user._id }).sort({
-          createdAt: -1,
-        }),
-      ]);
+    const [
+      userIfExists,
+      weeklyJourneyDetails,
+      userProgress,
+      actionScreenData,
+      businessProfileIfExists,
+    ] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      WeeklyJourneyTable.find({})
+        .sort({ week: 1, day: 1 })
+        .select("_id day week dailyGoal actions reward rewardType title"),
+      WeeklyJourneyResultTable.find({ userId: user._id }).sort({
+        createdAt: -1,
+      }),
+      ActionScreenCopyTable.find(),
+      BusinessProfileTable.findOne({ userId: user._id }),
+    ]);
     if (!userIfExists) return this.BadRequest(ctx, "User not found");
     if (!weeklyJourneyDetails)
       return this.BadRequest(ctx, "weeklyJourneyDetails not found");
@@ -32,7 +44,9 @@ class WeeklyJourneyController extends BaseController {
     const userNextChallenge = await WeeklyJourneyDBService.getUserNextChallenge(
       user._id,
       weeklyJourneyDetails,
-      userProgress
+      userProgress,
+      actionScreenData,
+      businessProfileIfExists
     );
     const getWeeklyDetails = await WeeklyJourneyDBService.getWeekDetails(
       weeklyJourneyDetails,

@@ -5,7 +5,6 @@ import {
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
   WEEKLY_REWARD_ACTION_NUM,
-  WEEKLY_JOURNEY_ACTION_DETAILS,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 import { ObjectId } from "mongodb";
@@ -19,7 +18,9 @@ class WeeklyJourneyDBService {
   public async getUserNextChallenge(
     userId: any,
     weeklyJourneyDetails: any,
-    userProgress: any
+    userProgress: any,
+    actionScreenData: any,
+    businessProfileIfExists: any
   ) {
     try {
       let upcomingChallenge = [];
@@ -227,11 +228,12 @@ class WeeklyJourneyDBService {
       }
       upcomingWeek.actionNum = upcomingActionNum + 1;
       if (upcomingWeek.actionNum == 3) {
+        const actionData = actionScreenData.filter(
+          (action) => action.key == upcomingWeek.actions[upcomingActionNum].key
+        );
+        const prevHoursSaved = businessProfileIfExists.hoursSaved;
         Object.assign(upcomingWeek.actions[upcomingActionNum], {
-          actionDetails:
-            WEEKLY_JOURNEY_ACTION_DETAILS[
-              upcomingWeek.actions[upcomingActionNum].key
-            ],
+          actionDetails: actionData[0],
         });
       }
       return upcomingChallenge[0];

@@ -24,7 +24,6 @@ import {
   IMAGE_ACTIONS,
   SUGGESTION_FORMAT,
   IS_RETRY,
-  WEEKLY_JOURNEY_ACTION_DETAILS,
   DEDUCT_RETRY_FUEL,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
@@ -36,7 +35,11 @@ class BusinessProfileService {
    * @param userProgress
    * @returns {*}
    */
-  public async addOrEditBusinessProfile(data: any, userIfExists: any) {
+  public async addOrEditBusinessProfile(
+    data: any,
+    userIfExists: any,
+    actionScreenData: any
+  ) {
     try {
       let obj = {};
       // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
@@ -53,10 +56,13 @@ class BusinessProfileService {
           }
         );
       } else {
+        const getHoursSaved = actionScreenData.filter(
+          (action) => action.key == data.key
+        );
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        obj["hoursSaved"] = WEEKLY_JOURNEY_ACTION_DETAILS[data.key].hoursSaved;
+        obj["hoursSaved"] = getHoursSaved[0].hoursSaved;
       }
       await BusinessProfileTable.findOneAndUpdate(
         {

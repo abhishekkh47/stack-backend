@@ -3,6 +3,7 @@ import {
   BusinessProfileTable,
   UserTable,
   WeeklyJourneyResultTable,
+  ActionScreenCopyTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
@@ -32,9 +33,16 @@ class BusinessProfileController extends BaseController {
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
-      const userIfExists = await UserTable.findOne({ _id: user._id });
+      const [userIfExists, actionScreenData] = await Promise.all([
+        UserTable.findOne({ _id: user._id }),
+        ActionScreenCopyTable.find(),
+      ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
-      await BusinessProfileService.addOrEditBusinessProfile(body, userIfExists);
+      await BusinessProfileService.addOrEditBusinessProfile(
+        body,
+        userIfExists,
+        actionScreenData
+      );
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
