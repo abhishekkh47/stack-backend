@@ -53,6 +53,7 @@ class BusinessProfileService {
       } else {
         obj[data.key] = data.value;
         obj["isRetry"] = false;
+        obj["aiGeneratedSuggestions"] = null;
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -118,7 +119,7 @@ class BusinessProfileService {
               placeHolderText:
                 "Example: Be the go-to platform for all emerging entrepreneurs to start their businesses.",
               isMultiLine: true,
-              maxCharLimit: 15,
+              maxCharLimit: 280,
             },
             {
               key: "companyName",
@@ -129,7 +130,7 @@ class BusinessProfileService {
               actionName: "Your Business Name",
               placeHolderText: "Enter name...",
               isMultiLine: false,
-              maxCharLimit: 0,
+              maxCharLimit: 15,
             },
             {
               key: "companyLogo",
@@ -141,7 +142,7 @@ class BusinessProfileService {
               actionName: "Your Logo",
               placeHolderText: null,
               isMultiLine: false,
-              maxCharLimit: 280,
+              maxCharLimit: 0,
             },
             {
               key: "targetAudience",
