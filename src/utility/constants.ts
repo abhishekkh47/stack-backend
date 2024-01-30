@@ -442,6 +442,8 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
     week: 1,
     day: 1,
     placeHolderText: "Enter name...",
+    isMultiLine: false,
+    maxCharLimit: 15,
   },
   companyLogo: {
     key: "companyLogo",
@@ -455,6 +457,8 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
     week: 1,
     day: 2,
     placeHolderText: null,
+    isMultiLine: false,
+    maxCharLimit: 0,
   },
   targetAudience: {
     key: "targetAudience",
@@ -468,6 +472,8 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
     week: 1,
     day: 3,
     placeHolderText: "Enter description...",
+    isMultiLine: true,
+    maxCharLimit: 280,
   },
   competitors: {
     key: "competitors",
@@ -481,6 +487,8 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
     week: 1,
     day: 4,
     placeHolderText: "Enter description...",
+    isMultiLine: true,
+    maxCharLimit: 280,
   },
   keyDifferentiator: {
     key: "keyDifferentiator",
@@ -494,6 +502,8 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
     week: 1,
     day: 5,
     placeHolderText: "Enter description...",
+    isMultiLine: true,
+    maxCharLimit: 280,
   },
   xForY: {
     key: "xForY",
@@ -507,6 +517,8 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
     week: 1,
     day: 6,
     placeHolderText: "Enter pitch...",
+    isMultiLine: false,
+    maxCharLimit: 40,
   },
 };
 

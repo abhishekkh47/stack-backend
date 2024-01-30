@@ -1,9 +1,5 @@
-import BusinessProfileController from "@controllers/v8/business-profile";
-import QuizController from "@controllers/v7/quiz";
+import QuizController from "@controllers/v8/quiz";
 import { getRouteDict } from "@app/utility";
-const routeDict = getRouteDict("7.0.0", [
-  BusinessProfileController,
-  QuizController,
-]);
+const routeDict = getRouteDict("7.0.0", [QuizController]);
 
 export default routeDict;
