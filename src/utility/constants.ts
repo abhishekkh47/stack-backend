@@ -533,3 +533,4 @@ export const IS_RETRY = {
   FALSE: "false",
 };
 export const DEDUCT_RETRY_FUEL = -200;
+export const HOURS_SAVED_BY_IDEA_GENERATOR = 28;

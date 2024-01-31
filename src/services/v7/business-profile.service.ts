@@ -25,6 +25,7 @@ import {
   SUGGESTION_FORMAT,
   IS_RETRY,
   DEDUCT_RETRY_FUEL,
+  HOURS_SAVED_BY_IDEA_GENERATOR,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -43,9 +44,16 @@ class BusinessProfileService {
     try {
       let obj = {};
       // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
+      const businessProfileData = await BusinessProfileTable.findOne({
+        userId: userIfExists._id,
+      });
       if (data.businessIdeaInfo) {
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
+        obj["hoursSaved"] =
+          businessProfileData.hoursSaved > HOURS_SAVED_BY_IDEA_GENERATOR
+            ? businessProfileData.hoursSaved
+            : HOURS_SAVED_BY_IDEA_GENERATOR;
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
           {
@@ -57,12 +65,17 @@ class BusinessProfileService {
         );
       } else {
         const getHoursSaved = actionScreenData.filter(
-          (action) => action.key == data.key
+          (action) => action?.key == data.key
         );
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        obj["hoursSaved"] = getHoursSaved[0].hoursSaved;
+        if (getHoursSaved.length) {
+          obj["hoursSaved"] =
+            businessProfileData.hoursSaved > getHoursSaved[0].hoursSaved
+              ? businessProfileData.hoursSaved
+              : getHoursSaved[0].hoursSaved;
+        }
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -441,7 +454,9 @@ class BusinessProfileService {
   public async generateBusinessIdea(
     systemInput: string,
     prompt: string,
-    passion: string
+    passion: string,
+    userExists: any,
+    isRetry: string
   ) {
     try {
       let [response, businessPassionImages] = await Promise.all([
@@ -465,6 +480,16 @@ class BusinessProfileService {
         newResponse.map(
           (idea, idx) =>
             (idea["image"] = businessPassionImages[0].businessImages[idx])
+        );
+      }
+      if (newResponse && isRetry == IS_RETRY.TRUE) {
+        await UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          {
+            $inc: {
+              quizCoins: DEDUCT_RETRY_FUEL,
+            },
+          }
         );
       }
       return newResponse;

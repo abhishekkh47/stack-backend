@@ -345,7 +345,9 @@ class BusinessProfileController extends BaseController {
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       SYSTEM_INPUT.SYSTEM,
       prompt,
-      query.passion
+      query.passion,
+      userExists,
+      query.isRetry
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.PASSION_SUBMITTED,
@@ -402,7 +404,9 @@ class BusinessProfileController extends BaseController {
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       SYSTEM_INPUT.USER,
       prompt,
-      "maximize"
+      "maximize",
+      userExists,
+      query.isRetry
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,
