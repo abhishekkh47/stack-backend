@@ -51,8 +51,8 @@ class BusinessProfileService {
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
         obj["hoursSaved"] =
-          businessProfileData.hoursSaved > HOURS_SAVED_BY_IDEA_GENERATOR
-            ? businessProfileData.hoursSaved
+          businessProfileData?.hoursSaved > HOURS_SAVED_BY_IDEA_GENERATOR
+            ? businessProfileData?.hoursSaved
             : HOURS_SAVED_BY_IDEA_GENERATOR;
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
