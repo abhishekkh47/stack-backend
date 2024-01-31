@@ -228,12 +228,16 @@ class WeeklyJourneyDBService {
       }
       upcomingWeek.actionNum = upcomingActionNum + 1;
       if (upcomingWeek.actionNum == 3) {
-        const actionData = actionScreenData.filter(
+        let actionData = actionScreenData.find(
           (action) => action.key == upcomingWeek.actions[upcomingActionNum].key
         );
-        const prevHoursSaved = businessProfileIfExists.hoursSaved;
+        let updatedActionData = actionData.toObject({ getters: true });
+        updatedActionData.hoursSaved =
+          businessProfileIfExists.hoursSaved == 0
+            ? [actionData.hoursSaved]
+            : [businessProfileIfExists.hoursSaved, actionData.hoursSaved];
         Object.assign(upcomingWeek.actions[upcomingActionNum], {
-          actionDetails: actionData[0],
+          actionDetails: updatedActionData,
         });
       }
       return upcomingChallenge[0];
