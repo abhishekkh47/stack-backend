@@ -1997,7 +1997,7 @@ class ScriptController extends BaseController {
       if (!isActionScreenCopyAddedToDB)
         return this.BadRequest(ctx, "Something Went Wrong");
       return this.Ok(ctx, {
-        message: "Passions Stored Successfully",
+        message: "Data Stored Successfully",
         data: isActionScreenCopyAddedToDB,
       });
     } catch (error) {
