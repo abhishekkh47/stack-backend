@@ -1,6 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 
 export interface IQuizTopic {
+  _id: ObjectId;
   topic: string;
   status: number;
   type: number;

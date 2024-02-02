@@ -334,6 +334,12 @@ class ScriptService {
             ? null
             : parseInt(data.quizNum);
           if (!quizNum) return false;
+          /**
+           * stageIfExists will never be found. data.stageName returns something like 'Day 28'
+           * And the 'title' of a state in StageTable looks like: 'Stage 1', or 'Stage 5'.
+           * This is an artifact of up our recent upgrade to checklist.
+           */
+          console.log('data.stageName', data.stageName, data['stageName'])
           const stageIfExists = await StageTable.findOne({
             title: data.stageName,
           });
@@ -866,8 +872,10 @@ class ScriptService {
     rows: any,
     allTopics: any
   ) {
+    
+    const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
     try {
-      rows = rows.filter((x) => storyNums.includes(x["Story #"]));
+      const filtered = rows.filter((x) => storyNums.includes(Number(x['Story #'])));
       let storyTitle = "";
       let lastStoryCategory = "";
       let lastStoryStage = "";
@@ -881,82 +889,87 @@ class ScriptService {
       let filterCategory = [];
       let questionData = null;
       let promptList = { descriptions: [], questions: [] };
-      const outputPath = path.join(__dirname, `/midJourneyImages`);
-      if (fs.existsSync(outputPath)) {
-        fs.rmdirSync(outputPath, { recursive: true });
-      }
-      fs.mkdirSync(outputPath);
+
+      // ---------- IMAGE GENERATION ----------- \\
+
+      // const outputPath = path.join(__dirname, `/midJourneyImages`);
+      // if (fs.existsSync(outputPath)) {
+      //   fs.rmdirSync(outputPath, { recursive: true });
+      // }
+      // fs.mkdirSync(outputPath);
+      // await Promise.all(
+      //   rows.map(async (data, index) => {
+      //     let currentPromptStyle =
+      //       PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
+      //     if (
+      //       data["Image Prompt"]?.trimEnd() &&
+      //       data["Prompt Type"]?.trimEnd() == "Description"
+      //     ) {
+      //       promptList.descriptions.push({
+      //         prompt: data["Image Prompt"]?.trimEnd(),
+      //         promptStyle: currentPromptStyle,
+      //         imageName: `s${(data["Story #"])}_d${index + 1}`,
+      //       });
+      //     } else {
+      //       const prompts = [
+      //         "Prompt A",
+      //         "Prompt B",
+      //         "Prompt C",
+      //         "Prompt D",
+      //       ].map((promptKey) => ({
+      //         prompt: data[promptKey]?.trimEnd(),
+      //         promptStyle: currentPromptStyle,
+      //         imageName: `s${data["Story #"]}_q${Math.ceil(
+      //           (index + 1) / 4
+      //         )}_${promptKey.slice(-1).toLocaleLowerCase()}`,
+      //       }));
+      //       if (prompts[0].prompt) {
+      //         promptList.questions.push(...prompts);
+      //       }
+      //     }
+      //   })
+      // );
+      // console.log('promptList', promptList)
+      // for (let i = 0; i < promptList.descriptions.length; i++) {
+      //   await this.getImage(
+      //     STORY_QUESTION_TYPE.DESCRIPTION,
+      //     promptList.descriptions[i]
+      //   );
+      // }
+      // for (let i = 0; i < promptList.questions.length; i++) {
+      //   await this.getImage(
+      //     STORY_QUESTION_TYPE.QUESTION,
+      //     promptList.questions[i]
+      //   );
+      // }
+
+
+      // ---------- TEXT CONTENT ----------- \\
+
+
       await Promise.all(
-        rows.map(async (data, index) => {
-          let currentPromptStyle =
-            PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
-          if (
-            data["Image Prompt"]?.trimEnd() &&
-            data["Prompt Type"]?.trimEnd() == "Description"
-          ) {
-            promptList.descriptions.push({
-              prompt: data["Image Prompt"]?.trimEnd(),
-              promptStyle: currentPromptStyle,
-              imageName: `s${data["Story #"]}_d${index + 1}`,
-            });
-          } else {
-            const prompts = [
-              "Prompt A",
-              "Prompt B",
-              "Prompt C",
-              "Prompt D",
-            ].map((promptKey) => ({
-              prompt: data[promptKey]?.trimEnd(),
-              promptStyle: currentPromptStyle,
-              imageName: `s${data["Story #"]}_q${Math.ceil(
-                (index + 1) / 4
-              )}_${promptKey.slice(-1).toLocaleLowerCase()}`,
-            }));
-            if (prompts[0].prompt) {
-              promptList.questions.push(...prompts);
-            }
-          }
-        })
-      );
-      for (let i = 0; i < promptList.descriptions.length; i++) {
-        await this.getImage(
-          STORY_QUESTION_TYPE.DESCRIPTION,
-          promptList.descriptions[i]
-        );
-      }
-      for (let i = 0; i < promptList.questions.length; i++) {
-        await this.getImage(
-          STORY_QUESTION_TYPE.QUESTION,
-          promptList.questions[i]
-        );
-      }
-      await Promise.all(
-        await rows.map(async (data, index) => {
-          if (data["Story Title"] != "") {
-            storyTitle = data["Story Title"]?.trimEnd();
-          }
-          if (data["Category"] != "") {
-            lastStoryCategory = data["Category"]?.trimEnd();
-          }
-          if (data["Stage"] != "") {
-            lastStoryStage = data["Stage"]?.trimEnd();
-          }
-          if (!data["Character"]) {
-            characterName = null;
-          }
-          if (!data["Character Image"]) {
-            characterImage = null;
-          }
+        await filtered.map(async (data, index) => {
+
+          // Conditionally set our text content. If it's in the spreadsheet, we need to pass it to DB.
           if (data["Story Title"] == "") {
             ++order;
           } else {
+            storyTitle = data["Story Title"]?.trimEnd();
             order = 1;
           }
+          lastStoryCategory = (!!data["Category"]) ? data["Category"]?.trimEnd() : "";
+          lastStoryStage = (!!data["Stage"]) ? data["Stage"]?.trimEnd() : "";
+          if (!data["Character"]) characterName = null;
+          if (!data["Character Image"]) characterImage = null;
+
+          const baseQuestionData = {
+            text: data["Text"]?.trimEnd(),
+            order: order,
+          };
           if (data["Prompt Type"]?.trimEnd() == "Description") {
             questionData = {
-              text: data["Text"]?.trimEnd(),
+              ...baseQuestionData,
               question_image: `s${data["Story #"]}_d${++descriptionNum}.png`,
-              order: order,
               points: 0,
               question_type: 4,
               answer_type: null,
@@ -966,9 +979,8 @@ class ScriptService {
             };
           } else {
             questionData = {
-              text: data["Text"]?.trimEnd(),
+              ...baseQuestionData,
               question_image: null,
-              order: order,
               points: 10,
               question_type: 2,
               answer_type: 2,
@@ -1011,6 +1023,10 @@ class ScriptService {
               const isCategoryExists = allTopics.find(
                 (x) => x.topic == lastStoryCategory
               );
+              /**
+               * We found a category in the spreadsheet for this story #.
+               * But does this category already exist in DB? If no, create it.
+               */
               if (!isCategoryExists) {
                 categories.push({
                   topic: lastStoryCategory,
@@ -1022,7 +1038,7 @@ class ScriptService {
                   key: data["Story #"],
                   value: lastStoryCategory,
                 });
-                topicId = new ObjectId("6594011ab1fc7ea1f458e8c8");
+                topicId = fallbackQuizTopic;
               } else {
                 topicId = isCategoryExists._id;
               }
@@ -1044,8 +1060,7 @@ class ScriptService {
           }
         })
       );
-
-      fs.rmdirSync(outputPath, { recursive: true });
+      // fs.rmdirSync(outputPath, { recursive: true });
       return storyContentData;
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -1176,8 +1191,11 @@ class ScriptService {
       const imagineRes = await generateImage(
         `${prompts.prompt} ${prompts.promptStyle}`
       );
-      const myImage = await UpscaleImage(imagineRes);
       if (!imagineRes) {
+        throw new NetworkError("Something Went Wrong in imagineRes", 400);
+      }
+      const myImage = await UpscaleImage(imagineRes);
+      if (!myImage) {
         throw new NetworkError("Something Went Wrong in myImage", 400);
       }
       if (myImage) {
