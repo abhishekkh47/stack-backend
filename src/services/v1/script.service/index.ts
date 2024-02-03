@@ -31,6 +31,8 @@ import {
   PROMPT_STYLE,
   XP_POINTS,
   COMPLETED_ACTION_REWARD,
+  IPromptData,
+  checkQuizImageExists,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 
@@ -334,12 +336,6 @@ class ScriptService {
             ? null
             : parseInt(data.quizNum);
           if (!quizNum) return false;
-          /**
-           * stageIfExists will never be found. data.stageName returns something like 'Day 28'
-           * And the 'title' of a state in StageTable looks like: 'Stage 1', or 'Stage 5'.
-           * This is an artifact of up our recent upgrade to checklist.
-           */
-          console.log('data.stageName', data.stageName, data['stageName'])
           const stageIfExists = await StageTable.findOne({
             title: data.stageName,
           });
@@ -860,6 +856,27 @@ class ScriptService {
     }
   }
 
+  public generateImages = async (
+    descriptions: IPromptData[],
+    questions: IPromptData[],
+    outputPath: any
+  ) => {
+    // @@TODO: This process takes a very long time. We want to offload this job to a different worker in the future.
+    for (let i = 0; i < descriptions.length; i++) {
+      await this.getImage(
+        STORY_QUESTION_TYPE.DESCRIPTION,
+        descriptions[i]
+      );
+    }
+    for (let i = 0; i < questions.length; i++) {
+      await this.getImage(
+        STORY_QUESTION_TYPE.QUESTION,
+        questions[i]
+      );
+    }
+    fs.rmdirSync(outputPath, { recursive: true });
+  }
+
   /**
    * @description This function is add simulations into db
    * @param rows
@@ -875,7 +892,7 @@ class ScriptService {
     
     const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
     try {
-      const filtered = rows.filter((x) => storyNums.includes(Number(x['Story #'])));
+      const filteredStories = rows.filter((x) => storyNums.includes(Number(x['Story #'])));
       let storyTitle = "";
       let lastStoryCategory = "";
       let lastStoryStage = "";
@@ -888,69 +905,96 @@ class ScriptService {
       let questionDataArray = [];
       let filterCategory = [];
       let questionData = null;
-      let promptList = { descriptions: [], questions: [] };
+      let promptList: {
+        [storyNumber: number]: {
+          descriptions: IPromptData[],
+          questions: IPromptData[] 
+        }
+      } = {};
 
       // ---------- IMAGE GENERATION ----------- \\
 
-      // const outputPath = path.join(__dirname, `/midJourneyImages`);
-      // if (fs.existsSync(outputPath)) {
-      //   fs.rmdirSync(outputPath, { recursive: true });
-      // }
-      // fs.mkdirSync(outputPath);
-      // await Promise.all(
-      //   rows.map(async (data, index) => {
-      //     let currentPromptStyle =
-      //       PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
-      //     if (
-      //       data["Image Prompt"]?.trimEnd() &&
-      //       data["Prompt Type"]?.trimEnd() == "Description"
-      //     ) {
-      //       promptList.descriptions.push({
-      //         prompt: data["Image Prompt"]?.trimEnd(),
-      //         promptStyle: currentPromptStyle,
-      //         imageName: `s${(data["Story #"])}_d${index + 1}`,
-      //       });
-      //     } else {
-      //       const prompts = [
-      //         "Prompt A",
-      //         "Prompt B",
-      //         "Prompt C",
-      //         "Prompt D",
-      //       ].map((promptKey) => ({
-      //         prompt: data[promptKey]?.trimEnd(),
-      //         promptStyle: currentPromptStyle,
-      //         imageName: `s${data["Story #"]}_q${Math.ceil(
-      //           (index + 1) / 4
-      //         )}_${promptKey.slice(-1).toLocaleLowerCase()}`,
-      //       }));
-      //       if (prompts[0].prompt) {
-      //         promptList.questions.push(...prompts);
-      //       }
-      //     }
-      //   })
-      // );
-      // console.log('promptList', promptList)
-      // for (let i = 0; i < promptList.descriptions.length; i++) {
-      //   await this.getImage(
-      //     STORY_QUESTION_TYPE.DESCRIPTION,
-      //     promptList.descriptions[i]
-      //   );
-      // }
-      // for (let i = 0; i < promptList.questions.length; i++) {
-      //   await this.getImage(
-      //     STORY_QUESTION_TYPE.QUESTION,
-      //     promptList.questions[i]
-      //   );
-      // }
+      const outputPath = path.join(__dirname, `/midJourneyImages`);
+      if (fs.existsSync(outputPath)) {
+        fs.rmdirSync(outputPath, { recursive: true });
+      }
+      fs.mkdirSync(outputPath);
+      await Promise.all(
+        filteredStories.map(async (data) => {
+          const storyNumber = Number(data["Story #"])
+          if (!(storyNumber in promptList)) {
+            promptList[storyNumber] = {
+              descriptions: [],
+              questions: []
+            }
+          }
+          let currentPromptStyle =
+            PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
+          if (data["Prompt Type"]?.trimEnd() == "Description") {
+            if (data["Image Prompt"]?.trimEnd()) {
+              const storyImageName = data["Story Image"];
+              const desc: IPromptData = {
+                prompt: data["Image Prompt"]?.trimEnd(),
+                promptStyle: currentPromptStyle,
+                imageName: `s${storyNumber}_d${promptList[storyNumber].descriptions.length + 1}`,
+              };
+              if (storyImageName) {
+                desc.isNameOverride = true;
+                desc.imageName = storyImageName;
+              }
+              promptList[storyNumber].descriptions.push(desc);
+            } else {
+              promptList[storyNumber].descriptions.push({});
+            } 
+          } else {
+            const prompts = [
+              "A",
+              "B",
+              "C",
+              "D",
+            ]
+            const promptData: IPromptData[] = prompts.map((promptKey) => {
+              const prompt = data[`Prompt ${promptKey}`]?.trimEnd()
+              const questionImageName = data[`Image ${promptKey}`]
+              
+              if (prompt) {
+                const question: IPromptData = {
+                  prompt: data[`Prompt ${promptKey}`]?.trimEnd(),
+                  promptStyle: currentPromptStyle,
+                  imageName: `s${storyNumber}_q${
+                    Math.ceil(((promptList[storyNumber].questions.length) / 4) + 1)
+                  }_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+                }
+                if (questionImageName) {
+                  question.isNameOverride = true
+                  question.imageName = questionImageName
+                }
+                return question
+              } else {
+                return {}
+              }
+            });
+            promptList[storyNumber].questions.push(...promptData);
+          }
+        })
+      );
+
+      const descriptions: IPromptData[] = []
+      const questions: IPromptData[] = []
+      Object.values(promptList).forEach(value => {
+        descriptions.push(...value.descriptions.filter(desc => Object.keys(desc).length > 0))
+        questions.push(...value.questions.filter(question => Object.keys(question).length > 0))
+      })
+      
+      this.generateImages(descriptions, questions, outputPath)
+
 
 
       // ---------- TEXT CONTENT ----------- \\
 
-
       await Promise.all(
-        await filtered.map(async (data, index) => {
+        await filteredStories.map(async (data, index) => {
 
-          // Conditionally set our text content. If it's in the spreadsheet, we need to pass it to DB.
           if (data["Story Title"] == "") {
             ++order;
           } else {
@@ -967,9 +1011,10 @@ class ScriptService {
             order: order,
           };
           if (data["Prompt Type"]?.trimEnd() == "Description") {
+            const questionImageName = data["Story Image"]
             questionData = {
               ...baseQuestionData,
-              question_image: `s${data["Story #"]}_d${++descriptionNum}.png`,
+              question_image: questionImageName || `s${data["Story #"]}_d${++descriptionNum}.png`,
               points: 0,
               question_type: 4,
               answer_type: null,
@@ -987,25 +1032,25 @@ class ScriptService {
               answer_array: [
                 {
                   name: data["A"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_a.png`,
+                  image: data["Image A"] || `s${data["Story #"]}_q${(index + 1) / 4}_a.png`,
                   correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["B"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_b.png`,
+                  image: data["Image B"] || `s${data["Story #"]}_q${(index + 1) / 4}_b.png`,
                   correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["C"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_c.png`,
+                  image: data["Image C"] || `s${data["Story #"]}_q${(index + 1) / 4}_c.png`,
                   correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["D"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_d.png`,
+                  image: data["Image D"] || `s${data["Story #"]}_q${(index + 1) / 4}_d.png`,
                   correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
                   statement: null,
                 },
@@ -1060,7 +1105,6 @@ class ScriptService {
           }
         })
       );
-      // fs.rmdirSync(outputPath, { recursive: true });
       return storyContentData;
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -1186,10 +1230,19 @@ class ScriptService {
     }
   }
 
-  public async getImage(questionType: number, prompts: any) {
+  public async getImage(questionType: number, promptData: IPromptData) {
     try {
+      if (promptData.isNameOverride) {
+        console.log(`Unable to create image due to custom image name: ${promptData.imageName}. Skipping.`)
+        return `${promptData.imageName}.png`
+      }
+      const isImageAlreadyExist: boolean = await checkQuizImageExists(promptData)
+      if (isImageAlreadyExist) {
+        console.log(`${promptData.imageName} already exists in s3 bucket. Skipping.`)
+        return `${promptData.imageName}.png`
+      }
       const imagineRes = await generateImage(
-        `${prompts.prompt} ${prompts.promptStyle}`
+        `${promptData.prompt} ${promptData.promptStyle}`
       );
       if (!imagineRes) {
         throw new NetworkError("Something Went Wrong in imagineRes", 400);
@@ -1201,7 +1254,7 @@ class ScriptService {
       if (myImage) {
         const outputPath = path.join(
           __dirname,
-          `/midJourneyImages/${prompts.imageName}.png`
+          `/midJourneyImages/${promptData.imageName}.png`
         );
         await downloadImage(myImage.uri, outputPath)
           .then(() => {
@@ -1217,13 +1270,14 @@ class ScriptService {
             .resize({ fit: "inside", width: 160, height: 160 })
             .png({ quality: 40 });
         }
-        uploadQuizImages(prompts.imageName, outputPath);
+        uploadQuizImages(promptData, outputPath);
       }
-      return `${prompts.imageName}.png`;
+      return `${promptData.imageName}.png`;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
   }
+  
   /**
    * @description This function convert spreadsheet data to JSON by filtering with quiz # for weekly journey
    * @param quizNums
