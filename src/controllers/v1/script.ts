@@ -2004,6 +2004,33 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to add action screen copywriting to DB
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/reset-power-users", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async resetPowerUsers(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.MENTORSHIP_PROGRAM_SHEET_GID,
+        envData.ACTION_SCREEN_COPY_SHEET_ID
+      );
+      if (rows.length === 0) return this.BadRequest(ctx, "Passion Not Found");
+      const usersToBeUpdated =
+        await BusinessProfileScriptService.resetUsersToUseOnboardingFlow(rows);
+      if (!usersToBeUpdated)
+        return this.BadRequest(ctx, "No Users to Reset");
+      return this.Ok(ctx, {
+        message: "Users Profile Reset Completed",
+        data: usersToBeUpdated,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new ScriptController();

@@ -4,6 +4,8 @@ import {
   BusinessPassionTable,
   BusinessPassionAspectTable,
   ActionScreenCopyTable,
+  UserTable,
+  BusinessProfileTable,
 } from "@app/model";
 
 class BusinessProfileScriptService {
@@ -254,6 +256,30 @@ class BusinessProfileScriptService {
     } catch (error) {
       return error;
     }
+  }
+  /**
+   * @description This function reset the existing users (before v1.28) to use AI-Suggestion onboarding flow
+   * @param rows
+   * @returns {*}
+   */
+  public async resetUsersToUseOnboardingFlow(rows: any) {
+    let userEmails = [];
+
+    rows.map((item) => {
+      if (item["Email"]) {
+        userEmails.push(item["Email"]);
+      }
+    });
+    const userData = await UserTable.find({
+      email: { $in: userEmails },
+    });
+
+    const response = userData.map((user) => user._id);
+    const updatedData = await BusinessProfileTable.updateMany(
+      { userId: { $in: response } },
+      { $set: { description: null } }
+    );
+    return updatedData;
   }
 }
 

@@ -176,4 +176,7 @@ export default {
   get ACTION_SCREEN_COPY_SHEET_GID() {
     return process.env.ACTION_SCREEN_COPY_SHEET_GID;
   },
+  get MENTORSHIP_PROGRAM_SHEET_GID() {
+    return process.env.MENTORSHIP_PROGRAM_SHEET_GID;
+  },
 };
