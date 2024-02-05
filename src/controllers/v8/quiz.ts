@@ -50,7 +50,9 @@ class QuizController extends BaseController {
             UserTable.findOne({ _id: user._id }).populate("streakGoal"),
             QuizTable.findOne({ _id: reqParam.quizId }),
             QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
-            WeeklyJourneyTable.findOne({ _id: reqParam.weeklyJourneyId }),
+            WeeklyJourneyTable.findOne({
+              _id: reqParam.weeklyJourneyId,
+            }).lean(),
             BusinessProfileTable.findOne({ userId: user._id }),
           ]);
           if (!userIfExists) {
@@ -73,7 +75,8 @@ class QuizController extends BaseController {
 
           if (
             curentWeeklyJourneyDetails.week == 1 &&
-            curentWeeklyJourneyDetails.day == 2
+            curentWeeklyJourneyDetails.day == 2 &&
+            curentWeeklyJourneyDetails.actions[0].quizId == reqParam.quizId
           ) {
             BusinessProfileService.generateAISuggestions(
               userIfExists,
