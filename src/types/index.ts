@@ -28,3 +28,4 @@ export * from "@app/types/streaks";
 export * from "@app/types/community";
 export * from "@app/types/weeklyJourney";
 export * from "@app/types/businessPassion";
+export * from "@app/types/actionScreenCopy";

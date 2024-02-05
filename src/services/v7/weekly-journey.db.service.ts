@@ -5,8 +5,13 @@ import {
   SIMULATION_QUIZ_FUEL,
   XP_POINTS,
   WEEKLY_REWARD_ACTION_NUM,
+  WEEKLY_JOURNEY_ACTION_DETAILS,
 } from "@app/utility";
-import { everyCorrectAnswerPoints } from "@app/types";
+import {
+  everyCorrectAnswerPoints,
+  IWeeklyJourneyResult,
+  IBusinessProfile,
+} from "@app/types";
 import { ObjectId } from "mongodb";
 class WeeklyJourneyDBService {
   /**
@@ -18,7 +23,9 @@ class WeeklyJourneyDBService {
   public async getUserNextChallenge(
     userId: any,
     weeklyJourneyDetails: any,
-    userProgress: any
+    userProgress: Array<IWeeklyJourneyResult>,
+    actionScreenData: any,
+    businessProfileIfExists: IBusinessProfile
   ) {
     try {
       let upcomingChallenge = [];
@@ -225,6 +232,27 @@ class WeeklyJourneyDBService {
         upcomingWeek.actions[upcomingActionNum].quizDetails = newData[0];
       }
       upcomingWeek.actionNum = upcomingActionNum + 1;
+      if (upcomingWeek.actionNum == 3) {
+        let actionData = actionScreenData.find(
+          (action) => action.key == upcomingWeek.actions[upcomingActionNum].key
+        );
+        let updatedActionData = null;
+        if (actionData) {
+          updatedActionData = actionData.toObject({ getters: true });
+          updatedActionData.hoursSaved =
+            businessProfileIfExists.hoursSaved == 0
+              ? [actionData.hoursSaved]
+              : [businessProfileIfExists.hoursSaved, actionData.hoursSaved];
+        } else {
+          updatedActionData =
+            WEEKLY_JOURNEY_ACTION_DETAILS[
+              upcomingWeek.actions[upcomingActionNum].key
+            ];
+        }
+        Object.assign(upcomingWeek.actions[upcomingActionNum], {
+          actionDetails: updatedActionData,
+        });
+      }
       return upcomingChallenge[0];
     } catch (err) {
       throw new NetworkError("Daily Challenge Not Found ", 400);

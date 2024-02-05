@@ -10,6 +10,7 @@ import routerDictV4 from "./v4";
 import routerDictV5 from "./v5";
 import routerDictV6 from "./v6";
 import routerDictV7 from "./v7";
+import routerDictV8 from "./v8";
 import { HttpMethod } from "@app/types";
 
 const router = new Router();
@@ -49,7 +50,9 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
       {}
     );
     const firstRouteForKey =
-      routesForKey.filter((x) => x.version === "7.0.0").length > 0
+      routesForKey.filter((x) => x.version === "8.0.0").length > 0
+        ? routesForKey.filter((x) => x.version === "8.0.0")[0]
+        : routesForKey.filter((x) => x.version === "7.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "7.0.0")[0]
         : routesForKey.filter((x) => x.version === "6.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "6.0.0")[0]
@@ -98,6 +101,7 @@ setRoutes(router, [
   routerDictV5,
   routerDictV6,
   routerDictV7,
+  routerDictV8,
 ]);
 
 export default Compose([router.routes(), router.allowedMethods()]);

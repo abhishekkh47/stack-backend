@@ -3,6 +3,7 @@ import {
   BusinessProfileTable,
   UserTable,
   WeeklyJourneyResultTable,
+  ActionScreenCopyTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
@@ -12,10 +13,11 @@ import {
   uploadHomeScreenImage,
   uploadSocialFeedback,
   uploadMvpHomeScreen,
+  SYSTEM_INPUT,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
-import { SYSTEM_INPUT, ANALYTICS_EVENTS } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 class BusinessProfileController extends BaseController {
   /**
@@ -31,9 +33,16 @@ class BusinessProfileController extends BaseController {
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
-      const userIfExists = await UserTable.findOne({ _id: user._id });
+      const [userIfExists, actionScreenData] = await Promise.all([
+        UserTable.findOne({ _id: user._id }),
+        ActionScreenCopyTable.find(),
+      ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
-      await BusinessProfileService.addOrEditBusinessProfile(body, userIfExists);
+      await BusinessProfileService.addOrEditBusinessProfile(
+        body,
+        userIfExists,
+        actionScreenData
+      );
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
@@ -106,7 +115,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { companyLogo: imageName },
+        $set: { companyLogo: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -161,7 +170,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { homescreenImage: imageName },
+        $set: { homescreenImage: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -216,7 +225,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { socialFeedback: imageName },
+        $set: { socialFeedback: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -271,7 +280,7 @@ class BusinessProfileController extends BaseController {
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
       {
-        $set: { mvpHomeScreen: imageName },
+        $set: { mvpHomeScreen: imageName, isRetry: false },
       },
       { upsert: true }
     );
@@ -329,14 +338,16 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (!query.category || !query.problem) {
+    if (!query.category || !query.problem || !query.passion) {
       return this.BadRequest(ctx, "Provide a Category and Problem");
     }
     const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       SYSTEM_INPUT.SYSTEM,
       prompt,
-      query.passion
+      query.passion,
+      userExists,
+      query.isRetry
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.PASSION_SUBMITTED,
@@ -393,7 +404,9 @@ class BusinessProfileController extends BaseController {
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       SYSTEM_INPUT.USER,
       prompt,
-      "maximize"
+      "maximize",
+      userExists,
+      query.isRetry
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,
@@ -405,6 +418,38 @@ class BusinessProfileController extends BaseController {
       }
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
+  }
+
+  /**
+   * @description This method is to generate suggestions from OpenAI-API based on based on user input
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/get-ai-suggestions",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getAISuggestion(ctx: any) {
+    const { user, query } = ctx.request;
+    const [userExists, userBusinessProfile] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }),
+    ]);
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!query.key) {
+      return this.BadRequest(ctx, "Please provide a valid requirement");
+    }
+    let response = await BusinessProfileService.generateAISuggestions(
+      userExists,
+      query.key,
+      userBusinessProfile,
+      query.actionInput,
+      query.isRetry
+    );
+    return this.Ok(ctx, { message: "Success", data: response });
   }
 }
 
