@@ -2006,7 +2006,7 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to add action screen copywriting to DB
+   * @description This method is used to reset user accounts created before 8/2023 to enable them use new business onboarding flow
    * @param ctx
    * @returns {*}
    */
@@ -2021,8 +2021,7 @@ class ScriptController extends BaseController {
       if (rows.length === 0) return this.BadRequest(ctx, "Passion Not Found");
       const usersToBeUpdated =
         await BusinessProfileScriptService.resetUsersToUseOnboardingFlow(rows);
-      if (!usersToBeUpdated)
-        return this.BadRequest(ctx, "No Users to Reset");
+      if (!usersToBeUpdated) return this.BadRequest(ctx, "No Users to Reset");
       return this.Ok(ctx, {
         message: "Users Profile Reset Completed",
         data: usersToBeUpdated,
