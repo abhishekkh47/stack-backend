@@ -26,6 +26,7 @@ import {
   IS_RETRY,
   DEDUCT_RETRY_FUEL,
   HOURS_SAVED_BY_IDEA_GENERATOR,
+  REQUIRE_COMPANY_NAME,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -567,7 +568,11 @@ class BusinessProfileService {
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]]
           }`;
         } else {
-          prompt = userBusinessProfile.description;
+          if (REQUIRE_COMPANY_NAME.includes(key)) {
+            prompt = userBusinessProfile.companyName;
+          } else {
+            prompt = userBusinessProfile.description;
+          }
         }
         if (actionInput == SUGGESTION_FORMAT.TEXT) {
           response = await this.generateTextSuggestions(

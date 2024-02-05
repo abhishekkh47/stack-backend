@@ -363,4 +363,111 @@ export const SYSTEM_INPUT = {
   Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event
   X for Y: Hoteltonight for event tickets
   Explanation: Hoteltonight also focuses on last minute luxury deals but is a hotel booking platform, not event ticketing.`,
+
+  HEADLINE: `"Based on the business description provided in the user prompt, I want you to provide 3 Business Headlines, with not more than 12 words each. The response should be an array containing three headline string as provided in below examples. below are 3 illustrative examples:
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  Headlines: ["Student Investors Thrive: Social App Revolutionizes Financial Learning!", "Empower Students: Gamified Finance App Sparks Social Investing Brilliance!", "Investing Fun for Students: Social App Gamifies Financial Wisdom!"]
+
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  Headlines: ["Soundscapes Reimagined: AI-Powered Remixes of Your Favorite Hits", "Revolutionize Your Playlist: AI-Infused Versions of Classic Tunes", "Echoes of Tomorrow: Where AI Breathes New Life into Timeless Tracks]
+
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  Headlines: ["Revolutionize Car Care: Membership App Delivers Auto Maintenance Right to You!", "Auto Bliss at Your Door: App Simplifies Maintenance with Membership Convenience!","Car Care on Demand: Membership App Brings Routine Maintenance to Your Door!"]
+
+  Example 4
+  Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
+  Headlines: ["Launch Success: Your Business Journey Starts Now with Our Guiding App!", "Startup Triumph: Unlock Business Success with Our Guiding Mobile App Experience!", "Launch Your Dream: Gamified Coaching App for First-Time Entrepreneurs!"]`,
+
+  VALUE_CREATORS: `"Based on the business description provided in the user prompt, I want you to provide three strings, each string containing 3 Value Creators regarding that business, with not more than 3 words each. The response should be an array containing three strings, with each string containing a combination of 3 value creator strings as provided in below examples. below are 3 illustrative examples:
+
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  valueCreators: ["Youthful Investing. Gamified Finance Mastery. Transforming Futures.", "Social Wealth Hub. Empower Students Socially. Join the Movement.", "GameSmart Finance. Transform Students Socially. Level Up Finances."]
+  
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  valueCreators: ["AI music. Exploratory sounds. On your phone.", "Your Favorite Artists. Unheard songs. Always new.","Discover new music. For every mood. New playlists daily."]
+  
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  valueCreators: ["AutoCare Revolution. Simplify Car Maintenance. Effortless Auto Wellness.","Membership Magic. Car Care Delivered. Stress-Free Auto Maintenance.","Tech-Driven Car TLC. Subscription Auto Bliss. Hassle-Free Maintenance."]
+  
+  Example 4
+  Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
+  valueCreators: ["Startup Mastery Hub. Guided Entrepreneurship. Daily Success Checklist.","Business Launchpad. Gamified Entrepreneurship. Mentorship at Fingertips.","Strategic Startups. Educate, Execute, Elevate. Daily Business Mentorship."]`,
+
+  COLORS_AND_AESTHETIC: `"Based on the Business Description provided in the user prompt, I want you to provide 4 suggestion objects, where each object contains "Primary", "Secondary" and "Text" fields which has color hex codes compatible to the theme of the provided business description. The response should be an array containing four objects as provided in below illustrative examples:
+
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  Colors: [{"Primary": "#247e6a", "Secondary": "#ffcc00", "Text": "#FFFFFF"}, {"Primary": "#6a247e", "Secondary": "#ffb300", "Text": "#FFFFFF"}, {"Primary": "#2e6c8a", "Secondary": "#ff6600", "Text": "#FFFFFF"}, {"Primary": "#742677", "Secondary": "#ffa31a", "Text": "#FFFFFF"}]
+  
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  Colors: [{"Primary": "#2F4F4F", "Secondary": "#8A2BE2", "Text": "#FFFFFF"}, {"Primary": "#472C86","Secondary": "#FFAB00","Text": "#FFFFFF"}, {"Primary": "#6A5ACD", "Secondary": "#FFD700", "Text": "#FFFFFF"}, {"Primary": "#6D2077", "Secondary": "#FF8C00", "Text": "#FFFFFF"}]
+  
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  Colors: [{"Primary": "#1E90FF", "Secondary": "#FFD700", "Text": "#000000"}, {"Primary": "#32CD32", "Secondary": "#FF4500", "Text": "#000000"}, {"Primary": "#4B0082", "Secondary": "#FF6347", "Text": "#000000"}, {"Primary": "#800080", "Secondary": "#FFA500", "Text": "#000000"}]
+  
+  Example 4
+  Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
+  Colors: [{"Primary": "#3D9970", "Secondary": "#FF4136", "Text": "#000000"}, {"Primary": "#2ECC40", "Secondary": "#FF851B", "Text": "#000000"}, {"Primary": "#FFDC00", "Secondary": "#001f3f", "Text": "#FFFFFF"}, {"Primary": "#FF4136", "Secondary": "#3D9970", "Text": "#000000"}]`,
+
+  CALL_TO_ACTION: `"Based on the business description provided in the user prompt, I want you to provide 4 call-to-action strings of 2-4 words regarding that business. The response should be an array containing four call-to-action strings as provided in below illustrative examples:
+
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  valueCreators: ["Invest Wisely Today","Join Financial Adventure","Start Your Investment Journey","Explore Social Investing Now"]
+
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  callToAction: ["Listen Now", "Join Waitlist","Try Musaic for free","See Song Library"]
+
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  valueCreators: ["Get AutoCare Now","Join Car Maintenance Club","Experience Easy Auto Service","Explore Membership Benefits"]
+
+  Example 4
+  Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
+  valueCreators: ["Start Your Business Journey","Join Entrepreneurial Coaching","Experience Gamified Learning","Explore Mentorship Opportunities"]`,
+
+  BLOG_TOPIC: `"Based on the business description provided in the user prompt, I want you to provide 3 topics strings regarding that business. The response should be an array containing four call-to-action strings as provided in below illustrative examples:
+
+  Example 1
+  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  Topic: ["Empowering students: Social investing through mobile apps","Gamified financial education: Making investing fun for students","The impact of investing on student communities: A closer look"]
+  
+  Example 2
+  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  Topic: ["Is AI good or bad for art and music?", "How can listening to the right music increase productivity?","Why you should listen to an entire album and not just one song"]
+  
+  Example 3
+  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  Topic: ["The future of auto care: Automating maintenance with mobile apps","Membership benefits: Convenient routine auto care for car owners","Revolutionizing car maintenance: Pay-as-you-go for oil changes and more"]
+  
+  Example 4
+  Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
+  Topic: ["Is gamified education effective for business starters?","Unlocking success with daily business action items","The impact of human mentorship in business development"]`,
+
+  WEBSITE_LINK: `"Based on the company name provided in the user prompt, I want you to provide 4 domain names regarding that company name. The response should be an array containing four domain name string as provided in below illustrative examples:
+
+  Example 1
+  Company Name: Beethoven
+  Website: ["Beethoven.com", "Beethoven.co","Beethoven.biz", "Beethoven.app"]
+
+  Example 2
+  Company Name: Musaic
+  Website: ["Musaic.com", "Musaic.music","Trymusaic.xyz", "Musaic.co"]
+
+  Example 3
+  Company Name: AutoEase
+  Website: ["AutoEaseHub.com", "CarCareEase.in", "EasyAutoCare.co", "CarMaintenanceEase.app"]
+
+  Example 4
+  Company Name: MentorCraft
+  Website: ["MentorCraftHub.com", "MentorCraft.com","MentorCraftHub.io","MentorCraft.ai"]`,
 };
