@@ -100,7 +100,14 @@ class BusinessProfileService {
 
         UserService.updateUserScore(userIfExists, data);
       }
-      return true;
+      return [
+        {
+          ...obj,
+          Business_Idea: obj["description"],
+          Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
+          Email: userIfExists.email,
+        },
+      ];
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
     }
