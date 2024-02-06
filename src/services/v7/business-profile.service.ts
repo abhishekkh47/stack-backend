@@ -656,6 +656,9 @@ class BusinessProfileService {
     }
   }
 
+  public async delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
   /**
    * @description this will generate suggestions using OpenAI API based on user inputs
    * @param data
@@ -668,8 +671,11 @@ class BusinessProfileService {
         throw new NetworkError("Something Went Wrong in myImage", 400);
       }
       const imageData1 = await UpscaleImage(imagineRes, 1);
+      await this.delay(3000);
       const imageData2 = await UpscaleImage(imagineRes, 2);
+      await this.delay(3000);
       const imageData3 = await UpscaleImage(imagineRes, 3);
+      await this.delay(3000);
       const imageData4 = await UpscaleImage(imagineRes, 4);
       return [imageData1.uri, imageData2.uri, imageData3.uri, imageData4.uri];
     } catch (error) {
