@@ -451,6 +451,26 @@ class BusinessProfileController extends BaseController {
     );
     return this.Ok(ctx, { message: "Success", data: response });
   }
+
+  /**
+   * @description This method is meant to be polled to determine if logo images have been successfully generated and uploaded
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/check-logo-generation-complete",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async checkLogoGenerationComplete(ctx: any) {
+    const { user } = ctx.request;
+    const userBusinessProfile = await BusinessProfileTable.findOne({ userId: user._id });
+    if (!userBusinessProfile) {
+      return this.BadRequest(ctx, "Business Profile Not Found");
+    }
+    const finished = userBusinessProfile.aiGeneratedSuggestions.length === 4;
+    return this.Ok(ctx, { message: "Success", data: { finished } });
+  }
 }
 
 export default new BusinessProfileController();
