@@ -254,7 +254,7 @@ export const SYSTEM_INPUT = {
   You will insert thing into the following quote as [THING]: simple vector graphic logo of [THING], flat, 2d`,
   ],
 
-  COMPANY_LOGO: `"Provide a 1-5 word visual description of an engaging and distinctive object that vividly represents the core service or theme of the following business description. The visual description should include one of the specified design styles and an object that is not only directly related to the business but also visually striking and easily identifiable. The object should be something that can be rendered in a simple yet captivating manner in a logo design. Include a color if it enhances the visual appeal and relevance. Choose both a design style and an object that have unmistakable and exciting associations with the business description. Replace OBJECT with the chosen object and STYLE with the chosen style in the following format: 'simple logo of OBJECT, STYLE --v 6.0'. Avoid generic or abstract concepts in favor of concrete and visually stimulating elements.
+  COMPANY_LOGO: `"Provide a 1-5 word visual description of an engaging and distinctive object that vividly represents the core service or theme of the following business description. The visual description should include one of the specified design styles and an object that is not only directly related to the business but also visually striking and easily identifiable. The object should be something that can be rendered in a simple yet captivating manner in a logo design. Include a color if it enhances the visual appeal and relevance. Choose both a design style and an object that have unmistakable and exciting associations with the business description. Replace OBJECT with the chosen object and STYLE with the chosen style in the following format: 'simple logo of OBJECT, STYLE --v 5.2 --turbo'. Avoid generic or abstract concepts in favor of concrete and visually stimulating elements.
 
   Styles: pixel art, contemporary 3d, synthwave, low poly art, flat, vibrant color
   
@@ -268,25 +268,25 @@ export const SYSTEM_INPUT = {
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education
   Object: green bull
   Style: contemporary 3d 
-  Output: simple logo of green bull, contemporary 3d --v 6.0
+  Output: simple logo of green bull, contemporary 3d --v 5.2 --turbo
   
   Example 2
   Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
   Object: headphones
   Style: synthwave
-  Output: simple logo of headphones, synthwave --v 6.0
+  Output: simple logo of headphones, synthwave --v 5.2 --turbo
   
   Example 3
   Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them
   Object: sports car
   Style: pixel art
-  Output: simple logo of sports car, pixel art --v 6.0
+  Output: simple logo of sports car, pixel art --v 5.2 --turbo
   
   Example 4
   Business description: a dating app that pairs users based on their vision of their perfect married life
   Object: diamond ring
   Style: low poly art
-  Output: simple logo of diamond ring, low poly art --v 6.0"`,
+  Output: simple logo of diamond ring, low poly art --v 5.2 --turbo"`,
 
   TARGET_AUDIENCE: `"Based on the business description provided in the user prompt, you will write three potential, very specific target audiences. Each separate target audience description will be formatted as one sentence where each characteristics of the target audience will be separated by a comma. The response should be an array containing three Target Audience strings. each target audience description should be no longer than 45 words. Each will highlight the 3-5 most important characteristics of the specific target audience potentially including age, gender, activities relating to social media habits (specific accounts they follow or groups, channels, #hashtags they are active members of or specific aspects of their own social media profile), specific jobs (including title and type of company), relationship status, wealth/income (specific not general), or other clubs, organizations, activities, habits that are all hyper-specific or niche. Here are 3 examples: 
 
