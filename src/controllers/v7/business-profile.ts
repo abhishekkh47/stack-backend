@@ -90,45 +90,59 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async updateCompanyLogo(ctx: any) {
     const { user } = ctx.request;
-    const userExists: any = await UserTable.findOne({
-      _id: user._id,
-    });
+    const [userExists, businessProfileExists, actionScreenData]: any =
+      await Promise.all([
+        UserTable.findOne({
+          _id: user._id,
+        }),
+        BusinessProfileTable.findOne({
+          userId: user._id,
+        }),
+        ActionScreenCopyTable.find(),
+      ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const businessProfileExists = await BusinessProfileTable.findOne({
-      userId: user._id,
-    });
     const file = ctx.request.file;
     if (!file) {
       return this.BadRequest(ctx, "Image is not selected");
     }
-    const imageName =
-      file && file.key
-        ? file.key.split("/").length > 0
-          ? file.key.split("/")[1]
-          : null
-        : null;
+    const imageName = file.key?.split("/")?.[1] || null;
+
     if (businessProfileExists.companyLogo) {
       await removeImage(userExists._id, businessProfileExists.companyLogo);
     }
-    await BusinessProfileTable.updateOne(
-      { userId: userExists._id },
-      {
-        $set: { companyLogo: imageName, isRetry: false },
-      },
-      { upsert: true }
+    const getHoursSaved = actionScreenData.filter(
+      (action) => action?.key == "companyLogo"
     );
-    if (ctx?.request?.body?.weeklyJourneyId) {
-      const dataToCreate = {
-        weeklyJourneyId: ctx.request.body.weeklyJourneyId,
-        actionNum: ctx.request.body.actionNum,
-        userId: user._id,
-        actionInput: imageName,
-      };
-      await WeeklyJourneyResultTable.create(dataToCreate);
-      UserService.updateUserScore(userExists, ctx.request.body);
+    const businessProfileObj = {
+      companyLogo: imageName,
+      isRetry: false,
+      aiGeneratedSuggestions: null,
+    };
+    if (getHoursSaved.length) {
+      businessProfileObj["hoursSaved"] =
+        businessProfileExists.hoursSaved > getHoursSaved[0].hoursSaved
+          ? businessProfileExists.hoursSaved
+          : getHoursSaved[0].hoursSaved;
     }
+    await Promise.all([
+      BusinessProfileTable.updateOne(
+        { userId: userExists._id },
+        { $set: businessProfileObj },
+        { upsert: true }
+      ),
+      ctx?.request?.body?.weeklyJourneyId
+        ? WeeklyJourneyResultTable.create({
+            weeklyJourneyId: ctx.request.body.weeklyJourneyId,
+            actionNum: ctx.request.body.actionNum,
+            userId: user._id,
+            actionInput: imageName,
+          }).then(() =>
+            UserService.updateUserScore(userExists, ctx.request.body)
+          )
+        : Promise.resolve(),
+    ]);
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
 
