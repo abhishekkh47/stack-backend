@@ -627,10 +627,7 @@ class BusinessProfileService {
       if (error.message == INVALID_DESCRIPTION_ERROR) {
         throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
       }
-      throw new NetworkError(
-        "Error Occured while generating suggestions : " + error.message,
-        400
-      );
+      throw new NetworkError("Error Occured while generating suggestions", 400);
     }
   }
 
