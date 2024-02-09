@@ -26,6 +26,7 @@ import {
   IS_RETRY,
   DEDUCT_RETRY_FUEL,
   HOURS_SAVED_BY_IDEA_GENERATOR,
+  delay,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -668,8 +669,11 @@ class BusinessProfileService {
         throw new NetworkError("Something Went Wrong in myImage", 400);
       }
       const imageData1 = await UpscaleImage(imagineRes, 1);
+      await delay(3000);
       const imageData2 = await UpscaleImage(imagineRes, 2);
+      await delay(3000);
       const imageData3 = await UpscaleImage(imagineRes, 3);
+      await delay(3000);
       const imageData4 = await UpscaleImage(imagineRes, 4);
       return [imageData1.uri, imageData2.uri, imageData3.uri, imageData4.uri];
     } catch (error) {
