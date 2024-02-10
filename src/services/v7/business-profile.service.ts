@@ -495,13 +495,7 @@ class BusinessProfileService {
       }
       return newResponse;
     } catch (error) {
-      if (error.message == INVALID_DESCRIPTION_ERROR) {
-        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
-      }
-      throw new NetworkError(
-        "Error Occured while generating Business Idea",
-        400
-      );
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
   }
 
@@ -612,13 +606,7 @@ class BusinessProfileService {
         isRetry: true,
       };
     } catch (error) {
-      if (error.message == INVALID_DESCRIPTION_ERROR) {
-        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
-      }
-      throw new NetworkError(
-        "Error Occured while generating suggestions : " + error.message,
-        400
-      );
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
   }
 
