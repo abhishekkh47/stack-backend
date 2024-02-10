@@ -166,79 +166,86 @@ export const SYSTEM_INPUT = {
   WHY THIS?
   An estimated 200 million health app users are interested in apps for managing screen time.”`,
 
-  COMPANY_NAME: `"You will suggest 4 unique business names (without explanations) based on the business description provided in the user prompt. Each suggestion will have different criteria also included below. Provide your response in a single array containing all 4 suggestions.
+  COMPANY_NAME: `Generate four unique business names based on the provided business description. Each name should meet distinct criteria outlined below, and present your suggestions in a straightforward array format. Avoid including explanations or the business description in your final output.
+
+  Criteria for Each Business Name Suggestion:
+  Suggestion 1 criteria: a real or fictional character's name that is either directly or loosely correlated to the business description.
+    Example 1:
+    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
+    - Suggestion: Beethoven
+    - Explanation: Beethoven, one of the most famous classical musicians ever, is universally recognizable for his association with music and his famous composing that is strongly metaphorical for a platform that democratizes high quality music production.
+    Example 2: 
+    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
+    - Suggestion: Houdini
+    - Explanation: Harry Houdini, one of the most famous magicians of all time, is both associated with magic and his famous magic tricks are a beacon for a community of magicians.
+    Example 3:
+    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
+    - Suggestion: Stockton
+    - Explanation: John Stockton, famous for assists in the NBA, is both associated with sports and his smooth passing is a metaphor for a ticketing platform that allows you to buy and sell during an event.
+    Example 4:
+    - Business description: a dating app that pairs users based on their vision of their perfect married life
+    - Suggestion: Pamela
+    - Explanation: Pamela Anderson, a famous playboy playmate and supermodel, is both associated with romance and dating as well as famous for having a higher than usual amount of husbands, strongly associating her with a dating app that focuses on picturing your ideal married life.
+    
+  Suggestion 2 criteria: a slang or fictitious one word name that has at least one of these letters: Z, Q, X, J, K, F, H, V, W, and Y, is 1-3 syllables, and has a double letter.
+    Example 1:
+    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
+    - Suggestion: Razzmatazz
+    - Explanation: Razzmatazz is a slang word for creative jazz music that emphasizes expression. this word would be well-suited for an app that allows musicians to use their creativity in producing their own music.
+    Example 2: 
+    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
+    - Suggestion: Zzephyr
+    - Explanation: a modification of the word 'zephyr', a gentle breeze, this name could be associated with a magician who has control over air or weather elements, has the double letter ""zz"" and is two syllables
+    Example 3:
+    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
+    - Suggestion: Hooper
+    - Explanation: A slang name for a basketball player who is skilled and has the double letter ""oo"" and the letter ""h"" as well has two syllables
+    Example 4:
+    - Business description: a dating app that pairs users based on their vision of their perfect married life
+    - Suggestion: Vowwy
+    - Explanation: a modification of the word vow, associated with wedding vows, that has the letters ""V"" ""W"" ""Y"" and double letter ""ww"" as well as is two syllables
+    
+  Suggestion 3 criteria: a direct and strong connection to the business description that is easy to pronounce, spell and say
+    Example 1:
+    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
+    - Suggestion: Mixer AI
+    - Explanation: A mixer is a piece of musical equipment that is used to mix sounds and has a very strong and literal correlation to an AI music editing app 
+    Example 2: 
+    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
+    - Suggestion: Spellbound
+    - Explanation: spellbound is a word that describes someone who is directly under the influence of. magical spells and has a strong and direct correlation to a social and education app for magicians
+    Example 3:
+    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
+    - Suggestion: VIP
+    - Explanation: VIP is associated with a pass that is a special ticket usually issued to VIPs to get access to the field or court for many sporting games which would have a strong correlation to a sports ticketing platform
+    Example 4:
+    - Business description: a dating app that pairs users based on their vision of their perfect married life
+    - Suggestion: Spouse
+    - Explanation: spouse is a word to describe your marriage partner and is directly correlated to marriage, the goal of a dating platform that has you picture your ideal married life
+    
+  Suggestion 4 criteria: a well-known real or fictitious place that is directly or loosely correlated to the business description
+    Example 1:
+    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
+    - Suggestion: Woodstock
+    - Explanation: woodstock, new york was a famous concert venue for 1960s and 1970s rock bands and their followers
+    Example 2: 
+    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
+    - Suggestion: Fantasia
+    - Explanation: fantasia was the magical location of the movie a never ending story, full of magical and mythical beings and events
+    Example 3:
+    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
+    - Suggestion: Daytona
+    - Explanation: daytona is a location of nascar events as well as featured in various video games as a location of events
+    Example 4:
+    - Business description: a dating app that pairs users based on their vision of their perfect married life
+    - Suggestion: Eden
+    - Explanation: a place known for being paradise and associated with love"
   
-  suggestion 1 criteria: a real or fictional character's name that is either directly or loosely correlated to the business description.
-  Example 1:
-  - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-  - Suggestion: Beethoven
-  - Explanation: Beethoven, one of the most famous classical musicians ever, is universally recognizable for his association with music and his famous composing that is strongly metaphorical for a platform that democratizes high quality music production.
-  Example 2: 
-  - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-  - Suggestion: Houdini
-  - Explanation: Harry Houdini, one of the most famous magicians of all time, is both associated with magic and his famous magic tricks are a beacon for a community of magicians.
-  Example 3:
-  - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-  - Suggestion: Stockton
-  - Explanation: John Stockton, famous for assists in the NBA, is both associated with sports and his smooth passing is a metaphor for a ticketing platform that allows you to buy and sell during an event.
-  Example 4:
-  - Business description: a dating app that pairs users based on their vision of their perfect married life
-  - Suggestion: Pamela
-  - Explanation: Pamela Anderson, a famous playboy playmate and supermodel, is both associated with romance and dating as well as famous for having a higher than usual amount of husbands, strongly associating her with a dating app that focuses on picturing your ideal married life.
+  Output Format Expectation:
+  Ensure the response is formatted as an array containing all four business name suggestions, strictly adhering to the criteria provided for each. The output should look similar to this template, omitting any explanations for the choices:
+  ["Oberon", "Buzzify", "WeddingWink", "Verona"]
   
-  suggestion 2 criteria: a slang or fictitious one word name that has at least one of these letters: Z, Q, X, J, K, F, H, V, W, and Y, is 1-3 syllables, and has a double letter.
-  Example 1:
-  - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-  - Suggestion: Razzmatazz
-  - Explanation: Razzmatazz is a slang word for creative jazz music that emphasizes expression. this word would be well-suited for an app that allows musicians to use their creativity in producing their own music.
-  Example 2: 
-  - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-  - Suggestion: Zzephyr
-  - Explanation: a modification of the word 'zephyr', a gentle breeze, this name could be associated with a magician who has control over air or weather elements, has the double letter ""zz"" and is two syllables
-  Example 3:
-  - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-  - Suggestion: Hooper
-  - Explanation: A slang name for a basketball player who is skilled and has the double letter ""oo"" and the letter ""h"" as well has two syllables
-  Example 4:
-  - Business description: a dating app that pairs users based on their vision of their perfect married life
-  - Suggestion: Vowwy
-  - Explanation: a modification of the word vow, associated with wedding vows, that has the letters ""V"" ""W"" ""Y"" and double letter ""ww"" as well as is two syllables
-  
-  suggestion 3 criteria: a direct and strong connection to the business description that is easy to pronounce, spell and say
-  Example 1:
-  - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-  - Suggestion: Mixer AI
-  - Explanation: A mixer is a piece of musical equipment that is used to mix sounds and has a very strong and literal correlation to an AI music editing app 
-  Example 2: 
-  - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-  - Suggestion: Spellbound
-  - Explanation: spellbound is a word that describes someone who is directly under the influence of. magical spells and has a strong and direct correlation to a social and education app for magicians
-  Example 3:
-  - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-  - Suggestion: VIP
-  - Explanation: VIP is associated with a pass that is a special ticket usually issued to VIPs to get access to the field or court for many sporting games which would have a strong correlation to a sports ticketing platform
-  Example 4:
-  - Business description: a dating app that pairs users based on their vision of their perfect married life
-  - Suggestion: Spouse
-  - Explanation: spouse is a word to describe your marriage partner and is directly correlated to marriage, the goal of a dating platform that has you picture your ideal married life
-  
-  suggestion 3 criteria: a well-known real or fictitious place that is directly or loosely correlated to the business description
-  Example 1:
-  - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-  - Suggestion: Woodstock
-  - Explanation: woodstock, new york was a famous concert venue for 1960s and 1970s rock bands and their followers
-  Example 2: 
-  - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-  - Suggestion: Fantasia
-  - Explanation: fantasia was the magical location of the movie a neverending story, full of magical and mythical beings and events
-  Example 3:
-  - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-  - Suggestion: Daytona
-  - Explanation: daytona is a location of nascar events as well as featured in various video games as a location of events
-  Example 4:
-  - Business description: a dating app that pairs users based on their vision of their perfect married life
-  - Suggestion: Eden
-  - Explanation: a place known for being paradise and associated with love"`,
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the company names within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,
 
   COMPANY_LOGO_: [
     `Based on the business name and business description provided, I want you to generate a business logo using below given Logo prompt. Make sure that if logo contains any text, it should be in english language words only. 
@@ -288,79 +295,107 @@ export const SYSTEM_INPUT = {
   Style: low poly art
   Output: simple logo of diamond ring, low poly art --v 5.2 --turbo"`,
 
-  TARGET_AUDIENCE: `"Based on the business description provided in the user prompt, you will write three potential, very specific target audiences. Each separate target audience description will be formatted as one sentence where each characteristics of the target audience will be separated by a comma. The response should be an array containing three Target Audience strings. each target audience description should be no longer than 45 words. Each will highlight the 3-5 most important characteristics of the specific target audience potentially including age, gender, activities relating to social media habits (specific accounts they follow or groups, channels, #hashtags they are active members of or specific aspects of their own social media profile), specific jobs (including title and type of company), relationship status, wealth/income (specific not general), or other clubs, organizations, activities, habits that are all hyper-specific or niche. Here are 3 examples: 
+  TARGET_AUDIENCE: `Generate three distinct and highly specific target audience profiles based solely on the provided business description. Each profile should be formatted as a concise sentence, not exceeding 45 words, detailing 3-5 pivotal characteristics such as age, gender, specific social media interactions, precise job titles, relationship status, clear income levels, or particular interests and activities. The output should strictly be an array containing only these three target audience descriptions, without including the business description or any other context. Ensure each entry in the array focuses on niche or hyper-specific audience traits.
 
+  Business Description Examples and Corresponding Target Audiences:
   Example 1:
-  Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal.
-  Target audience: 16-19 years old, STEM students, located in start-up hotspots, have the word ""Founder"" in their LinkedIn profile, are the leader of a business club or student organization
+  Business Description: A mobile app for first-time business starters with gamified learning, daily tasks, and mentorship.
+  Target Audience: "16-19 years old, STEM students, in startup hotspots, with 'Founder' in their LinkedIn, lead a business club/student organization."
   
   Example 2:
-  Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event
-  Target audience: 22-29 year old graduates of private universities or top-50 public colleges, young professionals at investment banks or large tech companies, members of reddit channels r/nba r/nfl r/soccer r/collegebasketball r/baseball r/collegefootball
+  Business Description: A live sports event ticketing platform for buying and selling tickets.
+  Target Audience: "22-29 years, private university grads or top-50 public college alumni, young professionals in banks/tech, reddit members of sports channels."
   
   Example 3:
-  Business description: a dating app that pairs users based on their vision of their perfect married life
-  Target audience: 30-35 year old single females, members of Soulcycle, barry's bootcamp, Orangetheory, Pure Barre, equinox, followers of @kimkardashian @taylorswift @kayla_itsines on instagram`,
+  Business Description: A dating app matching users on their ideal married life vision.
+  Target Audience: "30-35 year old single females, members of premium fitness clubs, followers of @kimkardashian @taylorswift @kayla_itsines on Instagram."
+  
+  Desired Output Format Example (without actual business description):
+  ["25-35 year old male, gym enthusiasts, registered on fitness apps like MyFitnessPal or Nike Training Club, follow fitness influencers like @therock or @schwarzenegger on Instagram, frequently shop from online apparel brands", "30-40 year old female, fashion enthusiasts, active Pinterest users, followers of @ChiaraFerragni, @SongofStyle on Instagram, customers of online fashion brands offering size guides", "20-28 year old college students, fans of fast fashion, active users of TikTok fashion hashtags, follower of fashion influencers like @emmachamberlain, regular shoppers at Zara, H&M or Forever 21."]
+  
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the target audience descriptions within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,
 
-  COMPETITORS: `"Based on the business description provided in the user prompt, I want you to provide the 5 most direct competitors. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. The response should be an array containing a single string having all 5 competitors name without any explanation as provided in below examples. below are 3 illustrative examples:
+  COMPETITORS: `Identify 5 most direct company competitors based solely on the provided business description. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. Present your findings as an array containing a single string, listing all five competitor names consecutively without any explanations. The array should not include the business description or any additional context.
 
-  Example 1
+  Business Description Examples and Corresponding Competitor:
+  
+  Example 1:
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
   Competitors: ["Robinhood, TD Ameritrade, Stash, Bloom, Stockpile"]
-  
-  Example 2
+    
+  Example 2:
   Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
   Competitors: ["Audacity, GarageBand, Mayk.it, sunhou.se, Volta"]
-  
-  Example 3
+    
+  Example 3:
   Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
   Competitors: ["Jiffy Lube, Valvoline, Wrench, ServiceUp, Get Spiffy"]
-  
-  Example 4
+    
+  Example 4:
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
-  Competitors: ["Shopify, HubSpot, Buildspace, Beta Blox, StartItUp"]`,
+  Competitors: ["Shopify, HubSpot, Buildspace, Beta Blox, StartItUp"]
+  
+  Desired Output Format Example (without actual business description):
+  ["Shopify, HubSpot, Buildspace, Beta Blox, StartItUp"]
+    
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the competitor company names within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,
 
-  KEY_DIFFERENTIATOR: `"Based on the business description provided in the user prompt, I want you to write 3 distinct potential core differentiators for. These core differentiators will be based on the incumbents of the industry and adjacent products. They will identify opportunities either through product differentiation or distribution. The core differentiator should be one concise phrase and emulate the examples provided below. The response should be an array containing three core differentiators strings. Below are 4 illustrative examples:
+  KEY_DIFFERENTIATOR: `Identify 3 distinct potential core differentiators based solely on the provided business description. These core differentiators will be based on the incumbents of the industry and adjacent products. Focus on highlighting distinct advantages in product features or distribution strategies. Each differentiator should be presented as a concise phrase, clearly encapsulating a competitive edge. Compile the differentiators into an array of three strings, without including explanations or the business description.
 
-  Example 1
+  Business Description Examples and Corresponding Core Differentiator:
+  
+  Example 1:
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
   Core differentiator: Creating a social eco-system for existing school and college communities
   Explanation: While many incumbents have investing apps with gamified education and social investing, the distribution channel of high school and college students is unique while occupying a large population of people interesting in learning about investing and a social finance community.
-  
-  Example 2
+    
+  Example 2:
   Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
   Core differentiator: A rich content library of musical sounds and beats for endless creation.
   Explanation: While many incumbents have easy to use software for music editing, few of them focus on a large library of sounds and beats. Differentiating on a rich content library has proven successful in other industries like design (Canva) and education (Coursera) while music is one of the most common hobbies in the world (big market).
-  
-  Example 3
+    
+  Example 3:
   Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
   Core differentiator: increased accessibility and service convenience by providing an at-home distribution 
-  Explanation: For routine car maintenance, all current incumbent have a phyical location that consumers are required to go to, in order to provide services like tire rotation, oil changes, replaing air conditioning filters, etc. This model greatly increases accessibility and convenience for the end user.
-  
-  Example 4
+  Explanation: For routine car maintenance, all current incumbent have a physical location that consumers are required to go to, in order to provide services like tire rotation, oil changes, replacing air conditioning filters, etc. This model greatly increases accessibility and convenience for the end user.
+    
+  Example 4:
   Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event
   Core differentiator: during-event ticket sales 
-  Explanation: ticket platforms currently only users to buy tickets prior to the event, whereas a service that allowed reselling during the event, opens up additonal revenue options for the event host as well increased ticket availability to event users.`,
+  Explanation: ticket platforms currently only users to buy tickets prior to the event, whereas a service that allowed reselling during the event, opens up additional revenue options for the event host as well increased ticket availability to event users.
+  
+  Desired Output Format Example (without actual business description):
+  ["In-app access to international cuisine recipes", "Nutritional information for every recipe", "Built-in grocery list creator based on selected recipes"]
+    
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the differentiator within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,
 
-  X_FOR_Y: `"Based on the business description provided in the user prompt, I want you to write 4 metaphorical ""[COMPANY] for [THING]"" often referred to as ""X for Y"". The [COMPANY] you choose must be a well-known company that people would be farmiliar with. The [THING] should be directly related to the industry or niche based on the business description provided in user prompt. The response should be an array containing four generated strings. You will NOT include an explanation in your response. Below are 4 illustrative examples:
+  X_FOR_Y: `Utilizing the provided business description, craft four metaphorical 'X for Y' analogies that succinctly compare the business model to that of a well-known company, with 'X' being the company and 'Y' the industry or niche related to the provided business description. Choose 'X' from companies that are broadly recognized, ensuring 'Y' directly ties to the specific industry or niche of the provided business description. Present your analogies in an array format, containing four generated strings, , without including explanations or the business description.
 
-  Example 1
+  Business Description Examples and Corresponding X for Y:
+  
+  Example 1:
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
   X for Y: Duolingo for investing
   Explanation: Duolingo includes many of the same features such as gamified education and a social community but for a different industry
-  
-  Example 2
+    
+  Example 2:
   Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
   X for Y: Canva for music
   Explanation: Canva is well known for its rich library of templates and designs but for digital design instead of music.
-  
-  Example 3
+    
+  Example 3:
   Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
   X for Y: Rover for routine car maintenance
   Explanation: Rover also includes a monthly subscription fee for a common and routine service, but is a dog walking app not a car maintenance platform.
-  
-  Example 4
+    
+  Example 4:
   Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event
   X for Y: Hoteltonight for event tickets
-  Explanation: Hoteltonight also focuses on last minute luxury deals but is a hotel booking platform, not event ticketing.`,
+  Explanation: Hoteltonight also focuses on last minute luxury deals but is a hotel booking platform, not event ticketing.
+  
+  Desired Output Format Example (without actual business description):
+  ["Spotify for Emerging Artists", "Instagram for Musicians", "TikTok for Music Creation", "Pandora for Local Bands"]
+      
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the X for Y within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.
+  `,
 };
