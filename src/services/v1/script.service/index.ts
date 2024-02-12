@@ -131,6 +131,8 @@ class ScriptService {
     let document = null;
     if (sheetId == envData.PASSION_SHEET_ID) {
       document = new GoogleSpreadsheet(envData.PASSION_SHEET_ID);
+    } else if (sheetId == envData.ACTION_SCREEN_COPY_SHEET_ID) {
+      document = new GoogleSpreadsheet(envData.ACTION_SCREEN_COPY_SHEET_ID);
     } else {
       document = new GoogleSpreadsheet(envData.SHEET_ID);
     }

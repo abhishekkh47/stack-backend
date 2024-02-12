@@ -3,6 +3,9 @@ import {
   PassionTable,
   BusinessPassionTable,
   BusinessPassionAspectTable,
+  ActionScreenCopyTable,
+  UserTable,
+  BusinessProfileTable,
 } from "@app/model";
 
 class BusinessProfileScriptService {
@@ -178,6 +181,105 @@ class BusinessProfileScriptService {
     } catch (error) {
       return error;
     }
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON by filtering with key referring the action to be performed
+   * @param rows
+   * @returns {*}
+   */
+  public async convertActionScreenCopySheetToJSON(rows: any) {
+    let tempData = {};
+    let allDetails = [];
+
+    rows.map((item) => {
+      if (item.Key) {
+        tempData = {
+          key: item.Key,
+          title: item["Loading Title"],
+          week: item.Week,
+          day: item.Day,
+          steps: [
+            item["Checklist Item 1"],
+            item["Checklist Item 2"],
+            item["Checklist Item 3"],
+          ],
+          hoursSaved: item["Hours Saved"],
+          actionName: item["Action Title"],
+          description: item.Description,
+          placeHolderText: item["Place Holder Text"],
+          maxCharLimit: item["Character Limit"],
+          isMultiLine: item.IsMultiLine == "TRUE" ? true : false,
+        };
+        allDetails.push(tempData);
+      }
+    });
+    return allDetails;
+  }
+
+  /**
+   * @dscription This method add action screen copy in DB
+   * @param passions
+   * @return {boolean}
+   */
+  public async addActionScreenCopyToDB(actionScreenData: any[]) {
+    try {
+      let passionsBulkWriteQuery = [];
+      actionScreenData.map((data) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: { key: data.key },
+            update: {
+              $set: {
+                key: data.key,
+                title: data.title,
+                order: data.order,
+                week: data.week,
+                day: data.day,
+                steps: data.steps,
+                hoursSaved: data.hoursSaved,
+                actionName: data.actionName,
+                description: data.description,
+                placeHolderText: data.placeHolderText,
+                maxCharLimit: data.maxCharLimit,
+                isMultiLine: data.isMultiLine,
+              },
+            },
+            upsert: true,
+          },
+        };
+        passionsBulkWriteQuery.push(bulkWriteObject);
+      });
+
+      await ActionScreenCopyTable.bulkWrite(passionsBulkWriteQuery);
+      return true;
+    } catch (error) {
+      return error;
+    }
+  }
+  /**
+   * @description This function reset the existing users (before v1.28) to use AI-Suggestion onboarding flow
+   * @param rows
+   * @returns {*}
+   */
+  public async resetUsersToUseOnboardingFlow(rows: any) {
+    let userEmails = [];
+
+    rows.map((item) => {
+      if (item["Email"]) {
+        userEmails.push(item["Email"]);
+      }
+    });
+    const userData = await UserTable.find({
+      email: { $in: userEmails },
+    });
+
+    const response = userData.map((user) => user._id);
+    const updatedData = await BusinessProfileTable.updateMany(
+      { userId: { $in: response } },
+      { $set: { description: null } }
+    );
+    return updatedData;
   }
 }
 

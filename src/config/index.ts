@@ -170,4 +170,13 @@ export default {
   get OPENAI_API_KEY() {
     return process.env.OPENAI_API_KEY;
   },
+  get ACTION_SCREEN_COPY_SHEET_ID() {
+    return process.env.ACTION_SCREEN_COPY_SHEET_ID;
+  },
+  get ACTION_SCREEN_COPY_SHEET_GID() {
+    return process.env.ACTION_SCREEN_COPY_SHEET_GID;
+  },
+  get MENTORSHIP_PROGRAM_SHEET_GID() {
+    return process.env.MENTORSHIP_PROGRAM_SHEET_GID;
+  },
 };
