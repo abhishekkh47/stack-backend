@@ -142,7 +142,7 @@ class BusinessProfileService {
           allBusinessPlans: [
             {
               key: "description",
-              actionType: "text",
+              type: "text",
               value: "$description",
               title: "Business Description",
               description: "Add your business decription",
@@ -154,7 +154,7 @@ class BusinessProfileService {
             },
             {
               key: "companyName",
-              actionType: "text",
+              type: "text",
               value: "$companyName",
               title: "Company Name",
               description: "Pro-tip: be unique but easy to spell and read.",
@@ -165,7 +165,7 @@ class BusinessProfileService {
             },
             {
               key: "companyLogo",
-              actionType: "image",
+              type: "image",
               value: "$companyLogo",
               title: "Business Logo",
               description:
@@ -177,7 +177,7 @@ class BusinessProfileService {
             },
             {
               key: "targetAudience",
-              actionType: "text",
+              type: "text",
               value: "$targetAudience",
               title: "Target Audience",
               description:
@@ -189,7 +189,7 @@ class BusinessProfileService {
             },
             {
               key: "competitors",
-              actionType: "text",
+              type: "text",
               value: "$competitors",
               title: "Top 5 Competitors",
               description:
@@ -201,7 +201,7 @@ class BusinessProfileService {
             },
             {
               key: "keyDifferentiator",
-              actionType: "text",
+              type: "text",
               value: "$keyDifferentiator",
               title: "Key Differentiator",
               description:
@@ -213,7 +213,7 @@ class BusinessProfileService {
             },
             {
               key: "xForY",
-              actionType: "text",
+              type: "text",
               value: "$xForY",
               title: "X For Y Pitch",
               description:
@@ -225,7 +225,7 @@ class BusinessProfileService {
             },
             {
               key: "headline",
-              actionType: "text",
+              type: "text",
               value: "$headline",
               title: "Headline",
               description:
@@ -236,7 +236,7 @@ class BusinessProfileService {
             },
             {
               key: "valueCreators",
-              actionType: "text",
+              type: "text",
               value: "$valueCreators",
               title: "Top 3 Value Creators",
               description: "Pro-tip: make each value creator than three words",
@@ -246,7 +246,7 @@ class BusinessProfileService {
             },
             {
               key: "colorsAndAesthetic",
-              actionType: "text",
+              type: "text",
               value: "$colorsAndAesthetic",
               title: "Brand Colors & Aesthetic",
               description:
@@ -257,7 +257,7 @@ class BusinessProfileService {
             },
             {
               key: "callToAction",
-              actionType: "text",
+              type: "text",
               value: "$callToAction",
               title: "Enter your call-to-action",
               description:
@@ -268,7 +268,7 @@ class BusinessProfileService {
             },
             {
               key: "linkYourBlog",
-              actionType: "text",
+              type: "text",
               value: "$linkYourBlog",
               title: "Link Your Blog",
               description:
@@ -277,7 +277,7 @@ class BusinessProfileService {
             },
             {
               key: "linkYourWebsite",
-              actionType: "text",
+              type: "text",
               value: "$linkYourWebsite",
               title: "Link Your Website",
               description:
@@ -288,7 +288,7 @@ class BusinessProfileService {
             },
             {
               key: "appName",
-              actionType: "text",
+              type: "text",
               value: "$appName",
               title: "Enter the app's name that inspires you",
               description:
@@ -299,7 +299,7 @@ class BusinessProfileService {
             },
             {
               key: "homescreenImage",
-              actionType: "image",
+              type: "image",
               value: "$homescreenImage",
               title: "Upload picture of your homescreen/homepage",
               description:
@@ -310,7 +310,7 @@ class BusinessProfileService {
             },
             {
               key: "customerDiscovery",
-              actionType: "text",
+              type: "text",
               value: "$customerDiscovery",
               title: "Enter one takeaway based on customer discovery",
               description:
@@ -321,7 +321,7 @@ class BusinessProfileService {
             },
             {
               key: "socialFeedback",
-              actionType: "image",
+              type: "image",
               value: "$socialFeedback",
               title: "Upload picture of social feedback",
               description:
@@ -332,7 +332,7 @@ class BusinessProfileService {
             },
             {
               key: "productUpdate",
-              actionType: "text",
+              type: "text",
               value: "$productUpdate",
               title: "Define one product update from the feedback you received",
               description:
@@ -343,7 +343,7 @@ class BusinessProfileService {
             },
             {
               key: "mvpHomeScreen",
-              actionType: "image",
+              type: "image",
               value: "$mvpHomeScreen",
               title: "Upload a picture of your MVP homescreen",
               description:
@@ -354,7 +354,7 @@ class BusinessProfileService {
             },
             {
               key: "socialMediaAccountLink",
-              actionType: "text",
+              type: "text",
               value: "$socialMediaAccountLink",
               title:
                 "Add link to social media account on TikTok, Instagram, LinkedIn, etc",
@@ -366,7 +366,7 @@ class BusinessProfileService {
             },
             {
               key: "firstPostLink",
-              actionType: "text",
+              type: "text",
               value: "$firstPostLink",
               title:
                 "Add link to your first post on TikTok, Instagram, LinkedIn, etc",
@@ -378,7 +378,7 @@ class BusinessProfileService {
             },
             {
               key: "favoriteComment",
-              actionType: "text",
+              type: "text",
               value: "$favoriteComment",
               title: "Enter your favorite comment on your post",
               description:
@@ -389,7 +389,7 @@ class BusinessProfileService {
             },
             {
               key: "aspiringSocialAccount",
-              actionType: "text",
+              type: "text",
               value: "$aspiringSocialAccount",
               title:
                 "Link one of the social media accounts that you aspire to be like, and has a similar audience",
@@ -401,7 +401,7 @@ class BusinessProfileService {
             },
             {
               key: "socialCampaignTheme",
-              actionType: "text",
+              type: "text",
               value: "$socialCampaignTheme",
               title: "Enter the theme of your social media campaigne",
               description:
@@ -412,7 +412,7 @@ class BusinessProfileService {
             },
             {
               key: "firstSocialCampaign",
-              actionType: "text",
+              type: "text",
               value: "$firstSocialCampaign",
               title: "Link the post of your first social campaign",
               description:
