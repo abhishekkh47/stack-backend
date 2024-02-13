@@ -79,14 +79,14 @@ class BusinessProfileService {
               : getHoursSaved[0].hoursSaved;
         }
       }
-      await BusinessProfileTable.findOneAndUpdate(
+      const updatedProfile = await BusinessProfileTable.findOneAndUpdate(
         {
           userId: userIfExists._id,
         },
         {
           $set: obj,
         },
-        { upsert: true }
+        { upsert: true, returnOriginal: false }
       );
 
       if (data.weeklyJourneyId) {
@@ -99,6 +99,14 @@ class BusinessProfileService {
         await WeeklyJourneyResultTable.create(dataToCreate);
 
         UserService.updateUserScore(userIfExists, data);
+        if (data.key == "companyName" && !businessProfileData.companyLogo) {
+          this.generateAISuggestions(
+            userIfExists,
+            "companyLogo",
+            updatedProfile,
+            SUGGESTION_FORMAT.IMAGE
+          );
+        }
       }
       return [
         {
