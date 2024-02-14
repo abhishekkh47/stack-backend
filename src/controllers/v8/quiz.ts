@@ -36,25 +36,15 @@ class QuizController extends BaseController {
       ctx,
       async (validate) => {
         if (validate) {
-          const [
-            leagues,
-            userIfExists,
-            quizIfExists,
-            quizResultsIfExists,
-            curentWeeklyJourneyDetails,
-            userBusinessProfile,
-          ] = await Promise.all([
-            LeagueTable.find({})
-              .select("_id name image minPoint maxPoint colorCode")
-              .sort({ minPoint: 1 }),
-            UserTable.findOne({ _id: user._id }).populate("streakGoal"),
-            QuizTable.findOne({ _id: reqParam.quizId }),
-            QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
-            WeeklyJourneyTable.findOne({
-              _id: reqParam.weeklyJourneyId,
-            }).lean(),
-            BusinessProfileTable.findOne({ userId: user._id }),
-          ]);
+          const [leagues, userIfExists, quizIfExists, quizResultsIfExists] =
+            await Promise.all([
+              LeagueTable.find({})
+                .select("_id name image minPoint maxPoint colorCode")
+                .sort({ minPoint: 1 }),
+              UserTable.findOne({ _id: user._id }).populate("streakGoal"),
+              QuizTable.findOne({ _id: reqParam.quizId }),
+              QuizResult.findOne({ userId: user._id, quizId: reqParam.quizId }),
+            ]);
           if (!userIfExists) {
             return this.BadRequest(ctx, "User Not Found");
           }
@@ -65,24 +55,6 @@ class QuizController extends BaseController {
             return this.BadRequest(
               ctx,
               "You cannot submit the same quiz again"
-            );
-          }
-          /*
-           * If the upcoming action is to upload company logo
-           * we will generate the logo using midjourney from here
-           * and store them in DB
-           */
-
-          if (
-            curentWeeklyJourneyDetails.week == 1 &&
-            curentWeeklyJourneyDetails.day == 2 &&
-            curentWeeklyJourneyDetails.actions[0].quizId == reqParam.quizId
-          ) {
-            BusinessProfileService.generateAISuggestions(
-              userIfExists,
-              "companyLogo",
-              userBusinessProfile,
-              SUGGESTION_FORMAT.IMAGE
             );
           }
           const {
