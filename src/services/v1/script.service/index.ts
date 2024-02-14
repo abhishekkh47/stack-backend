@@ -894,7 +894,7 @@ class ScriptService {
     
     const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
     try {
-      const filteredStories = rows.filter((x) => storyNums.includes(Number(x['Story #'])));
+      const filteredStories = rows.filter((x) => storyNums.includes(x['Story #']));
       let storyTitle = "";
       let lastStoryCategory = "";
       let lastStoryStage = "";
