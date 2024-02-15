@@ -410,6 +410,7 @@ export const USER = "user";
 export const SUGGESTION_FORMAT = {
   TEXT: "text",
   IMAGE: "image",
+  COLOR: "color",
 };
 
 export const INVALID_DESCRIPTION_ERROR =
@@ -534,7 +535,7 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
 };
 
 export const IMAGE_ACTIONS = ["companyLogo"];
-export const REQUIRE_COMPANY_NAME = ["linkYourWebsite"];
+export const REQUIRE_COMPANY_NAME = ["linkYourWebsite", "colorsAndAesthetic"];
 export const IS_RETRY = {
   TRUE: "true",
   FALSE: "false",

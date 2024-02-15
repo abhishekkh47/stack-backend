@@ -302,7 +302,7 @@ export const SYSTEM_INPUT = {
   Business description: a dating app that pairs users based on their vision of their perfect married life
   Target audience: 30-35 year old single females, members of Soulcycle, barry's bootcamp, Orangetheory, Pure Barre, equinox, followers of @kimkardashian @taylorswift @kayla_itsines on instagram`,
 
-  COMPETITORS: `"Based on the business description provided in the user prompt, I want you to provide the 5 most direct competitors. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. The response should be an array containing a single string having all 5 competitors name without any explanation as provided in below examples. below are 3 illustrative examples:
+  COMPETITORS: `"Based on the business description provided in the user prompt, I want you to provide the 5 most direct competitors. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were very familiar with the specific industry or niche of the industry. The response should be only an array containing a single string having all 5 competitors name without any explanation as provided in below examples. below are 3 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -320,7 +320,7 @@ export const SYSTEM_INPUT = {
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   Competitors: ["Shopify, HubSpot, Buildspace, Beta Blox, StartItUp"]`,
 
-  KEY_DIFFERENTIATOR: `"Based on the business description provided in the user prompt, I want you to write 3 distinct potential core differentiators for. These core differentiators will be based on the incumbents of the industry and adjacent products. They will identify opportunities either through product differentiation or distribution. The core differentiator should be one concise phrase and emulate the examples provided below. The response should be an array containing three core differentiators strings. Below are 4 illustrative examples:
+  KEY_DIFFERENTIATOR: `"Based on the business description provided in the user prompt, I want you to write 3 distinct potential core differentiators for. These core differentiators will be based on the incumbents of the industry and adjacent products. They will identify opportunities either through product differentiation or distribution. The core differentiator should be one concise phrase and emulate the examples provided below. The response should be only an array containing three core differentiators strings. Below are 4 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -342,7 +342,7 @@ export const SYSTEM_INPUT = {
   Core differentiator: during-event ticket sales 
   Explanation: ticket platforms currently only users to buy tickets prior to the event, whereas a service that allowed reselling during the event, opens up additonal revenue options for the event host as well increased ticket availability to event users.`,
 
-  X_FOR_Y: `"Based on the business description provided in the user prompt, I want you to write 4 metaphorical ""[COMPANY] for [THING]"" often referred to as ""X for Y"". The [COMPANY] you choose must be a well-known company that people would be farmiliar with. The [THING] should be directly related to the industry or niche based on the business description provided in user prompt. The response should be an array containing four generated strings. You will NOT include an explanation in your response. Below are 4 illustrative examples:
+  X_FOR_Y: `"Based on the business description provided in the user prompt, I want you to write 4 metaphorical ""[COMPANY] for [THING]"" often referred to as ""X for Y"". The [COMPANY] you choose must be a well-known company that people would be farmiliar with. The [THING] should be directly related to the industry or niche based on the business description provided in user prompt. The response should be only an array containing four generated strings. You will NOT include an explanation in your response. Below are 4 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -364,7 +364,7 @@ export const SYSTEM_INPUT = {
   X for Y: Hoteltonight for event tickets
   Explanation: Hoteltonight also focuses on last minute luxury deals but is a hotel booking platform, not event ticketing.`,
 
-  HEADLINE: `"Based on the business description provided in the user prompt, I want you to provide 3 Business Headlines, with not more than 12 words each. The response should be an array containing three headline string as provided in below examples. below are 3 illustrative examples:
+  HEADLINE: `"Based on the business description provided in the user prompt, I want you to provide 3 Business Headlines, with not more than 12 words each. The response should be only an array containing three headline string as provided in below examples. below are 3 illustrative examples:
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
   Headlines: ["Student Investors Thrive: Social App Revolutionizes Financial Learning!", "Empower Students: Gamified Finance App Sparks Social Investing Brilliance!", "Investing Fun for Students: Social App Gamifies Financial Wisdom!"]
@@ -381,7 +381,7 @@ export const SYSTEM_INPUT = {
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   Headlines: ["Launch Success: Your Business Journey Starts Now with Our Guiding App!", "Startup Triumph: Unlock Business Success with Our Guiding Mobile App Experience!", "Launch Your Dream: Gamified Coaching App for First-Time Entrepreneurs!"]`,
 
-  VALUE_CREATORS: `"Based on the business description provided in the user prompt, I want you to provide three strings, each string containing 3 Value Creators regarding that business, with not more than 3 words each. The response should be an array containing three strings, with each string containing a combination of 3 value creator strings as provided in below examples. below are 3 illustrative examples:
+  VALUE_CREATORS: `"Based on the business description provided in the user prompt, I want you to provide three strings, each string containing 3 Value Creators regarding that business, with not more than 3 words each. The response should be only an array containing three strings, with each string containing a combination of 3 value creator strings as provided in below examples. below are 3 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -403,21 +403,21 @@ export const SYSTEM_INPUT = {
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
-  Colors: [{"Primary": "#247e6a", "Secondary": "#ffcc00", "Text": "#FFFFFF"}, {"Primary": "#6a247e", "Secondary": "#ffb300", "Text": "#FFFFFF"}, {"Primary": "#2e6c8a", "Secondary": "#ff6600", "Text": "#FFFFFF"}, {"Primary": "#742677", "Secondary": "#ffa31a", "Text": "#FFFFFF"}]
+  Colors: [{"primary": "#247e6a", "secondary": "#ffcc00", "text": "#FFFFFF"}, {"primary": "#6a247e", "secondary": "#ffb300", "text": "#FFFFFF"}, {"primary": "#2e6c8a", "secondary": "#ff6600", "text": "#FFFFFF"}, {"primary": "#742677", "secondary": "#ffa31a", "text": "#FFFFFF"}]
   
   Example 2
   Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
-  Colors: [{"Primary": "#2F4F4F", "Secondary": "#8A2BE2", "Text": "#FFFFFF"}, {"Primary": "#472C86","Secondary": "#FFAB00","Text": "#FFFFFF"}, {"Primary": "#6A5ACD", "Secondary": "#FFD700", "Text": "#FFFFFF"}, {"Primary": "#6D2077", "Secondary": "#FF8C00", "Text": "#FFFFFF"}]
+  Colors: [{"primary": "#2F4F4F", "secondary": "#8A2BE2", "text": "#FFFFFF"}, {"primary": "#472C86","secondary": "#FFAB00","text": "#FFFFFF"}, {"primary": "#6A5ACD", "secondary": "#FFD700", "text": "#FFFFFF"}, {"primary": "#6D2077", "secondary": "#FF8C00", "text": "#FFFFFF"}]
   
   Example 3
   Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
-  Colors: [{"Primary": "#1E90FF", "Secondary": "#FFD700", "Text": "#000000"}, {"Primary": "#32CD32", "Secondary": "#FF4500", "Text": "#000000"}, {"Primary": "#4B0082", "Secondary": "#FF6347", "Text": "#000000"}, {"Primary": "#800080", "Secondary": "#FFA500", "Text": "#000000"}]
+  Colors: [{"primary": "#1E90FF", "secondary": "#FFD700", "text": "#000000"}, {"primary": "#32CD32", "secondary": "#FF4500", "text": "#000000"}, {"primary": "#4B0082", "secondary": "#FF6347", "text": "#000000"}, {"primary": "#800080", "secondary": "#FFA500", "text": "#000000"}]
   
   Example 4
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
-  Colors: [{"Primary": "#3D9970", "Secondary": "#FF4136", "Text": "#000000"}, {"Primary": "#2ECC40", "Secondary": "#FF851B", "Text": "#000000"}, {"Primary": "#FFDC00", "Secondary": "#001f3f", "Text": "#FFFFFF"}, {"Primary": "#FF4136", "Secondary": "#3D9970", "Text": "#000000"}]`,
+  Colors: [{"primary": "#3D9970", "secondary": "#FF4136", "text": "#000000"}, {"primary": "#2ECC40", "secondary": "#FF851B", "text": "#000000"}, {"primary": "#FFDC00", "secondary": "#001f3f", "text": "#FFFFFF"}, {"primary": "#FF4136", "secondary": "#3D9970", "text": "#000000"}]`,
 
-  CALL_TO_ACTION: `"Based on the business description provided in the user prompt, I want you to provide 4 call-to-action strings of 2-4 words regarding that business. The response should be an array containing four call-to-action strings as provided in below illustrative examples:
+  CALL_TO_ACTION: `"Based on the business description provided in the user prompt, I want you to provide 4 call-to-action strings of 2-4 words regarding that business. The response should be only an array containing four call-to-action strings as provided in below illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -435,7 +435,7 @@ export const SYSTEM_INPUT = {
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   valueCreators: ["Start Your Business Journey","Join Entrepreneurial Coaching","Experience Gamified Learning","Explore Mentorship Opportunities"]`,
 
-  BLOG_TOPIC: `"Based on the business description provided in the user prompt, I want you to provide 3 topics strings regarding that business. The response should be an array containing four call-to-action strings as provided in below illustrative examples:
+  BLOG_TOPIC: `"Based on the business description provided in the user prompt, I want you to provide 3 topics strings regarding that business. The response should be only an array containing three topic as provided in below illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -453,7 +453,7 @@ export const SYSTEM_INPUT = {
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   Topic: ["Is gamified education effective for business starters?","Unlocking success with daily business action items","The impact of human mentorship in business development"]`,
 
-  WEBSITE_LINK: `"Based on the company name provided in the user prompt, I want you to provide 4 domain names regarding that company name. The response should be an array containing four domain name string as provided in below illustrative examples:
+  WEBSITE_LINK: `"Based on the company name provided in the user prompt, I want you to provide 4 domain names regarding that company name. The response should be only an array containing four domain name string as provided in below illustrative examples:
 
   Example 1
   Company Name: Beethoven
