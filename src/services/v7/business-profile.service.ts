@@ -292,7 +292,7 @@ class BusinessProfileService {
             },
             {
               key: "linkYourWebsite",
-              type: "text",
+              type: "link",
               value: "$linkYourWebsite",
               title: "Website Link",
               description:

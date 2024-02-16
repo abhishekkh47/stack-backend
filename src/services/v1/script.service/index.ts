@@ -1088,8 +1088,8 @@ class ScriptService {
             day: dayNum,
             dailyGoal: dailyGoal,
             actions: [],
-            rewardType: null,
-            reward: null,
+            rewardType: dayNum == 7 ? 1 : null,
+            reward: dayNum == 7 ? "Jetson Advisor Meeting" : null,
           });
         }
 

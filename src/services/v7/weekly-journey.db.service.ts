@@ -117,6 +117,11 @@ class WeeklyJourneyDBService {
             upcomingChallenge = JSON.parse(JSON.stringify(upcomingChallenge));
             Object.assign(upcomingChallenge[0].weeklyJourney, { actionNum: 1 });
           }
+          if (upcomingChallenge[0].weeklyJourney.day == 7) {
+            Object.assign(upcomingChallenge[0].weeklyJourney, {
+              actions: null,
+            });
+          }
         }
       }
 
