@@ -1013,10 +1013,11 @@ class ScriptService {
             order: order,
           };
           if (data["Prompt Type"]?.trimEnd() == "Description") {
+            descriptionNum++;
             const questionImageName = data["Story Image"]
             questionData = {
               ...baseQuestionData,
-              question_image: questionImageName || `s${data["Story #"]}_d${++descriptionNum}.png`,
+              question_image: questionImageName || `s${data["Story #"]}_d${descriptionNum}.png`,
               points: 0,
               question_type: 4,
               answer_type: null,
