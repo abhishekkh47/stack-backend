@@ -1089,7 +1089,7 @@ class ScriptService {
             dailyGoal: dailyGoal,
             actions: [],
             rewardType: dayNum == 7 ? 1 : null,
-            reward: dayNum == 7 ? "Jetson Advisor Meeting" : null,
+            reward: dayNum == 7 ? data["Reward"]?.trimEnd() : null,
           });
         }
 
