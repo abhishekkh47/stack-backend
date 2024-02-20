@@ -184,7 +184,13 @@ class WeeklyJourneyDBService {
           {
             $addFields: {
               isUnlocked: false,
-              xpPoints: XP_POINTS.COMPLETED_QUIZ,
+              xpPoints: {
+                $cond: {
+                  if: { $eq: ["$quizType", QUIZ_TYPE.SIMULATION] },
+                  then: XP_POINTS.SIMULATION_QUIZ,
+                  else: XP_POINTS.COMPLETED_QUIZ,
+                },
+              },
               fuelCount: {
                 $cond: {
                   if: { $eq: ["$quizType", QUIZ_TYPE.SIMULATION] },
@@ -299,11 +305,6 @@ class WeeklyJourneyDBService {
             id: item._id,
             week,
             title: item.title,
-            reward: {
-              description: item.reward,
-              image: null,
-              name: "1:1 Mentorship with a Startup Founder",
-            },
           };
         } else if (!acc[week] && item.day == 7) {
           acc[week] = {

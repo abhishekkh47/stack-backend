@@ -179,4 +179,7 @@ export default {
   get MENTORSHIP_PROGRAM_SHEET_GID() {
     return process.env.MENTORSHIP_PROGRAM_SHEET_GID;
   },
+  get WEEKLY_JOURNEY_SHEET_GID() {
+    return process.env.WEEKLY_JOURNEY_SHEET_GID;
+  },
 };
