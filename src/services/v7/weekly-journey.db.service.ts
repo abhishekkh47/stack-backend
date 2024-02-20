@@ -79,8 +79,7 @@ class WeeklyJourneyDBService {
 
         if (
           userJourney[0].weeklyJourney.week == 4 &&
-          userJourney[0].weeklyJourney.day == 7 &&
-          userJourney[0].weeklyJourney.actionNum == 3
+          userJourney[0].weeklyJourney.day == 7
         ) {
           return null;
         }
