@@ -8,7 +8,7 @@ import { GOOGLEAPIS, PLAIDAPIS } from "./constants";
  * @returns {*}
  */
 export const searchSchools = async (input: string) => {
-  const types = `school|university`;
+  const types = `school|university|political`;
   const response = await axios
     .get(
       `${GOOGLEAPIS.placeApi}?key=${config.GOOGLE_PLACE_KEY}&input=${input}&language=en&components=country:us&types=${types}`
