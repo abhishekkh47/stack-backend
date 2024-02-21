@@ -97,6 +97,7 @@ class BusinessProfileController extends BaseController {
     middleware: [uploadCompanyLogo.single("companyLogo")],
   })
   @Auth()
+  @PrimeTrustJWT(true)
   public async updateCompanyLogo(ctx: any) {
     const { user } = ctx.request;
     const [userExists, businessProfileExists, actionScreenData]: any =
@@ -152,6 +153,14 @@ class BusinessProfileController extends BaseController {
           )
         : Promise.resolve(),
     ]);
+    const zohoInfo = {
+      companyLogo: imageName,
+      Account_Name: userExists.firstName + " " + userExists.lastName,
+      Email: userExists.email,
+    };
+    (async () => {
+      zohoCrmService.addAccounts(ctx.request.zohoAccessToken, zohoInfo, false);
+    })();
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
 
