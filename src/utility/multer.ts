@@ -2,7 +2,7 @@ import multer from "@koa/multer";
 import multerS3 from "multer-s3";
 import aws from "aws-sdk";
 import path from "path";
-import { verifyToken, checkValidImageExtension } from ".";
+import { verifyToken, checkValidImageExtension, IPromptData } from ".";
 import fs from "fs";
 import { NetworkError } from "@app/middleware";
 const s3 = new aws.S3({
@@ -192,12 +192,12 @@ export const removeImage = (userId: string, imageName: string) => {
     }
   );
 };
-export const uploadQuizImages = (prompt: any, outputPath: any) => {
+export const uploadQuizImages = (prompt: IPromptData, outputPath: any) => {
   const fileContent = fs.readFileSync(outputPath);
 
   const params = {
     Bucket: "stack-images/quiz_images",
-    Key: `${prompt}.png`,
+    Key: `${prompt.imageName}.png`,
     Body: fileContent,
   };
 
@@ -211,4 +211,21 @@ export const uploadQuizImages = (prompt: any, outputPath: any) => {
       response_data: data,
     };
   });
+};
+
+export const checkQuizImageExists = async (prompt: IPromptData): Promise<boolean> => {
+  const params = {
+    Bucket: "stack-images/quiz_images",
+    Key: `${prompt.imageName}.png`
+  };
+
+  try {
+    await s3.headObject(params).promise();
+    return true;
+  } catch (err) {
+    if (err.name === "NotFound") {
+      return false;
+    }
+    throw err;
+  }
 };

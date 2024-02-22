@@ -282,6 +282,13 @@ export const STORY_QUESTION_TYPE = {
   QUESTION: 2,
 };
 
+export interface IPromptData {
+  prompt?: string,
+  promptStyle?: string,
+  imageName?: string,
+  isNameOverride?: boolean,
+}
+
 export const SIMULATION_QUIZ_FUEL = 150;
 export const REFILL_LIFE_FUEL = 300;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
