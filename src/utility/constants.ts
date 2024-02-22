@@ -237,7 +237,7 @@ export const XP_POINTS = {
   CORRECT_ANSWER: 5,
   COMPLETED_QUIZ: 10,
   REFERRAL: 20,
-  SIMULATION_QUIZ: 50,
+  SIMULATION_QUIZ: 150,
 };
 export const COMPLETED_ACTION_REWARD = 100;
 
@@ -289,7 +289,7 @@ export interface IPromptData {
   isNameOverride?: boolean,
 }
 
-export const SIMULATION_QUIZ_FUEL = 50;
+export const SIMULATION_QUIZ_FUEL = 150;
 export const REFILL_LIFE_FUEL = 300;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 

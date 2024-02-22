@@ -1116,84 +1116,85 @@ class ScriptService {
 
   /**
    * @description This function process the weekly challenges
-   * @param weeklyChallenges
+   * @param rows
    * @returns {array}
    */
-  public async processWeeklyChallenges(weeklyChallenges: any) {
-    let processedChallenges = [];
+  public async processWeeklyChallenges(rows: any) {
+    let weeklyChallenges = [];
 
-    await Promise.all(
-      weeklyChallenges.map(async (weeks) => {
-        const { week, title, dailyChallenges, rewardType, reward } = weeks;
+    try {
+      let currentWeek = null;
+      let currentDay = null;
+      let currentWeekIndex = -1;
+      let title = null;
+      for (let data of rows) {
+        let weekNum = parseInt(data["Week #"]?.trimEnd());
+        title = data["Title"]?.trimEnd() ? data["Title"]?.trimEnd() : title;
+        let dayNum = parseInt(data["Day #"]?.trimEnd());
+        let dailyGoal = data["DailyGoal"]?.trimEnd()
+          ? data["DailyGoal"]?.trimEnd()
+          : null;
+        let type = null;
+        let currentReward = null;
+        let currentQuizId = null;
 
-        await Promise.all(
-          dailyChallenges.map(async (days) => {
-            const { day, actions, dailyGoal } = days;
-            const processedActions = await Promise.all(
-              actions.map(async (action) => {
-                if (action.type == 4) {
-                  return {
-                    ...action,
-                    reward: COMPLETED_ACTION_REWARD,
-                  };
-                } else {
-                  const { quizNum } = action;
-                  const quizId = await QuizTable.find({
-                    quizNum,
-                  }).select("quizId");
-                  const quizCount = await QuizQuestionTable.countDocuments({
-                    quizId: quizId[0],
-                  });
+        if (weekNum !== currentWeek || (dayNum && dayNum !== currentDay)) {
+          currentWeek = weekNum;
+          currentDay = dayNum;
+          currentWeekIndex++;
+          weeklyChallenges.push({
+            week: weekNum,
+            title: title,
+            day: dayNum,
+            dailyGoal: dailyGoal,
+            actions: [],
+            rewardType: null,
+            reward: null,
+          });
+        }
 
-                  if (action.type == 2) {
-                    return {
-                      ...action,
-                      quizId: quizId[0]._id,
-                      reward: XP_POINTS.SIMULATION_QUIZ,
-                    };
-                  } else if (action.type == 3) {
-                    return {
-                      ...action,
-                      quizId: quizId[0]._id,
-                      reward: (quizCount / 4) * everyCorrectAnswerPoints,
-                    };
-                  } else {
-                    return {
-                      ...action,
-                      quizId: quizId[0]._id,
-                      reward: quizCount * everyCorrectAnswerPoints,
-                    };
-                  }
-                }
-              })
-            );
-            const processedDay = {
-              week,
-              title,
-              day,
-              dailyGoal,
-              actions: processedActions,
-              rewardType: null,
-              reward: null,
-            };
-            processedChallenges.push(processedDay);
-          })
-        );
+        if (data["Type"]?.trimEnd() == "action") {
+          type = 4;
+          currentReward = COMPLETED_ACTION_REWARD;
+        } else {
+          const quizNum = data["QuizNum"]?.trimEnd();
+          const quizId = await QuizTable.find({
+            quizNum,
+          }).select("quizId");
+          const quizCount = await QuizQuestionTable.countDocuments({
+            quizId: quizId[0],
+          });
+          currentQuizId = quizId[0]._id;
 
-        const extraDay = {
-          week,
-          title,
-          day: 7,
-          dailyGoal: null,
-          actions: null,
-          rewardType,
-          reward,
+          if (data["Type"] == "simulation") {
+            type = 2;
+            currentReward = XP_POINTS.SIMULATION_QUIZ;
+          } else if (data["Type"] == "story") {
+            type = 3;
+            currentReward = (quizCount / 4) * everyCorrectAnswerPoints;
+          } else {
+            type = 1;
+            currentReward = quizCount * everyCorrectAnswerPoints;
+          }
+        }
+
+        const action = {
+          actionNum: parseInt(data["Action #"]?.trimEnd()),
+          type: type,
+          quizNum: parseInt(data["QuizNum"]?.trimEnd()) || null,
+          quizId: currentQuizId || null,
+          taskName: data["TaskName"]?.trimEnd() || null,
+          tip: data["Tip"]?.trimEnd() || null,
+          key: data["Key"]?.trimEnd() || null,
+          actionInput: data["ActionInput"]?.trimEnd() || null,
+          reward: currentReward,
         };
-        processedChallenges.push(extraDay);
-      })
-    );
-
-    return processedChallenges;
+        weeklyChallenges[currentWeekIndex].actions.push(action);
+      }
+    } catch (error) {
+      throw new NetworkError("Something Went Wrong", 400);
+    }
+    return weeklyChallenges;
   }
 
   /**
@@ -1444,7 +1445,7 @@ class ScriptService {
       let users = userDetails[0]?.users;
       if (users?.length) {
         for (let i = 0; i < users.length; i++) {
-          let overwrittenDate = new Date(users[i].createdAt)
+          let overwrittenDate = new Date(users[i].createdAt);
           overwrittenDate.setSeconds(overwrittenDate.getSeconds() - 1);
           let record = {
             updateOne: {
@@ -1464,7 +1465,7 @@ class ScriptService {
                 },
               },
               upsert: true,
-              timestamps: false
+              timestamps: false,
             },
           };
           newRecords.push(record);

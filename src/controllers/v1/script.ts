@@ -1821,13 +1821,13 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storeWeeklyChallenges(ctx: any) {
     try {
-      const { weeklyChallenges } = ctx.request.body;
-      if (!weeklyChallenges) {
-        return this.BadRequest(ctx, "Please provide weekly challenges");
-      }
-      const dailyChallenges = await ScriptService.processWeeklyChallenges(
-        weeklyChallenges
+      const rows = await ScriptService.readSpreadSheet(
+        envData.WEEKLY_JOURNEY_SHEET_GID
       );
+      if (!rows.length) {
+        return this.BadRequest(ctx, "Weekly Challenges Not Found");
+      }
+      const dailyChallenges = await ScriptService.processWeeklyChallenges(rows);
       const isAddedToDb = await ScriptService.addweeklyDataToDB(
         dailyChallenges
       );
