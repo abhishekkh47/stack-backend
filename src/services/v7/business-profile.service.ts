@@ -265,6 +265,7 @@ class BusinessProfileService {
               title: "Call-to-Action",
               description:
                 'Examples:\nApple iPhone: "Buy Now"\nAmazon Prime:"See Deals"\nOpenAI API: "Try ChatGPT Plus"',
+              actionName: "Your Call-To-Action",
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 40,
@@ -276,6 +277,7 @@ class BusinessProfileService {
               title: "Blog Post Topic",
               description:
                 "Pro-tip: Write about common question and concerns related to your industry",
+              actionName: "Your Blog Post Topic",
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
@@ -287,6 +289,7 @@ class BusinessProfileService {
               title: "Website Link",
               description:
                 "Pro-tip: A good domain name is short, easy to spell and reflective of your brand name",
+              actionName: "Your Website Link",
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 40,
