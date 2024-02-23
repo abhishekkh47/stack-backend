@@ -28,8 +28,10 @@ import {
   HOURS_SAVED_BY_IDEA_GENERATOR,
   delay,
   REQUIRE_COMPANY_NAME,
+  BACKUP_LOGOS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
+import moment from "moment";
 
 class BusinessProfileService {
   /**
@@ -565,24 +567,28 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     actionInput: string,
-    isRetry: any = false
+    isRetry: any = false,
+    requestId: string = null
   ) {
     try {
       let response = null;
+      if (IMAGE_ACTIONS.includes(key)) {
+        response = await this.generateAILogos(
+          userExists,
+          key,
+          userBusinessProfile,
+          isRetry,
+          requestId
+        );
+        return response;
+      }
       if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
         let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
           SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
           prompt
         );
-        if (IMAGE_ACTIONS.includes(key)) {
-          const imageURLs = await this.generateImageSuggestions(
-            textResponse.choices[0].message.content
-          );
-          response = [...imageURLs];
-        } else {
-          response = JSON.parse(textResponse.choices[0].message.content);
-        }
+        response = JSON.parse(textResponse.choices[0].message.content);
         if (response && isRetry == IS_RETRY.TRUE) {
           await UserTable.findOneAndUpdate(
             { _id: userExists._id },
@@ -613,6 +619,113 @@ class BusinessProfileService {
           : null,
       };
     } catch (error) {
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+    }
+  }
+
+  /**
+   * @description this will generate image suggestions using OpenAI GPT and MidJourney
+   * @param userExists
+   * @param key
+   * @param userBusinessProfile
+   * @param isRetry
+   * @returns {*}
+   */
+  public async generateAILogos(
+    userExists: any,
+    key: string,
+    userBusinessProfile: any,
+    isRetry: string = "false",
+    requestId: string = null
+  ) {
+    try {
+      let response = null;
+      let userUpdateObj = null;
+      await UserTable.findOneAndUpdate(
+        { _id: userExists._id },
+        {
+          $set: {
+            requestId: requestId,
+          },
+        },
+        { upsert: true }
+      );
+      const logoInfo = userBusinessProfile.logoGenerationInfo;
+      const elapsedTime = moment().unix() - logoInfo.startTime;
+      let finished = logoInfo?.aiSuggestions?.length === 4;
+      if (
+        (!finished && !logoInfo.isUnderProcess) ||
+        (!logoInfo.isUnderProcess && isRetry && finished) ||
+        (logoInfo.isUnderProcess && elapsedTime > 200)
+      ) {
+        let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
+        const textResponse = await this.generateTextSuggestions(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+          prompt
+        );
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          {
+            $set: {
+              "logoGenerationInfo.isUnderProcess": true,
+              "logoGenerationInfo.startTime": moment().unix(),
+              "logoGenerationInfo.aiSuggestions": null,
+            },
+          },
+          { upsert: true }
+        );
+        const imageURLs = await this.generateImageSuggestions(
+          textResponse.choices[0].message.content
+        );
+        response = [...imageURLs];
+        if (response?.length == 4 && isRetry == IS_RETRY.TRUE) {
+          userUpdateObj = { quizCoins: DEDUCT_RETRY_FUEL };
+        }
+        await Promise.all([
+          UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            {
+              $inc: userUpdateObj,
+            }
+          ),
+          BusinessProfileTable.findOneAndUpdate(
+            { userId: userExists._id },
+            {
+              $set: {
+                isRetry: true,
+                logoGenerationInfo: {
+                  isUnderProcess: false,
+                  aiSuggestions: response,
+                  startTime: moment().unix(),
+                },
+              },
+            },
+            { upsert: true }
+          ),
+        ]);
+      }
+
+      if (isRetry == "true" && logoInfo.isUnderProcess) {
+        finished = false;
+      }
+      if (isRetry == "false" && !logoInfo.isUnderProcess && !finished) {
+        return {
+          finished: true,
+          suggestions: BACKUP_LOGOS,
+          isRetry: true,
+        };
+      }
+      return {
+        finished,
+        suggestions: finished
+          ? response
+            ? response
+            : logoInfo.aiSuggestions
+          : null,
+        isRetry: true,
+      };
+    } catch (error) {
+      console.log("ERROR1 : ", error);
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
   }
