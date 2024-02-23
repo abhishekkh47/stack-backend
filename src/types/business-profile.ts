@@ -44,4 +44,11 @@ export interface IBusinessProfile {
   aiGeneratedSuggestions: string[];
   isRetry: boolean;
   hoursSaved: number;
+  logoGenerationInfo: ILogoGenerationInfo;
+}
+
+export interface ILogoGenerationInfo {
+  isUnderProcess: boolean;
+  aiSuggestions: string[];
+  startTime: number;
 }
