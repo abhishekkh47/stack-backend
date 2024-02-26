@@ -24,7 +24,7 @@ export const SYSTEM_INPUT = {
   Opportunity highlight: Around 70,000 Twitter users have expressed frustration about unpredictable lighting conditions during outdoor shoots over the past year.
   
   Desired Output Format Example:
-   [{""businessDescription"": [insert business description],""opportunityHighlight"": [insert potential customers datapoint]]
+   [{"businessDescription": [insert business description],"opportunityHighlight": [insert potential customers datapoint]]
       
   Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the business description and opportunity highlight within an array, adhering to the detailed criteria provided.`,
 

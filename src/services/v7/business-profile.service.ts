@@ -233,7 +233,7 @@ class BusinessProfileService {
               type: "text",
               value: "$valueCreators",
               title: "Top 3 Value Creators",
-              description: "Pro-tip: make each value creator than three words",
+              description: "Pro-tip: make each value creator less than three words",
               actionName: "Your Top 3 Value Creators",
               placeHolderText: "Enter description...",
               isMultiLine: true,
