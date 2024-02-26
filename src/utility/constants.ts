@@ -434,6 +434,12 @@ export const BUSINESS_ACTIONS = {
   competitors: "COMPETITORS",
   keyDifferentiator: "KEY_DIFFERENTIATOR",
   xForY: "X_FOR_Y",
+  headline: "HEADLINE",
+  valueCreators: "VALUE_CREATORS",
+  colorsAndAesthetic: "COLORS_AND_AESTHETIC",
+  callToAction: "CALL_TO_ACTION",
+  linkYourBlog: "BLOG_TOPIC",
+  linkYourWebsite: "WEBSITE_LINK",
 };
 
 export const WEEKLY_JOURNEY_ACTION_DETAILS = {
@@ -535,6 +541,7 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
 };
 
 export const IMAGE_ACTIONS = ["companyLogo"];
+export const REQUIRE_COMPANY_NAME = ["linkYourWebsite", "colorsAndAesthetic"];
 export const IS_RETRY = {
   TRUE: "true",
   FALSE: "false",

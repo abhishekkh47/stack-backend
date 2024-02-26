@@ -27,6 +27,7 @@ import {
   DEDUCT_RETRY_FUEL,
   HOURS_SAVED_BY_IDEA_GENERATOR,
   delay,
+  REQUIRE_COMPANY_NAME,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -222,8 +223,9 @@ class BusinessProfileService {
               title: "Headline",
               description:
                 "Pro-tip: make it short (10 words or less) and catchy!",
+              actionName: "Your Headline",
               placeHolderText: "Enter description...",
-              isMultiLine: true,
+              isMultiLine: false,
               maxCharLimit: 280,
             },
             {
@@ -232,6 +234,7 @@ class BusinessProfileService {
               value: "$valueCreators",
               title: "Top 3 Value Creators",
               description: "Pro-tip: make each value creator less than three words",
+              actionName: "Your Top 3 Value Creators",
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
@@ -243,6 +246,7 @@ class BusinessProfileService {
               title: "Brand Colors & Aesthetic",
               description:
                 "Pro-tip: consider the specifics of your audience in choosing brand colors and aesthetic",
+              actionName: "Your Brand Colors & Aesthetic",
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
@@ -251,32 +255,37 @@ class BusinessProfileService {
               key: "callToAction",
               type: "text",
               value: "$callToAction",
-              title: "Enter your call-to-action",
+              title: "Call-to-Action",
               description:
                 'Examples:\nApple iPhone: "Buy Now"\nAmazon Prime:"See Deals"\nOpenAI API: "Try ChatGPT Plus"',
+              actionName: "Your Call-To-Action",
               placeHolderText: "Enter description...",
-              isMultiLine: true,
-              maxCharLimit: 280,
+              isMultiLine: false,
+              maxCharLimit: 40,
             },
             {
               key: "linkYourBlog",
               type: "text",
               value: "$linkYourBlog",
-              title: "Link Your Blog",
+              title: "Blog Post Topic",
               description:
-                'Pro-tip: "join waitlist" can be a very effective CTA before you launch your product',
+                "Pro-tip: Write about common question and concerns related to your industry",
+              actionName: "Your Blog Post Topic",
               placeHolderText: "Enter description...",
+              isMultiLine: true,
+              maxCharLimit: 280,
             },
             {
               key: "linkYourWebsite",
               type: "text",
               value: "$linkYourWebsite",
-              title: "Link Your Website",
+              title: "Website Link",
               description:
-                'Pro-tip: "join waitlist" can be a very effective CTA before you launch your product',
+                "Pro-tip: A good domain name is short, easy to spell and reflective of your brand name",
+              actionName: "Your Website Link",
               placeHolderText: "Enter description...",
               isMultiLine: false,
-              maxCharLimit: 280,
+              maxCharLimit: 40,
             },
             {
               key: "appName",
@@ -554,31 +563,18 @@ class BusinessProfileService {
     try {
       let response = null;
       if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
-        let prompt = null;
+        let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
+        const textResponse = await this.generateTextSuggestions(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+          prompt
+        );
         if (IMAGE_ACTIONS.includes(key)) {
-          prompt = `Business Name:${
-            userBusinessProfile.companyName
-          }, Business Description: ${userBusinessProfile.description} ${
-            SYSTEM_INPUT[BUSINESS_ACTIONS[key]]
-          }`;
+          const imageURLs = await this.generateImageSuggestions(
+            textResponse.choices[0].message.content
+          );
+          response = [...imageURLs];
         } else {
-          prompt = userBusinessProfile.description;
-        }
-        if (actionInput == SUGGESTION_FORMAT.TEXT) {
-          response = await this.generateTextSuggestions(
-            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-            prompt
-          );
-          response = JSON.parse(response.choices[0].message.content);
-        } else {
-          const imagePrompt = await this.generateTextSuggestions(
-            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-            prompt
-          );
-          const response1 = await this.generateImageSuggestions(
-            imagePrompt.choices[0].message.content
-          );
-          response = [...response1];
+          response = JSON.parse(textResponse.choices[0].message.content);
         }
         if (response && isRetry == IS_RETRY.TRUE) {
           await UserTable.findOneAndUpdate(
@@ -599,11 +595,15 @@ class BusinessProfileService {
             },
           }
         );
-        return { suggestions: response, isRetry: true };
       }
       return {
-        suggestions: userBusinessProfile.aiGeneratedSuggestions,
+        suggestions: response
+          ? response
+          : userBusinessProfile.aiGeneratedSuggestions,
         isRetry: true,
+        companyName: REQUIRE_COMPANY_NAME.includes(key)
+          ? userBusinessProfile.companyName
+          : null,
       };
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
