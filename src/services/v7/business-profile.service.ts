@@ -553,6 +553,7 @@ class BusinessProfileService {
   ) {
     try {
       let response = null;
+      let businessProfileUpdateObj = null;
       if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
         let prompt = null;
         if (IMAGE_ACTIONS.includes(key)) {
@@ -570,6 +571,9 @@ class BusinessProfileService {
             prompt
           );
           response = JSON.parse(response.choices[0].message.content);
+          businessProfileUpdateObj = {
+            isRetry: true,
+          };
         } else {
           const imagePrompt = await this.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
@@ -579,6 +583,10 @@ class BusinessProfileService {
             imagePrompt.choices[0].message.content
           );
           response = [...response1];
+          businessProfileUpdateObj = {
+            aiGeneratedSuggestions: response,
+            isRetry: true,
+          };
         }
         if (response && isRetry == IS_RETRY.TRUE) {
           await UserTable.findOneAndUpdate(
@@ -593,16 +601,15 @@ class BusinessProfileService {
         await BusinessProfileTable.findOneAndUpdate(
           { userId: userExists._id },
           {
-            $set: {
-              aiGeneratedSuggestions: response,
-              isRetry: true,
-            },
+            $set: businessProfileUpdateObj,
           }
         );
         return { suggestions: response, isRetry: true };
       }
       return {
-        suggestions: userBusinessProfile.aiGeneratedSuggestions,
+        suggestions: IMAGE_ACTIONS.includes(key)
+          ? userBusinessProfile.aiGeneratedSuggestions
+          : response,
         isRetry: true,
       };
     } catch (error) {
