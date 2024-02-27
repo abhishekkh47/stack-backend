@@ -1,4 +1,4 @@
-import { Auth } from "@app/middleware";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import {
   BusinessProfileTable,
   UserTable,
@@ -19,6 +19,7 @@ import {
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
 import { AnalyticsService } from "@app/services/v4";
+import { zohoCrmService } from "@app/services/v1";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -30,6 +31,7 @@ class BusinessProfileController extends BaseController {
     method: HttpMethod.POST,
   })
   @Auth()
+  @PrimeTrustJWT(true)
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
@@ -38,11 +40,18 @@ class BusinessProfileController extends BaseController {
         ActionScreenCopyTable.find(),
       ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
-      await BusinessProfileService.addOrEditBusinessProfile(
+      const updatedUser = await BusinessProfileService.addOrEditBusinessProfile(
         body,
         userIfExists,
         actionScreenData
       );
+      (async () => {
+        zohoCrmService.addAccounts(
+          ctx.request.zohoAccessToken,
+          updatedUser,
+          true
+        );
+      })();
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
@@ -88,6 +97,7 @@ class BusinessProfileController extends BaseController {
     middleware: [uploadCompanyLogo.single("companyLogo")],
   })
   @Auth()
+  @PrimeTrustJWT(true)
   public async updateCompanyLogo(ctx: any) {
     const { user } = ctx.request;
     const [userExists, businessProfileExists, actionScreenData]: any =
@@ -143,6 +153,14 @@ class BusinessProfileController extends BaseController {
           )
         : Promise.resolve(),
     ]);
+    const zohoInfo = {
+      companyLogo: imageName,
+      Account_Name: userExists.firstName + " " + userExists.lastName,
+      Email: userExists.email,
+    };
+    (async () => {
+      zohoCrmService.addAccounts(ctx.request.zohoAccessToken, zohoInfo, false);
+    })();
     return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
 
