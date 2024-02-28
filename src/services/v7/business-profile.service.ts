@@ -608,7 +608,7 @@ class BusinessProfileService {
       };
     } catch (error) {
       if (IMAGE_ACTIONS.includes(key)) {
-        return BACKUP_LOGOS;
+        return { suggestions: BACKUP_LOGOS, isRetry: true };
       }
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
