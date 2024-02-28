@@ -569,7 +569,6 @@ class BusinessProfileService {
   ) {
     try {
       let response = null;
-      let businessProfileUpdateObj = null;
       if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
         let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
@@ -580,23 +579,9 @@ class BusinessProfileService {
           const imageURLs = await this.generateImageSuggestions(
             textResponse.choices[0].message.content
           );
-          response = JSON.parse(response.choices[0].message.content);
-          businessProfileUpdateObj = {
-            isRetry: true,
-          };
+          response = [...imageURLs];
         } else {
-          const imagePrompt = await this.generateTextSuggestions(
-            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-            prompt
-          );
-          const response1 = await this.generateImageSuggestions(
-            imagePrompt.choices[0].message.content
-          );
-          response = [...response1];
-          businessProfileUpdateObj = {
-            aiGeneratedSuggestions: response,
-            isRetry: true,
-          };
+          response = JSON.parse(textResponse.choices[0].message.content);
         }
         if (response && isRetry == IS_RETRY.TRUE) {
           await UserTable.findOneAndUpdate(
@@ -611,14 +596,17 @@ class BusinessProfileService {
         await BusinessProfileTable.findOneAndUpdate(
           { userId: userExists._id },
           {
-            $set: businessProfileUpdateObj,
+            $set: {
+              aiGeneratedSuggestions: response,
+              isRetry: true,
+            },
           }
         );
       }
       return {
-        suggestions: IMAGE_ACTIONS.includes(key)
-          ? userBusinessProfile.aiGeneratedSuggestions
-          : response,
+        suggestions: response
+          ? response
+          : userBusinessProfile.aiGeneratedSuggestions,
         isRetry: true,
         companyName: REQUIRE_COMPANY_NAME.includes(key)
           ? userBusinessProfile.companyName
