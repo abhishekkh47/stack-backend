@@ -534,3 +534,9 @@ export const IS_RETRY = {
 };
 export const DEDUCT_RETRY_FUEL = -200;
 export const HOURS_SAVED_BY_IDEA_GENERATOR = 28;
+export const BACKUP_LOGOS = [
+  "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-1.png",
+  "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-2.png",
+  "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-3.png",
+  "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-4.png",
+];

@@ -27,6 +27,7 @@ import {
   DEDUCT_RETRY_FUEL,
   HOURS_SAVED_BY_IDEA_GENERATOR,
   delay,
+  BACKUP_LOGOS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 
@@ -602,10 +603,13 @@ class BusinessProfileService {
         return { suggestions: response, isRetry: true };
       }
       return {
-        suggestions: userBusinessProfile.aiGeneratedSuggestions,
+        suggestions: userBusinessProfile.aiGeneratedSuggestions || BACKUP_LOGOS,
         isRetry: true,
       };
     } catch (error) {
+      if (IMAGE_ACTIONS.includes(key)) {
+        return BACKUP_LOGOS;
+      }
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
   }
