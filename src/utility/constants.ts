@@ -237,7 +237,7 @@ export const XP_POINTS = {
   CORRECT_ANSWER: 5,
   COMPLETED_QUIZ: 10,
   REFERRAL: 20,
-  SIMULATION_QUIZ: 50,
+  SIMULATION_QUIZ: 150,
 };
 export const COMPLETED_ACTION_REWARD = 100;
 
@@ -282,7 +282,14 @@ export const STORY_QUESTION_TYPE = {
   QUESTION: 2,
 };
 
-export const SIMULATION_QUIZ_FUEL = 50;
+export interface IPromptData {
+  prompt?: string,
+  promptStyle?: string,
+  imageName?: string,
+  isNameOverride?: boolean,
+}
+
+export const SIMULATION_QUIZ_FUEL = 150;
 export const REFILL_LIFE_FUEL = 300;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 
@@ -427,6 +434,12 @@ export const BUSINESS_ACTIONS = {
   competitors: "COMPETITORS",
   keyDifferentiator: "KEY_DIFFERENTIATOR",
   xForY: "X_FOR_Y",
+  headline: "HEADLINE",
+  valueCreators: "VALUE_CREATORS",
+  colorsAndAesthetic: "COLORS_AND_AESTHETIC",
+  callToAction: "CALL_TO_ACTION",
+  linkYourBlog: "BLOG_TOPIC",
+  linkYourWebsite: "WEBSITE_LINK",
 };
 
 export const WEEKLY_JOURNEY_ACTION_DETAILS = {
@@ -528,6 +541,7 @@ export const WEEKLY_JOURNEY_ACTION_DETAILS = {
 };
 
 export const IMAGE_ACTIONS = ["companyLogo"];
+export const REQUIRE_COMPANY_NAME = ["linkYourWebsite", "colorsAndAesthetic"];
 export const IS_RETRY = {
   TRUE: "true",
   FALSE: "false",

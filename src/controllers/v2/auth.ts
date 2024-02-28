@@ -841,6 +841,33 @@ class AuthController extends BaseController {
   }
 
   /**
+   * @description This method is used to update mobile number without otp.
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-mobile-number", method: HttpMethod.POST })
+  @Auth()
+  public async updateMobileNumber(ctx) {
+    const input = ctx.request.body;
+    const user = ctx.request.user;
+    try {
+      if (!input.mobile) 
+        return this.BadRequest(ctx, "Mobile number is required");
+      await UserTable.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            mobile: input.mobile,
+          },
+        }
+      );
+      return this.Ok(ctx, { message: "Mobile number update successfully" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
    * @description This method is used to check valid mobile
    * @param ctx
    * @returns {*}

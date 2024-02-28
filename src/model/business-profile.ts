@@ -157,7 +157,7 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
     },
     aiGeneratedSuggestions: [
       {
-        type: mongoose.Schema.Types.String,
+        type: mongoose.Schema.Types.Mixed,
         required: false,
         default: null,
       },

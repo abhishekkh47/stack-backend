@@ -31,6 +31,8 @@ import {
   PROMPT_STYLE,
   XP_POINTS,
   COMPLETED_ACTION_REWARD,
+  IPromptData,
+  checkQuizImageExists,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 
@@ -856,6 +858,27 @@ class ScriptService {
     }
   }
 
+  public generateImages = async (
+    descriptions: IPromptData[],
+    questions: IPromptData[],
+    outputPath: any
+  ) => {
+    // @@TODO: This process takes a very long time. We want to offload this job to a different worker in the future.
+    for (let i = 0; i < descriptions.length; i++) {
+      await this.getImage(
+        STORY_QUESTION_TYPE.DESCRIPTION,
+        descriptions[i]
+      );
+    }
+    for (let i = 0; i < questions.length; i++) {
+      await this.getImage(
+        STORY_QUESTION_TYPE.QUESTION,
+        questions[i]
+      );
+    }
+    fs.rmdirSync(outputPath, { recursive: true });
+  }
+
   /**
    * @description This function is add simulations into db
    * @param rows
@@ -868,8 +891,10 @@ class ScriptService {
     rows: any,
     allTopics: any
   ) {
+    
+    const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
     try {
-      rows = rows.filter((x) => storyNums.includes(x["Story #"]));
+      const filteredStories = rows.filter((x) => storyNums.includes(x['Story #']));
       let storyTitle = "";
       let lastStoryCategory = "";
       let lastStoryStage = "";
@@ -882,83 +907,117 @@ class ScriptService {
       let questionDataArray = [];
       let filterCategory = [];
       let questionData = null;
-      let promptList = { descriptions: [], questions: [] };
+      let promptList: {
+        [storyNumber: number]: {
+          descriptions: IPromptData[],
+          questions: IPromptData[] 
+        }
+      } = {};
+
+      // ---------- IMAGE GENERATION ----------- \\
+
       const outputPath = path.join(__dirname, `/midJourneyImages`);
       if (fs.existsSync(outputPath)) {
         fs.rmdirSync(outputPath, { recursive: true });
       }
       fs.mkdirSync(outputPath);
       await Promise.all(
-        rows.map(async (data, index) => {
+        filteredStories.map(async (data) => {
+          const storyNumber = Number(data["Story #"])
+          if (!(storyNumber in promptList)) {
+            promptList[storyNumber] = {
+              descriptions: [],
+              questions: []
+            }
+          }
           let currentPromptStyle =
             PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
-          if (
-            data["Image Prompt"]?.trimEnd() &&
-            data["Prompt Type"]?.trimEnd() == "Description"
-          ) {
-            promptList.descriptions.push({
-              prompt: data["Image Prompt"]?.trimEnd(),
-              promptStyle: currentPromptStyle,
-              imageName: `s${data["Story #"]}_d${index + 1}`,
-            });
+          if (data["Prompt Type"]?.trimEnd() == "Description") {
+            if (data["Image Prompt"]?.trimEnd()) {
+              const storyImageName = data["Story Image"];
+              const desc: IPromptData = {
+                prompt: data["Image Prompt"]?.trimEnd(),
+                promptStyle: currentPromptStyle,
+                imageName: `s${storyNumber}_d${promptList[storyNumber].descriptions.length + 1}`,
+              };
+              if (storyImageName) {
+                desc.isNameOverride = true;
+                desc.imageName = storyImageName;
+              }
+              promptList[storyNumber].descriptions.push(desc);
+            } else {
+              promptList[storyNumber].descriptions.push({});
+            } 
           } else {
             const prompts = [
-              "Prompt A",
-              "Prompt B",
-              "Prompt C",
-              "Prompt D",
-            ].map((promptKey) => ({
-              prompt: data[promptKey]?.trimEnd(),
-              promptStyle: currentPromptStyle,
-              imageName: `s${data["Story #"]}_q${Math.ceil(
-                (index + 1) / 4
-              )}_${promptKey.slice(-1).toLocaleLowerCase()}`,
-            }));
-            if (prompts[0].prompt) {
-              promptList.questions.push(...prompts);
-            }
+              "A",
+              "B",
+              "C",
+              "D",
+            ]
+            const promptData: IPromptData[] = prompts.map((promptKey) => {
+              const prompt = data[`Prompt ${promptKey}`]?.trimEnd()
+              const questionImageName = data[`Image ${promptKey}`]
+              
+              if (prompt) {
+                const question: IPromptData = {
+                  prompt: data[`Prompt ${promptKey}`]?.trimEnd(),
+                  promptStyle: currentPromptStyle,
+                  imageName: `s${storyNumber}_q${
+                    Math.ceil(((promptList[storyNumber].questions.length) / 4) + 1)
+                  }_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+                }
+                if (questionImageName) {
+                  question.isNameOverride = true
+                  question.imageName = questionImageName
+                }
+                return question
+              } else {
+                return {}
+              }
+            });
+            promptList[storyNumber].questions.push(...promptData);
           }
         })
       );
-      for (let i = 0; i < promptList.descriptions.length; i++) {
-        await this.getImage(
-          STORY_QUESTION_TYPE.DESCRIPTION,
-          promptList.descriptions[i]
-        );
-      }
-      for (let i = 0; i < promptList.questions.length; i++) {
-        await this.getImage(
-          STORY_QUESTION_TYPE.QUESTION,
-          promptList.questions[i]
-        );
-      }
+
+      const descriptions: IPromptData[] = []
+      const questions: IPromptData[] = []
+      Object.values(promptList).forEach(value => {
+        descriptions.push(...value.descriptions.filter(desc => Object.keys(desc).length > 0))
+        questions.push(...value.questions.filter(question => Object.keys(question).length > 0))
+      })
+      
+      this.generateImages(descriptions, questions, outputPath)
+
+
+
+      // ---------- TEXT CONTENT ----------- \\
+
       await Promise.all(
-        await rows.map(async (data, index) => {
-          if (data["Story Title"] != "") {
-            storyTitle = data["Story Title"]?.trimEnd();
-          }
-          if (data["Category"] != "") {
-            lastStoryCategory = data["Category"]?.trimEnd();
-          }
-          if (data["Stage"] != "") {
-            lastStoryStage = data["Stage"]?.trimEnd();
-          }
-          if (!data["Character"]) {
-            characterName = null;
-          }
-          if (!data["Character Image"]) {
-            characterImage = null;
-          }
+        await filteredStories.map(async (data, index) => {
+
           if (data["Story Title"] == "") {
             ++order;
           } else {
+            storyTitle = data["Story Title"]?.trimEnd();
             order = 1;
           }
+          lastStoryCategory = (!!data["Category"]) ? data["Category"]?.trimEnd() : "";
+          lastStoryStage = (!!data["Stage"]) ? data["Stage"]?.trimEnd() : "";
+          if (!data["Character"]) characterName = null;
+          if (!data["Character Image"]) characterImage = null;
+
+          const baseQuestionData = {
+            text: data["Text"]?.trimEnd(),
+            order: order,
+          };
           if (data["Prompt Type"]?.trimEnd() == "Description") {
+            descriptionNum++;
+            const questionImageName = data["Story Image"]
             questionData = {
-              text: data["Text"]?.trimEnd(),
-              question_image: `s${data["Story #"]}_d${++descriptionNum}.png`,
-              order: order,
+              ...baseQuestionData,
+              question_image: questionImageName || `s${data["Story #"]}_d${descriptionNum}.png`,
               points: 0,
               question_type: 4,
               answer_type: null,
@@ -968,34 +1027,33 @@ class ScriptService {
             };
           } else {
             questionData = {
-              text: data["Text"]?.trimEnd(),
+              ...baseQuestionData,
               question_image: null,
-              order: order,
               points: 10,
               question_type: 2,
               answer_type: 2,
               answer_array: [
                 {
                   name: data["A"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_a.png`,
+                  image: data["Image A"] || `s${data["Story #"]}_q${(index + 1) / 4}_a.png`,
                   correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["B"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_b.png`,
+                  image: data["Image B"] || `s${data["Story #"]}_q${(index + 1) / 4}_b.png`,
                   correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["C"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_c.png`,
+                  image: data["Image C"] || `s${data["Story #"]}_q${(index + 1) / 4}_c.png`,
                   correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
                   statement: null,
                 },
                 {
                   name: data["D"]?.trimEnd(),
-                  image: `s${data["Story #"]}_q${(index + 1) / 4}_d.png`,
+                  image: data["Image D"] || `s${data["Story #"]}_q${(index + 1) / 4}_d.png`,
                   correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
                   statement: null,
                 },
@@ -1013,6 +1071,10 @@ class ScriptService {
               const isCategoryExists = allTopics.find(
                 (x) => x.topic == lastStoryCategory
               );
+              /**
+               * We found a category in the spreadsheet for this story #.
+               * But does this category already exist in DB? If no, create it.
+               */
               if (!isCategoryExists) {
                 categories.push({
                   topic: lastStoryCategory,
@@ -1024,7 +1086,7 @@ class ScriptService {
                   key: data["Story #"],
                   value: lastStoryCategory,
                 });
-                topicId = new ObjectId("6594011ab1fc7ea1f458e8c8");
+                topicId = fallbackQuizTopic;
               } else {
                 topicId = isCategoryExists._id;
               }
@@ -1046,8 +1108,6 @@ class ScriptService {
           }
         })
       );
-
-      fs.rmdirSync(outputPath, { recursive: true });
       return storyContentData;
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -1056,84 +1116,85 @@ class ScriptService {
 
   /**
    * @description This function process the weekly challenges
-   * @param weeklyChallenges
+   * @param rows
    * @returns {array}
    */
-  public async processWeeklyChallenges(weeklyChallenges: any) {
-    let processedChallenges = [];
+  public async processWeeklyChallenges(rows: any) {
+    let weeklyChallenges = [];
 
-    await Promise.all(
-      weeklyChallenges.map(async (weeks) => {
-        const { week, title, dailyChallenges, rewardType, reward } = weeks;
+    try {
+      let currentWeek = null;
+      let currentDay = null;
+      let currentWeekIndex = -1;
+      let title = null;
+      for (let data of rows) {
+        let weekNum = parseInt(data["Week #"]?.trimEnd());
+        title = data["Title"]?.trimEnd() ? data["Title"]?.trimEnd() : title;
+        let dayNum = parseInt(data["Day #"]?.trimEnd());
+        let dailyGoal = data["DailyGoal"]?.trimEnd()
+          ? data["DailyGoal"]?.trimEnd()
+          : null;
+        let type = null;
+        let currentReward = null;
+        let currentQuizId = null;
 
-        await Promise.all(
-          dailyChallenges.map(async (days) => {
-            const { day, actions, dailyGoal } = days;
-            const processedActions = await Promise.all(
-              actions.map(async (action) => {
-                if (action.type == 4) {
-                  return {
-                    ...action,
-                    reward: COMPLETED_ACTION_REWARD,
-                  };
-                } else {
-                  const { quizNum } = action;
-                  const quizId = await QuizTable.find({
-                    quizNum,
-                  }).select("quizId");
-                  const quizCount = await QuizQuestionTable.countDocuments({
-                    quizId: quizId[0],
-                  });
+        if (weekNum !== currentWeek || (dayNum && dayNum !== currentDay)) {
+          currentWeek = weekNum;
+          currentDay = dayNum;
+          currentWeekIndex++;
+          weeklyChallenges.push({
+            week: weekNum,
+            title: title,
+            day: dayNum,
+            dailyGoal: dailyGoal,
+            actions: [],
+            rewardType: null,
+            reward: null,
+          });
+        }
 
-                  if (action.type == 2) {
-                    return {
-                      ...action,
-                      quizId: quizId[0]._id,
-                      reward: XP_POINTS.SIMULATION_QUIZ,
-                    };
-                  } else if (action.type == 3) {
-                    return {
-                      ...action,
-                      quizId: quizId[0]._id,
-                      reward: (quizCount / 4) * everyCorrectAnswerPoints,
-                    };
-                  } else {
-                    return {
-                      ...action,
-                      quizId: quizId[0]._id,
-                      reward: quizCount * everyCorrectAnswerPoints,
-                    };
-                  }
-                }
-              })
-            );
-            const processedDay = {
-              week,
-              title,
-              day,
-              dailyGoal,
-              actions: processedActions,
-              rewardType: null,
-              reward: null,
-            };
-            processedChallenges.push(processedDay);
-          })
-        );
+        if (data["Type"]?.trimEnd() == "action") {
+          type = 4;
+          currentReward = COMPLETED_ACTION_REWARD;
+        } else {
+          const quizNum = data["QuizNum"]?.trimEnd();
+          const quizId = await QuizTable.find({
+            quizNum,
+          }).select("quizId");
+          const quizCount = await QuizQuestionTable.countDocuments({
+            quizId: quizId[0],
+          });
+          currentQuizId = quizId[0]._id;
 
-        const extraDay = {
-          week,
-          title,
-          day: 7,
-          dailyGoal: null,
-          actions: null,
-          rewardType,
-          reward,
+          if (data["Type"] == "simulation") {
+            type = 2;
+            currentReward = XP_POINTS.SIMULATION_QUIZ;
+          } else if (data["Type"] == "story") {
+            type = 3;
+            currentReward = (quizCount / 4) * everyCorrectAnswerPoints;
+          } else {
+            type = 1;
+            currentReward = quizCount * everyCorrectAnswerPoints;
+          }
+        }
+
+        const action = {
+          actionNum: parseInt(data["Action #"]?.trimEnd()),
+          type: type,
+          quizNum: parseInt(data["QuizNum"]?.trimEnd()) || null,
+          quizId: currentQuizId || null,
+          taskName: data["TaskName"]?.trimEnd() || null,
+          tip: data["Tip"]?.trimEnd() || null,
+          key: data["Key"]?.trimEnd() || null,
+          actionInput: data["ActionInput"]?.trimEnd() || null,
+          reward: currentReward,
         };
-        processedChallenges.push(extraDay);
-      })
-    );
-
-    return processedChallenges;
+        weeklyChallenges[currentWeekIndex].actions.push(action);
+      }
+    } catch (error) {
+      throw new NetworkError("Something Went Wrong", 400);
+    }
+    return weeklyChallenges;
   }
 
   /**
@@ -1173,19 +1234,31 @@ class ScriptService {
     }
   }
 
-  public async getImage(questionType: number, prompts: any) {
+  public async getImage(questionType: number, promptData: IPromptData) {
     try {
+      if (promptData.isNameOverride) {
+        console.log(`Unable to create image due to custom image name: ${promptData.imageName}. Skipping.`)
+        return `${promptData.imageName}.png`
+      }
+      const isImageAlreadyExist: boolean = await checkQuizImageExists(promptData)
+      if (isImageAlreadyExist) {
+        console.log(`${promptData.imageName} already exists in s3 bucket. Skipping.`)
+        return `${promptData.imageName}.png`
+      }
       const imagineRes = await generateImage(
-        `${prompts.prompt} ${prompts.promptStyle}`
+        `${promptData.prompt} ${promptData.promptStyle}`
       );
-      const myImage = await UpscaleImage(imagineRes);
       if (!imagineRes) {
+        throw new NetworkError("Something Went Wrong in imagineRes", 400);
+      }
+      const myImage = await UpscaleImage(imagineRes);
+      if (!myImage) {
         throw new NetworkError("Something Went Wrong in myImage", 400);
       }
       if (myImage) {
         const outputPath = path.join(
           __dirname,
-          `/midJourneyImages/${prompts.imageName}.png`
+          `/midJourneyImages/${promptData.imageName}.png`
         );
         await downloadImage(myImage.uri, outputPath)
           .then(() => {
@@ -1201,13 +1274,14 @@ class ScriptService {
             .resize({ fit: "inside", width: 160, height: 160 })
             .png({ quality: 40 });
         }
-        uploadQuizImages(prompts.imageName, outputPath);
+        uploadQuizImages(promptData, outputPath);
       }
-      return `${prompts.imageName}.png`;
+      return `${promptData.imageName}.png`;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
   }
+  
   /**
    * @description This function convert spreadsheet data to JSON by filtering with quiz # for weekly journey
    * @param quizNums
@@ -1371,7 +1445,7 @@ class ScriptService {
       let users = userDetails[0]?.users;
       if (users?.length) {
         for (let i = 0; i < users.length; i++) {
-          let overwrittenDate = new Date(users[i].createdAt)
+          let overwrittenDate = new Date(users[i].createdAt);
           overwrittenDate.setSeconds(overwrittenDate.getSeconds() - 1);
           let record = {
             updateOne: {
@@ -1391,7 +1465,7 @@ class ScriptService {
                 },
               },
               upsert: true,
-              timestamps: false
+              timestamps: false,
             },
           };
           newRecords.push(record);
