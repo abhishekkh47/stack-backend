@@ -868,11 +868,15 @@ class ScriptService {
     outputPath: any
   ) => {
     // @@TODO: This process takes a very long time. We want to offload this job to a different worker in the future.
-    for (let i = 0; i < descriptions.length; i++) {
-      await this.getImage(STORY_QUESTION_TYPE.DESCRIPTION, descriptions[i]);
+    if (descriptions.length) {
+      for (let i = 0; i < descriptions.length; i++) {
+        await this.getImage(STORY_QUESTION_TYPE.DESCRIPTION, descriptions[i]);
+      }
     }
-    for (let i = 0; i < questions.length; i++) {
-      await this.getImage(STORY_QUESTION_TYPE.QUESTION, questions[i]);
+    if (questions.length) {
+      for (let i = 0; i < questions.length; i++) {
+        await this.getImage(STORY_QUESTION_TYPE.QUESTION, questions[i]);
+      }
     }
     fs.rmdirSync(outputPath, { recursive: true });
   };
@@ -881,30 +885,40 @@ class ScriptService {
     descriptions: IPromptData[],
     questions: IPromptData[]
   ) => {
-    const myDescriptions = descriptions
-      .map(
-        (obj, index) => `Story Phrase ${index + 1}: ${obj.promptDescription}`
-      )
-      .join("\n");
-    const myQuestions = questions
-      .map((obj) => obj.promptDescription)
-      .filter((description) => !!description);
-    let descriptionImagePrompts = await this.generateImagePrompts(
-      IMAGE_GENERATION_PROMPTS.STORY_MAIN_IMAGES,
-      myDescriptions
-    );
-    descriptionImagePrompts = JSON.parse(descriptionImagePrompts);
-    for (let i = 0; i < descriptions.length; i++) {
-      descriptions[i].prompt = descriptionImagePrompts[i];
+    try {
+      if (descriptions.length) {
+        const myDescriptions = descriptions
+          .map(
+            (obj, index) =>
+              `Story Phrase ${index + 1}: ${obj.promptDescription}`
+          )
+          .join("\n");
+        let descriptionImagePrompts = await this.generateImagePrompts(
+          IMAGE_GENERATION_PROMPTS.STORY_MAIN_IMAGES,
+          myDescriptions
+        );
+        descriptionImagePrompts = JSON.parse(descriptionImagePrompts);
+        for (let i = 0; i < descriptions.length; i++) {
+          descriptions[i].prompt = descriptionImagePrompts[i];
+        }
+      }
+
+      if (questions.length) {
+        const myQuestions = questions
+          .map((obj) => obj.promptDescription)
+          .filter((description) => !!description);
+        for (let i = 0; i < myQuestions.length; i++) {
+          const questionImagePrompt = await this.generateImagePrompts(
+            IMAGE_GENERATION_PROMPTS.STORY_MC_AND_QUIZ_IMAGES,
+            myQuestions[i]
+          );
+          questions[i].prompt = questionImagePrompt;
+        }
+      }
+      return { descriptionPrompts: descriptions, questionPrompts: questions };
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
-    for (let i = 0; i < myQuestions.length; i++) {
-      const questionImagePrompt = await this.generateImagePrompts(
-        IMAGE_GENERATION_PROMPTS.STORY_MC_AND_QUIZ_IMAGES,
-        myQuestions[i]
-      );
-      questions[i].prompt = questionImagePrompt;
-    }
-    return { descriptionPrompts: descriptions, questionPrompts: questions };
   };
 
   /**
@@ -1317,8 +1331,23 @@ class ScriptService {
     let quizContentData = [];
     let questionDataArray = [];
     let order = 1;
+    let currentPromptStyle = null;
+    let promptList: {
+      [quizNumber: number]: {
+        questions: IPromptData[];
+      };
+    } = {};
+    const outputPath = path.join(__dirname, `/midJourneyImages`);
+    const prompts = ["A", "B", "C", "D"];
     await Promise.all(
       await rows.map(async (data, index) => {
+        currentPromptStyle = "";
+        const quizNumber = data["Quiz #"].trimEnd();
+        if (!(quizNumber in promptList)) {
+          promptList[quizNumber] = {
+            questions: [],
+          };
+        }
         if (data["Quiz Title"] != "") {
           lastQuizName = data["Quiz Title"].trimEnd();
         }
@@ -1341,6 +1370,24 @@ class ScriptService {
         } else {
           order = 1;
         }
+
+        const promptData: IPromptData[] = prompts.map((promptKey) => {
+          const questionImageName = data[`Image ${promptKey}`];
+          const question: IPromptData = {
+            promptDescription: data[promptKey]?.trimEnd(),
+            promptStyle: currentPromptStyle,
+            imageName: `s${quizNumber}_q${Math.ceil(
+              promptList[quizNumber].questions.length / 4 + 1
+            )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+          };
+          if (questionImageName) {
+            question.isNameOverride = true;
+            question.imageName = questionImageName;
+          }
+          return question;
+        });
+        promptList[quizNumber].questions.push(...promptData);
+
         let questionData = {
           text: data["Question"].trimEnd(),
           question_image: null,
@@ -1348,44 +1395,19 @@ class ScriptService {
           points: 10,
           question_type: 2,
           answer_type: 2,
-          answer_array: [
-            {
-              name: data["A"].trimEnd(),
-              image: data["Image A"],
-              correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["A"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-            {
-              name: data["B"].trimEnd(),
-              image: data["Image B"],
-              correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["B"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-            {
-              name: data["C"].trimEnd(),
-              image: data["Image C"],
-              correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["C"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-            {
-              name: data["D"].trimEnd(),
-              image: data["Image D"],
-              correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["D"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-          ],
+          answer_array: prompts.map((prompt) => ({
+            name: data[prompt]?.trimEnd(),
+            image:
+              data[`Image ${prompt}`] ||
+              `q${data["Quiz #"]}_q${
+                (index + 1) / 4
+              }_${prompt.toLowerCase()}.png`,
+            correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
+            statement:
+              data["correctAnswer"] == data[prompt]
+                ? data["Explanation"].trimEnd()
+                : null,
+          })),
         };
         questionDataArray.push(questionData);
         if (
@@ -1406,6 +1428,17 @@ class ScriptService {
         }
       })
     );
+
+    const questions: IPromptData[] = [];
+    Object.values(promptList).forEach((value) => {
+      questions.push(
+        ...value.questions.filter(
+          (question) => Object.keys(question).length > 0
+        )
+      );
+    });
+    const { questionPrompts } = await this.generatePrompt([], questions);
+    this.generateImages([], questionPrompts, outputPath);
     return quizContentData;
   }
 
