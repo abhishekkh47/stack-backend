@@ -1061,46 +1061,23 @@ class ScriptService {
               incorrectStatement: null,
             };
           } else {
+            const prompts = ["A", "B", "C", "D"];
             questionData = {
               ...baseQuestionData,
               question_image: null,
               points: 10,
               question_type: 2,
               answer_type: 2,
-              answer_array: [
-                {
-                  name: data["A"]?.trimEnd(),
-                  image:
-                    data["Image A"] ||
-                    `s${data["Story #"]}_q${(index + 1) / 4}_a.png`,
-                  correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
-                  statement: null,
-                },
-                {
-                  name: data["B"]?.trimEnd(),
-                  image:
-                    data["Image B"] ||
-                    `s${data["Story #"]}_q${(index + 1) / 4}_b.png`,
-                  correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
-                  statement: null,
-                },
-                {
-                  name: data["C"]?.trimEnd(),
-                  image:
-                    data["Image C"] ||
-                    `s${data["Story #"]}_q${(index + 1) / 4}_c.png`,
-                  correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
-                  statement: null,
-                },
-                {
-                  name: data["D"]?.trimEnd(),
-                  image:
-                    data["Image D"] ||
-                    `s${data["Story #"]}_q${(index + 1) / 4}_d.png`,
-                  correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
-                  statement: null,
-                },
-              ],
+              answer_array: prompts.map((prompt) => ({
+                name: data[prompt]?.trimEnd(),
+                image:
+                  data[`Image ${prompt}`] ||
+                  `s${data["Story #"]}_q${
+                    (index + 1) / 4
+                  }_${prompt.toLowerCase()}.png`,
+                correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
+                statement: null,
+              })),
               correctStatement: data["Explanation"],
               incorrectStatement: data["Explanation"],
             };
