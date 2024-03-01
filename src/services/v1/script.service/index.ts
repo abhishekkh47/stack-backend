@@ -980,25 +980,19 @@ class ScriptService {
           } else {
             const prompts = ["A", "B", "C", "D"];
             const promptData: IPromptData[] = prompts.map((promptKey) => {
-              const prompt = data[`Prompt ${promptKey}`]?.trimEnd();
               const questionImageName = data[`Image ${promptKey}`];
-
-              if (prompt) {
-                const question: IPromptData = {
-                  promptDescription: data[promptKey]?.trimEnd(),
-                  promptStyle: currentPromptStyle,
-                  imageName: `s${storyNumber}_q${Math.ceil(
-                    promptList[storyNumber].questions.length / 4 + 1
-                  )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
-                };
-                if (questionImageName) {
-                  question.isNameOverride = true;
-                  question.imageName = questionImageName;
-                }
-                return question;
-              } else {
-                return {};
+              const question: IPromptData = {
+                promptDescription: data[promptKey]?.trimEnd(),
+                promptStyle: currentPromptStyle,
+                imageName: `s${storyNumber}_q${Math.ceil(
+                  promptList[storyNumber].questions.length / 4 + 1
+                )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+              };
+              if (questionImageName) {
+                question.isNameOverride = true;
+                question.imageName = questionImageName;
               }
+              return question;
             });
             promptList[storyNumber].questions.push(...promptData);
           }
