@@ -188,7 +188,7 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       startTime: {
         type: mongoose.Schema.Types.Number,
         required: false,
-        default: null,
+        default: 0,
       },
     },
   },

@@ -15,6 +15,8 @@ import {
   uploadMvpHomeScreen,
   SYSTEM_INPUT,
   ANALYTICS_EVENTS,
+  IMAGE_ACTIONS,
+  IS_RETRY,
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
@@ -118,7 +120,7 @@ class BusinessProfileController extends BaseController {
     if (!file) {
       return this.BadRequest(ctx, "Image is not selected");
     }
-    const imageName = file.key?.split("/")?.[1] || null;
+    const imageName = file.size > 0 ? file.key?.split("/")?.[1] || null : null;
 
     if (businessProfileExists.companyLogo) {
       await removeImage(userExists._id, businessProfileExists.companyLogo);
@@ -482,13 +484,24 @@ class BusinessProfileController extends BaseController {
     if (!query.key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
+    if (
+      IMAGE_ACTIONS.includes(query.key) &&
+      query.isRetry == IS_RETRY.TRUE &&
+      userBusinessProfile.logoGenerationInfo.isUnderProcess
+    ) {
+      return {
+        finished: false,
+        suggestions: null,
+        isRetry: true,
+      };
+    }
     let response = await BusinessProfileService.generateAISuggestions(
       userExists,
       query.key,
       userBusinessProfile,
       query.actionInput,
       query.isRetry,
-      headers.requestId
+      headers.requestid
     );
     return this.Ok(ctx, { message: "Success", data: response });
   }

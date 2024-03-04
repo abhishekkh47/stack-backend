@@ -584,8 +584,12 @@ class BusinessProfileService {
         );
         return response;
       }
-      if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
-        let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
+      if (
+        !userBusinessProfile.isRetry ||
+        isRetry == IS_RETRY.TRUE ||
+        userBusinessProfile.aiGeneratedSuggestions != key
+      ) {
+        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
           SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
           prompt
@@ -608,24 +612,16 @@ class BusinessProfileService {
         if (response && isRetry == IS_RETRY.TRUE) {
           await UserTable.findOneAndUpdate(
             { _id: userExists._id },
-            {
-              $inc: {
-                quizCoins: DEDUCT_RETRY_FUEL,
-              },
-            }
+            { $inc: { quizCoins: DEDUCT_RETRY_FUEL } }
           );
         }
         await BusinessProfileTable.findOneAndUpdate(
           { userId: userExists._id },
-          {
-            $set: businessProfileUpdateObj,
-          }
+          { $set: { isRetry: true } }
         );
       }
       return {
-        suggestions: IMAGE_ACTIONS.includes(key)
-          ? userBusinessProfile.aiGeneratedSuggestions
-          : response,
+        suggestions: response,
         isRetry: true,
         companyName: REQUIRE_COMPANY_NAME.includes(key)
           ? userBusinessProfile.companyName
@@ -648,7 +644,7 @@ class BusinessProfileService {
     userExists: any,
     key: string,
     userBusinessProfile: any,
-    isRetry: string = "false",
+    isRetry: string = IS_RETRY.FALSE,
     requestId: string = null
   ) {
     try {
@@ -656,22 +652,31 @@ class BusinessProfileService {
       let userUpdateObj = null;
       await UserTable.findOneAndUpdate(
         { _id: userExists._id },
-        {
-          $set: {
-            requestId: requestId,
-          },
-        },
+        { $set: { requestId } },
         { upsert: true }
       );
-      const logoInfo = userBusinessProfile.logoGenerationInfo;
-      const elapsedTime = moment().unix() - logoInfo.startTime;
-      let finished = logoInfo?.aiSuggestions?.length === 4;
+
+      const { logoGenerationInfo } = userBusinessProfile;
+      const { aiSuggestions, isUnderProcess, startTime } = logoGenerationInfo;
+      const elapsedTime = moment().unix() - startTime;
+      let finished = aiSuggestions?.length === 4;
       if (
-        (!finished && !logoInfo.isUnderProcess) ||
-        (!logoInfo.isUnderProcess && isRetry && finished) ||
-        (logoInfo.isUnderProcess && elapsedTime > 200)
+        isRetry.toString() == IS_RETRY.FALSE &&
+        !isUnderProcess &&
+        !finished
       ) {
-        let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
+        return {
+          finished: true,
+          suggestions: BACKUP_LOGOS,
+          isRetry: true,
+        };
+      }
+      if (
+        (!finished && !isUnderProcess) ||
+        (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
+        (isUnderProcess && elapsedTime > 200)
+      ) {
+        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
           SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
           prompt
@@ -706,11 +711,9 @@ class BusinessProfileService {
             {
               $set: {
                 isRetry: true,
-                logoGenerationInfo: {
-                  isUnderProcess: false,
-                  aiSuggestions: response,
-                  startTime: moment().unix(),
-                },
+                "logoGenerationInfo.isUnderProcess": false,
+                "logoGenerationInfo.startTime": moment().unix(),
+                "logoGenerationInfo.aiSuggestions": response,
               },
             },
             { upsert: true }
@@ -718,28 +721,20 @@ class BusinessProfileService {
         ]);
       }
 
-      if (isRetry == "true" && logoInfo.isUnderProcess) {
+      if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
         finished = false;
-      }
-      if (isRetry == "false" && !logoInfo.isUnderProcess && !finished) {
-        return {
-          finished: true,
-          suggestions: BACKUP_LOGOS,
-          isRetry: true,
-        };
       }
       return {
         finished,
-        suggestions: finished
-          ? response
-            ? response
-            : logoInfo.aiSuggestions
-          : null,
+        suggestions: finished ? (response ? response : aiSuggestions) : null,
         isRetry: true,
       };
     } catch (error) {
-      console.log("ERROR1 : ", error);
-      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      return {
+        finished: true,
+        suggestions: BACKUP_LOGOS,
+        isRetry: true,
+      };
     }
   }
 
