@@ -1312,6 +1312,12 @@ class ScriptService {
       }
       return `${promptData.imageName}.png`;
     } catch (error) {
+      if (error.message.indexOf("Job with id") >= 0) {
+        console.log(
+          `Error occurred while generating ${promptData.imageName}.png, trying again`
+        );
+        return await this.getImage(questionType, promptData);
+      }
       throw new NetworkError(error.message, 400);
     }
   }
@@ -1323,123 +1329,135 @@ class ScriptService {
    * @returns {*}
    */
   public async convertWeeklyQuizSpreadSheetToJSON(quizNums: any, rows: any) {
-    rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
-    let lastQuizName = "";
-    let lastQuizCategory = "";
-    let lastQuizStage = "";
-    let lastQuizTags = "";
-    let quizContentData = [];
-    let questionDataArray = [];
-    let order = 1;
-    let currentPromptStyle = null;
-    let promptList: {
-      [quizNumber: number]: {
-        questions: IPromptData[];
-      };
-    } = {};
-    const outputPath = path.join(__dirname, `/midJourneyImages`);
-    const prompts = ["A", "B", "C", "D"];
-    await Promise.all(
-      await rows.map(async (data, index) => {
-        currentPromptStyle = "";
-        const quizNumber = data["Quiz #"].trimEnd();
-        if (!(quizNumber in promptList)) {
-          promptList[quizNumber] = {
-            questions: [],
-          };
-        }
-        if (data["Quiz Title"] != "") {
-          lastQuizName = data["Quiz Title"].trimEnd();
-        }
-        if (data["Category"] != "") {
-          lastQuizCategory = data["Category"].trimEnd();
-        }
-        if (data["Stage"] != "") {
-          lastQuizStage = data["Stage"].trimEnd();
-        }
-        if (data["Tags"] && data["Tags"] != "") {
-          let tags = data["Tags"].split(",");
-          tags = tags.map((data) => {
-            data = data.trim();
-            return data;
-          });
-          lastQuizTags = tags.join(",");
-        }
-        if (data["Quiz Title"] == "") {
-          ++order;
-        } else {
-          order = 1;
-        }
-
-        const promptData: IPromptData[] = prompts.map((promptKey) => {
-          const questionImageName = data[`Image ${promptKey}`];
-          const question: IPromptData = {
-            promptDescription: data[promptKey]?.trimEnd(),
-            promptStyle: currentPromptStyle,
-            imageName: `s${quizNumber}_q${Math.ceil(
-              promptList[quizNumber].questions.length / 4 + 1
-            )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
-          };
-          if (questionImageName) {
-            question.isNameOverride = true;
-            question.imageName = questionImageName;
-          }
-          return question;
-        });
-        promptList[quizNumber].questions.push(...promptData);
-
-        let questionData = {
-          text: data["Question"].trimEnd(),
-          question_image: null,
-          order: order,
-          points: 10,
-          question_type: 2,
-          answer_type: 2,
-          answer_array: prompts.map((prompt) => ({
-            name: data[prompt]?.trimEnd(),
-            image:
-              data[`Image ${prompt}`] ||
-              `q${data["Quiz #"]}_q${
-                (index + 1) / 4
-              }_${prompt.toLowerCase()}.png`,
-            correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
-            statement:
-              data["correctAnswer"] == data[prompt]
-                ? data["Explanation"].trimEnd()
-                : null,
-          })),
+    try {
+      rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
+      let lastQuizName = "";
+      let lastQuizCategory = "";
+      let lastQuizStage = "";
+      let lastQuizTags = "";
+      let quizContentData = [];
+      let questionDataArray = [];
+      let order = 1;
+      let currentPromptStyle = null;
+      let questionNumber = 0;
+      let promptList: {
+        [quizNumber: number]: {
+          questions: IPromptData[];
         };
-        questionDataArray.push(questionData);
-        if (
-          rows[index + 1] == undefined ||
-          rows[index + 1]["Quiz #"] !== data["Quiz #"]
-        ) {
-          let quizData = {
-            topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
-            quizNum: data["Quiz #"].trimEnd(),
-            quizName: lastQuizName,
-            image: null,
-            stageName: lastQuizStage,
-            tags: lastQuizTags,
-            questionData: questionDataArray,
-          };
-          quizContentData.push(quizData);
-          questionDataArray = [];
-        }
-      })
-    );
+      } = {};
+      const outputPath = path.join(__dirname, `/midJourneyImages`);
+      if (fs.existsSync(outputPath)) {
+        fs.rmdirSync(outputPath, { recursive: true });
+      }
+      fs.mkdirSync(outputPath);
+      const prompts = ["A", "B", "C", "D"];
+      await Promise.all(
+        await rows.map(async (data, index) => {
+          currentPromptStyle = "";
+          const quizNumber = data["Quiz #"].trimEnd();
+          if (!(quizNumber in promptList)) {
+            promptList[quizNumber] = {
+              questions: [],
+            };
+            questionNumber = 0;
+          }
+          questionNumber++;
+          if (data["Quiz Title"] != "") {
+            lastQuizName = data["Quiz Title"].trimEnd();
+          }
+          if (data["Category"] != "") {
+            lastQuizCategory = data["Category"].trimEnd();
+          }
+          if (data["Stage"] != "") {
+            lastQuizStage = data["Stage"].trimEnd();
+          }
+          if (data["Tags"] && data["Tags"] != "") {
+            let tags = data["Tags"].split(",");
+            tags = tags.map((data) => {
+              data = data.trim();
+              return data;
+            });
+            lastQuizTags = tags.join(",");
+          }
+          if (data["Quiz Title"] == "") {
+            ++order;
+          } else {
+            order = 1;
+          }
 
-    const questions: IPromptData[] = [];
-    Object.values(promptList).forEach((value) => {
-      questions.push(
-        ...value.questions.filter(
-          (question) => Object.keys(question).length > 0
-        )
+          const promptData: IPromptData[] = prompts.map((promptKey) => {
+            const questionImageName = data[`Image ${promptKey}`];
+            const question: IPromptData = {
+              promptDescription: data[promptKey]?.trimEnd(),
+              promptStyle: currentPromptStyle,
+              imageName: `q${quizNumber}_q${Math.ceil(
+                promptList[quizNumber].questions.length / 4 + 1
+              )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+            };
+            if (questionImageName) {
+              question.isNameOverride = true;
+              question.imageName = questionImageName;
+            }
+            return question;
+          });
+          promptList[quizNumber].questions.push(...promptData);
+
+          let questionData = {
+            text: data["Question"].trimEnd(),
+            question_image: null,
+            order: order,
+            points: 10,
+            question_type: 2,
+            answer_type: 2,
+            answer_array: prompts.map((prompt) => ({
+              name: data[prompt]?.trimEnd(),
+              image:
+                data[`Image ${prompt}`] ||
+                `q${
+                  data["Quiz #"]
+                }_q${questionNumber}_${prompt.toLowerCase()}.png`,
+              correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
+              statement:
+                data["correctAnswer"] == data[prompt]
+                  ? data["Explanation"].trimEnd()
+                  : null,
+            })),
+          };
+          questionDataArray.push(questionData);
+          if (
+            rows[index + 1] == undefined ||
+            rows[index + 1]["Quiz #"] !== data["Quiz #"]
+          ) {
+            let quizData = {
+              topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
+              quizNum: data["Quiz #"].trimEnd(),
+              quizName: lastQuizName,
+              image: null,
+              stageName: lastQuizStage,
+              tags: lastQuizTags,
+              questionData: questionDataArray,
+            };
+            quizContentData.push(quizData);
+            questionDataArray = [];
+          }
+        })
       );
-    });
-    const { questionPrompts } = await this.generatePrompt([], questions);
-    this.generateImages([], questionPrompts, outputPath);
-    return quizContentData;
+
+      const questions: IPromptData[] = [];
+      Object.values(promptList).forEach((value) => {
+        questions.push(
+          ...value.questions.filter(
+            (question) => Object.keys(question).length > 0
+          )
+        );
+      });
+      const { questionPrompts } = await this.generatePrompt([], questions);
+      this.generateImages([], questionPrompts, outputPath);
+      return quizContentData;
+    } catch (error) {
+      console.log("ERROR : ", error.message);
+      throw new NetworkError(error.message, 400);
+    }
   }
 
   /**
