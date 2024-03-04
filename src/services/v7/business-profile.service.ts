@@ -240,7 +240,8 @@ class BusinessProfileService {
               type: "text",
               value: "$valueCreators",
               title: "Top 3 Value Creators",
-              description: "Pro-tip: make each value creator than three words",
+              description:
+                "Pro-tip: make each value creator less than three words",
               actionName: "Your Top 3 Value Creators",
               placeHolderText: "Enter description...",
               isMultiLine: true,
@@ -569,6 +570,7 @@ class BusinessProfileService {
   ) {
     try {
       let response = null;
+      let businessProfileUpdateObj = null;
       if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
         let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
@@ -580,8 +582,15 @@ class BusinessProfileService {
             textResponse.choices[0].message.content
           );
           response = [...imageURLs];
+          businessProfileUpdateObj = {
+            aiGeneratedSuggestions: response,
+            isRetry: true,
+          };
         } else {
           response = JSON.parse(textResponse.choices[0].message.content);
+          businessProfileUpdateObj = {
+            isRetry: true,
+          };
         }
         if (response && isRetry == IS_RETRY.TRUE) {
           await UserTable.findOneAndUpdate(
@@ -596,17 +605,14 @@ class BusinessProfileService {
         await BusinessProfileTable.findOneAndUpdate(
           { userId: userExists._id },
           {
-            $set: {
-              aiGeneratedSuggestions: response,
-              isRetry: true,
-            },
+            $set: businessProfileUpdateObj,
           }
         );
       }
       return {
-        suggestions: response
-          ? response
-          : userBusinessProfile.aiGeneratedSuggestions,
+        suggestions: IMAGE_ACTIONS.includes(key)
+          ? userBusinessProfile.aiGeneratedSuggestions
+          : response,
         isRetry: true,
         companyName: REQUIRE_COMPANY_NAME.includes(key)
           ? userBusinessProfile.companyName

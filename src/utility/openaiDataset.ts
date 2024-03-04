@@ -24,7 +24,7 @@ export const SYSTEM_INPUT = {
   Opportunity highlight: Around 70,000 Twitter users have expressed frustration about unpredictable lighting conditions during outdoor shoots over the past year.
   
   Desired Output Format Example:
-   [{""businessDescription"": [insert business description],""opportunityHighlight"": [insert potential customers datapoint]]
+   [{"businessDescription": [insert business description],"opportunityHighlight": [insert potential customers datapoint]]
       
   Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the business description and opportunity highlight within an array, adhering to the detailed criteria provided.`,
 
@@ -339,7 +339,7 @@ export const SYSTEM_INPUT = {
     
   Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the differentiator within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,
 
-  X_FOR_Y: `Utilizing the provided business description, craft four metaphorical 'X for Y' analogies that succinctly compare the business model to that of a well-known company, with 'X' being the company and 'Y' the industry or niche related to the provided business description. Choose 'X' from companies that are broadly recognized, ensuring 'Y' directly ties to the specific industry or niche of the provided business description. Present your analogies in an array format, containing four generated strings, , without including explanations or the business description.
+  X_FOR_Y: `Utilizing the provided business description, craft four metaphorical 'X for Y' analogies that succinctly compare the business model to that of a well-known company, with 'X' being the company and 'Y' the industry or niche related to the provided business description. Choose 'X' from companies that are broadly recognized, ensuring 'Y' directly ties to the specific industry or niche of the provided business description. Present your analogies in an array format, containing four generated strings (each string not more than 40 characters), without including explanations or the business description.
 
   Business Description Examples and Corresponding X for Y:
   
@@ -403,7 +403,7 @@ export const SYSTEM_INPUT = {
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   valueCreators: ["Startup Mastery Hub. Guided Entrepreneurship. Daily Success Checklist.","Business Launchpad. Gamified Entrepreneurship. Mentorship at Fingertips.","Strategic Startups. Educate, Execute, Elevate. Daily Business Mentorship."]`,
 
-  COLORS_AND_AESTHETIC: `"Based on the Business Description provided in the user prompt, I want you to provide 4 suggestion objects, where each object contains "Primary", "Secondary" and "Text" fields which has color hex codes compatible to the theme of the provided business description. The response should be an array containing four objects as provided in below illustrative examples:
+  COLORS_AND_AESTHETIC: `"Based on the Business Description provided in the user prompt, I want you to provide 4 suggestion objects, where each object contains "Primary", "Secondary" and "Text" fields which has color hex codes compatible to the theme of the provided business description. The response should be only an array containing four objects as provided in below illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
