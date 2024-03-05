@@ -847,20 +847,34 @@ class AuthController extends BaseController {
    */
   @Route({ path: "/update-mobile-number", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async updateMobileNumber(ctx) {
     const input = ctx.request.body;
     const user = ctx.request.user;
     try {
-      if (!input.mobile) 
+      if (!input.mobile)
         return this.BadRequest(ctx, "Mobile number is required");
-      await UserTable.updateOne(
+      const userIfExists = await UserTable.findOneAndUpdate(
         { _id: user._id },
         {
           $set: {
             mobile: input.mobile,
           },
-        }
+        },
+        { returnOriginal: true }
       );
+      const updatedUser = {
+        Mobile: input.mobile,
+        Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
+        Email: userIfExists.email,
+      };
+      (async () => {
+        zohoCrmService.addAccounts(
+          ctx.request.zohoAccessToken,
+          updatedUser,
+          false
+        );
+      })();
       return this.Ok(ctx, { message: "Mobile number update successfully" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
