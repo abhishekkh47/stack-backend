@@ -238,22 +238,12 @@ class WeeklyJourneyDBService {
       }
       upcomingWeek.actionNum = upcomingActionNum + 1;
       if (upcomingWeek.actionNum == 3) {
-        let actionData = actionScreenData.find(
-          (action) => action.key == upcomingWeek.actions[upcomingActionNum].key
+        const updatedActionData = await this.getActionDetails(
+          businessProfileIfExists,
+          upcomingWeek,
+          actionScreenData,
+          upcomingActionNum
         );
-        let updatedActionData = null;
-        if (actionData) {
-          updatedActionData = actionData.toObject({ getters: true });
-          updatedActionData.hoursSaved =
-            businessProfileIfExists.hoursSaved == 0
-              ? [actionData.hoursSaved]
-              : [businessProfileIfExists.hoursSaved, actionData.hoursSaved];
-        } else {
-          updatedActionData =
-            WEEKLY_JOURNEY_ACTION_DETAILS[
-              upcomingWeek.actions[upcomingActionNum].key
-            ];
-        }
         Object.assign(upcomingWeek.actions[upcomingActionNum], {
           actionDetails: updatedActionData,
         });
@@ -349,6 +339,34 @@ class WeeklyJourneyDBService {
     } catch (err) {
       throw new NetworkError("Error occured while claiming the reward", 400);
     }
+  }
+
+  public async getActionDetails(
+    businessProfileIfExists: IBusinessProfile,
+    upcomingWeek: any,
+    actionScreenData: any,
+    upcomingActionNum: number
+  ) {
+    let actionData = actionScreenData.find(
+      (action) => action.key == upcomingWeek.actions[upcomingActionNum].key
+    );
+    let updatedActionData = null;
+    if (actionData) {
+      updatedActionData = actionData.toObject({ getters: true });
+      updatedActionData.hoursSaved =
+        businessProfileIfExists.hoursSaved == 0
+          ? [actionData.hoursSaved]
+          : [businessProfileIfExists.hoursSaved, actionData.hoursSaved];
+    } else {
+      updatedActionData =
+        WEEKLY_JOURNEY_ACTION_DETAILS[
+          upcomingWeek.actions[upcomingActionNum].key
+        ];
+    }
+    Object.assign(upcomingWeek.actions[upcomingActionNum], {
+      actionDetails: updatedActionData,
+    });
+    return updatedActionData;
   }
 }
 export default new WeeklyJourneyDBService();

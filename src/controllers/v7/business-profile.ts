@@ -102,7 +102,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async updateCompanyLogo(ctx: any) {
-    const { user } = ctx.request;
+    const { user, body, file } = ctx.request;
     const [userExists, businessProfileExists, actionScreenData]: any =
       await Promise.all([
         UserTable.findOne({
@@ -116,7 +116,6 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const file = ctx.request.file;
     if (!file) {
       return this.BadRequest(ctx, "Image is not selected");
     }
@@ -149,15 +148,23 @@ class BusinessProfileController extends BaseController {
         { $set: businessProfileObj },
         { upsert: true }
       ),
-      ctx?.request?.body?.weeklyJourneyId
-        ? WeeklyJourneyResultTable.create({
-            weeklyJourneyId: ctx.request.body.weeklyJourneyId,
-            actionNum: ctx.request.body.actionNum,
-            userId: user._id,
-            actionInput: imageName,
-          }).then(() =>
-            UserService.updateUserScore(userExists, ctx.request.body)
-          )
+      body?.weeklyJourneyId
+        ? WeeklyJourneyResultTable.updateOne(
+            {
+              userId: user._id,
+              weeklyJourneyId: body.weeklyJourneyId,
+              actionNum: 3,
+            },
+            {
+              $set: {
+                weeklyJourneyId: body.weeklyJourneyId,
+                actionNum: 3,
+                userId: user._id,
+                actionInput: imageName,
+              },
+            },
+            { upsert: true }
+          ).then(() => UserService.updateUserScore(userExists, body, imageName))
         : Promise.resolve(),
     ]);
     const zohoInfo = {

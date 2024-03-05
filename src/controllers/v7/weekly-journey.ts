@@ -53,12 +53,22 @@ class WeeklyJourneyController extends BaseController {
       weeklyJourneyDetails,
       userNextChallenge
     );
-    const businessLogoActionDay = !businessProfileIfExists.companyLogo
-      ? {
-          _id: 1,
-          weeklyJourney: { ...weeklyJourneyDetails[1], actionNum: 3 },
-        }
-      : null;
+    weeklyJourneyDetails[1].actions[2].actionDetails =
+      await WeeklyJourneyDBService.getActionDetails(
+        businessProfileIfExists,
+        weeklyJourneyDetails[1],
+        actionScreenData,
+        2
+      );
+    const businessLogoActionDay =
+      !businessProfileIfExists.companyLogo &&
+      (userNextChallenge.weeklyJourney.day > 2 ||
+        userNextChallenge.weeklyJourney.week > 1)
+        ? {
+            _id: 1,
+            weeklyJourney: { ...weeklyJourneyDetails[1], actionNum: 3 },
+          }
+        : null;
     return this.Ok(ctx, {
       data: {
         weeks: getWeeklyDetails,

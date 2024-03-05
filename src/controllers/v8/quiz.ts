@@ -78,11 +78,13 @@ class QuizController extends BaseController {
             curentWeeklyJourneyDetails.day == 2 &&
             curentWeeklyJourneyDetails.actions[0].quizId == reqParam.quizId
           ) {
-            BusinessProfileService.generateAISuggestions(
+            BusinessProfileService.generateAILogos(
               userIfExists,
               "companyLogo",
               userBusinessProfile,
-              SUGGESTION_FORMAT.IMAGE
+              "false",
+              null,
+              true
             );
           }
           const {

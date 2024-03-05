@@ -187,9 +187,15 @@ class UserService {
    * @description This service is used to update user score on completion of thrid task of daily challenge
    * @param userIfExists
    * @param data
+   * @param ifDataAvailable this flag is added to handle logo action. If logo/image is not present, do not update the score and return
    */
-  public async updateUserScore(userIfExists: any, data: any) {
+  public async updateUserScore(
+    userIfExists: any,
+    data: any,
+    ifDataAvailable: boolean = true
+  ) {
     try {
+      if (!ifDataAvailable) return;
       let incrementObj: any = {
         quizCoins: COMPLETED_ACTION_REWARD,
       };

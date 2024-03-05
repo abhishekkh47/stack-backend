@@ -622,6 +622,7 @@ class BusinessProfileService {
       }
       return {
         suggestions: response,
+        finished: true,
         isRetry: true,
         companyName: REQUIRE_COMPANY_NAME.includes(key)
           ? userBusinessProfile.companyName
@@ -638,6 +639,7 @@ class BusinessProfileService {
    * @param key
    * @param userBusinessProfile
    * @param isRetry
+   * @param isSystemCall signifies that the function call has been made by system internally, when user completes day-2, quiz-1 to generate images before user plays action-3
    * @returns {*}
    */
   public async generateAILogos(
@@ -645,11 +647,12 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
-    requestId: string = null
+    requestId: string = null,
+    isSystemCall: boolean = false
   ) {
     try {
       let response = null;
-      let userUpdateObj = null;
+      let userUpdateObj = { quizCoins: DEDUCT_RETRY_FUEL };
       await UserTable.findOneAndUpdate(
         { _id: userExists._id },
         { $set: { requestId } },
@@ -663,7 +666,8 @@ class BusinessProfileService {
       if (
         isRetry.toString() == IS_RETRY.FALSE &&
         !isUnderProcess &&
-        !finished
+        !finished &&
+        !isSystemCall
       ) {
         return {
           finished: true,
@@ -674,7 +678,8 @@ class BusinessProfileService {
       if (
         (!finished && !isUnderProcess) ||
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
-        (isUnderProcess && elapsedTime > 200)
+        (isUnderProcess && elapsedTime > 200) ||
+        isSystemCall
       ) {
         const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
