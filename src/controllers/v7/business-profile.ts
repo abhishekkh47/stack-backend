@@ -136,11 +136,13 @@ class BusinessProfileController extends BaseController {
         startTime: null,
       },
     };
-    if (getHoursSaved.length) {
+    if (
+      getHoursSaved.length &&
+      imageName &&
+      !businessProfileExists.companyLogo
+    ) {
       businessProfileObj["hoursSaved"] =
-        businessProfileExists.hoursSaved > getHoursSaved[0].hoursSaved
-          ? businessProfileExists.hoursSaved
-          : getHoursSaved[0].hoursSaved;
+        businessProfileExists.hoursSaved + getHoursSaved[0].hoursSaved;
     }
     await Promise.all([
       BusinessProfileTable.updateOne(
@@ -478,6 +480,8 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getAISuggestion(ctx: any) {
     const { user, query, headers } = ctx.request;
+    const { key, actionInput, isRetry, isFromProfile } = query;
+    let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
       BusinessProfileTable.findOne({ userId: user._id }),
@@ -488,28 +492,41 @@ class BusinessProfileController extends BaseController {
     if (userExists.requestId == headers.requestid) {
       return this.Ok(ctx, { message: "Success", data: "Multiple Requests" });
     }
-    if (!query.key) {
+    if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
     if (
-      IMAGE_ACTIONS.includes(query.key) &&
-      query.isRetry == IS_RETRY.TRUE &&
+      IMAGE_ACTIONS.includes(key) &&
+      isRetry == IS_RETRY.TRUE &&
       userBusinessProfile.logoGenerationInfo.isUnderProcess
     ) {
-      return {
-        finished: false,
-        suggestions: null,
-        isRetry: true,
-      };
+      return this.Ok(ctx, {
+        message: "Success",
+        data: {
+          finished: false,
+          suggestions: null,
+          isRetry: true,
+        },
+      });
     }
-    let response = await BusinessProfileService.generateAISuggestions(
-      userExists,
-      query.key,
-      userBusinessProfile,
-      query.actionInput,
-      query.isRetry,
-      headers.requestid
-    );
+    if (IMAGE_ACTIONS.includes(key)) {
+      response = await BusinessProfileService.generateAILogos(
+        userExists,
+        key,
+        userBusinessProfile,
+        isRetry,
+        headers.requestid,
+        false,
+        isFromProfile
+      );
+    } else {
+      response = await BusinessProfileService.generateAISuggestions(
+        userExists,
+        key,
+        userBusinessProfile,
+        isRetry
+      );
+    }
     return this.Ok(ctx, { message: "Success", data: response });
   }
 

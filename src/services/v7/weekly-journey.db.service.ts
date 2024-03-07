@@ -356,7 +356,10 @@ class WeeklyJourneyDBService {
       updatedActionData.hoursSaved =
         businessProfileIfExists.hoursSaved == 0
           ? [actionData.hoursSaved]
-          : [businessProfileIfExists.hoursSaved, actionData.hoursSaved];
+          : [
+              businessProfileIfExists.hoursSaved,
+              businessProfileIfExists.hoursSaved + actionData.hoursSaved,
+            ];
     } else {
       updatedActionData =
         WEEKLY_JOURNEY_ACTION_DETAILS[

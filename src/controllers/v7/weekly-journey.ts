@@ -61,9 +61,10 @@ class WeeklyJourneyController extends BaseController {
         2
       );
     const businessLogoActionDay =
-      !businessProfileIfExists.companyLogo &&
-      (userNextChallenge.weeklyJourney.day > 2 ||
-        userNextChallenge.weeklyJourney.week > 1)
+      !businessProfileIfExists?.companyLogo &&
+      (userNextChallenge?.weeklyJourney?.day > 2 ||
+        userNextChallenge?.weeklyJourney?.week > 1 ||
+        !userNextChallenge)
         ? {
             _id: 1,
             weeklyJourney: { ...weeklyJourneyDetails[1], actionNum: 3 },
@@ -73,7 +74,8 @@ class WeeklyJourneyController extends BaseController {
       data: {
         weeks: getWeeklyDetails,
         currentDay: userNextChallenge,
-        businessJourneyCompleted: userNextChallenge ? false : true,
+        businessJourneyCompleted:
+          userNextChallenge || businessLogoActionDay ? false : true,
         businessLogoActionDay,
       },
       message: "Success",
