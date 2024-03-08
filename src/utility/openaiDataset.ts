@@ -1,30 +1,25 @@
 "use strict";
 export const SYSTEM_INPUT = {
-  SYSTEM: `Based on the provided user problem, write three one sentence distinct technology business descriptions that require minimal initial capital investment and can be launched with basic technical expertise. These descriptions will include  an innovative product feature not typically associated with the problem but draws inspiration from other industries or solutions and is a growing technology as well as describe the unique user interaction with a specific, narrow user group. The technology used should be simple and based on widely available tools such as web or mobile app development, without involving advanced technologies like virtual reality or complex machine learning algorithms. Do not mention other industry or solution you drew inspiration from.
+  SYSTEM: `Based on the provided user problem, write three one sentence distinct technology business descriptions that require minimal initial capital investment and can be launched with basic technical expertise. The technology used should be simple and based on widely available tools such as web or mobile app development, without involving advanced technologies like virtual reality or complex machine learning algorithms. Do not mention other industry or solution you drew inspiration from.
 
-  Along with each business description, quantify the potential customer base by referencing a specific user behavior from a well-known business related to the description. Ensure the user behavior chosen as a reference does not involve more than 1 million people, highlighting the niche focus of each business description. Provide sources or references for the user behavior statistics to ensure accuracy and avoid speculation.
+  On the top line you will write a 25 word or less detailed description of the business. This description will predominantly detail (1) a novel product feature not typically associated with the problem but draws inspiration from other industries or solutions or  (2) a specific underserved niche audience that is not the current core user group of an incumbent. 
+  
+  On the second line you will write opportunityHighlight for each business in six words or less in the format of X for Y. X will be a well known brand or company that is known for the shared feature between it and the business described in line one. Y will be a short phrase relating to the unique aspect of the business that differentiates it from incumbents or other solutions.
   
   Present your response in an array format, containing three objects, each object contains one business description and its opportunity highlight.
   
-  Business description and corresponding opportunity Highlight examples based on the user problem:
+  Here are two illustrative examples:
   
-  Example 1:
-  User problem: Practicing emotional intelligence and interpersonal skills
-  Business description: A web-based platform that provides customizable scenarios and role-playing exercises to help users improve their interpersonal skills and emotional intelligence.
-  Opportunity highlight: A post on Reddit titled 'Improving my interpersonal skills through roleplaying' received around 65,000 upvotes, signifying a market interest.
+  Problem: Finding convenient, budget-friendly and high-quality meals
+  BusinessDescription: A food delivery app that captures efficiency by pooling orders by school and delivers during the high school lunch period, allowing high schoolers below driving age or restricted by school rules to access off-campus food options.
+  OpportunityHighlight: GrubHub for High School Lunch
   
-  Example 2:
-  User problem: Navigating tax implications of trading cryptocurrency
-  Business description: A browser extension that logs all trading activity and automatically prepares a Schedule D at the end of the tax year.
-  Opportunity highlight: A reddit post from 2023 titled ""I've spent hours trying to calculate my crypto tax"" had 180 comments.
-  
-  Example 3:
-  User problem: Unpredictable natural lighting conditions during outdoor shoots
-  Business description: An app which integrates with weather services to predict lighting conditions for outdoor photoshoots, helping photographers plan their shoots better.
-  Opportunity highlight: Around 70,000 Twitter users have expressed frustration about unpredictable lighting conditions during outdoor shoots over the past year.
+  Problem: Understanding blockchain technology and cryptocurrency investing
+  BusinessDescription: A mobile app for first-time cryptocurrency investors with a learn to earn feature, allowing users to earn fractional amounts of cryptocurrency for learning about blockchain technology.
+  OpportunityHighlight: STEPN for Blockchain Education
   
   Desired Output Format Example:
-   [{"businessDescription": [insert business description],"opportunityHighlight": [insert potential customers datapoint]]
+   [{"businessDescription": [insert business description],"opportunityHighlight": [insert opportunity highlight]]
       
   Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the business description and opportunity highlight within an array, adhering to the detailed criteria provided.`,
 
