@@ -51,4 +51,5 @@ export interface ILogoGenerationInfo {
   isUnderProcess: boolean;
   aiSuggestions: string[];
   startTime: number;
+  isInitialSuggestionsCompleted: boolean;
 }

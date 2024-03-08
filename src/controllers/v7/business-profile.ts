@@ -127,22 +127,19 @@ class BusinessProfileController extends BaseController {
     const getHoursSaved = actionScreenData.filter(
       (action) => action?.key == "companyLogo"
     );
-    const businessProfileObj = {
+    let businessProfileObj = {
       companyLogo: imageName,
-      isRetry: false,
-      logoGenerationInfo: {
+    };
+    if (imageName) {
+      if (getHoursSaved.length && !businessProfileExists.companyLogo) {
+        businessProfileObj["hoursSaved"] =
+          businessProfileExists.hoursSaved + getHoursSaved[0].hoursSaved;
+      }
+      businessProfileObj["logoGenerationInfo"] = {
         isUnderProcess: false,
         aiSuggestions: null,
-        startTime: null,
-      },
-    };
-    if (
-      getHoursSaved.length &&
-      imageName &&
-      !businessProfileExists.companyLogo
-    ) {
-      businessProfileObj["hoursSaved"] =
-        businessProfileExists.hoursSaved + getHoursSaved[0].hoursSaved;
+        startTime: 0,
+      };
     }
     await Promise.all([
       BusinessProfileTable.updateOne(

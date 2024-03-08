@@ -190,6 +190,11 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         required: false,
         default: 0,
       },
+      isInitialSuggestionsCompleted: {
+        type: mongoose.Schema.Types.Boolean,
+        required: false,
+        default: false,
+      },
     },
   },
   { timestamps: true }

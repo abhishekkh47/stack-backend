@@ -560,10 +560,7 @@ class BusinessProfileService {
    * @param userExists
    * @param key
    * @param userBusinessProfile
-   * @param actionInput
    * @param isRetry
-   * @param requestId
-   * @param isFromProfile this will be true if user generate AI logos by visiting the profile page
    * @returns {*}
    */
   public async generateAISuggestions(
@@ -615,6 +612,7 @@ class BusinessProfileService {
    * @param key
    * @param userBusinessProfile
    * @param isRetry
+   * @param requestId
    * @param isSystemCall signifies that the function call has been made by system internally, when user completes day-2, quiz-1 to generate images before user plays action-3
    * @param isFromProfile this will be true if user generate AI logos by visiting the profile page
    * @returns {*}
@@ -637,7 +635,12 @@ class BusinessProfileService {
       );
 
       const { logoGenerationInfo } = userBusinessProfile;
-      const { aiSuggestions, isUnderProcess, startTime } = logoGenerationInfo;
+      const {
+        aiSuggestions,
+        isUnderProcess,
+        startTime,
+        isInitialSuggestionsCompleted,
+      } = logoGenerationInfo;
       const elapsedTime = moment().unix() - startTime;
       let finished = aiSuggestions?.length === 4;
       if (
@@ -687,20 +690,44 @@ class BusinessProfileService {
           textResponse.choices[0].message.content
         );
         response = [...imageURLs];
-        await Promise.all([
-          BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            {
-              $set: {
-                isRetry: true,
-                "logoGenerationInfo.isUnderProcess": false,
-                "logoGenerationInfo.startTime": moment().unix(),
-                "logoGenerationInfo.aiSuggestions": response,
-              },
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          {
+            $set: {
+              isRetry: true,
+              "logoGenerationInfo.isUnderProcess": false,
+              "logoGenerationInfo.startTime": moment().unix(),
+              "logoGenerationInfo.aiSuggestions": response,
+              "logoGenerationInfo.isInitialSuggestionsCompleted": true,
             },
-            { upsert: true }
-          ),
-        ]);
+          },
+          { upsert: true }
+        );
+      }
+      if (
+        isUnderProcess &&
+        isRetry == IS_RETRY.FALSE &&
+        !isInitialSuggestionsCompleted &&
+        isFromProfile == IS_RETRY.FALSE
+      ) {
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          {
+            $set: {
+              isRetry: true,
+              "logoGenerationInfo.isUnderProcess": false,
+              "logoGenerationInfo.startTime": moment().unix(),
+              "logoGenerationInfo.aiSuggestions": response,
+              "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+            },
+          },
+          { upsert: true }
+        );
+        return {
+          finished: true,
+          suggestions: BACKUP_LOGOS,
+          isRetry: true,
+        };
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
