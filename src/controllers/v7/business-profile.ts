@@ -116,10 +116,8 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (!file) {
-      return this.BadRequest(ctx, "Image is not selected");
-    }
-    const imageName = file.size > 0 ? file.key?.split("/")?.[1] || null : null;
+    const imageName =
+      file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
     if (businessProfileExists.companyLogo) {
       await removeImage(userExists._id, businessProfileExists.companyLogo);
