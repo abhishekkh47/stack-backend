@@ -283,10 +283,11 @@ export const STORY_QUESTION_TYPE = {
 };
 
 export interface IPromptData {
-  prompt?: string,
-  promptStyle?: string,
-  imageName?: string,
-  isNameOverride?: boolean,
+  promptDescription?: string;
+  prompt?: string;
+  promptStyle?: string;
+  imageName?: string;
+  isNameOverride?: boolean;
 }
 
 export const SIMULATION_QUIZ_FUEL = 150;

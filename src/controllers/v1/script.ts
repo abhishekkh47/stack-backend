@@ -1803,7 +1803,9 @@ class ScriptController extends BaseController {
       if (storiesContentData.length === 0) {
         return this.BadRequest(ctx, "Story Content Not Found");
       }
-      const isAddedToDb = await ScriptService.addQuizContentsToDB(storiesContentData);
+      const isAddedToDb = await ScriptService.addQuizContentsToDB(
+        storiesContentData
+      );
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }

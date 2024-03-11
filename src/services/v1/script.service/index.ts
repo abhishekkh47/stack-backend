@@ -33,8 +33,12 @@ import {
   COMPLETED_ACTION_REWARD,
   IPromptData,
   checkQuizImageExists,
+  IMAGE_GENERATION_PROMPTS,
+  SYSTEM,
+  USER,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
+import OpenAI from "openai";
 
 class ScriptService {
   public async sandboxApproveKYC(
@@ -864,20 +868,58 @@ class ScriptService {
     outputPath: any
   ) => {
     // @@TODO: This process takes a very long time. We want to offload this job to a different worker in the future.
-    for (let i = 0; i < descriptions.length; i++) {
-      await this.getImage(
-        STORY_QUESTION_TYPE.DESCRIPTION,
-        descriptions[i]
-      );
+    if (descriptions.length) {
+      for (let i = 0; i < descriptions.length; i++) {
+        await this.getImage(STORY_QUESTION_TYPE.DESCRIPTION, descriptions[i]);
+      }
     }
-    for (let i = 0; i < questions.length; i++) {
-      await this.getImage(
-        STORY_QUESTION_TYPE.QUESTION,
-        questions[i]
-      );
+    if (questions.length) {
+      for (let i = 0; i < questions.length; i++) {
+        await this.getImage(STORY_QUESTION_TYPE.QUESTION, questions[i]);
+      }
     }
     fs.rmdirSync(outputPath, { recursive: true });
-  }
+  };
+
+  public generatePrompt = async (
+    descriptions: IPromptData[],
+    questions: IPromptData[]
+  ) => {
+    try {
+      if (descriptions.length) {
+        const myDescriptions = descriptions
+          .map(
+            (obj, index) =>
+              `Story Phrase ${index + 1}: ${obj.promptDescription}`
+          )
+          .join("\n");
+        let descriptionImagePrompts = await this.generateImagePrompts(
+          IMAGE_GENERATION_PROMPTS.STORY_MAIN_IMAGES,
+          myDescriptions
+        );
+        descriptionImagePrompts = JSON.parse(descriptionImagePrompts);
+        for (let i = 0; i < descriptions.length; i++) {
+          descriptions[i].prompt = descriptionImagePrompts[i];
+        }
+      }
+
+      if (questions.length) {
+        const myQuestions = questions
+          .map((obj) => obj.promptDescription)
+          .filter((description) => !!description);
+        for (let i = 0; i < myQuestions.length; i++) {
+          const questionImagePrompt = await this.generateImagePrompts(
+            IMAGE_GENERATION_PROMPTS.STORY_MC_AND_QUIZ_IMAGES,
+            myQuestions[i]
+          );
+          questions[i].prompt = questionImagePrompt;
+        }
+      }
+      return { descriptionPrompts: descriptions, questionPrompts: questions };
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  };
 
   /**
    * @description This function is add simulations into db
@@ -891,10 +933,11 @@ class ScriptService {
     rows: any,
     allTopics: any
   ) {
-    
     const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
     try {
-      const filteredStories = rows.filter((x) => storyNums.includes(x['Story #']));
+      const filteredStories = rows.filter((x) =>
+        storyNums.includes(x["Story #"])
+      );
       let storyTitle = "";
       let lastStoryCategory = "";
       let lastStoryStage = "";
@@ -907,11 +950,12 @@ class ScriptService {
       let questionDataArray = [];
       let filterCategory = [];
       let questionData = null;
+      let currentPromptStyle = null;
       let promptList: {
         [storyNumber: number]: {
-          descriptions: IPromptData[],
-          questions: IPromptData[] 
-        }
+          descriptions: IPromptData[];
+          questions: IPromptData[];
+        };
       } = {};
 
       // ---------- IMAGE GENERATION ----------- \\
@@ -923,88 +967,85 @@ class ScriptService {
       fs.mkdirSync(outputPath);
       await Promise.all(
         filteredStories.map(async (data) => {
-          const storyNumber = Number(data["Story #"])
+          const storyNumber = Number(data["Story #"]);
           if (!(storyNumber in promptList)) {
             promptList[storyNumber] = {
               descriptions: [],
-              questions: []
-            }
+              questions: [],
+            };
           }
-          let currentPromptStyle =
-            PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd())];
+          currentPromptStyle =
+            PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd()) - 1] ||
+            currentPromptStyle;
           if (data["Prompt Type"]?.trimEnd() == "Description") {
-            if (data["Image Prompt"]?.trimEnd()) {
-              const storyImageName = data["Story Image"];
-              const desc: IPromptData = {
-                prompt: data["Image Prompt"]?.trimEnd(),
-                promptStyle: currentPromptStyle,
-                imageName: `s${storyNumber}_d${promptList[storyNumber].descriptions.length + 1}`,
-              };
-              if (storyImageName) {
-                desc.isNameOverride = true;
-                desc.imageName = storyImageName;
-              }
-              promptList[storyNumber].descriptions.push(desc);
-            } else {
-              promptList[storyNumber].descriptions.push({});
-            } 
+            const storyImageName = data["Story Image"];
+            const desc: IPromptData = {
+              promptDescription: data["Text"]?.trimEnd(),
+              promptStyle: "",
+              imageName: `s${storyNumber}_d${
+                promptList[storyNumber].descriptions.length + 1
+              }`,
+            };
+            if (storyImageName) {
+              desc.isNameOverride = true;
+              desc.imageName = storyImageName;
+            }
+            promptList[storyNumber].descriptions.push(desc);
           } else {
-            const prompts = [
-              "A",
-              "B",
-              "C",
-              "D",
-            ]
+            const prompts = ["A", "B", "C", "D"];
             const promptData: IPromptData[] = prompts.map((promptKey) => {
-              const prompt = data[`Prompt ${promptKey}`]?.trimEnd()
-              const questionImageName = data[`Image ${promptKey}`]
-              
-              if (prompt) {
-                const question: IPromptData = {
-                  prompt: data[`Prompt ${promptKey}`]?.trimEnd(),
-                  promptStyle: currentPromptStyle,
-                  imageName: `s${storyNumber}_q${
-                    Math.ceil(((promptList[storyNumber].questions.length) / 4) + 1)
-                  }_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
-                }
-                if (questionImageName) {
-                  question.isNameOverride = true
-                  question.imageName = questionImageName
-                }
-                return question
-              } else {
-                return {}
+              const questionImageName = data[`Image ${promptKey}`];
+              const question: IPromptData = {
+                promptDescription: data[promptKey]?.trimEnd(),
+                promptStyle: "",
+                imageName: `s${storyNumber}_q${Math.ceil(
+                  promptList[storyNumber].questions.length / 4 + 1
+                )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+              };
+              if (questionImageName) {
+                question.isNameOverride = true;
+                question.imageName = questionImageName;
               }
+              return question;
             });
             promptList[storyNumber].questions.push(...promptData);
           }
         })
       );
 
-      const descriptions: IPromptData[] = []
-      const questions: IPromptData[] = []
-      Object.values(promptList).forEach(value => {
-        descriptions.push(...value.descriptions.filter(desc => Object.keys(desc).length > 0))
-        questions.push(...value.questions.filter(question => Object.keys(question).length > 0))
-      })
-      
-      this.generateImages(descriptions, questions, outputPath)
+      const descriptions: IPromptData[] = [];
+      const questions: IPromptData[] = [];
+      Object.values(promptList).forEach((value) => {
+        descriptions.push(
+          ...value.descriptions.filter((desc) => Object.keys(desc).length > 0)
+        );
+        questions.push(
+          ...value.questions.filter(
+            (question) => Object.keys(question).length > 0
+          )
+        );
+      });
 
-
+      const { descriptionPrompts, questionPrompts } = await this.generatePrompt(
+        descriptions,
+        questions
+      );
+      this.generateImages(descriptionPrompts, questionPrompts, outputPath);
 
       // ---------- TEXT CONTENT ----------- \\
 
       await Promise.all(
         await filteredStories.map(async (data, index) => {
-
           if (data["Story Title"] == "") {
             ++order;
           } else {
             storyTitle = data["Story Title"]?.trimEnd();
             order = 1;
           }
-          lastStoryCategory = (!!data["Category"]) ? data["Category"]?.trimEnd() : "";
-          lastStoryStage = (!!data["Stage"]) ? data["Stage"]?.trimEnd() : "";
+          lastStoryCategory = !!data["Category"]
+            ? data["Category"]?.trimEnd()
+            : "";
+          lastStoryStage = !!data["Stage"] ? data["Stage"]?.trimEnd() : "";
           if (!data["Character"]) characterName = null;
           if (!data["Character Image"]) characterImage = null;
 
@@ -1014,10 +1055,12 @@ class ScriptService {
           };
           if (data["Prompt Type"]?.trimEnd() == "Description") {
             descriptionNum++;
-            const questionImageName = data["Story Image"]
+            const questionImageName = data["Story Image"];
             questionData = {
               ...baseQuestionData,
-              question_image: questionImageName || `s${data["Story #"]}_d${descriptionNum}.png`,
+              question_image:
+                questionImageName ||
+                `s${data["Story #"]}_d${descriptionNum}.png`,
               points: 0,
               question_type: 4,
               answer_type: null,
@@ -1026,38 +1069,23 @@ class ScriptService {
               incorrectStatement: null,
             };
           } else {
+            const prompts = ["A", "B", "C", "D"];
             questionData = {
               ...baseQuestionData,
               question_image: null,
               points: 10,
               question_type: 2,
               answer_type: 2,
-              answer_array: [
-                {
-                  name: data["A"]?.trimEnd(),
-                  image: data["Image A"] || `s${data["Story #"]}_q${(index + 1) / 4}_a.png`,
-                  correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
-                  statement: null,
-                },
-                {
-                  name: data["B"]?.trimEnd(),
-                  image: data["Image B"] || `s${data["Story #"]}_q${(index + 1) / 4}_b.png`,
-                  correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
-                  statement: null,
-                },
-                {
-                  name: data["C"]?.trimEnd(),
-                  image: data["Image C"] || `s${data["Story #"]}_q${(index + 1) / 4}_c.png`,
-                  correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
-                  statement: null,
-                },
-                {
-                  name: data["D"]?.trimEnd(),
-                  image: data["Image D"] || `s${data["Story #"]}_q${(index + 1) / 4}_d.png`,
-                  correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
-                  statement: null,
-                },
-              ],
+              answer_array: prompts.map((prompt) => ({
+                name: data[prompt]?.trimEnd(),
+                image:
+                  data[`Image ${prompt}`] ||
+                  `s${data["Story #"]}_q${
+                    (index + 1) / 4
+                  }_${prompt.toLowerCase()}.png`,
+                correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
+                statement: null,
+              })),
               correctStatement: data["Explanation"],
               incorrectStatement: data["Explanation"],
             };
@@ -1237,13 +1265,19 @@ class ScriptService {
   public async getImage(questionType: number, promptData: IPromptData) {
     try {
       if (promptData.isNameOverride) {
-        console.log(`Unable to create image due to custom image name: ${promptData.imageName}. Skipping.`)
-        return `${promptData.imageName}.png`
+        console.log(
+          `Unable to create image due to custom image name: ${promptData.imageName}. Skipping.`
+        );
+        return `${promptData.imageName}.png`;
       }
-      const isImageAlreadyExist: boolean = await checkQuizImageExists(promptData)
+      const isImageAlreadyExist: boolean = await checkQuizImageExists(
+        promptData
+      );
       if (isImageAlreadyExist) {
-        console.log(`${promptData.imageName} already exists in s3 bucket. Skipping.`)
-        return `${promptData.imageName}.png`
+        console.log(
+          `${promptData.imageName} already exists in s3 bucket. Skipping.`
+        );
+        return `${promptData.imageName}.png`;
       }
       const imagineRes = await generateImage(
         `${promptData.prompt} ${promptData.promptStyle}`
@@ -1278,10 +1312,16 @@ class ScriptService {
       }
       return `${promptData.imageName}.png`;
     } catch (error) {
+      if (error.message.indexOf("Job with id") >= 0) {
+        console.log(
+          `Error occurred while generating ${promptData.imageName}.png, trying again`
+        );
+        return await this.getImage(questionType, promptData);
+      }
       throw new NetworkError(error.message, 400);
     }
   }
-  
+
   /**
    * @description This function convert spreadsheet data to JSON by filtering with quiz # for weekly journey
    * @param quizNums
@@ -1289,104 +1329,135 @@ class ScriptService {
    * @returns {*}
    */
   public async convertWeeklyQuizSpreadSheetToJSON(quizNums: any, rows: any) {
-    rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
-    let lastQuizName = "";
-    let lastQuizCategory = "";
-    let lastQuizStage = "";
-    let lastQuizTags = "";
-    let quizContentData = [];
-    let questionDataArray = [];
-    let order = 1;
-    await Promise.all(
-      await rows.map(async (data, index) => {
-        if (data["Quiz Title"] != "") {
-          lastQuizName = data["Quiz Title"].trimEnd();
-        }
-        if (data["Category"] != "") {
-          lastQuizCategory = data["Category"].trimEnd();
-        }
-        if (data["Stage"] != "") {
-          lastQuizStage = data["Stage"].trimEnd();
-        }
-        if (data["Tags"] && data["Tags"] != "") {
-          let tags = data["Tags"].split(",");
-          tags = tags.map((data) => {
-            data = data.trim();
-            return data;
-          });
-          lastQuizTags = tags.join(",");
-        }
-        if (data["Quiz Title"] == "") {
-          ++order;
-        } else {
-          order = 1;
-        }
-        let questionData = {
-          text: data["Question"].trimEnd(),
-          question_image: null,
-          order: order,
-          points: 10,
-          question_type: 2,
-          answer_type: 2,
-          answer_array: [
-            {
-              name: data["A"].trimEnd(),
-              image: data["Image A"],
-              correct_answer: data["correctAnswer"] == data["A"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["A"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-            {
-              name: data["B"].trimEnd(),
-              image: data["Image B"],
-              correct_answer: data["correctAnswer"] == data["B"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["B"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-            {
-              name: data["C"].trimEnd(),
-              image: data["Image C"],
-              correct_answer: data["correctAnswer"] == data["C"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["C"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-            {
-              name: data["D"].trimEnd(),
-              image: data["Image D"],
-              correct_answer: data["correctAnswer"] == data["D"] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data["D"]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            },
-          ],
+    try {
+      rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
+      let lastQuizName = "";
+      let lastQuizCategory = "";
+      let lastQuizStage = "";
+      let lastQuizTags = "";
+      let quizContentData = [];
+      let questionDataArray = [];
+      let order = 1;
+      let currentPromptStyle = null;
+      let questionNumber = 0;
+      let promptList: {
+        [quizNumber: number]: {
+          questions: IPromptData[];
         };
-        questionDataArray.push(questionData);
-        if (
-          rows[index + 1] == undefined ||
-          rows[index + 1]["Quiz #"] !== data["Quiz #"]
-        ) {
-          let quizData = {
-            topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
-            quizNum: data["Quiz #"].trimEnd(),
-            quizName: lastQuizName,
-            image: null,
-            stageName: lastQuizStage,
-            tags: lastQuizTags,
-            questionData: questionDataArray,
+      } = {};
+      const outputPath = path.join(__dirname, `/midJourneyImages`);
+      if (fs.existsSync(outputPath)) {
+        fs.rmdirSync(outputPath, { recursive: true });
+      }
+      fs.mkdirSync(outputPath);
+      const prompts = ["A", "B", "C", "D"];
+      await Promise.all(
+        await rows.map(async (data, index) => {
+          currentPromptStyle = "";
+          const quizNumber = data["Quiz #"].trimEnd();
+          if (!(quizNumber in promptList)) {
+            promptList[quizNumber] = {
+              questions: [],
+            };
+            questionNumber = 0;
+          }
+          questionNumber++;
+          if (data["Quiz Title"] != "") {
+            lastQuizName = data["Quiz Title"].trimEnd();
+          }
+          if (data["Category"] != "") {
+            lastQuizCategory = data["Category"].trimEnd();
+          }
+          if (data["Stage"] != "") {
+            lastQuizStage = data["Stage"].trimEnd();
+          }
+          if (data["Tags"] && data["Tags"] != "") {
+            let tags = data["Tags"].split(",");
+            tags = tags.map((data) => {
+              data = data.trim();
+              return data;
+            });
+            lastQuizTags = tags.join(",");
+          }
+          if (data["Quiz Title"] == "") {
+            ++order;
+          } else {
+            order = 1;
+          }
+
+          const promptData: IPromptData[] = prompts.map((promptKey) => {
+            const questionImageName = data[`Image ${promptKey}`];
+            const question: IPromptData = {
+              promptDescription: data[promptKey]?.trimEnd(),
+              promptStyle: currentPromptStyle,
+              imageName: `q${quizNumber}_q${Math.ceil(
+                promptList[quizNumber].questions.length / 4 + 1
+              )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+            };
+            if (questionImageName) {
+              question.isNameOverride = true;
+              question.imageName = questionImageName;
+            }
+            return question;
+          });
+          promptList[quizNumber].questions.push(...promptData);
+
+          let questionData = {
+            text: data["Question"].trimEnd(),
+            question_image: null,
+            order: order,
+            points: 10,
+            question_type: 2,
+            answer_type: 2,
+            answer_array: prompts.map((prompt) => ({
+              name: data[prompt]?.trimEnd(),
+              image:
+                data[`Image ${prompt}`] ||
+                `q${
+                  data["Quiz #"]
+                }_q${questionNumber}_${prompt.toLowerCase()}.png`,
+              correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
+              statement:
+                data["correctAnswer"] == data[prompt]
+                  ? data["Explanation"].trimEnd()
+                  : null,
+            })),
           };
-          quizContentData.push(quizData);
-          questionDataArray = [];
-        }
-      })
-    );
-    return quizContentData;
+          questionDataArray.push(questionData);
+          if (
+            rows[index + 1] == undefined ||
+            rows[index + 1]["Quiz #"] !== data["Quiz #"]
+          ) {
+            let quizData = {
+              topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
+              quizNum: data["Quiz #"].trimEnd(),
+              quizName: lastQuizName,
+              image: null,
+              stageName: lastQuizStage,
+              tags: lastQuizTags,
+              questionData: questionDataArray,
+            };
+            quizContentData.push(quizData);
+            questionDataArray = [];
+          }
+        })
+      );
+
+      const questions: IPromptData[] = [];
+      Object.values(promptList).forEach((value) => {
+        questions.push(
+          ...value.questions.filter(
+            (question) => Object.keys(question).length > 0
+          )
+        );
+      });
+      const { questionPrompts } = await this.generatePrompt([], questions);
+      this.generateImages([], questionPrompts, outputPath);
+      return quizContentData;
+    } catch (error) {
+      console.log("ERROR : ", error.message);
+      throw new NetworkError(error.message, 400);
+    }
   }
 
   /**
@@ -1476,6 +1547,40 @@ class ScriptService {
       }
     });
     return true;
+  }
+  /**
+   * @description this will generate suggestions using OpenAI API based on user inputs
+   * @param data
+   * @returns {*}
+   */
+  public async generateImagePrompts(systemInput: string, prompt: string) {
+    try {
+      const openai = new OpenAI({
+        apiKey: envData.OPENAI_API_KEY,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: IMAGE_GENERATION_PROMPTS.GPT_MODEL,
+        messages: [
+          {
+            role: SYSTEM,
+            content: systemInput,
+          },
+          {
+            role: USER,
+            content: prompt,
+          },
+        ],
+        temperature: 1,
+        max_tokens: 1024,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
+      });
+      return JSON.parse(JSON.stringify(response.choices[0].message.content));
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 
