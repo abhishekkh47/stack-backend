@@ -15,11 +15,14 @@ import {
   uploadMvpHomeScreen,
   SYSTEM_INPUT,
   ANALYTICS_EVENTS,
+  IMAGE_ACTIONS,
+  IS_RETRY,
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
 import { AnalyticsService } from "@app/services/v4";
 import { zohoCrmService } from "@app/services/v1";
+import moment from "moment";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is add/edit business profile information
@@ -99,7 +102,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async updateCompanyLogo(ctx: any) {
-    const { user } = ctx.request;
+    const { user, body, file } = ctx.request;
     const [userExists, businessProfileExists, actionScreenData]: any =
       await Promise.all([
         UserTable.findOne({
@@ -113,11 +116,8 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const file = ctx.request.file;
-    if (!file) {
-      return this.BadRequest(ctx, "Image is not selected");
-    }
-    const imageName = file.key?.split("/")?.[1] || null;
+    const imageName =
+      file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
     if (businessProfileExists.companyLogo) {
       await removeImage(userExists._id, businessProfileExists.companyLogo);
@@ -125,16 +125,19 @@ class BusinessProfileController extends BaseController {
     const getHoursSaved = actionScreenData.filter(
       (action) => action?.key == "companyLogo"
     );
-    const businessProfileObj = {
+    let businessProfileObj = {
       companyLogo: imageName,
-      isRetry: false,
-      aiGeneratedSuggestions: null,
     };
-    if (getHoursSaved.length) {
-      businessProfileObj["hoursSaved"] =
-        businessProfileExists.hoursSaved > getHoursSaved[0].hoursSaved
-          ? businessProfileExists.hoursSaved
-          : getHoursSaved[0].hoursSaved;
+    if (imageName) {
+      if (getHoursSaved.length && !businessProfileExists.companyLogo) {
+        businessProfileObj["hoursSaved"] =
+          businessProfileExists.hoursSaved + getHoursSaved[0].hoursSaved;
+      }
+      businessProfileObj["logoGenerationInfo"] = {
+        isUnderProcess: false,
+        aiSuggestions: null,
+        startTime: 0,
+      };
     }
     await Promise.all([
       BusinessProfileTable.updateOne(
@@ -142,15 +145,23 @@ class BusinessProfileController extends BaseController {
         { $set: businessProfileObj },
         { upsert: true }
       ),
-      ctx?.request?.body?.weeklyJourneyId
-        ? WeeklyJourneyResultTable.create({
-            weeklyJourneyId: ctx.request.body.weeklyJourneyId,
-            actionNum: ctx.request.body.actionNum,
-            userId: user._id,
-            actionInput: imageName,
-          }).then(() =>
-            UserService.updateUserScore(userExists, ctx.request.body)
-          )
+      body?.weeklyJourneyId
+        ? WeeklyJourneyResultTable.updateOne(
+            {
+              userId: user._id,
+              weeklyJourneyId: body.weeklyJourneyId,
+              actionNum: 3,
+            },
+            {
+              $set: {
+                weeklyJourneyId: body.weeklyJourneyId,
+                actionNum: 3,
+                userId: user._id,
+                actionInput: imageName,
+              },
+            },
+            { upsert: true }
+          ).then(() => UserService.updateUserScore(userExists, body, imageName))
         : Promise.resolve(),
     ]);
     const zohoInfo = {
@@ -463,7 +474,9 @@ class BusinessProfileController extends BaseController {
   })
   @Auth()
   public async getAISuggestion(ctx: any) {
-    const { user, query } = ctx.request;
+    const { user, query, headers } = ctx.request;
+    const { key, actionInput, isRetry, isFromProfile } = query;
+    let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
       BusinessProfileTable.findOne({ userId: user._id }),
@@ -471,16 +484,44 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (!query.key) {
+    if (userExists.requestId == headers.requestid) {
+      return this.Ok(ctx, { message: "Success", data: "Multiple Requests" });
+    }
+    if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
-    let response = await BusinessProfileService.generateAISuggestions(
-      userExists,
-      query.key,
-      userBusinessProfile,
-      query.actionInput,
-      query.isRetry
-    );
+    if (
+      IMAGE_ACTIONS.includes(key) &&
+      isRetry == IS_RETRY.TRUE &&
+      userBusinessProfile.logoGenerationInfo.isUnderProcess
+    ) {
+      return this.Ok(ctx, {
+        message: "Success",
+        data: {
+          finished: false,
+          suggestions: null,
+          isRetry: true,
+        },
+      });
+    }
+    if (IMAGE_ACTIONS.includes(key)) {
+      response = await BusinessProfileService.generateAILogos(
+        userExists,
+        key,
+        userBusinessProfile,
+        isRetry,
+        headers.requestid,
+        false,
+        isFromProfile
+      );
+    } else {
+      response = await BusinessProfileService.generateAISuggestions(
+        userExists,
+        key,
+        userBusinessProfile,
+        isRetry
+      );
+    }
     return this.Ok(ctx, { message: "Success", data: response });
   }
 
@@ -495,13 +536,51 @@ class BusinessProfileController extends BaseController {
   })
   @Auth()
   public async checkLogoGenerationComplete(ctx: any) {
-    const { user } = ctx.request;
-    const userBusinessProfile = await BusinessProfileTable.findOne({ userId: user._id });
+    const { user, query } = ctx.request;
+    const [userBusinessProfile, userIfExists] = await Promise.all([
+      BusinessProfileTable.findOne({ userId: user._id }),
+      UserTable.findOne({
+        _id: user._id,
+      }),
+    ]);
     if (!userBusinessProfile) {
       return this.BadRequest(ctx, "Business Profile Not Found");
     }
-    const finished = userBusinessProfile.aiGeneratedSuggestions.length === 4;
-    return this.Ok(ctx, { message: "Success", data: { finished } });
+    let finished =
+      userBusinessProfile.logoGenerationInfo?.aiSuggestions?.length === 4;
+    if (
+      (!finished && !userBusinessProfile.logoGenerationInfo.isUnderProcess) ||
+      (userBusinessProfile.logoGenerationInfo.isUnderProcess &&
+        moment().unix() - userBusinessProfile.logoGenerationInfo.startTime >
+          200)
+    ) {
+      finished = false;
+      BusinessProfileService.generateAILogos(
+        userIfExists,
+        "companyLogo",
+        userBusinessProfile,
+        query.isRetry
+      );
+      return this.Ok(ctx, {
+        message: "Success",
+        data: {
+          finished,
+        },
+      });
+    }
+    if (
+      query.isRetry == "true" &&
+      !userBusinessProfile.logoGenerationInfo.isUnderProcess
+    ) {
+      finished = false;
+    }
+    return this.Ok(ctx, {
+      message: "Success",
+      data: {
+        finished,
+        suggestions: userBusinessProfile.logoGenerationInfo?.aiSuggestions,
+      },
+    });
   }
 }
 

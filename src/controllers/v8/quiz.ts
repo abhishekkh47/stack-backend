@@ -16,7 +16,7 @@ import {
 } from "@app/services/v4";
 import { QuizDBService, BusinessProfileService } from "@app/services/v7";
 import { HttpMethod } from "@app/types";
-import { Route, SUGGESTION_FORMAT } from "@app/utility";
+import { Route, SUGGESTION_FORMAT, IS_RETRY } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
 
 class QuizController extends BaseController {
@@ -78,11 +78,14 @@ class QuizController extends BaseController {
             curentWeeklyJourneyDetails.day == 2 &&
             curentWeeklyJourneyDetails.actions[0].quizId == reqParam.quizId
           ) {
-            BusinessProfileService.generateAISuggestions(
+            BusinessProfileService.generateAILogos(
               userIfExists,
               "companyLogo",
               userBusinessProfile,
-              SUGGESTION_FORMAT.IMAGE
+              IS_RETRY.FALSE,
+              null,
+              true,
+              IS_RETRY.FALSE
             );
           }
           const {

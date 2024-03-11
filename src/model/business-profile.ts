@@ -172,6 +172,30 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: 0,
     },
+    logoGenerationInfo: {
+      isUnderProcess: {
+        type: mongoose.Schema.Types.Boolean,
+        required: false,
+        default: false,
+      },
+      aiSuggestions: [
+        {
+          type: mongoose.Schema.Types.String,
+          required: false,
+          default: null,
+        },
+      ],
+      startTime: {
+        type: mongoose.Schema.Types.Number,
+        required: false,
+        default: 0,
+      },
+      isInitialSuggestionsCompleted: {
+        type: mongoose.Schema.Types.Boolean,
+        required: false,
+        default: false,
+      },
+    },
   },
   { timestamps: true }
 );

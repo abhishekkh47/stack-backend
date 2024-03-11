@@ -260,6 +260,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.Date,
       default: null,
     },
+    requestId: {
+      type: mongoose.Schema.Types.String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

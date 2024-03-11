@@ -30,7 +30,8 @@ class WeeklyJourneyController extends BaseController {
       UserTable.findOne({ _id: user._id }),
       WeeklyJourneyTable.find({})
         .sort({ week: 1, day: 1 })
-        .select("_id day week dailyGoal actions reward rewardType title"),
+        .select("_id day week dailyGoal actions reward rewardType title")
+        .lean(),
       WeeklyJourneyResultTable.find({ userId: user._id }).sort({
         createdAt: -1,
       }),
@@ -52,11 +53,30 @@ class WeeklyJourneyController extends BaseController {
       weeklyJourneyDetails,
       userNextChallenge
     );
+    weeklyJourneyDetails[1].actions[2].actionDetails =
+      await WeeklyJourneyDBService.getActionDetails(
+        businessProfileIfExists,
+        weeklyJourneyDetails[1],
+        actionScreenData,
+        2
+      );
+    const businessLogoActionDay =
+      !businessProfileIfExists?.companyLogo &&
+      (userNextChallenge?.weeklyJourney?.day > 2 ||
+        userNextChallenge?.weeklyJourney?.week > 1 ||
+        !userNextChallenge)
+        ? {
+            _id: 1,
+            weeklyJourney: { ...weeklyJourneyDetails[1], actionNum: 3 },
+          }
+        : null;
     return this.Ok(ctx, {
       data: {
         weeks: getWeeklyDetails,
         currentDay: userNextChallenge,
-        businessJourneyCompleted: userNextChallenge ? false : true,
+        businessJourneyCompleted:
+          userNextChallenge || businessLogoActionDay ? false : true,
+        businessLogoActionDay,
       },
       message: "Success",
     });

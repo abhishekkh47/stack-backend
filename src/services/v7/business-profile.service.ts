@@ -28,8 +28,10 @@ import {
   HOURS_SAVED_BY_IDEA_GENERATOR,
   delay,
   REQUIRE_COMPANY_NAME,
+  BACKUP_LOGOS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
+import moment from "moment";
 
 class BusinessProfileService {
   /**
@@ -52,10 +54,9 @@ class BusinessProfileService {
       if (data.businessIdeaInfo) {
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
-        obj["hoursSaved"] =
-          businessProfileData?.hoursSaved > HOURS_SAVED_BY_IDEA_GENERATOR
-            ? businessProfileData?.hoursSaved
-            : HOURS_SAVED_BY_IDEA_GENERATOR;
+        if (!businessProfileData) {
+          obj["hoursSaved"] = HOURS_SAVED_BY_IDEA_GENERATOR;
+        }
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
           {
@@ -72,11 +73,9 @@ class BusinessProfileService {
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        if (getHoursSaved.length) {
+        if (!businessProfileData[data.key] && getHoursSaved.length) {
           obj["hoursSaved"] =
-            businessProfileData.hoursSaved > getHoursSaved[0].hoursSaved
-              ? businessProfileData.hoursSaved
-              : getHoursSaved[0].hoursSaved;
+            businessProfileData.hoursSaved + getHoursSaved[0].hoursSaved;
         }
       }
       await BusinessProfileTable.findOneAndUpdate(
@@ -558,61 +557,45 @@ class BusinessProfileService {
 
   /**
    * @description this will generate business idea using OpenAI GPT
-   * @param data
+   * @param userExists
+   * @param key
+   * @param userBusinessProfile
+   * @param isRetry
    * @returns {*}
    */
   public async generateAISuggestions(
     userExists: any,
     key: string,
     userBusinessProfile: any,
-    actionInput: string,
     isRetry: any = false
   ) {
     try {
       let response = null;
-      let businessProfileUpdateObj = null;
-      if (userBusinessProfile.isRetry == false || isRetry == IS_RETRY.TRUE) {
-        let prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
+      if (
+        !userBusinessProfile.isRetry ||
+        isRetry == IS_RETRY.TRUE ||
+        userBusinessProfile.aiGeneratedSuggestions != key
+      ) {
+        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
           SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
           prompt
         );
-        if (IMAGE_ACTIONS.includes(key)) {
-          const imageURLs = await this.generateImageSuggestions(
-            textResponse.choices[0].message.content
-          );
-          response = [...imageURLs];
-          businessProfileUpdateObj = {
-            aiGeneratedSuggestions: response,
-            isRetry: true,
-          };
-        } else {
-          response = JSON.parse(textResponse.choices[0].message.content);
-          businessProfileUpdateObj = {
-            isRetry: true,
-          };
-        }
+        response = JSON.parse(textResponse.choices[0].message.content);
         if (response && isRetry == IS_RETRY.TRUE) {
           await UserTable.findOneAndUpdate(
             { _id: userExists._id },
-            {
-              $inc: {
-                quizCoins: DEDUCT_RETRY_FUEL,
-              },
-            }
+            { $inc: { quizCoins: DEDUCT_RETRY_FUEL } }
           );
         }
         await BusinessProfileTable.findOneAndUpdate(
           { userId: userExists._id },
-          {
-            $set: businessProfileUpdateObj,
-          }
+          { $set: { isRetry: true } }
         );
       }
       return {
-        suggestions: IMAGE_ACTIONS.includes(key)
-          ? userBusinessProfile.aiGeneratedSuggestions
-          : response,
+        suggestions: response,
+        finished: true,
         isRetry: true,
         companyName: REQUIRE_COMPANY_NAME.includes(key)
           ? userBusinessProfile.companyName
@@ -620,6 +603,147 @@ class BusinessProfileService {
       };
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+    }
+  }
+
+  /**
+   * @description this will generate image suggestions using OpenAI GPT and MidJourney
+   * @param userExists
+   * @param key
+   * @param userBusinessProfile
+   * @param isRetry
+   * @param requestId
+   * @param isSystemCall signifies that the function call has been made by system internally, when user completes day-2, quiz-1 to generate images before user plays action-3
+   * @param isFromProfile this will be true if user generate AI logos by visiting the profile page
+   * @returns {*}
+   */
+  public async generateAILogos(
+    userExists: any,
+    key: string,
+    userBusinessProfile: any,
+    isRetry: string = IS_RETRY.FALSE,
+    requestId: string = null,
+    isSystemCall: boolean = false,
+    isFromProfile: string = IS_RETRY.FALSE
+  ) {
+    try {
+      let response = null;
+      await UserTable.findOneAndUpdate(
+        { _id: userExists._id },
+        { $set: { requestId } },
+        { upsert: true }
+      );
+
+      const { logoGenerationInfo } = userBusinessProfile;
+      const {
+        aiSuggestions,
+        isUnderProcess,
+        startTime,
+        isInitialSuggestionsCompleted,
+      } = logoGenerationInfo;
+      const elapsedTime = moment().unix() - startTime;
+      let finished = aiSuggestions?.length === 4;
+      if (
+        isRetry.toString() == IS_RETRY.FALSE &&
+        !isUnderProcess &&
+        !finished &&
+        !isSystemCall
+      ) {
+        return {
+          finished: true,
+          suggestions: isFromProfile == IS_RETRY.TRUE ? null : BACKUP_LOGOS,
+          isRetry: true,
+        };
+      }
+      if (
+        (!finished && !isUnderProcess) ||
+        (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
+        (isUnderProcess && elapsedTime > 200) ||
+        isSystemCall
+      ) {
+        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
+        const textResponse = await this.generateTextSuggestions(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+          prompt
+        );
+        const updateFuel = isRetry === IS_RETRY.TRUE ? DEDUCT_RETRY_FUEL : 0;
+        await Promise.all([
+          BusinessProfileTable.findOneAndUpdate(
+            { userId: userExists._id },
+            {
+              $set: {
+                "logoGenerationInfo.isUnderProcess": true,
+                "logoGenerationInfo.startTime": moment().unix(),
+                "logoGenerationInfo.aiSuggestions": null,
+              },
+            },
+            { upsert: true }
+          ),
+          UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            {
+              $inc: { quizCoins: updateFuel },
+            }
+          ),
+        ]);
+        const imageURLs = await this.generateImageSuggestions(
+          textResponse.choices[0].message.content
+        );
+        response = [...imageURLs];
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          {
+            $set: {
+              isRetry: true,
+              "logoGenerationInfo.isUnderProcess": false,
+              "logoGenerationInfo.startTime": moment().unix(),
+              "logoGenerationInfo.aiSuggestions": response,
+              "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+            },
+          },
+          { upsert: true }
+        );
+      }
+      if (
+        isUnderProcess &&
+        isRetry == IS_RETRY.FALSE &&
+        !isInitialSuggestionsCompleted &&
+        isFromProfile == IS_RETRY.FALSE
+      ) {
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          {
+            $set: {
+              isRetry: true,
+              "logoGenerationInfo.isUnderProcess": false,
+              "logoGenerationInfo.startTime": moment().unix(),
+              "logoGenerationInfo.aiSuggestions": response,
+              "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+            },
+          },
+          { upsert: true }
+        );
+        return {
+          finished: true,
+          suggestions: BACKUP_LOGOS,
+          isRetry: true,
+        };
+      }
+
+      if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
+        finished = false;
+      }
+      return {
+        finished,
+        suggestions: finished ? (response ? response : aiSuggestions) : null,
+        isRetry: true,
+      };
+    } catch (error) {
+      return {
+        finished: true,
+        suggestions: BACKUP_LOGOS,
+        isRetry: true,
+      };
     }
   }
 
