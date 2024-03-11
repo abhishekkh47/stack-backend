@@ -951,6 +951,8 @@ class ScriptService {
       let filterCategory = [];
       let questionData = null;
       let currentPromptStyle = null;
+      let currentStoryNumber = 0;
+      let questionNum = 0;
       let promptList: {
         [storyNumber: number]: {
           descriptions: IPromptData[];
@@ -1036,6 +1038,11 @@ class ScriptService {
 
       await Promise.all(
         await filteredStories.map(async (data, index) => {
+          if (currentStoryNumber != Number(data["Story #"])) {
+            currentStoryNumber = Number(data["Story #"]);
+            descriptionNum = 0;
+            questionNum = 0;
+          }
           if (data["Story Title"] == "") {
             ++order;
           } else {
@@ -1069,6 +1076,7 @@ class ScriptService {
               incorrectStatement: null,
             };
           } else {
+            questionNum++;
             const prompts = ["A", "B", "C", "D"];
             questionData = {
               ...baseQuestionData,
@@ -1080,9 +1088,9 @@ class ScriptService {
                 name: data[prompt]?.trimEnd(),
                 image:
                   data[`Image ${prompt}`] ||
-                  `s${data["Story #"]}_q${
-                    (index + 1) / 4
-                  }_${prompt.toLowerCase()}.png`,
+                  `s${
+                    data["Story #"]
+                  }_q${questionNum}_${prompt.toLowerCase()}.png`,
                 correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
                 statement: null,
               })),
