@@ -42,3 +42,4 @@ export * from "@app/model/weeklyJourneyResult";
 export * from "@app/model/businessPassion";
 export * from "@app/model/businessPassionAspect";
 export * from "@app/model/actionScreenCopy";
+export * from "@app/model/coachProfile";

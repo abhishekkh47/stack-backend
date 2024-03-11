@@ -15,6 +15,7 @@ import {
   UserTable,
   WeeklyJourneyTable,
   WeeklyJourneyResultTable,
+  CoachProfileTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1589,6 +1590,65 @@ class ScriptService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description This function import available Coach details
+   * @returns {*}
+   */
+  public async importCoachProfilesInDB(rows) {
+    const coachProfiles = [];
+    let skills = [];
+    let whyItsValuable = [];
+    let currentCoachId = 0;
+
+    rows.forEach((data) => {
+      if (currentCoachId != data["Coach Id"].trimEnd()) {
+        currentCoachId = Number(data["Coach Id"].trimEnd());
+        skills = [];
+        whyItsValuable = [];
+        coachProfiles.push({
+          coachId: Number(data["Coach Id"].trimEnd()),
+          key: data["Key"].trimEnd(),
+          name: data["Name"].trimEnd(),
+          linkedIn: data["LinkedIn"].trimEnd(),
+          rating: Number(data["Rating"].trimEnd()),
+          reviews: Number(data["Reviews"].trimEnd()),
+          mobile: data["Mobile"].trimEnd().replace(/-/g, ""),
+          about: data["About"].trimEnd(),
+          skills,
+          whyItsValuable,
+        });
+      }
+      coachProfiles[coachProfiles.length - 1].skills.push(
+        data["Skills"]?.trimEnd()
+      );
+      if (data["Why Its Valuable (Name)"]) {
+        coachProfiles[coachProfiles.length - 1].whyItsValuable.push({
+          name: data["Why Its Valuable (Name)"]?.trimEnd(),
+          description: data["Why Its Valuable (Description)"]?.trimEnd(),
+        });
+      }
+    });
+
+    let coachProfilesData = [];
+    coachProfiles.map(async (data: any) => {
+      let bulkWriteObject = {
+        updateOne: {
+          filter: { key: data.key },
+          update: {
+            $set: {
+              ...data,
+            },
+          },
+          upsert: true,
+        },
+      };
+      coachProfilesData.push(bulkWriteObject);
+    });
+
+    await CoachProfileTable.bulkWrite(coachProfilesData);
+    return coachProfilesData;
   }
 }
 
