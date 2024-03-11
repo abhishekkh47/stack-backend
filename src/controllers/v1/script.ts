@@ -1803,7 +1803,9 @@ class ScriptController extends BaseController {
       if (storiesContentData.length === 0) {
         return this.BadRequest(ctx, "Story Content Not Found");
       }
-      const isAddedToDb = await ScriptService.addQuizContentsToDB(storiesContentData);
+      const isAddedToDb = await ScriptService.addQuizContentsToDB(
+        storiesContentData
+      );
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
@@ -2023,6 +2025,33 @@ class ScriptController extends BaseController {
       return this.Ok(ctx, {
         message: "Users Profile Reset Completed",
         data: usersToBeUpdated,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to import the Coach details in 'coach_profiles' collection
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/import-coach-profiles", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importCoachProfiles(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.COACH_DETAILS_SHEET_GID,
+        envData.SHEET_ID
+      );
+      if (rows.length === 0)
+        return this.BadRequest(ctx, "Coach Profiles Not Found");
+      const coachData = await ScriptService.importCoachProfilesInDB(rows);
+      if (!coachData)
+        return this.BadRequest(ctx, "No Coach Profiles to Import");
+      return this.Ok(ctx, {
+        message: "Coach Profile Imported",
+        data: coachData,
       });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

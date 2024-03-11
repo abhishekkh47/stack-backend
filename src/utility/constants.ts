@@ -283,10 +283,10 @@ export const STORY_QUESTION_TYPE = {
 };
 
 export interface IPromptData {
-  prompt?: string,
-  promptStyle?: string,
-  imageName?: string,
-  isNameOverride?: boolean,
+  prompt?: string;
+  promptStyle?: string;
+  imageName?: string;
+  isNameOverride?: boolean;
 }
 
 export const SIMULATION_QUIZ_FUEL = 150;
@@ -554,3 +554,60 @@ export const BACKUP_LOGOS = [
   "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-3.png",
   "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-4.png",
 ];
+export const COACH_REQUIREMENTS = {
+  goodAt: {
+    order: 1,
+    title: "What do you feel you’re really good at?",
+    options: [
+      "Leading a group or community of peers",
+      "Technical skills including software engineering & coding",
+      "Graphic design and making things look high quality",
+      "Getting peers interested and excited about products that I like",
+      "others",
+    ],
+  },
+  needHelpIn: {
+    order: 2,
+    title: "Where do you feel you need the most support?",
+    options: [
+      "Idea Validation: I have a business idea but I want to make sure there’s demand.",
+      "No Code Solutions: I’m not a technical person but I want to build a prototype.",
+      "Developing my MVP: I believe in my idea but I need to bring it to life.",
+      "Marketing Strategy: I have a version of my product ready and I want to grow.",
+      "others",
+    ],
+  },
+  coachingStyle: {
+    order: 3,
+    title: "Which coaching style do you like better?",
+    options: [
+      "Motivational",
+      "Direct",
+      "Calm",
+      "Upbeat",
+      "Collaborative",
+      "Other",
+    ],
+  },
+  findPerfectCoach: {
+    order: 4,
+    title: "Finding your perfect Coach",
+    array: [
+      "Analyzing your coaching needs",
+      "Searching our database of coaches",
+      "Matching you with the perfect coach",
+    ],
+  },
+};
+export const THINGS_TO_TALK_ABOUT = [
+  "How do you generate new ideas?",
+  "What makes a business unique?",
+  "How to validate your ideas?",
+  "How to build a product?",
+  "How to market your business?",
+  "Who are your customers?",
+  "How to get your first 100 customers?",
+  "What should you focus on first?",
+  "How will you fund your business?",
+];
+export const MENTORS = ["natalieYoung", "willRush"];
