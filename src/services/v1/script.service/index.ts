@@ -981,7 +981,7 @@ class ScriptService {
             const storyImageName = data["Story Image"];
             const desc: IPromptData = {
               promptDescription: data["Text"]?.trimEnd(),
-              promptStyle: currentPromptStyle,
+              promptStyle: "",
               imageName: `s${storyNumber}_d${
                 promptList[storyNumber].descriptions.length + 1
               }`,
@@ -997,7 +997,7 @@ class ScriptService {
               const questionImageName = data[`Image ${promptKey}`];
               const question: IPromptData = {
                 promptDescription: data[promptKey]?.trimEnd(),
-                promptStyle: currentPromptStyle,
+                promptStyle: "",
                 imageName: `s${storyNumber}_q${Math.ceil(
                   promptList[storyNumber].questions.length / 4 + 1
                 )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
