@@ -1,6 +1,6 @@
 import BaseController from "@app/controllers/base";
 import { Auth, PrimeTrustJWT } from "@app/middleware";
-import { UserTable } from "@app/model";
+import { BusinessProfileTable, UserTable } from "@app/model";
 import { CoachDBService } from "@app/services/v8";
 import { HttpMethod } from "@app/types";
 import { Route, COACH_REQUIREMENTS, THINGS_TO_TALK_ABOUT } from "@app/utility";
@@ -33,14 +33,22 @@ class CoachController extends BaseController {
   @PrimeTrustJWT(true)
   public async getCoachDetails(ctx: any) {
     const { user, query } = ctx.request;
-    const userIfExists = await UserTable.findOne({ _id: user._id });
+    let coachProfile = null;
+    const [userIfExists, userBusinessProfile] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id })?.populate("coachId"),
+    ]);
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found.");
     }
-    const coachProfile = await CoachDBService.getCoachRequirements(
-      userIfExists,
-      query
-    );
+    if (userBusinessProfile.coachId) {
+      coachProfile = userBusinessProfile.coachId;
+    } else {
+      coachProfile = await CoachDBService.getCoachRequirements(
+        userIfExists,
+        query
+      );
+    }
     return this.Ok(ctx, {
       data: { coachProfile, thingsToTalkAbout: THINGS_TO_TALK_ABOUT },
     });
