@@ -1,0 +1,9 @@
+import UserController from "@controllers/v9/user";
+import BusinessProfileController from "@controllers/v9/business-profile";
+import { getRouteDict } from "@app/utility";
+const routeDict = getRouteDict("9.0.0", [
+  UserController,
+  BusinessProfileController,
+]);
+
+export default routeDict;

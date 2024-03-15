@@ -555,3 +555,7 @@ export const BACKUP_LOGOS = [
   "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-3.png",
   "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-4.png",
 ];
+export const PRO_SUBSCRIPTION_PRICE = {
+  jetson_9999_1y_1w0: 99.99,
+  jetson_1299_1m_1w0: 12.49,
+};
