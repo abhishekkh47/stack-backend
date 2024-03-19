@@ -5,7 +5,6 @@ import {
   SYSTEM_INPUT,
   BUSINESS_ACTIONS,
   IS_RETRY,
-  DEDUCT_RETRY_FUEL,
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
 } from "@app/utility";
@@ -19,7 +18,6 @@ class BusinessProfileService {
    * @param key
    * @param userBusinessProfile
    * @param isRetry
-   * @param isProUser
    * @returns {*}
    */
   public async generateAISuggestions(
@@ -32,22 +30,17 @@ class BusinessProfileService {
       let response = null;
       if (!userBusinessProfile.isRetry || isRetry == IS_RETRY.TRUE) {
         const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
-        const textResponse =
-          await BusinessProfileServiceV7.generateTextSuggestions(
+        const [textResponse, _] = await Promise.all([
+          BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
             prompt
-          );
+          ),
+          BusinessProfileTable.findOneAndUpdate(
+            { userId: userExists._id },
+            { $set: { isRetry: true } }
+          ),
+        ]);
         response = JSON.parse(textResponse.choices[0].message.content);
-        if (response && isRetry == IS_RETRY.TRUE) {
-          await UserTable.findOneAndUpdate(
-            { _id: userExists._id },
-            { $inc: { quizCoins: DEDUCT_RETRY_FUEL } }
-          );
-        }
-        await BusinessProfileTable.findOneAndUpdate(
-          { userId: userExists._id },
-          { $set: { isRetry: true } }
-        );
       }
       return {
         suggestions: response,
@@ -119,22 +112,23 @@ class BusinessProfileService {
         isSystemCall
       ) {
         const prompt = `Business Name:${companyName}, Business Description: ${description}`;
-        const textResponse =
-          await BusinessProfileServiceV7.generateTextSuggestions(
+        const [textResponse, _] = await Promise.all([
+          BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
             prompt
-          );
-        await BusinessProfileTable.findOneAndUpdate(
-          { userId: userExists._id },
-          {
-            $set: {
-              "logoGenerationInfo.isUnderProcess": true,
-              "logoGenerationInfo.startTime": moment().unix(),
-              "logoGenerationInfo.aiSuggestions": null,
+          ),
+          BusinessProfileTable.findOneAndUpdate(
+            { userId: userExists._id },
+            {
+              $set: {
+                "logoGenerationInfo.isUnderProcess": true,
+                "logoGenerationInfo.startTime": moment().unix(),
+                "logoGenerationInfo.aiSuggestions": null,
+              },
             },
-          },
-          { upsert: true }
-        );
+            { upsert: true }
+          ),
+        ]);
         const imageURLs =
           await BusinessProfileServiceV7.generateImageSuggestions(
             textResponse.choices[0].message.content
