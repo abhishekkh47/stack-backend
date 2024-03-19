@@ -264,6 +264,10 @@ const schema = new mongoose.Schema<IUserSchema>(
       type: mongoose.Schema.Types.String,
       default: null,
     },
+    isProUser: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

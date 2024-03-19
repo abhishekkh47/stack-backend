@@ -26,6 +26,7 @@ export interface IUser extends IAccount {
   lifeCount: number;
   renewLifeAt: string;
   requestId: string;
+  isProUser: boolean;
 }
 
 export interface IAccount {
