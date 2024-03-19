@@ -1,16 +1,19 @@
 import { Auth } from "@app/middleware";
-import { BusinessProfileTable, UserTable, ProUserTable } from "@app/model";
+import { BusinessProfileTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
 import BaseController from "../base";
-import { BusinessProfileService } from "@app/services/v9";
+import { BusinessProfileService } from "@app/services/v7";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is to generate suggestions from OpenAI-API based on based on user input
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/get-ai-suggestions", method: HttpMethod.GET })
+  @Route({
+    path: "/get-ai-suggestions",
+    method: HttpMethod.GET,
+  })
   @Auth()
   public async getAISuggestion(ctx: any) {
     const { user, query, headers } = ctx.request;

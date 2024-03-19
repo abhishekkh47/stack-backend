@@ -71,7 +71,6 @@ class BusinessProfileService {
    * @param requestId
    * @param isSystemCall signifies that the function call has been made by system internally, when user completes day-2, quiz-1 to generate images before user plays action-3
    * @param isFromProfile this will be true if user generate AI logos by visiting the profile page
-   * @param isProUser
    * @returns {*}
    */
   public async generateAILogos(

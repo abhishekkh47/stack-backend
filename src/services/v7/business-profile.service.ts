@@ -567,15 +567,11 @@ class BusinessProfileService {
     userExists: any,
     key: string,
     userBusinessProfile: any,
-    isRetry: any = false
+    isRetry: string = IS_RETRY.FALSE
   ) {
     try {
       let response = null;
-      if (
-        !userBusinessProfile.isRetry ||
-        isRetry == IS_RETRY.TRUE ||
-        userBusinessProfile.aiGeneratedSuggestions != key
-      ) {
+      if (!userBusinessProfile.isRetry || isRetry == IS_RETRY.TRUE) {
         const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse = await this.generateTextSuggestions(
           SYSTEM_INPUT[BUSINESS_ACTIONS[key]],

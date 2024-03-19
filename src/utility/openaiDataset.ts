@@ -207,7 +207,7 @@ export const SYSTEM_INPUT = {
     - Explanation: a place known for being paradise and associated with love"
   
   Output Format Expectation:
-  Ensure the response is formatted as an array containing all four business name suggestions, strictly adhering to the criteria provided for each. The output should look similar to this template, omitting any explanations for the choices:
+  Ensure the response is formatted as an array containing all four business name suggestions, strictly adhering to the criteria provided for each. Also, each business name should not exceed the character limit of 15 character. The output should look similar to this template, omitting any explanations for the choices:
   ["Oberon", "Buzzify", "WeddingWink", "Verona"]
   
   Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the company names within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,

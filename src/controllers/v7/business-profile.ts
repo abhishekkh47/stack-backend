@@ -484,7 +484,7 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (userExists.requestId == headers.requestid) {
+    if (userExists.requestId && userExists.requestId == headers.requestid) {
       return this.Ok(ctx, { message: "Success", data: "Multiple Requests" });
     }
     if (!key) {
