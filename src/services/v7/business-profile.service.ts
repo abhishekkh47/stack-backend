@@ -29,6 +29,7 @@ import {
   delay,
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
+  logger,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import moment from "moment";
@@ -739,6 +740,7 @@ class BusinessProfileService {
         isRetry: true,
       };
     } catch (error) {
+      logger.error(`{function:generateAILogos message:${error.message}}`);
       return {
         finished: true,
         suggestions: BACKUP_LOGOS,
@@ -802,6 +804,9 @@ class BusinessProfileService {
       const imageData4 = await UpscaleImage(imagineRes, 4);
       return [imageData1.uri, imageData2.uri, imageData3.uri, imageData4.uri];
     } catch (error) {
+      logger.error(
+        `{function:generateImageSuggestions prompt:${prompt} message:${error.message}}`
+      );
       throw new NetworkError(error.message, 400);
     }
   }
