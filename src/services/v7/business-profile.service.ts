@@ -29,7 +29,7 @@ import {
   delay,
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
-  logger,
+  awsLogger,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import moment from "moment";
@@ -691,7 +691,6 @@ class BusinessProfileService {
           { userId: userExists._id },
           {
             $set: {
-              isRetry: true,
               "logoGenerationInfo.isUnderProcess": false,
               "logoGenerationInfo.startTime": moment().unix(),
               "logoGenerationInfo.aiSuggestions": response,
@@ -711,7 +710,6 @@ class BusinessProfileService {
           { userId: userExists._id },
           {
             $set: {
-              isRetry: true,
               "logoGenerationInfo.isUnderProcess": false,
               "logoGenerationInfo.startTime": moment().unix(),
               "logoGenerationInfo.aiSuggestions": response,
@@ -736,7 +734,7 @@ class BusinessProfileService {
         isRetry: true,
       };
     } catch (error) {
-      logger.error(`{function:generateAILogos message:${error.message}}`);
+      awsLogger.error(`{function:generateAILogos || message:${error.message}}`);
       return {
         finished: true,
         suggestions: BACKUP_LOGOS,
@@ -789,7 +787,7 @@ class BusinessProfileService {
     try {
       const imagineRes = await generateImage(prompt);
       if (!imagineRes) {
-        throw new NetworkError("Something Went Wrong in myImage", 400);
+        throw new NetworkError("Imagine API failed to generate image", 400);
       }
       const imageData1 = await UpscaleImage(imagineRes, 1);
       await delay(3000);
@@ -800,8 +798,8 @@ class BusinessProfileService {
       const imageData4 = await UpscaleImage(imagineRes, 4);
       return [imageData1.uri, imageData2.uri, imageData3.uri, imageData4.uri];
     } catch (error) {
-      logger.error(
-        `{function:generateImageSuggestions prompt:${prompt} message:${error.message}}`
+      awsLogger.error(
+        `{function:generateImageSuggestions || prompt:${prompt} || message:${error.message}}`
       );
       throw new NetworkError(error.message, 400);
     }

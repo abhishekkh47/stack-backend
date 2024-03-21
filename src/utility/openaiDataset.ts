@@ -210,7 +210,7 @@ export const SYSTEM_INPUT = {
   Ensure the response is formatted as an array containing all four business name suggestions, strictly adhering to the criteria provided for each. Also, each business name should not exceed the character limit of 15 character. The output should look similar to this template, omitting any explanations for the choices:
   ["Oberon", "Buzzify", "WeddingWink", "Verona"]
   
-  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the company names within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the company names within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text. Strictly ensure that each company name does not exceed 15 characters.`,
 
   COMPANY_LOGO_: [
     `Based on the business name and business description provided, I want you to generate a business logo using below given Logo prompt. Make sure that if logo contains any text, it should be in english language words only. 
@@ -361,7 +361,7 @@ export const SYSTEM_INPUT = {
   Desired Output Format Example (without actual business description):
   ["Spotify for Emerging Artists", "Instagram for Musicians", "TikTok for Music Creation", "Pandora for Local Bands"]
       
-  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the X for Y within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text.`,
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the X for Y within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text. Strictly ensure that each "X For Y" phrase does not exceed 40 characters.`,
 
   HEADLINE: `"Based on the business description provided in the user prompt, I want you to provide 3 Business Headlines, with not more than 12 words each. The response should be only an array containing three headline string as provided in below examples. below are 3 illustrative examples:
   Example 1
@@ -416,7 +416,7 @@ export const SYSTEM_INPUT = {
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   Colors: [{"primary": "#3D9970", "secondary": "#FF4136", "text": "#000000"}, {"primary": "#2ECC40", "secondary": "#FF851B", "text": "#000000"}, {"primary": "#FFDC00", "secondary": "#001f3f", "text": "#FFFFFF"}, {"primary": "#FF4136", "secondary": "#3D9970", "text": "#000000"}]`,
 
-  CALL_TO_ACTION: `"Based on the business description provided in the user prompt, I want you to provide 4 call-to-action strings of 2-4 words regarding that business. The response should be only an array containing four call-to-action strings as provided in below illustrative examples:
+  CALL_TO_ACTION: `"Based on the business description provided in the user prompt, I want you to provide 4 call-to-action strings of 2-4 words regarding that business, and strictly ensure that each call-to-action is no longer than 40 characters. The response should be only an array containing four call-to-action strings as provided in below illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.

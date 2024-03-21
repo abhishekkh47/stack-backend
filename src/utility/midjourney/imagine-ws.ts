@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Midjourney } from "./midjourney";
 import axios from "axios";
 import * as fs from "fs";
-import { logger } from "@app/utility";
+import { awsLogger } from "@app/utility";
 /**
  *
  * a simple example of using the imagine api with ws
@@ -27,8 +27,8 @@ export async function generateImage(prompt) {
     }
   );
   if (!Imagine) {
-    logger.error(
-      `{function:generateAILogos message:MidJourney Client could not be created}`
+    awsLogger.error(
+      `{function:generateImage || message:MidJourney Client could not be created}`
     );
     return;
   }
@@ -55,8 +55,8 @@ export async function UpscaleImage(Imagine, upscaleIndex: 1 | 2 | 3 | 4 = 2) {
     },
   });
   if (!Imagine) {
-    logger.error(
-      `{function:UpscaleImage message:MidJourney Client could not be created}`
+    awsLogger.error(
+      `{function:UpscaleImage || message:Imagine API response is invalid || imagineResponse: ${Imagine}}`
     );
     return;
   }
