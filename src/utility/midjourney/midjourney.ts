@@ -14,6 +14,7 @@ import {
   base64ToBlob,
 } from "./utils";
 import { WsMessage } from "./discord.ws";
+import { awsLogger } from "@app/utility";
 export class Midjourney extends MidjourneyMessage {
   public config: MJConfig;
   private wsClient?: WsMessage;
@@ -59,27 +60,33 @@ export class Midjourney extends MidjourneyMessage {
     return this;
   }
   async Imagine(prompt: string, loading?: LoadingHandler) {
-    prompt = prompt.trim();
-    if (!this.config.Ws) {
-      const seed = random(1000000000, 9999999999);
-      prompt = `[${seed}] ${prompt}`;
-    } else {
-      await this.getWsClient();
-    }
+    try {
+      prompt = prompt.trim();
+      if (!this.config.Ws) {
+        const seed = random(1000000000, 9999999999);
+        prompt = `[${seed}] ${prompt}`;
+      } else {
+        await this.getWsClient();
+      }
 
-    const nonce = nextNonce();
-    this.log(`Imagine`, prompt, "nonce", nonce);
-    const httpStatus = await this.MJApi.ImagineApi(prompt, nonce);
-    if (httpStatus !== 204) {
-      throw new Error(`ImagineApi failed with status ${httpStatus}`);
-    }
-    if (this.wsClient) {
-      return await this.wsClient.waitImageMessage({ nonce, loading, prompt });
-    } else {
-      this.log(`await generate image`);
-      const msg = await this.WaitMessage(prompt, loading);
-      this.log(`image generated`, prompt, msg?.uri);
-      return msg;
+      const nonce = nextNonce();
+      this.log(`Imagine`, prompt, "nonce", nonce);
+      const httpStatus = await this.MJApi.ImagineApi(prompt, nonce);
+      if (httpStatus !== 204) {
+        throw new Error(`ImagineApi failed with status ${httpStatus}`);
+      }
+      if (this.wsClient) {
+        return await this.wsClient.waitImageMessage({ nonce, loading, prompt });
+      } else {
+        this.log(`await generate image`);
+        const msg = await this.WaitMessage(prompt, loading);
+        this.log(`image generated`, prompt, msg?.uri);
+        return msg;
+      }
+    } catch (error) {
+      awsLogger.error(
+        `{function:Imagine || prompt:${prompt} || message:${error.message}}`
+      );
     }
   }
   // check ws enabled && connect

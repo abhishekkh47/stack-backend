@@ -2,6 +2,10 @@ import winston from "winston";
 import CloudWatchTransport from "winston-aws-cloudwatch";
 
 export const logger = winston.createLogger({
+  transports: [new winston.transports.Console()],
+});
+
+export const awsLogger = winston.createLogger({
   level: "info", // Set log level
   format: winston.format.json(), // JSON format for log messages
   transports: [
