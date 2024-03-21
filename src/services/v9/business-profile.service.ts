@@ -138,7 +138,6 @@ class BusinessProfileService {
           { userId: userExists._id },
           {
             $set: {
-              isRetry: true,
               "logoGenerationInfo.isUnderProcess": false,
               "logoGenerationInfo.startTime": moment().unix(),
               "logoGenerationInfo.aiSuggestions": response,
@@ -158,7 +157,6 @@ class BusinessProfileService {
           { userId: userExists._id },
           {
             $set: {
-              isRetry: true,
               "logoGenerationInfo.isUnderProcess": false,
               "logoGenerationInfo.startTime": moment().unix(),
               "logoGenerationInfo.aiSuggestions": response,
