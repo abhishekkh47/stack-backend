@@ -45,6 +45,7 @@ export interface IBusinessProfile {
   isRetry: boolean;
   hoursSaved: number;
   logoGenerationInfo: ILogoGenerationInfo;
+  coachId: mongoose.Schema.Types.ObjectId;
 }
 
 export interface ILogoGenerationInfo {

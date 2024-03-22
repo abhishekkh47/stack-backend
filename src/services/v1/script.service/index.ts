@@ -15,6 +15,7 @@ import {
   UserTable,
   WeeklyJourneyTable,
   WeeklyJourneyResultTable,
+  CoachProfileTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1589,6 +1590,52 @@ class ScriptService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description This function import available Coach details
+   * @returns {*}
+   */
+  public async importCoachProfilesInDB(rows) {
+    const coachProfilesMap = new Map(); // Use a Map to store coach profiles by coachId
+    rows.forEach((data) => {
+      const coachId = Number(data["Coach Id"].trim());
+      let coachProfile = coachProfilesMap.get(coachId);
+      if (!coachProfile) {
+        coachProfile = {
+          coachId,
+          key: data["Key"].trim(),
+          name: data["Name"].trim(),
+          linkedIn: data["LinkedIn"].trim(),
+          rating: Number(data["Rating"].trim()),
+          reviews: Number(data["Reviews"].trim()),
+          mobile: data["Mobile"].trim().replace(/-/g, ""),
+          about: data["About"].trim(),
+          skills: [],
+          whyItsValuable: [],
+        };
+        coachProfilesMap.set(coachId, coachProfile);
+      }
+      coachProfile.skills.push(data["Skills"]?.trim());
+      if (data["Why Its Valuable (Name)"]) {
+        coachProfile.whyItsValuable.push({
+          name: data["Why Its Valuable (Name)"]?.trim(),
+          description: data["Why Its Valuable (Description)"]?.trim(),
+        });
+      }
+    });
+
+    const coachProfilesData = Array.from(coachProfilesMap.values()); // Extract values from the Map
+    const bulkWriteOperations = coachProfilesData.map((data) => ({
+      updateOne: {
+        filter: { key: data.key },
+        update: { $set: data },
+        upsert: true,
+      },
+    }));
+
+    await CoachProfileTable.bulkWrite(bulkWriteOperations);
+    return coachProfilesData;
   }
 }
 

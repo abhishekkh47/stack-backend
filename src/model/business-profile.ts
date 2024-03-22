@@ -196,6 +196,11 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         default: false,
       },
     },
+    coachId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
+      ref: "coach_profile",
+    },
   },
   { timestamps: true }
 );
