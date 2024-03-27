@@ -2,8 +2,9 @@ import BaseController from "@app/controllers/base";
 import { Auth } from "@app/middleware";
 import { UserDBService } from "@app/services/v6";
 import { HttpMethod } from "@app/types";
-import { Route } from "@app/utility";
+import { Route, THINGS_TO_TALK_ABOUT } from "@app/utility";
 import { BusinessProfileService } from "@app/services/v7";
+import { CoachProfileTable } from "@app/model";
 
 class UserController extends BaseController {
   /**
@@ -14,14 +15,23 @@ class UserController extends BaseController {
   @Auth()
   public async getProfile(ctx: any) {
     const { id } = ctx.request.params;
+    let coachProfile = null;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     let { data } = await UserDBService.getProfile(id);
     const businessProfile = await BusinessProfileService.getBusinessProfile(id);
+    if (businessProfile.coachId) {
+      coachProfile = await CoachProfileTable.findOne({
+        _id: businessProfile.coachId,
+      });
+    }
 
     data = {
       ...data,
       businessProfile,
+      assginedCoach: coachProfile
+        ? { coachProfile, thingsToTalkAbout: THINGS_TO_TALK_ABOUT }
+        : null,
     };
 
     return this.Ok(ctx, data, true);

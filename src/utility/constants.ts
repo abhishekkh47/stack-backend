@@ -584,25 +584,27 @@ export const COACH_REQUIREMENTS = {
     options: [
       {
         id: 1,
-        value:
-          "Idea Validation: I have a business idea but I want to make sure there’s demand.",
+        heading: "Idea Validation",
+        description:
+          "I have a business idea but I want to make sure there’s demand.",
       },
       {
         id: 2,
-        value:
-          "No Code Solutions: I’m not a technical person but I want to build a prototype.",
+        heading: "No Code Solutions",
+        description:
+          "I’m not a technical person but I want to build a prototype.",
       },
       {
         id: 3,
-        value:
-          "Developing my MVP: I believe in my idea but I need to bring it to life.",
+        heading: "Developing my MVP",
+        description: "I believe in my idea but I need to bring it to life.",
       },
       {
         id: 4,
-        value:
-          "Marketing Strategy: I have a version of my product ready and I want to grow.",
+        heading: "Marketing Strategy",
+        description: "I have a version of my product ready and I want to grow.",
       },
-      { id: 5, value: "others" },
+      { id: 5, heading: "others" },
     ],
   },
   coachingStyle: {
@@ -628,14 +630,14 @@ export const COACH_REQUIREMENTS = {
   },
 };
 export const THINGS_TO_TALK_ABOUT = [
-  "How do you generate new ideas?",
-  "What makes a business unique?",
-  "How to validate your ideas?",
-  "How to build a product?",
-  "How to market your business?",
-  "Who are your customers?",
-  "How to get your first 100 customers?",
-  "What should you focus on first?",
-  "How will you fund your business?",
+  "💡 How do you generate new ideas?",
+  "🤔 What makes a business unique?",
+  "👍 How to validate your ideas?",
+  "🛠 How to build a product?",
+  "🔊 How to market your business?",
+  "👥 Who are your customers?",
+  "📈 How to get your first 100 customers?",
+  "🎯 What should you focus on first?",
+  "💰 How will you fund your business?",
 ];
 export const MENTORS = ["natalieYoung", "willRush"];

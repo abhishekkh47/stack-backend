@@ -17,6 +17,16 @@ const schema = new mongoose.Schema<ICoachProfileSchema>(
       required: true,
       default: null,
     },
+    position: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    image: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
     linkedIn: {
       type: mongoose.Schema.Types.String,
       required: true,
@@ -56,6 +66,11 @@ const schema = new mongoose.Schema<ICoachProfileSchema>(
           default: null,
         },
         description: {
+          type: mongoose.Schema.Types.String,
+          required: true,
+          default: null,
+        },
+        date: {
           type: mongoose.Schema.Types.String,
           required: true,
           default: null,

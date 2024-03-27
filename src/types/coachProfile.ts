@@ -1,6 +1,8 @@
 export interface ICoachProfile {
   key: string;
   name: string;
+  position: string;
+  image: string;
   linkedIn: string;
   rating: number;
   reviews: number;
@@ -13,4 +15,5 @@ export interface ICoachProfile {
 interface IWhyItsValuableArray {
   name: string;
   description: string;
+  date: string;
 }

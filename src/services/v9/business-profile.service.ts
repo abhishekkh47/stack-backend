@@ -7,6 +7,7 @@ import {
   IS_RETRY,
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
+  awsLogger,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -181,6 +182,7 @@ class BusinessProfileService {
         isRetry: true,
       };
     } catch (error) {
+      awsLogger.error(`{function:generateAILogos || message:${error.message}}`);
       return {
         finished: true,
         suggestions: BACKUP_LOGOS,

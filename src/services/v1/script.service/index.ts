@@ -1606,6 +1606,8 @@ class ScriptService {
           coachId,
           key: data["Key"].trim(),
           name: data["Name"].trim(),
+          position: data["Position"].trim(),
+          image: data["Image"].trim(),
           linkedIn: data["LinkedIn"].trim(),
           rating: Number(data["Rating"].trim()),
           reviews: Number(data["Reviews"].trim()),
@@ -1621,6 +1623,7 @@ class ScriptService {
         coachProfile.whyItsValuable.push({
           name: data["Why Its Valuable (Name)"]?.trim(),
           description: data["Why Its Valuable (Description)"]?.trim(),
+          date: data["Why Its Valuable (Date)"]?.trim(),
         });
       }
     });
