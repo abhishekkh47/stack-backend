@@ -16,21 +16,27 @@ class UserController extends BaseController {
   public async getProfile(ctx: any) {
     const { id } = ctx.request.params;
     let coachProfile = null;
+    let initialMessage = null;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     let { data } = await UserDBService.getProfile(id);
     const businessProfile = await BusinessProfileService.getBusinessProfile(id);
-    if (businessProfile.coachId) {
+    if (businessProfile && businessProfile?.businessCoachInfo?.coachId) {
       coachProfile = await CoachProfileTable.findOne({
-        _id: businessProfile.coachId,
+        _id: businessProfile.businessCoachInfo.coachId,
       });
+      initialMessage = businessProfile.businessCoachInfo.initialMessage;
     }
 
     data = {
       ...data,
       businessProfile,
-      assginedCoach: coachProfile
-        ? { coachProfile, thingsToTalkAbout: THINGS_TO_TALK_ABOUT }
+      assignedCoach: coachProfile
+        ? {
+            coachProfile,
+            initialMessage,
+            thingsToTalkAbout: THINGS_TO_TALK_ABOUT,
+          }
         : null,
     };
 

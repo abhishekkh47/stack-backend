@@ -13,7 +13,6 @@ class CoachController extends BaseController {
    */
   @Route({ path: "/get-coach-requirements", method: HttpMethod.GET })
   @Auth()
-  @PrimeTrustJWT(true)
   public async getCoachRequirements(ctx: any) {
     const { user } = ctx.request;
     const userIfExists = await UserTable.findOne({ _id: user._id });
@@ -30,24 +29,34 @@ class CoachController extends BaseController {
    */
   @Route({ path: "/get-coach-details", method: HttpMethod.GET })
   @Auth()
-  @PrimeTrustJWT(true)
   public async getCoachDetails(ctx: any) {
     const { user, query } = ctx.request;
     let coachProfile = null;
+    let initialMessage = null;
     const [userIfExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
-      BusinessProfileTable.findOne({ userId: user._id })?.populate("coachId"),
+      BusinessProfileTable.findOne({ userId: user._id })?.populate(
+        "businessCoachInfo.coachId"
+      ),
     ]);
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found.");
     }
-    if (userBusinessProfile.coachId) {
-      coachProfile = userBusinessProfile.coachId;
+    if (userBusinessProfile?.businessCoachInfo?.coachId) {
+      ({ coachId: coachProfile, initialMessage } =
+        userBusinessProfile.businessCoachInfo);
     } else {
-      coachProfile = await CoachDBService.getCoachProfile(userIfExists, query);
+      ({ coachProfile, initialMessage } = await CoachDBService.getCoachProfile(
+        userIfExists,
+        query
+      ));
     }
     return this.Ok(ctx, {
-      data: { coachProfile, thingsToTalkAbout: THINGS_TO_TALK_ABOUT },
+      data: {
+        coachProfile,
+        initialMessage,
+        thingsToTalkAbout: THINGS_TO_TALK_ABOUT,
+      },
     });
   }
 }

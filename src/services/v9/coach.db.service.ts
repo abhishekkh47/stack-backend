@@ -10,25 +10,36 @@ class CoachDBService {
    */
   public async getCoachProfile(userIfExists: any, queryParams: any) {
     try {
-      const id = queryParams.requirementID;
-      const options = COACH_REQUIREMENTS.goodAt.options;
-      let key = null;
-      if (id == options[0].id || id == options[3].id) {
-        key = MENTORS[1];
-      } else if (id == options[1].id || id == options[2].id) {
-        key = MENTORS[0];
-      } else {
-        key = MENTORS[Math.floor(Math.random() * MENTORS.length)];
+      const { id, needHelpID } = queryParams;
+      const { options: needHelpIn } = COACH_REQUIREMENTS.needHelpIn;
+      const message = needHelpIn.find(
+        (option) => option.id == Number(needHelpID)
+      ).message;
+      let initialMessage = null;
+      let mentorIndex = Math.floor(Math.random() * MENTORS.length);
+      if (Number(id) == 1 || Number(id) == 4) {
+        mentorIndex = 1;
+      } else if (Number(id) == 2 || Number(id) == 3) {
+        mentorIndex = 0;
       }
-      const coachDetails = await CoachProfileTable.findOne({ key });
-      if (coachDetails) {
+      const key = MENTORS[mentorIndex];
+      const coachProfile = await CoachProfileTable.findOne({ key });
+      if (coachProfile) {
+        initialMessage = `Hey ${userIfExists.firstName}! I'm ${
+          coachProfile.name.split(" ")[0]
+        }, your startup coach. ${message}`;
         await BusinessProfileTable.findOneAndUpdate(
           { userId: userIfExists._id },
-          { $set: { coachId: coachDetails._id } },
+          {
+            $set: {
+              "businessCoachInfo.coachId": coachProfile._id,
+              "businessCoachInfo.initialMessage": initialMessage,
+            },
+          },
           { upsert: true }
         );
       }
-      return coachDetails;
+      return { coachProfile, initialMessage };
     } catch (err) {
       throw new NetworkError(
         "Error occurred while retrieving coach profile",

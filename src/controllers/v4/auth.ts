@@ -5,6 +5,7 @@ import {
   UserTable,
   ParentChildTable,
   UserReferralTable,
+  CoachProfileTable,
 } from "@app/model";
 import {
   TokenService,
@@ -30,6 +31,7 @@ import {
   ANALYTICS_EVENTS,
   PARENT_SIGNUP_FUNNEL,
   TEEN_SIGNUP_FUNNEL,
+  THINGS_TO_TALK_ABOUT,
 } from "@app/utility/constants";
 import { validation } from "@app/validations/v1/apiValidation";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
@@ -528,6 +530,9 @@ class AuthController extends BaseController {
           try {
             const { email, deviceToken, deviceId } = reqParam;
             let accountCreated = false;
+            let coachProfile = null;
+            let initialMessage = null;
+            let thingsToTalkAbout = null;
             let userExists = await UserTable.findOne({ email });
             await SocialService.verifySocial(reqParam);
 
@@ -581,7 +586,25 @@ class AuthController extends BaseController {
             );
             const businessProfile =
               await BusinessProfileServiceV7.getBusinessProfile(userExists._id);
-            profileData = { ...profileData, businessProfile };
+            if (
+              businessProfile &&
+              businessProfile?.businessCoachInfo?.coachId
+            ) {
+              coachProfile = await CoachProfileTable.findOne({
+                _id: businessProfile.businessCoachInfo.coachId,
+              });
+              initialMessage = businessProfile.businessCoachInfo.initialMessage;
+              thingsToTalkAbout = THINGS_TO_TALK_ABOUT;
+            }
+            profileData = {
+              ...profileData,
+              businessProfile,
+              assignedCoach: {
+                coachProfile,
+                initialMessage,
+                thingsToTalkAbout,
+              },
+            };
 
             if (deviceToken) {
               await DeviceTokenService.addDeviceTokenIfNeeded(
