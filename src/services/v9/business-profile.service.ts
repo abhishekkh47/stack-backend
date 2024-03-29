@@ -1,4 +1,8 @@
-import { BusinessProfileTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  BusinessPassionTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
   INVALID_DESCRIPTION_ERROR,
@@ -7,6 +11,7 @@ import {
   IS_RETRY,
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
+  MAXIMIZE_BUSINESS_IMAGES,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -186,6 +191,58 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    }
+  }
+
+  /**
+   * @description this will generate business idea using OpenAI GPT
+   * @param data
+   * @returns {*}
+   */
+  public async generateBusinessIdea(
+    systemInput: string,
+    prompt: string,
+    passion: string,
+    userExists: any,
+    isRetry: string,
+    userBusinessProfile: any
+  ) {
+    try {
+      let newResponse = null;
+      if (!userBusinessProfile?.isRetry || isRetry == IS_RETRY.TRUE) {
+        let [response, businessPassionImages, _] = await Promise.all([
+          BusinessProfileServiceV7.generateTextSuggestions(systemInput, prompt),
+          BusinessPassionTable.find({ title: passion }),
+          BusinessProfileTable.findOneAndUpdate(
+            { userId: userExists._id },
+            { $set: { isRetry: true } }
+          ),
+        ]);
+
+        if (
+          !response.choices[0].message.content.includes(
+            "businessDescription"
+          ) ||
+          !response.choices[0].message.content.includes("opportunityHighlight")
+        ) {
+          throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+        }
+
+        newResponse = JSON.parse(response.choices[0].message.content);
+        if (!businessPassionImages.length) {
+          newResponse.map(
+            (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
+          );
+        } else {
+          newResponse.map(
+            (idea, idx) =>
+              (idea["image"] = businessPassionImages[0].businessImages[idx])
+          );
+        }
+      }
+      return newResponse;
+    } catch (error) {
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
   }
 }
