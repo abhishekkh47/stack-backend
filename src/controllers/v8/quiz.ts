@@ -30,7 +30,7 @@ class QuizController extends BaseController {
   @PrimeTrustJWT(true)
   public storeQuizResults(ctx: any) {
     const reqParam = ctx.request.body;
-    const { user, headers, query } = ctx.request;
+    const { user, headers } = ctx.request;
     return validation.addQuizResultValidation(
       reqParam,
       ctx,
@@ -103,7 +103,6 @@ class QuizController extends BaseController {
           const [
             { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked },
             streaksDetails,
-            quizRecommendations,
           ] = await Promise.all([
             LeagueService.getUpdatedLeagueDetailsOfUser(
               userIfExists,
@@ -111,24 +110,22 @@ class QuizController extends BaseController {
               updatedXPPoints
             ),
             UserDBService.addStreaks(updatedUser),
-            QuizDBServiceV4.getQuizRecommendations(
-              updatedUser._id,
-              quizIfExists.topicId.toString()
-            ),
           ]);
 
           (async () => {
-            const dataForCrm = await QuizDBServiceV4.getQuizDataForCrm(
+            QuizDBServiceV4.getQuizDataForCrm(
               updatedUser,
               user._id,
               updatedXPPoints
-            );
-
-            zohoCrmService.addAccounts(
-              ctx.request.zohoAccessToken,
-              dataForCrm,
-              true
-            );
+            )
+              .then((dataForCrm) => {
+                zohoCrmService.addAccounts(
+                  ctx.request.zohoAccessToken,
+                  dataForCrm,
+                  true
+                );
+              })
+              .catch((err) => console.log("ERROR : ", err));
           })();
           return this.Ok(ctx, {
             message: "Quiz Results Stored Successfully",
@@ -140,7 +137,6 @@ class QuizController extends BaseController {
             nextLeague,
             isNewLeagueUnlocked,
             streaksDetails,
-            quizRecommendations,
             isGiftedStreakFreeze,
           });
         }

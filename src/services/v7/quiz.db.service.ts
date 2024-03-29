@@ -63,7 +63,7 @@ class QuizDBService {
       /**
        * Add Question Result and Quiz Result
        */
-      await QuizQuestionResult.insertMany(quizQuestions);
+      QuizQuestionResult.insertMany(quizQuestions);
     }
 
     const pointsEarnedFromQuiz =
@@ -72,7 +72,7 @@ class QuizDBService {
         ? everyCorrectAnswerPoints * reqParam.solvedQuestions.length
         : SIMULATION_QUIZ_FUEL;
 
-    let quizResultsData = await QuizResult.create({
+    QuizResult.create({
       topicId: quizExists.topicId,
       quizId: quizExists._id,
       userId: userIfExists._id,
@@ -80,7 +80,7 @@ class QuizDBService {
       pointsEarned: pointsEarnedFromQuiz,
       numOfIncorrectAnswers: reqParam.numOfIncorrectAnswers || 0,
     });
-    await WeeklyJourneyResultTable.create({
+    WeeklyJourneyResultTable.create({
       weeklyJourneyId: reqParam.weeklyJourneyId,
       actionNum: reqParam.actionNum,
       userId: userIfExists._id,
@@ -130,7 +130,7 @@ class QuizDBService {
           nextChallengeDate
         );
         if (isScheduled) {
-          await CommunityTable.updateOne(
+          CommunityTable.updateOne(
             { _id: usersCommunityIfExists.communityId },
             {
               $set: {
@@ -145,12 +145,7 @@ class QuizDBService {
     const {
       streak: { freezeCount, current },
     } = userIfExists;
-    if (
-      quizResultsData &&
-      freezeCount == 0 &&
-      current >= 0 &&
-      freezeCount <= MAX_STREAK_FREEZE
-    ) {
+    if (freezeCount == 0 && current >= 0 && freezeCount <= MAX_STREAK_FREEZE) {
       isGiftedStreakFreeze = true;
       incrementObj = { ...incrementObj, "streak.freezeCount": 1 };
     }

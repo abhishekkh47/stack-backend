@@ -520,13 +520,13 @@ class UserDBService {
    */
   public async addStreaks(userDetails: any) {
     try {
-      let isStreakToBeUpdated = false;
       const {
         streak: { freezeCount: latestStreakFreezeCount },
       } = await UserTable.findOne({
         _id: userDetails._id,
       }).select("_id streak");
       let streakFreezeToConsume = 0;
+      let isStreakToBeUpdated = false;
       /**
        * Check if streak is inactive since last 5 days
        */
@@ -537,23 +537,18 @@ class UserDBService {
         new Date(),
         userDetails.timezone
       );
-      const currentStreak = userDetails.streak.current;
       const { day } = userDetails?.streak?.updatedDate;
-      const isFirstStreak = !userDetails || day === 0;
       const diffDays = getDaysBetweenDates(
         userDetails?.streak?.updatedDate,
         currentDate
       );
-      if (isFirstStreak || diffDays === 1) {
-        let last5days: any = [];
-        const earliestNullIndex =
-          userDetails?.streak?.last5days?.indexOf(null) ?? -1;
-        if (earliestNullIndex === -1) {
-          last5days = FIVE_DAYS_TO_RESET;
+      if (!userDetails || day === 0 || diffDays === 1) {
+        let last5days: any = userDetails?.streak?.last5days || [];
+        const earliestNullIndex = last5days.indexOf(null);
+        if (earliestNullIndex !== -1) {
+          last5days[earliestNullIndex] = 1;
         } else {
-          last5days = userDetails.streak.last5days.map((value, index) =>
-            index === earliestNullIndex ? 1 : value
-          );
+          last5days = FIVE_DAYS_TO_RESET;
         }
         streak = {
           current: userDetails?.streak?.current + 1,
@@ -638,22 +633,22 @@ class UserDBService {
           last5DaysStreak: updatedStreaksDetails.streak.last5days,
           last5DaysWeek: dayRange,
           currentStreak: updatedStreaksDetails.streak.current,
-          previousStreak: currentStreak,
+          previousStreak: userDetails.streak.current,
           isStreakInActiveSinceLast5Days,
         };
       } else {
-        const updatedStreaksDetails = await UserTable.find({
+        const updatedStreaksDetails = await UserTable.findOne({
           _id: userDetails._id,
         });
         const dayRange = this.get5DaysOfWeek(
-          updatedStreaksDetails[0].streak.updatedDate,
-          updatedStreaksDetails[0].streak.last5days
+          updatedStreaksDetails.streak.updatedDate,
+          updatedStreaksDetails.streak.last5days
         );
         return {
-          last5DaysStreak: updatedStreaksDetails[0].streak.last5days,
+          last5DaysStreak: updatedStreaksDetails.streak.last5days,
           last5DaysWeek: dayRange,
-          currentStreak: updatedStreaksDetails[0].streak.current,
-          previousStreak: currentStreak,
+          currentStreak: updatedStreaksDetails.streak.current,
+          previousStreak: userDetails.streak.current,
           isStreakInActiveSinceLast5Days,
         };
       }
