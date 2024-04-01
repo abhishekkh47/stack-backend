@@ -120,7 +120,7 @@ class BusinessProfileController extends BaseController {
       file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
     if (businessProfileExists.companyLogo) {
-      await removeImage(userExists._id, businessProfileExists.companyLogo);
+      removeImage(userExists._id, businessProfileExists.companyLogo);
     }
     const getHoursSaved = actionScreenData.filter(
       (action) => action?.key == "companyLogo"
@@ -208,7 +208,7 @@ class BusinessProfileController extends BaseController {
           : null
         : null;
     if (businessProfileExists.homescreenImage) {
-      await removeImage(userExists._id, businessProfileExists.homescreenImage);
+      removeImage(userExists._id, businessProfileExists.homescreenImage);
     }
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
@@ -263,7 +263,7 @@ class BusinessProfileController extends BaseController {
           : null
         : null;
     if (businessProfileExists.socialFeedback) {
-      await removeImage(userExists._id, businessProfileExists.socialFeedback);
+      removeImage(userExists._id, businessProfileExists.socialFeedback);
     }
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
@@ -318,7 +318,7 @@ class BusinessProfileController extends BaseController {
           : null
         : null;
     if (businessProfileExists.mvpHomeScreen) {
-      await removeImage(userExists._id, businessProfileExists.mvpHomeScreen);
+      removeImage(userExists._id, businessProfileExists.mvpHomeScreen);
     }
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },
