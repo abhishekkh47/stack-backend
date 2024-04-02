@@ -30,3 +30,4 @@ export * from "@app/types/weeklyJourney";
 export * from "@app/types/businessPassion";
 export * from "@app/types/actionScreenCopy";
 export * from "@app/types/proUser";
+export * from "@app/types/coachProfile";

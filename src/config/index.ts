@@ -182,4 +182,7 @@ export default {
   get WEEKLY_JOURNEY_SHEET_GID() {
     return process.env.WEEKLY_JOURNEY_SHEET_GID;
   },
+  get COACH_DETAILS_SHEET_GID() {
+    return process.env.COACH_DETAILS_SHEET_GID;
+  },
 };

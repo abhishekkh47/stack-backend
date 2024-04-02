@@ -559,3 +559,98 @@ export const PRO_SUBSCRIPTION_PRICE = {
   jetson_9999_1y_1w0: 99.99,
   jetson_1299_1m_1w0: 12.49,
 };
+export const COACH_REQUIREMENTS = {
+  goodAt: {
+    order: 1,
+    title: "What do you feel you’re really good at?",
+    options: [
+      { id: 1, value: "Leading a group or community of peers" },
+      {
+        id: 2,
+        value: "Technical skills including software engineering & coding",
+      },
+      { id: 3, value: "Graphic design and making things look high quality" },
+      {
+        id: 4,
+        value:
+          "Getting peers interested and excited about products that I like",
+      },
+      { id: 5, value: "others" },
+    ],
+  },
+  needHelpIn: {
+    order: 2,
+    title: "Where do you feel you need the most support?",
+    options: [
+      {
+        id: 1,
+        heading: "Idea Validation",
+        description:
+          "I have a business idea but I want to make sure there’s demand.",
+        message:
+          "Excited to help you validate your idea. What's the core concept of your idea, and who do you envision as your target audience?",
+      },
+      {
+        id: 2,
+        heading: "No Code Solutions",
+        description:
+          "I’m not a technical person but I want to build a prototype.",
+        message:
+          "Interested in no-code solutions? What features are you looking to implement?",
+      },
+      {
+        id: 3,
+        heading: "Developing MVP",
+        description: "I believe in my idea but I need to bring it to life.",
+        message:
+          "Excited to help you with developing MVP. What's your vision for the product?",
+      },
+      {
+        id: 4,
+        heading: "Marketing Strategy",
+        description: "I have a version of my product ready and I want to grow.",
+        message:
+          "Excited to help you craft an effective marketing strategy. What are your main goals for your marketing efforts, and who is your idea customer?",
+      },
+      {
+        id: 5,
+        heading: "others",
+        message:
+          "Excited to help you with any challenge you're facing. What is on your mind?",
+      },
+    ],
+  },
+  coachingStyle: {
+    order: 3,
+    title: "Which coaching style do you like better?",
+    options: [
+      { id: 1, value: "Motivational" },
+      { id: 2, value: "Direct" },
+      { id: 3, value: "Calm" },
+      { id: 4, value: "Upbeat" },
+      { id: 5, value: "Collaborative" },
+      { id: 6, value: "Other" },
+    ],
+  },
+  findPerfectCoach: {
+    order: 4,
+    title: "Finding your perfect Coach",
+    options: [
+      { id: 1, value: "Analyzing your coaching needs" },
+      { id: 2, value: "Searching our database of coaches" },
+      { id: 3, value: "Matching you with the perfect coach" },
+    ],
+  },
+};
+export const THINGS_TO_TALK_ABOUT = [
+  "💡 How do you generate new ideas?",
+  "🤔 What makes a business unique?",
+  "👍 How to validate your ideas?",
+  "🛠 How to build a product?",
+  "🔊 How to market your business?",
+  "👥 Who are your customers?",
+  "📈 How to get your first 100 customers?",
+  "🎯 What should you focus on first?",
+  "💰 How will you fund your business?",
+];
+export const MENTORS = ["natalieYoung", "willRush"];

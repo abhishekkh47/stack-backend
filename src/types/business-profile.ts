@@ -45,6 +45,7 @@ export interface IBusinessProfile {
   isRetry: boolean;
   hoursSaved: number;
   logoGenerationInfo: ILogoGenerationInfo;
+  businessCoachInfo: IBusinessCoachInfo;
 }
 
 export interface ILogoGenerationInfo {
@@ -52,4 +53,9 @@ export interface ILogoGenerationInfo {
   aiSuggestions: string[];
   startTime: number;
   isInitialSuggestionsCompleted: boolean;
+}
+
+export interface IBusinessCoachInfo {
+  coachId: mongoose.Schema.Types.ObjectId;
+  initialMessage: string;
 }

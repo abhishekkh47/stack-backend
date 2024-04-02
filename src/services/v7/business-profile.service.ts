@@ -458,6 +458,7 @@ class BusinessProfileService {
           passions: 1,
           businessPlans: "$filteredBusinessPlans",
           hoursSaved: 1,
+          businessCoachInfo: 1,
         },
       },
     ]).exec();
