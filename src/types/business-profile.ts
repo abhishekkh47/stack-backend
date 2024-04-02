@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { boolean } from "yup";
 export interface IImpact {
   title: string;
   image: string;
@@ -46,6 +47,7 @@ export interface IBusinessProfile {
   hoursSaved: number;
   logoGenerationInfo: ILogoGenerationInfo;
   businessCoachInfo: IBusinessCoachInfo;
+  enableStealthMode: boolean;
 }
 
 export interface ILogoGenerationInfo {
