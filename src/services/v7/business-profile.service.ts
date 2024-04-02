@@ -459,6 +459,7 @@ class BusinessProfileService {
           businessPlans: "$filteredBusinessPlans",
           hoursSaved: 1,
           businessCoachInfo: 1,
+          enableStealthMode: 1,
         },
       },
     ]).exec();

@@ -207,6 +207,11 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         required: false,
       },
     },
+    enableStealthMode: {
+      type: mongoose.Schema.Types.Boolean,
+      required: false,
+      default: false,
+    },
   },
   { timestamps: true }
 );

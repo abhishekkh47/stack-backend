@@ -1882,6 +1882,8 @@ class ScriptController extends BaseController {
           aiGeneratedSuggestions: null,
           isRetry: false,
           hoursSaved: 0,
+          businessCoachInfo: null,
+          enableStealthMode: false,
         },
       }
     );
