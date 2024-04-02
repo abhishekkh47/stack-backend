@@ -501,16 +501,6 @@ class BusinessProfileService {
             (idea["image"] = businessPassionImages[0].businessImages[idx])
         );
       }
-      if (newResponse && isRetry == IS_RETRY.TRUE) {
-        await UserTable.findOneAndUpdate(
-          { _id: userExists._id },
-          {
-            $inc: {
-              quizCoins: DEDUCT_RETRY_FUEL,
-            },
-          }
-        );
-      }
       return newResponse;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
