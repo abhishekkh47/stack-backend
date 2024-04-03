@@ -2067,21 +2067,10 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async updatePremiumUserStatus(ctx: any) {
     await Promise.all([
-      UserTable.updateMany(
-        {},
-        {
-          $set: {
-            isPremiumUser: false,
-          },
-        }
-      ),
+      UserTable.updateMany({}, { $set: { isPremiumUser: false } }),
       BusinessProfileTable.updateMany(
         {},
-        {
-          $set: {
-            enableStealthMode: false,
-          },
-        }
+        { $set: { enableStealthMode: false } }
       ),
     ]);
     return this.Ok(ctx, { message: "Success" });
