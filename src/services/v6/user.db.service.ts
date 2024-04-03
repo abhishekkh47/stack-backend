@@ -133,6 +133,7 @@ class UserDBService {
             last5DaysStreak: "$streak.last5days",
             communityDetails: 1,
             isClaimed: "$userCommunity.isClaimed",
+            isPremiumUser: 1,
           },
         },
       ]).exec()
