@@ -4,7 +4,7 @@ import { UserDBService } from "@app/services/v6";
 import { HttpMethod } from "@app/types";
 import { Route, THINGS_TO_TALK_ABOUT } from "@app/utility";
 import { BusinessProfileService } from "@app/services/v7";
-import { CoachProfileTable } from "@app/model";
+import { CoachProfileTable, UserTable } from "@app/model";
 
 class UserController extends BaseController {
   /**
@@ -41,6 +41,22 @@ class UserController extends BaseController {
     };
 
     return this.Ok(ctx, data, true);
+  }
+
+  /**
+   * @description This method is used update whether a user is premium user or not
+   * @param ctx
+   */
+  @Route({ path: "/pro-user-status", method: HttpMethod.POST })
+  @Auth()
+  public async UpdateProUserStatus(ctx: any) {
+    const { user, body } = ctx.request;
+    await UserTable.findOneAndUpdate(
+      { _id: user._id },
+      { $set: { isPremiumUser: body.isPremiumUser } },
+      { upsert: true }
+    );
+    return this.Ok(ctx, { message: "Success" });
   }
 }
 

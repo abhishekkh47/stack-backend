@@ -2057,6 +2057,24 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to make all user as non-premium by default (initial status)
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-premium-user-status", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updatePremiumUserStatus(ctx: any) {
+    await Promise.all([
+      UserTable.updateMany({}, { $set: { isPremiumUser: false } }),
+      BusinessProfileTable.updateMany(
+        {},
+        { $set: { enableStealthMode: false } }
+      ),
+    ]);
+    return this.Ok(ctx, { message: "Success" });
+  }
 }
 
 export default new ScriptController();
