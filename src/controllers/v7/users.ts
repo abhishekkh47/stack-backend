@@ -19,8 +19,10 @@ class UserController extends BaseController {
     let initialMessage = null;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
-    let { data } = await UserDBService.getProfile(id);
-    const businessProfile = await BusinessProfileService.getBusinessProfile(id);
+    const [userProfile, businessProfile] = await Promise.all([
+      UserDBService.getProfile(id),
+      BusinessProfileService.getBusinessProfile(id),
+    ]);
     if (businessProfile && businessProfile?.businessCoachInfo?.coachId) {
       coachProfile = await CoachProfileTable.findOne({
         _id: businessProfile.businessCoachInfo.coachId,
@@ -28,8 +30,8 @@ class UserController extends BaseController {
       initialMessage = businessProfile.businessCoachInfo.initialMessage;
     }
 
-    data = {
-      ...data,
+    let data = {
+      ...userProfile.data,
       businessProfile,
       assignedCoach: coachProfile
         ? {

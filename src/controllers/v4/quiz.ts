@@ -439,60 +439,41 @@ class QuizController extends BaseController {
   @Auth()
   public async getQuizResultsInformation(ctx: any) {
     const { user } = ctx.request;
-    const userIfExists = await UserTable.findOne({ _id: user._id });
+    const [
+      userIfExists,
+      checkQuizExists,
+      getQuizQuestionsCount,
+      latestQuiz,
+      totalQuizzesCompleted,
+    ] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      quizService.checkQuizExists({
+        $or: [{ userId: new mongoose.Types.ObjectId(user._id) }],
+        isOnBoardingQuiz: false,
+      }),
+      QuizQuestionResult.countDocuments({ userId: user._id }),
+      QuizResult.findOne({ userId: user._id, isOnBoardingQuiz: false }).sort({
+        createdAt: -1,
+      }),
+      QuizResult.countDocuments({
+        userId: user._id,
+        isOnBoardingQuiz: false,
+      }),
+    ]);
     if (!userIfExists) {
       return this.BadRequest(ctx, "User not found");
     }
-    const checkQuizExists = await quizService.checkQuizExists({
-      $or: [{ userId: new mongoose.Types.ObjectId(user._id) }],
-      isOnBoardingQuiz: false,
-    });
     const dataToSend = {
       quizCooldown: 0,
-      lastQuizTime: null,
-      totalQuestionSolved: 0,
-      totalStackPointsEarned: 0,
-      totalStackPointsEarnedTop: userIfExists.preLoadedCoins,
-      xpPoints: 0,
-      totalQuizzesCompleted: 0,
+      lastQuizTime: latestQuiz ? moment(latestQuiz.createdAt).unix() : null,
+      totalQuestionSolved:
+        checkQuizExists.length > 0 ? getQuizQuestionsCount : 0,
+      totalStackPointsEarned: userIfExists.quizCoins || 0,
+      totalStackPointsEarnedTop:
+        userIfExists.preLoadedCoins + (userIfExists.quizCoins || 0),
+      xpPoints: userIfExists.xpPoints || 0,
+      totalQuizzesCompleted,
     };
-    /**
-     * Get Stack Point Earned
-     */
-    // let parentCoins = childExists?.userId?.quizCoins || 0;
-    dataToSend.totalStackPointsEarned += userIfExists.quizCoins;
-    dataToSend.totalStackPointsEarnedTop += userIfExists.quizCoins;
-    /**
-     * Get Quiz Question Count
-     */
-    const getQuizQuestionsCount = await QuizQuestionResult.countDocuments({
-      userId: user._id,
-    });
-    dataToSend.totalQuestionSolved =
-      checkQuizExists.length > 0 ? getQuizQuestionsCount : 0;
-    /**
-     * Get Latest Quiz Time
-     */
-    const latestQuiz = await QuizResult.findOne({
-      userId: user._id,
-      isOnBoardingQuiz: false,
-    }).sort({
-      createdAt: -1,
-    });
-
-    dataToSend.xpPoints = userIfExists.xpPoints;
-    dataToSend.lastQuizTime = latestQuiz
-      ? moment(latestQuiz.createdAt).unix()
-      : null;
-
-    /**
-     * Get Latest Quiz Time
-     */
-    const totalQuizzesCompleted = await QuizResult.countDocuments({
-      userId: user._id,
-      isOnBoardingQuiz: false,
-    });
-    dataToSend.totalQuizzesCompleted = totalQuizzesCompleted;
     return this.Ok(ctx, dataToSend);
   }
 
@@ -765,6 +746,9 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-categories", method: HttpMethod.GET })
   @Auth()
   public async quizCategories(ctx: any) {
+    return this.Ok(ctx, {
+      data: {},
+    });
     try {
       let userIfExists = await UserTable.findOne({ _id: ctx.request.user._id });
       if (!userIfExists) {
