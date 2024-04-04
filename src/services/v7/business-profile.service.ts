@@ -459,6 +459,7 @@ class BusinessProfileService {
           businessPlans: "$filteredBusinessPlans",
           hoursSaved: 1,
           businessCoachInfo: 1,
+          enableStealthMode: 1,
         },
       },
     ]).exec();
@@ -499,16 +500,6 @@ class BusinessProfileService {
         newResponse.map(
           (idea, idx) =>
             (idea["image"] = businessPassionImages[0].businessImages[idx])
-        );
-      }
-      if (newResponse && isRetry == IS_RETRY.TRUE) {
-        await UserTable.findOneAndUpdate(
-          { _id: userExists._id },
-          {
-            $inc: {
-              quizCoins: DEDUCT_RETRY_FUEL,
-            },
-          }
         );
       }
       return newResponse;
