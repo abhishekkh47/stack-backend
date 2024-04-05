@@ -107,18 +107,19 @@ class QuizDBService {
       userId: userIfExists._id,
     }).populate("communityId");
     if (usersCommunityIfExists) {
-      await UserCommunityTable.findOneAndUpdate(
-        { _id: usersCommunityIfExists._id },
-        {
-          $inc: {
-            xpPoints: totalXPPoints,
-          },
-        }
-      );
-      const isGoalAchieved =
-        await CommunityDBService.checkCommunityGoalAchievedOrNot(
+      const [_, isGoalAchieved] = await Promise.all([
+        UserCommunityTable.findOneAndUpdate(
+          { _id: usersCommunityIfExists._id },
+          {
+            $inc: {
+              xpPoints: totalXPPoints,
+            },
+          }
+        ),
+        CommunityDBService.checkCommunityGoalAchievedOrNot(
           usersCommunityIfExists.communityId
-        );
+        ),
+      ]);
       if (
         isGoalAchieved &&
         !usersCommunityIfExists.communityId.isNextChallengeScheduled
