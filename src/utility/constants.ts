@@ -270,7 +270,7 @@ export const REFERRAL_SOURCES = [
   "podcast",
 ];
 
-export const DEFAULT_LIFE_COUNT = 3;
+export const DEFAULT_LIFE_COUNT = 5;
 export const REFILL_INTERVAL = 4 * 3600 * 1000;
 export const QUIZ_TYPE = {
   NORMAL: 1,
