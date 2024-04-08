@@ -888,7 +888,7 @@ class UserDBService {
    */
   public async refillLifeWithFuel(user: any) {
     if (user.lifeCount === DEFAULT_LIFE_COUNT) {
-      throw new NetworkError("You already have 3 lives", 400);
+      throw new NetworkError("You already have 5 lives", 400);
     }
     const totalFuels = user.quizCoins + user.preLoadedCoins;
     if (totalFuels < REFILL_LIFE_FUEL) {
@@ -956,8 +956,11 @@ class UserDBService {
     }
     const numOfLivesToRefill =
       1 + Math.floor((currentTime - usersRenewLifeAt) / REFILL_INTERVAL);
-    lifeCount = Math.min(user.lifeCount + numOfLivesToRefill, 3);
-    if (lifeCount < 3) {
+    lifeCount = Math.min(
+      user.lifeCount + numOfLivesToRefill,
+      DEFAULT_LIFE_COUNT
+    );
+    if (lifeCount < DEFAULT_LIFE_COUNT) {
       renewLifeAt = new Date(
         usersRenewLifeAt + numOfLivesToRefill * REFILL_INTERVAL
       ).toISOString();
