@@ -746,9 +746,6 @@ class QuizController extends BaseController {
   @Route({ path: "/quiz-categories", method: HttpMethod.GET })
   @Auth()
   public async quizCategories(ctx: any) {
-    return this.Ok(ctx, {
-      data: {},
-    });
     try {
       let userIfExists = await UserTable.findOne({ _id: ctx.request.user._id });
       if (!userIfExists) {
