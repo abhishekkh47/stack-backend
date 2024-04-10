@@ -2075,6 +2075,25 @@ class ScriptController extends BaseController {
     ]);
     return this.Ok(ctx, { message: "Success" });
   }
+
+  /**
+   * @description This method is used to increment existing lifecount by 2, to make default lifecount as 5 instead of 3
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-life-count", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateLifeCount(ctx: any) {
+    try {
+      await UserTable.updateMany(
+        { lifeCount: { $lte: 3 } },
+        { $inc: { lifeCount: 2 } }
+      );
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new ScriptController();
