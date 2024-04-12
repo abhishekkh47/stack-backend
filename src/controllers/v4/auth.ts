@@ -599,11 +599,13 @@ class AuthController extends BaseController {
             profileData = {
               ...profileData,
               businessProfile,
-              assignedCoach: {
-                coachProfile,
-                initialMessage,
-                thingsToTalkAbout,
-              },
+              assignedCoach: coachProfile
+                ? {
+                    coachProfile,
+                    initialMessage,
+                    thingsToTalkAbout,
+                  }
+                : null,
             };
 
             if (deviceToken) {
