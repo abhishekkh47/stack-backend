@@ -575,7 +575,7 @@ export const COACH_REQUIREMENTS = {
         value:
           "Getting peers interested and excited about products that I like",
       },
-      { id: 5, value: "others" },
+      { id: 5, value: "Other" },
     ],
   },
   needHelpIn: {
@@ -614,7 +614,7 @@ export const COACH_REQUIREMENTS = {
       },
       {
         id: 5,
-        heading: "others",
+        heading: "Other",
         message:
           "Excited to help you with any challenge you're facing. What is on your mind?",
       },
