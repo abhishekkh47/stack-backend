@@ -20,11 +20,15 @@ const schema = new mongoose.Schema<IQuizTopicSchema>(
       default: false,
     },
     /**
-     * 0/null - old quiz, 1 - new quiz, 3 Story quizzes
+     * 0/null - old quiz, 1 - new quiz, 3 Story quizzes, 4 - checklist topics
      */
     type: {
       type: mongoose.Schema.Types.Number,
       default: null,
+    },
+    order: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
     },
   },
   { timestamps: true }

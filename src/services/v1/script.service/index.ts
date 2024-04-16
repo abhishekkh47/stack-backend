@@ -16,6 +16,8 @@ import {
   WeeklyJourneyTable,
   WeeklyJourneyResultTable,
   CoachProfileTable,
+  QuizCategoryTable,
+  QuizLevelTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -393,53 +395,48 @@ class ScriptService {
   public async addQuizCategoryContentsToDB(quizCategoryData: any) {
     try {
       let quizCategoryQuery = [];
-      let quizQuery = [];
-      for await (let data of quizCategoryData) {
-        if (!data["Quiz #"] || !data["Category"]) {
+      let currentTopic = null;
+      let currentCategory = null;
+      let categoryOrder = 0;
+      for (let data of quizCategoryData) {
+        if (!data["Topic#"] || !data["Category"]) {
           continue;
         }
-        let quiz = await QuizTable.findOne({
-          quizNum: parseInt(data["Quiz #"]),
-        });
-        if (!quiz) {
-          continue;
-        }
-        let category = await QuizTopicTable.findOne({
-          topic: data["Category"].trimEnd(),
-        });
-        if (!category) {
-          category = await QuizTopicTable.create({
-            type: 2,
-            status: 1,
-            hasStages: false,
-            topic: data["Category"].trimEnd(),
+        if (data["Topic"] && currentTopic != data["Topic"]?.trimEnd()) {
+          currentTopic = await QuizTopicTable.findOne({
+            order: parseInt(data["Topic#"]?.trimEnd()),
           });
+          categoryOrder = 0;
         }
-        let bulkWriteObject = {
-          updateMany: {
-            filter: { quizId: quiz._id },
-            update: {
-              $set: { topicId: category ? category._id : quiz.topicId },
+        if (!currentTopic) {
+          continue;
+        }
+        if (currentCategory != data["Category"].trimEnd()) {
+          categoryOrder += 1;
+          currentCategory = data["Category"].trimEnd();
+          let bulkWriteObject = {
+            updateMany: {
+              filter: { topicId: currentTopic._id, title: currentCategory },
+              update: {
+                $set: {
+                  topicId: currentTopic._id,
+                  order: categoryOrder,
+                  title: currentCategory,
+                  description: `Level ${categoryOrder * 5 - 4}-${
+                    categoryOrder * 5
+                  }`,
+                },
+              },
+              upsert: true,
             },
-          },
-        };
-        quizCategoryQuery.push(bulkWriteObject);
-        let bulkWriteObjectQuiz = {
-          updateMany: {
-            filter: { _id: quiz._id },
-            update: {
-              $set: { topicId: category ? category._id : quiz.topicId },
-            },
-          },
-        };
-        quizQuery.push(bulkWriteObjectQuiz);
+          };
+          quizCategoryQuery.push(bulkWriteObject);
+        }
       }
-      await QuizResult.bulkWrite(quizCategoryQuery);
-      await QuizQuestionResult.bulkWrite(quizCategoryQuery);
-      await QuizTable.bulkWrite(quizQuery);
+      await QuizCategoryTable.bulkWrite(quizCategoryQuery);
       return { isAddedToDB: true, data: quizCategoryQuery };
     } catch (err) {
-      return { isAddedToDB: false, data: null };
+      return { isAddedToDB: false, data: null, message: err.mesage };
     }
   }
 
@@ -1156,116 +1153,106 @@ class ScriptService {
    * @param rows
    * @returns {array}
    */
-  public async processWeeklyChallenges(rows: any) {
-    let weeklyChallenges = [];
-
+  public async processChecklistContent(rows: any) {
     try {
-      let currentWeek = null;
-      let currentDay = null;
-      let currentWeekIndex = -1;
-      let title = null;
+      let currentTopic = null;
+      let currentCategory = null;
+      let currentLevelNum = 0;
+      let levelDetails = [];
+      let currentLevelIndex = -1;
+      let currentTopicObj = null;
+      let currentCategoryObj = null;
       for (let data of rows) {
-        let weekNum = parseInt(data["Week #"]?.trimEnd());
-        title = data["Title"]?.trimEnd() ? data["Title"]?.trimEnd() : title;
-        let dayNum = parseInt(data["Day #"]?.trimEnd());
-        let dailyGoal = data["DailyGoal"]?.trimEnd()
-          ? data["DailyGoal"]?.trimEnd()
-          : null;
+        if (data["Topic"] && currentTopic != data["Topic"]?.trimEnd()) {
+          currentTopic = data["Topic"]?.trimEnd();
+          currentTopicObj = await QuizTopicTable.findOne({
+            topic: currentTopic,
+          });
+          currentLevelNum = 0;
+        }
+        if (data["Category"] && currentCategory != data["Category"]) {
+          currentCategory = data["Category"]?.trimEnd();
+          currentCategoryObj = await QuizCategoryTable.findOne({
+            title: currentCategory,
+          });
+        }
+        if (data["Level"] && currentLevelNum != data["Level"]?.trimEnd()) {
+          currentLevelNum = parseInt(data["Level"]?.trimEnd());
+          currentLevelIndex++;
+          levelDetails.push({
+            topicId: currentTopicObj._id,
+            categoryId: currentCategoryObj._id,
+            level: currentLevelNum,
+            title: data["Level Name"]?.trimEnd(),
+            actions: [],
+          });
+        }
         let type = null;
         let currentReward = null;
         let currentQuizId = null;
-
-        if (weekNum !== currentWeek || (dayNum && dayNum !== currentDay)) {
-          currentWeek = weekNum;
-          currentDay = dayNum;
-          currentWeekIndex++;
-          weeklyChallenges.push({
-            week: weekNum,
-            title: title,
-            day: dayNum,
-            dailyGoal: dailyGoal,
-            actions: [],
-            rewardType: null,
-            reward: null,
-          });
-        }
 
         if (data["Type"]?.trimEnd() == "action") {
           type = 4;
           currentReward = COMPLETED_ACTION_REWARD;
         } else {
           const quizNum = data["QuizNum"]?.trimEnd();
-          const quizId = await QuizTable.find({
+          const quizId = await QuizTable.findOne({
             quizNum,
-          }).select("quizId");
-          const quizCount = await QuizQuestionTable.countDocuments({
-            quizId: quizId[0],
-          });
-          currentQuizId = quizId[0]._id;
-
+          }).select("_id");
+          currentQuizId = quizId._id;
           if (data["Type"] == "simulation") {
             type = 2;
             currentReward = XP_POINTS.SIMULATION_QUIZ;
           } else if (data["Type"] == "story") {
             type = 3;
-            currentReward = (quizCount / 4) * everyCorrectAnswerPoints;
+            currentReward = 4 * everyCorrectAnswerPoints;
           } else {
+            const quizCount = await QuizQuestionTable.countDocuments({
+              quizId: quizId,
+            });
             type = 1;
             currentReward = quizCount * everyCorrectAnswerPoints;
           }
         }
 
         const action = {
-          actionNum: parseInt(data["Action #"]?.trimEnd()),
+          actionNum: parseInt(data["Action Number"]?.trimEnd()),
           type: type,
           quizNum: parseInt(data["QuizNum"]?.trimEnd()) || null,
           quizId: currentQuizId || null,
-          taskName: data["TaskName"]?.trimEnd() || null,
-          tip: data["Tip"]?.trimEnd() || null,
-          key: data["Key"]?.trimEnd() || null,
-          actionInput: data["ActionInput"]?.trimEnd() || null,
           reward: currentReward,
         };
-        weeklyChallenges[currentWeekIndex].actions.push(action);
+        levelDetails[currentLevelIndex].actions.push(action);
       }
+      return levelDetails;
     } catch (error) {
-      throw new NetworkError("Something Went Wrong", 400);
+      throw new NetworkError(`Something Went Wrong : ${error.message}`, 400);
     }
-    return weeklyChallenges;
   }
 
   /**
    * @description This function is add simulations into db
-   * @param dailyChallenges
+   * @param checklistContent
    */
-  public async addweeklyDataToDB(dailyChallenges: any) {
+  public async addChecklistContentToDB(checklistContent: any) {
     try {
-      let dailyChallengesData = [];
-      dailyChallenges.map(async (data: any) => {
-        const weekNum = isNaN(parseInt(data.week)) ? null : parseInt(data.week);
-        const dayNum = isNaN(parseInt(data.week)) ? null : parseInt(data.day);
-        if (!weekNum || !dayNum) return false;
-
+      let checklistContentData = [];
+      checklistContent.map(async (data: any) => {
         let bulkWriteObject = {
           updateOne: {
-            filter: { week: data.week, day: data.day },
+            filter: { level: data.level, categoryId: data.categoryId },
             update: {
               $set: {
                 ...data,
-                week: data.week,
-                day: data.day,
               },
             },
             upsert: true,
           },
         };
-        dailyChallengesData.push(bulkWriteObject);
+        checklistContentData.push(bulkWriteObject);
       });
-
-      const weeklyChallenges = await WeeklyJourneyTable.bulkWrite(
-        dailyChallengesData
-      );
-      return true;
+      await QuizLevelTable.bulkWrite(checklistContentData);
+      return checklistContentData;
     } catch (err) {
       return false;
     }

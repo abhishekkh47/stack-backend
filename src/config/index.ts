@@ -185,4 +185,7 @@ export default {
   get COACH_DETAILS_SHEET_GID() {
     return process.env.COACH_DETAILS_SHEET_GID;
   },
+  get CHECKLIST_CONTENT_GID() {
+    return process.env.CHECKLIST_CONTENT_GID;
+  },
 };

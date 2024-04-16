@@ -7,6 +7,7 @@ export interface IQuizTopic {
   type: number;
   image: string;
   hasStages: boolean;
+  order: number;
 }
 
 export interface IQuizTopicSuggestion {
@@ -66,6 +67,7 @@ export interface IAnswerArray {
 export interface IQuiz {
   quizName: string;
   topicId: mongoose.Schema.Types.ObjectId;
+  categoryId: mongoose.Schema.Types.ObjectId;
   stageId: mongoose.Schema.Types.ObjectId;
   videoUrl: string;
   image: string;
@@ -98,4 +100,27 @@ export interface IQuizReview {
 
 export interface IQuizQuestionResult extends IQuizResult {
   quizQuestionId: mongoose.Schema.Types.ObjectId;
+}
+
+export interface IQuizCategory {
+  topicId: mongoose.Schema.Types.ObjectId;
+  order: number;
+  title: string;
+  description: string;
+}
+
+export interface IQuizLevel {
+  topicId: mongoose.Schema.Types.ObjectId;
+  categoryId: mongoose.Schema.Types.ObjectId;
+  level: number;
+  title: string;
+  actions: IQuizDetail[];
+}
+
+export interface IQuizDetail {
+  actionNum: number;
+  quizId: mongoose.Schema.Types.ObjectId;
+  quizNum: number;
+  type: string;
+  reward: number;
 }

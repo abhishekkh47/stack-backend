@@ -12,6 +12,11 @@ const schema = new mongoose.Schema<IQuizSchema>(
       ref: "quizTopic",
       default: null,
     },
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "quiz_category",
+      default: null,
+    },
     stageId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "stage",
