@@ -345,9 +345,6 @@ class ScriptService {
             ? null
             : parseInt(data.quizNum);
           if (!quizNum) return false;
-          const stageIfExists = await StageTable.findOne({
-            title: data.stageName,
-          });
           const quiz = await QuizTable.findOneAndUpdate(
             { quizNum: quizNum },
             {
@@ -356,10 +353,11 @@ class ScriptService {
                 topicId: data.topicId,
                 image: data.image,
                 tags: data.tags,
-                stageId: stageIfExists?._id || null,
+                stageId: null,
                 quizType: data.quizType || QUIZ_TYPE.NORMAL,
                 characterName: data.characterName || null,
                 characterImage: data.characterImage || null,
+                categoryId: data.categoryId,
               },
             },
             { upsert: true, new: true }
@@ -1324,7 +1322,11 @@ class ScriptService {
    * @param rows
    * @returns {*}
    */
-  public async convertWeeklyQuizSpreadSheetToJSON(quizNums: any, rows: any) {
+  public async convertQuizSpreadSheetToJSON(
+    quizNums: any,
+    rows: any,
+    allCategories: any
+  ) {
     try {
       rows = rows.filter((x) => quizNums.includes(x["Quiz #"]));
       let lastQuizName = "";
@@ -1336,6 +1338,8 @@ class ScriptService {
       let order = 1;
       let currentPromptStyle = null;
       let questionNumber = 0;
+      let currentCategory = null;
+      let currentTopic = null;
       let promptList: {
         [quizNumber: number]: {
           questions: IPromptData[];
@@ -1356,6 +1360,12 @@ class ScriptService {
               questions: [],
             };
             questionNumber = 0;
+            const currentCategoryObj =
+              allCategories?.find(
+                (category) => category.title == data["Category"]?.trimEnd()
+              ) || allCategories?.[0];
+            currentCategory = currentCategoryObj?._id || null;
+            currentTopic = currentCategoryObj?.topicId || null;
           }
           questionNumber++;
           if (data["Quiz Title"] != "") {
@@ -1386,9 +1396,10 @@ class ScriptService {
             const question: IPromptData = {
               promptDescription: data[promptKey]?.trimEnd(),
               promptStyle: currentPromptStyle,
+              prompt: data[`Prompt ${promptKey}`]?.trimEnd(),
               imageName: `q${quizNumber}_q${Math.ceil(
-                promptList[quizNumber].questions.length / 4 + 1
-              )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+                questionNumber / 4
+              )}_${promptKey.toLowerCase()}`,
             };
             if (questionImageName) {
               question.isNameOverride = true;
@@ -1409,9 +1420,9 @@ class ScriptService {
               name: data[prompt]?.trimEnd(),
               image:
                 data[`Image ${prompt}`] ||
-                `q${
-                  data["Quiz #"]
-                }_q${questionNumber}_${prompt.toLowerCase()}.png`,
+                `q${data["Quiz #"]}_q${Math.ceil(
+                  questionNumber / 4
+                )}_${prompt.toLowerCase()}.png`,
               correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
               statement:
                 data["correctAnswer"] == data[prompt]
@@ -1425,13 +1436,14 @@ class ScriptService {
             rows[index + 1]["Quiz #"] !== data["Quiz #"]
           ) {
             let quizData = {
-              topicId: new ObjectId("6594011ab1fc7ea1f458e8c8"),
+              topicId: currentTopic,
               quizNum: data["Quiz #"].trimEnd(),
               quizName: lastQuizName,
               image: null,
               stageName: lastQuizStage,
               tags: lastQuizTags,
               questionData: questionDataArray,
+              categoryId: currentCategory,
             };
             quizContentData.push(quizData);
             questionDataArray = [];
@@ -1443,15 +1455,13 @@ class ScriptService {
       Object.values(promptList).forEach((value) => {
         questions.push(
           ...value.questions.filter(
-            (question) => Object.keys(question).length > 0
+            (question) => Object.keys(question).length > 0 && question.prompt
           )
         );
       });
-      const { questionPrompts } = await this.generatePrompt([], questions);
-      this.generateImages([], questionPrompts, outputPath);
+      this.generateImages([], questions, outputPath);
       return quizContentData;
     } catch (error) {
-      console.log("ERROR : ", error.message);
       throw new NetworkError(error.message, 400);
     }
   }

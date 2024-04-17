@@ -26,6 +26,7 @@ import {
   StageTable,
   StreakGoalTable,
   BusinessProfileTable,
+  QuizCategoryTable,
 } from "@app/model";
 import {
   EAction,
@@ -1069,22 +1070,14 @@ class ScriptController extends BaseController {
       if (quizNums.length === 0) {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
-      let investingTopic = await QuizTopicTable.findOne({ topic: "Investing" });
-      let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
-        "_id topic"
-      );
-      /**
-       * Read Spreadsheet
-       */
-      const rows = await ScriptService.readSpreadSheet();
-      /**
-       * Convert Spreadsheet to JSON
-       */
-      const quizContentData = await ScriptService.convertSpreadSheetToJSON(
-        investingTopic._id,
+      const [rows, allCategories] = await Promise.all([
+        ScriptService.readSpreadSheet(),
+        QuizCategoryTable.find().select("_id topicId title"),
+      ]);
+      const quizContentData = await ScriptService.convertQuizSpreadSheetToJSON(
         quizNums,
         rows,
-        allTopics
+        allCategories
       );
       if (quizContentData.length === 0) {
         return this.BadRequest(ctx, "Quiz Content Not Found");
@@ -1095,7 +1088,10 @@ class ScriptController extends BaseController {
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
-      return this.Ok(ctx, { message: "Success", data: quizContentData });
+      return this.Ok(ctx, {
+        message: "Success",
+        data: quizContentData,
+      });
     } catch (error) {
       console.log(error);
       return this.BadRequest(ctx, "Something Went Wrong");
@@ -1899,8 +1895,11 @@ class ScriptController extends BaseController {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
       const rows = await ScriptService.readSpreadSheet();
-      const quizContentData =
-        await ScriptService.convertWeeklyQuizSpreadSheetToJSON(quizNums, rows);
+      const quizContentData = await ScriptService.convertQuizSpreadSheetToJSON(
+        quizNums,
+        rows,
+        null
+      );
       if (quizContentData.length === 0) {
         return this.BadRequest(ctx, "Quiz Content Not Found");
       }
