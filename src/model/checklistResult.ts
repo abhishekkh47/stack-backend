@@ -14,12 +14,17 @@ const schema = new mongoose.Schema<IChecklistResult>(
     topicId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "weekly_journey",
+      ref: "quizTopic",
     },
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "user",
+      ref: "quiz_category",
+    },
+    levelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "quiz_level",
     },
     level: {
       type: mongoose.Schema.Types.Number,

@@ -121,6 +121,6 @@ export interface IQuizDetail {
   actionNum: number;
   quizId: mongoose.Schema.Types.ObjectId;
   quizNum: number;
-  type: string;
+  type: number;
   reward: number;
 }
