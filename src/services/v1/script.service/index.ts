@@ -1238,7 +1238,11 @@ class ScriptService {
       checklistContent.map(async (data: any) => {
         let bulkWriteObject = {
           updateOne: {
-            filter: { level: data.level, categoryId: data.categoryId },
+            filter: {
+              topicId: data.topicId,
+              level: data.level,
+              categoryId: data.categoryId,
+            },
             update: {
               $set: {
                 ...data,
