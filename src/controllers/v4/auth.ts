@@ -581,9 +581,20 @@ class AuthController extends BaseController {
                 First_Name: reqParam.firstName,
                 Last_Name: reqParam.lastName ? reqParam.lastName : null,
                 Email: reqParam.email,
+                User_ID: userExists._id,
               };
 
               await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+            } else {
+              let dataSentInCrm: any = {
+                Email: reqParam.email,
+                User_ID: userExists._id,
+              };
+
+              zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
                 dataSentInCrm
               );
