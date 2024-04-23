@@ -134,11 +134,11 @@ export const validationsV4 = {
     const schema = Joi.object({
       name: Joi.string()
         .required()
-        .regex(/\.png$/, { name: "png_extension", invert: false })
+        .regex(/\.(png|webp)$/, { name: "png_extension", invert: false })
         .messages({
           "string.base": `Image name must be a string`,
           "string.empty": `Image name cannot be empty`,
-          "string.pattern.invert.base": `Image name must end with '.png'`,
+          "string.pattern.invert.base": `Image name must end with '.png' or '.webp'`,
           "any.required": `Image name is required`,
         }),
     });
