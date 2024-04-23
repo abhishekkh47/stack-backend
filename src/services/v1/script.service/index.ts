@@ -1189,9 +1189,9 @@ class ScriptService {
         let currentReward = null;
         let currentQuizId = null;
 
-        if (data["Type"]?.trimEnd() == "action") {
+        if (data["Type"]?.trimEnd() == "summary") {
           type = 4;
-          currentReward = COMPLETED_ACTION_REWARD;
+          currentReward = null;
         } else {
           const quizNum = data["QuizNum"]?.trimEnd();
           const quizId = await QuizTable.findOne({
