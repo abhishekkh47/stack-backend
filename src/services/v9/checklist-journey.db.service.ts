@@ -15,6 +15,7 @@ import {
   LEVEL_COUNT,
   LEVEL_QUIZ_COUNT,
 } from "@app/utility";
+import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
 class ChecklistDBService {
   /**
@@ -22,11 +23,11 @@ class ChecklistDBService {
    * @param userIfExists
    * @returns {*}
    */
-  public async getQuizTopics(userIfExists: any) {
+  public async getQuizTopics(userIfExists: IUser) {
     try {
       let [quizTopics, completedQuizzes] = await Promise.all([
         QuizTopicTable.find({ type: 4 }, { topic: 1, order: 1 }).lean(),
-        ChecklistResultTable.find({ userId: userIfExists._id }),
+        ChecklistResultTable.find({ userId: (userIfExists as any)._id }),
       ]);
 
       let topics = quizTopics.map((topic) => {
@@ -56,7 +57,7 @@ class ChecklistDBService {
    * @param topicId
    * @returns {*}
    */
-  public async getQuizCategories(userIfExists: any, topicId: any) {
+  public async getQuizCategories(userIfExists: IUser, topicId: string) {
     try {
       let [quizCategory, completedQuizzes] = await Promise.all([
         QuizCategoryTable.find(
@@ -65,7 +66,7 @@ class ChecklistDBService {
         )
           .sort({ order: 1 })
           .lean(),
-        ChecklistResultTable.find({ userId: userIfExists._id }),
+        ChecklistResultTable.find({ userId: (userIfExists as any)._id }),
       ]);
       let quizCategories = quizCategory.map((category) => {
         const categoryQuizzes = completedQuizzes.filter(
@@ -94,21 +95,33 @@ class ChecklistDBService {
    * @param categoryId
    * @returns {*}
    */
-  public async getLevelsAndChallenges(userIfExists: any, categoryId: any) {
+  public async getLevelsAndChallenges(userIfExists: IUser, categoryId: string) {
     try {
       let upcomingChallenge = {};
       let upcomingQuizId = null;
       let upcomingQuizDetails = null;
       let checklistFlowCompleted = false;
+      let nextCategory = null;
       const [quizCategoryDetails, quizLevelsDetails, lastPlayedChallenge]: any =
         await Promise.all([
           QuizCategoryTable.findOne({ _id: categoryId }).populate("topicId"),
           QuizLevelTable.find({ categoryId }).sort({ level: 1 }),
           ChecklistResultTable.findOne({
-            userId: userIfExists._id,
+            userId: (userIfExists as any)._id,
             categoryId,
           }).sort({ createdAt: -1 }),
         ]);
+      const quizCategory = await QuizCategoryTable.find(
+        {
+          topicId: quizCategoryDetails.topicId._id,
+        },
+        { _id: 1, topicId: 1, title: 1, description: 1 }
+      ).sort({ order: 1 });
+      if (quizCategory.length == quizCategoryDetails.order) {
+        nextCategory = null;
+      } else {
+        nextCategory = quizCategory[quizCategoryDetails.order];
+      }
 
       const levels = quizLevelsDetails.map((obj) => ({
         _id: obj._id,
@@ -164,7 +177,12 @@ class ChecklistDBService {
         };
       }
 
-      return { levels, upcomingChallenge, checklistFlowCompleted };
+      return {
+        levels,
+        upcomingChallenge,
+        checklistFlowCompleted,
+        nextCategory,
+      };
     } catch (err) {
       throw new NetworkError("Error occurred while retrieving challenge", 400);
     }
@@ -267,6 +285,60 @@ class ChecklistDBService {
         },
       },
     ]);
+  }
+
+  /**
+   * @description get a default categoryId which is not yet completed, to open when a user logs in
+   * @param userIfExists
+   * @param topicId
+   * @returns {*}
+   */
+  public async getDefaultLevelsAndChallenges(
+    userIfExists: IUser,
+    topicId: string = null
+  ) {
+    try {
+      let currentCategoryId = null;
+      let currentTopicId = null;
+      const lastPlayedChallenge = await ChecklistResultTable.findOne({
+        userId: (userIfExists as any)._id,
+      }).sort({ createdAt: -1 });
+      if (lastPlayedChallenge) {
+        currentCategoryId = lastPlayedChallenge.categoryId.toString();
+      } else {
+        currentTopicId = topicId;
+        if (!topicId) {
+          const quizTopics = await this.getQuizTopics(userIfExists);
+          let currentTopic = quizTopics[quizTopics.length - 1];
+          for (const topic of quizTopics) {
+            if (topic.userProgress < 100) {
+              currentTopic = topic;
+              break;
+            }
+          }
+          currentTopicId = currentTopic._id;
+        }
+        const quizCategories = await this.getQuizCategories(
+          userIfExists,
+          currentTopicId
+        );
+        let currentCategory = quizCategories[quizCategories.length - 1];
+        for (const category of quizCategories) {
+          if (category.userProgress < 100) {
+            currentCategory = category;
+            break;
+          }
+        }
+        currentCategoryId = currentCategory._id;
+      }
+
+      // const { levels, upcomingChallenge, checklistFlowCompleted } =
+      //   await this.getLevelsAndChallenges(userIfExists, currentCategoryId);
+
+      return currentCategoryId; //{ levels, upcomingChallenge, checklistFlowCompleted };
+    } catch (err) {
+      throw new NetworkError("Error occurred while retrieving quizzes", 400);
+    }
   }
 }
 export default new ChecklistDBService();
