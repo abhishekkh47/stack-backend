@@ -395,6 +395,7 @@ class ScriptService {
       let quizCategoryQuery = [];
       let currentTopic = null;
       let currentCategory = null;
+      let currentDescrition = null;
       let categoryOrder = 0;
       for (let data of quizCategoryData) {
         if (!data["Topic#"] || !data["Category"]) {
@@ -412,6 +413,7 @@ class ScriptService {
         if (currentCategory != data["Category"].trimEnd()) {
           categoryOrder += 1;
           currentCategory = data["Category"].trimEnd();
+          currentDescrition = data["Description"].trimEnd();
           let bulkWriteObject = {
             updateMany: {
               filter: { topicId: currentTopic._id, title: currentCategory },
@@ -420,9 +422,8 @@ class ScriptService {
                   topicId: currentTopic._id,
                   order: categoryOrder,
                   title: currentCategory,
-                  description: `Level ${categoryOrder * 5 - 4}-${
-                    categoryOrder * 5
-                  }`,
+                  description: currentDescrition,
+                  levels: `Level ${categoryOrder * 5 - 4}-${categoryOrder * 5}`,
                 },
               },
               upsert: true,

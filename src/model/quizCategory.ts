@@ -27,6 +27,11 @@ const schema = new mongoose.Schema<IQuizCategorySchema>(
       required: true,
       default: null,
     },
+    levels: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );
