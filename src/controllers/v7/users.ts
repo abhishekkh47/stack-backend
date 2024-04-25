@@ -4,6 +4,7 @@ import { UserDBService } from "@app/services/v6";
 import { HttpMethod } from "@app/types";
 import { Route, THINGS_TO_TALK_ABOUT } from "@app/utility";
 import { BusinessProfileService } from "@app/services/v7";
+import { BusinessProfileService as BusinessProfileServiceV9 } from "@app/services/v9";
 import { CoachProfileTable, UserTable } from "@app/model";
 
 class UserController extends BaseController {
@@ -19,9 +20,10 @@ class UserController extends BaseController {
     let initialMessage = null;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
-    const [userProfile, businessProfile] = await Promise.all([
+    const [userProfile, businessProfile, businessDetails] = await Promise.all([
       UserDBService.getProfile(id),
       BusinessProfileService.getBusinessProfile(id),
+      BusinessProfileServiceV9.getBusinessProfile(id),
     ]);
     if (businessProfile && businessProfile?.businessCoachInfo?.coachId) {
       coachProfile = await CoachProfileTable.findOne({
@@ -33,6 +35,7 @@ class UserController extends BaseController {
     let data = {
       ...userProfile.data,
       businessProfile,
+      businessDetails,
       assignedCoach: coachProfile
         ? {
             coachProfile,

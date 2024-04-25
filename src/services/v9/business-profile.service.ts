@@ -1,4 +1,8 @@
-import { BusinessProfileTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  ActionScreenCopyTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
   INVALID_DESCRIPTION_ERROR,
@@ -11,6 +15,7 @@ import {
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import { ObjectId } from "mongodb";
 
 class BusinessProfileService {
   /**
@@ -188,6 +193,49 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    }
+  }
+
+  /**
+   * @description this will generate suggestions using OpenAI API based on user inputs
+   * @param id
+   * @returns {*}
+   */
+  public async getBusinessProfile(id: any) {
+    try {
+      const [actionScreenData, businessProfileIfExists] = await Promise.all([
+        ActionScreenCopyTable.find(
+          {},
+          {
+            key: 1,
+            actionTitle: 1,
+            hoursSaved: 1,
+            isMultiLine: 1,
+            placeHolderText: 1,
+            steps: 1,
+            title: 1,
+          }
+        ).sort({
+          week: 1,
+          day: 1,
+        }),
+        BusinessProfileTable.findOne({ userId: new ObjectId(id) }),
+      ]);
+      actionScreenData.map((action) => {
+        if (action.key == "headline" || action.key == "callToAction") {
+          action.placeHolderText = businessProfileIfExists
+            ? businessProfileIfExists[action.key] ||
+              `Add Website ${action.actionTitle}`
+            : `Add Website ${action.actionTitle}`;
+        } else {
+          action.placeHolderText = businessProfileIfExists
+            ? businessProfileIfExists[action.key] || `Add ${action.actionTitle}`
+            : `Add ${action.actionTitle}`;
+        }
+      });
+      return actionScreenData;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }
