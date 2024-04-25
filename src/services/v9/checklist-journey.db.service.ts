@@ -42,7 +42,6 @@ class ChecklistDBService {
         },
       ]);
 
-      startFromScratch._id = focusAreas[0]._id;
       startFromScratch.categories = [...focusAreas[0].categories];
       focusAreas.push(startFromScratch);
       focusAreas.map((area) => area.categories.push(PERFECT_IDEA));

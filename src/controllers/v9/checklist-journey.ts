@@ -39,7 +39,8 @@ class ChecklistJourneyController extends BaseController {
     }
     await UserTable.findOneAndUpdate(
       { _id: userExists._id },
-      { $set: { focusAreaTopic: body.focusAreaTopic } }
+      { $set: { focusAreaTopic: body.focusAreaTopic } },
+      { upsert: true }
     );
     return this.Ok(ctx, { message: "Success" });
   }
