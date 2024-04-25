@@ -654,3 +654,16 @@ export const THINGS_TO_TALK_ABOUT = [
   "💰 How will you fund your business?",
 ];
 export const MENTORS = ["natalieYoung", "willRush"];
+export const START_FROM_SCRATCH = {
+  _id: null,
+  order: 6,
+  topic: "Start From Scratch",
+  image: "start_from_scratch.webp",
+  categories: [],
+};
+export const PERFECT_IDEA = {
+  title: "Find Your Perfect Idea",
+  description:
+    "Use Jetson AI to find the unique idea that excites you or input your own idea",
+  order: 0,
+};
