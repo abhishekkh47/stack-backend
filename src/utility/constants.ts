@@ -657,7 +657,7 @@ export const MENTORS = ["natalieYoung", "willRush"];
 export const START_FROM_SCRATCH = {
   _id: 1,
   order: 6,
-  topic: "Start From Scratch",
+  title: "Start From Scratch",
   image: "start_from_scratch.webp",
   categories: [],
 };
