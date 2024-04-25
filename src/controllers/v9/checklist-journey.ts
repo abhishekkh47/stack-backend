@@ -47,52 +47,26 @@ class ChecklistJourneyController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/get-checklist-journey/:categoryId", method: HttpMethod.GET })
+  @Route({ path: "/get-checklist-journey", method: HttpMethod.GET })
   @Auth()
   public async getCheckListJourneyByCategory(ctx: any) {
-    const { user, params } = ctx.request;
-    let categoryId = null;
+    const { user, query } = ctx.request;
+    let categoryId = query.categoryId;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (!params.categoryId) {
+    if (!categoryId) {
       categoryId = await ChecklistDBService.getDefaultLevelsAndChallenges(
         userExists,
-        params.topicId
+        query.topicId
       );
     }
     const { levels, upcomingChallenge, checklistFlowCompleted, nextCategory } =
-      await ChecklistDBService.getLevelsAndChallenges(
-        userExists,
-        params.categoryId
-      );
+      await ChecklistDBService.getLevelsAndChallenges(userExists, categoryId);
     return this.Ok(ctx, {
       data: { levels, upcomingChallenge, checklistFlowCompleted, nextCategory },
     });
-  }
-
-  /**
-   * @description This method is to fetch levels and challenges initially when a user login to the app
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({
-    path: "/get-checklist-journey",
-    method: HttpMethod.GET,
-  })
-  @Auth()
-  public async getCheckListJourney(ctx: any) {
-    const { user, params } = ctx.request;
-    const userExists = await UserTable.findOne({ _id: user._id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const res = await ChecklistDBService.getDefaultLevelsAndChallenges(
-      userExists,
-      params.topicId
-    );
-    return this.Ok(ctx, { data: res });
   }
 }
 
