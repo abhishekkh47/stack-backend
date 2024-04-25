@@ -31,7 +31,7 @@ class ChecklistDBService {
         {
           $project: {
             _id: 1,
-            topic: 1,
+            title: "$topic",
             image: 1,
             order: 1,
             "categories._id": 1,
