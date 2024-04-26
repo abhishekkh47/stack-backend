@@ -654,3 +654,14 @@ export const THINGS_TO_TALK_ABOUT = [
   "💰 How will you fund your business?",
 ];
 export const MENTORS = ["natalieYoung", "willRush"];
+export const BUSINESS_DESCRIPTION_OBJ = {
+  _id: "1",
+  key: "description",
+  actionTitle: "Business Idea",
+  hoursSaved: HOURS_SAVED_BY_IDEA_GENERATOR,
+  isMultiLine: true,
+  placeHolderText: "Add Business Idea",
+  steps: [],
+  title: "Creating Your Perfect Business",
+  actionInput: "Text",
+};
