@@ -29,6 +29,11 @@ class ChecklistDBService {
           },
         },
         {
+          $sort: {
+            "categories.order": -1,
+          },
+        },
+        {
           $project: {
             _id: 1,
             title: "$topic",
@@ -44,7 +49,7 @@ class ChecklistDBService {
 
       startFromScratch.categories = [...focusAreas[0].categories];
       focusAreas.push(startFromScratch);
-      focusAreas.map((area) => area.categories.push(PERFECT_IDEA));
+      focusAreas.map((area) => area.categories.unshift(PERFECT_IDEA));
 
       return focusAreas;
     } catch (err) {

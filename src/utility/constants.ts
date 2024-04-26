@@ -662,6 +662,7 @@ export const START_FROM_SCRATCH = {
   categories: [],
 };
 export const PERFECT_IDEA = {
+  _id: "1",
   title: "Find Your Perfect Idea",
   description:
     "Use Jetson AI to find the unique idea that excites you or input your own idea",
