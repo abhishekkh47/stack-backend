@@ -212,6 +212,11 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: false,
     },
+    availableAISuggestions: {
+      type: mongoose.Schema.Types.Mixed,
+      required: false,
+      default: null,
+    },
   },
   { timestamps: true }
 );

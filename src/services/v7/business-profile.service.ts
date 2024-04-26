@@ -74,6 +74,7 @@ class BusinessProfileService {
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
+        obj[`availableAISuggestions.${data.key}`] = null;
         if (!businessProfileData[data.key] && getHoursSaved.length) {
           obj["hoursSaved"] =
             businessProfileData.hoursSaved + getHoursSaved[0].hoursSaved;
