@@ -188,4 +188,7 @@ export default {
   get CHECKLIST_CONTENT_GID() {
     return process.env.CHECKLIST_CONTENT_GID;
   },
+  get CASE_STUDY_GID() {
+    return process.env.CASE_STUDY_GID;
+  },
 };

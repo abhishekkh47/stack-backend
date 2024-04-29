@@ -1784,18 +1784,15 @@ class ScriptController extends BaseController {
       if (storyNums.length === 0) {
         return this.BadRequest(ctx, "Please enter input story numbers");
       }
-      const rows = await ScriptService.readSpreadSheet(envData.STORY_SHEET_GID);
-      let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
-        "_id topic"
+      const rows = await ScriptService.readCaseStudySpreadSheet(
+        envData.CASE_STUDY_GID
       );
-      const hasStagesTopic = await QuizTopicTable.findOne({ hasStages: true });
+      if (!rows.length) {
+        return this.BadRequest(ctx, "Something Went Wrong - no data found");
+      }
+      // console.log("ROWS : ", JSON.stringify(rows));
       const storiesContentData =
-        await ScriptService.convertStorySpreadSheetToJSON(
-          hasStagesTopic,
-          storyNums,
-          rows,
-          allTopics
-        );
+        await ScriptService.convertStorySpreadSheetToJSON(storyNums, rows);
       if (storiesContentData.length === 0) {
         return this.BadRequest(ctx, "Story Content Not Found");
       }
@@ -1805,7 +1802,7 @@ class ScriptController extends BaseController {
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
-      return this.Ok(ctx, { message: "Success", data: true });
+      return this.Ok(ctx, { message: "Success", data: storiesContentData });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

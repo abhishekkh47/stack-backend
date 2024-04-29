@@ -358,6 +358,11 @@ class ScriptService {
                 characterName: data.characterName || null,
                 characterImage: data.characterImage || null,
                 categoryId: data.categoryId,
+                startupExecutive: data.startupExecutive,
+                company: data.company,
+                brandColors: data.brandColors,
+                fullStoryText: data.fullStoryText,
+                pronouns: data.pronouns,
               },
             },
             { upsert: true, new: true }
@@ -924,38 +929,35 @@ class ScriptService {
    * @param topic
    * @param stages
    */
-  public async convertStorySpreadSheetToJSON(
-    topicId: any,
-    storyNums: any,
-    rows: any,
-    allTopics: any
-  ) {
+  public async convertStorySpreadSheetToJSON(storyNums: any, rows: any) {
     const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
     try {
       const filteredStories = rows.filter((x) =>
         storyNums.includes(x["Story #"])
       );
       let storyTitle = "";
-      let lastStoryCategory = "";
       let lastStoryStage = "";
       let order = 1;
       let descriptionNum = 0;
       let characterName = "";
       let characterImage = "";
-      let categories = [];
       let storyContentData = [];
       let questionDataArray = [];
-      let filterCategory = [];
       let questionData = null;
-      let currentPromptStyle = null;
       let currentStoryNumber = 0;
       let questionNum = 0;
+      let startupExecutive = "";
+      let company = "";
+      let brandColors = "";
+      let pronouns = [];
+      let fullStoryText = "";
       let promptList: {
         [storyNumber: number]: {
           descriptions: IPromptData[];
           questions: IPromptData[];
         };
       } = {};
+      let topicId = null;
 
       // ---------- IMAGE GENERATION ----------- \\
 
@@ -973,14 +975,12 @@ class ScriptService {
               questions: [],
             };
           }
-          currentPromptStyle =
-            PROMPT_STYLE[Number(data["Prompt Style"]?.trimEnd()) - 1] ||
-            currentPromptStyle;
           if (data["Prompt Type"]?.trimEnd() == "Description") {
-            const storyImageName = data["Story Image"];
+            const storyImageName = data["Screen Text Image"];
             const desc: IPromptData = {
-              promptDescription: data["Text"]?.trimEnd(),
+              promptDescription: data["Screen Text"]?.trimEnd(),
               promptStyle: "",
+              prompt: data["Screen Text Prompt"],
               imageName: `s${storyNumber}_d${
                 promptList[storyNumber].descriptions.length + 1
               }`,
@@ -993,13 +993,14 @@ class ScriptService {
           } else {
             const prompts = ["A", "B", "C", "D"];
             const promptData: IPromptData[] = prompts.map((promptKey) => {
-              const questionImageName = data[`Image ${promptKey}`];
+              const questionImageName = data[`Image Name ${promptKey}`];
               const question: IPromptData = {
                 promptDescription: data[promptKey]?.trimEnd(),
                 promptStyle: "",
+                prompt: `data["Image Prompt"] ${promptKey}`,
                 imageName: `s${storyNumber}_q${Math.ceil(
                   promptList[storyNumber].questions.length / 4 + 1
-                )}_${`Prompt ${promptKey}`.slice(-1).toLocaleLowerCase()}`,
+                )}`,
               };
               if (questionImageName) {
                 question.isNameOverride = true;
@@ -1025,11 +1026,11 @@ class ScriptService {
         );
       });
 
-      const { descriptionPrompts, questionPrompts } = await this.generatePrompt(
-        descriptions,
-        questions
-      );
-      this.generateImages(descriptionPrompts, questionPrompts, outputPath);
+      // const { descriptionPrompts, questionPrompts } = await this.generatePrompt(
+      //   descriptions,
+      //   questions
+      // );
+      // this.generateImages(descriptionPrompts, questionPrompts, outputPath);
 
       // ---------- TEXT CONTENT ----------- \\
 
@@ -1039,27 +1040,34 @@ class ScriptService {
             currentStoryNumber = Number(data["Story #"]);
             descriptionNum = 0;
             questionNum = 0;
+            characterName = `${data["First Name"]?.trimEnd()} ${data[
+              "Last Name"
+            ]?.trimEnd()}`;
+            characterImage = data["Discord Image Link"]?.trimEnd();
+            startupExecutive = data["Startup Executive"]?.trimEnd();
+            company = data["Company"]?.trimEnd();
+            brandColors = data["Brand Colors"]?.trimEnd();
+            fullStoryText = data["Full Story Text"]?.trimEnd();
+            pronouns = [
+              data["Pronoun 1"]?.trimEnd(),
+              data["Pronoun 2"]?.trimEnd(),
+            ];
           }
-          if (data["Story Title"] == "") {
+          if (!data["Title"] || data["Title"] == "") {
             ++order;
           } else {
-            storyTitle = data["Story Title"]?.trimEnd();
+            storyTitle = data["Title"]?.trimEnd();
             order = 1;
           }
-          lastStoryCategory = !!data["Category"]
-            ? data["Category"]?.trimEnd()
-            : "";
-          lastStoryStage = !!data["Stage"] ? data["Stage"]?.trimEnd() : "";
           if (!data["Character"]) characterName = null;
-          if (!data["Character Image"]) characterImage = null;
 
           const baseQuestionData = {
-            text: data["Text"]?.trimEnd(),
+            text: data["Screen Text"]?.trimEnd(),
             order: order,
           };
-          if (data["Prompt Type"]?.trimEnd() == "Description") {
+          if (data["Type"]?.trimEnd() == "Description") {
             descriptionNum++;
-            const questionImageName = data["Story Image"];
+            const questionImageName = data["Screen Text Image"];
             questionData = {
               ...baseQuestionData,
               question_image:
@@ -1082,7 +1090,10 @@ class ScriptService {
               question_type: 2,
               answer_type: 2,
               answer_array: prompts.map((prompt) => ({
-                name: data[prompt]?.trimEnd(),
+                name:
+                  data[prompt]?.trimEnd().split("*").length > 1
+                    ? data[prompt]?.trimEnd().split("*")[0]
+                    : data[prompt]?.trimEnd(),
                 image:
                   data[`Image ${prompt}`] ||
                   `s${
@@ -1100,40 +1111,21 @@ class ScriptService {
             rows[index + 1] == undefined ||
             rows[index + 1]["Story #"] !== data["Story #"]
           ) {
-            if (lastStoryCategory) {
-              const isCategoryExists = allTopics.find(
-                (x) => x.topic == lastStoryCategory
-              );
-              /**
-               * We found a category in the spreadsheet for this story #.
-               * But does this category already exist in DB? If no, create it.
-               */
-              if (!isCategoryExists) {
-                categories.push({
-                  topic: lastStoryCategory,
-                  image: null,
-                  status: 1,
-                  type: 3,
-                });
-                filterCategory.push({
-                  key: data["Story #"],
-                  value: lastStoryCategory,
-                });
-                topicId = fallbackQuizTopic;
-              } else {
-                topicId = isCategoryExists._id;
-              }
-            }
             let quizData = {
               topicId: topicId,
               quizNum: data["Story #"].trimEnd(),
               quizName: storyTitle,
               image: null,
-              quizType: QUIZ_TYPE.STORY,
+              quizType: 4, //QUIZ_TYPE.STORY,
               stageName: lastStoryStage,
               characterName: characterName,
               characterImage: characterImage,
               tags: null,
+              startupExecutive,
+              company,
+              brandColors,
+              fullStoryText,
+              pronouns,
               questionData: questionDataArray,
             };
             storyContentData.push(quizData);
@@ -1641,6 +1633,45 @@ class ScriptService {
 
     await CoachProfileTable.bulkWrite(bulkWriteOperations);
     return coachProfilesData;
+  }
+
+  /**
+   * @description This function authenticates spreadsheet and read the data
+   * @param gid GidId of sheet
+   * @returns {*}
+   */
+  public async readCaseStudySpreadSheet(
+    gid: string = null,
+    sheetId: string = null
+  ) {
+    let document = null;
+    if (sheetId == envData.PASSION_SHEET_ID) {
+      document = new GoogleSpreadsheet(envData.PASSION_SHEET_ID);
+    } else if (sheetId == envData.ACTION_SCREEN_COPY_SHEET_ID) {
+      document = new GoogleSpreadsheet(envData.ACTION_SCREEN_COPY_SHEET_ID);
+    } else {
+      document = new GoogleSpreadsheet(envData.SHEET_ID);
+    }
+    await document.useServiceAccountAuth({
+      client_email: envData.CLIENT_EMAIL,
+      private_key: envData.GOOGLE_SERVICEACCOUNT_PRIVATE_KEY,
+    });
+    await document.loadInfo();
+    const sheet = gid ? document.sheetsById[gid] : document.sheetsByIndex[0];
+    await sheet.loadCells();
+    let rows = await sheet.getRows();
+    const rowData = [];
+    rows.forEach((row) => {
+      const rowDataItem = {};
+      for (let j = 0; j < sheet.columnCount; j++) {
+        const cell = sheet.getCell(row.rowIndex - 1, j);
+        const key = cell["_sheet"]["headerValues"][j];
+        rowDataItem[key] = cell ? cell.value : null;
+      }
+      rowData.push(rowDataItem);
+    });
+
+    return rowData;
   }
 }
 
