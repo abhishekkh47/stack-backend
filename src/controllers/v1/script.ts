@@ -1787,22 +1787,24 @@ class ScriptController extends BaseController {
       const rows = await ScriptService.readCaseStudySpreadSheet(
         envData.CASE_STUDY_GID
       );
-      if (!rows.length) {
+      if (!rows) {
         return this.BadRequest(ctx, "Something Went Wrong - no data found");
       }
-      // console.log("ROWS : ", JSON.stringify(rows));
-      const storiesContentData =
+      const storyContentData =
         await ScriptService.convertStorySpreadSheetToJSON(storyNums, rows);
-      if (storiesContentData.length === 0) {
+      if (storyContentData.length === 0) {
         return this.BadRequest(ctx, "Story Content Not Found");
       }
       const isAddedToDb = await ScriptService.addQuizContentsToDB(
-        storiesContentData
+        storyContentData
       );
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
-      return this.Ok(ctx, { message: "Success", data: storiesContentData });
+      return this.Ok(ctx, {
+        message: "Success",
+        data: storyContentData,
+      });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

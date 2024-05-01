@@ -191,4 +191,25 @@ export default {
   get CASE_STUDY_GID() {
     return process.env.CASE_STUDY_GID;
   },
+  get SERVER_ID() {
+    return process.env.SERVER_ID;
+  },
+  get CHANNEL_ID() {
+    return process.env.CHANNEL_ID;
+  },
+  get SALAI_TOKEN() {
+    return process.env.SALAI_TOKEN;
+  },
+  get HUGGINGFACE_TOKEN() {
+    return process.env.HUGGINGFACE_TOKEN;
+  },
+  get IMPORT_SERVER_ID() {
+    return process.env.IMPORT_SERVER_ID;
+  },
+  get IMPORT_CHANNEL_ID() {
+    return process.env.IMPORT_CHANNEL_ID;
+  },
+  get IMPORT_SALAI_TOKEN() {
+    return process.env.IMPORT_SALAI_TOKEN;
+  },
 };

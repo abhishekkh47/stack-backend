@@ -11,8 +11,6 @@ import {
   QuizResult,
   QuizTable,
   QuizTopicTable,
-  StageTable,
-  UserTable,
   WeeklyJourneyTable,
   WeeklyJourneyResultTable,
   CoachProfileTable,
@@ -31,14 +29,14 @@ import {
   UpscaleImage,
   downloadImage,
   uploadQuizImages,
-  PROMPT_STYLE,
   XP_POINTS,
-  COMPLETED_ACTION_REWARD,
   IPromptData,
   checkQuizImageExists,
   IMAGE_GENERATION_PROMPTS,
   SYSTEM,
   USER,
+  IMPORT_SCRIPT,
+  ICharacterImageData,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 import OpenAI from "openai";
@@ -929,15 +927,12 @@ class ScriptService {
    * @param topic
    * @param stages
    */
-  public async convertStorySpreadSheetToJSON(storyNums: any, rows: any) {
+  public async convertStorySpreadSheetToJSON(storyNums: any, rowData: any) {
     const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
     try {
-      const filteredStories = rows.filter((x) =>
-        storyNums.includes(x["Story #"])
-      );
       let storyTitle = "";
       let lastStoryStage = "";
-      let order = 1;
+      let order = 0;
       let descriptionNum = 0;
       let characterName = "";
       let characterImage = "";
@@ -967,40 +962,42 @@ class ScriptService {
       }
       fs.mkdirSync(outputPath);
       await Promise.all(
-        filteredStories.map(async (data) => {
-          const storyNumber = Number(data["Story #"]);
+        storyNums.map(async (storyNum) => {
+          let data = rowData[storyNum];
+          let imagePromptsData = rowData[`Image Prompts ${storyNum}`];
+          let imageNamesData = rowData[`Image Names ${storyNum}`];
+          const storyNumber = Number(data["Story Number"]);
           if (!(storyNumber in promptList)) {
             promptList[storyNumber] = {
               descriptions: [],
               questions: [],
             };
           }
-          if (data["Prompt Type"]?.trimEnd() == "Description") {
-            const storyImageName = data["Screen Text Image"];
+          imagePromptsData["Screen Text"].map((prompt, index) => {
+            const storyImageName = imageNamesData[index];
             const desc: IPromptData = {
-              promptDescription: data["Screen Text"]?.trimEnd(),
+              promptDescription: data["Screen Text"][index]?.trimEnd(),
               promptStyle: "",
-              prompt: data["Screen Text Prompt"],
-              imageName: `s${storyNumber}_d${
-                promptList[storyNumber].descriptions.length + 1
-              }`,
+              prompt: prompt?.trimEnd(),
+              imageName: `s${storyNumber}_d${index + 1}`,
             };
             if (storyImageName) {
               desc.isNameOverride = true;
               desc.imageName = storyImageName;
             }
-            promptList[storyNumber].descriptions.push(desc);
-          } else {
-            const prompts = ["A", "B", "C", "D"];
+            if (desc.prompt) promptList[storyNumber].descriptions.push(desc);
+          });
+          const prompts = ["1", "2", "3", "4"];
+          prompts.map((questionNum) => {
             const promptData: IPromptData[] = prompts.map((promptKey) => {
-              const questionImageName = data[`Image Name ${promptKey}`];
+              const questionImageName =
+                imageNamesData[`Q${questionNum} A${promptKey}`]?.trimEnd();
               const question: IPromptData = {
-                promptDescription: data[promptKey]?.trimEnd(),
+                promptDescription:
+                  data[`Q${questionNum} A${promptKey}`]?.trimEnd(),
                 promptStyle: "",
-                prompt: `data["Image Prompt"] ${promptKey}`,
-                imageName: `s${storyNumber}_q${Math.ceil(
-                  promptList[storyNumber].questions.length / 4 + 1
-                )}`,
+                prompt: imagePromptsData[`Q1 A${promptKey}`],
+                imageName: `s${storyNumber}_q1_a${promptKey}`,
               };
               if (questionImageName) {
                 question.isNameOverride = true;
@@ -1008,8 +1005,9 @@ class ScriptService {
               }
               return question;
             });
-            promptList[storyNumber].questions.push(...promptData);
-          }
+            if (questionNum == "1")
+              promptList[storyNumber].questions.push(...promptData);
+          });
         })
       );
 
@@ -1026,18 +1024,18 @@ class ScriptService {
         );
       });
 
-      // const { descriptionPrompts, questionPrompts } = await this.generatePrompt(
-      //   descriptions,
-      //   questions
-      // );
-      // this.generateImages(descriptionPrompts, questionPrompts, outputPath);
+      this.generateImages(descriptions, questions, outputPath);
 
       // ---------- TEXT CONTENT ----------- \\
 
       await Promise.all(
-        await filteredStories.map(async (data, index) => {
-          if (currentStoryNumber != Number(data["Story #"])) {
-            currentStoryNumber = Number(data["Story #"]);
+        await storyNums.map(async (storyNum: string, index: number) => {
+          let data = rowData[storyNum];
+          const storyNumber = Number(data["Story Number"]);
+          const MAX_STORY_SLIDES = data["Screen Text"].length - 1;
+          let imageNamesData = rowData[`Image Names ${storyNumber}`];
+          if (currentStoryNumber != storyNumber) {
+            currentStoryNumber = storyNumber;
             descriptionNum = 0;
             questionNum = 0;
             characterName = `${data["First Name"]?.trimEnd()} ${data[
@@ -1052,27 +1050,21 @@ class ScriptService {
               data["Pronoun 1"]?.trimEnd(),
               data["Pronoun 2"]?.trimEnd(),
             ];
-          }
-          if (!data["Title"] || data["Title"] == "") {
-            ++order;
-          } else {
             storyTitle = data["Title"]?.trimEnd();
-            order = 1;
+            order = 0;
           }
-          if (!data["Character"]) characterName = null;
-
-          const baseQuestionData = {
-            text: data["Screen Text"]?.trimEnd(),
-            order: order,
-          };
-          if (data["Type"]?.trimEnd() == "Description") {
+          while (
+            descriptionNum <= MAX_STORY_SLIDES &&
+            data[`Screen Text`][order]
+          ) {
             descriptionNum++;
+            order++;
             const questionImageName = data["Screen Text Image"];
             questionData = {
-              ...baseQuestionData,
+              text: data[`Screen Text`][order - 1]?.trimEnd(),
+              order: order,
               question_image:
-                questionImageName ||
-                `s${data["Story #"]}_d${descriptionNum}.png`,
+                questionImageName || `s${storyNumber}_d${descriptionNum}.webp`,
               points: 0,
               question_type: 4,
               answer_type: null,
@@ -1080,40 +1072,44 @@ class ScriptService {
               correctStatement: null,
               incorrectStatement: null,
             };
-          } else {
+            questionDataArray.push(questionData);
+          }
+          const questions = ["1", "2", "3", "4"];
+          questions.map((question) => {
             questionNum++;
-            const prompts = ["A", "B", "C", "D"];
+            const prompts = ["1", "2", "3", "4"];
             questionData = {
-              ...baseQuestionData,
+              text: data[`Question ${question}`]?.trimEnd(),
+              order: ++order,
               question_image: null,
               points: 10,
               question_type: 2,
               answer_type: 2,
               answer_array: prompts.map((prompt) => ({
                 name:
-                  data[prompt]?.trimEnd().split("*").length > 1
-                    ? data[prompt]?.trimEnd().split("*")[0]
-                    : data[prompt]?.trimEnd(),
+                  data[`Q${question} A${prompt}`]?.trimEnd().split("*").length >
+                  1
+                    ? data[`Q${question} A${prompt}`]?.trimEnd().split("*")[0]
+                    : data[`Q${question} A${prompt}`]?.trimEnd(),
                 image:
-                  data[`Image ${prompt}`] ||
-                  `s${
-                    data["Story #"]
-                  }_q${questionNum}_${prompt.toLowerCase()}.png`,
-                correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
+                  imageNamesData[`Q${question} A${prompt}`]?.trimEnd() ||
+                  `s${storyNumber}_q${1}_a${prompt.toLowerCase()}.webp`,
+                correct_answer:
+                  data[`Q${question} A${prompt}`]?.trimEnd().split("*").length >
+                  1
+                    ? 1
+                    : 0,
                 statement: null,
               })),
               correctStatement: data["Explanation"],
               incorrectStatement: data["Explanation"],
             };
-          }
-          questionDataArray.push(questionData);
-          if (
-            rows[index + 1] == undefined ||
-            rows[index + 1]["Story #"] !== data["Story #"]
-          ) {
+            questionDataArray.push(questionData);
+          });
+          if (storyNums[index + 1] == undefined) {
             let quizData = {
               topicId: topicId,
-              quizNum: data["Story #"].trimEnd(),
+              quizNum: data["Story Number"],
               quizName: storyTitle,
               image: null,
               quizType: 4, //QUIZ_TYPE.STORY,
@@ -1259,7 +1255,7 @@ class ScriptService {
         console.log(
           `Unable to create image due to custom image name: ${promptData.imageName}. Skipping.`
         );
-        return `${promptData.imageName}.png`;
+        return `${promptData.imageName}.webp`;
       }
       const isImageAlreadyExist: boolean = await checkQuizImageExists(
         promptData
@@ -1268,15 +1264,16 @@ class ScriptService {
         console.log(
           `${promptData.imageName} already exists in s3 bucket. Skipping.`
         );
-        return `${promptData.imageName}.png`;
+        return `${promptData.imageName}.webp`;
       }
       const imagineRes = await generateImage(
-        `${promptData.prompt} ${promptData.promptStyle}`
+        `${promptData.prompt} ${promptData.promptStyle}`,
+        IMPORT_SCRIPT
       );
       if (!imagineRes) {
         throw new NetworkError("Something Went Wrong in imagineRes", 400);
       }
-      const myImage = await UpscaleImage(imagineRes);
+      const myImage = await UpscaleImage(imagineRes, 2, IMPORT_SCRIPT);
       if (!myImage) {
         throw new NetworkError("Something Went Wrong in myImage", 400);
       }
@@ -1284,6 +1281,10 @@ class ScriptService {
         const outputPath = path.join(
           __dirname,
           `/midJourneyImages/${promptData.imageName}.png`
+        );
+        const outputPathwebp = path.join(
+          __dirname,
+          `/midJourneyImages/${promptData.imageName}.webp`
         );
         await downloadImage(myImage.uri, outputPath)
           .then(() => {
@@ -1293,19 +1294,24 @@ class ScriptService {
         if (questionType == STORY_QUESTION_TYPE.DESCRIPTION) {
           sharp(outputPath)
             .resize({ fit: "inside", width: 390, height: 518 })
-            .png({ quality: 40 });
+            .webp({ quality: 100 })
+            .toFile(outputPathwebp, (err, info) => {
+              uploadQuizImages(promptData, outputPathwebp);
+            });
         } else {
           sharp(outputPath)
             .resize({ fit: "inside", width: 160, height: 160 })
-            .png({ quality: 40 });
+            .webp({ quality: 100 })
+            .toFile(outputPathwebp, (err, info) => {
+              uploadQuizImages(promptData, outputPathwebp);
+            });
         }
-        uploadQuizImages(promptData, outputPath);
       }
-      return `${promptData.imageName}.png`;
+      return `${promptData.imageName}.webp`;
     } catch (error) {
       if (error.message.indexOf("Job with id") >= 0) {
         console.log(
-          `Error occurred while generating ${promptData.imageName}.png, trying again`
+          `Error occurred while generating ${promptData.imageName}.webp, trying again`
         );
         return await this.getImage(questionType, promptData);
       }
@@ -1419,7 +1425,7 @@ class ScriptService {
                 data[`Image ${prompt}`] ||
                 `q${data["Quiz #"]}_q${Math.ceil(
                   questionNumber / 4
-                )}_${prompt.toLowerCase()}.png`,
+                )}_${prompt.toLowerCase()}.webp`,
               correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
               statement:
                 data["correctAnswer"] == data[prompt]
@@ -1659,19 +1665,64 @@ class ScriptService {
     await document.loadInfo();
     const sheet = gid ? document.sheetsById[gid] : document.sheetsByIndex[0];
     await sheet.loadCells();
-    let rows = await sheet.getRows();
-    const rowData = [];
-    rows.forEach((row) => {
-      const rowDataItem = {};
-      for (let j = 0; j < sheet.columnCount; j++) {
-        const cell = sheet.getCell(row.rowIndex - 1, j);
-        const key = cell["_sheet"]["headerValues"][j];
-        rowDataItem[key] = cell ? cell.value : null;
+    const rowData = {};
+    const headers = [];
+    for (let i = 1; i < sheet.rowCount; i++) {
+      headers.push(sheet.getCell(i, 0).value);
+    }
+    for (let i = 1; i < sheet.columnCount; i++) {
+      const header = sheet.getCell(0, i).value;
+      rowData[header] = {};
+
+      // Iterate through each row in the column and extract data
+      for (let j = 1; j < sheet.rowCount; j++) {
+        const cellValue = sheet.getCell(j, i).value;
+        const currentHeader = headers[j - 1];
+        if (currentHeader === "Screen Text") {
+          if (!rowData[header][currentHeader]) {
+            rowData[header][currentHeader] = [];
+          }
+          rowData[header][currentHeader].push(cellValue);
+        } else {
+          rowData[header][currentHeader] = cellValue;
+        }
       }
-      rowData.push(rowDataItem);
-    });
+    }
 
     return rowData;
+  }
+
+  public async saveCharacterImage(character: ICharacterImageData) {
+    try {
+      const outputDir = path.join(__dirname, `/midJourneyImages`);
+      if (fs.existsSync(outputDir)) {
+        fs.rmdirSync(outputDir, { recursive: true });
+      }
+      fs.mkdirSync(outputDir);
+      const isImageAlreadyExist: boolean = await checkQuizImageExists(
+        character
+      );
+      if (isImageAlreadyExist) {
+        console.log(
+          `${character.imageName} already exists in s3 bucket. Skipping.`
+        );
+        return `${character.imageName}.webp`;
+      }
+      const outputPath = path.join(
+        __dirname,
+        `/midJourneyImages/${character.imageName}.webp`
+      );
+      await downloadImage(character.imageUrl, outputPath)
+        .then(() => {
+          console.log(`Image downloaded to ${outputPath}`);
+          uploadQuizImages(character, outputPath);
+        })
+        .catch(console.error);
+      fs.rmdirSync(outputDir, { recursive: true });
+      return `${character.imageName}.webp`;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 
