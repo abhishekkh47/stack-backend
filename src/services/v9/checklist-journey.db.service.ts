@@ -143,6 +143,10 @@ class ChecklistDBService {
       let upcomingQuizDetails = null;
       let checklistFlowCompleted = false;
       let nextCategory = null;
+      let currentActionNum = 0;
+      let currentLevel = 0;
+      let currentLevels = null;
+      let upcomingLevelIndex = 0;
       const [quizCategoryDetails, quizLevelsDetails, lastPlayedChallenge]: any =
         await Promise.all([
           QuizCategoryTable.findOne({ _id: categoryId }).populate("topicId"),
@@ -178,24 +182,20 @@ class ChecklistDBService {
         upcomingChallenge = null;
         checklistFlowCompleted = true;
       } else if (!lastPlayedChallenge) {
-        upcomingQuizId = quizLevelsDetails[0].actions[0].quizId;
+        upcomingQuizId =
+          quizLevelsDetails[upcomingLevelIndex].actions[0].quizId;
         upcomingQuizDetails = await this.getQuizDetails(upcomingQuizId);
-        let currentLevels = quizLevelsDetails[0].actions;
-        Object.assign(currentLevels[0], {
+        currentLevels = quizLevelsDetails[upcomingLevelIndex].actions;
+        Object.assign(currentLevels[upcomingLevelIndex], {
           quizDetails: upcomingQuizDetails[0],
         });
-        upcomingChallenge = {
-          level: quizLevelsDetails[0].level,
-          title: quizLevelsDetails[0].title,
-          quizId: upcomingQuizId,
-          actionNum: 1,
-          currentLevels,
-        };
+        currentActionNum = 1;
+        currentLevel = quizLevelsDetails[upcomingLevelIndex].level;
       } else {
         let upcomingLevel =
           lastPlayedChallenge.level +
           (lastPlayedChallenge.actionNum === 4 ? 1 : 0);
-        let upcomingLevelIndex =
+        upcomingLevelIndex =
           upcomingLevel % 5 == 0 ? 4 : (upcomingLevel % 5) - 1;
         let upcomingActionNum =
           lastPlayedChallenge.actionNum === 4
@@ -204,29 +204,28 @@ class ChecklistDBService {
         upcomingQuizId =
           quizLevelsDetails[upcomingLevelIndex].actions[upcomingActionNum - 1]
             .quizId;
-        let currentLevels = quizLevelsDetails[upcomingActionNum].actions;
+        currentLevels = quizLevelsDetails[upcomingActionNum].actions;
         upcomingQuizDetails = await this.getQuizDetails(upcomingQuizId);
-        upcomingChallenge = {
-          level: upcomingLevel,
-          title: quizLevelsDetails[upcomingLevelIndex].title,
-          quizId: upcomingQuizId,
-          actionNum: upcomingActionNum,
-          currentLevels,
-        };
-        Object.assign(currentLevels[upcomingActionNum], {
+        currentActionNum = upcomingActionNum;
+        currentLevel = upcomingLevel;
+        Object.assign(currentLevels[upcomingActionNum - 1], {
           quizDetails: upcomingQuizDetails[0],
         });
       }
+      Object.assign(levels[upcomingLevelIndex], {
+        challenges: currentLevels,
+      });
 
       return {
         levels,
-        upcomingChallenge,
         checklistFlowCompleted,
-        nextCategory,
+        currentActionNum,
+        currentLevel,
         topicId: quizCategoryDetails.topicId._id,
         topic: quizCategoryDetails.topicId.topic,
         categoryId: quizCategoryDetails._id,
         category: quizCategoryDetails.title,
+        nextCategory,
       };
     } catch (err) {
       throw new NetworkError("Error occurred while retrieving challenge", 400);
