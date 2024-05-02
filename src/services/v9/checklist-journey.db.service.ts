@@ -146,7 +146,7 @@ class ChecklistDBService {
       const [quizCategoryDetails, quizLevelsDetails, lastPlayedChallenge]: any =
         await Promise.all([
           QuizCategoryTable.findOne({ _id: categoryId }).populate("topicId"),
-          QuizLevelTable.find({ categoryId }).sort({ level: 1 }),
+          QuizLevelTable.find({ categoryId }).sort({ level: 1 }).lean(),
           ChecklistResultTable.findOne({
             userId: (userIfExists as any)._id,
             categoryId,
@@ -156,7 +156,7 @@ class ChecklistDBService {
         {
           topicId: quizCategoryDetails.topicId._id,
         },
-        { _id: 1, topicId: 1, title: 1, description: 1 }
+        { _id: 1, topicId: 1, title: 1, description: 1, levels: 1 }
       ).sort({ order: 1 });
       if (quizCategory.length == quizCategoryDetails.order) {
         nextCategory = null;
@@ -180,16 +180,16 @@ class ChecklistDBService {
       } else if (!lastPlayedChallenge) {
         upcomingQuizId = quizLevelsDetails[0].actions[0].quizId;
         upcomingQuizDetails = await this.getQuizDetails(upcomingQuizId);
+        let currentLevels = quizLevelsDetails[0].actions;
+        Object.assign(currentLevels[0], {
+          quizDetails: upcomingQuizDetails[0],
+        });
         upcomingChallenge = {
           level: quizLevelsDetails[0].level,
           title: quizLevelsDetails[0].title,
-          topicId: quizCategoryDetails.topicId._id,
-          topic: quizCategoryDetails.topicId.topic,
-          categoryId: quizCategoryDetails._id,
-          category: quizCategoryDetails.title,
           quizId: upcomingQuizId,
-          quizDetails: upcomingQuizDetails,
           actionNum: 1,
+          currentLevels,
         };
       } else {
         let upcomingLevel =
@@ -204,18 +204,18 @@ class ChecklistDBService {
         upcomingQuizId =
           quizLevelsDetails[upcomingLevelIndex].actions[upcomingActionNum - 1]
             .quizId;
+        let currentLevels = quizLevelsDetails[upcomingActionNum].actions;
         upcomingQuizDetails = await this.getQuizDetails(upcomingQuizId);
         upcomingChallenge = {
           level: upcomingLevel,
           title: quizLevelsDetails[upcomingLevelIndex].title,
-          topicId: quizCategoryDetails.topicId._id,
-          topic: quizCategoryDetails.topicId.topic,
-          categoryId: quizCategoryDetails._id,
-          category: quizCategoryDetails.title,
           quizId: upcomingQuizId,
-          quizDetails: upcomingQuizDetails,
           actionNum: upcomingActionNum,
+          currentLevels,
         };
+        Object.assign(currentLevels[upcomingActionNum], {
+          quizDetails: upcomingQuizDetails[0],
+        });
       }
 
       return {

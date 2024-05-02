@@ -51,15 +51,16 @@ class ChecklistJourneyController extends BaseController {
   @Auth()
   public async getCheckListJourneyByCategory(ctx: any) {
     const { user, query } = ctx.request;
-    let categoryId = query.categoryId;
     const userExists = await UserTable.findOne({ _id: user._id });
+    let categoryId = query.categoryId;
+    const topicId = userExists.focusAreaTopic;
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
     if (!categoryId) {
       categoryId = await ChecklistDBService.getDefaultLevelsAndChallenges(
         userExists,
-        query.topicId
+        topicId
       );
     }
     const challengeDetails = await ChecklistDBService.getLevelsAndChallenges(
