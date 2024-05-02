@@ -277,6 +277,7 @@ export const QUIZ_TYPE = {
   NORMAL: 1,
   SIMULATION: 2,
   STORY: 3,
+  CASE_STUDY: 4,
 };
 export const STORY_QUESTION_TYPE = {
   DESCRIPTION: 1,

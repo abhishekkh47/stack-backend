@@ -59,15 +59,23 @@ class ChecklistDBService {
    */
   public async getQuizCategories(userIfExists: IUser, topicId: string) {
     try {
-      let [quizCategory, completedQuizzes] = await Promise.all([
+      let categoryProgress = 0;
+      let [quizCategory, completedQuizzes, topicDetails] = await Promise.all([
         QuizCategoryTable.find(
           { topicId },
-          { _id: 1, topicId: 1, title: 1, description: 1, order: 1 }
+          { _id: 1, topicId: 1, topic: "$title", levels: 1 }
         )
           .sort({ order: 1 })
           .lean(),
-        ChecklistResultTable.find({ userId: (userIfExists as any)._id }),
+        ChecklistResultTable.find({ userId: (userIfExists as any)._id })
+          .sort({
+            createdAt: -1,
+          })
+          .lean(),
+        QuizTopicTable.findOne({ _id: topicId }, { topic: 1 }).lean(),
       ]);
+      const lastCompletedChallenge = completedQuizzes[0];
+      let activeCategory = 0;
       let quizCategories = quizCategory.map((category) => {
         const categoryQuizzes = completedQuizzes.filter(
           (quiz) => quiz.categoryId.toString() == category._id.toString()
@@ -77,10 +85,43 @@ class ChecklistDBService {
         const userProgress = Math.floor(
           (numCompletedQuizzes / totalQuizzes) * 100
         );
-        return { ...category, userProgress };
+        if (userProgress == 100) categoryProgress += 1;
+        return { ...category, userProgress, isUnlocked: true, isActive: false };
+      });
+      const categoryLength = quizCategories.length;
+      quizCategories.map((category, index) => {
+        quizCategories[index - 1] &&
+        quizCategories[index - 1]?.userProgress < 100
+          ? (category.isUnlocked = false)
+          : (category.isUnlocked = true);
+
+        if (lastCompletedChallenge) {
+          if (
+            lastCompletedChallenge?._id == category._id &&
+            lastCompletedChallenge?.level == 5 &&
+            lastCompletedChallenge?.actionNum == 4
+          ) {
+            activeCategory = index + 1;
+          } else {
+            activeCategory = index;
+          }
+        }
+
+        if (activeCategory == categoryLength) {
+          activeCategory -= 1;
+        }
       });
 
-      return quizCategories;
+      quizCategories[activeCategory].isActive = true;
+      return {
+        topicDetails: {
+          ...topicDetails,
+          userProgress: (categoryProgress / quizCategories.length) * 100,
+          completedLevels: categoryProgress,
+          totalLevels: quizCategories.length,
+        },
+        quizCategories,
+      };
     } catch (err) {
       throw new NetworkError(
         "Error occurred while retrieving quiz categories",
@@ -182,6 +223,10 @@ class ChecklistDBService {
         upcomingChallenge,
         checklistFlowCompleted,
         nextCategory,
+        topicId: quizCategoryDetails.topicId._id,
+        topic: quizCategoryDetails.topicId.topic,
+        categoryId: quizCategoryDetails._id,
+        category: quizCategoryDetails.title,
       };
     } catch (err) {
       throw new NetworkError("Error occurred while retrieving challenge", 400);
@@ -220,7 +265,7 @@ class ChecklistDBService {
                     $eq: ["$$question.question_type", 2],
                   },
                   {
-                    $eq: ["$quizType", 3],
+                    $eq: ["$quizType", QUIZ_TYPE.CASE_STUDY],
                   },
                 ],
               },
@@ -249,7 +294,7 @@ class ChecklistDBService {
               then: SIMULATION_QUIZ_FUEL,
               else: {
                 $cond: {
-                  if: { $eq: ["$quizType", QUIZ_TYPE.STORY] },
+                  if: { $eq: ["$quizType", QUIZ_TYPE.CASE_STUDY] },
                   then: {
                     $multiply: [
                       CORRECT_ANSWER_FUEL_POINTS,
@@ -318,7 +363,7 @@ class ChecklistDBService {
           }
           currentTopicId = currentTopic._id;
         }
-        const quizCategories = await this.getQuizCategories(
+        const { quizCategories } = await this.getQuizCategories(
           userIfExists,
           currentTopicId
         );
@@ -332,12 +377,31 @@ class ChecklistDBService {
         currentCategoryId = currentCategory._id;
       }
 
-      // const { levels, upcomingChallenge, checklistFlowCompleted } =
-      //   await this.getLevelsAndChallenges(userIfExists, currentCategoryId);
-
-      return currentCategoryId; //{ levels, upcomingChallenge, checklistFlowCompleted };
+      return currentCategoryId;
     } catch (err) {
       throw new NetworkError("Error occurred while retrieving quizzes", 400);
+    }
+  }
+
+  /**
+   * @description store status for each levelup status
+   * @param userId
+   * @param reqParam
+   * @returns {*}
+   */
+  public async storeWeeklyReward(userId: any, reqParam: any) {
+    try {
+      ChecklistResultTable.create({
+        userId,
+        topicId: reqParam.topicId,
+        categoryId: reqParam.categoryId,
+        levelId: reqParam.levelId,
+        level: reqParam.level,
+        actionNum: reqParam.actionNum,
+      });
+      return;
+    } catch (err) {
+      throw new NetworkError("Error occured while claiming the reward", 400);
     }
   }
 }

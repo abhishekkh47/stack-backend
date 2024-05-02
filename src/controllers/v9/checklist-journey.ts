@@ -62,11 +62,33 @@ class ChecklistJourneyController extends BaseController {
         query.topicId
       );
     }
-    const { levels, upcomingChallenge, checklistFlowCompleted, nextCategory } =
-      await ChecklistDBService.getLevelsAndChallenges(userExists, categoryId);
+    const challengeDetails = await ChecklistDBService.getLevelsAndChallenges(
+      userExists,
+      categoryId
+    );
     return this.Ok(ctx, {
-      data: { levels, upcomingChallenge, checklistFlowCompleted, nextCategory },
+      data: challengeDetails,
     });
+  }
+
+  /**
+   * @description This method is called on 4th action of each level
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/checklist-levelup", method: HttpMethod.GET })
+  @Auth()
+  public async checklistLevelup(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const categoryDetails = await ChecklistDBService.storeWeeklyReward(
+      userExists,
+      body
+    );
+    return this.Ok(ctx, { data: categoryDetails });
   }
 }
 
