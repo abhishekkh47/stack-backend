@@ -955,7 +955,6 @@ class ScriptService {
           questions: IPromptData[];
         };
       } = {};
-      let topicId = null;
 
       // ---------- IMAGE GENERATION ----------- \\
 
@@ -977,7 +976,7 @@ class ScriptService {
             };
           }
           imagePromptsData["Screen Text"].map((prompt, index) => {
-            const storyImageName = imageNamesData[index];
+            const storyImageName = imageNamesData["Screen Text"][index];
             const desc: IPromptData = {
               promptDescription: data["Screen Text"][index]?.trimEnd(),
               promptStyle: "",
@@ -1111,7 +1110,7 @@ class ScriptService {
           });
           if (storyNums[index + 1] == undefined) {
             let quizData = {
-              topicId: topicId,
+              topicId: fallbackQuizTopic,
               quizNum: data["Story Number"],
               quizName: storyTitle,
               image: null,
