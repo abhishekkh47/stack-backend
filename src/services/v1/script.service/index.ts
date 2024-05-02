@@ -37,6 +37,7 @@ import {
   USER,
   IMPORT_SCRIPT,
   ICharacterImageData,
+  delay,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 import OpenAI from "openai";
@@ -878,6 +879,8 @@ class ScriptService {
         await this.getImage(STORY_QUESTION_TYPE.QUESTION, questions[i]);
       }
     }
+    // Added a delay to avoid immediate deletion and wait for the images to be uploaded on AWS-S3
+    await delay(3000);
     fs.rmdirSync(outputPath, { recursive: true });
   };
 
@@ -1690,39 +1693,6 @@ class ScriptService {
     }
 
     return rowData;
-  }
-
-  public async saveCharacterImage(character: ICharacterImageData) {
-    try {
-      const outputDir = path.join(__dirname, `/midJourneyImages`);
-      if (fs.existsSync(outputDir)) {
-        fs.rmdirSync(outputDir, { recursive: true });
-      }
-      fs.mkdirSync(outputDir);
-      const isImageAlreadyExist: boolean = await checkQuizImageExists(
-        character
-      );
-      if (isImageAlreadyExist) {
-        console.log(
-          `${character.imageName} already exists in s3 bucket. Skipping.`
-        );
-        return `${character.imageName}.webp`;
-      }
-      const outputPath = path.join(
-        __dirname,
-        `/midJourneyImages/${character.imageName}.webp`
-      );
-      await downloadImage(character.imageUrl, outputPath)
-        .then(() => {
-          console.log(`Image downloaded to ${outputPath}`);
-          uploadQuizImages(character, outputPath);
-        })
-        .catch(console.error);
-      fs.rmdirSync(outputDir, { recursive: true });
-      return `${character.imageName}.webp`;
-    } catch (error) {
-      throw new NetworkError(error.message, 400);
-    }
   }
 }
 
