@@ -1114,7 +1114,7 @@ class ScriptService {
               quizNum: data["Story Number"],
               quizName: storyTitle,
               image: null,
-              quizType: 4, //QUIZ_TYPE.STORY,
+              quizType: QUIZ_TYPE.STORY,
               stageName: lastStoryStage,
               characterName: characterName,
               characterImage: characterImage,
@@ -1185,8 +1185,17 @@ class ScriptService {
           currentReward = null;
         } else {
           const quizNum = data["QuizNum"]?.trimEnd();
+          let quizType = 0;
+          if (data["Type"] == "simulation") {
+            quizType = 2;
+          } else if (data["Type"] == "story") {
+            quizType = 3;
+          } else {
+            quizType = 1;
+          }
           const quizId = await QuizTable.findOne({
             quizNum,
+            quizType,
           }).select("_id");
           currentQuizId = quizId._id;
           if (data["Type"] == "simulation") {
