@@ -763,28 +763,28 @@ class ScriptService {
             answer_type: 2,
             answer_array: [
               {
-                name: data["Option A"].trimEnd(),
+                name: data["Option A"].trimEnd().split("*")[0],
                 image: null,
                 correct_answer:
                   data["correctAnswer"] == data["Response A"] ? 1 : 0,
                 statement: data["Response A"],
               },
               {
-                name: data["Option B"].trimEnd(),
+                name: data["Option B"].trimEnd().split("*")[0],
                 image: null,
                 correct_answer:
                   data["correctAnswer"] == data["Response B"] ? 1 : 0,
                 statement: data["Response B"],
               },
               {
-                name: data["Option C"].trimEnd(),
+                name: data["Option C"].trimEnd().split("*")[0],
                 image: null,
                 correct_answer:
                   data["correctAnswer"] == data["Response C"] ? 1 : 0,
                 statement: data["Response C"],
               },
               {
-                name: data["Option D"].trimEnd(),
+                name: data["Option D"].trimEnd().split("*")[0],
                 image: null,
                 correct_answer:
                   data["correctAnswer"] == data["Response D"] ? 1 : 0,
@@ -980,7 +980,7 @@ class ScriptService {
             const desc: IPromptData = {
               promptDescription: data["Screen Text"][index]?.trimEnd(),
               promptStyle: "",
-              prompt: prompt?.trimEnd(),
+              prompt: prompt,
               imageName: `s${storyNumber}_d${index + 1}`,
             };
             if (storyImageName) {
