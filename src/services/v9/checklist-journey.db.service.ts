@@ -264,7 +264,7 @@ class ChecklistDBService {
                     $eq: ["$$question.question_type", 2],
                   },
                   {
-                    $eq: ["$quizType", QUIZ_TYPE.CASE_STUDY],
+                    $eq: ["$quizType", QUIZ_TYPE.STORY],
                   },
                 ],
               },
@@ -293,7 +293,7 @@ class ChecklistDBService {
               then: SIMULATION_QUIZ_FUEL,
               else: {
                 $cond: {
-                  if: { $eq: ["$quizType", QUIZ_TYPE.CASE_STUDY] },
+                  if: { $eq: ["$quizType", QUIZ_TYPE.STORY] },
                   then: {
                     $multiply: [
                       CORRECT_ANSWER_FUEL_POINTS,
