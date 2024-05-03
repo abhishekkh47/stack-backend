@@ -77,7 +77,7 @@ class ChecklistJourneyController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/checklist-levelup", method: HttpMethod.GET })
+  @Route({ path: "/checklist-levelup", method: HttpMethod.POST })
   @Auth()
   public async checklistLevelup(ctx: any) {
     const { user, body } = ctx.request;

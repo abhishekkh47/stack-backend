@@ -97,12 +97,12 @@ class ChecklistDBService {
 
         if (lastCompletedChallenge) {
           if (
-            lastCompletedChallenge?._id == category._id &&
+            lastCompletedChallenge?.categoryId == category._id &&
             lastCompletedChallenge?.level == 5 &&
             lastCompletedChallenge?.actionNum == 4
           ) {
             activeCategory = index + 1;
-          } else {
+          } else if (lastCompletedChallenge?.categoryId == category._id) {
             activeCategory = index;
           }
         }
