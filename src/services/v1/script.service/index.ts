@@ -345,7 +345,7 @@ class ScriptService {
             : parseInt(data.quizNum);
           if (!quizNum) return false;
           const quiz = await QuizTable.findOneAndUpdate(
-            { quizNum: quizNum },
+            { quizNum: quizNum, quizType: data.quizType },
             {
               $set: {
                 quizName: data.quizName,
