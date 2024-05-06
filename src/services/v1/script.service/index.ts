@@ -1108,27 +1108,25 @@ class ScriptService {
             };
             questionDataArray.push(questionData);
           });
-          if (storyNums[index + 1] == undefined) {
-            let quizData = {
-              topicId: fallbackQuizTopic,
-              quizNum: data["Story Number"],
-              quizName: storyTitle,
-              image: null,
-              quizType: QUIZ_TYPE.STORY,
-              stageName: lastStoryStage,
-              characterName: characterName,
-              characterImage: characterImage,
-              tags: null,
-              startupExecutive,
-              company,
-              brandColors,
-              fullStoryText,
-              pronouns,
-              questionData: questionDataArray,
-            };
-            storyContentData.push(quizData);
-            questionDataArray = [];
-          }
+          let quizData = {
+            topicId: fallbackQuizTopic,
+            quizNum: data["Story Number"],
+            quizName: storyTitle,
+            image: null,
+            quizType: QUIZ_TYPE.STORY,
+            stageName: lastStoryStage,
+            characterName: characterName,
+            characterImage: characterImage,
+            tags: null,
+            startupExecutive,
+            company,
+            brandColors,
+            fullStoryText,
+            pronouns,
+            questionData: questionDataArray,
+          };
+          storyContentData.push(quizData);
+          questionDataArray = [];
         })
       );
       return storyContentData;
