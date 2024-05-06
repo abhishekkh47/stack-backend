@@ -420,7 +420,10 @@ class ScriptService {
           currentDescrition = data["Description"].trimEnd();
           let bulkWriteObject = {
             updateMany: {
-              filter: { topicId: currentTopic._id, title: currentCategory },
+              filter: {
+                topicId: currentTopic._id,
+                order: categoryOrder,
+              },
               update: {
                 $set: {
                   topicId: currentTopic._id,
@@ -1167,8 +1170,8 @@ class ScriptService {
           currentLevelNum = parseInt(data["Level"]?.trimEnd());
           currentLevelIndex++;
           levelDetails.push({
-            topicId: currentTopicObj._id,
-            categoryId: currentCategoryObj._id,
+            topicId: currentTopicObj?._id || null,
+            categoryId: currentCategoryObj?._id || null,
             level: currentLevelNum,
             title: data["Level Name"]?.trimEnd(),
             actions: [],
@@ -1181,8 +1184,8 @@ class ScriptService {
         if (data["Type"]?.trimEnd() == "summary") {
           type = 4;
           currentReward = null;
-        } else {
-          const quizNum = data["QuizNum"]?.trimEnd();
+        } else if (Number(parseInt(data["Identifier"]?.trimEnd()))) {
+          const quizNum = data["Identifier"]?.trimEnd();
           let quizType = 0;
           if (data["Type"] == "simulation") {
             quizType = 2;
@@ -1195,7 +1198,7 @@ class ScriptService {
             quizNum,
             quizType,
           }).select("_id");
-          currentQuizId = quizId._id;
+          currentQuizId = quizId?._id || null;
           if (data["Type"] == "simulation") {
             type = 2;
             currentReward = XP_POINTS.SIMULATION_QUIZ;
@@ -1207,18 +1210,19 @@ class ScriptService {
               quizId: quizId,
             });
             type = 1;
-            currentReward = quizCount * everyCorrectAnswerPoints;
+            currentReward = quizCount * everyCorrectAnswerPoints || 0;
           }
         }
-
-        const action = {
-          actionNum: parseInt(data["Action Number"]?.trimEnd()),
-          type: type,
-          quizNum: parseInt(data["QuizNum"]?.trimEnd()) || null,
-          quizId: currentQuizId || null,
-          reward: currentReward,
-        };
-        levelDetails[currentLevelIndex].actions.push(action);
+        if (Number(parseInt(data["Identifier"]?.trimEnd())) || type == 4) {
+          const action = {
+            actionNum: parseInt(data["Action Order"]?.trimEnd()),
+            type: type,
+            quizNum: parseInt(data["Identifier"]?.trimEnd()) || null,
+            quizId: currentQuizId || null,
+            reward: currentReward,
+          };
+          levelDetails[currentLevelIndex].actions.push(action);
+        }
       }
       return levelDetails;
     } catch (error) {
@@ -1234,22 +1238,24 @@ class ScriptService {
     try {
       let checklistContentData = [];
       checklistContent.map(async (data: any) => {
-        let bulkWriteObject = {
-          updateOne: {
-            filter: {
-              topicId: data.topicId,
-              level: data.level,
-              categoryId: data.categoryId,
-            },
-            update: {
-              $set: {
-                ...data,
+        if (data.topicId) {
+          let bulkWriteObject = {
+            updateOne: {
+              filter: {
+                topicId: data.topicId,
+                level: data.level,
+                categoryId: data.categoryId,
               },
+              update: {
+                $set: {
+                  ...data,
+                },
+              },
+              upsert: true,
             },
-            upsert: true,
-          },
-        };
-        checklistContentData.push(bulkWriteObject);
+          };
+          checklistContentData.push(bulkWriteObject);
+        }
       });
       await QuizLevelTable.bulkWrite(checklistContentData);
       return checklistContentData;
