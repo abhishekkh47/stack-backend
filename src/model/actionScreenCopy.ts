@@ -25,6 +25,14 @@ const schema = new mongoose.Schema<IActionScreenCopy>(
       type: mongoose.Schema.Types.String,
       required: true,
     },
+    actionTitle: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
+    actionInput: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
     hoursSaved: {
       type: mongoose.Schema.Types.Number,
       required: true,

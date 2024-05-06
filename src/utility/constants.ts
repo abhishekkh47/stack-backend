@@ -658,3 +658,15 @@ export const MENTORS = ["natalieYoung", "willRush"];
 export const CATEGORY_COUNT = 12;
 export const LEVEL_COUNT = 5;
 export const LEVEL_QUIZ_COUNT = 4;
+
+export const BUSINESS_DESCRIPTION_OBJ = {
+  _id: "1",
+  key: "description",
+  actionTitle: "Business Idea",
+  hoursSaved: HOURS_SAVED_BY_IDEA_GENERATOR,
+  isMultiLine: true,
+  placeHolderText: "Add Business Idea",
+  steps: [],
+  title: "Creating Your Perfect Business",
+  actionInput: "Text",
+};

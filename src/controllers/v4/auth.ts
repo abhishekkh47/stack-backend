@@ -547,6 +547,18 @@ class AuthController extends BaseController {
                 referralCode: uniqueReferralCode,
               };
               userExists = await UserTable.create(createQuery);
+              // To handle inaccurate streak counts for users who signup again after deleting their accounts
+              await UserTable.findOneAndUpdate(
+                { _id: userExists._id },
+                {
+                  $set: {
+                    "streak.last5days": [null, null, null, null, null],
+                    "streak.updatedDate.day": 0,
+                    "streak.updatedDate.month": 0,
+                    "streak.updatedDate.year": 0,
+                  },
+                }
+              );
 
               accountCreated = true;
 
@@ -569,9 +581,20 @@ class AuthController extends BaseController {
                 First_Name: reqParam.firstName,
                 Last_Name: reqParam.lastName ? reqParam.lastName : null,
                 Email: reqParam.email,
+                User_ID: userExists._id,
               };
 
               await zohoCrmService.addAccounts(
+                ctx.request.zohoAccessToken,
+                dataSentInCrm
+              );
+            } else {
+              let dataSentInCrm: any = {
+                Email: reqParam.email,
+                User_ID: userExists._id,
+              };
+
+              zohoCrmService.addAccounts(
                 ctx.request.zohoAccessToken,
                 dataSentInCrm
               );

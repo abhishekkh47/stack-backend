@@ -29,6 +29,16 @@ class BusinessProfileController extends BaseController {
     if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
+    if (userBusinessProfile.availableAISuggestions[key]) {
+      return this.Ok(ctx, {
+        message: "Success",
+        data: {
+          finished: true,
+          suggestions: userBusinessProfile.availableAISuggestions[key],
+          isRetry: true,
+        },
+      });
+    }
     if (
       IMAGE_ACTIONS.includes(key) &&
       isRetry == IS_RETRY.TRUE &&

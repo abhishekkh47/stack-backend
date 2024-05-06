@@ -48,6 +48,7 @@ export interface IBusinessProfile {
   logoGenerationInfo: ILogoGenerationInfo;
   businessCoachInfo: IBusinessCoachInfo;
   enableStealthMode: boolean;
+  availableAISuggestions: Object;
 }
 
 export interface ILogoGenerationInfo {

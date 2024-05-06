@@ -1,4 +1,8 @@
-import { BusinessProfileTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  ActionScreenCopyTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
   INVALID_DESCRIPTION_ERROR,
@@ -8,9 +12,11 @@ import {
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
+  BUSINESS_DESCRIPTION_OBJ,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import { ObjectId } from "mongodb";
 
 class BusinessProfileService {
   /**
@@ -29,19 +35,28 @@ class BusinessProfileService {
   ) {
     try {
       let response = null;
-      if (!userBusinessProfile.isRetry || isRetry == IS_RETRY.TRUE) {
+      if (
+        !userBusinessProfile.isRetry ||
+        isRetry == IS_RETRY.TRUE ||
+        !userBusinessProfile.availableAISuggestions.key
+      ) {
         const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
-        const [textResponse, _] = await Promise.all([
-          BusinessProfileServiceV7.generateTextSuggestions(
+        const textResponse =
+          await BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
             prompt
-          ),
-          BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            { $set: { isRetry: true } }
-          ),
-        ]);
+          );
         response = JSON.parse(textResponse.choices[0].message.content);
+        const updateObject = {
+          $set: {
+            isRetry: true,
+            [`availableAISuggestions.${key}`]: response,
+          },
+        };
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          updateObject
+        );
       }
       return {
         suggestions: response,
@@ -188,6 +203,54 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    }
+  }
+
+  /**
+   * @description this will generate suggestions using OpenAI API based on user inputs
+   * @param id
+   * @returns {*}
+   */
+  public async getBusinessProfile(id: any) {
+    try {
+      let [actionScreenData, businessProfileIfExists]: any = await Promise.all([
+        ActionScreenCopyTable.find(
+          {},
+          {
+            key: 1,
+            actionTitle: 1,
+            actionInput: 1,
+            hoursSaved: 1,
+            isMultiLine: 1,
+            placeHolderText: 1,
+            steps: 1,
+            title: 1,
+          }
+        )
+          .sort({
+            week: 1,
+            day: 1,
+          })
+          .lean(),
+        BusinessProfileTable.findOne({ userId: new ObjectId(id) }),
+      ]);
+      actionScreenData.map((action) => {
+        action.placeHolderText = businessProfileIfExists
+          ? businessProfileIfExists[action.key] || `Add ${action.actionTitle}`
+          : `Add ${action.actionTitle}`;
+        if (action.key == "headline" || action.key == "callToAction") {
+          action.actionTitle = businessProfileIfExists
+            ? businessProfileIfExists[action.key] ||
+              `Website ${action.actionTitle}`
+            : `Website ${action.actionTitle}`;
+        }
+      });
+      BUSINESS_DESCRIPTION_OBJ.placeHolderText =
+        businessProfileIfExists?.description || "Add Business Idea";
+      actionScreenData = [BUSINESS_DESCRIPTION_OBJ].concat(actionScreenData);
+      return actionScreenData;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }
