@@ -670,3 +670,17 @@ export const BUSINESS_DESCRIPTION_OBJ = {
   title: "Creating Your Perfect Business",
   actionInput: "Text",
 };
+export const START_FROM_SCRATCH = {
+  _id: "1",
+  order: 6,
+  title: "Start From Scratch",
+  image: "start_from_scratch.webp",
+  categories: [],
+};
+export const PERFECT_IDEA = {
+  _id: "1",
+  title: "Find Your Perfect Idea",
+  description:
+    "Use Jetson AI to find the unique idea that excites you or input your own idea",
+  order: 0,
+};

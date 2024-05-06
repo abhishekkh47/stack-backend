@@ -107,6 +107,7 @@ export interface IQuizCategory {
   order: number;
   title: string;
   description: string;
+  levels: string;
 }
 
 export interface IQuizLevel {

@@ -1021,6 +1021,7 @@ class ScriptController extends BaseController {
                 order: items.order,
                 topic: items.topic,
                 type: 4,
+                image: items.image,
               },
             },
             upsert: true,
