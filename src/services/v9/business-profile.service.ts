@@ -219,12 +219,13 @@ class BusinessProfileService {
           {
             key: 1,
             actionTitle: 1,
-            actionInput: 1,
+            type: "$actionInput",
             hoursSaved: 1,
             isMultiLine: 1,
             placeHolderText: 1,
             steps: 1,
             title: 1,
+            maxCharLimit: 1,
           }
         )
           .sort({
@@ -235,9 +236,10 @@ class BusinessProfileService {
         BusinessProfileTable.findOne({ userId: new ObjectId(id) }),
       ]);
       actionScreenData.map((action) => {
-        action.placeHolderText = businessProfileIfExists
-          ? businessProfileIfExists[action.key] || `Add ${action.actionTitle}`
-          : `Add ${action.actionTitle}`;
+        action.placeHolderText = `Add ${action.actionTitle}`;
+        Object.assign(action, {
+          value: businessProfileIfExists[action.key] || null,
+        });
         if (action.key == "headline" || action.key == "callToAction") {
           action.actionTitle = businessProfileIfExists
             ? businessProfileIfExists[action.key] ||
@@ -245,8 +247,8 @@ class BusinessProfileService {
             : `Website ${action.actionTitle}`;
         }
       });
-      BUSINESS_DESCRIPTION_OBJ.placeHolderText =
-        businessProfileIfExists?.description || "Add Business Idea";
+      BUSINESS_DESCRIPTION_OBJ.value =
+        businessProfileIfExists?.description || null;
       actionScreenData = [BUSINESS_DESCRIPTION_OBJ].concat(actionScreenData);
       return actionScreenData;
     } catch (error) {
