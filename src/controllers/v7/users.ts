@@ -31,7 +31,9 @@ class UserController extends BaseController {
       });
       initialMessage = businessProfile.businessCoachInfo.initialMessage;
     }
-    Object.assign(businessProfile, { businessDetails });
+    if (businessProfile) {
+      Object.assign(businessProfile, { businessDetails });
+    }
 
     let data = {
       ...userProfile.data,

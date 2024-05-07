@@ -235,16 +235,14 @@ class BusinessProfileService {
           .lean(),
         BusinessProfileTable.findOne({ userId: new ObjectId(id) }),
       ]);
+      if (!businessProfileIfExists) return null;
       actionScreenData.map((action) => {
         action.placeHolderText = `Add ${action.actionTitle}`;
         Object.assign(action, {
           value: businessProfileIfExists[action.key] || null,
         });
         if (action.key == "headline" || action.key == "callToAction") {
-          action.actionTitle = businessProfileIfExists
-            ? businessProfileIfExists[action.key] ||
-              `Website ${action.actionTitle}`
-            : `Website ${action.actionTitle}`;
+          action.actionTitle = `Website ${action.actionTitle}`;
         }
       });
       BUSINESS_DESCRIPTION_OBJ.value =
