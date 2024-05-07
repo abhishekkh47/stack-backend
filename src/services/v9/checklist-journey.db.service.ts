@@ -224,6 +224,7 @@ class ChecklistDBService {
         currentActionNum,
         currentLevel,
         topicId: quizCategoryDetails.topicId._id,
+        topicOrder: quizCategoryDetails.topicId.order,
         topic: quizCategoryDetails.topicId.topic,
         categoryId: quizCategoryDetails._id,
         category: quizCategoryDetails.title,
