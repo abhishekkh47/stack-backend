@@ -364,7 +364,7 @@ class ScriptService {
                 pronouns: data.pronouns,
               },
             },
-            { upsert: true, new: true }
+            { upsert: true }
           );
           data.questionData = data.questionData.map((questions) => {
             let bulkWriteObject = {
