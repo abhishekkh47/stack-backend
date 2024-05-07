@@ -219,6 +219,7 @@ class BusinessProfileService {
           {
             key: 1,
             actionTitle: 1,
+            actionName: 1,
             type: "$actionInput",
             hoursSaved: 1,
             isMultiLine: 1,
@@ -226,6 +227,7 @@ class BusinessProfileService {
             steps: 1,
             title: 1,
             maxCharLimit: 1,
+            description: 1,
           }
         )
           .sort({
