@@ -660,8 +660,10 @@ export const BUSINESS_DESCRIPTION_OBJ = {
   actionTitle: "Business Idea",
   hoursSaved: HOURS_SAVED_BY_IDEA_GENERATOR,
   isMultiLine: true,
+  maxCharLimit: 280,
   placeHolderText: "Add Business Idea",
   steps: [],
   title: "Creating Your Perfect Business",
-  actionInput: "Text",
+  type: "text",
+  value: null,
 };
