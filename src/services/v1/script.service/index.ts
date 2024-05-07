@@ -364,7 +364,7 @@ class ScriptService {
                 pronouns: data.pronouns,
               },
             },
-            { upsert: true }
+            { upsert: true, new: true }
           );
           data.questionData = data.questionData.map((questions) => {
             let bulkWriteObject = {
@@ -1462,6 +1462,7 @@ class ScriptService {
               tags: lastQuizTags,
               questionData: questionDataArray,
               categoryId: currentCategory,
+              quizType: QUIZ_TYPE.NORMAL,
             };
             quizContentData.push(quizData);
             questionDataArray = [];
