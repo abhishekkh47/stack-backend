@@ -1435,7 +1435,7 @@ class ScriptService {
             question_type: 2,
             answer_type: 2,
             answer_array: prompts.map((prompt) => ({
-              name: data[prompt]?.trimEnd(),
+              name: data[prompt]?.trimEnd().split("*")[0],
               image:
                 data[`Image ${prompt}`] ||
                 `q${data["Quiz #"]}_q${Math.ceil(
