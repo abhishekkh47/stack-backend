@@ -1106,8 +1106,8 @@ class ScriptService {
                     : 0,
                 statement: null,
               })),
-              correctStatement: data["Explanation"],
-              incorrectStatement: data["Explanation"],
+              correctStatement: data[`Q${question} Explanation`]?.trimEnd(),
+              incorrectStatement: data[`Q${question} Explanation`]?.trimEnd(),
             };
             questionDataArray.push(questionData);
           });
