@@ -686,3 +686,8 @@ export const PERFECT_IDEA = {
     "Use Jetson AI to find the unique idea that excites you or input your own idea",
   order: 0,
 };
+export const IMPORT_SCRIPT = "import";
+export interface ICharacterImageData {
+  imageName?: string;
+  imageUrl?: string;
+}
