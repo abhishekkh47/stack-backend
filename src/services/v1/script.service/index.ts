@@ -732,6 +732,7 @@ class ScriptService {
       let simulationContentData = [];
       let questionDataArray = [];
       let filterCategory = [];
+      const prompts = ["A", "B", "C", "D"];
       await Promise.all(
         await rows.map(async (data, index) => {
           if (data["Simulation Title"] != "") {
@@ -764,36 +765,15 @@ class ScriptService {
             points: 20,
             question_type: 2,
             answer_type: 2,
-            answer_array: [
-              {
-                name: data["Option A"].trimEnd().split("*")[0],
-                image: null,
-                correct_answer:
-                  data["correctAnswer"] == data["Response A"] ? 1 : 0,
-                statement: data["Response A"],
-              },
-              {
-                name: data["Option B"].trimEnd().split("*")[0],
-                image: null,
-                correct_answer:
-                  data["correctAnswer"] == data["Response B"] ? 1 : 0,
-                statement: data["Response B"],
-              },
-              {
-                name: data["Option C"].trimEnd().split("*")[0],
-                image: null,
-                correct_answer:
-                  data["correctAnswer"] == data["Response C"] ? 1 : 0,
-                statement: data["Response C"],
-              },
-              {
-                name: data["Option D"].trimEnd().split("*")[0],
-                image: null,
-                correct_answer:
-                  data["correctAnswer"] == data["Response D"] ? 1 : 0,
-                statement: data["Response D"],
-              },
-            ],
+            answer_array: prompts.map((prompt) => ({
+              name: data[`Option ${prompt}`].trimEnd().split("*")[0],
+              image: null,
+              correct_answer:
+                data[`Option ${prompt}`].trimEnd().split("*").length > 1
+                  ? 1
+                  : 0,
+              statement: data[`Response ${prompt}`],
+            })),
             correctStatement: data["Response if correct"],
             incorrectStatement: data["Response if incorrect"],
           };
