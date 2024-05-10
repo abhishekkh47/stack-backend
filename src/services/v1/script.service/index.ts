@@ -1018,7 +1018,7 @@ class ScriptService {
           let data = rowData[storyNum];
           const storyNumber = Number(data["Story Number"]);
           const MAX_STORY_SLIDES = data["Screen Text"].length - 1;
-          let imageNamesData = rowData[`Image Names ${storyNumber}`];
+          let imageNamesData = rowData[`Image Names ${storyNum}`];
           if (currentStoryNumber != storyNumber) {
             currentStoryNumber = storyNumber;
             descriptionNum = 0;
@@ -1027,15 +1027,15 @@ class ScriptService {
               "Last Name"
             ]?.trimEnd()}`;
             characterImage = data["Discord Image Link"]?.trimEnd();
-            startupExecutive = data["Startup Executive"]?.trimEnd();
-            company = data["Company"]?.trimEnd();
+            startupExecutive = "";
+            company = data["Company"]?.trimEnd().split('"')[1];
             brandColors = data["Brand Colors"]?.trimEnd();
             fullStoryText = data["Full Story Text"]?.trimEnd();
             pronouns = [
               data["Pronoun 1"]?.trimEnd(),
               data["Pronoun 2"]?.trimEnd(),
             ];
-            storyTitle = data["Title"]?.trimEnd();
+            storyTitle = data["Story Name"]?.trimEnd();
             order = 0;
           }
           while (
