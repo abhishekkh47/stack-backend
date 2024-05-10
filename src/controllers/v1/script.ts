@@ -1015,7 +1015,7 @@ class ScriptController extends BaseController {
       reqBody.data.map(async (items) => {
         let bulkWriteObject = {
           updateOne: {
-            filter: { order: items.order, topic: items.topic },
+            filter: { type: 4, order: items.order },
             update: {
               $set: {
                 order: items.order,
