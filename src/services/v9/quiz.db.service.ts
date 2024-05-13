@@ -69,7 +69,7 @@ class QuizDBService {
         : SIMULATION_QUIZ_FUEL;
 
     QuizResult.create({
-      topicId: quizExists.topicId,
+      topicId: reqParam.topicId,
       quizId: quizExists._id,
       userId: userIfExists._id,
       isOnBoardingQuiz: false,
