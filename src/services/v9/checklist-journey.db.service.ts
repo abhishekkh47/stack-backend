@@ -470,7 +470,7 @@ class ChecklistDBService {
         400
       );
     }
-
+  }
   /**
    * @description verify if all the levels in a category with all 4 challenges present
    * @returns {*}
