@@ -98,7 +98,7 @@ class ChecklistDBService {
         if (lastCompletedChallenge) {
           if (
             lastCompletedChallenge?.categoryId == category._id &&
-            lastCompletedChallenge?.level == 5 &&
+            lastCompletedChallenge?.level % 5 == 0 &&
             lastCompletedChallenge?.actionNum == 4
           ) {
             activeCategory = index + 1;
