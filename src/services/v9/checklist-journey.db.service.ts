@@ -94,10 +94,10 @@ class ChecklistDBService {
         quizCategories[index - 1]?.userProgress < 100
           ? (category.isUnlocked = false)
           : (category.isUnlocked = true);
-
         if (lastCompletedChallenge) {
           if (
-            lastCompletedChallenge?.categoryId == category._id &&
+            lastCompletedChallenge?.categoryId.toString() ==
+              category._id.toString() &&
             lastCompletedChallenge?.level % 5 == 0 &&
             lastCompletedChallenge?.actionNum == 4
           ) {
@@ -112,7 +112,15 @@ class ChecklistDBService {
         }
       });
 
-      quizCategories[activeCategory].isActive = true;
+      const isCorrectActiveCategory = await this.checkActiveCategory(
+        quizCategories[activeCategory]._id
+      );
+      if (isCorrectActiveCategory) {
+        quizCategories[activeCategory].isActive = true;
+      } else {
+        quizCategories[activeCategory].isUnlocked = false;
+        quizCategories[activeCategory - 1].isActive = true;
+      }
       return {
         topicDetails: {
           ...topicDetails,
@@ -403,6 +411,18 @@ class ChecklistDBService {
     } catch (err) {
       throw new NetworkError("Error occured while claiming the reward", 400);
     }
+  }
+
+  /**
+   * @description verify if all the levels in a category with all 4 challenges present
+   * @returns {*}
+   */
+  public async checkActiveCategory(categoryId) {
+    let levels = await QuizLevelTable.find({ categoryId });
+    for (let i = 0; i < levels.length; i++) {
+      if (levels[i].actions.length != 4) return false;
+    }
+    return true;
   }
 }
 export default new ChecklistDBService();
