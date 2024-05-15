@@ -31,3 +31,4 @@ export * from "@app/types/businessPassion";
 export * from "@app/types/actionScreenCopy";
 export * from "@app/types/proUser";
 export * from "@app/types/coachProfile";
+export * from "@app/types/checklistResult";

@@ -654,3 +654,8 @@ export const THINGS_TO_TALK_ABOUT = [
   "💰 How will you fund your business?",
 ];
 export const MENTORS = ["natalieYoung", "willRush"];
+export const IMPORT_SCRIPT = "import";
+export interface ICharacterImageData {
+  imageName?: string;
+  imageUrl?: string;
+}

@@ -44,3 +44,6 @@ export * from "@app/model/businessPassionAspect";
 export * from "@app/model/actionScreenCopy";
 export * from "@app/model/proUser";
 export * from "@app/model/coachProfile";
+export * from "@app/model/quizCategory";
+export * from "@app/model/quizLevel";
+export * from "@app/model/checklistResult";

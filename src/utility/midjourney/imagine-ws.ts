@@ -2,7 +2,8 @@ import "dotenv/config";
 import { Midjourney } from "./midjourney";
 import axios from "axios";
 import * as fs from "fs";
-import { awsLogger } from "@app/utility";
+import { awsLogger, IMPORT_SCRIPT } from "@app/utility";
+import envData from "@app/config";
 /**
  *
  * a simple example of using the imagine api with ws
@@ -10,12 +11,21 @@ import { awsLogger } from "@app/utility";
  * npx tsx example/imagine-ws.ts
  * ```
  */
-export async function generateImage(prompt) {
+export async function generateImage(prompt, type = null) {
   const client = new Midjourney({
-    ServerId: <string>process.env.SERVER_ID,
-    ChannelId: <string>process.env.CHANNEL_ID,
-    SalaiToken: <string>process.env.SALAI_TOKEN,
-    HuggingFaceToken: <string>process.env.HUGGINGFACE_TOKEN,
+    ServerId:
+      <string>type == IMPORT_SCRIPT
+        ? envData.IMPORT_SERVER_ID
+        : envData.SERVER_ID,
+    ChannelId:
+      <string>type == IMPORT_SCRIPT
+        ? envData.IMPORT_CHANNEL_ID
+        : envData.CHANNEL_ID,
+    SalaiToken:
+      <string>type == IMPORT_SCRIPT
+        ? envData.IMPORT_SALAI_TOKEN
+        : envData.SALAI_TOKEN,
+    HuggingFaceToken: <string>envData.HUGGINGFACE_TOKEN,
     Debug: true,
     Ws: true, // required  `Only you can see this`
   });
@@ -35,12 +45,25 @@ export async function generateImage(prompt) {
   client.Close();
   return Imagine;
 }
-export async function UpscaleImage(Imagine, upscaleIndex: 1 | 2 | 3 | 4 = 2) {
+export async function UpscaleImage(
+  Imagine,
+  upscaleIndex: 1 | 2 | 3 | 4 = 2,
+  type = null
+) {
   const client = new Midjourney({
-    ServerId: <string>process.env.SERVER_ID,
-    ChannelId: <string>process.env.CHANNEL_ID,
-    SalaiToken: <string>process.env.SALAI_TOKEN,
-    HuggingFaceToken: <string>process.env.HUGGINGFACE_TOKEN,
+    ServerId:
+      <string>type == IMPORT_SCRIPT
+        ? envData.IMPORT_SERVER_ID
+        : envData.SERVER_ID,
+    ChannelId:
+      <string>type == IMPORT_SCRIPT
+        ? envData.IMPORT_CHANNEL_ID
+        : envData.CHANNEL_ID,
+    SalaiToken:
+      <string>type == IMPORT_SCRIPT
+        ? envData.IMPORT_SALAI_TOKEN
+        : envData.SALAI_TOKEN,
+    HuggingFaceToken: <string>envData.HUGGINGFACE_TOKEN,
     Debug: true,
     Ws: true, // required  `Only you can see this`
   });

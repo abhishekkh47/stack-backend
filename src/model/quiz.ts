@@ -12,6 +12,11 @@ const schema = new mongoose.Schema<IQuizSchema>(
       ref: "quizTopic",
       default: null,
     },
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "quiz_category",
+      default: null,
+    },
     stageId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "stage",
@@ -36,6 +41,28 @@ const schema = new mongoose.Schema<IQuizSchema>(
     quizType: { type: mongoose.Schema.Types.Number, default: 1 },
     characterName: { type: mongoose.Schema.Types.String, default: null },
     characterImage: { type: mongoose.Schema.Types.String, default: null },
+    startupExecutive: {
+      type: mongoose.Schema.Types.String,
+      default: "",
+    },
+    company: {
+      type: mongoose.Schema.Types.String,
+      default: "",
+    },
+    brandColors: {
+      type: mongoose.Schema.Types.String,
+      default: "",
+    },
+    pronouns: [
+      {
+        type: mongoose.Schema.Types.String,
+        default: "",
+      },
+    ],
+    fullStoryText: {
+      type: mongoose.Schema.Types.String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

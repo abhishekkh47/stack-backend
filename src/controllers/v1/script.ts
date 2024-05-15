@@ -26,6 +26,7 @@ import {
   StageTable,
   StreakGoalTable,
   BusinessProfileTable,
+  QuizCategoryTable,
 } from "@app/model";
 import {
   EAction,
@@ -998,7 +999,7 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to add new 1.9 quiz topics
+   * @description This method is used to add new 1.33 quiz topics
    * @param ctx
    */
   @Route({ path: "/add-quiz-topics", method: HttpMethod.POST })
@@ -1006,32 +1007,30 @@ class ScriptController extends BaseController {
   public async addQuizTopics(ctx: any) {
     try {
       const reqBody = ctx.request.body;
-      const isFieldsAdded = reqBody.data.every((x) => x.topic && x.image);
+      let topicData = [];
+      const isFieldsAdded = reqBody.data.every((x) => x.topic && x.order);
       if (!isFieldsAdded) {
         return this.BadRequest(ctx, "Request Body not valid");
       }
-      const quizTopicsData = await Promise.all(
-        await reqBody.data.map(async (items) => {
-          const quizTopicObject = {
-            topic: items.topic,
-            type: 2,
-            image: items.image,
-            status: 1,
-          };
-          const createdQuizTopicData = await QuizTopicTable.create(
-            quizTopicObject
-          );
-          const quizObject = {
-            quizName: items.quizTitle,
-            topicId: createdQuizTopicData._id,
-            videoUrl: null,
-            image: items.quizImage,
-          };
-          const createdQuizData = await QuizTable.create(quizObject);
-          return items;
-        })
-      );
-      return this.Ok(ctx, { message: "Success" });
+      reqBody.data.map(async (items) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: { type: 4, order: items.order },
+            update: {
+              $set: {
+                order: items.order,
+                topic: items.topic,
+                type: 4,
+                image: items.image,
+              },
+            },
+            upsert: true,
+          },
+        };
+        topicData.push(bulkWriteObject);
+      });
+      await QuizTopicTable.bulkWrite(topicData);
+      return this.Ok(ctx, { message: "Success", data: topicData });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
@@ -1072,22 +1071,14 @@ class ScriptController extends BaseController {
       if (quizNums.length === 0) {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
-      let investingTopic = await QuizTopicTable.findOne({ topic: "Investing" });
-      let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
-        "_id topic"
-      );
-      /**
-       * Read Spreadsheet
-       */
-      const rows = await ScriptService.readSpreadSheet();
-      /**
-       * Convert Spreadsheet to JSON
-       */
-      const quizContentData = await ScriptService.convertSpreadSheetToJSON(
-        investingTopic._id,
+      const [rows, allCategories] = await Promise.all([
+        ScriptService.readSpreadSheet(),
+        QuizCategoryTable.find().select("_id topicId title"),
+      ]);
+      const quizContentData = await ScriptService.convertQuizSpreadSheetToJSON(
         quizNums,
         rows,
-        allTopics
+        allCategories
       );
       if (quizContentData.length === 0) {
         return this.BadRequest(ctx, "Quiz Content Not Found");
@@ -1098,7 +1089,10 @@ class ScriptController extends BaseController {
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
-      return this.Ok(ctx, { message: "Success", data: quizContentData });
+      return this.Ok(ctx, {
+        message: "Success",
+        data: quizContentData,
+      });
     } catch (error) {
       console.log(error);
       return this.BadRequest(ctx, "Something Went Wrong");
@@ -1113,7 +1107,9 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storeQuizCategory(ctx: any) {
     try {
-      const rows = await ScriptService.readSpreadSheet();
+      const rows = await ScriptService.readSpreadSheet(
+        envData.CHECKLIST_CONTENT_GID
+      );
       const { isAddedToDB, data }: any =
         await ScriptService.addQuizCategoryContentsToDB(rows);
       if (!isAddedToDB) {
@@ -1788,55 +1784,53 @@ class ScriptController extends BaseController {
       if (storyNums.length === 0) {
         return this.BadRequest(ctx, "Please enter input story numbers");
       }
-      const rows = await ScriptService.readSpreadSheet(envData.STORY_SHEET_GID);
-      let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
-        "_id topic"
+      const rows = await ScriptService.readCaseStudySpreadSheet(
+        envData.CASE_STUDY_GID
       );
-      const hasStagesTopic = await QuizTopicTable.findOne({ hasStages: true });
-      const storiesContentData =
-        await ScriptService.convertStorySpreadSheetToJSON(
-          hasStagesTopic,
-          storyNums,
-          rows,
-          allTopics
-        );
-      if (storiesContentData.length === 0) {
+      if (!rows) {
+        return this.BadRequest(ctx, "Something Went Wrong - no data found");
+      }
+      const storyContentData =
+        await ScriptService.convertStorySpreadSheetToJSON(storyNums, rows);
+      if (storyContentData.length === 0) {
         return this.BadRequest(ctx, "Story Content Not Found");
       }
       const isAddedToDb = await ScriptService.addQuizContentsToDB(
-        storiesContentData
+        storyContentData
       );
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
-      return this.Ok(ctx, { message: "Success", data: true });
+      return this.Ok(ctx, {
+        message: "Success",
+        data: storyContentData,
+      });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }
   }
 
   /**
-   * @description This method is used to import simulations
+   * @description This method is used to import topics, their category and corresponding levels along with challenges in each level
    * @param ctx
+   * @returns {*}
    */
-  @Route({ path: "/import-weekly-challenges", method: HttpMethod.POST })
+  @Route({ path: "/import-checklist-content", method: HttpMethod.POST })
   @InternalUserAuth()
-  public async storeWeeklyChallenges(ctx: any) {
+  public async importChecklistContent(ctx: any) {
     try {
       const rows = await ScriptService.readSpreadSheet(
-        envData.WEEKLY_JOURNEY_SHEET_GID
+        envData.CHECKLIST_CONTENT_GID
       );
       if (!rows.length) {
-        return this.BadRequest(ctx, "Weekly Challenges Not Found");
+        return this.BadRequest(ctx, "Checklist Content Not Found");
       }
-      const dailyChallenges = await ScriptService.processWeeklyChallenges(rows);
-      const isAddedToDb = await ScriptService.addweeklyDataToDB(
-        dailyChallenges
-      );
+      const levels = await ScriptService.processChecklistContent(rows);
+      const isAddedToDb = await ScriptService.addChecklistContentToDB(levels);
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
-      return this.Ok(ctx, { message: "Success", data: true });
+      return this.Ok(ctx, { message: "Success", data: isAddedToDb });
     } catch (error) {
       return this.BadRequest(ctx, "Something Went Wrong");
     }
@@ -1901,8 +1895,11 @@ class ScriptController extends BaseController {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
       const rows = await ScriptService.readSpreadSheet();
-      const quizContentData =
-        await ScriptService.convertWeeklyQuizSpreadSheetToJSON(quizNums, rows);
+      const quizContentData = await ScriptService.convertQuizSpreadSheetToJSON(
+        quizNums,
+        rows,
+        null
+      );
       if (quizContentData.length === 0) {
         return this.BadRequest(ctx, "Quiz Content Not Found");
       }

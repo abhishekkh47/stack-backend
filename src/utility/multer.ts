@@ -197,7 +197,7 @@ export const uploadQuizImages = (prompt: IPromptData, outputPath: any) => {
 
   const params = {
     Bucket: "stack-images/quiz_images",
-    Key: `${prompt.imageName}.png`,
+    Key: `${prompt.imageName}.webp`,
     Body: fileContent,
   };
 
@@ -213,10 +213,12 @@ export const uploadQuizImages = (prompt: IPromptData, outputPath: any) => {
   });
 };
 
-export const checkQuizImageExists = async (prompt: IPromptData): Promise<boolean> => {
+export const checkQuizImageExists = async (
+  prompt: IPromptData
+): Promise<boolean> => {
   const params = {
     Bucket: "stack-images/quiz_images",
-    Key: `${prompt.imageName}.png`
+    Key: `${prompt.imageName}.webp`,
   };
 
   try {
