@@ -49,7 +49,10 @@ class ChecklistDBService {
 
       startFromScratch.categories = [...focusAreas[0].categories];
       focusAreas.push(startFromScratch);
-      focusAreas.map((area) => area.categories.unshift(PERFECT_IDEA));
+      focusAreas.map((area) => {
+        area.categories.unshift(PERFECT_IDEA);
+        area.categories.sort((a, b) => a.order - b.order);
+      });
 
       return focusAreas;
     } catch (err) {
