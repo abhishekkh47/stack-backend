@@ -38,7 +38,8 @@ class BusinessProfileService {
       if (
         !userBusinessProfile.isRetry ||
         isRetry == IS_RETRY.TRUE ||
-        !userBusinessProfile.availableAISuggestions.key
+        (userBusinessProfile?.availableAISuggestions &&
+          !userBusinessProfile?.availableAISuggestions[key])
       ) {
         const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
         const textResponse =
@@ -50,7 +51,9 @@ class BusinessProfileService {
         const updateObject = {
           $set: {
             isRetry: true,
-            [`availableAISuggestions.${key}`]: response,
+            availableAISuggestions: {
+              [key]: response,
+            },
           },
         };
         await BusinessProfileTable.findOneAndUpdate(

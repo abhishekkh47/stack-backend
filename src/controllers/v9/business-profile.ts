@@ -29,7 +29,10 @@ class BusinessProfileController extends BaseController {
     if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
-    if (userBusinessProfile.availableAISuggestions[key]) {
+    if (
+      userBusinessProfile?.availableAISuggestions &&
+      userBusinessProfile?.availableAISuggestions[key]
+    ) {
       return this.Ok(ctx, {
         message: "Success",
         data: {

@@ -214,7 +214,7 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
     },
     availableAISuggestions: {
       type: mongoose.Schema.Types.Mixed,
-      required: false,
+      required: true,
       default: null,
     },
   },
