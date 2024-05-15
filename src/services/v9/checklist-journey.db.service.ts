@@ -26,7 +26,9 @@ class ChecklistDBService {
   public async getQuizTopics(userIfExists: IUser) {
     try {
       let [quizTopics, completedQuizzes] = await Promise.all([
-        QuizTopicTable.find({ type: 4 }, { topic: 1, order: 1 }).lean(),
+        QuizTopicTable.find({ type: 4 }, { topic: 1, order: 1 })
+          .sort({ order: 1 })
+          .lean(),
         ChecklistResultTable.find({ userId: (userIfExists as any)._id }),
       ]);
 
@@ -116,6 +118,9 @@ class ChecklistDBService {
         quizCategories[activeCategory]._id
       );
       if (isCorrectActiveCategory) {
+        quizCategories[activeCategory].isActive = true;
+      } else if (activeCategory == 0) {
+        quizCategories[activeCategory].isUnlocked = false;
         quizCategories[activeCategory].isActive = true;
       } else {
         quizCategories[activeCategory].isUnlocked = false;
