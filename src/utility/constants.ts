@@ -240,6 +240,7 @@ export const XP_POINTS = {
   SIMULATION_QUIZ: 150,
 };
 export const COMPLETED_ACTION_REWARD = 100;
+export const CORRECT_ANSWER_FUEL_POINTS = 10;
 
 export const STREAK_LEVELS = {
   LEVEL1: { level: 1, maxValue: 3 },
@@ -654,6 +655,9 @@ export const THINGS_TO_TALK_ABOUT = [
   "💰 How will you fund your business?",
 ];
 export const MENTORS = ["natalieYoung", "willRush"];
+export const CATEGORY_COUNT = 12;
+export const LEVEL_COUNT = 5;
+export const LEVEL_QUIZ_COUNT = 4;
 export const START_FROM_SCRATCH = {
   _id: "1",
   order: 6,
