@@ -27,6 +27,7 @@ export interface IUser extends IAccount {
   renewLifeAt: string;
   requestId: string;
   isPremiumUser: boolean;
+  focusAreaTopic: mongoose.Schema.Types.ObjectId;
 }
 
 export interface IAccount {

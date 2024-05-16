@@ -6,7 +6,26 @@ import BaseController from "../base";
 import { ChecklistDBService } from "@app/services/v9";
 class ChecklistJourneyController extends BaseController {
   /**
-   * @description This method is to fetch quiz categories
+   * @description This is to fetch focus areas and categories for onbaording flow
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-focus-area", method: HttpMethod.GET })
+  @Auth()
+  public async getFocusArea(ctx: any) {
+    const { user } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const topicDetails = await ChecklistDBService.getFocusArea();
+    return this.Ok(ctx, {
+      data: { topicDetails, focusAreaTopic: userExists.focusAreaTopic || null },
+    });
+  }
+  
+   /*
+   * @description This method is to fetch quiz topics
    * @param ctx
    * @returns {*}
    */

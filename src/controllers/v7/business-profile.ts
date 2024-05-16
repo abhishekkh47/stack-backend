@@ -48,6 +48,13 @@ class BusinessProfileController extends BaseController {
         userIfExists,
         actionScreenData
       );
+      if (body.focusAreaTopic) {
+        await UserTable.findOneAndUpdate(
+          { _id: userIfExists._id },
+          { $set: { focusAreaTopic: body.focusAreaTopic } },
+          { upsert: true }
+        );
+      }
       (async () => {
         zohoCrmService.addAccounts(
           ctx.request.zohoAccessToken,

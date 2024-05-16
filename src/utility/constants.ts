@@ -658,3 +658,22 @@ export const MENTORS = ["natalieYoung", "willRush"];
 export const CATEGORY_COUNT = 12;
 export const LEVEL_COUNT = 5;
 export const LEVEL_QUIZ_COUNT = 4;
+export const START_FROM_SCRATCH = {
+  _id: "1",
+  order: 6,
+  title: "Start From Scratch",
+  image: "start_from_scratch.webp",
+  categories: [],
+};
+export const PERFECT_IDEA = {
+  _id: "1",
+  title: "Find Your Perfect Idea",
+  description:
+    "Use Jetson AI to find the unique idea that excites you or input your own idea",
+  order: 0,
+};
+export const IMPORT_SCRIPT = "import";
+export interface ICharacterImageData {
+  imageName?: string;
+  imageUrl?: string;
+}

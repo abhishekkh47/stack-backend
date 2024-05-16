@@ -1015,12 +1015,13 @@ class ScriptController extends BaseController {
       reqBody.data.map(async (items) => {
         let bulkWriteObject = {
           updateOne: {
-            filter: { order: items.order, topic: items.topic },
+            filter: { type: 4, order: items.order },
             update: {
               $set: {
                 order: items.order,
                 topic: items.topic,
                 type: 4,
+                image: items.image,
               },
             },
             upsert: true,
@@ -1783,28 +1784,27 @@ class ScriptController extends BaseController {
       if (storyNums.length === 0) {
         return this.BadRequest(ctx, "Please enter input story numbers");
       }
-      const rows = await ScriptService.readSpreadSheet(envData.STORY_SHEET_GID);
-      let allTopics = await QuizTopicTable.find({ type: 2, status: 1 }).select(
-        "_id topic"
+      const rows = await ScriptService.readCaseStudySpreadSheet(
+        envData.CASE_STUDY_GID
       );
-      const hasStagesTopic = await QuizTopicTable.findOne({ hasStages: true });
-      const storiesContentData =
-        await ScriptService.convertStorySpreadSheetToJSON(
-          hasStagesTopic,
-          storyNums,
-          rows,
-          allTopics
-        );
-      if (storiesContentData.length === 0) {
+      if (!rows) {
+        return this.BadRequest(ctx, "Something Went Wrong - no data found");
+      }
+      const storyContentData =
+        await ScriptService.convertStorySpreadSheetToJSON(storyNums, rows);
+      if (storyContentData.length === 0) {
         return this.BadRequest(ctx, "Story Content Not Found");
       }
       const isAddedToDb = await ScriptService.addQuizContentsToDB(
-        storiesContentData
+        storyContentData
       );
       if (!isAddedToDb) {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
-      return this.Ok(ctx, { message: "Success", data: true });
+      return this.Ok(ctx, {
+        message: "Success",
+        data: storyContentData,
+      });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

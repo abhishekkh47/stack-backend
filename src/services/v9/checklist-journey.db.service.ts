@@ -14,6 +14,8 @@ import {
   CATEGORY_COUNT,
   LEVEL_COUNT,
   LEVEL_QUIZ_COUNT,
+  START_FROM_SCRATCH,
+  PERFECT_IDEA,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
@@ -419,6 +421,66 @@ class ChecklistDBService {
   }
 
   /**
+   * @description get all Topics and current level in each topic
+   * @returns {*}
+   */
+  public async getFocusArea() {
+    try {
+      let startFromScratch = { ...START_FROM_SCRATCH };
+      let focusAreas = await QuizTopicTable.aggregate([
+        {
+          $match: {
+            type: 4,
+          },
+        },
+        {
+          $sort: {
+            order: 1,
+          },
+        },
+        {
+          $lookup: {
+            from: "quiz_categories",
+            localField: "_id",
+            foreignField: "topicId",
+            as: "categories",
+          },
+        },
+        {
+          $sort: {
+            "categories.order": -1,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            title: "$topic",
+            image: 1,
+            order: 1,
+            "categories._id": 1,
+            "categories.title": 1,
+            "categories.description": 1,
+            "categories.order": 1,
+          },
+        },
+      ]);
+
+      startFromScratch.categories = [...focusAreas[0].categories];
+      focusAreas.push(startFromScratch);
+      focusAreas.map((area) => {
+        area.categories.unshift(PERFECT_IDEA);
+        area.categories.sort((a, b) => a.order - b.order);
+      });
+
+      return focusAreas;
+    } catch (err) {
+      throw new NetworkError(
+        "Error occurred while retrieving quiz topics",
+        400
+      );
+    }
+  }
+   /**
    * @description verify if all the levels in a category with all 4 challenges present
    * @returns {*}
    */
