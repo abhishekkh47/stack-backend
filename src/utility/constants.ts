@@ -240,8 +240,16 @@ export const XP_POINTS = {
   SIMULATION_QUIZ: 150,
 };
 export const COMPLETED_ACTION_REWARD = 100;
-export const CORRECT_ANSWER_FUEL_POINTS = 10;
-
+export const CORRECT_ANSWER_FUEL_POINTS = {
+  QUIZ: 3,
+  STORY: 10,
+  SIMULATION: 10,
+};
+export const CHECKLIST_QUESTION_LENGTH = {
+  QUIZ: 12,
+  STORY: 4,
+  SIMULATION: 5,
+};
 export const STREAK_LEVELS = {
   LEVEL1: { level: 1, maxValue: 3 },
   LEVEL2: { level: 2, maxValue: 7 },

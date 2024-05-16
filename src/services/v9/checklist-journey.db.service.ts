@@ -7,7 +7,6 @@ import {
   QuizTable,
 } from "@app/model";
 import {
-  SIMULATION_QUIZ_FUEL,
   QUIZ_TYPE,
   XP_POINTS,
   CORRECT_ANSWER_FUEL_POINTS,
@@ -16,6 +15,7 @@ import {
   LEVEL_QUIZ_COUNT,
   START_FROM_SCRATCH,
   PERFECT_IDEA,
+  CHECKLIST_QUESTION_LENGTH,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
@@ -298,30 +298,39 @@ class ChecklistDBService {
           isUnlocked: false,
           xpPoints: {
             $cond: {
-              if: { $eq: ["$quizType", QUIZ_TYPE.SIMULATION] },
-              then: XP_POINTS.SIMULATION_QUIZ,
-              else: XP_POINTS.COMPLETED_QUIZ,
+              if: { $eq: ["$quizType", QUIZ_TYPE.NORMAL] },
+              then:
+                XP_POINTS.COMPLETED_QUIZ +
+                CHECKLIST_QUESTION_LENGTH.QUIZ * XP_POINTS.CORRECT_ANSWER,
+              else: {
+                $cond: {
+                  if: { $eq: ["$quizType", QUIZ_TYPE.STORY] },
+                  then:
+                    XP_POINTS.COMPLETED_QUIZ +
+                    CHECKLIST_QUESTION_LENGTH.STORY * XP_POINTS.CORRECT_ANSWER,
+                  else:
+                    XP_POINTS.COMPLETED_QUIZ +
+                    CHECKLIST_QUESTION_LENGTH.SIMULATION *
+                      XP_POINTS.CORRECT_ANSWER,
+                },
+              },
             },
           },
           fuelCount: {
             $cond: {
-              if: { $eq: ["$quizType", QUIZ_TYPE.SIMULATION] },
-              then: SIMULATION_QUIZ_FUEL,
+              if: { $eq: ["$quizType", QUIZ_TYPE.NORMAL] },
+              then:
+                CHECKLIST_QUESTION_LENGTH.QUIZ *
+                CORRECT_ANSWER_FUEL_POINTS.QUIZ,
               else: {
                 $cond: {
                   if: { $eq: ["$quizType", QUIZ_TYPE.STORY] },
-                  then: {
-                    $multiply: [
-                      CORRECT_ANSWER_FUEL_POINTS,
-                      "$quizQuestionsLength",
-                    ],
-                  },
-                  else: {
-                    $multiply: [
-                      CORRECT_ANSWER_FUEL_POINTS,
-                      { $size: "$quizQuestions" },
-                    ],
-                  },
+                  then:
+                    CHECKLIST_QUESTION_LENGTH.STORY *
+                    CORRECT_ANSWER_FUEL_POINTS.STORY,
+                  else:
+                    CHECKLIST_QUESTION_LENGTH.SIMULATION *
+                    CORRECT_ANSWER_FUEL_POINTS.SIMULATION,
                 },
               },
             },
@@ -480,7 +489,7 @@ class ChecklistDBService {
       );
     }
   }
-   /**
+  /**
    * @description verify if all the levels in a category with all 4 challenges present
    * @returns {*}
    */
