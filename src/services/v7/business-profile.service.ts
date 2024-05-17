@@ -28,6 +28,7 @@ import {
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
+  AI_TOOLBOX_IMAGES,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import moment from "moment";
@@ -46,13 +47,25 @@ class BusinessProfileService {
   ) {
     try {
       let obj = {};
+      let businessHistoryObj = {};
       // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
       const businessProfileData = await BusinessProfileTable.findOne({
         userId: userIfExists._id,
       });
       if (data.businessIdeaInfo) {
+        // save business description and opportunity
+        // data.businessIdeaInfo will have 'idea' and 'description'
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
+        businessHistoryObj = {
+          key: "description",
+          value: {
+            idea: data.businessIdeaInfo[0].value,
+            description: data.businessIdeaInfo[1].value,
+          },
+          timestamp: Date.now(),
+          image: AI_TOOLBOX_IMAGES.description,
+        };
         if (!businessProfileData) {
           obj["hoursSaved"] = HOURS_SAVED_BY_IDEA_GENERATOR;
         }
@@ -76,6 +89,12 @@ class BusinessProfileService {
           obj["hoursSaved"] =
             businessProfileData.hoursSaved + getHoursSaved[0].hoursSaved;
         }
+        businessHistoryObj = {
+          key: data.key,
+          value: data.value,
+          timestamp: Date.now(),
+          image: AI_TOOLBOX_IMAGES[data.key],
+        };
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -83,6 +102,7 @@ class BusinessProfileService {
         },
         {
           $set: obj,
+          $push: { businessHistory: businessHistoryObj },
         },
         { upsert: true }
       );
@@ -515,12 +535,15 @@ class BusinessProfileService {
     try {
       let response = [];
       if (data.key == BUSINESS_PREFERENCE.PASSION) {
-        response = await BusinessPassionTable.find({})
+        response = await BusinessPassionTable.find({
+          type: Number(data.businessType),
+        })
           .select("image title")
           .sort({ order: 1 });
       } else if (data.key == BUSINESS_PREFERENCE.ASPECT) {
         const aspectsData = await BusinessPassionAspectTable.find({
           businessPassionId: data._id,
+          type: Number(data.businessType),
         }).select("aspect aspectImage");
         response = aspectsData.map((aspect) => ({
           _id: aspect._id,
@@ -529,15 +552,21 @@ class BusinessProfileService {
         }));
       } else if (data.key == BUSINESS_PREFERENCE.PROBLEM) {
         let order = 0;
-        const problemsData = await BusinessPassionAspectTable.find({
+        const problemsData = await BusinessPassionAspectTable.findOne({
           _id: data._id,
         }).select("problems");
-        problemsData[0].problems.map((problem) => {
+        problemsData.problems.map((problem) => {
           response.push({
             _id: ++order,
             title: problem,
             image: null,
           });
+        });
+        // add additional object for user to enter their own problem description
+        response.push({
+          _id: ++order,
+          title: "Choose my own Problem",
+          image: null,
         });
       }
       return response;

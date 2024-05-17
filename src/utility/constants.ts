@@ -677,3 +677,19 @@ export interface ICharacterImageData {
   imageName?: string;
   imageUrl?: string;
 }
+
+export const BUSINESS_TYPE = {
+  1: "Physical Product",
+  2: "Software Technology",
+  3: "Content Brand",
+};
+
+export const AI_TOOLBOX_IMAGES = {
+  description: "light_bulb.webp",
+  ideaValidation: "magnifire.webp",
+  targetAudience: "direct_hit.webp",
+  companyName: "speech_balloon.webp",
+  companyLogo: "sparkles.webp",
+  competitors: "racing_car.webp",
+  colorsAndAesthetic: "artist_palette.webp",
+};

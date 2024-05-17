@@ -212,4 +212,10 @@ export default {
   get IMPORT_SALAI_TOKEN() {
     return process.env.IMPORT_SALAI_TOKEN;
   },
+  get PRODUCT_PASSIONS_SHEET_GID() {
+    return process.env.PRODUCT_PASSIONS_SHEET_GID;
+  },
+  get CONTENT_PASSIONS_SHEET_GID() {
+    return process.env.CONTENT_PASSIONS_SHEET_GID;
+  },
 };

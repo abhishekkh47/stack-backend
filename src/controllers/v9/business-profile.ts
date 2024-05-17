@@ -86,6 +86,33 @@ class BusinessProfileController extends BaseController {
     }
     return this.Ok(ctx, { message: "Success" });
   }
+
+  /**
+   * @description This method is to enable/disable stealth mode
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-business-history", method: HttpMethod.GET })
+  @Auth()
+  public async getBusinessHistory(ctx: any) {
+    const { user } = ctx.request;
+    const [userExists, businessProfile] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }).select(
+        "businessHistory"
+      ),
+    ]);
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!businessProfile) {
+      return this.BadRequest(ctx, "Business Details Not Found");
+    }
+    const response = await BusinessProfileService.getBusinessHistory(
+      businessProfile.businessHistory
+    );
+    return this.Ok(ctx, { message: "Success", data: response });
+  }
 }
 
 export default new BusinessProfileController();

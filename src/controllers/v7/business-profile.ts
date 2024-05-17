@@ -365,6 +365,13 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (!query.businessType) {
+      return this.BadRequest(ctx, "Please Select a Business Type");
+    }
+    await BusinessProfileTable.updateOne(
+      { userId: user._id },
+      { $set: { businessType: Number(query.businessType) } }
+    );
     const businessPreference =
       await BusinessProfileService.getBusinessPreference(query);
     return this.Ok(ctx, { message: "Success", data: businessPreference });
@@ -391,14 +398,25 @@ class BusinessProfileController extends BaseController {
     if (!query.category || !query.problem || !query.passion) {
       return this.BadRequest(ctx, "Provide a Category and Problem");
     }
+    const obj = {
+      passion: query.passion,
+      aspect: query.category,
+      problem: query.problem,
+    };
     const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
-    const businessIdea = await BusinessProfileService.generateBusinessIdea(
-      SYSTEM_INPUT.SYSTEM,
-      prompt,
-      query.passion,
-      userExists,
-      query.isRetry
-    );
+    const [businessIdea, _] = await Promise.all([
+      BusinessProfileService.generateBusinessIdea(
+        SYSTEM_INPUT.SYSTEM,
+        prompt,
+        query.passion,
+        userExists,
+        query.isRetry
+      ),
+      BusinessProfileTable.updateOne(
+        { userId: user._id },
+        { $set: { businessPreferences: obj } }
+      ),
+    ]);
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.PASSION_SUBMITTED,
       {

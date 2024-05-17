@@ -8,6 +8,7 @@ import {
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
+  AI_TOOLBOX_IMAGES,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -188,6 +189,59 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    }
+  }
+
+  /**
+   * @description get business history in descending order of dates
+   * @returns {*}
+   */
+  public async getBusinessHistory(businessProfile) {
+    try {
+      const today = new Date(Date.now()).toLocaleDateString();
+      const sortedHistory = businessProfile.sort(
+        (a, b) => b.timestamp - a.timestamp
+      );
+
+      const groupedHistory = sortedHistory.reduce((acc, entry) => {
+        const date = new Date(entry.timestamp);
+        const year = date.getFullYear();
+        const month = date.toLocaleString("default", { month: "long" });
+        const day = date.toLocaleDateString();
+
+        const groupKey = day == today ? "Today" : `${month} ${year}`;
+
+        if (!acc[groupKey]) {
+          acc[groupKey] = [];
+        }
+
+        acc[groupKey].push({
+          key: entry.key,
+          value: entry.value,
+          timestamp: entry.timestamp,
+          day: day,
+        });
+        return acc;
+      }, {});
+
+      const response = Object.entries(groupedHistory).map(
+        ([key, values]: any) => {
+          return {
+            period: key,
+            entries: values.map(({ key, value, timestamp, day }) => ({
+              key: key,
+              title: value,
+              date: day,
+              icon: AI_TOOLBOX_IMAGES[key], // Function to get appropriate icon based on key
+            })),
+          };
+        }
+      );
+
+      return response;
+    } catch (error) {
+      console.log("ERROR : ", error);
+      throw new NetworkError("Data not found", 400);
     }
   }
 }

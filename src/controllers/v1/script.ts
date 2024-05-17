@@ -1945,14 +1945,22 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storePassionAndProblemsInDB(ctx: any) {
     try {
+      const { type } = ctx.request.body;
+      let sheetGID = envData.PASSION_SHEET_ID; // type=2
+      if (type == 1) {
+        sheetGID = envData.PRODUCT_PASSIONS_SHEET_GID;
+      } else if (type == 3) {
+        sheetGID = envData.CONTENT_PASSIONS_SHEET_GID;
+      }
       const rows = await ScriptService.readSpreadSheet(
-        envData.PASSION_SHEET_GID,
+        sheetGID,
         envData.PASSION_SHEET_ID
       );
       if (rows.length === 0) return this.BadRequest(ctx, "Passion Not Found");
       const passionsContentData =
         await BusinessProfileScriptService.convertPassionSpreadSheetToJSON(
-          rows
+          rows,
+          type
         );
       const isPassionAddedToDB =
         await BusinessProfileScriptService.addPassionAndProblemCategory(
