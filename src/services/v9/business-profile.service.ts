@@ -228,20 +228,15 @@ class BusinessProfileService {
         ([key, values]: any) => {
           return {
             period: key,
-            data: values.map(({ key, value, day }) => {
-              let title = value;
-              if (key === "description" && value.idea) {
-                title = value.idea;
-              }
-              return {
-                key: key,
-                title: title,
-                date: day,
-                icon: AI_TOOLBOX_IMAGES[key] || null, // Provide the icon or null if not found
-              };
-            }),
+            data: values.map(({ key, value, day }) => ({
+              key: key,
+              title: value,
+              date: day,
+              icon: AI_TOOLBOX_IMAGES[key] || null, // Provide the icon or null if not found
+            })),
           };
-        });
+        }
+      );
 
       return response;
     } catch (error) {

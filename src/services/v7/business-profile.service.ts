@@ -520,15 +520,18 @@ class BusinessProfileService {
           "description": "An app matching players with similar skill levels for local pickup games, complete with profiles and verified skill ratings.",
           "ratings": [
             {
-              "market_competition": "Medium",
+              "criteria": "Growth Opportunities",
+              "level": 78,
               "info": "info on medium market competition"
             },
             {
-              "market_size": "High",
+              "criteria": "Market Size",
+              "level": 93,
               "info": "info on high market size"
             },
             {
-              "difficulty_to_build": "Medium",
+              "criteria": "Complexity",
+              "level": 50,
               "info": "info on medium difficulty to build"
             }
           ]
@@ -538,15 +541,18 @@ class BusinessProfileService {
           "description": "An on-demand app that quickly connects users with nearby pickup games of matching skill levels and provides real-time game updates.",
           "ratings": [
             {
-              "market_competition": "low",
+              "criteria": "Growth Opportunities",
+              "level": 70,
               "info": "info on low market competition"
             },
             {
-              "market_size": "High",
+              "criteria": "Market Size",
+              "level": 90,
               "info": "info on high market size"
             },
             {
-              "difficulty_to_build": "Medium",
+              "criteria": "Complexity",
+              "level": 100,
               "info": "info on medium difficulty to build"
             }
           ]
@@ -556,20 +562,23 @@ class BusinessProfileService {
           "description": "A platform where local player communities can organize games, chat, and create skill-level specific events or tournaments.",
           "ratings": [
             {
-              "market_competition": "low",
+              "criteria": "Growth Opportunities",
+              "level": 65,
               "info": "info on low market competition"
             },
             {
-              "market_size": "High",
+              "criteria": "Market Size",
+              "level": 95,
               "info": "info on high market size"
             },
             {
-              "difficulty_to_build": "Medium",
+              "criteria": "Complexity",
+              "level": 30,
               "info": "info on medium difficulty to build"
             }
           ]
         }
-      ]
+      ];
       console.log("new response");
       console.log(newResponse);
       if (!businessPassionImages.length) {
