@@ -496,20 +496,82 @@ class BusinessProfileService {
     userExists: any,
     isRetry: string
   ) {
+
     try {
       let [response, businessPassionImages] = await Promise.all([
         this.generateTextSuggestions(systemInput, prompt),
         BusinessPassionTable.find({ title: passion }),
       ]);
 
-      if (
-        !response.choices[0].message.content.includes("businessDescription") ||
-        !response.choices[0].message.content.includes("opportunityHighlight")
-      ) {
-        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
-      }
-
-      let newResponse = JSON.parse(response.choices[0].message.content);
+      /** commented this out temporary before the prompt is finalized
+            if (
+              !response.choices[0].message.content.includes("businessDescription") ||
+              !response.choices[0].message.content.includes("opportunityHighlight")
+            ) {
+              throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+            }
+      
+            let newResponse = JSON.parse(response.choices[0].message.content);
+      */
+      //NATALIE ADDED mock response for generated ideas
+      let newResponse = [
+        {
+          "idea": "LinkedIn for Local Sports",
+          "description": "An app matching players with similar skill levels for local pickup games, complete with profiles and verified skill ratings.",
+          "ratings": [
+            {
+              "market_competition": "Medium",
+              "info": "info on medium market competition"
+            },
+            {
+              "market_size": "High",
+              "info": "info on high market size"
+            },
+            {
+              "difficulty_to_build": "Medium",
+              "info": "info on medium difficulty to build"
+            }
+          ]
+        },
+        {
+          "idea": "Uber for Pickup Games",
+          "description": "An on-demand app that quickly connects users with nearby pickup games of matching skill levels and provides real-time game updates.",
+          "ratings": [
+            {
+              "market_competition": "low",
+              "info": "info on low market competition"
+            },
+            {
+              "market_size": "High",
+              "info": "info on high market size"
+            },
+            {
+              "difficulty_to_build": "Medium",
+              "info": "info on medium difficulty to build"
+            }
+          ]
+        },
+        {
+          "idea": "Discord for Sports Communities",
+          "description": "A platform where local player communities can organize games, chat, and create skill-level specific events or tournaments.",
+          "ratings": [
+            {
+              "market_competition": "low",
+              "info": "info on low market competition"
+            },
+            {
+              "market_size": "High",
+              "info": "info on high market size"
+            },
+            {
+              "difficulty_to_build": "Medium",
+              "info": "info on medium difficulty to build"
+            }
+          ]
+        }
+      ]
+      console.log("new response");
+      console.log(newResponse);
       if (!businessPassionImages.length) {
         newResponse.map(
           (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
