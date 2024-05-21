@@ -228,11 +228,11 @@ class BusinessProfileService {
         ([key, values]: any) => {
           return {
             period: key,
-            entries: values.map(({ key, value, timestamp, day }) => ({
+            data: values.map(({ key, value, day }) => ({
               key: key,
               title: value,
               date: day,
-              icon: AI_TOOLBOX_IMAGES[key], // Function to get appropriate icon based on key
+              icon: AI_TOOLBOX_IMAGES[key] || null, // Provide the icon or null if not found
             })),
           };
         }
