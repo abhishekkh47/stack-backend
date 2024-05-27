@@ -48,13 +48,6 @@ class BusinessProfileController extends BaseController {
         userIfExists,
         actionScreenData
       );
-      if (body.focusAreaTopic) {
-        await UserTable.findOneAndUpdate(
-          { _id: userIfExists._id },
-          { $set: { focusAreaTopic: body.focusAreaTopic } },
-          { upsert: true }
-        );
-      }
       (async () => {
         zohoCrmService.addAccounts(
           ctx.request.zohoAccessToken,
@@ -146,10 +139,18 @@ class BusinessProfileController extends BaseController {
         startTime: 0,
       };
     }
+    const businessHistoryObj = {
+      key: "companyLogo",
+      value: imageName,
+      timestamp: Date.now(),
+    };
     await Promise.all([
       BusinessProfileTable.updateOne(
         { userId: userExists._id },
-        { $set: businessProfileObj },
+        {
+          $set: businessProfileObj,
+          $push: { businessHistory: businessHistoryObj },
+        },
         { upsert: true }
       ),
       body?.weeklyJourneyId

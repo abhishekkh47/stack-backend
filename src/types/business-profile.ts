@@ -80,3 +80,14 @@ interface IBusinessHistory {
   timestamp: Date;
   image: string;
 }
+
+export interface IAIToolsUsageStatus {
+  userId: mongoose.Schema.Types.ObjectId;
+  description: boolean;
+  ideaValidation: boolean;
+  companyName: boolean;
+  companyLogo: boolean;
+  targetAudience: boolean;
+  competitors: boolean;
+  colorsAndAesthetic: boolean;
+}

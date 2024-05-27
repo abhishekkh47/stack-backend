@@ -1,5 +1,9 @@
 import { Auth } from "@app/middleware";
-import { BusinessProfileTable, UserTable, ProUserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  AIToolsUsageStatusTable,
+} from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
 import BaseController from "../base";
@@ -14,7 +18,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getAISuggestion(ctx: any) {
     const { user, query, headers } = ctx.request;
-    const { key, isRetry, isFromProfile } = query;
+    const { key, isRetry, isFromProfile, idea } = query;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
@@ -51,14 +55,16 @@ class BusinessProfileController extends BaseController {
         isRetry,
         headers.requestid,
         false,
-        isFromProfile
+        isFromProfile,
+        idea
       );
     } else {
       response = await BusinessProfileService.generateAISuggestions(
         userExists,
         key,
         userBusinessProfile,
-        isRetry
+        isRetry,
+        idea
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });
@@ -88,7 +94,7 @@ class BusinessProfileController extends BaseController {
   }
 
   /**
-   * @description This method is to enable/disable stealth mode
+   * @description This method is to get history of business tools used
    * @param ctx
    * @returns {*}
    */
@@ -112,6 +118,36 @@ class BusinessProfileController extends BaseController {
       businessProfile.businessHistory
     );
     return this.Ok(ctx, { message: "Success", data: response });
+  }
+
+  /**
+   * @description This is to get the usage status of all AI Tools
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-ai-tools-status", method: HttpMethod.GET })
+  @Auth()
+  public async getAIToolsStatus(ctx: any) {
+    const { user } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const response = await AIToolsUsageStatusTable.find(
+      {
+        userId: userExists._id,
+      },
+      {
+        description: 1,
+        ideaValidation: 1,
+        targetAudience: 1,
+        companyName: 1,
+        companyLogo: 1,
+        colorsAndAesthetic: 1,
+        competitors: 1,
+      }
+    );
+    return this.Ok(ctx, { message: "success", data: response });
   }
 }
 

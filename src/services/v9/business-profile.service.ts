@@ -1,4 +1,8 @@
-import { BusinessProfileTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  AIToolsUsageStatusTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
   INVALID_DESCRIPTION_ERROR,
@@ -8,7 +12,6 @@ import {
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
-  AI_TOOLBOX_IMAGES,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -26,13 +29,22 @@ class BusinessProfileService {
     userExists: any,
     key: string,
     userBusinessProfile: any,
-    isRetry: any = false
+    isRetry: any = false,
+    idea: string = null
   ) {
     try {
       let response = null;
+      if (!idea) {
+        throw new NetworkError(
+          "Please provide a valid business description",
+          404
+        );
+      }
+      let aiToolUsageObj = {};
+      aiToolUsageObj[key] = true;
       if (!userBusinessProfile.isRetry || isRetry == IS_RETRY.TRUE) {
-        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
-        const [textResponse, _] = await Promise.all([
+        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${idea}`;
+        const [textResponse, _, __] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
             prompt
@@ -40,6 +52,11 @@ class BusinessProfileService {
           BusinessProfileTable.findOneAndUpdate(
             { userId: userExists._id },
             { $set: { isRetry: true } }
+          ),
+          AIToolsUsageStatusTable.findOneAndUpdate(
+            { userId: userExists._id },
+            { $set: aiToolUsageObj },
+            { upsert: true }
           ),
         ]);
         response = JSON.parse(textResponse.choices[0].message.content);
@@ -75,7 +92,8 @@ class BusinessProfileService {
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
     isSystemCall: boolean = false,
-    isFromProfile: string = IS_RETRY.FALSE
+    isFromProfile: string = IS_RETRY.FALSE,
+    idea: string = null
   ) {
     try {
       let response = null;
@@ -113,7 +131,7 @@ class BusinessProfileService {
         (isUnderProcess && elapsedTime > 200) ||
         isSystemCall
       ) {
-        const prompt = `Business Name:${companyName}, Business Description: ${description}`;
+        const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
@@ -209,7 +227,7 @@ class BusinessProfileService {
         const month = date.toLocaleString("default", { month: "long" });
         const day = date.toLocaleDateString();
 
-        const groupKey = day == today ? "Today" : `${month} ${year}`;
+        const groupKey = day == today ? "Today" : `In ${month} ${year}`;
 
         if (!acc[groupKey]) {
           acc[groupKey] = [];
@@ -224,15 +242,18 @@ class BusinessProfileService {
         return acc;
       }, {});
 
+      let periodId = 0;
       const response = Object.entries(groupedHistory).map(
         ([key, values]: any) => {
+          let order = 0;
           return {
-            period: key,
+            _id: ++periodId,
+            title: key,
             data: values.map(({ key, value, day }) => ({
+              _id: ++order,
               key: key,
-              title: value,
+              details: value,
               date: day,
-              icon: AI_TOOLBOX_IMAGES[key] || null, // Provide the icon or null if not found
             })),
           };
         }
@@ -240,7 +261,6 @@ class BusinessProfileService {
 
       return response;
     } catch (error) {
-      console.log("ERROR : ", error);
       throw new NetworkError("Data not found", 400);
     }
   }

@@ -15,7 +15,6 @@ import {
   LEVEL_COUNT,
   LEVEL_QUIZ_COUNT,
   START_FROM_SCRATCH,
-  PERFECT_IDEA,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
@@ -468,7 +467,6 @@ class ChecklistDBService {
       startFromScratch.categories = [...focusAreas[0].categories];
       focusAreas.push(startFromScratch);
       focusAreas.map((area) => {
-        area.categories.unshift(PERFECT_IDEA);
         area.categories.sort((a, b) => a.order - b.order);
       });
 
@@ -480,7 +478,7 @@ class ChecklistDBService {
       );
     }
   }
-   /**
+  /**
    * @description verify if all the levels in a category with all 4 challenges present
    * @returns {*}
    */

@@ -28,7 +28,6 @@ import {
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
-  AI_TOOLBOX_IMAGES,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import moment from "moment";
@@ -64,7 +63,6 @@ class BusinessProfileService {
             description: data.businessIdeaInfo[1].value,
           },
           timestamp: Date.now(),
-          image: AI_TOOLBOX_IMAGES.description,
         };
         if (!businessProfileData) {
           obj["hoursSaved"] = HOURS_SAVED_BY_IDEA_GENERATOR;
@@ -93,7 +91,6 @@ class BusinessProfileService {
           key: data.key,
           value: data.value,
           timestamp: Date.now(),
-          image: AI_TOOLBOX_IMAGES[data.key],
         };
       }
       await BusinessProfileTable.findOneAndUpdate(
@@ -496,7 +493,6 @@ class BusinessProfileService {
     userExists: any,
     isRetry: string
   ) {
-
     try {
       let [response, businessPassionImages] = await Promise.all([
         this.generateTextSuggestions(systemInput, prompt),
@@ -516,75 +512,86 @@ class BusinessProfileService {
       //NATALIE ADDED mock response for generated ideas
       let newResponse = [
         {
-          "idea": "LinkedIn for Local Sports",
-          "description": "An app matching players with similar skill levels for local pickup games, complete with profiles and verified skill ratings.",
-          "ratings": [
+          idea: "LinkedIn for Local Sports",
+          description:
+            "An app matching players with similar skill levels for local pickup games, complete with profiles and verified skill ratings.",
+          ratings: [
             {
-              "criteria": "Growth Opportunities",
-              "level": 78,
-              "info": "info on medium market competition"
+              criteria: "Uniqueness",
+              level: 78,
+              info: "info on medium market competition",
+              image: "uniqueness.png",
             },
             {
-              "criteria": "Market Size",
-              "level": 93,
-              "info": "info on high market size"
+              criteria: "Market Size",
+              level: 93,
+              info: "info on high market size",
+              image: "marketsize.png",
             },
             {
-              "criteria": "Complexity",
-              "level": 50,
-              "info": "info on medium difficulty to build"
-            }
-          ]
+              criteria: "Complexity",
+              level: 50,
+              info: "info on medium difficulty to build",
+              image: "complexity.png",
+            },
+          ],
         },
         {
-          "idea": "Uber for Pickup Games",
-          "description": "An on-demand app that quickly connects users with nearby pickup games of matching skill levels and provides real-time game updates.",
-          "ratings": [
+          idea: "Uber for Pickup Games",
+          description:
+            "An on-demand app that quickly connects users with nearby pickup games of matching skill levels and provides real-time game updates.",
+          ratings: [
             {
-              "criteria": "Growth Opportunities",
-              "level": 70,
-              "info": "info on low market competition"
+              criteria: "Uniqueness",
+              level: 70,
+              info: "info on low market competition",
+              image: "uniqueness.png",
             },
             {
-              "criteria": "Market Size",
-              "level": 90,
-              "info": "info on high market size"
+              criteria: "Market Size",
+              level: 90,
+              info: "info on high market size",
+              image: "marketsize.png",
             },
             {
-              "criteria": "Complexity",
-              "level": 100,
-              "info": "info on medium difficulty to build"
-            }
-          ]
+              criteria: "Complexity",
+              level: 100,
+              info: "info on medium difficulty to build",
+              image: "complexity.png",
+            },
+          ],
         },
         {
-          "idea": "Discord for Sports Communities",
-          "description": "A platform where local player communities can organize games, chat, and create skill-level specific events or tournaments.",
-          "ratings": [
+          idea: "Discord for Sports Communities",
+          description:
+            "A platform where local player communities can organize games, chat, and create skill-level specific events or tournaments.",
+          ratings: [
             {
-              "criteria": "Growth Opportunities",
-              "level": 65,
-              "info": "info on low market competition"
+              criteria: "Uniqueness",
+              level: 65,
+              info: "info on low market competition",
+              image: "uniqueness.png",
             },
             {
-              "criteria": "Market Size",
-              "level": 95,
-              "info": "info on high market size"
+              criteria: "Market Size",
+              level: 95,
+              info: "info on high market size",
+              image: "marketsize.png",
             },
             {
-              "criteria": "Complexity",
-              "level": 30,
-              "info": "info on medium difficulty to build"
-            }
-          ]
-        }
+              criteria: "Complexity",
+              level: 30,
+              info: "info on medium difficulty to build",
+              image: "complexity.png",
+            },
+          ],
+        },
       ];
-      console.log("new response");
-      console.log(newResponse);
       if (!businessPassionImages.length) {
         newResponse.map(
           (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
         );
+        newResponse = [newResponse[0]];
       } else {
         newResponse.map(
           (idea, idx) =>
