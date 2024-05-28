@@ -38,6 +38,8 @@ import {
   IMPORT_SCRIPT,
   ICharacterImageData,
   delay,
+  CHECKLIST_QUESTION_LENGTH,
+  CORRECT_ANSWER_FUEL_POINTS,
 } from "@app/utility";
 import { everyCorrectAnswerPoints } from "@app/types";
 import OpenAI from "openai";
@@ -1181,16 +1183,18 @@ class ScriptService {
           currentQuizId = quizId?._id || null;
           if (data["Type"] == "simulation") {
             type = 2;
-            currentReward = XP_POINTS.SIMULATION_QUIZ;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.SIMULATION *
+              CORRECT_ANSWER_FUEL_POINTS.SIMULATION;
           } else if (data["Type"] == "story") {
             type = 3;
-            currentReward = 4 * everyCorrectAnswerPoints;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.STORY *
+              CORRECT_ANSWER_FUEL_POINTS.STORY;
           } else {
-            const quizCount = await QuizQuestionTable.countDocuments({
-              quizId: quizId,
-            });
             type = 1;
-            currentReward = quizCount * everyCorrectAnswerPoints || 0;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
           }
         }
         if (Number(parseInt(data["Identifier"]?.trimEnd())) || type == 4) {
