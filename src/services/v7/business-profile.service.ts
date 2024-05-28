@@ -47,20 +47,22 @@ class BusinessProfileService {
     try {
       let obj = {};
       let businessHistoryObj = {};
-      // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
+      // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-idea, description and ratings
       const businessProfileData = await BusinessProfileTable.findOne({
         userId: userIfExists._id,
       });
       if (data.businessIdeaInfo) {
         // save business description and opportunity
-        // data.businessIdeaInfo will have 'idea' and 'description'
+        // data.businessIdeaInfo will have 'idea', 'description' and 'ratings'
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
+        obj[data.businessIdeaInfo[2].key] = data.businessIdeaInfo[2].value;
         businessHistoryObj = {
-          key: "description",
+          key: data.type, // type = description or ideaValidation
           value: {
             idea: data.businessIdeaInfo[0].value,
             description: data.businessIdeaInfo[1].value,
+            ratings: data.businessIdeaInfo[2].value,
           },
           timestamp: Date.now(),
         };

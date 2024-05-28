@@ -4,6 +4,7 @@ import {
   UserTable,
   WeeklyJourneyResultTable,
   ActionScreenCopyTable,
+  AIToolsUsageStatusTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
@@ -144,6 +145,8 @@ class BusinessProfileController extends BaseController {
       value: imageName,
       timestamp: Date.now(),
     };
+    let aiToolUsageObj = {};
+    aiToolUsageObj["companyLogo"] = true;
     await Promise.all([
       BusinessProfileTable.updateOne(
         { userId: userExists._id },
@@ -171,6 +174,11 @@ class BusinessProfileController extends BaseController {
             { upsert: true }
           ).then(() => UserService.updateUserScore(userExists, body, imageName))
         : Promise.resolve(),
+      AIToolsUsageStatusTable.findOneAndUpdate(
+        { userId: userExists._id },
+        { $set: aiToolUsageObj },
+        { upsert: true }
+      ),
     ]);
     const zohoInfo = {
       companyLogo: imageName,
