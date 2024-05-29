@@ -533,7 +533,10 @@ class AuthController extends BaseController {
             let coachProfile = null;
             let initialMessage = null;
             let thingsToTalkAbout = null;
-            let userExists = await UserTable.findOne({ email });
+            let [userExists, adminDetails] = await Promise.all([
+              UserTable.findOne({ email }),
+              AdminTable.findOne({}),
+            ]);
             await SocialService.verifySocial(reqParam);
 
             if (!userExists) {
@@ -545,6 +548,7 @@ class AuthController extends BaseController {
                 dob: reqParam.dob,
                 type: reqParam.type,
                 referralCode: uniqueReferralCode,
+                preLoadedCoins: adminDetails.stackCoins,
               };
               userExists = await UserTable.create(createQuery);
               // To handle inaccurate streak counts for users who signup again after deleting their accounts
