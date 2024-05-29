@@ -14,9 +14,10 @@ import {
   ANALYTICS_EVENTS,
   MAX_STREAK_FREEZE,
   QUIZ_TYPE,
-  SIMULATION_QUIZ_FUEL,
   XP_POINTS,
   executeWeeklyChallengeStepFunction,
+  CORRECT_ANSWER_FUEL_POINTS,
+  CHECKLIST_QUESTION_LENGTH,
 } from "@app/utility";
 import { CommunityDBService } from "@app/services/v6";
 
@@ -63,10 +64,10 @@ class QuizDBService {
     }
 
     const pointsEarnedFromQuiz =
-      quizExists.quizType === QUIZ_TYPE.NORMAL ||
+      quizExists.quizType === QUIZ_TYPE.SIMULATION ||
       quizExists.quizType === QUIZ_TYPE.STORY
-        ? everyCorrectAnswerPoints * reqParam.solvedQuestions.length
-        : SIMULATION_QUIZ_FUEL;
+        ? CORRECT_ANSWER_FUEL_POINTS.STORY * reqParam.solvedQuestions.length
+        : CORRECT_ANSWER_FUEL_POINTS.QUIZ * reqParam.solvedQuestions.length;
 
     QuizResult.create({
       topicId: reqParam.topicId,
@@ -90,13 +91,9 @@ class QuizDBService {
     let query: any = {
       $inc: incrementObj,
     };
-    const correctAnswerXPPointsEarned =
-      reqParam.solvedQuestions.length * XP_POINTS.CORRECT_ANSWER;
     totalXPPoints =
-      quizExists.quizType === QUIZ_TYPE.NORMAL ||
-      quizExists.quizType === QUIZ_TYPE.STORY
-        ? correctAnswerXPPointsEarned + XP_POINTS.COMPLETED_QUIZ
-        : XP_POINTS.SIMULATION_QUIZ;
+      XP_POINTS.COMPLETED_QUIZ +
+      XP_POINTS.CORRECT_ANSWER * reqParam.solvedQuestions.length;
     incrementObj = { ...incrementObj, xpPoints: totalXPPoints };
     /**
      * If user is in community, please add xp accordingly for that community

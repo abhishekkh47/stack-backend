@@ -29,17 +29,16 @@ import {
   UpscaleImage,
   downloadImage,
   uploadQuizImages,
-  XP_POINTS,
   IPromptData,
   checkQuizImageExists,
   IMAGE_GENERATION_PROMPTS,
   SYSTEM,
   USER,
   IMPORT_SCRIPT,
-  ICharacterImageData,
   delay,
+  CHECKLIST_QUESTION_LENGTH,
+  CORRECT_ANSWER_FUEL_POINTS,
 } from "@app/utility";
-import { everyCorrectAnswerPoints } from "@app/types";
 import OpenAI from "openai";
 
 class ScriptService {
@@ -762,7 +761,7 @@ class ScriptService {
             text: data["Prompt"].trimEnd(),
             question_image: null,
             order: order,
-            points: 20,
+            points: CORRECT_ANSWER_FUEL_POINTS.SIMULATION,
             question_type: 2,
             answer_type: 2,
             answer_array: prompts.map((prompt) => ({
@@ -1067,7 +1066,7 @@ class ScriptService {
               text: data[`Question ${question}`]?.trimEnd(),
               order: ++order,
               question_image: null,
-              points: 10,
+              points: CORRECT_ANSWER_FUEL_POINTS.STORY,
               question_type: 2,
               answer_type: 2,
               answer_array: prompts.map((prompt) => ({
@@ -1181,16 +1180,18 @@ class ScriptService {
           currentQuizId = quizId?._id || null;
           if (data["Type"] == "simulation") {
             type = 2;
-            currentReward = XP_POINTS.SIMULATION_QUIZ;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.SIMULATION *
+              CORRECT_ANSWER_FUEL_POINTS.SIMULATION;
           } else if (data["Type"] == "story") {
             type = 3;
-            currentReward = 4 * everyCorrectAnswerPoints;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.STORY *
+              CORRECT_ANSWER_FUEL_POINTS.STORY;
           } else {
-            const quizCount = await QuizQuestionTable.countDocuments({
-              quizId: quizId,
-            });
             type = 1;
-            currentReward = quizCount * everyCorrectAnswerPoints || 0;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
           }
         }
         if (Number(parseInt(data["Identifier"]?.trimEnd())) || type == 4) {
@@ -1411,7 +1412,7 @@ class ScriptService {
             text: data["Question"].trimEnd(),
             question_image: null,
             order: order,
-            points: 10,
+            points: CORRECT_ANSWER_FUEL_POINTS.QUIZ,
             question_type: 2,
             answer_type: 2,
             answer_array: prompts.map((prompt) => ({

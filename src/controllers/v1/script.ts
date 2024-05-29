@@ -1,9 +1,7 @@
 import { EPHONEVERIFIEDSTATUS } from "@app/types/user";
-import { DripshopTable } from "@app/model/dripshop";
 import moment from "moment";
-import { InternalUserAuth, PrimeTrustJWT, Auth } from "@app/middleware";
+import { InternalUserAuth, PrimeTrustJWT } from "@app/middleware";
 import {
-  CryptoPriceTable,
   CryptoTable,
   DeviceToken,
   Notification,
@@ -18,15 +16,12 @@ import {
   ParentChildTable,
   UserDraftTable,
   QuizTopicTable,
-  QuizTable,
   DeletedUserTable,
-  AdminTable,
   LeagueTable,
-  DripshopItemTable,
   StageTable,
-  StreakGoalTable,
   BusinessProfileTable,
   QuizCategoryTable,
+  QuizTable,
 } from "@app/model";
 import {
   EAction,
@@ -38,12 +33,10 @@ import {
 } from "@app/types";
 import {
   getAllGiftCards,
-  getAssets,
   getPrimeTrustJWTToken,
   Route,
   getQuoteInformation,
   getInternalTransferInformation,
-  getQuizImageAspectRatio,
   getBalance,
   GIFTCARDS,
   NOTIFICATION,
@@ -59,7 +52,6 @@ import {
   ScriptService,
   BusinessProfileScriptService,
   tradingService,
-  AuthService,
   DripshopDBService,
   StreakScriptService,
 } from "@app/services/v1";
@@ -2093,6 +2085,31 @@ class ScriptController extends BaseController {
       await UserTable.updateMany(
         { lifeCount: { $lte: 3 } },
         { $inc: { lifeCount: 2 } }
+      );
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
+
+  /**
+   * @description This method is used to update the fuel reward points of each questions for the checklist flow quizzes (quizType=1)
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/update-checklist-quiz-reward", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateChecklistQuizReward(ctx: any) {
+    try {
+      const quizzes = await QuizTable.find(
+        { quizType: 1, quizNum: { $gt: 601 } },
+        { _id: 1 }
+      );
+      const quizIds = quizzes.map((quiz) => quiz._id);
+
+      await QuizQuestionTable.updateMany(
+        { quizId: { $in: quizIds } },
+        { $set: { points: 3 } }
       );
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
