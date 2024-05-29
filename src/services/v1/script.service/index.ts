@@ -357,10 +357,7 @@ class ScriptService {
                 characterName: data.characterName || null,
                 characterImage: data.characterImage || null,
                 categoryId: data.categoryId,
-                startupExecutive: data.startupExecutive,
                 company: data.company,
-                brandColors: data.brandColors,
-                fullStoryText: data.fullStoryText,
                 pronouns: data.pronouns,
               },
             },
@@ -920,18 +917,13 @@ class ScriptService {
       let lastStoryStage = "";
       let order = 0;
       let descriptionNum = 0;
-      let characterName = "";
-      let characterImage = "";
       let storyContentData = [];
       let questionDataArray = [];
       let questionData = null;
       let currentStoryNumber = 0;
       let questionNum = 0;
-      let startupExecutive = "";
       let company = "";
-      let brandColors = "";
       let pronouns = [];
-      let fullStoryText = "";
       let promptList: {
         [storyNumber: number]: {
           descriptions: IPromptData[];
@@ -1023,14 +1015,7 @@ class ScriptService {
             currentStoryNumber = storyNumber;
             descriptionNum = 0;
             questionNum = 0;
-            characterName = `${data["First Name"]?.trimEnd()} ${data[
-              "Last Name"
-            ]?.trimEnd()}`;
-            characterImage = data["Discord Image Link"]?.trimEnd();
-            startupExecutive = "";
             company = data["Company"]?.trimEnd().split('"')[1];
-            brandColors = data["Brand Colors"]?.trimEnd();
-            fullStoryText = data["Full Story Text"]?.trimEnd();
             pronouns = [
               data["Pronoun 1"]?.trimEnd(),
               data["Pronoun 2"]?.trimEnd(),
@@ -1098,13 +1083,8 @@ class ScriptService {
             image: null,
             quizType: QUIZ_TYPE.STORY,
             stageName: lastStoryStage,
-            characterName: characterName,
-            characterImage: characterImage,
             tags: null,
-            startupExecutive,
             company,
-            brandColors,
-            fullStoryText,
             pronouns,
             questionData: questionDataArray,
           };
