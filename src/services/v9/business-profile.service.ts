@@ -108,18 +108,6 @@ class BusinessProfileService {
       const elapsedTime = moment().unix() - startTime;
       let finished = aiSuggestions?.length === 4;
       if (
-        isRetry.toString() == IS_RETRY.FALSE &&
-        !isUnderProcess &&
-        !finished &&
-        !isSystemCall
-      ) {
-        return {
-          finished: true,
-          suggestions: isFromProfile == IS_RETRY.TRUE ? null : BACKUP_LOGOS,
-          isRetry: true,
-        };
-      }
-      if (
         (!finished && !isUnderProcess) ||
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
         (isUnderProcess && elapsedTime > 200) ||
