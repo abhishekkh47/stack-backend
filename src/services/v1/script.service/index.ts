@@ -29,19 +29,16 @@ import {
   UpscaleImage,
   downloadImage,
   uploadQuizImages,
-  XP_POINTS,
   IPromptData,
   checkQuizImageExists,
   IMAGE_GENERATION_PROMPTS,
   SYSTEM,
   USER,
   IMPORT_SCRIPT,
-  ICharacterImageData,
   delay,
   CHECKLIST_QUESTION_LENGTH,
   CORRECT_ANSWER_FUEL_POINTS,
 } from "@app/utility";
-import { everyCorrectAnswerPoints } from "@app/types";
 import OpenAI from "openai";
 
 class ScriptService {
@@ -764,7 +761,7 @@ class ScriptService {
             text: data["Prompt"].trimEnd(),
             question_image: null,
             order: order,
-            points: 20,
+            points: CORRECT_ANSWER_FUEL_POINTS.SIMULATION,
             question_type: 2,
             answer_type: 2,
             answer_array: prompts.map((prompt) => ({
@@ -1069,7 +1066,7 @@ class ScriptService {
               text: data[`Question ${question}`]?.trimEnd(),
               order: ++order,
               question_image: null,
-              points: 10,
+              points: CORRECT_ANSWER_FUEL_POINTS.STORY,
               question_type: 2,
               answer_type: 2,
               answer_array: prompts.map((prompt) => ({
@@ -1415,7 +1412,7 @@ class ScriptService {
             text: data["Question"].trimEnd(),
             question_image: null,
             order: order,
-            points: 10,
+            points: CORRECT_ANSWER_FUEL_POINTS.QUIZ,
             question_type: 2,
             answer_type: 2,
             answer_array: prompts.map((prompt) => ({
