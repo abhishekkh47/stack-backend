@@ -42,25 +42,19 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      if (!userBusinessProfile.isRetry || isRetry == IS_RETRY.TRUE) {
-        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${idea}`;
-        const [textResponse, _, __] = await Promise.all([
-          BusinessProfileServiceV7.generateTextSuggestions(
-            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-            prompt
-          ),
-          BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            { $set: { isRetry: true } }
-          ),
-          AIToolsUsageStatusTable.findOneAndUpdate(
-            { userId: userExists._id },
-            { $set: aiToolUsageObj },
-            { upsert: true }
-          ),
-        ]);
-        response = JSON.parse(textResponse.choices[0].message.content);
-      }
+      const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${idea}`;
+      const [textResponse, _] = await Promise.all([
+        BusinessProfileServiceV7.generateTextSuggestions(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+          prompt
+        ),
+        AIToolsUsageStatusTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: aiToolUsageObj },
+          { upsert: true }
+        ),
+      ]);
+      response = JSON.parse(textResponse.choices[0].message.content);
       return {
         suggestions: response,
         finished: true,

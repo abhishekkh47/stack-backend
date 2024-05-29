@@ -119,36 +119,6 @@ class BusinessProfileController extends BaseController {
     );
     return this.Ok(ctx, { message: "Success", data: response });
   }
-
-  /**
-   * @description This is to get the usage status of all AI Tools
-   * @param ctx
-   * @returns {*}
-   */
-  @Route({ path: "/get-ai-tools-status", method: HttpMethod.GET })
-  @Auth()
-  public async getAIToolsStatus(ctx: any) {
-    const { user } = ctx.request;
-    const userExists = await UserTable.findOne({ _id: user._id });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const response = await AIToolsUsageStatusTable.find(
-      {
-        userId: userExists._id,
-      },
-      {
-        description: 1,
-        ideaValidation: 1,
-        targetAudience: 1,
-        companyName: 1,
-        companyLogo: 1,
-        colorsAndAesthetic: 1,
-        competitors: 1,
-      }
-    );
-    return this.Ok(ctx, { message: "success", data: response });
-  }
 }
 
 export default new BusinessProfileController();

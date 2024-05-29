@@ -13,6 +13,7 @@ import {
   UserCommunityTable,
   WeeklyJourneyResultTable,
   ChecklistResultTable,
+  AIToolsUsageStatusTable,
 } from "@app/model";
 import {
   MAX_STREAK_FREEZE,
@@ -168,6 +169,7 @@ class UserService {
       await UserTable.deleteMany(userQuery);
       await ParentChildTable.deleteMany(otherRecordsQuery);
       await ChecklistResultTable.deleteMany(otherRecordsQuery);
+      await AIToolsUsageStatusTable.deleteMany(otherRecordsQuery);
       /**
        * Store Deleted Users in a separate document
        */

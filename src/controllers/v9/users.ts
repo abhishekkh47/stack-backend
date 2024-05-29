@@ -6,6 +6,7 @@ import { Route, THINGS_TO_TALK_ABOUT } from "@app/utility";
 import { BusinessProfileService } from "@app/services/v7";
 import { CoachProfileTable, UserTable } from "@app/model";
 import { ChecklistDBService } from "@app/services/v9";
+import { UserService } from "@app/services/v9";
 
 class UserController extends BaseController {
   /**
@@ -33,6 +34,9 @@ class UserController extends BaseController {
       initialMessage = businessProfile.businessCoachInfo.initialMessage;
     }
     const topicDetails = await ChecklistDBService.getQuizTopics(userExists);
+    const userAIToolStatus = await UserService.userAIToolUsageStatus(
+      userExists
+    );
 
     let data = {
       ...userProfile.data,
@@ -45,6 +49,7 @@ class UserController extends BaseController {
           }
         : null,
       topicDetails,
+      userAIToolStatus,
     };
 
     return this.Ok(ctx, data, true);
