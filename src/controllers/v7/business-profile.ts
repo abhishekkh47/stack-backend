@@ -419,7 +419,7 @@ class BusinessProfileController extends BaseController {
         prompt,
         query.passion,
         userExists,
-        query.isRetry
+        "description"
       ),
       BusinessProfileTable.updateOne(
         { userId: user._id },
@@ -483,7 +483,7 @@ class BusinessProfileController extends BaseController {
       prompt,
       "maximize",
       userExists,
-      query.isRetry
+      "ideaValidation"
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,

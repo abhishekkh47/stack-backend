@@ -4,6 +4,7 @@ import {
   BusinessPassionTable,
   BusinessPassionAspectTable,
   UserTable,
+  AIToolsUsageStatusTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
@@ -493,12 +494,19 @@ class BusinessProfileService {
     prompt: string,
     passion: string,
     userExists: any,
-    isRetry: string
+    key: string
   ) {
     try {
-      let [response, businessPassionImages] = await Promise.all([
+      let aiToolUsageObj = {};
+      aiToolUsageObj[key] = true;
+      let [response, businessPassionImages, _] = await Promise.all([
         this.generateTextSuggestions(systemInput, prompt),
         BusinessPassionTable.find({ title: passion }),
+        AIToolsUsageStatusTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: aiToolUsageObj },
+          { upsert: true }
+        ),
       ]);
 
       /** commented this out temporary before the prompt is finalized
