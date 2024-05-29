@@ -29,17 +29,16 @@ import {
   UpscaleImage,
   downloadImage,
   uploadQuizImages,
-  XP_POINTS,
   IPromptData,
   checkQuizImageExists,
   IMAGE_GENERATION_PROMPTS,
   SYSTEM,
   USER,
   IMPORT_SCRIPT,
-  ICharacterImageData,
   delay,
+  CHECKLIST_QUESTION_LENGTH,
+  CORRECT_ANSWER_FUEL_POINTS,
 } from "@app/utility";
-import { everyCorrectAnswerPoints } from "@app/types";
 import OpenAI from "openai";
 
 class ScriptService {
@@ -357,10 +356,7 @@ class ScriptService {
                 characterName: data.characterName || null,
                 characterImage: data.characterImage || null,
                 categoryId: data.categoryId,
-                startupExecutive: data.startupExecutive,
                 company: data.company,
-                brandColors: data.brandColors,
-                fullStoryText: data.fullStoryText,
                 pronouns: data.pronouns,
               },
             },
@@ -762,7 +758,7 @@ class ScriptService {
             text: data["Prompt"].trimEnd(),
             question_image: null,
             order: order,
-            points: 20,
+            points: CORRECT_ANSWER_FUEL_POINTS.SIMULATION,
             question_type: 2,
             answer_type: 2,
             answer_array: prompts.map((prompt) => ({
@@ -920,18 +916,13 @@ class ScriptService {
       let lastStoryStage = "";
       let order = 0;
       let descriptionNum = 0;
-      let characterName = "";
-      let characterImage = "";
       let storyContentData = [];
       let questionDataArray = [];
       let questionData = null;
       let currentStoryNumber = 0;
       let questionNum = 0;
-      let startupExecutive = "";
       let company = "";
-      let brandColors = "";
       let pronouns = [];
-      let fullStoryText = "";
       let promptList: {
         [storyNumber: number]: {
           descriptions: IPromptData[];
@@ -1023,14 +1014,7 @@ class ScriptService {
             currentStoryNumber = storyNumber;
             descriptionNum = 0;
             questionNum = 0;
-            characterName = `${data["First Name"]?.trimEnd()} ${data[
-              "Last Name"
-            ]?.trimEnd()}`;
-            characterImage = data["Discord Image Link"]?.trimEnd();
-            startupExecutive = "";
             company = data["Company"]?.trimEnd().split('"')[1];
-            brandColors = data["Brand Colors"]?.trimEnd();
-            fullStoryText = data["Full Story Text"]?.trimEnd();
             pronouns = [
               data["Pronoun 1"]?.trimEnd(),
               data["Pronoun 2"]?.trimEnd(),
@@ -1067,7 +1051,7 @@ class ScriptService {
               text: data[`Question ${question}`]?.trimEnd(),
               order: ++order,
               question_image: null,
-              points: 10,
+              points: CORRECT_ANSWER_FUEL_POINTS.STORY,
               question_type: 2,
               answer_type: 2,
               answer_array: prompts.map((prompt) => ({
@@ -1098,13 +1082,8 @@ class ScriptService {
             image: null,
             quizType: QUIZ_TYPE.STORY,
             stageName: lastStoryStage,
-            characterName: characterName,
-            characterImage: characterImage,
             tags: null,
-            startupExecutive,
             company,
-            brandColors,
-            fullStoryText,
             pronouns,
             questionData: questionDataArray,
           };
@@ -1181,16 +1160,18 @@ class ScriptService {
           currentQuizId = quizId?._id || null;
           if (data["Type"] == "simulation") {
             type = 2;
-            currentReward = XP_POINTS.SIMULATION_QUIZ;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.SIMULATION *
+              CORRECT_ANSWER_FUEL_POINTS.SIMULATION;
           } else if (data["Type"] == "story") {
             type = 3;
-            currentReward = 4 * everyCorrectAnswerPoints;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.STORY *
+              CORRECT_ANSWER_FUEL_POINTS.STORY;
           } else {
-            const quizCount = await QuizQuestionTable.countDocuments({
-              quizId: quizId,
-            });
             type = 1;
-            currentReward = quizCount * everyCorrectAnswerPoints || 0;
+            currentReward =
+              CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
           }
         }
         if (Number(parseInt(data["Identifier"]?.trimEnd())) || type == 4) {
@@ -1411,7 +1392,7 @@ class ScriptService {
             text: data["Question"].trimEnd(),
             question_image: null,
             order: order,
-            points: 10,
+            points: CORRECT_ANSWER_FUEL_POINTS.QUIZ,
             question_type: 2,
             answer_type: 2,
             answer_array: prompts.map((prompt) => ({

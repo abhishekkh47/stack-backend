@@ -76,11 +76,8 @@ export interface IQuiz {
   quizType: number;
   characterName: string;
   characterImage: string;
-  startupExecutive: string;
   company: string;
-  brandColors: string;
   pronouns: string[];
-  fullStoryText: string;
 }
 
 export interface IQuizResult {
