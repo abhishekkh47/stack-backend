@@ -82,7 +82,7 @@ class BusinessProfileScriptService {
    * @param rows
    * @returns {*}
    */
-  public async convertPassionSpreadSheetToJSON(rows: any) {
+  public async convertPassionSpreadSheetToJSON(rows: any, type: number) {
     const allPassions = [];
     const tempData = {};
     let order = 0;
@@ -98,6 +98,7 @@ class BusinessProfileScriptService {
             item["Business Image 2"],
             item["Business Image 3"],
           ],
+          type: type,
           category: {},
         };
       }
@@ -107,6 +108,7 @@ class BusinessProfileScriptService {
           title: item["Sub-Category"],
           image: item["Sub-Category Image"],
           problem: [],
+          type: type,
         };
       }
 
@@ -135,13 +137,14 @@ class BusinessProfileScriptService {
       passions.map((data) => {
         let bulkWriteObject = {
           updateOne: {
-            filter: { title: data.title },
+            filter: { title: data.title, type: data.type },
             update: {
               $set: {
                 title: data.title,
                 order: data.order,
                 image: data.image,
                 businessImages: data.businessImages,
+                type: data.type,
               },
             },
             upsert: true,
@@ -160,7 +163,10 @@ class BusinessProfileScriptService {
           data.category.map((sub_category) => {
             let bulkWriteObject = {
               updateOne: {
-                filter: { aspect: sub_category["title"] },
+                filter: {
+                  aspect: sub_category["title"],
+                  type: sub_category.type,
+                },
                 update: {
                   $set: {
                     aspect: sub_category["title"],

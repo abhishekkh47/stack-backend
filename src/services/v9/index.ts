@@ -2,3 +2,4 @@ export { default as BusinessProfileService } from "@app/services/v9/business-pro
 export { default as CoachDBService } from "@app/services/v9/coach.db.service";
 export { default as ChecklistDBService } from "@app/services/v9/checklist-journey.db.service";
 export { default as QuizDBService } from "@app/services/v9/quiz.db.service";
+export { default as UserService } from "@app/services/v9/user.service";

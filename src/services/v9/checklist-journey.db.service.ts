@@ -31,7 +31,11 @@ class ChecklistDBService {
         QuizTopicTable.find({ type: 4 }, { topic: 1, order: 1 })
           .sort({ order: 1 })
           .lean(),
-        ChecklistResultTable.find({ userId: (userIfExists as any)._id }),
+        ChecklistResultTable.find({ userId: (userIfExists as any)._id })
+          .sort({
+            createdAt: -1,
+          })
+          .lean(),
       ]);
 
       let topics = quizTopics.map((topic) => {
@@ -43,7 +47,12 @@ class ChecklistDBService {
         const userProgress = Math.ceil(
           (numCompletedQuizzes / totalQuizzes) * 100
         );
-        return { ...topic, userProgress };
+        const currentLevel = topicQuizzes.length
+          ? topicQuizzes[0].actionNum == 4
+            ? topicQuizzes[0].level + 1
+            : topicQuizzes[0].level
+          : 1;
+        return { ...topic, userProgress, currentLevel };
       });
 
       return topics;
@@ -430,7 +439,7 @@ class ChecklistDBService {
   }
 
   /**
-   * @description get all Topics and current level in each topic
+   * @description get all Topics and their categories
    * @returns {*}
    */
   public async getFocusArea() {
@@ -477,7 +486,6 @@ class ChecklistDBService {
       startFromScratch.categories = [...focusAreas[0].categories];
       focusAreas.push(startFromScratch);
       focusAreas.map((area) => {
-        area.categories.unshift(PERFECT_IDEA);
         area.categories.sort((a, b) => a.order - b.order);
       });
 

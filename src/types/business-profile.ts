@@ -48,6 +48,12 @@ export interface IBusinessProfile {
   logoGenerationInfo: ILogoGenerationInfo;
   businessCoachInfo: IBusinessCoachInfo;
   enableStealthMode: boolean;
+  hoursPerWeek: string;
+  technicalExperience: string;
+  investments: string;
+  businessType: number;
+  businessPreferences: IBusinessPreferences;
+  businessHistory: IBusinessHistory[];
 }
 
 export interface ILogoGenerationInfo {
@@ -60,4 +66,28 @@ export interface ILogoGenerationInfo {
 export interface IBusinessCoachInfo {
   coachId: mongoose.Schema.Types.ObjectId;
   initialMessage: string;
+}
+
+interface IBusinessPreferences {
+  passion: string;
+  aspect: string;
+  problem: string;
+}
+
+interface IBusinessHistory {
+  key: string;
+  value: mongoose.Schema.Types.Mixed;
+  timestamp: Date;
+  image: string;
+}
+
+export interface IAIToolsUsageStatus {
+  userId: mongoose.Schema.Types.ObjectId;
+  description: boolean;
+  ideaValidation: boolean;
+  companyName: boolean;
+  companyLogo: boolean;
+  targetAudience: boolean;
+  competitors: boolean;
+  colorsAndAesthetic: boolean;
 }

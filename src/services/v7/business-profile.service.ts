@@ -4,6 +4,7 @@ import {
   BusinessPassionTable,
   BusinessPassionAspectTable,
   UserTable,
+  AIToolsUsageStatusTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
@@ -46,13 +47,26 @@ class BusinessProfileService {
   ) {
     try {
       let obj = {};
-      // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-description and opportunity highlight
+      let businessHistoryObj = {};
+      // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-idea, description and ratings
       const businessProfileData = await BusinessProfileTable.findOne({
         userId: userIfExists._id,
       });
       if (data.businessIdeaInfo) {
+        // save business description and opportunity
+        // data.businessIdeaInfo will have 'idea', 'description' and 'ratings'
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
+        obj[data.businessIdeaInfo[2].key] = data.businessIdeaInfo[2].value;
+        businessHistoryObj = {
+          key: data.type, // type = description or ideaValidation
+          value: {
+            idea: data.businessIdeaInfo[0].value,
+            description: data.businessIdeaInfo[1].value,
+            ratings: data.businessIdeaInfo[2].value,
+          },
+          timestamp: Date.now(),
+        };
         if (!businessProfileData) {
           obj["hoursSaved"] = HOURS_SAVED_BY_IDEA_GENERATOR;
         }
@@ -76,6 +90,11 @@ class BusinessProfileService {
           obj["hoursSaved"] =
             businessProfileData.hoursSaved + getHoursSaved[0].hoursSaved;
         }
+        businessHistoryObj = {
+          key: data.key,
+          value: data.value,
+          timestamp: Date.now(),
+        };
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -83,6 +102,7 @@ class BusinessProfileService {
         },
         {
           $set: obj,
+          $push: { businessHistory: businessHistoryObj },
         },
         { upsert: true }
       );
@@ -474,26 +494,114 @@ class BusinessProfileService {
     prompt: string,
     passion: string,
     userExists: any,
-    isRetry: string
+    key: string
   ) {
     try {
-      let [response, businessPassionImages] = await Promise.all([
+      let aiToolUsageObj = {};
+      aiToolUsageObj[key] = true;
+      let [response, businessPassionImages, _] = await Promise.all([
         this.generateTextSuggestions(systemInput, prompt),
         BusinessPassionTable.find({ title: passion }),
+        AIToolsUsageStatusTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: aiToolUsageObj },
+          { upsert: true }
+        ),
       ]);
 
-      if (
-        !response.choices[0].message.content.includes("businessDescription") ||
-        !response.choices[0].message.content.includes("opportunityHighlight")
-      ) {
-        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
-      }
-
-      let newResponse = JSON.parse(response.choices[0].message.content);
+      /** commented this out temporary before the prompt is finalized
+            if (
+              !response.choices[0].message.content.includes("businessDescription") ||
+              !response.choices[0].message.content.includes("opportunityHighlight")
+            ) {
+              throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+            }
+      
+            let newResponse = JSON.parse(response.choices[0].message.content);
+      */
+      //NATALIE ADDED mock response for generated ideas
+      let newResponse = [
+        {
+          idea: "LinkedIn for Local Sports",
+          description:
+            "An app matching players with similar skill levels for local pickup games, complete with profiles and verified skill ratings.",
+          ratings: [
+            {
+              criteria: "Uniqueness",
+              level: 78,
+              info: "info on medium market competition",
+              image: "uniqueness.png",
+            },
+            {
+              criteria: "Market Size",
+              level: 93,
+              info: "info on high market size",
+              image: "marketsize.png",
+            },
+            {
+              criteria: "Complexity",
+              level: 50,
+              info: "info on medium difficulty to build",
+              image: "complexity.png",
+            },
+          ],
+        },
+        {
+          idea: "Uber for Pickup Games",
+          description:
+            "An on-demand app that quickly connects users with nearby pickup games of matching skill levels and provides real-time game updates.",
+          ratings: [
+            {
+              criteria: "Uniqueness",
+              level: 70,
+              info: "info on low market competition",
+              image: "uniqueness.png",
+            },
+            {
+              criteria: "Market Size",
+              level: 90,
+              info: "info on high market size",
+              image: "marketsize.png",
+            },
+            {
+              criteria: "Complexity",
+              level: 100,
+              info: "info on medium difficulty to build",
+              image: "complexity.png",
+            },
+          ],
+        },
+        {
+          idea: "Discord for Sports Communities",
+          description:
+            "A platform where local player communities can organize games, chat, and create skill-level specific events or tournaments.",
+          ratings: [
+            {
+              criteria: "Uniqueness",
+              level: 65,
+              info: "info on low market competition",
+              image: "uniqueness.png",
+            },
+            {
+              criteria: "Market Size",
+              level: 95,
+              info: "info on high market size",
+              image: "marketsize.png",
+            },
+            {
+              criteria: "Complexity",
+              level: 30,
+              info: "info on medium difficulty to build",
+              image: "complexity.png",
+            },
+          ],
+        },
+      ];
       if (!businessPassionImages.length) {
         newResponse.map(
           (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
         );
+        newResponse = [newResponse[0]];
       } else {
         newResponse.map(
           (idea, idx) =>
@@ -515,12 +623,15 @@ class BusinessProfileService {
     try {
       let response = [];
       if (data.key == BUSINESS_PREFERENCE.PASSION) {
-        response = await BusinessPassionTable.find({})
+        response = await BusinessPassionTable.find({
+          type: Number(data.businessType),
+        })
           .select("image title")
           .sort({ order: 1 });
       } else if (data.key == BUSINESS_PREFERENCE.ASPECT) {
         const aspectsData = await BusinessPassionAspectTable.find({
           businessPassionId: data._id,
+          type: Number(data.businessType),
         }).select("aspect aspectImage");
         response = aspectsData.map((aspect) => ({
           _id: aspect._id,
@@ -529,15 +640,21 @@ class BusinessProfileService {
         }));
       } else if (data.key == BUSINESS_PREFERENCE.PROBLEM) {
         let order = 0;
-        const problemsData = await BusinessPassionAspectTable.find({
+        const problemsData = await BusinessPassionAspectTable.findOne({
           _id: data._id,
         }).select("problems");
-        problemsData[0].problems.map((problem) => {
+        problemsData.problems.map((problem) => {
           response.push({
             _id: ++order,
             title: problem,
             image: null,
           });
+        });
+        // add additional object for user to enter their own problem description
+        response.push({
+          _id: ++order,
+          title: "Choose my own Problem",
+          image: null,
         });
       }
       return response;

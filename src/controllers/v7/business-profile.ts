@@ -4,6 +4,7 @@ import {
   UserTable,
   WeeklyJourneyResultTable,
   ActionScreenCopyTable,
+  AIToolsUsageStatusTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
@@ -48,13 +49,6 @@ class BusinessProfileController extends BaseController {
         userIfExists,
         actionScreenData
       );
-      if (body.focusAreaTopic) {
-        await UserTable.findOneAndUpdate(
-          { _id: userIfExists._id },
-          { $set: { focusAreaTopic: body.focusAreaTopic } },
-          { upsert: true }
-        );
-      }
       (async () => {
         zohoCrmService.addAccounts(
           ctx.request.zohoAccessToken,
@@ -146,10 +140,20 @@ class BusinessProfileController extends BaseController {
         startTime: 0,
       };
     }
+    const businessHistoryObj = {
+      key: "companyLogo",
+      value: imageName,
+      timestamp: Date.now(),
+    };
+    let aiToolUsageObj = {};
+    aiToolUsageObj["companyLogo"] = true;
     await Promise.all([
       BusinessProfileTable.updateOne(
         { userId: userExists._id },
-        { $set: businessProfileObj },
+        {
+          $set: businessProfileObj,
+          $push: { businessHistory: businessHistoryObj },
+        },
         { upsert: true }
       ),
       body?.weeklyJourneyId
@@ -170,6 +174,11 @@ class BusinessProfileController extends BaseController {
             { upsert: true }
           ).then(() => UserService.updateUserScore(userExists, body, imageName))
         : Promise.resolve(),
+      AIToolsUsageStatusTable.findOneAndUpdate(
+        { userId: userExists._id },
+        { $set: aiToolUsageObj },
+        { upsert: true }
+      ),
     ]);
     const zohoInfo = {
       companyLogo: imageName,
@@ -365,6 +374,13 @@ class BusinessProfileController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (!query.businessType) {
+      return this.BadRequest(ctx, "Please Select a Business Type");
+    }
+    await BusinessProfileTable.updateOne(
+      { userId: user._id },
+      { $set: { businessType: Number(query.businessType) } }
+    );
     const businessPreference =
       await BusinessProfileService.getBusinessPreference(query);
     return this.Ok(ctx, { message: "Success", data: businessPreference });
@@ -391,14 +407,25 @@ class BusinessProfileController extends BaseController {
     if (!query.category || !query.problem || !query.passion) {
       return this.BadRequest(ctx, "Provide a Category and Problem");
     }
+    const obj = {
+      passion: query.passion,
+      aspect: query.category,
+      problem: query.problem,
+    };
     const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
-    const businessIdea = await BusinessProfileService.generateBusinessIdea(
-      SYSTEM_INPUT.SYSTEM,
-      prompt,
-      query.passion,
-      userExists,
-      query.isRetry
-    );
+    const [businessIdea, _] = await Promise.all([
+      BusinessProfileService.generateBusinessIdea(
+        SYSTEM_INPUT.SYSTEM,
+        prompt,
+        query.passion,
+        userExists,
+        "description"
+      ),
+      BusinessProfileTable.updateOne(
+        { userId: user._id },
+        { $set: { businessPreferences: obj } }
+      ),
+    ]);
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.PASSION_SUBMITTED,
       {
@@ -456,7 +483,7 @@ class BusinessProfileController extends BaseController {
       prompt,
       "maximize",
       userExists,
-      query.isRetry
+      "ideaValidation"
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,

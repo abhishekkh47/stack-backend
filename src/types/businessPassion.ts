@@ -4,6 +4,7 @@ export interface IBusinessPassion {
   image: string;
   order: number;
   businessImages: string[];
+  type: number;
 }
 
 export interface IBusinessPassionAspect {
@@ -11,4 +12,5 @@ export interface IBusinessPassionAspect {
   businessPassionId: mongoose.Schema.Types.ObjectId;
   aspectImage: string;
   problems: string[];
+  type: number;
 }

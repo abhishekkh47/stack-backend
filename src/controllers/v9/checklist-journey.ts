@@ -23,8 +23,8 @@ class ChecklistJourneyController extends BaseController {
       data: { topicDetails, focusAreaTopic: userExists.focusAreaTopic || null },
     });
   }
-  
-   /*
+
+  /*
    * @description This method is to fetch quiz topics
    * @param ctx
    * @returns {*}
@@ -109,6 +109,27 @@ class ChecklistJourneyController extends BaseController {
       body
     );
     return this.Ok(ctx, { data: categoryDetails });
+  }
+
+  /**
+   * @description This is to submit the selected 'focus area topic' from the onboarding flow
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/submit-focus-area", method: HttpMethod.POST })
+  @Auth()
+  public async submitFocusArea(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    await UserTable.findOneAndUpdate(
+      { _id: userExists._id },
+      { $set: { focusAreaTopic: body.focusAreaTopic } },
+      { upsert: true }
+    );
+    return this.Ok(ctx, { message: "success" });
   }
 }
 

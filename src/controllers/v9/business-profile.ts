@@ -1,5 +1,9 @@
 import { Auth } from "@app/middleware";
-import { BusinessProfileTable, UserTable, ProUserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  AIToolsUsageStatusTable,
+} from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
 import BaseController from "../base";
@@ -14,7 +18,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getAISuggestion(ctx: any) {
     const { user, query, headers } = ctx.request;
-    const { key, isRetry, isFromProfile } = query;
+    const { key, isRetry, isFromProfile, idea } = query;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
@@ -51,14 +55,16 @@ class BusinessProfileController extends BaseController {
         isRetry,
         headers.requestid,
         false,
-        isFromProfile
+        isFromProfile,
+        idea
       );
     } else {
       response = await BusinessProfileService.generateAISuggestions(
         userExists,
         key,
         userBusinessProfile,
-        isRetry
+        isRetry,
+        idea
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });
@@ -85,6 +91,33 @@ class BusinessProfileController extends BaseController {
       return this.BadRequest(ctx, "User Not Found");
     }
     return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is to get history of business tools used
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-business-history", method: HttpMethod.GET })
+  @Auth()
+  public async getBusinessHistory(ctx: any) {
+    const { user } = ctx.request;
+    const [userExists, businessProfile] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }).select(
+        "businessHistory"
+      ),
+    ]);
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!businessProfile) {
+      return this.BadRequest(ctx, "Business Details Not Found");
+    }
+    const response = await BusinessProfileService.getBusinessHistory(
+      businessProfile.businessHistory
+    );
+    return this.Ok(ctx, { message: "Success", data: response });
   }
 }
 

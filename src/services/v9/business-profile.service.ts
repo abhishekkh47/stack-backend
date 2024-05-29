@@ -1,4 +1,8 @@
-import { BusinessProfileTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  UserTable,
+  AIToolsUsageStatusTable,
+} from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
   INVALID_DESCRIPTION_ERROR,
@@ -25,24 +29,32 @@ class BusinessProfileService {
     userExists: any,
     key: string,
     userBusinessProfile: any,
-    isRetry: any = false
+    isRetry: any = false,
+    idea: string = null
   ) {
     try {
       let response = null;
-      if (!userBusinessProfile.isRetry || isRetry == IS_RETRY.TRUE) {
-        const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${userBusinessProfile.description}`;
-        const [textResponse, _] = await Promise.all([
-          BusinessProfileServiceV7.generateTextSuggestions(
-            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-            prompt
-          ),
-          BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            { $set: { isRetry: true } }
-          ),
-        ]);
-        response = JSON.parse(textResponse.choices[0].message.content);
+      if (!idea) {
+        throw new NetworkError(
+          "Please provide a valid business description",
+          404
+        );
       }
+      let aiToolUsageObj = {};
+      aiToolUsageObj[key] = true;
+      const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${idea}`;
+      const [textResponse, _] = await Promise.all([
+        BusinessProfileServiceV7.generateTextSuggestions(
+          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+          prompt
+        ),
+        AIToolsUsageStatusTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: aiToolUsageObj },
+          { upsert: true }
+        ),
+      ]);
+      response = JSON.parse(textResponse.choices[0].message.content);
       return {
         suggestions: response,
         finished: true,
@@ -74,7 +86,8 @@ class BusinessProfileService {
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
     isSystemCall: boolean = false,
-    isFromProfile: string = IS_RETRY.FALSE
+    isFromProfile: string = IS_RETRY.FALSE,
+    idea: string = null
   ) {
     try {
       let response = null;
@@ -95,24 +108,12 @@ class BusinessProfileService {
       const elapsedTime = moment().unix() - startTime;
       let finished = aiSuggestions?.length === 4;
       if (
-        isRetry.toString() == IS_RETRY.FALSE &&
-        !isUnderProcess &&
-        !finished &&
-        !isSystemCall
-      ) {
-        return {
-          finished: true,
-          suggestions: isFromProfile == IS_RETRY.TRUE ? null : BACKUP_LOGOS,
-          isRetry: true,
-        };
-      }
-      if (
         (!finished && !isUnderProcess) ||
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
         (isUnderProcess && elapsedTime > 200) ||
         isSystemCall
       ) {
-        const prompt = `Business Name:${companyName}, Business Description: ${description}`;
+        const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
@@ -188,6 +189,61 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    }
+  }
+
+  /**
+   * @description get business history in descending order of dates
+   * @returns {*}
+   */
+  public async getBusinessHistory(businessProfile) {
+    try {
+      const today = new Date(Date.now()).toLocaleDateString();
+      const sortedHistory = businessProfile.sort(
+        (a, b) => b.timestamp - a.timestamp
+      );
+
+      const groupedHistory = sortedHistory.reduce((acc, entry) => {
+        const date = new Date(entry.timestamp);
+        const year = date.getFullYear();
+        const month = date.toLocaleString("default", { month: "long" });
+        const day = date.toLocaleDateString();
+
+        const groupKey = day == today ? "Today" : `In ${month} ${year}`;
+
+        if (!acc[groupKey]) {
+          acc[groupKey] = [];
+        }
+
+        acc[groupKey].push({
+          key: entry.key,
+          value: entry.value,
+          timestamp: entry.timestamp,
+          day: day,
+        });
+        return acc;
+      }, {});
+
+      let periodId = 0;
+      const response = Object.entries(groupedHistory).map(
+        ([key, values]: any) => {
+          let order = 0;
+          return {
+            _id: ++periodId,
+            title: key,
+            data: values.map(({ key, value, day }) => ({
+              _id: ++order,
+              key: key,
+              details: value,
+              date: day,
+            })),
+          };
+        }
+      );
+
+      return response;
+    } catch (error) {
+      throw new NetworkError("Data not found", 400);
     }
   }
 }
