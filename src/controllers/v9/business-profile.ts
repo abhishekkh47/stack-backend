@@ -1,9 +1,5 @@
 import { Auth } from "@app/middleware";
-import {
-  BusinessProfileTable,
-  UserTable,
-  AIToolsUsageStatusTable,
-} from "@app/model";
+import { BusinessProfileTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
 import BaseController from "../base";
@@ -18,7 +14,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getAISuggestion(ctx: any) {
     const { user, query, headers } = ctx.request;
-    const { key, isRetry, isFromProfile, idea } = query;
+    const { key, isRetry, idea } = query;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
@@ -54,8 +50,6 @@ class BusinessProfileController extends BaseController {
         userBusinessProfile,
         isRetry,
         headers.requestid,
-        false,
-        isFromProfile,
         idea
       );
     } else {
@@ -63,7 +57,6 @@ class BusinessProfileController extends BaseController {
         userExists,
         key,
         userBusinessProfile,
-        isRetry,
         idea
       );
     }
@@ -112,7 +105,7 @@ class BusinessProfileController extends BaseController {
       return this.BadRequest(ctx, "User Not Found");
     }
     if (!businessProfile) {
-      return this.BadRequest(ctx, "Business Details Not Found");
+      return this.Ok(ctx, { message: "Success", data: [] });
     }
     const response = await BusinessProfileService.getBusinessHistory(
       businessProfile.businessHistory

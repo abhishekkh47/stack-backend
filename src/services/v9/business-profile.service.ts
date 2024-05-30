@@ -22,14 +22,13 @@ class BusinessProfileService {
    * @param userExists
    * @param key
    * @param userBusinessProfile
-   * @param isRetry
+   * @param idea user input to generate business logo
    * @returns {*}
    */
   public async generateAISuggestions(
     userExists: any,
     key: string,
     userBusinessProfile: any,
-    isRetry: any = false,
     idea: string = null
   ) {
     try {
@@ -75,8 +74,7 @@ class BusinessProfileService {
    * @param userBusinessProfile
    * @param isRetry
    * @param requestId
-   * @param isSystemCall signifies that the function call has been made by system internally, when user completes day-2, quiz-1 to generate images before user plays action-3
-   * @param isFromProfile this will be true if user generate AI logos by visiting the profile page
+   * @param idea user input to generate business logo
    * @returns {*}
    */
   public async generateAILogos(
@@ -85,8 +83,6 @@ class BusinessProfileService {
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
-    isSystemCall: boolean = false,
-    isFromProfile: string = IS_RETRY.FALSE,
     idea: string = null
   ) {
     try {
@@ -97,21 +93,14 @@ class BusinessProfileService {
         { upsert: true }
       );
 
-      const { logoGenerationInfo, companyName, description } =
-        userBusinessProfile;
-      const {
-        aiSuggestions,
-        isUnderProcess,
-        startTime,
-        isInitialSuggestionsCompleted,
-      } = logoGenerationInfo;
+      const { logoGenerationInfo, companyName } = userBusinessProfile;
+      const { aiSuggestions, isUnderProcess, startTime } = logoGenerationInfo;
       const elapsedTime = moment().unix() - startTime;
       let finished = aiSuggestions?.length === 4;
       if (
         (!finished && !isUnderProcess) ||
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
-        (isUnderProcess && elapsedTime > 200) ||
-        isSystemCall
+        (isUnderProcess && elapsedTime > 200)
       ) {
         const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
         const [textResponse, _] = await Promise.all([
@@ -148,30 +137,6 @@ class BusinessProfileService {
           },
           { upsert: true }
         );
-      }
-      if (
-        isUnderProcess &&
-        isRetry == IS_RETRY.FALSE &&
-        !isInitialSuggestionsCompleted &&
-        isFromProfile == IS_RETRY.FALSE
-      ) {
-        await BusinessProfileTable.findOneAndUpdate(
-          { userId: userExists._id },
-          {
-            $set: {
-              "logoGenerationInfo.isUnderProcess": false,
-              "logoGenerationInfo.startTime": moment().unix(),
-              "logoGenerationInfo.aiSuggestions": response,
-              "logoGenerationInfo.isInitialSuggestionsCompleted": true,
-            },
-          },
-          { upsert: true }
-        );
-        return {
-          finished: true,
-          suggestions: BACKUP_LOGOS,
-          isRetry: true,
-        };
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
