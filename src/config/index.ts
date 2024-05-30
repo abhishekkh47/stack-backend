@@ -218,4 +218,7 @@ export default {
   get CONTENT_PASSIONS_SHEET_GID() {
     return process.env.CONTENT_PASSIONS_SHEET_GID;
   },
+  get SOFTWARE_PASSIONS_SHEET_GID() {
+    return process.env.SOFTWARE_PASSIONS_SHEET_GID;
+  },
 };
