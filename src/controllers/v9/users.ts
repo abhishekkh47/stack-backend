@@ -44,8 +44,7 @@ class UserController extends BaseController {
     );
     let currentLeague = leagues.find(
       (x) =>
-        x.minPoint <= (userExists.xpPoints || 1) &&
-        x.maxPoint >= userExists.xpPoints
+        x.minPoint <= userExists.xpPoints && x.maxPoint >= userExists.xpPoints
     );
 
     let data = {
