@@ -120,23 +120,23 @@ class BusinessProfileService {
             { upsert: true }
           ),
         ]);
-        const imageURLs =
-          await BusinessProfileServiceV7.generateImageSuggestions(
-            textResponse.choices[0].message.content
-          );
-        response = [...imageURLs];
-        await BusinessProfileTable.findOneAndUpdate(
-          { userId: userExists._id },
-          {
-            $set: {
-              "logoGenerationInfo.isUnderProcess": false,
-              "logoGenerationInfo.startTime": moment().unix(),
-              "logoGenerationInfo.aiSuggestions": response,
-              "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+        BusinessProfileServiceV7.generateImageSuggestions(
+          textResponse.choices[0].message.content
+        ).then(async (imageUrls) => {
+          response = [...imageUrls];
+          await BusinessProfileTable.findOneAndUpdate(
+            { userId: userExists._id },
+            {
+              $set: {
+                "logoGenerationInfo.isUnderProcess": false,
+                "logoGenerationInfo.startTime": moment().unix(),
+                "logoGenerationInfo.aiSuggestions": response,
+                "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+              },
             },
-          },
-          { upsert: true }
-        );
+            { upsert: true }
+          );
+        });
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
