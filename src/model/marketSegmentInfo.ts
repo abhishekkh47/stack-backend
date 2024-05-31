@@ -35,7 +35,7 @@ const schema = new mongoose.Schema<IMarketSegmentInfoType>(
     timestamps: true,
   }
 );
-export const marketSegmentInfoTable = mongoose.model<IMarketSegmentInfoType>(
+export const MarketSegmentInfoTable = mongoose.model<IMarketSegmentInfoType>(
   "market_segment_info",
   schema
 );

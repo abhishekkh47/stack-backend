@@ -18,6 +18,7 @@ import {
   ANALYTICS_EVENTS,
   IMAGE_ACTIONS,
   IS_RETRY,
+  BUSINESS_TYPE,
 } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService, UserService } from "@app/services/v7";
@@ -412,14 +413,16 @@ class BusinessProfileController extends BaseController {
       aspect: query.category,
       problem: query.problem,
     };
+    const systemInputDataset = SYSTEM_INPUT[BUSINESS_TYPE[query.businessType]];
     const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
     const [businessIdea, _] = await Promise.all([
       BusinessProfileService.generateBusinessIdea(
-        SYSTEM_INPUT.SYSTEM,
+        systemInputDataset,
         prompt,
         query.passion,
         userExists,
-        "description"
+        "description",
+        query.businessType
       ),
       BusinessProfileTable.updateOne(
         { userId: user._id },
@@ -479,11 +482,12 @@ class BusinessProfileController extends BaseController {
     }
     const prompt = `problem: ${query.idea}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
-      SYSTEM_INPUT.USER,
+      SYSTEM_INPUT[BUSINESS_TYPE[1]],
       prompt,
       "maximize",
       userExists,
-      "ideaValidation"
+      "ideaValidation",
+      1
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,

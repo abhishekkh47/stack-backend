@@ -469,4 +469,692 @@ export const SYSTEM_INPUT = {
   Example 4
   Company Name: MentorCraft
   Website: ["MentorCraftHub.com", "MentorCraft.com","MentorCraftHub.io","MentorCraft.ai"]`,
+
+  SYSTEM_PHYSICAL_PRODUCT: {
+    DISRUPTION: `Objective: Generate a unique and innovative physical product business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
+    The idea must correlate to one of the following market segments. Choose the segment that is closest to the user input from the list below:
+    Portable Audio
+    VR Headsets
+    PC Gaming Hardware
+    Action Figures
+    Trading Cards
+    Educational Toys
+    Outdoor Gear
+    BBQ Equipment
+    Hiking Gear
+    Electric Bikes
+    Water Sports Equipment
+    Leisure Products
+    Adventure Equipment
+    Gourmet Foods
+    Luxury Clothing
+    Luxury Accessories
+    Luxury Outerwear
+    Fast Fashion
+    High-End Fashion
+    Sustainable Fashion
+    Streetwear
+    Athleisure Clothing
+    Athleisure Footwear
+    Yoga Gear
+    Fitness Accessories
+    Running Accessories
+    Supplements
+    Home Gym Equipment
+    Fitness Equipment
+    Fitness Apparel
+    Fitness Tracking
+    Kitchen Appliances
+    Health Foods
+    Fitness Supplements
+    Skincare Products
+    Luxury Skincare
+    Natural Skincare
+    Luxury Makeup
+    Professional Makeup
+    Organic Makeup
+    Dog Food
+    Aromatherapy
+    Mattresses
+    Sleep Accessories
+    Essential Oils
+    Diffusers
+    Natural Remedies
+    Art Supplies
+    Pickleball Equipment
+    Autographed Merchandise
+    Group Games
+    Gift Items
+    Party Games
+    Beach Gear
+    Food Tours
+    Nutrition for Runners
+    Cocktail Kits
+    Vitamins & Minerals
+    Dog Toys
+    Dog Accessories
+    Mindfulness Journals
+    Aromatherapy for Sleep
+    Plant Care Products
+    Do not generate or use any market segments that are not included in this list.
+    The idea will always be a physical product solution, not a software product or service business. The idea will focus on a specific niche and include one key differentiating feature that sets it apart from existing solutions for each.
+    The idea should be groundbreaking, applying a novel approach not seen in the industry before. Consider the following aspects when crafting this idea:
+    Offer a scalable solution that can be easily manufactured and distributed across multiple markets or geographies.
+    Demonstrate strong brand loyalty and customer retention, where satisfied customers become advocates for the product.
+    Leverage cutting-edge technologies (e.g., 3D printing, advanced robotics, smart materials) to create a significant competitive advantage or unique selling proposition.
+    Disrupt traditional industries by introducing a dramatically more efficient, convenient, or cost-effective physical product alternative.
+    Create a new market or category by offering a unique physical product that addresses previously unrecognized needs.
+    Address a price-insensitive problem that consumers already pay money to solve, ensuring strong demand and revenue potential.
+    Involve a streamlined supply chain and efficient manufacturing processes to ensure cost-effectiveness and profitability at scale.
+    Describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. Also provide the market segment you chose the idea from in a separate line below the idea. Do not use any market segments that are not on the list.
+    Lastly, generate a catchy short description for the business idea in 6 words or less. The description should generate curiosity while also clearly describing the business idea. Aim to highlight the unique value proposition. This will precede the business idea on its own line.
+    After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
+    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+    Input:
+    Finding eco-friendly children's toys
+    Output:
+    {
+      "description": "Eco-friendly Children's Blocks",
+      "idea": "Modular, eco-friendly building blocks made from recycled materials with interlocking mechanisms for enhanced stability and creativity.",
+      "segment": "Educational Toys"
+    }
+    Input:
+    Finding luxury sleepwear
+    Output:
+    {
+      "description": "Temperature-Regulating Luxury Sleepwear",
+      "idea": "Temperature-regulating luxury sleepwear with advanced fabric technology for optimal comfort and sleep quality.",
+      "segment": "Luxury Clothing"
+    }
+    Input:
+    Home Cooking. Organizing Kitchen Tools and Supplies
+    Output:
+    {
+      "description": "Modular Space-Saving Cookware",
+      "idea": "Smart, modular cookware set with interchangeable handles and lids, featuring space-saving stackable design for efficient storage and cooking.",
+      "segment": "Kitchen Appliances"
+    }
+    Input:
+    Health & Nutrition. Creating a supplement plan
+    Output:
+    {
+      "description": "DNA-personalized Nutrition Supplements",
+      "idea": "Personalized fitness supplements with DNA-based formulations for optimal nutrient absorption and performance enhancement.",
+      "segment": "Fitness Supplements"
+    }
+    Input:
+    Taking care of indoor plants
+    Output:
+    {
+      "description": "Smart Plant Care System",
+      "idea": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
+      "segment": "Plant Care Products"
+    }`,
+    MARKET_SIZE: `Objective: Generate a unique and innovative physical product business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
+    The idea must correlate to one of the following market segments. Choose the segment that is closest to the user input from the list below:
+    Portable Audio
+    VR Headsets
+    PC Gaming Hardware
+    Action Figures
+    Trading Cards
+    Educational Toys
+    Outdoor Gear
+    BBQ Equipment
+    Hiking Gear
+    Electric Bikes
+    Water Sports Equipment
+    Leisure Products
+    Adventure Equipment
+    Gourmet Foods
+    Luxury Clothing
+    Luxury Accessories
+    Luxury Outerwear
+    Fast Fashion
+    High-End Fashion
+    Sustainable Fashion
+    Streetwear
+    Athleisure Clothing
+    Athleisure Footwear
+    Yoga Gear
+    Fitness Accessories
+    Running Accessories
+    Supplements
+    Home Gym Equipment
+    Fitness Equipment
+    Fitness Apparel
+    Fitness Tracking
+    Kitchen Appliances
+    Health Foods
+    Fitness Supplements
+    Skincare Products
+    Luxury Skincare
+    Natural Skincare
+    Luxury Makeup
+    Professional Makeup
+    Organic Makeup
+    Dog Food
+    Aromatherapy
+    Mattresses
+    Sleep Accessories
+    Essential Oils
+    Diffusers
+    Natural Remedies
+    Art Supplies
+    Pickleball Equipment
+    Autographed Merchandise
+    Group Games
+    Gift Items
+    Party Games
+    Beach Gear
+    Food Tours
+    Nutrition for Runners
+    Cocktail Kits
+    Vitamins & Minerals
+    Dog Toys
+    Dog Accessories
+    Mindfulness Journals
+    Aromatherapy for Sleep
+    Plant Care Products
+    Do not generate or use any market segments that are not included in this list.
+    The idea will always be a physical product solution, not a software product or service business. The idea will focus on a specific niche and include one key differentiating feature that sets it apart from existing solutions for each.
+    The idea should be groundbreaking, applying a novel approach not seen in the industry before. Consider the following aspects when crafting this idea:
+    Offer a scalable solution that can be easily manufactured and distributed across multiple markets or geographies.
+    Demonstrate strong brand loyalty and customer retention, where satisfied customers become advocates for the product.
+    Leverage cutting-edge technologies (e.g., 3D printing, advanced robotics, smart materials) to create a significant competitive advantage or unique selling proposition.
+    Disrupt traditional industries by introducing a dramatically more efficient, convenient, or cost-effective physical product alternative.
+    Create a new market or category by offering a unique physical product that addresses previously unrecognized needs.
+    Address a price-insensitive problem that consumers already pay money to solve, ensuring strong demand and revenue potential.
+    Involve a streamlined supply chain and efficient manufacturing processes to ensure cost-effectiveness and profitability at scale.
+    Describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. Also provide the market segment you chose the idea from in a separate line below the idea. Do not use any market segments that are not on the list.
+    Lastly, generate a catchy short description for the business idea in 6 words or less. The description should generate curiosity while also clearly describing the business idea. Aim to highlight the unique value proposition. This will precede the business idea on its own line.
+    After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
+    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+    Input:
+    Finding eco-friendly children's toys
+    Output:
+    {
+      "description": "Eco-friendly Children's Blocks",
+      "idea": "Modular, eco-friendly building blocks made from recycled materials with interlocking mechanisms for enhanced stability and creativity.",
+      "segment": "Educational Toys"
+    }
+    Input:
+    Finding luxury sleepwear
+    Output:
+    {
+      "description": "Temperature-Regulating Luxury Sleepwear",
+      "idea": "Temperature-regulating luxury sleepwear with advanced fabric technology for optimal comfort and sleep quality.",
+      "segment": "Luxury Clothing"
+    }
+    Input:
+    Home Cooking. Organizing Kitchen Tools and Supplies
+    Output:
+    {
+      "description": "Modular Space-Saving Cookware",
+      "idea": "Smart, modular cookware set with interchangeable handles and lids, featuring space-saving stackable design for efficient storage and cooking.",
+      "segment": "Kitchen Appliances"
+    }
+    Input:
+    Health & Nutrition. Creating a supplement plan
+    Output:
+    {
+      "description": "DNA-personalized Nutrition Supplements",
+      "idea": "Personalized fitness supplements with DNA-based formulations for optimal nutrient absorption and performance enhancement.",
+      "segment": "Fitness Supplements"
+    }
+    Input:
+    Taking care of indoor plants
+    Output:
+    {
+      "description": "Smart Plant Care System",
+      "idea": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
+      "segment": "Plant Care Products"
+    }`,
+    COMPLEXITY: `Objective: Generate a unique and innovative physical product business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
+    The idea must correlate to one of the following market segments. Choose the segment that is closest to the user input from the list below:
+    Portable Audio
+    VR Headsets
+    PC Gaming Hardware
+    Action Figures
+    Trading Cards
+    Educational Toys
+    Outdoor Gear
+    BBQ Equipment
+    Hiking Gear
+    Electric Bikes
+    Water Sports Equipment
+    Leisure Products
+    Adventure Equipment
+    Gourmet Foods
+    Luxury Clothing
+    Luxury Accessories
+    Luxury Outerwear
+    Fast Fashion
+    High-End Fashion
+    Sustainable Fashion
+    Streetwear
+    Athleisure Clothing
+    Athleisure Footwear
+    Yoga Gear
+    Fitness Accessories
+    Running Accessories
+    Supplements
+    Home Gym Equipment
+    Fitness Equipment
+    Fitness Apparel
+    Fitness Tracking
+    Kitchen Appliances
+    Health Foods
+    Fitness Supplements
+    Skincare Products
+    Luxury Skincare
+    Natural Skincare
+    Luxury Makeup
+    Professional Makeup
+    Organic Makeup
+    Dog Food
+    Aromatherapy
+    Mattresses
+    Sleep Accessories
+    Essential Oils
+    Diffusers
+    Natural Remedies
+    Art Supplies
+    Pickleball Equipment
+    Autographed Merchandise
+    Group Games
+    Gift Items
+    Party Games
+    Beach Gear
+    Food Tours
+    Nutrition for Runners
+    Cocktail Kits
+    Vitamins & Minerals
+    Dog Toys
+    Dog Accessories
+    Mindfulness Journals
+    Aromatherapy for Sleep
+    Plant Care Products
+    Do not generate or use any market segments that are not included in this list.
+    The idea will always be a physical product solution, not a software product or service business. The idea will focus on a specific niche and include one key differentiating feature that sets it apart from existing solutions for each.
+    The idea should be groundbreaking, applying a novel approach not seen in the industry before. Consider the following aspects when crafting this idea:
+    Offer a scalable solution that can be easily manufactured and distributed across multiple markets or geographies.
+    Demonstrate strong brand loyalty and customer retention, where satisfied customers become advocates for the product.
+    Leverage cutting-edge technologies (e.g., 3D printing, advanced robotics, smart materials) to create a significant competitive advantage or unique selling proposition.
+    Disrupt traditional industries by introducing a dramatically more efficient, convenient, or cost-effective physical product alternative.
+    Create a new market or category by offering a unique physical product that addresses previously unrecognized needs.
+    Address a price-insensitive problem that consumers already pay money to solve, ensuring strong demand and revenue potential.
+    Involve a streamlined supply chain and efficient manufacturing processes to ensure cost-effectiveness and profitability at scale.
+    Describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. Also provide the market segment you chose the idea from in a separate line below the idea. Do not use any market segments that are not on the list.
+    Lastly, generate a catchy short description for the business idea in 6 words or less. The description should generate curiosity while also clearly describing the business idea. Aim to highlight the unique value proposition. This will precede the business idea on its own line.
+    After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
+    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+    Input:
+    Finding eco-friendly children's toys
+    Output:
+    {
+      "description": "Eco-friendly Children's Blocks",
+      "idea": "Modular, eco-friendly building blocks made from recycled materials with interlocking mechanisms for enhanced stability and creativity.",
+      "segment": "Educational Toys"
+    }
+    Input:
+    Finding luxury sleepwear
+    Output:
+    {
+      "description": "Temperature-Regulating Luxury Sleepwear",
+      "idea": "Temperature-regulating luxury sleepwear with advanced fabric technology for optimal comfort and sleep quality.",
+      "segment": "Luxury Clothing"
+    }
+    Input:
+    Home Cooking. Organizing Kitchen Tools and Supplies
+    Output:
+    {
+      "description": "Modular Space-Saving Cookware",
+      "idea": "Smart, modular cookware set with interchangeable handles and lids, featuring space-saving stackable design for efficient storage and cooking.",
+      "segment": "Kitchen Appliances"
+    }
+    Input:
+    Health & Nutrition. Creating a supplement plan
+    Output:
+    {
+      "description": "DNA-personalized Nutrition Supplements",
+      "idea": "Personalized fitness supplements with DNA-based formulations for optimal nutrient absorption and performance enhancement.",
+      "segment": "Fitness Supplements"
+    }
+    Input:
+    Taking care of indoor plants
+    Output:
+    {
+      "description": "Smart Plant Care System",
+      "idea": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
+      "segment": "Plant Care Products"
+    }`,
+  },
+
+  SYSTEM_SOFTWARE_TECHNOLOGY: {
+    DISRUPTION: `Objective: Generate a unique and innovative software business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
+    The idea must correlate to one of the following market segments. Choose the segment that is closest to the user input from the list below:
+    Art Education Platforms
+    Photo Editing Mobile Apps
+    Photo Book Creation Software
+    Sports Management Software
+    Athlete Performance Tracking Software
+    Fitness and Training Apps
+    Sports Streaming and Media Platforms
+    Fantasy Sports Platforms
+    Sports Betting Software
+    Fan Engagement and Loyalty Platforms
+    Music Publishing and Royalty Management Platforms
+    Online Music Marketplaces
+    Music Learning Apps
+    Concert Services & Livestreaming
+    Music Collaboration Tools
+    AI Music Composition Tools
+    Virtual Reality Gaming
+    Blockchain Gaming Platforms
+    Cloud Gaming Services
+    Stock Trading Platforms
+    Robo-Advisors
+    Personal Finance Software
+    Cryptocurrency Exchanges
+    Wealth Management Software
+    Insurance Tech Platforms
+    Social Media Platforms
+    Group Activity Planning Apps
+    Virtual Reality Social Platforms
+    Cycling Apps
+    Virtual Tour and Local Guide Platforms
+    Tour Planning Software
+    Virtual Try-On Apps
+    Fashion Resale and Secondhand Platforms
+    Custom Tailoring Apps
+    Personal Styling Apps
+    Online Ticket Booking Platforms
+    Online Film Festivals
+    VR Film Experiences
+    AI Script Writing Tools
+    Streaming Service Aggregators
+    Meal Kit Delivery Services
+    Recipe Apps
+    Nutrition Tracking Apps
+    Online Cooking Classes and Platforms
+    Food Waste Reduction Apps
+    Food Allergy Management Apps
+    Dating Apps
+    Couple Goal Tracking Platforms
+    Virtual Date Ideas Apps
+    Couples' Communication Apps
+    Romantic Getaway Booking Apps
+    Relationship Counseling Apps
+    Gifting Apps
+    Online Proposal Planning Services
+    Online Tutoring Services
+    Virtual Field Trip Platforms
+    Do not generate or use any market segments that are not included in this list.
+    
+    The idea will always be a software solution, not a physical product. The idea will focus on a specific niche and include one key differentiating feature that sets it apart from existing solutions for each. The idea should be groundbreaking, applying a novel approach not seen in the industry before. Consider the following aspects when crafting this idea:
+    Innovates on UI/UX format by meeting users where they already are by integrating with existing platforms, behaviors, or technologies.
+    Innovates by optimizing a scarce resource by identifying a more efficient or effective use pattern and format.
+    Innovates by being hyper-specific about the target user and use case to create a strong value proposition.
+    Innovates on the UI/UX format by creating a more effective way of reaching users of an existing product.
+    Innovates by combining seemingly unrelated or contrasting elements to create a unique and engaging experience.
+    Leverages the core strengths of the underlying technology to solve a specific user problem.
+    Empowers a user to express their creativity or become creators themselves.
+    Focus on a well-known product but target an underserved and high-value use case.
+    Avoids direct competition by integrating between established platforms or market segments.
+    
+    Describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. Also provide the market segment you chose the idea from in a separate line below the idea. Do not use any market segments that are not on the list.
+    
+    Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
+    
+    After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
+    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+    Input: 
+    Educating a toddler without cringe youtube videos
+    Output: 
+    {
+      "description": "JibJab for Educational Kids' Music Videos",
+      "idea": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
+      "segment": "Music Learning Apps"
+    }
+    Input: 
+    Sports/Fitness. Finding available exercise equipment at the gym
+    Output:
+    {
+      "description": "OpenTable for Smart Gym Equipment Bookings",
+      "idea": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
+      "segment": "Fitness and Training Apps"
+    } 
+    Input: 
+    Getting unfairly banned by game moderators
+    Output:
+    {
+      "description": "Reddit for Decentralized Game Moderation",
+      "idea": "A decentralized moderation system where the community votes on content and behavior moderation, ensuring fair and transparent enforcement.",
+      "segment": "Blockchain Gaming Platforms"
+    } 
+    Input: 
+    Fantasy Sports. Sparking more interaction in fantasy league SMS threads
+    Output:
+    {
+      "description": "WhatsApp for Fantasy Recaps",
+      "idea": "An integration that sends weekly fantasy recaps to group chats/SMS threads, sparking fun league conversations with data-driven insights.",
+      "segment": "Fantasy Sports Platforms"
+    } 
+    Input: 
+    Photography. Making photo editing easier
+    Output:
+    {
+      "description": "Siri for Voice-Controlled Photo Editing",
+      "idea": "An app that allows users to apply photo edits and effects using voice commands, making the editing process more accessible.",
+      "segment": "Photo Editing Mobile Apps"
+    }`,
+    MARKET_SIZE: `Objective: Generate a unique and innovative software business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
+    The idea must correlate to one of the following market segments. Choose the segment that is closest to the user input from the list below:
+    Sports Analytics Software
+    Fitness and Training Apps
+    Sports Streaming and Media Platforms
+    Fantasy Sports Platforms
+    Sports Event Ticketing Software
+    Music Streaming Services
+    Music Production Software
+    AI Music Composition Tools
+    Mobile Gaming Apps
+    Virtual Reality Gaming
+    Blockchain Gaming Platforms
+    Cloud Gaming Services
+    Stock Trading Platforms
+    Robo-Advisors
+    Cryptocurrency Exchanges
+    P2P Lending Platforms
+    Insurance Tech Platforms
+    Social Media Platforms
+    Messaging Apps
+    Virtual Reality Social Platforms
+    Cycling Apps
+    Online Travel Agencies
+    Car Rental Apps
+    Fashion E-commerce Platforms
+    Fashion Resale and Secondhand Platforms
+    Subscription Box Services
+    Video Streaming Services
+    Video on Demand (VOD) Services
+    Meal Kit Delivery Services
+    Grocery Delivery Services
+    Food Delivery Apps
+    Online Learning Platforms
+    Educational Apps and Game Platforms
+    Language Learning Software
+    Virtual Classroom Platforms
+    Corporate Training Software
+    E-books and Digital Libraries
+    Learning Management Systems (LMS)
+    Do not generate or use any market segments that are not included in this list.
+    
+    The idea will always be a software solution, not a physical product. The idea will focus on a specific niche and include one key differentiating feature that sets it apart from existing solutions for each. The idea should be groundbreaking, applying a novel approach not seen in the industry before. Consider the following aspects when crafting this idea:
+    Offer a scalable solution that can be easily replicated and deployed across multiple markets or geographies.
+    Demonstrate strong network effects, where the value of the product or service increases as more users adopt it.
+    Leverage cutting-edge technologies (e.g., AI, blockchain, IoT) to create a significant competitive advantage or barrier to entry.
+    Disrupt traditional industries by introducing a dramatically more efficient, convenient, or cost-effective alternative.
+    Create a new market or category by offering a unique value proposition that addresses previously unrecognized needs.
+    Address a price-insensitive problem that consumers already pay money to solve, ensuring strong demand and revenue potential.
+    Involves a fully automated, technology-driven solution that can create value for millions of users without requiring manual or human intervention, ensuring exceptional scalability.
+    
+    Describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. Also provide the market segment you chose the idea from in a separate line below the idea. Do not use any market segments that are not on the list.
+    
+    Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
+    
+    After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
+    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+    Input:
+    Jobs/Careers. Preparing for a career switch
+    Output:
+    {
+      "description": "Roblox for Career Exploration",
+      "idea": "A mobile app that allows users to virtually explore careers, learn required skills, complete simulated tasks, and build a professional portfolio.",
+      "segment": "Educational Apps and Game Platforms"
+    }
+    Input:
+    Sports/Fitness. Finding available exercise equipment at the gym
+    Output:
+    {
+      "description": "OpenTable for Smart Gym Equipment Bookings",
+      "idea": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
+      "segment": "Fitness and Training Apps"
+    }
+    Input:
+    Finding music to pair with edited videos or other content
+    Output:
+    {
+      "description": "Spotify for Storytelling",
+      "idea": "A platform that generates dynamic soundtracks for stories and narratives, with AI adapting the music to fit the plot twists, character emotions, and scenes.",
+      "segment": "AI Music Composition Tools"
+    }
+    Input:
+    Gaming. Lack of true ownership in gaming
+    Output:
+    {
+      "description": "Minecraft for Blockchain",
+      "idea": "A sandbox game where players can build, own, and trade virtual lands and assets using blockchain, with in-game items having real-world value through NFTs.",
+      "segment": "Blockchain Gaming Platforms"
+    }
+    Input:
+    Finance/Investing. Creating a balanced and diversified investment portfolio
+    Output:
+    {
+      "description": "Hedgeye for AI-Driven Hedging Strategies",
+      "idea": "A platform that uses AI to develop and execute hedging strategies, protecting portfolios from downside risk.",
+      "segment": "Stock Trading Platforms"
+    } `,
+    COMPLEXITY: `Objective: Generate a unique and innovative software business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
+    The idea must correlate to one of the following market segments. Choose the segment that is closest to the user input from the list below:
+    Photo Editing Software
+    Graphic Design Software
+    Online Art Marketplaces
+    Art Education Platforms
+    Stock Photography Platforms
+    Digital Art and Portfolio Platforms
+    Photo Editing Mobile Apps
+    Digital Painting Software
+    Photo Book Creation Software
+    Sports Management Software
+    Fitness and Training Apps
+    Fan Engagement and Loyalty Platforms
+    Music Learning Apps
+    DJ Software
+    Cycling Apps
+    Fishing Apps
+    Tour Planning Software
+    Travel Blogging Platforms
+    Travel Journal and Itinerary Apps
+    Custom Tailoring Apps
+    Subtitle and Dubbing Software
+    Recipe Apps
+    Food Blogging Platforms
+    Food Waste Reduction Apps
+    Food Allergy Management Apps
+    Couple Goal Tracking Platforms
+    Virtual Date Ideas Apps
+    Couples' Communication Apps
+    Gifting Apps
+    Online Proposal Planning Services
+    Test Preparation Apps
+    Do not generate or use any market segments that are not included in this list.
+    
+    The idea will always be a software solution, not a physical product. The idea will focus on a specific niche and include one key differentiating feature that sets it apart from existing solutions for each. The idea should be groundbreaking, applying a novel approach not seen in the industry before. Consider the following aspects when crafting this idea:
+    Leverage existing platforms and APIs: The business idea should utilize well-established platforms and APIs, reducing the need for custom development and minimizing technical complexity.
+    Simple, focused functionality: The core functionality of the software should be simple, intuitive, and focused on solving a specific problem, reducing the scope of development required.
+    Focus on niche markets: Target specific, underserved niches where competition is lower, and it's easier to gain traction with minimal resources.
+    Minimize need for unique or complex data: The business idea should rely primarily on easily accessible, widely available, or user-generated data, rather than requiring the collection or processing of unique or complex data sets.
+    
+    Describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. Also provide the market segment you chose the idea from in a separate line below the idea. Do not use any market segments that are not on the list.
+    
+    Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
+    
+    After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
+    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+    Input: 
+    Music. Developing songwriting skills
+    Output:
+    {
+      "description": "Grammarly for Songwriting",
+      "idea": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
+      "segment": "Music Learning Apps"
+    } 
+    Input: 
+    Mental Health. Finding moments of relaxation
+    Output:
+    {
+      "description": "Calm for Photo Therapy",
+      "idea": "A mobile app that combines mindfulness exercises with photo editing tasks to promote relaxation, creativity, and mental well-being.",
+      "segment": "Photo Editing Mobile Apps"
+    } 
+    Input: 
+    Staying in touch with friends virtually
+    Output:
+    {
+      "description": "WhatsApp for Automated Photo Book Sharing",
+      "idea": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
+      "segment": "Photo Book Creation Software"
+    } 
+    Input: 
+    Sports/Fitness. Fitting workouts into a busy daily routine
+    Output:
+    {
+      "description": "HIIT for Micro-Workouts",
+      "idea": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
+      "segment": "Fitness and Training Apps"
+    } 
+    Input: 
+    Watching Sports. Staying engaged during live sporting events
+    Output:
+    {
+      "description": "Twitter for Real-Time Fan Polls",
+      "idea": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
+      "segment": "Fan Engagement and Loyalty Platforms"
+    } `,
+  },
+
+  SYSTEM_CONTENT: {
+    DISRUPTION: ``,
+    MARKET_SIZE: ``,
+    COMPLEXITY: ``,
+  }, // provide System Prompt for Content Brand when available
 };

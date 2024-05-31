@@ -5,6 +5,7 @@ import {
   BusinessPassionAspectTable,
   UserTable,
   AIToolsUsageStatusTable,
+  MarketSegmentInfoTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
@@ -486,21 +487,35 @@ class BusinessProfileService {
 
   /**
    * @description this will generate business idea using OpenAI GPT
-   * @param data
+   * @param systemInputDataset
+   * @param prompt
+   * @param passion
+   * @param userExists
+   * @param key
+   * @param businessType
    * @returns {*}
    */
   public async generateBusinessIdea(
-    systemInput: string,
+    systemInputDataset: string,
     prompt: string,
     passion: string,
     userExists: any,
-    key: string
+    key: string,
+    businessType: number
   ) {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      let [response, businessPassionImages, _] = await Promise.all([
-        this.generateTextSuggestions(systemInput, prompt),
+      let [
+        uniqueness_response,
+        marketSize_response,
+        complexity_response,
+        businessPassionImages,
+        _,
+      ] = await Promise.all([
+        this.generateTextSuggestions(systemInputDataset["DISRUPTION"], prompt),
+        this.generateTextSuggestions(systemInputDataset["MARKET_SIZE"], prompt),
+        this.generateTextSuggestions(systemInputDataset["COMPLEXITY"], prompt),
         BusinessPassionTable.find({ title: passion }),
         AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
@@ -509,16 +524,40 @@ class BusinessProfileService {
         ),
       ]);
 
-      /** commented this out temporary before the prompt is finalized
-            if (
-              !response.choices[0].message.content.includes("businessDescription") ||
-              !response.choices[0].message.content.includes("opportunityHighlight")
-            ) {
-              throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
-            }
-      
-            let newResponse = JSON.parse(response.choices[0].message.content);
-      */
+      let uniquenessData = JSON.parse(
+        uniqueness_response.choices[0].message.content
+      );
+      let marketSizeData = JSON.parse(
+        marketSize_response.choices[0].message.content
+      );
+      let complexityData = JSON.parse(
+        complexity_response.choices[0].message.content
+      );
+      let marketSegments = await MarketSegmentInfoTable.find(
+        {
+          marketSegment: {
+            $in: [
+              uniquenessData.segment,
+              marketSizeData.segment,
+              complexityData.segment,
+            ],
+          },
+          businessType,
+        },
+        {
+          _id: 0,
+          uniqueness: 1,
+          marketSize: 1,
+          complexity: 1,
+          marketSegment: 1,
+        }
+      );
+
+      const defaultMarketSegment = marketSegments.find(
+        (market) => (market.marketSegment = "Other")
+      );
+      let response = [uniquenessData, marketSizeData, complexityData];
+      /*
       //NATALIE ADDED mock response for generated ideas
       let newResponse = [
         {
@@ -597,18 +636,24 @@ class BusinessProfileService {
           ],
         },
       ];
+      */
       if (!businessPassionImages.length) {
-        newResponse.map(
+        response.map(
           (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
         );
-        newResponse = [newResponse[0]];
+        return [response[0]];
       } else {
-        newResponse.map(
-          (idea, idx) =>
-            (idea["image"] = businessPassionImages[0].businessImages[idx])
-        );
+        return response.map((idea, idx) => {
+          return {
+            ...idea,
+            image: businessPassionImages[0].businessImages[idx],
+            ratings:
+              marketSegments.find(
+                (market) => (market.marketSegment = idea.segment)
+              ) || defaultMarketSegment,
+          };
+        });
       }
-      return newResponse;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }

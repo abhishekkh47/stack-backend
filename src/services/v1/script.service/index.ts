@@ -16,7 +16,7 @@ import {
   CoachProfileTable,
   QuizCategoryTable,
   QuizLevelTable,
-  marketSegmentInfoTable,
+  MarketSegmentInfoTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1731,7 +1731,7 @@ class ScriptService {
         };
         marketSegmentBulkWriteQuery.push(bulkWriteObject);
       });
-      await marketSegmentInfoTable.bulkWrite(marketSegmentBulkWriteQuery);
+      await MarketSegmentInfoTable.bulkWrite(marketSegmentBulkWriteQuery);
       return true;
     } catch (error) {
       return error;

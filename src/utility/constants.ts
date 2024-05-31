@@ -687,9 +687,9 @@ export interface ICharacterImageData {
 }
 
 export const BUSINESS_TYPE = {
-  1: "Physical Product",
-  2: "Software Technology",
-  3: "Content Brand",
+  1: "SYSTEM_PHYSICAL_PRODUCT", // E-Commerce
+  2: "SYSTEM_SOFTWARE_TECHNOLOGY",
+  3: "SYSTEM_CONTENT",
 };
 
 export const AI_TOOLBOX_IMAGES = {
