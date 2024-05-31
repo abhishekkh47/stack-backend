@@ -1938,7 +1938,7 @@ class ScriptController extends BaseController {
   public async storePassionAndProblemsInDB(ctx: any) {
     try {
       const { type } = ctx.request.body;
-      let sheetGID = envData.PASSION_SHEET_ID; // type=2
+      let sheetGID = envData.PASSION_SHEET_GID; // type=2
       if (type == 1) {
         sheetGID = envData.PRODUCT_PASSIONS_SHEET_GID;
       } else if (type == 3) {
