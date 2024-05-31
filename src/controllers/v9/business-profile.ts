@@ -107,9 +107,13 @@ class BusinessProfileController extends BaseController {
     if (!businessProfile) {
       return this.Ok(ctx, { message: "Success", data: [] });
     }
-    const response = await BusinessProfileService.getBusinessHistory(
-      businessProfile.businessHistory
-    );
+
+    let response = [];
+    if (businessProfile?.businessHistory) {
+      response = await BusinessProfileService.getBusinessHistory(
+        businessProfile.businessHistory
+      );
+    }
     return this.Ok(ctx, { message: "Success", data: response });
   }
 }
