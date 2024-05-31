@@ -48,3 +48,4 @@ export * from "@app/model/quizCategory";
 export * from "@app/model/quizLevel";
 export * from "@app/model/checklistResult";
 export * from "@app/model/aiToolsUsageStatus";
+export * from "@app/model/marketSegmentInfo";

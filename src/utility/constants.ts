@@ -701,3 +701,9 @@ export const AI_TOOLBOX_IMAGES = {
   competitors: "racing_car.webp",
   colorsAndAesthetic: "artist_palette.webp",
 };
+
+export const PRODUCT_TYPE = {
+  Physical: 1,
+  Software: 2,
+  Content: 3,
+};

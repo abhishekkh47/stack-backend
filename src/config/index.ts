@@ -218,4 +218,10 @@ export default {
   get CONTENT_PASSIONS_SHEET_GID() {
     return process.env.CONTENT_PASSIONS_SHEET_GID;
   },
+  get MARKET_SEGMENT_SHEET_ID() {
+    return process.env.MARKET_SEGMENT_SHEET_ID;
+  },
+  get MARKET_SEGMENT_SHEET_GID() {
+    return process.env.MARKET_SEGMENT_SHEET_GID;
+  },
 };
