@@ -141,6 +141,14 @@ class AuthController extends BaseController {
               initialMessage = businessProfile.businessCoachInfo.initialMessage;
               thingsToTalkAbout = THINGS_TO_TALK_ABOUT;
             }
+            const topicDetails = await ChecklistDBService.getQuizTopics(
+              userExists
+            );
+            let currentLeague = leagues.find(
+              (x) =>
+                x.minPoint <= userExists.xpPoints &&
+                x.maxPoint >= userExists.xpPoints
+            );
             profileData = {
               ...profileData,
               businessProfile,
@@ -151,6 +159,8 @@ class AuthController extends BaseController {
                     thingsToTalkAbout,
                   }
                 : null,
+              topicDetails,
+              currentLeague,
             };
 
             if (deviceToken) {
@@ -159,22 +169,12 @@ class AuthController extends BaseController {
                 deviceToken
               );
             }
-            const topicDetails = await ChecklistDBService.getQuizTopics(
-              userExists
-            );
-            let currentLeague = leagues.find(
-              (x) =>
-                x.minPoint <= userExists.xpPoints &&
-                x.maxPoint >= userExists.xpPoints
-            );
             return this.Ok(ctx, {
               token,
               refreshToken,
               profileData: profileData,
               message: "Success",
               accountCreated,
-              topicDetails,
-              currentLeague,
             });
           } catch (error) {
             return this.BadRequest(ctx, error.message);
