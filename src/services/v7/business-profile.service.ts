@@ -551,92 +551,12 @@ class BusinessProfileService {
           complexity: 1,
           marketSegment: 1,
         }
-      );
+      ).lean();
 
       const defaultMarketSegment = marketSegments.find(
         (market) => (market.marketSegment = "Other")
       );
       let response = [uniquenessData, marketSizeData, complexityData];
-      /*
-      //NATALIE ADDED mock response for generated ideas
-      let newResponse = [
-        {
-          idea: "LinkedIn for Local Sports",
-          description:
-            "An app matching players with similar skill levels for local pickup games, complete with profiles and verified skill ratings.",
-          ratings: [
-            {
-              criteria: "Uniqueness",
-              level: 78,
-              info: "info on medium market competition",
-              image: "uniqueness.png",
-            },
-            {
-              criteria: "Market Size",
-              level: 93,
-              info: "info on high market size",
-              image: "marketsize.png",
-            },
-            {
-              criteria: "Complexity",
-              level: 50,
-              info: "info on medium difficulty to build",
-              image: "complexity.png",
-            },
-          ],
-        },
-        {
-          idea: "Uber for Pickup Games",
-          description:
-            "An on-demand app that quickly connects users with nearby pickup games of matching skill levels and provides real-time game updates.",
-          ratings: [
-            {
-              criteria: "Uniqueness",
-              level: 70,
-              info: "info on low market competition",
-              image: "uniqueness.png",
-            },
-            {
-              criteria: "Market Size",
-              level: 90,
-              info: "info on high market size",
-              image: "marketsize.png",
-            },
-            {
-              criteria: "Complexity",
-              level: 100,
-              info: "info on medium difficulty to build",
-              image: "complexity.png",
-            },
-          ],
-        },
-        {
-          idea: "Discord for Sports Communities",
-          description:
-            "A platform where local player communities can organize games, chat, and create skill-level specific events or tournaments.",
-          ratings: [
-            {
-              criteria: "Uniqueness",
-              level: 65,
-              info: "info on low market competition",
-              image: "uniqueness.png",
-            },
-            {
-              criteria: "Market Size",
-              level: 95,
-              info: "info on high market size",
-              image: "marketsize.png",
-            },
-            {
-              criteria: "Complexity",
-              level: 30,
-              info: "info on medium difficulty to build",
-              image: "complexity.png",
-            },
-          ],
-        },
-      ];
-      */
       if (!businessPassionImages.length) {
         response.map(
           (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
@@ -644,13 +564,17 @@ class BusinessProfileService {
         return [response[0]];
       } else {
         return response.map((idea, idx) => {
+          let filteredMarketSegment =
+            marketSegments.find(
+              (market) => market.marketSegment == idea.segment
+            ) || defaultMarketSegment;
+          let ratings = Object.values(filteredMarketSegment).filter(
+            (value) => typeof value === "object"
+          );
           return {
             ...idea,
             image: businessPassionImages[0].businessImages[idx],
-            ratings:
-              marketSegments.find(
-                (market) => (market.marketSegment = idea.segment)
-              ) || defaultMarketSegment,
+            ratings: ratings,
           };
         });
       }

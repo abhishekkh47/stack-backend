@@ -1683,16 +1683,22 @@ class ScriptService {
         marketSegment: data["Market Segment"],
         businessType: PRODUCT_TYPE[data["Product Type"]],
         uniqueness: {
-          rating: data["Disruption"],
+          criteria: "Uniqueness",
+          rating: data["Disruption"] * 10, // *10 to convert in percentage
           description: data["Disruption Description"],
+          image: "disruption.png",
         },
         marketSize: {
-          rating: data["Market Size"],
+          criteria: "Market Size",
+          rating: data["Market Size"] * 10,
           description: data["Market Size Description"],
+          image: "marketsize.png",
         },
         complexity: {
-          rating: data["Complexity"],
+          criteria: "Complexity",
+          rating: data["Complexity"] * 10,
           description: data["Complexity Description"],
+          image: "complexity.png",
         },
       };
 

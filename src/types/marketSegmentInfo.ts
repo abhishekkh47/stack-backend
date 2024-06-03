@@ -7,6 +7,8 @@ export interface IMarketSegmentInfo {
 }
 
 interface IBusinessAspects {
+  criteria: string;
   rating: number;
   description: string;
+  image: string;
 }

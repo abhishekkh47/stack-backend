@@ -19,16 +19,22 @@ const schema = new mongoose.Schema<IMarketSegmentInfoType>(
       required: true,
     },
     uniqueness: {
+      criteria: { type: mongoose.Schema.Types.String, required: true },
       rating: { type: mongoose.Schema.Types.Number, required: true },
       description: { type: mongoose.Schema.Types.String, required: true },
+      image: { type: mongoose.Schema.Types.String, required: true },
     },
     marketSize: {
+      criteria: { type: mongoose.Schema.Types.String, required: true },
       rating: { type: mongoose.Schema.Types.Number, required: true },
       description: { type: mongoose.Schema.Types.String, required: true },
+      image: { type: mongoose.Schema.Types.String, required: true },
     },
     complexity: {
+      criteria: { type: mongoose.Schema.Types.String, required: true },
       rating: { type: mongoose.Schema.Types.Number, required: true },
       description: { type: mongoose.Schema.Types.String, required: true },
+      image: { type: mongoose.Schema.Types.String, required: true },
     },
   },
   {
