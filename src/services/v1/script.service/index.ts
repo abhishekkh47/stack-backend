@@ -16,6 +16,7 @@ import {
   CoachProfileTable,
   QuizCategoryTable,
   QuizLevelTable,
+  MarketSegmentInfoTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -38,6 +39,7 @@ import {
   delay,
   CHECKLIST_QUESTION_LENGTH,
   CORRECT_ANSWER_FUEL_POINTS,
+  PRODUCT_TYPE,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -134,10 +136,8 @@ class ScriptService {
    */
   public async readSpreadSheet(gid: string = null, sheetId: string = null) {
     let document = null;
-    if (sheetId == envData.PASSION_SHEET_ID) {
-      document = new GoogleSpreadsheet(envData.PASSION_SHEET_ID);
-    } else if (sheetId == envData.ACTION_SCREEN_COPY_SHEET_ID) {
-      document = new GoogleSpreadsheet(envData.ACTION_SCREEN_COPY_SHEET_ID);
+    if (sheetId) {
+      document = new GoogleSpreadsheet(sheetId);
     } else {
       document = new GoogleSpreadsheet(envData.SHEET_ID);
     }
@@ -1667,6 +1667,81 @@ class ScriptService {
     }
 
     return rowData;
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON
+   * @param rows
+   * @returns {*}
+   */
+  public async convertMarketSegmentInfoSheetToJSON(rows: any) {
+    const marketData = [];
+    let tempData = {};
+
+    rows.forEach((data) => {
+      tempData = {
+        marketSegment: data["Market Segment"],
+        businessType: PRODUCT_TYPE[data["Product Type"]],
+        uniqueness: {
+          criteria: "Uniqueness",
+          rating: data["Disruption"] * 10, // *10 to convert in percentage
+          description: data["Disruption Description"],
+          image: "disruption.png",
+        },
+        marketSize: {
+          criteria: "Market Size",
+          rating: data["Market Size"] * 10,
+          description: data["Market Size Description"],
+          image: "marketsize.png",
+        },
+        complexity: {
+          criteria: "Complexity",
+          rating: data["Complexity"] * 10,
+          description: data["Complexity Description"],
+          image: "complexity.png",
+        },
+      };
+
+      marketData.push(tempData);
+    });
+
+    return marketData;
+  }
+
+  /**
+   * @dscription This method add the market segment info like ragtings, description and business type
+   * @param marketInfo
+   * @return {boolean}
+   */
+  public async addMarketSegmentInfoCategory(marketInfo: any[]) {
+    try {
+      let marketSegmentBulkWriteQuery = [];
+      marketInfo.map((data) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              businessType: data.businessType,
+              marketSegment: data.marketSegment,
+            },
+            update: {
+              $set: {
+                marketSegment: data.marketSegment,
+                businessType: data.businessType,
+                uniqueness: data.uniqueness,
+                marketSize: data.marketSize,
+                complexity: data.complexity,
+              },
+            },
+            upsert: true,
+          },
+        };
+        marketSegmentBulkWriteQuery.push(bulkWriteObject);
+      });
+      await MarketSegmentInfoTable.bulkWrite(marketSegmentBulkWriteQuery);
+      return true;
+    } catch (error) {
+      return error;
+    }
   }
 }
 

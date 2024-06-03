@@ -4,6 +4,7 @@ import {
   BusinessPassionAspectTable,
   UserTable,
   AIToolsUsageStatusTable,
+  MarketSegmentInfoTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
@@ -483,21 +484,35 @@ class BusinessProfileService {
 
   /**
    * @description this will generate business idea using OpenAI GPT
-   * @param data
+   * @param systemInputDataset
+   * @param prompt
+   * @param passion
+   * @param userExists
+   * @param key
+   * @param businessType
    * @returns {*}
    */
   public async generateBusinessIdea(
-    systemInput: string,
+    systemInputDataset: string,
     prompt: string,
     passion: string,
     userExists: any,
-    key: string
+    key: string,
+    businessType: number
   ) {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      let [response, businessPassionImages, _] = await Promise.all([
-        this.generateTextSuggestions(systemInput, prompt),
+      let [
+        uniqueness_response,
+        marketSize_response,
+        complexity_response,
+        businessPassionImages,
+        _,
+      ] = await Promise.all([
+        this.generateTextSuggestions(systemInputDataset["DISRUPTION"], prompt),
+        this.generateTextSuggestions(systemInputDataset["MARKET_SIZE"], prompt),
+        this.generateTextSuggestions(systemInputDataset["COMPLEXITY"], prompt),
         BusinessPassionTable.find({ title: passion }),
         AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
@@ -506,106 +521,60 @@ class BusinessProfileService {
         ),
       ]);
 
-      /** commented this out temporary before the prompt is finalized
-            if (
-              !response.choices[0].message.content.includes("businessDescription") ||
-              !response.choices[0].message.content.includes("opportunityHighlight")
-            ) {
-              throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
-            }
-      
-            let newResponse = JSON.parse(response.choices[0].message.content);
-      */
-      //NATALIE ADDED mock response for generated ideas
-      let newResponse = [
+      let uniquenessData = JSON.parse(
+        uniqueness_response.choices[0].message.content
+      );
+      let marketSizeData = JSON.parse(
+        marketSize_response.choices[0].message.content
+      );
+      let complexityData = JSON.parse(
+        complexity_response.choices[0].message.content
+      );
+      let marketSegments = await MarketSegmentInfoTable.find(
         {
-          idea: "LinkedIn for Local Sports",
-          description:
-            "An app matching players with similar skill levels for local pickup games, complete with profiles and verified skill ratings.",
-          ratings: [
-            {
-              criteria: "Uniqueness",
-              level: 78,
-              info: "info on medium market competition",
-              image: "uniqueness.png",
-            },
-            {
-              criteria: "Market Size",
-              level: 93,
-              info: "info on high market size",
-              image: "marketsize.png",
-            },
-            {
-              criteria: "Complexity",
-              level: 50,
-              info: "info on medium difficulty to build",
-              image: "complexity.png",
-            },
-          ],
+          marketSegment: {
+            $in: [
+              uniquenessData.segment,
+              marketSizeData.segment,
+              complexityData.segment,
+            ],
+          },
+          businessType,
         },
         {
-          idea: "Uber for Pickup Games",
-          description:
-            "An on-demand app that quickly connects users with nearby pickup games of matching skill levels and provides real-time game updates.",
-          ratings: [
-            {
-              criteria: "Uniqueness",
-              level: 70,
-              info: "info on low market competition",
-              image: "uniqueness.png",
-            },
-            {
-              criteria: "Market Size",
-              level: 90,
-              info: "info on high market size",
-              image: "marketsize.png",
-            },
-            {
-              criteria: "Complexity",
-              level: 100,
-              info: "info on medium difficulty to build",
-              image: "complexity.png",
-            },
-          ],
-        },
-        {
-          idea: "Discord for Sports Communities",
-          description:
-            "A platform where local player communities can organize games, chat, and create skill-level specific events or tournaments.",
-          ratings: [
-            {
-              criteria: "Uniqueness",
-              level: 65,
-              info: "info on low market competition",
-              image: "uniqueness.png",
-            },
-            {
-              criteria: "Market Size",
-              level: 95,
-              info: "info on high market size",
-              image: "marketsize.png",
-            },
-            {
-              criteria: "Complexity",
-              level: 30,
-              info: "info on medium difficulty to build",
-              image: "complexity.png",
-            },
-          ],
-        },
-      ];
+          _id: 0,
+          uniqueness: 1,
+          marketSize: 1,
+          complexity: 1,
+          marketSegment: 1,
+        }
+      ).lean();
+
+      const defaultMarketSegment = marketSegments.find(
+        (market) => (market.marketSegment = "Other")
+      );
+      let response = [uniquenessData, marketSizeData, complexityData];
       if (!businessPassionImages.length) {
-        newResponse.map(
+        response.map(
           (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
         );
-        newResponse = [newResponse[0]];
+        return [response[0]];
       } else {
-        newResponse.map(
-          (idea, idx) =>
-            (idea["image"] = businessPassionImages[0].businessImages[idx])
-        );
+        return response.map((idea, idx) => {
+          let filteredMarketSegment =
+            marketSegments.find(
+              (market) => market.marketSegment == idea.segment
+            ) || defaultMarketSegment;
+          let ratings = Object.values(filteredMarketSegment).filter(
+            (value) => typeof value === "object"
+          );
+          return {
+            ...idea,
+            image: businessPassionImages[0].businessImages[idx],
+            ratings: ratings,
+          };
+        });
       }
-      return newResponse;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }

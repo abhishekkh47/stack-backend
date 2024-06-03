@@ -2116,6 +2116,39 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to import market-segment information for idea-generator
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/import-market-segment-information",
+    method: HttpMethod.POST,
+  })
+  @InternalUserAuth()
+  public async importMarketSegmentInfo(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.MARKET_SEGMENT_SHEET_GID,
+        envData.MARKET_SEGMENT_SHEET_ID
+      );
+      if (rows.length === 0)
+        return this.BadRequest(ctx, "Market Segment Details Not Found");
+      const marketSegmentData =
+        await ScriptService.convertMarketSegmentInfoSheetToJSON(rows);
+      const isDataAddedToDB = await ScriptService.addMarketSegmentInfoCategory(
+        marketSegmentData
+      );
+      if (!isDataAddedToDB) return this.BadRequest(ctx, "Something Went Wrong");
+      return this.Ok(ctx, {
+        message: "Market Segment Data Stored Successfully",
+        data: isDataAddedToDB,
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new ScriptController();
