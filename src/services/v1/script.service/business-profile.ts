@@ -159,6 +159,7 @@ class BusinessProfileScriptService {
         passions.map(async (data) => {
           let passionIfExists = await BusinessPassionTable.find({
             title: data.title,
+            type: data.type,
           });
           data.category.map((sub_category) => {
             let bulkWriteObject = {
