@@ -270,6 +270,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     },
     focusAreaTopic: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "quiztopics",
       default: null,
     },
   },

@@ -1,5 +1,5 @@
 import { Auth } from "@app/middleware";
-import { UserTable } from "@app/model";
+import { QuizTopicTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import BaseController from "../base";
@@ -120,13 +120,20 @@ class ChecklistJourneyController extends BaseController {
   @Auth()
   public async submitFocusArea(ctx: any) {
     const { user, body } = ctx.request;
-    const userExists = await UserTable.findOne({ _id: user._id });
+    let focusAreaTopic = body.focusAreaTopic;
+    const [userExists, quizTopics] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      QuizTopicTable.findOne({ order: 1 }),
+    ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
+    if (focusAreaTopic == "1") {
+      focusAreaTopic = quizTopics._id;
+    }
     await UserTable.findOneAndUpdate(
       { _id: userExists._id },
-      { $set: { focusAreaTopic: body.focusAreaTopic } },
+      { $set: { focusAreaTopic } },
       { upsert: true }
     );
     return this.Ok(ctx, { message: "success" });
