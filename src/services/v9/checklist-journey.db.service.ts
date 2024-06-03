@@ -270,39 +270,6 @@ class ChecklistDBService {
         },
       },
       {
-        $lookup: {
-          from: "quizquestions",
-          localField: "_id",
-          foreignField: "quizId",
-          as: "quizQuestions",
-        },
-      },
-      {
-        $addFields: {
-          quizQuestionsFiltered: {
-            $filter: {
-              input: "$quizQuestions",
-              as: "question",
-              cond: {
-                $and: [
-                  {
-                    $eq: ["$$question.question_type", 2],
-                  },
-                  {
-                    $eq: ["$quizType", QUIZ_TYPE.STORY],
-                  },
-                ],
-              },
-            },
-          },
-        },
-      },
-      {
-        $addFields: {
-          quizQuestionsLength: { $size: "$quizQuestionsFiltered" },
-        },
-      },
-      {
         $addFields: {
           isUnlocked: false,
           xpPoints: {
