@@ -1686,7 +1686,7 @@ class ScriptService {
           criteria: "Uniqueness",
           rating: data["Disruption"] * 10, // *10 to convert in percentage
           description: data["Disruption Description"],
-          image: "disruption.png",
+          image: "uniqueness.png",
         },
         marketSize: {
           criteria: "Market Size",
