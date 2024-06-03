@@ -120,7 +120,7 @@ class BusinessProfileController extends BaseController {
     const imageName =
       file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
-    if (businessProfileExists.companyLogo) {
+    if (businessProfileExists?.companyLogo) {
       removeImage(userExists._id, businessProfileExists.companyLogo);
     }
     const getHoursSaved = actionScreenData.filter(
@@ -130,10 +130,6 @@ class BusinessProfileController extends BaseController {
       companyLogo: imageName,
     };
     if (imageName) {
-      if (getHoursSaved.length && !businessProfileExists.companyLogo) {
-        businessProfileObj["hoursSaved"] =
-          businessProfileExists.hoursSaved + getHoursSaved[0].hoursSaved;
-      }
       businessProfileObj["logoGenerationInfo"] = {
         isUnderProcess: false,
         aiSuggestions: null,
