@@ -231,6 +231,12 @@ export const ANALYTICS_EVENTS = {
   PROBLEM_SUBMITTED: "Problem Submitted",
   BUSINESS_IDEA_SUBMITTED: "Business Idea Submitted",
   BUSINESS_IDEA_SELECTED: "Business Idea Selected",
+  IDEA_VALIDATION_SUBMITTED: "Idea Validaton Submitted",
+  TARGET_AUDIENCE_SUBMITTED: "Target Audience Submitted",
+  BUSINESS_NAME_SUBMITTED: "Business Name Submitted",
+  BUSINESS_LOGO_SUBMITTED: "Business Logo Submitted",
+  TOP_COMPETITORS_SUBMITTED: "Top Competitors Submitted",
+  BRAND_AESTHETIC_SUBMITTED: "Brand Aesthetic Submitted",
 };
 
 export const XP_POINTS = {
@@ -700,4 +706,19 @@ export const AI_TOOLBOX_IMAGES = {
   companyLogo: "sparkles.webp",
   competitors: "racing_car.webp",
   colorsAndAesthetic: "artist_palette.webp",
+};
+
+export const PRODUCT_TYPE = {
+  Physical: 1,
+  Software: 2,
+  Content: 3,
+};
+
+export const AI_TOOLS_ANALYTICS = {
+  ideaValidation: "IDEA_VALIDATION_SUBMITTED",
+  targetAudience: "TARGET_AUDIENCE_SUBMITTED",
+  companyName: "BUSINESS_NAME_SUBMITTED",
+  companyLogo: "BUSINESS_LOGO_SUBMITTED",
+  competitors: "TOP_COMPETITORS_SUBMITTED",
+  colorsAndAesthetic: "BRAND_AESTHETIC_SUBMITTED",
 };
