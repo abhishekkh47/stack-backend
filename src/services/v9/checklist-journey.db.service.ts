@@ -391,14 +391,24 @@ class ChecklistDBService {
    */
   public async storeWeeklyReward(userId: any, reqParam: any) {
     try {
-      ChecklistResultTable.create({
-        userId,
-        topicId: reqParam.topicId,
-        categoryId: reqParam.categoryId,
-        levelId: reqParam.levelId,
-        level: reqParam.level,
-        actionNum: reqParam.actionNum,
-      });
+      await ChecklistResultTable.findOneAndUpdate(
+        {
+          userId: userId,
+          levelId: reqParam.levelId,
+          actionNum: reqParam.actionNum,
+        },
+        {
+          $set: {
+            userId,
+            topicId: reqParam.topicId,
+            categoryId: reqParam.categoryId,
+            levelId: reqParam.levelId,
+            level: reqParam.level,
+            actionNum: reqParam.actionNum,
+          },
+        },
+        { upsert: true }
+      );
       return;
     } catch (err) {
       throw new NetworkError("Error occured while claiming the reward", 400);
