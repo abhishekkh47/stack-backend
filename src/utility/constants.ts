@@ -430,7 +430,7 @@ export const SUGGESTION_FORMAT = {
 };
 
 export const INVALID_DESCRIPTION_ERROR =
-  "Oops! Looks like we're missing a valid business description to proceed. No worries, simply add it to your profile, and give it another go. Thanks!";
+  "Oops! It seems like the business idea you entered is invalid. Please check your input and try again.";
 export const MAXIMIZE_BUSINESS_IMAGES = [
   "maximize_1.png",
   "maximize_2.png",
