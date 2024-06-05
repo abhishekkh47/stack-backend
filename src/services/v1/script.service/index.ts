@@ -1054,24 +1054,22 @@ class ScriptService {
               points: CORRECT_ANSWER_FUEL_POINTS.STORY,
               question_type: 2,
               answer_type: 2,
-              answer_array: prompts.map((prompt) => ({
-                name:
-                  data[`Q${question} A${prompt}`]?.trimEnd().split("*").length >
-                  1
-                    ? data[`Q${question} A${prompt}`]?.trimEnd().split("*")[0]
-                    : data[`Q${question} A${prompt}`]?.trimEnd(),
-                image:
-                  imageNamesData[`Q${question} A${prompt}`]?.trimEnd() ||
-                  `s${storyNumber}_q${1}_a${prompt.toLowerCase()}.webp`,
-                correct_answer:
-                  data[`Q${question} A${prompt}`]?.trimEnd().split("*").length >
-                  1
-                    ? 1
-                    : 0,
-                statement: null,
-              })),
-              correctStatement: data[`Q${question} Explanation`]?.trimEnd(),
-              incorrectStatement: data[`Q${question} Explanation`]?.trimEnd(),
+              answer_array: prompts.map((prompt) => {
+                const answerText = data[`Q${question} A${prompt}`]?.trimEnd();
+                const isCorrect = answerText.split("*").length > 1;
+                return {
+                  name: isCorrect ? answerText.split("*")[0] : answerText,
+                  image:
+                    imageNamesData[`Q${question} A${prompt}`]?.trimEnd() ||
+                    `s${storyNumber}_q${1}_a${prompt.toLowerCase()}.webp`,
+                  correct_answer: isCorrect ? 1 : 0,
+                  statement: isCorrect
+                    ? data[`Q${question} Explanation`]?.trimEnd()
+                    : null,
+                };
+              }),
+              correctStatement: null,
+              incorrectStatement: null,
             };
             questionDataArray.push(questionData);
           });
@@ -1738,6 +1736,77 @@ class ScriptService {
         marketSegmentBulkWriteQuery.push(bulkWriteObject);
       });
       await MarketSegmentInfoTable.bulkWrite(marketSegmentBulkWriteQuery);
+      return true;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  /**
+   * @dscription This method fetch all case studies and update the explanation statements for its quiestions
+   * @return {boolean}
+   */
+  public async updateAnswerExplanationStatement() {
+    try {
+      await QuizQuestionTable.aggregate([
+        {
+          $lookup: {
+            from: "quiz",
+            localField: "quizId",
+            foreignField: "_id",
+            as: "quiz_info",
+          },
+        },
+        {
+          $unwind: "$quiz_info",
+        },
+        {
+          $match: {
+            "quiz_info.quizType": 3,
+            "quiz_info.updatedAt": {
+              $gt: new Date("2024-05-01T06:24:40.364Z"),
+            },
+            answer_type: 2,
+          },
+        },
+        {
+          $set: {
+            answer_array: {
+              $map: {
+                input: "$answer_array",
+                as: "answer",
+                in: {
+                  $mergeObjects: [
+                    "$$answer",
+                    {
+                      statement: {
+                        $cond: [
+                          { $eq: ["$$answer.correct_answer", 1] },
+                          "$correctStatement",
+                          "$$answer.statement",
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            correctStatement: null,
+            incorrectStatement: null,
+          },
+        },
+        {
+          $unset: "quiz_info",
+        },
+        {
+          $merge: {
+            into: "quizquestions",
+            whenMatched: "merge",
+            whenNotMatched: "discard",
+          },
+        },
+      ]);
+
       return true;
     } catch (error) {
       return error;
