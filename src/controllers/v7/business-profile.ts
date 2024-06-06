@@ -104,7 +104,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async updateCompanyLogo(ctx: any) {
-    const { user, body, file } = ctx.request;
+    const { user, file } = ctx.request;
     const [userExists, businessProfileExists, actionScreenData]: any =
       await Promise.all([
         UserTable.findOne({
@@ -121,7 +121,7 @@ class BusinessProfileController extends BaseController {
     const imageName =
       file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
-    if (businessProfileExists.companyLogo) {
+    if (businessProfileExists?.companyLogo) {
       removeImage(userExists._id, businessProfileExists.companyLogo);
     }
     const getHoursSaved = actionScreenData.filter(
@@ -131,10 +131,6 @@ class BusinessProfileController extends BaseController {
       companyLogo: imageName,
     };
     if (imageName) {
-      if (getHoursSaved.length && !businessProfileExists.companyLogo) {
-        businessProfileObj["hoursSaved"] =
-          businessProfileExists.hoursSaved + getHoursSaved[0].hoursSaved;
-      }
       businessProfileObj["logoGenerationInfo"] = {
         isUnderProcess: false,
         aiSuggestions: null,
@@ -157,24 +153,6 @@ class BusinessProfileController extends BaseController {
         },
         { upsert: true }
       ),
-      body?.weeklyJourneyId
-        ? WeeklyJourneyResultTable.updateOne(
-            {
-              userId: user._id,
-              weeklyJourneyId: body.weeklyJourneyId,
-              actionNum: 3,
-            },
-            {
-              $set: {
-                weeklyJourneyId: body.weeklyJourneyId,
-                actionNum: 3,
-                userId: user._id,
-                actionInput: imageName,
-              },
-            },
-            { upsert: true }
-          ).then(() => UserService.updateUserScore(userExists, body, imageName))
-        : Promise.resolve(),
       AIToolsUsageStatusTable.findOneAndUpdate(
         { userId: userExists._id },
         { $set: aiToolUsageObj },
@@ -186,6 +164,11 @@ class BusinessProfileController extends BaseController {
       Account_Name: userExists.firstName + " " + userExists.lastName,
       Email: userExists.email,
     };
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.BUSINESS_LOGO_SUBMITTED,
+      { "Item Name": imageName },
+      { user_id: userExists._id }
+    );
     (async () => {
       zohoCrmService.addAccounts(ctx.request.zohoAccessToken, zohoInfo, false);
     })();

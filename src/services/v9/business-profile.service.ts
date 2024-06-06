@@ -41,7 +41,7 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const prompt = `Business Name:${userBusinessProfile.companyName}, Business Description: ${idea}`;
+      const prompt = `Business Name:${userBusinessProfile?.companyName}, Business Description: ${idea}`;
       const [textResponse, _] = await Promise.all([
         BusinessProfileServiceV7.generateTextSuggestions(
           SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
@@ -161,10 +161,10 @@ class BusinessProfileService {
    * @description get business history in descending order of dates
    * @returns {*}
    */
-  public async getBusinessHistory(businessProfile) {
+  public async getBusinessHistory(businessHistory) {
     try {
       const today = new Date(Date.now()).toLocaleDateString();
-      const sortedHistory = businessProfile.sort(
+      const sortedHistory = businessHistory.sort(
         (a, b) => b.timestamp - a.timestamp
       );
 

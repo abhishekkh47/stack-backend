@@ -1,6 +1,5 @@
 import {
   BusinessProfileTable,
-  WeeklyJourneyResultTable,
   BusinessPassionTable,
   BusinessPassionAspectTable,
   UserTable,
@@ -9,7 +8,6 @@ import {
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import { ObjectId } from "mongodb";
-import { UserService } from "@app/services/v7";
 import envData from "@app/config";
 import OpenAI from "openai";
 import {
@@ -30,6 +28,7 @@ import {
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
+  AI_TOOLS_ANALYTICS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import moment from "moment";
@@ -87,7 +86,11 @@ class BusinessProfileService {
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        if (!businessProfileData[data.key] && getHoursSaved.length) {
+        if (
+          businessProfileData &&
+          !businessProfileData[data.key] &&
+          getHoursSaved.length
+        ) {
           obj["hoursSaved"] =
             businessProfileData.hoursSaved + getHoursSaved[0].hoursSaved;
         }
@@ -108,17 +111,11 @@ class BusinessProfileService {
         { upsert: true }
       );
 
-      if (data.weeklyJourneyId) {
-        const dataToCreate = {
-          weeklyJourneyId: data.weeklyJourneyId,
-          actionNum: data.actionNum,
-          userId: userIfExists._id,
-          actionInput: data.key,
-        };
-        await WeeklyJourneyResultTable.create(dataToCreate);
-
-        UserService.updateUserScore(userIfExists, data);
-      }
+      AnalyticsService.sendEvent(
+        ANALYTICS_EVENTS[AI_TOOLS_ANALYTICS[data.key]],
+        { "Item Name": data.value },
+        { user_id: userIfExists._id }
+      );
       return [
         {
           ...obj,
