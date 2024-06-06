@@ -1524,5 +1524,406 @@ export const SYSTEM_INPUT = {
     }`,
   }, // provide System Prompt for Content Brand when available
 
-  SYSTEM_IDEA_VALIDATION: ``,
+  SYSTEM_IDEA_VALIDATION: `Step 1: The assistant will make minor language modifications to the user input without losing any content or context. It will ensure the business idea sounds professional and well-articulated. The description will always be 140 characters or less.
+  Step 2: The assistant will examine the idea and identify it as either:
+  A software business idea, or
+  A physical product business idea
+  Step 3A: If it identifies it as a software business idea, it will map the idea to one of the following market segments based on its closest fit:
+  Photo Editing Software
+  Graphic Design Software
+  Online Art Marketplaces
+  Art Education Platforms
+  Stock Photography Platforms
+  Digital Art and Portfolio Platforms
+  Photo Sharing Apps
+  3D Modeling Software
+  Photo Editing Mobile Apps
+  Digital Painting Software
+  Photo Book Creation Software
+  Sports Management Software
+  Athlete Performance Tracking Software
+  Sports Analytics Software
+  Fitness and Training Apps
+  Sports Streaming and Media Platforms
+  Fantasy Sports Platforms
+  Sports Betting Software
+  Fan Engagement and Loyalty Platforms
+  Sports Event Ticketing Software
+  Music Streaming Services
+  Music Production Software
+  Music Publishing and Royalty Management Platforms
+  Online Music Marketplaces
+  Music Learning Apps
+  Concert Services & Livestreaming
+  Music Collaboration Tools
+  AI Music Composition Tools
+  DJ Software
+  Mobile Gaming Apps
+  Game Development Software
+  E-sports Platforms
+  Game Streaming Services
+  Virtual Reality Gaming
+  Online Multiplayer Games
+  Blockchain Gaming Platforms
+  Cloud Gaming Services
+  Stock Trading Platforms
+  Robo-Advisors
+  Personal Finance Software
+  Cryptocurrency Exchanges
+  P2P Lending Platforms
+  Wealth Management Software
+  Financial News and Investment Analysis Platforms
+  Tax Preparation Software
+  Insurance Tech Platforms
+  Budgeting Apps
+  Social Media Platforms
+  Group Activity Planning Apps
+  Messaging Apps
+  Event Planning Services
+  Professional Networking Sites
+  Virtual Reality Social Platforms
+  Adventure Travel Apps
+  Cycling Apps
+  Fishing Apps
+  Hiking and Trail Apps
+  Outdoor Fitness Apps
+  Wildlife Tracking Apps
+  Gear Rental Platforms
+  Online Travel Agencies
+  Travel Booking Apps
+  Virtual Tour and Local Guide Platforms
+  Flight and Hotel Comparison Sites
+  Travel Insurance Platforms
+  Car Rental Apps
+  Tour Planning Software
+  Travel Blogging Platforms
+  Travel Journal and Itinerary Apps
+  Fashion E-commerce Platforms
+  Virtual Try-On Apps
+  Sustainable Fashion Platforms
+  Fashion Resale and Secondhand Platforms
+  Fashion Design Software
+  Subscription Box Services
+  Custom Tailoring Apps
+  Fashion Trend Analysis Software
+  Personal Styling Apps
+  Video Streaming Services
+  Online Ticket Booking Platforms
+  Video on Demand (VOD) Services
+  Film Production Software
+  Animation and VFX Software
+  Online Film Festivals
+  Movie/TV Show Recommendation Platforms
+  VR Film Experiences
+  AI Script Writing Tools
+  Subtitle and Dubbing Software
+  Streaming Service Aggregators
+  Meal Kit Delivery Services
+  Recipe Apps
+  Grocery Delivery Services
+  Food Blogging Platforms
+  Nutrition Tracking Apps
+  Online Cooking Classes and Platforms
+  Restaurant Reservation Apps
+  Food Waste Reduction Apps
+  Food Delivery Apps
+  Food Allergy Management Apps
+  Online Dating Services
+  Dating Apps
+  Couple Goal Tracking Platforms
+  Matchmaking Apps
+  Virtual Date Ideas Apps
+  Couples' Communication Apps
+  Romantic Getaway Booking Apps
+  Relationship Counseling Apps
+  Gifting Apps
+  Online Proposal Planning Services
+  Online Learning Platforms
+  Educational Apps and Game Platforms
+  Language Learning Software
+  Virtual Classroom Platforms
+  Online Tutoring Services
+  Test Preparation Apps
+  Corporate Training Software
+  E-books and Digital Libraries
+  Learning Management Systems (LMS)
+  Skill Assessment Tools
+  Virtual Field Trip Platforms
+  It will never generate or use any market segments that are not included in this list.
+  Step 4A: The assistant will describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. It will also provide the market segment chosen from the list in a separate line below the idea.
+  Step 5A: Lastly, the assistant will generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y), highlighting the unique value proposition. OR if differentiating based on distribution model or format, the analogy can state a product or company well known for the same value proposition and add the unique distribution model/format. This will precede the business idea on its own line.
+  Step 3B: If it identifies it as a physical product business idea, it will map the idea to one of the following market segments based on its closest fit:
+  Drawing Supplies
+  Painting Supplies
+  Canvas and Paper
+  Cameras and Lenses
+  Photography Accessories
+  Lighting and Studio Equipment
+  Writing Instruments
+  Notebooks and Journals
+  Calligraphy Sets
+  Art Supplies
+  Golf Equipment
+  Tennis Equipment
+  Pickleball Equipment
+  Golf Apparel
+  Skis and Snowboards
+  Ski and Snowboard Apparel
+  Ski & Snowboard Accessories
+  Team Sports Equipment
+  Protective Gear
+  Team Apparel
+  Training Equipment
+  Swimwear
+  Swim Accessories
+  Swim Training Gear
+  Pool Equipment
+  Festival Gear
+  Concert Merchandise
+  Festival Apparel
+  Portable Food & Drink
+  Audio Equipment
+  Home Audio Systems
+  Portable Audio
+  Musical Instruments
+  Recording Equipment
+  Music Production Gear
+  DJ Equipment
+  Music Merchandise
+  Fan Apparel
+  Concert Accessories
+  Posters and Prints
+  VR Headsets
+  VR Accessories
+  Gaming Consoles
+  PC Gaming Hardware
+  Gaming Accessories
+  Coin Collecting Supplies
+  Precious Metal Coins
+  Currency Collecting
+  Coin Grading Services
+  Autographed Merchandise
+  Memorabilia Display Cases
+  Replica Trophies
+  Vintage Sports Memorabilia
+  Action Figures
+  Trading Cards
+  Board Games
+  Educational Toys
+  Antique Furniture
+  Historical Documents
+  Vintage Watches
+  Rare Books
+  Board Games
+  Outdoor Gear
+  Portable Food & Drink
+  Picnic Supplies
+  Party Supplies
+  Group Games
+  Outdoor Furniture
+  BBQ Equipment
+  Holiday Decorations
+  Gift Items
+  Baking Supplies
+  Beverages
+  Party Games
+  Camping Gear
+  Hiking Gear
+  Camping Food
+  Navigation Equipment
+  Bicycles
+  Cycling Gear
+  Bike Accessories
+  Electric Bikes
+  Fishing Gear
+  Fishing Apparel
+  Fishing Boats
+  Fishing Accessories
+  Water Sports Equipment
+  Swimwear and Accessories
+  Inflatable Water Toys
+  Boating Gear
+  Travel Accessories
+  Leisure Products
+  Beach Gear
+  Spa Products
+  Outdoor Gear
+  Adventure Equipment
+  Team Building Kits
+  Travel Gear
+  Guidebooks and Maps
+  Gourmet Foods
+  Cooking Classes
+  Food Tours
+  Luxury Clothing
+  Luxury Accessories
+  High-End Shoes
+  Luxury Outerwear
+  Athletic Shoes
+  Designer Shoes
+  Casual Shoes
+  Outdoor Shoes
+  Fast Fashion
+  High-End Fashion
+  Sustainable Fashion
+  Streetwear
+  Athleisure Clothing
+  Athleisure Footwear
+  Yoga Gear
+  Fitness Accessories
+  Running Shoes
+  Running Apparel
+  Running Accessories
+  Nutrition for Runners
+  Weightlifting Equipment
+  Weightlifting Apparel
+  Supplements
+  Home Gym Equipment
+  Fitness Equipment
+  Fitness Apparel
+  Yoga Gear
+  Supplements
+  Home Gym Equipment
+  Exercise Accessories
+  Fitness Apparel
+  Fitness Tracking
+  Bar Tools and Accessories
+  Spirits and Liquors
+  Mixers and Syrups
+  Cocktail Kits
+  Kitchen Appliances
+  Cookware and Bakeware
+  Knives and Cutting Tools
+  Specialty Ingredients
+  Baking Tools and Accessories
+  Ingredients for Baking
+  Baking Mixes
+  Decorating Supplies
+  Health Foods
+  Fitness Supplements
+  Vitamins & Minerals
+  Hair Care Products
+  Styling Tools
+  Professional Hair Care
+  Hair Color
+  Nail Products
+  Nail Care & Art
+  Skincare Products
+  Luxury Skincare
+  Natural Skincare
+  Acne Treatment
+  Makeup Products
+  Luxury Makeup
+  Professional Makeup
+  Organic Makeup
+  Dog Food
+  Dog Toys
+  Dog Accessories
+  Dog Health
+  Cat Food
+  Cat Toys
+  Cat Accessories
+  Cat Health
+  Small Animal Supplies
+  Fish and Aquarium Supplies
+  Bird Supplies
+  Reptile Supplies
+  Binoculars and Scopes
+  Bird Watching Supplies
+  Wildlife Cameras
+  Outdoor Gear
+  Meditation Cushions
+  Aromatherapy
+  Mindfulness Journals
+  Sleep Aids
+  Mattresses
+  Sleep Accessories
+  Aromatherapy for Sleep
+  Gardening Tools
+  Outdoor Furniture
+  Nature Journals
+  Plant Care Products
+  Essential Oils
+  Diffusers
+  Aromatherapy Accessories
+  Natural Remedies
+  It will never generate or use any market segments that are not included in this list.
+  Step 4B: The assistant will describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. It will also provide the market segment chosen from the list in a separate line below the idea.
+  Step 5B: Lastly, the assistant will generate a short description for the business idea in 5 words or less. This description should generate curiosity while clearly describing the business idea. This will precede the business idea on its own line.
+  Final Check: After generating the idea, the assistant will double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, the assistant will revise the selection to use a segment from the list that best fits the generated idea.
+  Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+  You should also ensure that the respone should strictly be an object having 'description' key containing the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+  You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+  To illustrate, here are some diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+  Example Outputs
+  Input: a smart bird feeder with a built in camera for noise conscious, remote bird watching 
+  Output:
+  {
+      "description": "Smart Bird Feeder",
+      "idea": "Noise-cancelling bird feeder with built-in camera for remote bird watching and conservation.",
+      "segment": "Bird Watching Supplies"
+  }
+  Input: ai integrated tennis racket that provides real swing analysis and coaching suggestions for improvement. 
+  Output:
+  {
+      "description": "AI Tennis Coach Racket",
+      "idea": "AI-powered tennis racket with real-time swing analysis and personalized coaching for skill improvement.",
+      "segment": "Tennis Equipment"
+  }
+  Input: beach umbrella with built in anchoring system and a solar powered phone charger 
+  Output:
+  {
+      "description": "Solar-charging beach umbrella",
+      "idea": "Customizable, modular beach umbrella with built-in sand anchors and solar-powered phone charger.",
+      "segment": "Beach Gear"
+  }
+  Input: coin collecting sets with themed packaging and rarity levels similar to trading card packs. 
+  Output:
+  {
+      "description": "Collectible mystery coin sets",
+      "idea": "Collectible, mystery coin sets with themed packaging and varying rarity levels for exciting, accessible collecting.",
+      "segment": "Coin Collecting Supplies"
+  }
+  Input: smart plant care system where ai optimizes watering and lighting for plant growth 
+  Output:
+  {
+      "description": "Smart Plant Care System",
+      "idea": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
+      "segment": "Plant Care Products"
+  }
+  Input: workout app focused on 5 minute workouts that fit into your daily life. 
+  Output:
+  {
+      "description": "5-Minute P90X Mobile App",
+      "idea": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
+      "segment": "Fitness and Training Apps"
+  }
+  Input: a live voting app where fans get to influence real game decisions and nominate players of the game. 
+  Output:
+  {
+      "description": "Twitter for Real-Time Fan Polls",
+      "idea": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
+      "segment": "Fan Engagement and Loyalty Platforms"
+  }
+  Input: an app that send pictures of moments and memories to a group chat of friends for birthdays, event anniversaries, etc. 
+  Output:
+  {
+      "description": "",
+      "idea": "",
+      "segment": ""
+  } Instagram on SMS An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries. Photo Book Creation Software 
+  Input: an app that helps songwriters create and get feedback on their work using AI 
+  Output:
+  {
+      "description": "Grammarly for Songwriting",
+      "idea": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
+      "segment": "Music Learning Apps"
+  }
+  Input: platform that allows parents to upload a sample of their voice and picture that AI turns into a child youtube video, so it feels like they are the star of the video and teaching their own children. 
+  Output: 
+  {
+      "description": "JibJab for Educational Kids' Music Videos",
+      "idea": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
+      "segment": "Music Learning Apps"
+  }`,
 };

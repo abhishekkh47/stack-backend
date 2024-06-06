@@ -516,7 +516,7 @@ class BusinessProfileService {
         this.generateTextSuggestions(systemInputDataset["DISRUPTION"], prompt),
         this.generateTextSuggestions(systemInputDataset["MARKET_SIZE"], prompt),
         this.generateTextSuggestions(systemInputDataset["COMPLEXITY"], prompt),
-        BusinessPassionTable.find({ title: passion }),
+        BusinessPassionTable.find({ title: passion, type: businessType }),
         AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
