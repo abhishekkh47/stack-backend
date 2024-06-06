@@ -377,35 +377,35 @@ class BusinessProfileController extends BaseController {
    */
   @Route({
     path: "/generate-business-idea",
-    method: HttpMethod.GET,
+    method: HttpMethod.POST,
   })
   @Auth()
   public async getBusinessIdea(ctx: any) {
-    const { user, query } = ctx.request;
+    const { user, body } = ctx.request;
     const userExists: any = await UserTable.findOne({
       _id: user._id,
     });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (!query.category || !query.problem || !query.passion) {
+    if (!body.category || !body.problem || !body.passion) {
       return this.BadRequest(ctx, "Provide a Category and Problem");
     }
     const obj = {
-      passion: query.passion,
-      aspect: query.category,
-      problem: query.problem,
+      passion: body.passion,
+      aspect: body.category,
+      problem: body.problem,
     };
-    const systemInputDataset = SYSTEM_INPUT[BUSINESS_TYPE[query.businessType]];
-    const prompt = `category: ${query.category}; problem: ${query.problem}.**`;
+    const systemInputDataset = SYSTEM_INPUT[BUSINESS_TYPE[body.businessType]];
+    const prompt = `category: ${body.category}; problem: ${body.problem}.**`;
     const [businessIdea, _] = await Promise.all([
       BusinessProfileService.generateBusinessIdea(
         systemInputDataset,
         prompt,
-        query.passion,
+        body.passion,
         userExists,
         "description",
-        Number(query.businessType)
+        Number(body.businessType)
       ),
       BusinessProfileTable.updateOne(
         { userId: user._id },
@@ -415,7 +415,7 @@ class BusinessProfileController extends BaseController {
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.PASSION_SUBMITTED,
       {
-        "Item Name": query.passion,
+        "Item Name": body.passion,
       },
       {
         user_id: userExists._id,
@@ -424,7 +424,7 @@ class BusinessProfileController extends BaseController {
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.SUB_PASSION_SUBMITTED,
       {
-        "Item Name": query.category,
+        "Item Name": body.category,
       },
       {
         user_id: userExists._id,
@@ -433,7 +433,7 @@ class BusinessProfileController extends BaseController {
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.PROBLEM_SUBMITTED,
       {
-        "Item Name": query.problem,
+        "Item Name": body.problem,
       },
       {
         user_id: userExists._id,
@@ -449,33 +449,31 @@ class BusinessProfileController extends BaseController {
    */
   @Route({
     path: "/maximize-business-idea",
-    method: HttpMethod.GET,
+    method: HttpMethod.POST,
   })
   @Auth()
   public async maximizeBusinessIdea(ctx: any) {
-    const { user, query } = ctx.request;
+    const { user, body } = ctx.request;
     const userExists: any = await UserTable.findOne({
       _id: user._id,
     });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    if (!query.idea) {
+    if (!body.idea) {
       return this.BadRequest(ctx, "Please provide your Business Idea");
     }
-    const prompt = `problem: ${query.idea}.**`;
-    const businessIdea = await BusinessProfileService.generateBusinessIdea(
+    const prompt = `problem: ${body.idea}.**`;
+    const businessIdea = await BusinessProfileService.ideaValidator(
       SYSTEM_INPUT["SYSTEM_IDEA_VALIDATION"],
       prompt,
-      "maximize",
       userExists,
-      "ideaValidation",
-      1
+      "ideaValidation"
     );
     AnalyticsService.sendEvent(
       ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,
       {
-        "Item Name": query.idea,
+        "Item Name": body.idea,
       },
       {
         user_id: userExists._id,
@@ -496,7 +494,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getAISuggestion(ctx: any) {
     const { user, query, headers } = ctx.request;
-    const { key, actionInput, isRetry, isFromProfile } = query;
+    const { key, isRetry, isFromProfile } = query;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
