@@ -102,6 +102,7 @@ class BusinessProfileService {
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
         (isUnderProcess && elapsedTime > 200)
       ) {
+        finished = false;
         const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
