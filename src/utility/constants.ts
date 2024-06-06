@@ -436,7 +436,7 @@ export const SUGGESTION_FORMAT = {
 };
 
 export const INVALID_DESCRIPTION_ERROR =
-  "Oops! Looks like we're missing a valid business description to proceed. No worries, provide some better description, and give it another go. Thanks!";
+  "Oops! It seems like the business idea you entered is invalid. Please check your input and try again.";
 export const MAXIMIZE_BUSINESS_IMAGES = [
   "maximize_1.png",
   "maximize_2.png",
@@ -693,9 +693,9 @@ export interface ICharacterImageData {
 }
 
 export const BUSINESS_TYPE = {
-  1: "Physical Product",
-  2: "Software Technology",
-  3: "Content Brand",
+  1: "SYSTEM_PHYSICAL_PRODUCT", // E-Commerce
+  2: "SYSTEM_SOFTWARE_TECHNOLOGY",
+  3: "SYSTEM_CONTENT",
 };
 
 export const AI_TOOLBOX_IMAGES = {
