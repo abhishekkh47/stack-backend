@@ -1852,8 +1852,8 @@ export const SYSTEM_INPUT = {
   Step 5B: Lastly, the assistant will generate a short description for the business idea in 5 words or less. This description should generate curiosity while clearly describing the business idea. This will precede the business idea on its own line.
   Final Check: After generating the idea, the assistant will double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, the assistant will revise the selection to use a segment from the list that best fits the generated idea.
   Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-  You should also ensure that the respone should strictly be an object having 'description' key containing the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-  You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+  You should also ensure that the respone should strictly be an object having 'description' key containing the generated catchy short description, 'idea' key containing the generated business idea, 'segment' key containing the chosen Market Segment and 'type' containing the type of business idea, whether it is 'software' or 'physical'.
+  You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea', 'segment' and 'type'. Nothing else will be considered a valid response.
   To illustrate, here are some diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
   Example Outputs
   Input: a smart bird feeder with a built in camera for noise conscious, remote bird watching 
@@ -1861,69 +1861,79 @@ export const SYSTEM_INPUT = {
   {
       "description": "Smart Bird Feeder",
       "idea": "Noise-cancelling bird feeder with built-in camera for remote bird watching and conservation.",
-      "segment": "Bird Watching Supplies"
+      "segment": "Bird Watching Supplies",
+      "type": "product"
   }
   Input: ai integrated tennis racket that provides real swing analysis and coaching suggestions for improvement. 
   Output:
   {
       "description": "AI Tennis Coach Racket",
       "idea": "AI-powered tennis racket with real-time swing analysis and personalized coaching for skill improvement.",
-      "segment": "Tennis Equipment"
+      "segment": "Tennis Equipment",
+      "type": "product"
   }
   Input: beach umbrella with built in anchoring system and a solar powered phone charger 
   Output:
   {
       "description": "Solar-charging beach umbrella",
       "idea": "Customizable, modular beach umbrella with built-in sand anchors and solar-powered phone charger.",
-      "segment": "Beach Gear"
+      "segment": "Beach Gear",
+      "type": "product"
   }
   Input: coin collecting sets with themed packaging and rarity levels similar to trading card packs. 
   Output:
   {
       "description": "Collectible mystery coin sets",
       "idea": "Collectible, mystery coin sets with themed packaging and varying rarity levels for exciting, accessible collecting.",
-      "segment": "Coin Collecting Supplies"
+      "segment": "Coin Collecting Supplies",
+      "type": "product"
   }
   Input: smart plant care system where ai optimizes watering and lighting for plant growth 
   Output:
   {
       "description": "Smart Plant Care System",
       "idea": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
-      "segment": "Plant Care Products"
+      "segment": "Plant Care Products",
+      "type": "product"
   }
   Input: workout app focused on 5 minute workouts that fit into your daily life. 
   Output:
   {
       "description": "5-Minute P90X Mobile App",
       "idea": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
-      "segment": "Fitness and Training Apps"
+      "segment": "Fitness and Training Apps",
+      "type": "software"
   }
   Input: a live voting app where fans get to influence real game decisions and nominate players of the game. 
   Output:
   {
       "description": "Twitter for Real-Time Fan Polls",
       "idea": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
-      "segment": "Fan Engagement and Loyalty Platforms"
+      "segment": "Fan Engagement and Loyalty Platforms",
+      "type": "software"
   }
   Input: an app that send pictures of moments and memories to a group chat of friends for birthdays, event anniversaries, etc. 
   Output:
   {
-      "description": "",
-      "idea": "",
-      "segment": ""
-  } Instagram on SMS An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries. Photo Book Creation Software 
+      "description": "Instagram on SMS",
+      "idea": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
+      "segment": "Photo Book Creation Software",
+      "type": "software"
+  }
   Input: an app that helps songwriters create and get feedback on their work using AI 
   Output:
   {
       "description": "Grammarly for Songwriting",
       "idea": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
-      "segment": "Music Learning Apps"
+      "segment": "Music Learning Apps",
+      "type": "software"
   }
   Input: platform that allows parents to upload a sample of their voice and picture that AI turns into a child youtube video, so it feels like they are the star of the video and teaching their own children. 
   Output: 
   {
       "description": "JibJab for Educational Kids' Music Videos",
       "idea": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
-      "segment": "Music Learning Apps"
+      "segment": "Music Learning Apps",
+      "type": "software"
   }`,
 };

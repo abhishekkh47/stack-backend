@@ -516,7 +516,7 @@ class BusinessProfileService {
         this.generateTextSuggestions(systemInputDataset["DISRUPTION"], prompt),
         this.generateTextSuggestions(systemInputDataset["MARKET_SIZE"], prompt),
         this.generateTextSuggestions(systemInputDataset["COMPLEXITY"], prompt),
-        BusinessPassionTable.find({ title: passion, type: businessType }),
+        BusinessPassionTable.findOne({ title: passion, type: businessType }),
         AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
@@ -557,27 +557,20 @@ class BusinessProfileService {
         (market) => (market.marketSegment = "Other")
       );
       let response = [uniquenessData, marketSizeData, complexityData];
-      if (!businessPassionImages.length) {
-        response.map(
-          (idea, idx) => (idea["image"] = MAXIMIZE_BUSINESS_IMAGES[idx])
+      return response.map((idea, idx) => {
+        let filteredMarketSegment =
+          marketSegments.find(
+            (market) => market.marketSegment == idea.segment
+          ) || defaultMarketSegment;
+        let ratings = Object.values(filteredMarketSegment).filter(
+          (value) => typeof value === "object"
         );
-        return [response[0]];
-      } else {
-        return response.map((idea, idx) => {
-          let filteredMarketSegment =
-            marketSegments.find(
-              (market) => market.marketSegment == idea.segment
-            ) || defaultMarketSegment;
-          let ratings = Object.values(filteredMarketSegment).filter(
-            (value) => typeof value === "object"
-          );
-          return {
-            ...idea,
-            image: businessPassionImages[0].businessImages[idx],
-            ratings: ratings,
-          };
-        });
-      }
+        return {
+          ...idea,
+          image: businessPassionImages.businessImages[idx],
+          ratings: ratings,
+        };
+      });
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
@@ -878,6 +871,73 @@ class BusinessProfileService {
         `{function:generateImageSuggestions || prompt:${prompt} || message:${error.message}}`
       );
       throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this will validate user provided business idea using OpenAI GPT
+   * @param systemInputDataset
+   * @param prompt
+   * @param userExists
+   * @param key
+   * @returns {*}
+   */
+  public async ideaValidator(
+    systemInputDataset: string,
+    prompt: string,
+    userExists: any,
+    key: string
+  ) {
+    try {
+      let aiToolUsageObj = {};
+      aiToolUsageObj[key] = true;
+      let [validatedIdea, _] = await Promise.all([
+        this.generateTextSuggestions(systemInputDataset, prompt),
+        AIToolsUsageStatusTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: aiToolUsageObj },
+          { upsert: true }
+        ),
+      ]);
+
+      let validatedIdeaData = JSON.parse(
+        validatedIdea.choices[0].message.content
+      );
+      let marketSegments = await MarketSegmentInfoTable.find(
+        {
+          marketSegment: {
+            $in: [validatedIdeaData.segment],
+          },
+        },
+        {
+          _id: 0,
+          uniqueness: 1,
+          marketSize: 1,
+          complexity: 1,
+          marketSegment: 1,
+        }
+      ).lean();
+
+      const defaultMarketSegment = marketSegments.find(
+        (market) => (market.marketSegment = "Other")
+      );
+      let response = [validatedIdeaData];
+      return response.map((idea, idx) => {
+        let filteredMarketSegment =
+          marketSegments.find(
+            (market) => market.marketSegment == idea.segment
+          ) || defaultMarketSegment;
+        let ratings = Object.values(filteredMarketSegment).filter(
+          (value) => typeof value === "object"
+        );
+        return {
+          ...idea,
+          image: MAXIMIZE_BUSINESS_IMAGES[idx],
+          ratings: ratings,
+        };
+      });
+    } catch (error) {
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
   }
 }
