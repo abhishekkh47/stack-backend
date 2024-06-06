@@ -405,7 +405,7 @@ class BusinessProfileController extends BaseController {
         query.passion,
         userExists,
         "description",
-        query.businessType
+        Number(query.businessType)
       ),
       BusinessProfileTable.updateOne(
         { userId: user._id },
@@ -465,7 +465,7 @@ class BusinessProfileController extends BaseController {
     }
     const prompt = `problem: ${query.idea}.**`;
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
-      SYSTEM_INPUT[BUSINESS_TYPE[1]],
+      SYSTEM_INPUT["SYSTEM_IDEA_VALIDATION"],
       prompt,
       "maximize",
       userExists,
