@@ -190,6 +190,15 @@ class ChecklistDBService {
         nextCategory = null;
       } else {
         nextCategory = quizCategory[quizCategoryDetails.order];
+        const isUnlocked = await this.checkActiveCategory(nextCategory._id);
+        nextCategory = {
+          _id: nextCategory._id,
+          topicId: nextCategory.topicId,
+          description: nextCategory.description,
+          levels: nextCategory.levels,
+          title: nextCategory.title,
+          isUnlocked,
+        };
       }
 
       const levels = quizLevelsDetails.map((obj) => ({
