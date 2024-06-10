@@ -549,48 +549,48 @@ export const SYSTEM_INPUT = {
     Describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. Also provide the market segment you chose the idea from in a separate line below the idea. Do not use any market segments that are not on the list.
     Lastly, generate a catchy short description for the business idea in 6 words or less. The description should generate curiosity while also clearly describing the business idea. Aim to highlight the unique value proposition. This will precede the business idea on its own line.
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input:
     Finding eco-friendly children's toys
     Output:
     {
-      "description": "Eco-friendly Children's Blocks",
-      "idea": "Modular, eco-friendly building blocks made from recycled materials with interlocking mechanisms for enhanced stability and creativity.",
+      "idea": "Eco-friendly Children's Blocks",
+      "description": "Modular, eco-friendly building blocks made from recycled materials with interlocking mechanisms for enhanced stability and creativity.",
       "segment": "Educational Toys"
     }
     Input:
     Finding luxury sleepwear
     Output:
     {
-      "description": "Temperature-Regulating Luxury Sleepwear",
-      "idea": "Temperature-regulating luxury sleepwear with advanced fabric technology for optimal comfort and sleep quality.",
+      "idea": "Temperature-Regulating Luxury Sleepwear",
+      "description": "Temperature-regulating luxury sleepwear with advanced fabric technology for optimal comfort and sleep quality.",
       "segment": "Luxury Clothing"
     }
     Input:
     Home Cooking. Organizing Kitchen Tools and Supplies
     Output:
     {
-      "description": "Modular Space-Saving Cookware",
-      "idea": "Smart, modular cookware set with interchangeable handles and lids, featuring space-saving stackable design for efficient storage and cooking.",
+      "idea": "Modular Space-Saving Cookware",
+      "description": "Smart, modular cookware set with interchangeable handles and lids, featuring space-saving stackable design for efficient storage and cooking.",
       "segment": "Kitchen Appliances"
     }
     Input:
     Health & Nutrition. Creating a supplement plan
     Output:
     {
-      "description": "DNA-personalized Nutrition Supplements",
-      "idea": "Personalized fitness supplements with DNA-based formulations for optimal nutrient absorption and performance enhancement.",
+      "idea": "DNA-personalized Nutrition Supplements",
+      "description": "Personalized fitness supplements with DNA-based formulations for optimal nutrient absorption and performance enhancement.",
       "segment": "Fitness Supplements"
     }
     Input:
     Taking care of indoor plants
     Output:
     {
-      "description": "Smart Plant Care System",
-      "idea": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
+      "idea": "Smart Plant Care System",
+      "description": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
       "segment": "Plant Care Products"
     }`,
     MARKET_SIZE: `Objective: Generate a unique and innovative physical product business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas. 
@@ -708,48 +708,48 @@ export const SYSTEM_INPUT = {
     
     Lastly, generate an easy to understand short description for the business idea in 5 words or less. The description should generate curiosity while also clearly describing the business idea. Aim to highlight the unique value proposition. This will precede the business idea on its own line. 
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea. 
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input: 
     Finding affordable and convenient tennis lessons
     Output: 
     {
-        "description": "AI tennis coach racket",
-        "idea": "AI-powered tennis racket with real-time swing analysis and personalized coaching for skill improvement.",
+        "idea": "AI tennis coach racket",
+        "description": "AI-powered tennis racket with real-time swing analysis and personalized coaching for skill improvement.",
         "segment": "Tennis Equipment"
     }
     Input: 
     A more personalized concert experience
     Output: 
     {
-        "description": "AR interactive concert glasses",
-        "idea": "Augmented reality concert glasses with real-time lyrics, artist info, and interactive visuals for enhanced experiences.",
+        "idea": "AR interactive concert glasses",
+        "description": "Augmented reality concert glasses with real-time lyrics, artist info, and interactive visuals for enhanced experiences.",
         "segment": "Concert Accessories"
     }
     Input: 
     Repetitive board game content
     Output:
     {
-        "description": "User-generated modular board game",
-        "idea": "Collaborative board game with modular, user-generated content for endless replayability and creativity.",
+        "idea": "User-generated modular board game",
+        "description": "Collaborative board game with modular, user-generated content for endless replayability and creativity.",
         "segment": "Board Games"
     }
     Input: 
     Home gym. Maximizing Limited Space
     Output:
     {
-        "description": "VR compact home gym",
-        "idea": "Portable, compact home gym equipment with virtual reality integration for immersive, space-saving workouts.",
+        "idea": "VR compact home gym",
+        "description": "Portable, compact home gym equipment with virtual reality integration for immersive, space-saving workouts.",
         "segment": "Home Gym Equipment"
     }
     Input: 
     Wildlife Observation & Care. Integrating Habitats and Feeders with Environmental Monitoring
     Output:
     {
-        "description": "Eco-friendly smart bird feeder",
-        "idea": "Eco-friendly, noise-canceling bird feeder with built-in camera for remote bird watching and conservation.",
+        "idea": "Eco-friendly smart bird feeder",
+        "description": "Eco-friendly, noise-canceling bird feeder with built-in camera for remote bird watching and conservation.",
         "segment": "Bird Watching Supplies"
     }`,
     COMPLEXITY: `Objective: Generate a unique and innovative physical product business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas. 
@@ -852,48 +852,48 @@ export const SYSTEM_INPUT = {
     
     Lastly, generate an easy to understand short description for the business idea in 5 words or less. The description should generate curiosity while also clearly describing the business idea. Aim to highlight the unique value proposition. This will precede the business idea on its own line. 
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea. 
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input: 
     Phone battery dies during long group hangouts
     Output: 
     {
-        "description": "Solar-charging beach umbrella",
-        "idea": "Customizable, modular beach umbrella with built-in sand anchors and solar-powered phone charger.",
+        "idea": "Solar-charging beach umbrella",
+        "description": "Customizable, modular beach umbrella with built-in sand anchors and solar-powered phone charger.",
         "segment": "Beach Gear"
     }
     Input: 
     Holidays, Birthdays & Traditions. Finding fun and unique decorations or party accessories
     Output:
     {
-        "description": "Eco-friendly plantable party confetti",
-        "idea": "Eco-friendly, biodegradable confetti and streamers made from plantable seed paper for sustainable celebrations.",
+        "idea": "Eco-friendly plantable party confetti",
+        "description": "Eco-friendly, biodegradable confetti and streamers made from plantable seed paper for sustainable celebrations.",
         "segment": "Party Supplies"
     } 
     Input: 
     Inconsistent golf grip and comfort
     Output:
     {
-        "description": "Adjustable grip-enhancing golf glove",
-        "idea": "Golf glove with built-in grip enhancers and adjustable tension for improved comfort and swing consistency.",
+        "idea": "Adjustable grip-enhancing golf glove",
+        "description": "Golf glove with built-in grip enhancers and adjustable tension for improved comfort and swing consistency.",
         "segment": "Golf Apparel"
     } 
     Input: 
     Affording rare coins
     Output:
     {
-        "description": "Collectible mystery coin sets",
-        "idea": "Collectible, mystery coin sets with themed packaging and varying rarity levels for exciting, accessible collecting.",
+        "idea": "Collectible mystery coin sets",
+        "description": "Collectible, mystery coin sets with themed packaging and varying rarity levels for exciting, accessible collecting.",
         "segment": "Coin Collecting Supplies"
     } 
     Input: 
     Staying hygienic during culinary adventures
     Output:
     {
-        "description": "Self-sanitizing portable travel utensils",
-        "idea": "Portable, compact travel utensil set with built-in sanitizing case for hygienic, on-the-go dining.",
+        "idea": "Self-sanitizing portable travel utensils",
+        "description": "Portable, compact travel utensil set with built-in sanitizing case for hygienic, on-the-go dining.",
         "segment": "Travel Accessories"
     }`,
   },
@@ -975,48 +975,48 @@ export const SYSTEM_INPUT = {
     Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
     
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input: 
     Educating a toddler without cringe youtube videos
     Output: 
     {
-      "description": "JibJab for Educational Kids' Music Videos",
-      "idea": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
+      "idea": "JibJab for Educational Kids' Music Videos",
+      "description": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
       "segment": "Music Learning Apps"
     }
     Input: 
     Sports/Fitness. Finding available exercise equipment at the gym
     Output:
     {
-      "description": "OpenTable for Smart Gym Equipment Bookings",
-      "idea": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
+      "idea": "OpenTable for Smart Gym Equipment Bookings",
+      "description": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
       "segment": "Fitness and Training Apps"
     } 
     Input: 
     Getting unfairly banned by game moderators
     Output:
     {
-      "description": "Reddit for Decentralized Game Moderation",
-      "idea": "A decentralized moderation system where the community votes on content and behavior moderation, ensuring fair and transparent enforcement.",
+      "idea": "Reddit for Decentralized Game Moderation",
+      "description": "A decentralized moderation system where the community votes on content and behavior moderation, ensuring fair and transparent enforcement.",
       "segment": "Blockchain Gaming Platforms"
     } 
     Input: 
     Fantasy Sports. Sparking more interaction in fantasy league SMS threads
     Output:
     {
-      "description": "WhatsApp for Fantasy Recaps",
-      "idea": "An integration that sends weekly fantasy recaps to group chats/SMS threads, sparking fun league conversations with data-driven insights.",
+      "idea": "WhatsApp for Fantasy Recaps",
+      "description": "An integration that sends weekly fantasy recaps to group chats/SMS threads, sparking fun league conversations with data-driven insights.",
       "segment": "Fantasy Sports Platforms"
     } 
     Input: 
     Photography. Making photo editing easier
     Output:
     {
-      "description": "Siri for Voice-Controlled Photo Editing",
-      "idea": "An app that allows users to apply photo edits and effects using voice commands, making the editing process more accessible.",
+      "idea": "Siri for Voice-Controlled Photo Editing",
+      "description": "An app that allows users to apply photo edits and effects using voice commands, making the editing process more accessible.",
       "segment": "Photo Editing Mobile Apps"
     }`,
     MARKET_SIZE: `Objective: Generate a unique and innovative software business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
@@ -1075,48 +1075,48 @@ export const SYSTEM_INPUT = {
     Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
     
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input:
     Jobs/Careers. Preparing for a career switch
     Output:
     {
-      "description": "Roblox for Career Exploration",
-      "idea": "A mobile app that allows users to virtually explore careers, learn required skills, complete simulated tasks, and build a professional portfolio.",
+      "idea": "Roblox for Career Exploration",
+      "description": "A mobile app that allows users to virtually explore careers, learn required skills, complete simulated tasks, and build a professional portfolio.",
       "segment": "Educational Apps and Game Platforms"
     }
     Input:
     Sports/Fitness. Finding available exercise equipment at the gym
     Output:
     {
-      "description": "OpenTable for Smart Gym Equipment Bookings",
-      "idea": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
+      "idea": "OpenTable for Smart Gym Equipment Bookings",
+      "description": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
       "segment": "Fitness and Training Apps"
     }
     Input:
     Finding music to pair with edited videos or other content
     Output:
     {
-      "description": "Spotify for Storytelling",
-      "idea": "A platform that generates dynamic soundtracks for stories and narratives, with AI adapting the music to fit the plot twists, character emotions, and scenes.",
+      "idea": "Spotify for Storytelling",
+      "description": "A platform that generates dynamic soundtracks for stories and narratives, with AI adapting the music to fit the plot twists, character emotions, and scenes.",
       "segment": "AI Music Composition Tools"
     }
     Input:
     Gaming. Lack of true ownership in gaming
     Output:
     {
-      "description": "Minecraft for Blockchain",
-      "idea": "A sandbox game where players can build, own, and trade virtual lands and assets using blockchain, with in-game items having real-world value through NFTs.",
+      "idea": "Minecraft for Blockchain",
+      "description": "A sandbox game where players can build, own, and trade virtual lands and assets using blockchain, with in-game items having real-world value through NFTs.",
       "segment": "Blockchain Gaming Platforms"
     }
     Input:
     Finance/Investing. Creating a balanced and diversified investment portfolio
     Output:
     {
-      "description": "Hedgeye for AI-Driven Hedging Strategies",
-      "idea": "A platform that uses AI to develop and execute hedging strategies, protecting portfolios from downside risk.",
+      "idea": "Hedgeye for AI-Driven Hedging Strategies",
+      "description": "A platform that uses AI to develop and execute hedging strategies, protecting portfolios from downside risk.",
       "segment": "Stock Trading Platforms"
     }`,
     COMPLEXITY: `Objective: Generate a unique and innovative software business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
@@ -1165,48 +1165,48 @@ export const SYSTEM_INPUT = {
     Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
     
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input: 
     Music. Developing songwriting skills
     Output:
     {
-      "description": "Grammarly for Songwriting",
-      "idea": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
+      "idea": "Grammarly for Songwriting",
+      "description": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
       "segment": "Music Learning Apps"
     } 
     Input: 
     Mental Health. Finding moments of relaxation
     Output:
     {
-      "description": "Calm for Photo Therapy",
-      "idea": "A mobile app that combines mindfulness exercises with photo editing tasks to promote relaxation, creativity, and mental well-being.",
+      "idea": "Calm for Photo Therapy",
+      "description": "A mobile app that combines mindfulness exercises with photo editing tasks to promote relaxation, creativity, and mental well-being.",
       "segment": "Photo Editing Mobile Apps"
     } 
     Input: 
     Staying in touch with friends virtually
     Output:
     {
-      "description": "WhatsApp for Automated Photo Book Sharing",
-      "idea": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
+      "idea": "WhatsApp for Automated Photo Book Sharing",
+      "description": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
       "segment": "Photo Book Creation Software"
     } 
     Input: 
     Sports/Fitness. Fitting workouts into a busy daily routine
     Output:
     {
-      "description": "HIIT for Micro-Workouts",
-      "idea": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
+      "idea": "HIIT for Micro-Workouts",
+      "description": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
       "segment": "Fitness and Training Apps"
     } 
     Input: 
     Watching Sports. Staying engaged during live sporting events
     Output:
     {
-      "description": "Twitter for Real-Time Fan Polls",
-      "idea": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
+      "idea": "Twitter for Real-Time Fan Polls",
+      "description": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
       "segment": "Fan Engagement and Loyalty Platforms"
     }`,
   },
@@ -1288,48 +1288,48 @@ export const SYSTEM_INPUT = {
     Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
     
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input: 
     Educating a toddler without cringe youtube videos
     Output: 
     {
-      "description": "JibJab for Educational Kids' Music Videos",
-      "idea": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
+      "idea": "JibJab for Educational Kids' Music Videos",
+      "description": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
       "segment": "Music Learning Apps"
     }
     Input: 
     Sports/Fitness. Finding available exercise equipment at the gym
     Output:
     {
-      "description": "OpenTable for Smart Gym Equipment Bookings",
-      "idea": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
+      "idea": "OpenTable for Smart Gym Equipment Bookings",
+      "description": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
       "segment": "Fitness and Training Apps"
     } 
     Input: 
     Getting unfairly banned by game moderators
     Output:
     {
-      "description": "Reddit for Decentralized Game Moderation",
-      "idea": "A decentralized moderation system where the community votes on content and behavior moderation, ensuring fair and transparent enforcement.",
+      "idea": "Reddit for Decentralized Game Moderation",
+      "description": "A decentralized moderation system where the community votes on content and behavior moderation, ensuring fair and transparent enforcement.",
       "segment": "Blockchain Gaming Platforms"
     } 
     Input: 
     Fantasy Sports. Sparking more interaction in fantasy league SMS threads
     Output:
     {
-      "description": "WhatsApp for Fantasy Recaps",
-      "idea": "An integration that sends weekly fantasy recaps to group chats/SMS threads, sparking fun league conversations with data-driven insights.",
+      "idea": "WhatsApp for Fantasy Recaps",
+      "description": "An integration that sends weekly fantasy recaps to group chats/SMS threads, sparking fun league conversations with data-driven insights.",
       "segment": "Fantasy Sports Platforms"
     } 
     Input: 
     Photography. Making photo editing easier
     Output:
     {
-      "description": "Siri for Voice-Controlled Photo Editing",
-      "idea": "An app that allows users to apply photo edits and effects using voice commands, making the editing process more accessible.",
+      "idea": "Siri for Voice-Controlled Photo Editing",
+      "description": "An app that allows users to apply photo edits and effects using voice commands, making the editing process more accessible.",
       "segment": "Photo Editing Mobile Apps"
     }`,
     MARKET_SIZE: `Objective: Generate a unique and innovative software business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
@@ -1388,48 +1388,48 @@ export const SYSTEM_INPUT = {
     Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
     
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input:
     Jobs/Careers. Preparing for a career switch
     Output:
     {
-      "description": "Roblox for Career Exploration",
-      "idea": "A mobile app that allows users to virtually explore careers, learn required skills, complete simulated tasks, and build a professional portfolio.",
+      "idea": "Roblox for Career Exploration",
+      "description": "A mobile app that allows users to virtually explore careers, learn required skills, complete simulated tasks, and build a professional portfolio.",
       "segment": "Educational Apps and Game Platforms"
     }
     Input:
     Sports/Fitness. Finding available exercise equipment at the gym
     Output:
     {
-      "description": "OpenTable for Smart Gym Equipment Bookings",
-      "idea": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
+      "idea": "OpenTable for Smart Gym Equipment Bookings",
+      "description": "An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals.",
       "segment": "Fitness and Training Apps"
     }
     Input:
     Finding music to pair with edited videos or other content
     Output:
     {
-      "description": "Spotify for Storytelling",
-      "idea": "A platform that generates dynamic soundtracks for stories and narratives, with AI adapting the music to fit the plot twists, character emotions, and scenes.",
+      "idea": "Spotify for Storytelling",
+      "description": "A platform that generates dynamic soundtracks for stories and narratives, with AI adapting the music to fit the plot twists, character emotions, and scenes.",
       "segment": "AI Music Composition Tools"
     }
     Input:
     Gaming. Lack of true ownership in gaming
     Output:
     {
-      "description": "Minecraft for Blockchain",
-      "idea": "A sandbox game where players can build, own, and trade virtual lands and assets using blockchain, with in-game items having real-world value through NFTs.",
+      "idea": "Minecraft for Blockchain",
+      "description": "A sandbox game where players can build, own, and trade virtual lands and assets using blockchain, with in-game items having real-world value through NFTs.",
       "segment": "Blockchain Gaming Platforms"
     }
     Input:
     Finance/Investing. Creating a balanced and diversified investment portfolio
     Output:
     {
-      "description": "Hedgeye for AI-Driven Hedging Strategies",
-      "idea": "A platform that uses AI to develop and execute hedging strategies, protecting portfolios from downside risk.",
+      "idea": "Hedgeye for AI-Driven Hedging Strategies",
+      "description": "A platform that uses AI to develop and execute hedging strategies, protecting portfolios from downside risk.",
       "segment": "Stock Trading Platforms"
     }`,
     COMPLEXITY: `Objective: Generate a unique and innovative software business idea to solve the user problem in the input. An associated activity may also be included in the input before the problem to provide context. Prioritize generating truly unique and innovative ideas.
@@ -1478,48 +1478,48 @@ export const SYSTEM_INPUT = {
     Lastly, generate a catchy "X for Y" analogy for the business idea in 6 words or less. The analogy should concisely convey the core concept by comparing it to a well-known successful company or product (X) being applied to a new domain or market (Y). Aim to highlight the unique value proposition. This will precede the business idea on its own line.
     
     After generating the idea, double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, revise your selection to use a segment from the list that best fits the generated idea.
-    Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-    You should also ensure that the respone should be an strictly be an object having 'description' key containg the generated catchy short description, 'idea' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
-    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea' and 'segment'. Nothing else will be considered a valid response.
+    Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+    You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+    You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
     To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
     Input: 
     Music. Developing songwriting skills
     Output:
     {
-      "description": "Grammarly for Songwriting",
-      "idea": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
+      "idea": "Grammarly for Songwriting",
+      "description": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
       "segment": "Music Learning Apps"
     } 
     Input: 
     Mental Health. Finding moments of relaxation
     Output:
     {
-      "description": "Calm for Photo Therapy",
-      "idea": "A mobile app that combines mindfulness exercises with photo editing tasks to promote relaxation, creativity, and mental well-being.",
+      "idea": "Calm for Photo Therapy",
+      "description": "A mobile app that combines mindfulness exercises with photo editing tasks to promote relaxation, creativity, and mental well-being.",
       "segment": "Photo Editing Mobile Apps"
     } 
     Input: 
     Staying in touch with friends virtually
     Output:
     {
-      "description": "WhatsApp for Automated Photo Book Sharing",
-      "idea": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
+      "idea": "WhatsApp for Automated Photo Book Sharing",
+      "description": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
       "segment": "Photo Book Creation Software"
     } 
     Input: 
     Sports/Fitness. Fitting workouts into a busy daily routine
     Output:
     {
-      "description": "HIIT for Micro-Workouts",
-      "idea": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
+      "idea": "HIIT for Micro-Workouts",
+      "description": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
       "segment": "Fitness and Training Apps"
     } 
     Input: 
     Watching Sports. Staying engaged during live sporting events
     Output:
     {
-      "description": "Twitter for Real-Time Fan Polls",
-      "idea": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
+      "idea": "Twitter for Real-Time Fan Polls",
+      "description": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
       "segment": "Fan Engagement and Loyalty Platforms"
     }`,
   }, // provide System Prompt for Content Brand when available
@@ -1851,88 +1851,88 @@ export const SYSTEM_INPUT = {
   Step 4B: The assistant will describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. It will also provide the market segment chosen from the list in a separate line below the idea.
   Step 5B: Lastly, the assistant will generate a short description for the business idea in 5 words or less. This description should generate curiosity while clearly describing the business idea. This will precede the business idea on its own line.
   Final Check: After generating the idea, the assistant will double-check that the selected market segment is from the list provided at the beginning of this section. If the market segment is not on the list, the assistant will revise the selection to use a segment from the list that best fits the generated idea.
-  Also, ensure that your response should only contain three things that is business description, business idea and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
-  You should also ensure that the respone should strictly be an object having 'description' key containing the generated catchy short description, 'idea' key containing the generated business idea, 'segment' key containing the chosen Market Segment and 'type' containing the type of business idea, whether it is 'software' or 'physical'.
-  You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'description', 'idea', 'segment' and 'type'. Nothing else will be considered a valid response.
-  To illustrate, here are some diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
+  Also, ensure that your response should only contain three things that is business idea, business description and the market segment based on the requirements provided above. Strictly refrain from providing anything which is not asked in the above requirement.
+  You should also ensure that the respone should be an strictly be an object having 'idea' key containg the generated catchy short description, 'description' key containing the generated business idea and 'segment' key containing the chosen Market Segment.
+  You can cross-check the response structure from some of the examples given below. And the response object should strictly contain only three key-value pairs, where keys should be 'idea', 'description' and 'segment'. Nothing else will be considered a valid response.
+  To illustrate, here are 5 diverse examples that demonstrate the desired output format and cover different niches, user problems, and innovative approaches:
   Example Outputs
   Input: a smart bird feeder with a built in camera for noise conscious, remote bird watching 
   Output:
   {
-      "description": "Smart Bird Feeder",
-      "idea": "Noise-cancelling bird feeder with built-in camera for remote bird watching and conservation.",
+      "idea": "Smart Bird Feeder",
+      "description": "Noise-cancelling bird feeder with built-in camera for remote bird watching and conservation.",
       "segment": "Bird Watching Supplies",
       "type": "product"
   }
   Input: ai integrated tennis racket that provides real swing analysis and coaching suggestions for improvement. 
   Output:
   {
-      "description": "AI Tennis Coach Racket",
-      "idea": "AI-powered tennis racket with real-time swing analysis and personalized coaching for skill improvement.",
+      "idea": "AI Tennis Coach Racket",
+      "description": "AI-powered tennis racket with real-time swing analysis and personalized coaching for skill improvement.",
       "segment": "Tennis Equipment",
       "type": "product"
   }
   Input: beach umbrella with built in anchoring system and a solar powered phone charger 
   Output:
   {
-      "description": "Solar-charging beach umbrella",
-      "idea": "Customizable, modular beach umbrella with built-in sand anchors and solar-powered phone charger.",
+      "idea": "Solar-charging beach umbrella",
+      "description": "Customizable, modular beach umbrella with built-in sand anchors and solar-powered phone charger.",
       "segment": "Beach Gear",
       "type": "product"
   }
   Input: coin collecting sets with themed packaging and rarity levels similar to trading card packs. 
   Output:
   {
-      "description": "Collectible mystery coin sets",
-      "idea": "Collectible, mystery coin sets with themed packaging and varying rarity levels for exciting, accessible collecting.",
+      "idea": "Collectible mystery coin sets",
+      "description": "Collectible, mystery coin sets with themed packaging and varying rarity levels for exciting, accessible collecting.",
       "segment": "Coin Collecting Supplies",
       "type": "product"
   }
   Input: smart plant care system where ai optimizes watering and lighting for plant growth 
   Output:
   {
-      "description": "Smart Plant Care System",
-      "idea": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
+      "idea": "Smart Plant Care System",
+      "description": "Smart plant care system with AI-driven watering, lighting, and nutrient dosing for optimal plant health and growth.",
       "segment": "Plant Care Products",
       "type": "product"
   }
   Input: workout app focused on 5 minute workouts that fit into your daily life. 
   Output:
   {
-      "description": "5-Minute P90X Mobile App",
-      "idea": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
+      "idea": "5-Minute P90X Mobile App",
+      "description": "An app offering 5-10 minute micro-workouts tailored to specific fitness goals and schedules, fitting seamlessly into daily routines.",
       "segment": "Fitness and Training Apps",
       "type": "software"
   }
   Input: a live voting app where fans get to influence real game decisions and nominate players of the game. 
   Output:
   {
-      "description": "Twitter for Real-Time Fan Polls",
-      "idea": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
+      "idea": "Twitter for Real-Time Fan Polls",
+      "description": "An app that conducts real-time polls during games and events, allowing fans to vote on various aspects like player of the match, game strategies, and more.",
       "segment": "Fan Engagement and Loyalty Platforms",
       "type": "software"
   }
   Input: an app that send pictures of moments and memories to a group chat of friends for birthdays, event anniversaries, etc. 
   Output:
   {
-      "description": "Instagram on SMS",
-      "idea": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
+      "idea": "Instagram on SMS",
+      "description": "An app that automatically creates and shares photo book memories with friends and family via group texts on special occasions and anniversaries.",
       "segment": "Photo Book Creation Software",
       "type": "software"
   }
   Input: an app that helps songwriters create and get feedback on their work using AI 
   Output:
   {
-      "description": "Grammarly for Songwriting",
-      "idea": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
+      "idea": "Grammarly for Songwriting",
+      "description": "An app that provides songwriting prompts, tools, and feedback, helping users develop their songwriting abilities and create original music.",
       "segment": "Music Learning Apps",
       "type": "software"
   }
   Input: platform that allows parents to upload a sample of their voice and picture that AI turns into a child youtube video, so it feels like they are the star of the video and teaching their own children. 
   Output: 
   {
-      "description": "JibJab for Educational Kids' Music Videos",
-      "idea": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
+      "idea": "JibJab for Educational Kids' Music Videos",
+      "description": "Parents upload a voice recording and picture to create educational music videos, like popular YouTube kids' channels, featuring them as the performer.",
       "segment": "Music Learning Apps",
       "type": "software"
   }`,
