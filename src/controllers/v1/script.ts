@@ -2149,6 +2149,27 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to update explanation statements for case study quizzes
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/update-explanation-statement",
+    method: HttpMethod.POST,
+  })
+  @InternalUserAuth()
+  public async updateExplanationStatement(ctx: any) {
+    try {
+      await ScriptService.updateAnswerExplanationStatement();
+      return this.Ok(ctx, {
+        message: "Data Updated Successfully",
+      });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
+  }
 }
 
 export default new ScriptController();
