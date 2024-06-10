@@ -1,10 +1,11 @@
 import BaseController from "@app/controllers/base";
-import { Auth } from "@app/middleware";
+import { Auth, PrimeTrustJWT } from "@app/middleware";
 import { UserDBService } from "@app/services/v6";
 import { HttpMethod } from "@app/types";
 import { Route, THINGS_TO_TALK_ABOUT } from "@app/utility";
 import { BusinessProfileService } from "@app/services/v7";
 import { CoachProfileTable, UserTable } from "@app/model";
+import { zohoCrmService } from "@app/services/v1";
 
 class UserController extends BaseController {
   /**
@@ -51,12 +52,29 @@ class UserController extends BaseController {
    */
   @Route({ path: "/pro-user-status", method: HttpMethod.POST })
   @Auth()
+  @PrimeTrustJWT(true)
   public async UpdateProUserStatus(ctx: any) {
     const { user, body } = ctx.request;
-    await UserTable.findOneAndUpdate(
+    const userIfExists = await UserTable.findOneAndUpdate(
       { _id: user._id },
       { $set: { isPremiumUser: body.isPremiumUser } },
-      { upsert: true }
+      { upsert: true, new: true }
+    );
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    let dataSentInCrm = [
+      {
+        Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
+        Email: userIfExists.email,
+        Pro_Plan: body.proPlanName || null,
+        Pro_Plan_Status: body.proPlanStatus || "Inactive",
+      },
+    ];
+    zohoCrmService.addAccounts(
+      ctx.request.zohoAccessToken,
+      dataSentInCrm,
+      true
     );
     return this.Ok(ctx, { message: "Success" });
   }
