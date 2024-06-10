@@ -523,12 +523,18 @@ class BusinessProfileService {
 
       let uniquenessData = JSON.parse(
         uniqueness_response.choices[0].message.content
+          .replace(/```json|```/g, "")
+          .trim()
       );
       let marketSizeData = JSON.parse(
         marketSize_response.choices[0].message.content
+          .replace(/```json|```/g, "")
+          .trim()
       );
       let complexityData = JSON.parse(
         complexity_response.choices[0].message.content
+          .replace(/```json|```/g, "")
+          .trim()
       );
       let marketSegments = await MarketSegmentInfoTable.find(
         {
@@ -899,6 +905,8 @@ class BusinessProfileService {
 
       let validatedIdeaData = JSON.parse(
         validatedIdea.choices[0].message.content
+          .replace(/```json|```/g, "")
+          .trim()
       );
       let marketSegments = await MarketSegmentInfoTable.find(
         {
