@@ -72,12 +72,8 @@ class BusinessProfileService {
         }
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
-          {
-            "Item Name": data.businessIdeaInfo[0].value,
-          },
-          {
-            user_id: userIfExists._id,
-          }
+          { "Item Name": data.businessIdeaInfo[0].value },
+          { user_id: userIfExists._id }
         );
       } else {
         const getHoursSaved = actionScreenData.filter(
@@ -99,6 +95,11 @@ class BusinessProfileService {
           value: data.value,
           timestamp: Date.now(),
         };
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS[AI_TOOLS_ANALYTICS[data.key]],
+          { "Item Name": data.value },
+          { user_id: userIfExists._id }
+        );
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -109,12 +110,6 @@ class BusinessProfileService {
           $push: { businessHistory: businessHistoryObj },
         },
         { upsert: true }
-      );
-
-      AnalyticsService.sendEvent(
-        ANALYTICS_EVENTS[AI_TOOLS_ANALYTICS[data.key]],
-        { "Item Name": data.value },
-        { user_id: userIfExists._id }
       );
       return [
         {
