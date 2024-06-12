@@ -2,9 +2,19 @@ import BaseController from "@app/controllers/base";
 import { Auth } from "@app/middleware";
 import { UserDBService } from "@app/services/v6";
 import { HttpMethod } from "@app/types";
-import { Route, THINGS_TO_TALK_ABOUT } from "@app/utility";
+import {
+  Route,
+  THINGS_TO_TALK_ABOUT,
+  INITIAL_TUTORIAL_STATUS,
+  TUTORIAL_LOOKUP,
+} from "@app/utility";
 import { BusinessProfileService } from "@app/services/v7";
-import { CoachProfileTable, UserTable, LeagueTable } from "@app/model";
+import {
+  CoachProfileTable,
+  UserTable,
+  LeagueTable,
+  TutorialStatusTable,
+} from "@app/model";
 import { ChecklistDBService } from "@app/services/v9";
 import { UserService } from "@app/services/v9";
 
@@ -63,6 +73,60 @@ class UserController extends BaseController {
     };
 
     return this.Ok(ctx, data, true);
+  }
+
+  /**
+   * @description This method is to get the tutorial status which have been viewed by the user or not
+   * @param ctx
+   */
+  @Route({ path: "/get-tutorial-status", method: HttpMethod.GET })
+  @Auth()
+  public async getTutorialStatus(ctx: any) {
+    try {
+      const { user } = ctx.request;
+      const userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      let data: any = await TutorialStatusTable.findOne({ userId: user._id });
+      if (!data) {
+        return this.Ok(
+          ctx,
+          { userId: user._id, ...INITIAL_TUTORIAL_STATUS },
+          true
+        );
+      }
+      return this.Ok(ctx, data, true);
+    } catch (error) {
+      return this.BadRequest(ctx, "Something went wrong");
+    }
+  }
+
+  /**
+   * @description This method is set the viewed tutorial status to true
+   * @param ctx
+   */
+  @Route({ path: "/update-tutorial-status", method: HttpMethod.POST })
+  @Auth()
+  public async updateTutorialStatus(ctx: any) {
+    try {
+      const { user, body } = ctx.request;
+      const userExists = await UserTable.findOne({ _id: user._id });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      if (!Object.keys(INITIAL_TUTORIAL_STATUS).includes(body.key)) {
+        return this.BadRequest(ctx, "Invalid data");
+      }
+      await TutorialStatusTable.findOneAndUpdate(
+        { userId: user._id },
+        { $set: TUTORIAL_LOOKUP[body.key] },
+        { upsert: true }
+      );
+      return this.Ok(ctx, { message: "success" });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
   }
 }
 

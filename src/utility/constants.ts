@@ -722,3 +722,25 @@ export const AI_TOOLS_ANALYTICS = {
   competitors: "TOP_COMPETITORS_SUBMITTED",
   colorsAndAesthetic: "BRAND_AESTHETIC_SUBMITTED",
 };
+
+export const INITIAL_TUTORIAL_STATUS = {
+  quiz: false,
+  caseStudy: false,
+  simulation: false,
+  aiTools: false,
+  ideaGenerator: false,
+  mentorship: false,
+  aiToolVisited: false,
+  mentorshipVisited: false,
+};
+
+export const TUTORIAL_LOOKUP = {
+  quiz: { quiz: true },
+  caseStudy: { quiz: true, caseStudy: true },
+  simulation: { quiz: true, caseStudy: true, simulation: true },
+  aiTools: { aiTools: true },
+  ideaGenerator: { aiTools: true, ideaGenerator: true },
+  mentorship: { mentorship: true },
+  aiToolVisited: { aiToolVisited: true },
+  mentorshipVisited: { mentorshipVisited: true },
+};

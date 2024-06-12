@@ -33,3 +33,4 @@ export * from "@app/types/proUser";
 export * from "@app/types/coachProfile";
 export * from "@app/types/checklistResult";
 export * from "@app/types/marketSegmentInfo";
+export * from "@app/types/tutorialStatus";
