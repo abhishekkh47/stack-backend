@@ -14,6 +14,7 @@ import {
   WeeklyJourneyResultTable,
   ChecklistResultTable,
   AIToolsUsageStatusTable,
+  TutorialStatusTable,
 } from "@app/model";
 import {
   MAX_STREAK_FREEZE,
@@ -155,21 +156,24 @@ class UserService {
       const users = await UserTable.find(userQuery);
       let emails = users.map((x) => x.email);
       emails = [...new Set(emails)];
-      await UserDBService.searchAndDeleteZohoAccounts(emails, zohoAccessToken);
-      await UserBanksTable.deleteMany(otherRecordsQuery);
-      await DeviceToken.deleteMany(otherRecordsQuery);
-      await Notification.deleteMany(otherRecordsQuery);
-      await QuizQuestionResult.deleteMany(otherRecordsQuery);
-      await QuizResult.deleteMany(otherRecordsQuery);
-      await WeeklyJourneyResultTable.deleteMany(otherRecordsQuery);
-      await TransactionTable.deleteMany(otherRecordsQuery);
-      await UserActivityTable.deleteMany(otherRecordsQuery);
-      await BusinessProfileTable.deleteMany(otherRecordsQuery);
-      await UserCommunityTable.deleteMany(otherRecordsQuery);
-      await UserTable.deleteMany(userQuery);
-      await ParentChildTable.deleteMany(otherRecordsQuery);
-      await ChecklistResultTable.deleteMany(otherRecordsQuery);
-      await AIToolsUsageStatusTable.deleteMany(otherRecordsQuery);
+      await Promise.all([
+        UserDBService.searchAndDeleteZohoAccounts(emails, zohoAccessToken),
+        UserBanksTable.deleteMany(otherRecordsQuery),
+        DeviceToken.deleteMany(otherRecordsQuery),
+        Notification.deleteMany(otherRecordsQuery),
+        QuizQuestionResult.deleteMany(otherRecordsQuery),
+        QuizResult.deleteMany(otherRecordsQuery),
+        WeeklyJourneyResultTable.deleteMany(otherRecordsQuery),
+        TransactionTable.deleteMany(otherRecordsQuery),
+        UserActivityTable.deleteMany(otherRecordsQuery),
+        BusinessProfileTable.deleteMany(otherRecordsQuery),
+        UserCommunityTable.deleteMany(otherRecordsQuery),
+        UserTable.deleteMany(userQuery),
+        ParentChildTable.deleteMany(otherRecordsQuery),
+        ChecklistResultTable.deleteMany(otherRecordsQuery),
+        AIToolsUsageStatusTable.deleteMany(otherRecordsQuery),
+        TutorialStatusTable.deleteMany(otherRecordsQuery),
+      ]);
       /**
        * Store Deleted Users in a separate document
        */
