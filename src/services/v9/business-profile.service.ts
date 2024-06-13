@@ -93,8 +93,13 @@ class BusinessProfileService {
         { upsert: true }
       );
 
-      const { logoGenerationInfo, companyName } = userBusinessProfile;
-      const { aiSuggestions, isUnderProcess, startTime } = logoGenerationInfo;
+      const { logoGenerationInfo = null, companyName = "" } =
+        userBusinessProfile ?? {};
+      const {
+        aiSuggestions = [],
+        isUnderProcess = false,
+        startTime = 0,
+      } = logoGenerationInfo ?? {};
       const elapsedTime = moment().unix() - startTime;
       let finished = aiSuggestions?.length === 4;
       if (
