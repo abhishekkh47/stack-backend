@@ -14,7 +14,6 @@ import {
   LEVEL_COUNT,
   LEVEL_QUIZ_COUNT,
   START_FROM_SCRATCH,
-  PERFECT_IDEA,
   CHECKLIST_QUESTION_LENGTH,
 } from "@app/utility";
 import { IUser } from "@app/types";
@@ -42,10 +41,9 @@ class ChecklistDBService {
         const topicQuizzes = completedQuizzes.filter(
           (quiz) => quiz.topicId.toString() == topic._id.toString()
         );
-        const numCompletedQuizzes = topicQuizzes.length;
         const totalQuizzes = LEVEL_COUNT * LEVEL_QUIZ_COUNT * CATEGORY_COUNT;
         const userProgress = Math.ceil(
-          (numCompletedQuizzes / totalQuizzes) * 100
+          (topicQuizzes.length / totalQuizzes) * 100
         );
         const currentLevel = topicQuizzes.length
           ? topicQuizzes[0].actionNum == 4
@@ -73,7 +71,7 @@ class ChecklistDBService {
   public async getQuizCategories(userIfExists: IUser, topicId: string) {
     try {
       let categoryProgress = 0;
-      let [quizCategory, completedQuizzes, topicDetails] = await Promise.all([
+      const [quizCategory, completedQuizzes, topicDetails] = await Promise.all([
         QuizCategoryTable.find(
           { topicId },
           { _id: 1, topicId: 1, topic: "$title", levels: 1 }
@@ -88,39 +86,36 @@ class ChecklistDBService {
         QuizTopicTable.findOne({ _id: topicId }, { topic: 1 }).lean(),
       ]);
       const lastCompletedChallenge = completedQuizzes[0];
+      const totalQuizzes = LEVEL_COUNT * LEVEL_QUIZ_COUNT; // Assuming each category has 5 levels and each level has 4 quizzes
       let activeCategory = 0;
       let quizCategories = quizCategory.map((category) => {
         const categoryQuizzes = completedQuizzes.filter(
           (quiz) => quiz.categoryId.toString() == category._id.toString()
         );
-        const numCompletedQuizzes = categoryQuizzes.length;
-        const totalQuizzes = LEVEL_COUNT * LEVEL_QUIZ_COUNT; // Assuming each category has 5 levels and each level has 4 quizzes
         const userProgress = Math.floor(
-          (numCompletedQuizzes / totalQuizzes) * 100
+          (categoryQuizzes.length / totalQuizzes) * 100
         );
         if (userProgress == 100) categoryProgress += 1;
         return { ...category, userProgress, isUnlocked: true, isActive: false };
       });
-      const categoryLength = quizCategories.length;
+
       quizCategories.map((category, index) => {
         quizCategories[index - 1] &&
         quizCategories[index - 1]?.userProgress < 100
           ? (category.isUnlocked = false)
           : (category.isUnlocked = true);
-        if (lastCompletedChallenge) {
-          if (
-            lastCompletedChallenge?.categoryId.toString() ==
-              category._id.toString() &&
+        if (
+          lastCompletedChallenge &&
+          lastCompletedChallenge?.categoryId.toString() ==
+            category._id.toString()
+        ) {
+          activeCategory =
             lastCompletedChallenge?.level % 5 == 0 &&
             lastCompletedChallenge?.actionNum == 4
-          ) {
-            activeCategory = index + 1;
-          } else if (lastCompletedChallenge?.categoryId == category._id) {
-            activeCategory = index;
-          }
+              ? index + 1
+              : index;
         }
-
-        if (activeCategory == categoryLength) {
+        if (activeCategory == quizCategories.length) {
           activeCategory -= 1;
         }
       });
@@ -162,7 +157,6 @@ class ChecklistDBService {
    */
   public async getLevelsAndChallenges(userIfExists: IUser, categoryId: string) {
     try {
-      let upcomingChallenge = {};
       let upcomingQuizId = null;
       let upcomingQuizDetails = null;
       let checklistFlowCompleted = false;
@@ -212,7 +206,6 @@ class ChecklistDBService {
         lastPlayedChallenge.level % 5 == 0 &&
         lastPlayedChallenge.actionNum == 4
       ) {
-        upcomingChallenge = null;
         checklistFlowCompleted = true;
       } else if (!lastPlayedChallenge) {
         upcomingQuizId =
@@ -225,23 +218,20 @@ class ChecklistDBService {
         currentActionNum = 1;
         currentLevel = quizLevelsDetails[upcomingLevelIndex].level;
       } else {
-        let upcomingLevel =
+        currentLevel =
           lastPlayedChallenge.level +
           (lastPlayedChallenge.actionNum === 4 ? 1 : 0);
-        upcomingLevelIndex =
-          upcomingLevel % 5 == 0 ? 4 : (upcomingLevel % 5) - 1;
-        let upcomingActionNum =
+        upcomingLevelIndex = currentLevel % 5 == 0 ? 4 : (currentLevel % 5) - 1;
+        currentActionNum =
           lastPlayedChallenge.actionNum === 4
             ? 1
             : lastPlayedChallenge.actionNum + 1;
         upcomingQuizId =
-          quizLevelsDetails[upcomingLevelIndex].actions[upcomingActionNum - 1]
+          quizLevelsDetails[upcomingLevelIndex].actions[currentActionNum - 1]
             .quizId;
-        currentLevels = quizLevelsDetails[upcomingActionNum].actions;
+        currentLevels = quizLevelsDetails[currentActionNum].actions;
         upcomingQuizDetails = await this.getQuizDetails(upcomingQuizId);
-        currentActionNum = upcomingActionNum;
-        currentLevel = upcomingLevel;
-        Object.assign(currentLevels[upcomingActionNum - 1], {
+        Object.assign(currentLevels[currentActionNum - 1], {
           quizDetails: upcomingQuizDetails[0],
         });
       }
@@ -352,41 +342,31 @@ class ChecklistDBService {
     topicId: string = null
   ) {
     try {
-      let currentCategoryId = null;
-      let currentTopicId = null;
       const lastPlayedChallenge = await ChecklistResultTable.findOne({
         userId: (userIfExists as any)._id,
       }).sort({ createdAt: -1 });
       if (lastPlayedChallenge) {
-        currentCategoryId = lastPlayedChallenge.categoryId.toString();
+        return lastPlayedChallenge.categoryId.toString();
       } else {
-        currentTopicId = topicId;
         if (!topicId) {
           const quizTopics = await this.getQuizTopics(userIfExists);
-          let currentTopic = quizTopics[quizTopics.length - 1];
-          for (const topic of quizTopics) {
-            if (topic.userProgress < 100) {
-              currentTopic = topic;
-              break;
-            }
-          }
-          currentTopicId = currentTopic._id;
+          const currentTopic = quizTopics.find(
+            (topic) =>
+              topic.userProgress < 100 || quizTopics[quizTopics.length - 1]
+          );
+          topicId = currentTopic._id;
         }
         const { quizCategories } = await this.getQuizCategories(
           userIfExists,
-          currentTopicId
+          topicId
         );
-        let currentCategory = quizCategories[quizCategories.length - 1];
-        for (const category of quizCategories) {
-          if (category.userProgress < 100) {
-            currentCategory = category;
-            break;
-          }
-        }
-        currentCategoryId = currentCategory._id;
+        const currentCategory = quizCategories.find(
+          (category) =>
+            category.userProgress < 100 ||
+            quizCategories[quizCategories.length - 1]
+        );
+        return currentCategory._id;
       }
-
-      return currentCategoryId;
     } catch (err) {
       throw new NetworkError("Error occurred while retrieving quizzes", 400);
     }
