@@ -1064,7 +1064,7 @@ class ScriptController extends BaseController {
         return this.BadRequest(ctx, "Please enter input quiz numbers");
       }
       const [rows, allCategories] = await Promise.all([
-        ScriptService.readSpreadSheet(),
+        ScriptService.readSpreadSheet(envData.QUIZ_IMPORT_SHEET_GID),
         QuizCategoryTable.find().select("_id topicId title"),
       ]);
       const quizContentData = await ScriptService.convertQuizSpreadSheetToJSON(
