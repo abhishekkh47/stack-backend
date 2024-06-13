@@ -224,4 +224,7 @@ export default {
   get MARKET_SEGMENT_SHEET_GID() {
     return process.env.MARKET_SEGMENT_SHEET_GID;
   },
+  get QUIZ_IMPORT_SHEET_GID() {
+    return process.env.QUIZ_IMPORT_SHEET_GID;
+  },
 };
