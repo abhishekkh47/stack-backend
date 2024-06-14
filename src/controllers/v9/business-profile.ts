@@ -4,6 +4,7 @@ import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService } from "@app/services/v9";
+import moment from "moment";
 class BusinessProfileController extends BaseController {
   /**
    * @description This method is to generate suggestions from OpenAI-API based on based on user input
@@ -29,10 +30,13 @@ class BusinessProfileController extends BaseController {
     if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
+    const elapsedTime =
+      moment().unix() - userBusinessProfile?.logoGenerationInfo.startTime;
     if (
       IMAGE_ACTIONS.includes(key) &&
       isRetry == IS_RETRY.TRUE &&
-      userBusinessProfile.logoGenerationInfo.isUnderProcess
+      userBusinessProfile?.logoGenerationInfo.isUnderProcess &&
+      elapsedTime < 200
     ) {
       return this.Ok(ctx, {
         message: "Success",
