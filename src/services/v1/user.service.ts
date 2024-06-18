@@ -296,166 +296,191 @@ class UserService {
     receiverIds: any,
     userReferral: string
   ) {
-    let arrayOfReceiverIds = receiverIds.map((x) => x.toString());
-    let userUpdateReferrals = [];
-    let referrals;
-    if (userReferral) {
-      /**
-       * get user referral info along with device token for notification
-       */
-      const userReferralAggregate = [
-        {
-          $match: {
-            userId: userId,
-          },
-        },
-        {
-          $lookup: {
-            from: "devicetokens",
-            localField: "userId",
-            foreignField: "userId",
-            as: "deviceTokenInfo",
-          },
-        },
-        {
-          $unwind: {
-            path: "$deviceTokenInfo",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "devicetokens",
-            localField: "referralArray.referredId",
-            foreignField: "userId",
-            as: "receiverDeviceTokenInfo",
-          },
-        },
-        {
-          $unwind: {
-            path: "$receiverDeviceTokenInfo",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $group: {
-            _id: "$_id",
-            userId: {
-              $first: "$userId",
-            },
-            senderName: {
-              $first: "$senderName",
-            },
-            referralCount: {
-              $first: "$referralCount",
-            },
-            referralArray: {
-              $first: "$referralArray",
-            },
-            deviceTokenInfo: {
-              $first: "$deviceTokenInfo",
-            },
-            receiverDeviceTokenInfo: {
-              $addToSet: "$receiverDeviceTokenInfo",
-            },
-          },
-        },
-      ];
-      referrals = await UserReferralTable.aggregate(
-        userReferralAggregate
-      ).exec();
-      referrals = referrals.length > 0 ? referrals[0] : null;
-
-      if (referrals) {
+    try {
+      let arrayOfReceiverIds = receiverIds.map((x) => x.toString());
+      let userUpdateReferrals = [];
+      let referrals;
+      if (userReferral) {
         /**
-         * get all ids in an array
+         * get user referral info along with device token for notification
          */
-        userUpdateReferrals = referrals.referralArray.map((obj) => {
-          if (arrayOfReceiverIds.includes(obj.referredId.toString())) {
-            return obj.referredId.toString();
-          }
-        });
-        userUpdateReferrals.push(userId.toString());
+        const userReferralAggregate = [
+          {
+            $match: {
+              userId: userId,
+            },
+          },
+          {
+            $lookup: {
+              from: "devicetokens",
+              localField: "userId",
+              foreignField: "userId",
+              as: "deviceTokenInfo",
+            },
+          },
+          {
+            $unwind: {
+              path: "$deviceTokenInfo",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $unwind: {
+              path: "$referralArray",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $lookup: {
+              from: "devicetokens",
+              localField: "referralArray.referredId",
+              foreignField: "userId",
+              as: "receiverDeviceTokenInfo",
+            },
+          },
+          {
+            $addFields: {
+              "referralArray.deviceTokens": {
+                $cond: {
+                  if: { $gt: [{ $size: "$receiverDeviceTokenInfo" }, 0] },
+                  then: {
+                    $arrayElemAt: ["$receiverDeviceTokenInfo.deviceToken", 0],
+                  },
+                  else: [],
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$_id",
+              userId: {
+                $first: "$userId",
+              },
+              senderName: {
+                $first: "$senderName",
+              },
+              referralCount: {
+                $first: "$referralCount",
+              },
+              referralArray: {
+                $push: {
+                  referredId: "$referralArray.referredId",
+                  receiverName: "$referralArray.receiverName",
+                  deviceTokens: "$receiverDeviceTokenInfo.deviceToken",
+                },
+              },
+              deviceTokenInfo: {
+                $first: "$deviceTokenInfo",
+              },
+              receiverDeviceTokenInfo: {
+                $push: {
+                  referredId: "$referralArray.referredId",
+                  receiverName: "$referralArray.receiverName",
+                  deviceTokens: "$receiverDeviceTokenInfo.deviceToken",
+                },
+              },
+            },
+          },
+        ];
+        referrals = await UserReferralTable.aggregate(
+          userReferralAggregate
+        ).exec();
+        referrals = referrals.length > 0 ? referrals[0] : null;
+
+        if (referrals) {
+          /**
+           * get all ids in an array
+           */
+          userUpdateReferrals = referrals.referralArray.map((obj) => {
+            if (arrayOfReceiverIds.includes(obj.referredId.toString())) {
+              return obj.referredId.toString();
+            }
+          });
+          userUpdateReferrals.push(userId.toString());
+        }
       }
+
+      userUpdateReferrals = userUpdateReferrals.filter((i) => i);
+
+      await UserTable.updateMany(
+        {
+          _id: { $in: userUpdateReferrals },
+        },
+        {
+          $inc: {
+            xpPoints: XP_POINTS.REFERRAL,
+          },
+        },
+        { new: true }
+      );
+
+      await UserReferralTable.updateMany(
+        {
+          userId: { $in: userUpdateReferrals },
+        },
+        {
+          $inc: {
+            referralCount: 1,
+          },
+        },
+        { new: true }
+      );
+      /**
+       *  for sending notification to each user for referring and being referred
+       */
+      let referredIdsArray = [];
+      let allNotifications = [];
+      referredIdsArray = await Promise.all(
+        referrals.referralArray.map(async (receiver) => {
+          if (arrayOfReceiverIds.includes(receiver.referredId.toString())) {
+            let notification = await this.sendNotificationForUserReferral(
+              userId.toString(),
+              referrals.deviceTokenInfo?.deviceToken || null,
+              NOTIFICATION.REFERRAL_SENDER_MESSAGE,
+              receiver.receiverName
+            );
+            return {
+              idsToReffer: receiver.referredId.toString(),
+              notificationObj: notification,
+            };
+          }
+        })
+      );
+
+      referredIdsArray = referredIdsArray.filter((i) => i);
+
+      let userNotification = referredIdsArray.map(
+        (response) => response.notificationObj
+      );
+
+      let receiveDeviceTokenInfo = referrals.receiverDeviceTokenInfo;
+      allNotifications = await Promise.all(
+        receiveDeviceTokenInfo.map(async (deviceToken) => {
+          if (
+            referredIdsArray.find(
+              (i) => i.idsToReffer === deviceToken.referredId.toString()
+            )
+          ) {
+            let notification = await this.sendNotificationForUserReferral(
+              deviceToken.referredId,
+              deviceToken.deviceTokens[0],
+              NOTIFICATION.REFERRAL_RECEIVER_MESSAGE,
+              referrals.senderName
+            );
+            userNotification = [...userNotification, notification];
+
+            return userNotification;
+          }
+        })
+      );
+      allNotifications = allNotifications.filter((i) => i);
+
+      await Notification.insertMany(allNotifications[0]);
+      return true;
+    } catch (error) {
+      console.log("error in notification service : ", error);
     }
-
-    userUpdateReferrals = userUpdateReferrals.filter((i) => i);
-
-    await UserTable.updateMany(
-      {
-        _id: { $in: userUpdateReferrals },
-      },
-      {
-        $inc: {
-          xpPoints: XP_POINTS.REFERRAL,
-        },
-      },
-      { new: true }
-    );
-
-    await UserReferralTable.updateMany(
-      {
-        userId: { $in: userUpdateReferrals },
-      },
-      {
-        $inc: {
-          referralCount: 1,
-        },
-      },
-      { new: true }
-    );
-    /**
-     *  for sending notification to each user for referring and being referred
-     */
-    let referredIdsArray = [];
-    let allNotifications = [];
-    referredIdsArray = await Promise.all(
-      referrals.referralArray.map(async (receiver) => {
-        if (arrayOfReceiverIds.includes(receiver.referredId.toString())) {
-          let notification = await this.sendNotificationForUserReferral(
-            userId.toString(),
-            referrals.deviceTokenInfo?.deviceToken || null,
-            NOTIFICATION.REFERRAL_SENDER_MESSAGE,
-            receiver.receiverName
-          );
-          return {
-            idsToReffer: receiver.referredId.toString(),
-            notificationObj: notification,
-          };
-        }
-      })
-    );
-
-    referredIdsArray = referredIdsArray.filter((i) => i);
-
-    let userNotification = referredIdsArray.map(
-      (response) => response.notificationObj
-    );
-
-    let receiveDeviceTokenInfo = referrals.receiverDeviceTokenInfo;
-    allNotifications = await Promise.all(
-      receiveDeviceTokenInfo.map(async (deviceToken) => {
-        if (
-          referredIdsArray.find(
-            (i) => i.idsToReffer === deviceToken.userId.toString()
-          )
-        ) {
-          let notification = await this.sendNotificationForUserReferral(
-            deviceToken.userId,
-            deviceToken.deviceToken,
-            NOTIFICATION.REFERRAL_RECEIVER_MESSAGE,
-            referrals.senderName
-          );
-          userNotification = [...userNotification, notification];
-
-          return userNotification;
-        }
-      })
-    );
-    allNotifications = allNotifications.filter((i) => i);
-
-    await Notification.insertMany(allNotifications[0]);
-    return true;
   }
 
   /**
