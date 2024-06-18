@@ -479,7 +479,7 @@ class UserService {
       await Notification.insertMany(allNotifications[0]);
       return true;
     } catch (error) {
-      console.log("error in notification service : ", error);
+      throw Error(error.message);
     }
   }
 
