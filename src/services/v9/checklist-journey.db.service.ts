@@ -5,6 +5,7 @@ import {
   QuizLevelTable,
   ChecklistResultTable,
   QuizTable,
+  DailyChallengeTable,
 } from "@app/model";
 import {
   QUIZ_TYPE,
@@ -14,7 +15,7 @@ import {
   LEVEL_COUNT,
   LEVEL_QUIZ_COUNT,
   START_FROM_SCRATCH,
-  PERFECT_IDEA,
+  DAILY_GOALS,
   CHECKLIST_QUESTION_LENGTH,
 } from "@app/utility";
 import { IUser } from "@app/types";
@@ -493,6 +494,163 @@ class ChecklistDBService {
       if (levels[i].actions.length != 4) return false;
     }
     return true;
+  }
+
+  /**
+   * @description get personalized daily challenges to be completed by the user
+   * @returns {*}
+   */
+  public async getDailyChallenges(
+    userIfExists: any,
+    businessProfileIfExists: any,
+    categoryId: any
+  ) {
+    try {
+      const [lastPlayedChallenge]: any = await Promise.all([
+        ChecklistResultTable.findOne({
+          userId: (userIfExists as any)._id,
+          categoryId,
+        }).sort({ createdAt: -1 }),
+      ]);
+      const currentCategory = lastPlayedChallenge
+        ? lastPlayedChallenge.categoryId
+        : categoryId;
+
+      if (businessProfileIfExists) {
+        var {
+          description,
+          targetAudience,
+          competitors,
+          companyLogo,
+          companyName,
+          colorsAndAesthetic,
+        } = businessProfileIfExists;
+      }
+
+      let dateDiff = this.getDaysNum(userIfExists.createdAt);
+
+      const updateChallenges = (challenges: any[]) => {
+        return challenges.map((x) => {
+          if (businessProfileIfExists && businessProfileIfExists[x.key]) {
+            return { ...x, isCompleted: true };
+          }
+          return x;
+        });
+      };
+
+      const getAITools = (start: number = 0, numTools: number) => {
+        return updateChallenges(DAILY_GOALS.slice(start, numTools));
+      };
+
+      const areDay1AIToolsCompleted = () => {
+        return description && targetAudience && competitors;
+      };
+      const areDay2AIToolsCompleted = () => {
+        return companyLogo && companyName && colorsAndAesthetic;
+      };
+
+      const getLevels = async () => {
+        return await this.getNextChallenges(userIfExists, currentCategory, 1);
+      };
+
+      if (dateDiff < 1) {
+        return [...getAITools(0, 3), ...(await getLevels())];
+      }
+
+      if (!areDay1AIToolsCompleted()) {
+        if (!lastPlayedChallenge) {
+          return [...getAITools(0, 6), ...(await getLevels())];
+        }
+        return [
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
+      }
+      if (areDay1AIToolsCompleted() && !areDay2AIToolsCompleted()) {
+        if (!lastPlayedChallenge) {
+          return [...getAITools(3, 6), ...(await getLevels())];
+        }
+        return [
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
+      }
+
+      return [
+        ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+      ];
+    } catch (error) {
+      throw new NetworkError("Error occurred while daily challenges", 400);
+    }
+  }
+
+  private getDaysNum(dateToCompare) {
+    const firstDate = new Date(dateToCompare);
+    const secondDate = new Date();
+    firstDate.setHours(0, 0, 0, 0);
+    secondDate.setHours(0, 0, 0, 0);
+    const differenceInTime = secondDate.getTime() - firstDate.getTime();
+    const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+    return Math.abs(differenceInDays);
+  }
+
+  async getNextChallenges(
+    userIfExists: any,
+    currentCategory: any,
+    nums: number
+  ) {
+    const availableDailyChallenges = await DailyChallengeTable.findOne({
+      userId: userIfExists._id,
+    });
+    const currentChallenges = await this.getLevelsAndChallenges(
+      userIfExists,
+      currentCategory
+    );
+
+    const currentLevel = currentChallenges.currentLevel;
+    const todayChallenges = [
+      {
+        id: currentChallenges.levels[currentLevel - 1]._id,
+        title: `Level ${currentLevel}: ${
+          currentChallenges.levels[currentLevel - 1].title
+        }`,
+        key: "challenges",
+        time: "5-7 min",
+        isCompleted: false,
+        categoryId: currentChallenges.categoryId,
+      },
+    ];
+    if (nums === 2) {
+      if (currentLevel % 5 !== 0) {
+        todayChallenges.push({
+          id: currentChallenges.levels[currentLevel - 1]._id,
+          title: `Level ${currentLevel}: ${
+            currentChallenges.levels[currentLevel - 1].title
+          }`,
+          key: "challenges",
+          time: "5-7 min",
+          isCompleted: false,
+          categoryId: currentChallenges.categoryId,
+        });
+      } else {
+        const getNextLevel = await QuizLevelTable.findOne({
+          level: currentLevel + 1,
+          topicId: currentChallenges.topicId,
+        });
+        if (
+          getNextLevel?.categoryId &&
+          (await this.checkActiveCategory(getNextLevel?.categoryId))
+        ) {
+          todayChallenges.push({
+            id: getNextLevel._id,
+            title: `Level ${currentLevel}: ${getNextLevel.title}`,
+            key: "challenges",
+            time: "5-7 min",
+            isCompleted: false,
+            categoryId: getNextLevel.categoryId,
+          });
+        }
+      }
+    }
+    return todayChallenges;
   }
 }
 export default new ChecklistDBService();

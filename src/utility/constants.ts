@@ -744,3 +744,48 @@ export const TUTORIAL_LOOKUP = {
   aiToolVisited: { aiToolVisited: true },
   mentorshipVisited: { mentorshipVisited: true },
 };
+
+export const DAILY_GOALS = [
+  {
+    id: 1,
+    key: "description",
+    title: "Create Your Business Idea",
+    time: "2 min",
+    isCompleted: false,
+  },
+  {
+    id: 2,
+    key: "targetAudience",
+    title: "Describe Your Target Audience",
+    time: "2 min",
+    isCompleted: false,
+  },
+  {
+    id: 3,
+    key: "competitors",
+    title: "Identify Your Top Competitors",
+    time: "2 min",
+    isCompleted: false,
+  },
+  {
+    id: 4,
+    key: "companyName",
+    title: "Name Your Business",
+    time: "2 min",
+    isCompleted: false,
+  },
+  {
+    id: 5,
+    key: "companyLogo",
+    title: "Design Your Logo",
+    time: "2 min",
+    isCompleted: false,
+  },
+  {
+    id: 6,
+    key: "colorsAndAesthetic",
+    title: "Create Your Brand Aesthetic",
+    time: "2 min",
+    isCompleted: false,
+  },
+];

@@ -50,3 +50,4 @@ export * from "@app/model/checklistResult";
 export * from "@app/model/aiToolsUsageStatus";
 export * from "@app/model/marketSegmentInfo";
 export * from "@app/model/tutorialStatus";
+export * from "@app/model/dailyChallenge";

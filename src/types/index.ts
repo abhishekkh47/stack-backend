@@ -34,3 +34,4 @@ export * from "@app/types/coachProfile";
 export * from "@app/types/checklistResult";
 export * from "@app/types/marketSegmentInfo";
 export * from "@app/types/tutorialStatus";
+export * from "@app/types/dailyChallenge";
