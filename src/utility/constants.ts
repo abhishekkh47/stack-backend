@@ -748,7 +748,7 @@ export const TUTORIAL_LOOKUP = {
 export const DAILY_GOALS = [
   {
     id: 1,
-    key: "description",
+    key: "ideaValidation",
     title: "Create Your Business Idea",
     time: "2 min",
     isCompleted: false,

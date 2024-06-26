@@ -485,6 +485,7 @@ class ChecklistDBService {
       );
     }
   }
+
   /**
    * @description verify if all the levels in a category with all 4 challenges present
    * @param categoryId
@@ -506,16 +507,19 @@ class ChecklistDBService {
    */
   public async getDailyChallenges(userIfExists: any, categoryId: any) {
     try {
-      const [lastPlayedChallenge, aiToolsUsageStatus]: any = await Promise.all([
+      let response = null;
+      const [
+        lastPlayedChallenge,
+        aiToolsUsageStatus,
+        availableDailyChallenges,
+      ]: any = await Promise.all([
         ChecklistResultTable.findOne({
           userId: (userIfExists as any)._id,
           categoryId,
         }).sort({ createdAt: -1 }),
         UserService.userAIToolUsageStatus(userIfExists),
+        DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
-      const currentCategory = lastPlayedChallenge
-        ? lastPlayedChallenge.categoryId
-        : categoryId;
 
       if (aiToolsUsageStatus) {
         var {
@@ -539,6 +543,24 @@ class ChecklistDBService {
         });
       };
 
+      if (
+        availableDailyChallenges &&
+        this.getDaysNum(availableDailyChallenges["updatedAt"]) < 1
+      ) {
+        const currentDailyGoalsStatus =
+          availableDailyChallenges.dailyGoalStatus;
+        const currentLength = availableDailyChallenges.dailyGoalStatus.length;
+        if (currentLength > 3) {
+          const uc = updateChallenges(
+            currentDailyGoalsStatus.slice(0, currentLength - 1)
+          );
+          return [...uc, currentDailyGoalsStatus[currentLength - 1]];
+        }
+      }
+      const currentCategory = lastPlayedChallenge
+        ? lastPlayedChallenge.categoryId
+        : categoryId;
+
       const getAITools = (start: number = 0, numTools: number) => {
         return updateChallenges(DAILY_GOALS.slice(start, numTools));
       };
@@ -555,36 +577,44 @@ class ChecklistDBService {
       };
 
       if (dateDiff < 1) {
-        return [...getAITools(0, 3), ...(await getLevels())];
-      }
-
-      if (!areDay1AIToolsCompleted()) {
+        response = [...getAITools(0, 3), ...(await getLevels())];
+      } else if (!areDay1AIToolsCompleted()) {
         if (!lastPlayedChallenge) {
-          return [...getAITools(0, 6), ...(await getLevels())];
+          response = [...getAITools(0, 6), ...(await getLevels())];
         }
-        return [
+        response = [
           ...getAITools(0, 6),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
-      }
-      if (areDay1AIToolsCompleted() && !areDay2AIToolsCompleted()) {
+      } else if (areDay1AIToolsCompleted() && !areDay2AIToolsCompleted()) {
         if (!lastPlayedChallenge) {
-          return [...getAITools(3, 6), ...(await getLevels())];
+          response = [...getAITools(3, 6), ...(await getLevels())];
         }
-        return [
+        response = [
           ...getAITools(3, 6),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
+      } else {
+        response = [
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+        ];
       }
-
-      return [
-        ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
-      ];
+      await DailyChallengeTable.updateOne(
+        { userId: userIfExists._id },
+        { $set: { dailyGoalStatus: response } },
+        { upsert: true }
+      );
+      return response;
     } catch (error) {
       throw new NetworkError("Error occurred while daily challenges", 400);
     }
   }
 
+  /**
+   * @description get the date difference between today and last updated goals
+   * @param dateToCompare the udpatedAt timestamp of the record
+   * @returns {*}
+   */
   private getDaysNum(dateToCompare) {
     const firstDate = new Date(dateToCompare);
     const secondDate = new Date();
@@ -595,14 +625,18 @@ class ChecklistDBService {
     return Math.abs(differenceInDays);
   }
 
+  /**
+   * @description get next quizzes to be completed on current day
+   * @param userIfExists
+   * @param currentCategory
+   * @param nums number of challenges to played on current day
+   * @returns {*}
+   */
   async getNextChallenges(
     userIfExists: any,
     currentCategory: any,
     nums: number
   ) {
-    const availableDailyChallenges = await DailyChallengeTable.findOne({
-      userId: userIfExists._id,
-    });
     const currentChallenges = await this.getLevelsAndChallenges(
       userIfExists,
       currentCategory
@@ -616,7 +650,7 @@ class ChecklistDBService {
           currentChallenges.levels[currentLevel - 1].title
         }`,
         key: "challenges",
-        time: "5-7 min",
+        time: "6 min",
         isCompleted: false,
         categoryId: currentChallenges.categoryId,
       },
