@@ -566,6 +566,7 @@ class ChecklistDBService {
           companyLogo,
           companyName,
           colorsAndAesthetic,
+          ideaValidation,
         } = aiToolsUsageStatus;
       }
 
@@ -611,7 +612,7 @@ class ChecklistDBService {
       };
 
       const areDay1AIToolsCompleted = () => {
-        return description && targetAudience && competitors;
+        return (description || ideaValidation) && targetAudience && competitors;
       };
       const areDay2AIToolsCompleted = () => {
         return companyLogo && companyName && colorsAndAesthetic;
