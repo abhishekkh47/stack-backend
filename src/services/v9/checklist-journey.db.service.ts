@@ -491,12 +491,49 @@ class ChecklistDBService {
    * @param categoryId
    * @returns {*}
    */
-  public async checkActiveCategory(categoryId) {
+  public async checkActiveCategory(categoryId: any) {
     let levels = await QuizLevelTable.find({ categoryId });
     for (let i = 0; i < levels.length; i++) {
       if (levels[i].actions.length != 4) return false;
     }
     return true;
+  }
+
+  /**
+   * @description get the date difference between today and last updated goals
+   * @param dateToCompare the udpatedAt timestamp of the record
+   * @returns {*}
+   */
+  private getDaysNum(dateToCompare: string) {
+    const firstDate = new Date(dateToCompare);
+    const secondDate = new Date();
+    firstDate.setHours(0, 0, 0, 0);
+    secondDate.setHours(0, 0, 0, 0);
+    const differenceInTime = secondDate.getTime() - firstDate.getTime();
+    const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+    return Math.abs(differenceInDays);
+  }
+
+  /**
+   * @description get the date difference between today and last updated goals
+   * @param userIfExists
+   * @param goals array of checklist challenges
+   * @returns {*}
+   */
+  private async updateLevelStatus(userIfExists: any, goals: any) {
+    return await Promise.all(
+      goals.map(async (goal) => {
+        const res = await ChecklistResultTable.findOne({
+          userId: userIfExists._id,
+          levelId: goal.id,
+          actionNum: 4,
+        });
+        if (res) {
+          return { ...goal, isCompleted: true };
+        }
+        return goal;
+      })
+    );
   }
 
   /**
@@ -548,14 +585,22 @@ class ChecklistDBService {
         this.getDaysNum(availableDailyChallenges["updatedAt"]) < 1
       ) {
         const currentDailyGoalsStatus =
-          availableDailyChallenges.dailyGoalStatus;
-        const currentLength = availableDailyChallenges.dailyGoalStatus.length;
+          availableDailyChallenges?.dailyGoalStatus;
+        const currentLength = availableDailyChallenges?.dailyGoalStatus?.length;
         if (currentLength > 3) {
           const uc = updateChallenges(
             currentDailyGoalsStatus.slice(0, currentLength - 1)
           );
-          return [...uc, currentDailyGoalsStatus[currentLength - 1]];
+          return [
+            ...uc,
+            ...(await this.updateLevelStatus(userIfExists, [
+              currentDailyGoalsStatus[currentLength - 1],
+            ])),
+          ];
         }
+        return currentLength
+          ? await this.updateLevelStatus(userIfExists, currentDailyGoalsStatus)
+          : [];
       }
       const currentCategory = lastPlayedChallenge
         ? lastPlayedChallenge.categoryId
@@ -606,23 +651,11 @@ class ChecklistDBService {
       );
       return response;
     } catch (error) {
-      throw new NetworkError("Error occurred while daily challenges", 400);
+      throw new NetworkError(
+        "Error occurred while retrieving daily challenges",
+        400
+      );
     }
-  }
-
-  /**
-   * @description get the date difference between today and last updated goals
-   * @param dateToCompare the udpatedAt timestamp of the record
-   * @returns {*}
-   */
-  private getDaysNum(dateToCompare) {
-    const firstDate = new Date(dateToCompare);
-    const secondDate = new Date();
-    firstDate.setHours(0, 0, 0, 0);
-    secondDate.setHours(0, 0, 0, 0);
-    const differenceInTime = secondDate.getTime() - firstDate.getTime();
-    const differenceInDays = differenceInTime / (1000 * 3600 * 24);
-    return Math.abs(differenceInDays);
   }
 
   /**
@@ -658,12 +691,12 @@ class ChecklistDBService {
     if (nums === 2) {
       if (currentLevel % 5 !== 0) {
         todayChallenges.push({
-          id: currentChallenges.levels[currentLevel - 1]._id,
-          title: `Level ${currentLevel}: ${
-            currentChallenges.levels[currentLevel - 1].title
+          id: currentChallenges.levels[currentLevel]._id,
+          title: `Level ${currentLevel + 1}: ${
+            currentChallenges.levels[currentLevel].title
           }`,
           key: "challenges",
-          time: "5-7 min",
+          time: "6 min",
           isCompleted: false,
           categoryId: currentChallenges.categoryId,
         });
@@ -678,9 +711,9 @@ class ChecklistDBService {
         ) {
           todayChallenges.push({
             id: getNextLevel._id,
-            title: `Level ${currentLevel}: ${getNextLevel.title}`,
+            title: `Level ${currentLevel + 1}: ${getNextLevel.title}`,
             key: "challenges",
-            time: "5-7 min",
+            time: "6 min",
             isCompleted: false,
             categoryId: getNextLevel.categoryId,
           });

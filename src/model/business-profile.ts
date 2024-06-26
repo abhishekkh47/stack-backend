@@ -30,6 +30,11 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: null,
     },
+    idea: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      default: null,
+    },
     marketOpportunity: {
       type: mongoose.Schema.Types.String,
       required: false,

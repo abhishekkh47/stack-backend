@@ -155,6 +155,7 @@ class BusinessProfileService {
               key: "description",
               type: "text",
               value: "$description",
+              idea: "$idea",
               title: "Business Description",
               description: "Add your business decription",
               actionName: "Your Business Description",
