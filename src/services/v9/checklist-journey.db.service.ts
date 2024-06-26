@@ -20,6 +20,7 @@ import {
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
+import { UserService } from "@services/v9";
 class ChecklistDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -486,6 +487,7 @@ class ChecklistDBService {
   }
   /**
    * @description verify if all the levels in a category with all 4 challenges present
+   * @param categoryId
    * @returns {*}
    */
   public async checkActiveCategory(categoryId) {
@@ -498,25 +500,24 @@ class ChecklistDBService {
 
   /**
    * @description get personalized daily challenges to be completed by the user
+   * @param userIfExists
+   * @param categoryId
    * @returns {*}
    */
-  public async getDailyChallenges(
-    userIfExists: any,
-    businessProfileIfExists: any,
-    categoryId: any
-  ) {
+  public async getDailyChallenges(userIfExists: any, categoryId: any) {
     try {
-      const [lastPlayedChallenge]: any = await Promise.all([
+      const [lastPlayedChallenge, aiToolsUsageStatus]: any = await Promise.all([
         ChecklistResultTable.findOne({
           userId: (userIfExists as any)._id,
           categoryId,
         }).sort({ createdAt: -1 }),
+        UserService.userAIToolUsageStatus(userIfExists),
       ]);
       const currentCategory = lastPlayedChallenge
         ? lastPlayedChallenge.categoryId
         : categoryId;
 
-      if (businessProfileIfExists) {
+      if (aiToolsUsageStatus) {
         var {
           description,
           targetAudience,
@@ -524,14 +525,14 @@ class ChecklistDBService {
           companyLogo,
           companyName,
           colorsAndAesthetic,
-        } = businessProfileIfExists;
+        } = aiToolsUsageStatus;
       }
 
       let dateDiff = this.getDaysNum(userIfExists.createdAt);
 
       const updateChallenges = (challenges: any[]) => {
         return challenges.map((x) => {
-          if (businessProfileIfExists && businessProfileIfExists[x.key]) {
+          if (aiToolsUsageStatus && aiToolsUsageStatus[x.key]) {
             return { ...x, isCompleted: true };
           }
           return x;
@@ -562,6 +563,7 @@ class ChecklistDBService {
           return [...getAITools(0, 6), ...(await getLevels())];
         }
         return [
+          ...getAITools(0, 6),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
       }
@@ -570,6 +572,7 @@ class ChecklistDBService {
           return [...getAITools(3, 6), ...(await getLevels())];
         }
         return [
+          ...getAITools(3, 6),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
       }

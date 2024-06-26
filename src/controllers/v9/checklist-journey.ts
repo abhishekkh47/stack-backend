@@ -148,10 +148,7 @@ class ChecklistJourneyController extends BaseController {
   @Auth()
   public async dailyChallenges(ctx: any) {
     const { user, query } = ctx.request;
-    const [userIfExists, businessProfileIfExists]: any = await Promise.all([
-      UserTable.findOne({ _id: user._id }),
-      BusinessProfileTable.findOne({ userId: user._id }),
-    ]);
+    const userIfExists = await UserTable.findOne({ _id: user._id });
     let categoryId = query.categoryId;
     if (!userIfExists) {
       return this.BadRequest(ctx, "User Not Found");
@@ -165,7 +162,6 @@ class ChecklistJourneyController extends BaseController {
     }
     const challengeDetails = await ChecklistDBService.getDailyChallenges(
       userIfExists,
-      businessProfileIfExists,
       categoryId
     );
     return this.Ok(ctx, {
