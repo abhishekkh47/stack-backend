@@ -135,16 +135,18 @@ class CommunityController extends BaseController {
             const communityExists = await CommunityTable.findOne({
               googlePlaceId: item.place_id,
             });
-            return {
-              isCommunityExists: communityExists ? true : false,
-              name: item.structured_formatting.main_text,
-              placeId: item.place_id,
-              address: item.structured_formatting.secondary_text,
-              state: item.terms[item.terms.length -2].value
-            };
+            if (!item.description.includes("Campus Parkway"))
+              return {
+                isCommunityExists: communityExists ? true : false,
+                name: item.structured_formatting.main_text,
+                placeId: item.place_id,
+                address: item.structured_formatting.secondary_text,
+                state: item.terms[item.terms.length - 2].value,
+              };
           })
         );
       }
+      result = result.filter(Boolean);
       return this.Ok(ctx, { data: result });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
