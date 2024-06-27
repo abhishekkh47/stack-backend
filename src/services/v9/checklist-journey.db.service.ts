@@ -697,28 +697,26 @@ class ChecklistDBService {
     );
     const currentLevel = currentChallenges.currentLevel;
 
-    const createChallenge = (levelIndex: number, levelTitle: string) => ({
-      id: currentChallenges.levels[levelIndex]._id,
-      title: `Level ${currentLevel + levelIndex}: ${levelTitle}`,
+    const createChallenge = (
+      challenges: any,
+      level: number,
+      levelIndex: number
+    ) => ({
+      id: challenges.levels[levelIndex]._id,
+      title: `Level ${level}: ${challenges.levels[levelIndex].title}`,
       key: "challenges",
       time: "6 min",
       isCompleted: false,
-      categoryId: currentChallenges.categoryId,
+      categoryId: challenges.categoryId,
     });
 
     const todayChallenges = [
-      createChallenge(
-        currentLevel - 1,
-        currentChallenges.levels[currentLevel - 1].title
-      ),
+      createChallenge(currentChallenges, currentLevel, (currentLevel - 1) % 5),
     ];
     if (nums === 2) {
       if (currentLevel % 5 !== 0) {
         todayChallenges.push(
-          createChallenge(
-            currentLevel,
-            currentChallenges.levels[currentLevel].title
-          )
+          createChallenge(currentChallenges, currentLevel + 1, currentLevel % 5)
         );
       } else {
         const getNextLevel = await QuizLevelTable.findOne({
