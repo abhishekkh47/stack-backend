@@ -691,54 +691,86 @@ class ChecklistDBService {
     currentCategory: any,
     nums: number
   ) {
-    const currentChallenges = await this.getLevelsAndChallenges(
-      userIfExists,
-      currentCategory
-    );
-    const currentLevel = currentChallenges.currentLevel;
+    try {
+      const todayChallenges = [];
+      const currentChallenges = await this.getLevelsAndChallenges(
+        userIfExists,
+        currentCategory
+      );
+      const currentLevel = currentChallenges.currentLevel;
 
-    const createChallenge = (
-      challenges: any,
-      level: number,
-      levelIndex: number
-    ) => ({
-      id: challenges.levels[levelIndex]._id,
-      title: `Level ${level}: ${challenges.levels[levelIndex].title}`,
-      key: "challenges",
-      time: "6 min",
-      isCompleted: false,
-      categoryId: challenges.categoryId,
-    });
+      const createChallenge = (
+        challenges: any,
+        level: number,
+        levelIndex: number
+      ) => ({
+        id: challenges.levels[levelIndex]._id,
+        title: `Level ${level}: ${challenges.levels[levelIndex].title}`,
+        key: "challenges",
+        time: "6 min",
+        isCompleted: false,
+        categoryId: challenges.categoryId,
+      });
 
-    const todayChallenges = [
-      createChallenge(currentChallenges, currentLevel, (currentLevel - 1) % 5),
-    ];
-    if (nums === 2) {
-      if (currentLevel % 5 !== 0) {
-        todayChallenges.push(
-          createChallenge(currentChallenges, currentLevel + 1, currentLevel % 5)
-        );
-      } else {
-        const getNextLevel = await QuizLevelTable.findOne({
-          level: currentLevel + 1,
+      const addNextLevelChallenge = async (
+        levelOffset: number,
+        levelNum: number = null
+      ) => {
+        const levelNumber = levelNum
+          ? levelNum
+          : currentChallenges.levels[4].level + levelOffset;
+        const nextLevel = await QuizLevelTable.findOne({
+          level: levelNumber,
           topicId: currentChallenges.topicId,
         });
         if (
-          getNextLevel?.categoryId &&
-          (await this.checkActiveCategory(getNextLevel?.categoryId))
+          nextLevel?.categoryId &&
+          (await this.checkActiveCategory(nextLevel.categoryId))
         ) {
           todayChallenges.push({
-            id: getNextLevel._id,
-            title: `Level ${currentLevel + 1}: ${getNextLevel.title}`,
+            id: nextLevel._id,
+            title: `Level ${nextLevel.level}: ${nextLevel.title}`,
             key: "challenges",
             time: "6 min",
             isCompleted: false,
-            categoryId: getNextLevel.categoryId,
+            categoryId: nextLevel.categoryId,
           });
         }
+      };
+
+      if (!currentChallenges.checklistFlowCompleted) {
+        todayChallenges.push(
+          createChallenge(
+            currentChallenges,
+            currentLevel,
+            (currentLevel - 1) % 5
+          )
+        );
+      } else {
+        await addNextLevelChallenge(1);
       }
+
+      if (nums === 2) {
+        if (!currentChallenges.checklistFlowCompleted) {
+          if (currentLevel % 5 !== 0) {
+            todayChallenges.push(
+              createChallenge(
+                currentChallenges,
+                currentLevel + 1,
+                currentLevel % 5
+              )
+            );
+          } else {
+            await addNextLevelChallenge(1, currentLevel + 1);
+          }
+        } else {
+          await addNextLevelChallenge(2);
+        }
+      }
+      return todayChallenges;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
-    return todayChallenges;
   }
 }
 export default new ChecklistDBService();
