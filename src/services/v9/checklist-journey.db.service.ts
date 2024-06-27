@@ -537,6 +537,58 @@ class ChecklistDBService {
   }
 
   /**
+   * @description update the status if ai tools is used or not
+   * @param challenges AI Tools details
+   * @param aiToolsUsageStatus current status of ai tools in DB
+   * @returns {*}
+   */
+  private updateChallenges(challenges: any[], aiToolsUsageStatus: any) {
+    return challenges.map((challenge) => {
+      if (aiToolsUsageStatus && aiToolsUsageStatus[challenge.key]) {
+        return { ...challenge, isCompleted: true };
+      }
+      return challenge;
+    });
+  }
+
+  /**
+   * @description this function returns the currently saved challenges in DB if available
+   * @param availableDailyChallenges current daily challenges in db
+   * @param aiToolsUsageStatus updated status of AI tools
+   * @param userIfExists
+   * @returns {*}
+   */
+  private async handleAvailableDailyChallenges(
+    availableDailyChallenges: any,
+    aiToolsUsageStatus: any,
+    userIfExists: any
+  ) {
+    if (
+      availableDailyChallenges &&
+      this.getDaysNum(availableDailyChallenges["updatedAt"]) < 1
+    ) {
+      const currentDailyGoalsStatus = availableDailyChallenges.dailyGoalStatus;
+      const currentLength = currentDailyGoalsStatus.length;
+      if (currentLength > 3) {
+        const updatedChallenges = this.updateChallenges(
+          currentDailyGoalsStatus.slice(0, currentLength - 1),
+          aiToolsUsageStatus
+        );
+        return [
+          ...updatedChallenges,
+          ...(await this.updateLevelStatus(userIfExists, [
+            currentDailyGoalsStatus[currentLength - 1],
+          ])),
+        ];
+      }
+      return currentLength
+        ? await this.updateLevelStatus(userIfExists, currentDailyGoalsStatus)
+        : [];
+    }
+    return null;
+  }
+
+  /**
    * @description get personalized daily challenges to be completed by the user
    * @param userIfExists
    * @param categoryId
@@ -558,84 +610,52 @@ class ChecklistDBService {
         DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
 
-      if (aiToolsUsageStatus) {
-        var {
-          description,
-          targetAudience,
-          competitors,
-          companyLogo,
-          companyName,
-          colorsAndAesthetic,
-          ideaValidation,
-        } = aiToolsUsageStatus;
-      }
-
       let dateDiff = this.getDaysNum(userIfExists.createdAt);
-
-      const updateChallenges = (challenges: any[]) => {
-        return challenges.map((x) => {
-          if (aiToolsUsageStatus && aiToolsUsageStatus[x.key]) {
-            return { ...x, isCompleted: true };
-          }
-          return x;
-        });
-      };
-
-      if (
-        availableDailyChallenges &&
-        this.getDaysNum(availableDailyChallenges["updatedAt"]) < 1
-      ) {
-        const currentDailyGoalsStatus =
-          availableDailyChallenges?.dailyGoalStatus;
-        const currentLength = availableDailyChallenges?.dailyGoalStatus?.length;
-        if (currentLength > 3) {
-          const uc = updateChallenges(
-            currentDailyGoalsStatus.slice(0, currentLength - 1)
-          );
-          return [
-            ...uc,
-            ...(await this.updateLevelStatus(userIfExists, [
-              currentDailyGoalsStatus[currentLength - 1],
-            ])),
-          ];
-        }
-        return currentLength
-          ? await this.updateLevelStatus(userIfExists, currentDailyGoalsStatus)
-          : [];
-      }
       const currentCategory = lastPlayedChallenge
         ? lastPlayedChallenge.categoryId
         : categoryId;
 
+      const currentResponse = await this.handleAvailableDailyChallenges(
+        availableDailyChallenges,
+        aiToolsUsageStatus,
+        userIfExists
+      );
+      if (currentResponse) return currentResponse;
+
       const getAITools = (start: number = 0, numTools: number) => {
-        return updateChallenges(DAILY_GOALS.slice(start, numTools));
+        return this.updateChallenges(
+          DAILY_GOALS.slice(start, numTools),
+          aiToolsUsageStatus
+        );
       };
 
       const areDay1AIToolsCompleted = () => {
-        return (description || ideaValidation) && targetAudience && competitors;
+        return (
+          (aiToolsUsageStatus.description ||
+            aiToolsUsageStatus.ideaValidation) &&
+          aiToolsUsageStatus.targetAudience &&
+          aiToolsUsageStatus.competitors
+        );
       };
       const areDay2AIToolsCompleted = () => {
-        return companyLogo && companyName && colorsAndAesthetic;
-      };
-
-      const getLevels = async () => {
-        return await this.getNextChallenges(userIfExists, currentCategory, 1);
+        return (
+          aiToolsUsageStatus.companyLogo &&
+          aiToolsUsageStatus.companyName &&
+          aiToolsUsageStatus.colorsAndAesthetic
+        );
       };
 
       if (dateDiff < 1) {
-        response = [...getAITools(0, 3), ...(await getLevels())];
+        response = [
+          ...getAITools(0, 3),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
       } else if (!areDay1AIToolsCompleted()) {
-        if (!lastPlayedChallenge) {
-          response = [...getAITools(0, 6), ...(await getLevels())];
-        }
         response = [
           ...getAITools(0, 6),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
       } else if (areDay1AIToolsCompleted() && !areDay2AIToolsCompleted()) {
-        if (!lastPlayedChallenge) {
-          response = [...getAITools(3, 6), ...(await getLevels())];
-        }
         response = [
           ...getAITools(3, 6),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
@@ -666,7 +686,7 @@ class ChecklistDBService {
    * @param nums number of challenges to played on current day
    * @returns {*}
    */
-  async getNextChallenges(
+  private async getNextChallenges(
     userIfExists: any,
     currentCategory: any,
     nums: number
@@ -675,32 +695,31 @@ class ChecklistDBService {
       userIfExists,
       currentCategory
     );
-
     const currentLevel = currentChallenges.currentLevel;
+
+    const createChallenge = (levelIndex: number, levelTitle: string) => ({
+      id: currentChallenges.levels[levelIndex]._id,
+      title: `Level ${currentLevel + levelIndex}: ${levelTitle}`,
+      key: "challenges",
+      time: "6 min",
+      isCompleted: false,
+      categoryId: currentChallenges.categoryId,
+    });
+
     const todayChallenges = [
-      {
-        id: currentChallenges.levels[currentLevel - 1]._id,
-        title: `Level ${currentLevel}: ${
-          currentChallenges.levels[currentLevel - 1].title
-        }`,
-        key: "challenges",
-        time: "6 min",
-        isCompleted: false,
-        categoryId: currentChallenges.categoryId,
-      },
+      createChallenge(
+        currentLevel - 1,
+        currentChallenges.levels[currentLevel - 1].title
+      ),
     ];
     if (nums === 2) {
       if (currentLevel % 5 !== 0) {
-        todayChallenges.push({
-          id: currentChallenges.levels[currentLevel]._id,
-          title: `Level ${currentLevel + 1}: ${
+        todayChallenges.push(
+          createChallenge(
+            currentLevel,
             currentChallenges.levels[currentLevel].title
-          }`,
-          key: "challenges",
-          time: "6 min",
-          isCompleted: false,
-          categoryId: currentChallenges.categoryId,
-        });
+          )
+        );
       } else {
         const getNextLevel = await QuizLevelTable.findOne({
           level: currentLevel + 1,
