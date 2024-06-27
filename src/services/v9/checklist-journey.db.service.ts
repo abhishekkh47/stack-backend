@@ -349,10 +349,7 @@ class ChecklistDBService {
    * @param topicId
    * @returns {*}
    */
-  public async getDefaultLevelsAndChallenges(
-    userIfExists: IUser,
-    topicId: string = null
-  ) {
+  public async getDefaultCategory(userIfExists: IUser, topicId: string = null) {
     try {
       let currentCategoryId = null;
       let currentTopicId = null;
@@ -735,6 +732,12 @@ class ChecklistDBService {
             isCompleted: false,
             categoryId: nextLevel.categoryId,
           });
+        } else {
+          const newTopicChallenge = await this.getNextTopicChallenge(
+            userIfExists,
+            nextLevel.topicId
+          );
+          if (newTopicChallenge) todayChallenges.push(newTopicChallenge);
         }
       };
 
@@ -768,6 +771,58 @@ class ChecklistDBService {
         }
       }
       return todayChallenges;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get quiz from next topic available
+   * @param userIfExists
+   * @param topicId current active topicId
+   * @returns {*}
+   */
+  private async getNextTopicChallenge(userIfExists: any, topicId: any) {
+    try {
+      const topicDetails = await this.getQuizTopics(userIfExists);
+      let newTopic = null;
+      let newCategory = null;
+      let updatedChallenge = null;
+      for (let i = 0; i < topicDetails.length; i++) {
+        if (
+          topicDetails[i]._id.toString() != topicId.toString() &&
+          topicDetails[i].userProgress <= 25
+        ) {
+          newTopic = topicDetails[i];
+          break;
+        }
+      }
+      const categoryDetails = await this.getQuizCategories(
+        userIfExists,
+        newTopic._id
+      );
+      for (let i = 0; i < categoryDetails.quizCategories.length; i++) {
+        if (categoryDetails.quizCategories[i].userProgress <= 25) {
+          newCategory = categoryDetails.quizCategories[i];
+          break;
+        }
+      }
+      const currentChallenges = await this.getLevelsAndChallenges(
+        userIfExists,
+        newCategory._id
+      );
+      if (currentChallenges)
+        updatedChallenge = {
+          id: currentChallenges.levels[currentChallenges.currentLevel - 1]._id,
+          title: `Level ${currentChallenges.currentLevel}: ${
+            currentChallenges.levels[currentChallenges.currentLevel - 1].title
+          }`,
+          key: "challenges",
+          time: "6 min",
+          isCompleted: false,
+          categoryId: currentChallenges.categoryId,
+        };
+      return updatedChallenge;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

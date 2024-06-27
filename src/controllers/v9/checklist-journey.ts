@@ -1,5 +1,5 @@
 import { Auth } from "@app/middleware";
-import { BusinessProfileTable, QuizTopicTable, UserTable } from "@app/model";
+import { QuizTopicTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import BaseController from "../base";
@@ -77,7 +77,7 @@ class ChecklistJourneyController extends BaseController {
     }
     const topicId = userExists.focusAreaTopic;
     if (!categoryId) {
-      categoryId = await ChecklistDBService.getDefaultLevelsAndChallenges(
+      categoryId = await ChecklistDBService.getDefaultCategory(
         userExists,
         topicId
       );
@@ -155,7 +155,7 @@ class ChecklistJourneyController extends BaseController {
     }
     const topicId = userIfExists.focusAreaTopic;
     if (!categoryId) {
-      categoryId = await ChecklistDBService.getDefaultLevelsAndChallenges(
+      categoryId = await ChecklistDBService.getDefaultCategory(
         userIfExists,
         topicId
       );
