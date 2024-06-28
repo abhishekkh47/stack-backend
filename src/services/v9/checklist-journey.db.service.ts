@@ -628,17 +628,17 @@ class ChecklistDBService {
 
       const areDay1AIToolsCompleted = () => {
         return (
-          (aiToolsUsageStatus.description ||
-            aiToolsUsageStatus.ideaValidation) &&
-          aiToolsUsageStatus.targetAudience &&
-          aiToolsUsageStatus.competitors
+          (aiToolsUsageStatus?.description ||
+            aiToolsUsageStatus?.ideaValidation) &&
+          aiToolsUsageStatus?.targetAudience &&
+          aiToolsUsageStatus?.competitors
         );
       };
       const areDay2AIToolsCompleted = () => {
         return (
-          aiToolsUsageStatus.companyLogo &&
-          aiToolsUsageStatus.companyName &&
-          aiToolsUsageStatus.colorsAndAesthetic
+          aiToolsUsageStatus?.companyLogo &&
+          aiToolsUsageStatus?.companyName &&
+          aiToolsUsageStatus?.colorsAndAesthetic
         );
       };
 
