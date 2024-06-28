@@ -77,7 +77,7 @@ class ChecklistJourneyController extends BaseController {
     }
     const topicId = userExists.focusAreaTopic;
     if (!categoryId) {
-      categoryId = await ChecklistDBService.getDefaultLevelsAndChallenges(
+      categoryId = await ChecklistDBService.getDefaultCategory(
         userExists,
         topicId
       );
@@ -137,6 +137,36 @@ class ChecklistJourneyController extends BaseController {
       { upsert: true }
     );
     return this.Ok(ctx, { message: "success" });
+  }
+
+  /**
+   * @description This is to get the personalized daily challenges
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-daily-challenges", method: HttpMethod.GET })
+  @Auth()
+  public async dailyChallenges(ctx: any) {
+    const { user, query } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    let categoryId = query.categoryId;
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const topicId = userIfExists.focusAreaTopic;
+    if (!categoryId) {
+      categoryId = await ChecklistDBService.getDefaultCategory(
+        userIfExists,
+        topicId
+      );
+    }
+    const challengeDetails = await ChecklistDBService.getDailyChallenges(
+      userIfExists,
+      categoryId
+    );
+    return this.Ok(ctx, {
+      data: challengeDetails,
+    });
   }
 }
 

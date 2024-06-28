@@ -5,6 +5,7 @@ import {
   QuizLevelTable,
   ChecklistResultTable,
   QuizTable,
+  DailyChallengeTable,
 } from "@app/model";
 import {
   QUIZ_TYPE,
@@ -14,11 +15,12 @@ import {
   LEVEL_COUNT,
   LEVEL_QUIZ_COUNT,
   START_FROM_SCRATCH,
-  PERFECT_IDEA,
+  DAILY_GOALS,
   CHECKLIST_QUESTION_LENGTH,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
+import { UserService } from "@services/v9";
 class ChecklistDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -347,10 +349,7 @@ class ChecklistDBService {
    * @param topicId
    * @returns {*}
    */
-  public async getDefaultLevelsAndChallenges(
-    userIfExists: IUser,
-    topicId: string = null
-  ) {
+  public async getDefaultCategory(userIfExists: IUser, topicId: string = null) {
     try {
       let currentCategoryId = null;
       let currentTopicId = null;
@@ -483,16 +482,350 @@ class ChecklistDBService {
       );
     }
   }
+
   /**
    * @description verify if all the levels in a category with all 4 challenges present
+   * @param categoryId
    * @returns {*}
    */
-  public async checkActiveCategory(categoryId) {
+  public async checkActiveCategory(categoryId: any) {
     let levels = await QuizLevelTable.find({ categoryId });
     for (let i = 0; i < levels.length; i++) {
       if (levels[i].actions.length != 4) return false;
     }
     return true;
+  }
+
+  /**
+   * @description get the date difference between today and last updated goals
+   * @param dateToCompare the udpatedAt timestamp of the record
+   * @returns {*}
+   */
+  private getDaysNum(dateToCompare: string) {
+    const firstDate = new Date(dateToCompare);
+    const secondDate = new Date();
+    firstDate.setHours(0, 0, 0, 0);
+    secondDate.setHours(0, 0, 0, 0);
+    const differenceInTime = secondDate.getTime() - firstDate.getTime();
+    const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+    return Math.abs(differenceInDays);
+  }
+
+  /**
+   * @description get the date difference between today and last updated goals
+   * @param userIfExists
+   * @param goals array of checklist challenges
+   * @returns {*}
+   */
+  private async updateLevelStatus(userIfExists: any, goals: any) {
+    return await Promise.all(
+      goals.map(async (goal) => {
+        const res = await ChecklistResultTable.findOne({
+          userId: userIfExists._id,
+          levelId: goal.id,
+          actionNum: 4,
+        });
+        if (res) {
+          return { ...goal, isCompleted: true };
+        }
+        return goal;
+      })
+    );
+  }
+
+  /**
+   * @description update the status if ai tools is used or not
+   * @param challenges AI Tools details
+   * @param aiToolsUsageStatus current status of ai tools in DB
+   * @returns {*}
+   */
+  private updateChallenges(challenges: any[], aiToolsUsageStatus: any) {
+    return challenges.map((challenge) => {
+      if (aiToolsUsageStatus && aiToolsUsageStatus[challenge.key]) {
+        return { ...challenge, isCompleted: true };
+      }
+      return challenge;
+    });
+  }
+
+  /**
+   * @description this function returns the currently saved challenges in DB if available
+   * @param availableDailyChallenges current daily challenges in db
+   * @param aiToolsUsageStatus updated status of AI tools
+   * @param userIfExists
+   * @returns {*}
+   */
+  private async handleAvailableDailyChallenges(
+    availableDailyChallenges: any,
+    aiToolsUsageStatus: any,
+    userIfExists: any
+  ) {
+    if (
+      availableDailyChallenges &&
+      this.getDaysNum(availableDailyChallenges["updatedAt"]) < 1
+    ) {
+      const currentDailyGoalsStatus = availableDailyChallenges.dailyGoalStatus;
+      const currentLength = currentDailyGoalsStatus.length;
+      if (currentLength > 3) {
+        const updatedChallenges = this.updateChallenges(
+          currentDailyGoalsStatus.slice(0, currentLength - 1),
+          aiToolsUsageStatus
+        );
+        return [
+          ...updatedChallenges,
+          ...(await this.updateLevelStatus(userIfExists, [
+            currentDailyGoalsStatus[currentLength - 1],
+          ])),
+        ];
+      }
+      return currentLength
+        ? await this.updateLevelStatus(userIfExists, currentDailyGoalsStatus)
+        : [];
+    }
+    return null;
+  }
+
+  /**
+   * @description get personalized daily challenges to be completed by the user
+   * @param userIfExists
+   * @param categoryId
+   * @returns {*}
+   */
+  public async getDailyChallenges(userIfExists: any, categoryId: any) {
+    try {
+      let response = null;
+      const [
+        lastPlayedChallenge,
+        aiToolsUsageStatus,
+        availableDailyChallenges,
+      ]: any = await Promise.all([
+        ChecklistResultTable.findOne({
+          userId: (userIfExists as any)._id,
+          categoryId,
+        }).sort({ createdAt: -1 }),
+        UserService.userAIToolUsageStatus(userIfExists),
+        DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
+      ]);
+
+      let dateDiff = this.getDaysNum(userIfExists.createdAt);
+      const currentCategory = lastPlayedChallenge
+        ? lastPlayedChallenge.categoryId
+        : categoryId;
+
+      const currentResponse = await this.handleAvailableDailyChallenges(
+        availableDailyChallenges,
+        aiToolsUsageStatus,
+        userIfExists
+      );
+      if (currentResponse) return currentResponse;
+
+      const getAITools = (start: number = 0, numTools: number) => {
+        return this.updateChallenges(
+          DAILY_GOALS.slice(start, numTools),
+          aiToolsUsageStatus
+        );
+      };
+
+      const areDay1AIToolsCompleted = () => {
+        return (
+          (aiToolsUsageStatus?.description ||
+            aiToolsUsageStatus?.ideaValidation) &&
+          aiToolsUsageStatus?.targetAudience &&
+          aiToolsUsageStatus?.competitors
+        );
+      };
+      const areDay2AIToolsCompleted = () => {
+        return (
+          aiToolsUsageStatus?.companyLogo &&
+          aiToolsUsageStatus?.companyName &&
+          aiToolsUsageStatus?.colorsAndAesthetic
+        );
+      };
+
+      if (dateDiff < 1) {
+        response = [
+          ...getAITools(0, 3),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
+      } else if (!areDay1AIToolsCompleted()) {
+        response = [
+          ...getAITools(0, 6),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
+      } else if (areDay1AIToolsCompleted() && !areDay2AIToolsCompleted()) {
+        response = [
+          ...getAITools(3, 6),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
+      } else {
+        response = [
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+        ];
+      }
+      await DailyChallengeTable.updateOne(
+        { userId: userIfExists._id },
+        { $set: { dailyGoalStatus: response } },
+        { upsert: true }
+      );
+      return response;
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving daily challenges",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description get next quizzes to be completed on current day
+   * @param userIfExists
+   * @param currentCategory
+   * @param nums number of challenges to played on current day
+   * @returns {*}
+   */
+  private async getNextChallenges(
+    userIfExists: any,
+    currentCategory: any,
+    nums: number
+  ) {
+    try {
+      const todayChallenges = [];
+      const currentChallenges = await this.getLevelsAndChallenges(
+        userIfExists,
+        currentCategory
+      );
+      const currentLevel = currentChallenges.currentLevel;
+
+      const createChallenge = (
+        challenges: any,
+        level: number,
+        levelIndex: number
+      ) => ({
+        id: challenges.levels[levelIndex]._id,
+        title: `Level ${level}: ${challenges.levels[levelIndex].title}`,
+        key: "challenges",
+        time: "6 min",
+        isCompleted: false,
+        categoryId: challenges.categoryId,
+      });
+
+      const addNextLevelChallenge = async (
+        levelOffset: number,
+        levelNum: number = null
+      ) => {
+        const levelNumber = levelNum
+          ? levelNum
+          : currentChallenges.levels[4].level + levelOffset;
+        const nextLevel = await QuizLevelTable.findOne({
+          level: levelNumber,
+          topicId: currentChallenges.topicId,
+        });
+        if (
+          nextLevel?.categoryId &&
+          (await this.checkActiveCategory(nextLevel.categoryId))
+        ) {
+          todayChallenges.push({
+            id: nextLevel._id,
+            title: `Level ${nextLevel.level}: ${nextLevel.title}`,
+            key: "challenges",
+            time: "6 min",
+            isCompleted: false,
+            categoryId: nextLevel.categoryId,
+          });
+        } else {
+          const newTopicChallenge = await this.getNextTopicChallenge(
+            userIfExists,
+            nextLevel.topicId
+          );
+          if (newTopicChallenge) todayChallenges.push(newTopicChallenge);
+        }
+      };
+
+      if (!currentChallenges.checklistFlowCompleted) {
+        todayChallenges.push(
+          createChallenge(
+            currentChallenges,
+            currentLevel,
+            (currentLevel - 1) % 5
+          )
+        );
+      } else {
+        await addNextLevelChallenge(1);
+      }
+
+      if (nums === 2) {
+        if (!currentChallenges.checklistFlowCompleted) {
+          if (currentLevel % 5 !== 0) {
+            todayChallenges.push(
+              createChallenge(
+                currentChallenges,
+                currentLevel + 1,
+                currentLevel % 5
+              )
+            );
+          } else {
+            await addNextLevelChallenge(1, currentLevel + 1);
+          }
+        } else {
+          await addNextLevelChallenge(2);
+        }
+      }
+      return todayChallenges;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get quiz from next topic available
+   * @param userIfExists
+   * @param topicId current active topicId
+   * @returns {*}
+   */
+  private async getNextTopicChallenge(userIfExists: any, topicId: any) {
+    try {
+      const topicDetails = await this.getQuizTopics(userIfExists);
+      let newTopic = null;
+      let newCategory = null;
+      let updatedChallenge = null;
+      for (let i = 0; i < topicDetails.length; i++) {
+        if (
+          topicDetails[i]._id.toString() != topicId.toString() &&
+          topicDetails[i].userProgress <= 25
+        ) {
+          newTopic = topicDetails[i];
+          break;
+        }
+      }
+      const categoryDetails = await this.getQuizCategories(
+        userIfExists,
+        newTopic._id
+      );
+      for (let i = 0; i < categoryDetails.quizCategories.length; i++) {
+        if (categoryDetails.quizCategories[i].userProgress <= 25) {
+          newCategory = categoryDetails.quizCategories[i];
+          break;
+        }
+      }
+      const currentChallenges = await this.getLevelsAndChallenges(
+        userIfExists,
+        newCategory._id
+      );
+      if (currentChallenges)
+        updatedChallenge = {
+          id: currentChallenges.levels[currentChallenges.currentLevel - 1]._id,
+          title: `Level ${currentChallenges.currentLevel}: ${
+            currentChallenges.levels[currentChallenges.currentLevel - 1].title
+          }`,
+          key: "challenges",
+          time: "6 min",
+          isCompleted: false,
+          categoryId: currentChallenges.categoryId,
+        };
+      return updatedChallenge;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 export default new ChecklistDBService();
