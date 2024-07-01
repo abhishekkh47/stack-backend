@@ -17,6 +17,9 @@ import {
   START_FROM_SCRATCH,
   DAILY_GOALS,
   CHECKLIST_QUESTION_LENGTH,
+  convertDateToTimeZone,
+  getDaysBetweenDates,
+  DEFAULT_TIMEZONE,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
@@ -501,14 +504,16 @@ class ChecklistDBService {
    * @param dateToCompare the udpatedAt timestamp of the record
    * @returns {*}
    */
-  private getDaysNum(dateToCompare: string) {
-    const firstDate = new Date(dateToCompare);
-    const secondDate = new Date();
-    firstDate.setHours(0, 0, 0, 0);
-    secondDate.setHours(0, 0, 0, 0);
-    const differenceInTime = secondDate.getTime() - firstDate.getTime();
-    const differenceInDays = differenceInTime / (1000 * 3600 * 24);
-    return Math.abs(differenceInDays);
+  private getDaysNum(userIfExists, dateToCompare: string) {
+    const firstDate = convertDateToTimeZone(
+      new Date(dateToCompare),
+      userIfExists?.timezone || DEFAULT_TIMEZONE
+    );
+    const secondDate = convertDateToTimeZone(
+      new Date(),
+      userIfExists?.timezone || DEFAULT_TIMEZONE
+    );
+    return getDaysBetweenDates(firstDate, secondDate);
   }
 
   /**
@@ -562,7 +567,7 @@ class ChecklistDBService {
   ) {
     if (
       availableDailyChallenges &&
-      this.getDaysNum(availableDailyChallenges["updatedAt"]) < 1
+      this.getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
     ) {
       const currentDailyGoalsStatus = availableDailyChallenges.dailyGoalStatus;
       const currentLength = currentDailyGoalsStatus.length;
@@ -607,7 +612,7 @@ class ChecklistDBService {
         DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
 
-      let dateDiff = this.getDaysNum(userIfExists.createdAt);
+      let dateDiff = this.getDaysNum(userIfExists, userIfExists.createdAt);
       const currentCategory = lastPlayedChallenge
         ? lastPlayedChallenge.categoryId
         : categoryId;
