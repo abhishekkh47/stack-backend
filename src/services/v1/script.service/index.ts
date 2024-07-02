@@ -1393,19 +1393,20 @@ class ScriptService {
             points: CORRECT_ANSWER_FUEL_POINTS.QUIZ,
             question_type: 2,
             answer_type: 2,
-            answer_array: prompts.map((prompt) => ({
-              name: data[prompt]?.trimEnd().split("*")[0],
-              image:
-                data[`Image ${prompt}`] ||
-                `q${data["Quiz #"]}_q${Math.ceil(
-                  questionNumber / 4
-                )}_${prompt.toLowerCase()}.webp`,
-              correct_answer: data["correctAnswer"] == data[prompt] ? 1 : 0,
-              statement:
-                data["correctAnswer"] == data[prompt]
-                  ? data["Explanation"].trimEnd()
-                  : null,
-            })),
+            answer_array: prompts.map((prompt) => {
+              const answerText = data[prompt]?.trimEnd();
+              const isCorrect = answerText.split("*").length > 1;
+              return {
+                name: isCorrect ? answerText.split("*")[0] : answerText,
+                image:
+                  data[`Image ${prompt}`] ||
+                  `q${data["Quiz #"]}_q${Math.ceil(
+                    questionNumber / 4
+                  )}_${prompt.toLowerCase()}.webp`,
+                correct_answer: isCorrect ? 1 : 0,
+                statement: isCorrect ? data["Explanation"].trimEnd() : null,
+              };
+            }),
           };
           questionDataArray.push(questionData);
           if (
