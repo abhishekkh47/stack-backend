@@ -128,25 +128,37 @@ class CommunityController extends BaseController {
         return this.BadRequest(ctx, "User already exists in community");
 
       let placeApiResponse: any = await searchSchools(query.input);
+      const uniqueNames = new Set();
+      const filteredData = [];
+      placeApiResponse.data.predictions.forEach((item) => {
+        const schoolName = `${item.terms[item.terms.length - 2].value} (${
+          item.terms[item.terms.length - 2].value
+        })`;
+        if (!uniqueNames.has(schoolName)) {
+          uniqueNames.add(schoolName);
+          filteredData.push(item);
+        }
+      });
       let result = [];
-      if (placeApiResponse.data.predictions.length > 0) {
+      if (filteredData.length > 0) {
         result = await Promise.all(
-          placeApiResponse.data.predictions.map(async (item) => {
+          filteredData.map(async (item) => {
             const communityExists = await CommunityTable.findOne({
               googlePlaceId: item.place_id,
+              name: item?.structured_formatting?.main_text,
             });
-            if (!item.description.includes("Campus Parkway"))
-              return {
-                isCommunityExists: communityExists ? true : false,
-                name: item.structured_formatting.main_text,
-                placeId: item.place_id,
-                address: item.structured_formatting.secondary_text,
-                state: item.terms[item.terms.length - 2].value,
-              };
+            return {
+              isCommunityExists: communityExists ? true : false,
+              name: item.structured_formatting.main_text,
+              placeId: communityExists
+                ? communityExists.googlePlaceId
+                : item.place_id,
+              address: item.structured_formatting.secondary_text,
+              state: item.terms[item.terms.length - 2].value,
+            };
           })
         );
       }
-      result = result.filter(Boolean);
       return this.Ok(ctx, { data: result });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
