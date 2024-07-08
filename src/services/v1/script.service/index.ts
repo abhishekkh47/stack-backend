@@ -17,6 +17,8 @@ import {
   QuizCategoryTable,
   QuizLevelTable,
   MarketSegmentInfoTable,
+  ProblemScoreTable,
+  MarketScoreTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1810,6 +1812,97 @@ class ScriptService {
       return true;
     } catch (error) {
       return error;
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param rows
+   * @param type 1=physical, 2=software
+   * @returns {*}
+   */
+  public async addProblemScoringDataToDB(rows: any, type: number) {
+    try {
+      let problemScoresData = [];
+      let problemDetails = null;
+      rows.forEach((data) => {
+        if (data["Problem"] && data["Explanation 1"]?.trim()) {
+          problemDetails = {
+            type,
+            problem: data["Problem"]?.trim(),
+            pricePointIndex: Number(data["Price Point Index"]?.trim()),
+            pricePointExplanation: data["Explanation 1"]?.trim(),
+            demandScore: Number(data["Demand Score"]?.trim()),
+            demandScoreExplanation: data["Explanation 2"]?.trim(),
+            trendingScore: Number(data["Trending Score"]?.trim()),
+            trendingScoreExplanation: data["Explanation 3"]?.trim(),
+            overallRating: Number(data["Overall Rating"]?.trim()),
+          };
+        }
+        problemScoresData.push(problemDetails);
+      });
+
+      const bulkWriteOperations = problemScoresData.map((data) => ({
+        updateOne: {
+          filter: { type: data.type, problem: data.problem },
+          update: { $set: data },
+          upsert: true,
+        },
+      }));
+
+      await ProblemScoreTable.bulkWrite(bulkWriteOperations);
+      return problemScoresData;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param rows
+   * @param type 1=physical, 2=software
+   * @returns {*}
+   */
+  public async addMarketScoringDataToDB(rows: any, type: number) {
+    try {
+      let marketScoresData = [];
+      let marketDetails = null;
+      rows.forEach((data) => {
+        if (data["Market Segment"]) {
+          marketDetails = {
+            type,
+            marketSegment: data["Market Segment"]?.trim(),
+            hhiRating: Number(data["HHI Rating"]?.trim()),
+            hhiExplanation: data["HHI Explanation"]?.trim(),
+            customerSatisfactionRating: Number(
+              data["Customer Satisfaction Rating"]?.trim()
+            ),
+            customerSatisfactionExplanation:
+              data["Customer Satisfaction Explanation"]?.trim(),
+            ageIndexRating: Number(data["Age Index Rating"]?.trim()),
+            ageIndexExplanation: data["Age Index Explanation"]?.trim(),
+            tamRating: Number(data["TAM Rating"]?.trim()),
+            tamExplanation: data["TAM Explanation"]?.trim(),
+            cagrRating: Number(data["CAGR Rating"]?.trim()),
+            cagrExplanation: data["CAGR Explanation"]?.trim(),
+            overallRating: Number(data["Total Rating"]?.trim()),
+          };
+        }
+        marketScoresData.push(marketDetails);
+      });
+
+      const bulkWriteOperations = marketScoresData.map((data) => ({
+        updateOne: {
+          filter: { type: data.type, marketSegment: data.marketSegment },
+          update: { $set: data },
+          upsert: true,
+        },
+      }));
+
+      await MarketScoreTable.bulkWrite(bulkWriteOperations);
+      return marketScoresData;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }

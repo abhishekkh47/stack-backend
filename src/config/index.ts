@@ -227,4 +227,19 @@ export default {
   get QUIZ_IMPORT_SHEET_GID() {
     return process.env.QUIZ_IMPORT_SHEET_GID;
   },
+  get IDEA_GENERATOR_DATA_SHEET_ID() {
+    return process.env.IDEA_GENERATOR_DATA_SHEET_ID;
+  },
+  get SOFTWARE_PROBLEM_SCORING_SHEET_GID() {
+    return process.env.SOFTWARE_PROBLEM_SCORING_SHEET_GID;
+  },
+  get SOFTWARE_MARKET_SCORING_SHEET_GID() {
+    return process.env.SOFTWARE_MARKET_SCORING_SHEET_GID;
+  },
+  get PHYSICAL_PROBLEM_SCORING_SHEET_GID() {
+    return process.env.PHYSICAL_PROBLEM_SCORING_SHEET_GID;
+  },
+  get PHYSICAL_MARKET_SCORING_SHEET_GID() {
+    return process.env.PHYSICAL_MARKET_SCORING_SHEET_GID;
+  },
 };
