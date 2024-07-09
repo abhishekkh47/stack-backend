@@ -1,9 +1,17 @@
 import { Auth } from "@app/middleware";
 import { BusinessProfileTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
-import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
+import {
+  Route,
+  IMAGE_ACTIONS,
+  IS_RETRY,
+  ANALYTICS_EVENTS,
+  SYSTEM_IDEA_GENERATOR,
+  SYSTEM_IDEA_VALIDATION,
+} from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService } from "@app/services/v9";
+import { AnalyticsService } from "@app/services/v4";
 import moment from "moment";
 class BusinessProfileController extends BaseController {
   /**
@@ -119,6 +127,57 @@ class BusinessProfileController extends BaseController {
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });
+  }
+
+  /**
+   * @description This method is to generate business-idea using OpenAI GPT
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/generate-business-idea",
+    method: HttpMethod.POST,
+  })
+  public async getBusinessIdea(ctx: any) {
+    const { user, body } = ctx.request;
+
+    if (!body.idea && !body.businessType) {
+      return this.BadRequest(
+        ctx,
+        "Please provide your Business Idea and Business Type"
+      );
+    }
+    const businessIdea = await BusinessProfileService.generateBusinessIdea(
+      body.idea,
+      "description",
+      Number(body.businessType)
+    );
+    return this.Ok(ctx, { message: "Success", data: businessIdea });
+  }
+
+  /**
+   * @description This method is to maximize user provided business-idea
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/maximize-business-idea",
+    method: HttpMethod.POST,
+  })
+  public async maximizeBusinessIdea(ctx: any) {
+    const { user, body } = ctx.request;
+    if (!body.idea && !body.businessType) {
+      return this.BadRequest(
+        ctx,
+        "Please provide your Business Idea and Business Type"
+      );
+    }
+    const prompt = `problem: ${body.idea}.**`;
+    const businessIdea = await BusinessProfileService.ideaValidator(
+      prompt,
+      "ideaValidation"
+    );
+    return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
 }
 
