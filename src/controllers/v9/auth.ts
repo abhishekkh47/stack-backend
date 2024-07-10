@@ -174,7 +174,7 @@ class AuthController extends BaseController {
               const updatedUser =
                 await BusinessProfileServiceV9.onboardingIdeaUpdate(
                   userExists,
-                  reqParam.businessIdeaInfo
+                  reqParam
                 );
               (async () => {
                 zohoCrmService.addAccounts(
