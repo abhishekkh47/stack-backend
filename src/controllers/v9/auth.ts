@@ -19,6 +19,7 @@ import BaseController from "@app/controllers/base";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
 import { UserDBService } from "@app/services/v6";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import { BusinessProfileService as BusinessProfileServiceV9 } from "@app/services/v9";
 import { ChecklistDBService } from "@app/services/v9";
 
 class AuthController extends BaseController {
@@ -168,6 +169,20 @@ class AuthController extends BaseController {
                 userExists._id,
                 deviceToken
               );
+            }
+            if (reqParam.businessIdeaInfo) {
+              const updatedUser =
+                await BusinessProfileServiceV9.onboardingIdeaUpdate(
+                  userExists,
+                  reqParam.businessIdeaInfo
+                );
+              (async () => {
+                zohoCrmService.addAccounts(
+                  ctx.request.zohoAccessToken,
+                  updatedUser,
+                  true
+                );
+              })();
             }
             return this.Ok(ctx, {
               token,

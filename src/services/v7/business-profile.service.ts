@@ -40,11 +40,7 @@ class BusinessProfileService {
    * @param userProgress
    * @returns {*}
    */
-  public async addOrEditBusinessProfile(
-    data: any,
-    userIfExists: any,
-    actionScreenData: any
-  ) {
+  public async addOrEditBusinessProfile(data: any, userIfExists: any) {
     try {
       let obj = {};
       let businessHistoryObj = {};
@@ -54,16 +50,14 @@ class BusinessProfileService {
       });
       if (data.businessIdeaInfo) {
         // save business description and opportunity
-        // data.businessIdeaInfo will have 'idea', 'description' and 'ratings'
+        // data.businessIdeaInfo will have 'idea', 'description'
         obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
         obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
-        obj[data.businessIdeaInfo[2].key] = data.businessIdeaInfo[2].value;
         businessHistoryObj = {
-          key: data.type, // type = description or ideaValidation
+          key: data.ideaGenerationType, // type = description or ideaValidation
           value: {
             idea: data.businessIdeaInfo[0].value,
             description: data.businessIdeaInfo[1].value,
-            ratings: data.businessIdeaInfo[2].value,
           },
           timestamp: Date.now(),
         };
@@ -76,20 +70,9 @@ class BusinessProfileService {
           { user_id: userIfExists._id }
         );
       } else {
-        const getHoursSaved = actionScreenData.filter(
-          (action) => action?.key == data.key
-        );
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        if (
-          businessProfileData &&
-          !businessProfileData[data.key] &&
-          getHoursSaved.length
-        ) {
-          obj["hoursSaved"] =
-            businessProfileData.hoursSaved + getHoursSaved[0].hoursSaved;
-        }
         businessHistoryObj = {
           key: data.key,
           value: data.value,

@@ -2471,7 +2471,8 @@ export const SYSTEM_IDEA_GENERATOR = {
   Additional Guidelines:
   Relevance: Ensure the chosen problem directly relates to the core function or benefit of the business concept.
   Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-  Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list`,
+  Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list
+  Strictly ensure that you return only the required JSON parsable response and nothing else`,
   SOFTWARE_TECHNOLOGY: {
     PRODUCTIZATION: `Objective:
     Use the problem statement and market segment in the user input to identify a manual service that is currently the best solution to a specific aspect of the problem and create a novel business concept that automates and streamlines the solution. This business concept should compete in the market segment identified in the user input. The business concept must not already exist.
@@ -2505,7 +2506,7 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "Automated E-commerce Support",
       description: "AI-driven customer service platform for e-commerce businesses, offering real-time, personalized support and efficient issue resolution.",
-      strategy: "Customer service for e-commerce retailers requires human representatives to handle diverse issues, involving extensive research and communication. The AI solution automates interactions by collecting detailed context and offering clear options, reducing costs and improving customer satisfaction through faster issue resolution.",
+      strategy: ["Customer service for e-commerce retailers requires human representatives to handle diverse issues, involving extensive research and communication." ,"The AI solution automates interactions by collecting detailed context and offering clear options, reducing costs and improving customer satisfaction through faster issue resolution."],
       problem: "Customer support is frequently slow and inefficient",
       market: "Fashion E-commerce Platforms",
     }
@@ -2516,7 +2517,7 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "Digital Notarization Service",
       description: "Remote notarization platform for legal and real estate sectors, enabling on-demand identity verification and electronic notarization.",
-      strategy: "Notarizing documents is cumbersome, requiring physical presence and causing inefficiencies. The technology solution enables on-demand identity verification and electronic notarization, increasing flexibility and maintaining high security standards.",
+      strategy: ["Notarizing documents is cumbersome, requiring physical presence and causing inefficiencies.", "The technology solution enables on-demand identity verification and electronic notarization, increasing flexibility and maintaining high security standards."],
       problem: "ID verification processes are time-consuming and intrusive",
       market: "Insurance Tech Platforms",
     }
@@ -2527,12 +2528,13 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "Automated HVAC Maintenance",
       description: "IoT and AI-based platform for HVAC maintenance, providing real-time monitoring and predictive upkeep to reduce repair costs for homeowners.",
-      strategy: "HVAC maintenance involves manual inspections and scheduling professional check-ups, often leading to inefficiencies and breakdowns. The solution uses IoT sensors for real-time monitoring and AI for predictive maintenance, ensuring timely upkeep and reducing repair costs.",
+      strategy: ["HVAC maintenance involves manual inspections and scheduling professional check-ups, often leading to inefficiencies and breakdowns." ,"The solution uses IoT sensors for real-time monitoring and AI for predictive maintenance, ensuring timely upkeep and reducing repair costs."],
       problem: "Unexpected appliance breakdowns are costly and inconvenient",
       market: "AI-powered Predictive Maintenance",
     }
     Additional Guidelines:
-    Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()`,
+    Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response and nothing else`,
     DISTRIBUTION: `Objective:
     Transform user-provided problem statement and market segment into refined business opportunities that have distinct distribution models and provide the best business opportunity. The transformed business opportunities must solve the problem from the user input as well as compete in the market segment provided. They must employ one of two specific strategies that solve an existing distribution problem within the segment.
     
@@ -2570,7 +2572,7 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "TikTok for Restaurant Reviews",
       description: "A mobile app curating short-form videos of restaurant ambiance and menu highlights, targeting Gen Z's preference for visual food discovery.",
-      strategy: "Although Gen-Z reports wanting to discover new restaurants, existing restaurant discovery platforms focus on text/picture content. This concept re-formats the restaurant discovery experience by engaging Gen-Z through short-form video, their preferred content format.",
+      strategy: ["Although Gen-Z reports wanting to discover new restaurants, existing restaurant discovery platforms focus on text/picture content." ,"This concept re-formats the restaurant discovery experience by engaging Gen-Z through short-form video, their preferred content format."],
       problem: "Gen-Z consumers prefer video content over pictures or text",
       market: "Food Reservation & Delivery Apps",
     }
@@ -2581,7 +2583,7 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "AI Event Planner while Driving",
       description: "An AI assistant that detects when your driving to plan social events, sync calendars, and coordinate with potential attendees.",
-      strategy: "Although most people want to plan fun social events, they often report not having the time. This concept engages users when they have an abundance of time sitting in traffic to plan events hands free.",
+      strategy: ["Although most people want to plan fun social events, they often report not having the time." ,"This concept engages users when they have an abundance of time sitting in traffic to plan events hands free."],
       problem: "Sitting in traffic wastes valuable time",
       market: "Conversational AI & Chatbot Platforms",
     }
@@ -2592,12 +2594,13 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "Honey for Live Sports Betting",
       description: "A browser extension that detects the sports game you're streaming and suggests relevant live bets based on real-time game analytics.",
-      strategy: "Although online sports streamers make up the majority of sports bettors by volume, this audience reports frustration with missing game action when placing bets on betting websites. This concept finds streamers in their native environment, allowing them to bet without missing any action.",
+      strategy: ["Although online sports streamers make up the majority of sports bettors by volume, this audience reports frustration with missing game action when placing bets on betting websites." ,"This concept finds streamers in their native environment, allowing them to bet without missing any action."],
       problem: "Understanding sports betting complexities",
       market: "Sports Betting Software",
     }
     Additional Guidelines:
-    Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()`,
+    Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response and nothing else`,
     DOMINATE_NICHE: `Objective:
     Use the problem statement and market segment in the user input to identify a manual service that is currently the best solution to a specific aspect of the problem and create a novel business concept that automates and streamlines the solution. This business concept should compete in the market segment identified in the user input. The business concept must not already exist.
     
@@ -2630,7 +2633,7 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "Automated E-commerce Support",
       description: "AI-driven customer service platform for e-commerce businesses, offering real-time, personalized support and efficient issue resolution.",
-      strategy: "Customer service for e-commerce retailers requires human representatives to handle diverse issues, involving extensive research and communication. The AI solution automates interactions by collecting detailed context and offering clear options, reducing costs and improving customer satisfaction through faster issue resolution.",
+      strategy: ["Customer service for e-commerce retailers requires human representatives to handle diverse issues, involving extensive research and communication." ,"The AI solution automates interactions by collecting detailed context and offering clear options, reducing costs and improving customer satisfaction through faster issue resolution."],
       problem: "Customer support is frequently slow and inefficient",
       market: "Fashion E-commerce Platforms",
     }
@@ -2641,7 +2644,7 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "Digital Notarization Service",
       description: "Remote notarization platform for legal and real estate sectors, enabling on-demand identity verification and electronic notarization.",
-      strategy: "Notarizing documents is cumbersome, requiring physical presence and causing inefficiencies. The technology solution enables on-demand identity verification and electronic notarization, increasing flexibility and maintaining high security standards.",
+      strategy: ["Notarizing documents is cumbersome, requiring physical presence and causing inefficiencies." ," The technology solution enables on-demand identity verification and electronic notarization, increasing flexibility and maintaining high security standards."],
       problem: "ID verification processes are time-consuming and intrusive",
       market: "Insurance Tech Platforms",
     }
@@ -2652,12 +2655,13 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: {
       idea: "Automated HVAC Maintenance",
       description: "IoT and AI-based platform for HVAC maintenance, providing real-time monitoring and predictive upkeep to reduce repair costs for homeowners.",
-      strategy: "HVAC maintenance involves manual inspections and scheduling professional check-ups, often leading to inefficiencies and breakdowns. The solution uses IoT sensors for real-time monitoring and AI for predictive maintenance, ensuring timely upkeep and reducing repair costs.",
+      strategy: ["HVAC maintenance involves manual inspections and scheduling professional check-ups, often leading to inefficiencies and breakdowns." ," The solution uses IoT sensors for real-time monitoring and AI for predictive maintenance, ensuring timely upkeep and reducing repair costs."],
       problem: "Unexpected appliance breakdowns are costly and inconvenient",
       market: "AI-powered Predictive Maintenance",
     }
     Additional Guidelines:
-    Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()`, //need to be updated
+    Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response and nothing else`, //need to be updated
   },
   PHYSICAL_PRODUCT: {},
   PRODUCT_RATING: `Objective:
@@ -2818,7 +2822,8 @@ export const SYSTEM_IDEA_GENERATOR = {
     "Overall Score": 89
   }
   Additional Guidelines:
-  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()`,
+  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else`,
 };
 
 export const SYSTEM_IDEA_VALIDATION = {
@@ -2826,7 +2831,8 @@ export const SYSTEM_IDEA_VALIDATION = {
   A "tech" involves the development or utilization of software, applications, platforms, or digital services as the primary product or service.
   An "ecommerce" involves the buying and selling of goods or services over the internet, focusing primarily on the commercial transaction of physical or digital products.
   Additional Guidelines:
-  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()`,
+  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else`,
   TECH_PRODUCT: `Step 1: The assistant will make minor language modifications to the user input without losing any content or context. It will ensure the business idea sounds professional and well-articulated. It will never add new components to the business idea and use similar language to that used in the user input. The description will always be 140 characters or less.
 
     Step 2: The assistant will describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. It will also provide the market segment chosen from the list in a separate line below the idea. It will never add core differentiating features or new concepts that are not included in the user input.
@@ -4097,7 +4103,8 @@ export const SYSTEM_IDEA_VALIDATION = {
     }
     Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-    Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list`,
+    Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list
+    Strictly ensure that you return only the required JSON parsable response and nothing else`,
   PHYSICAL_PRODUCT: `Step 1: The assistant will make minor language modifications to the user input without losing any content or context. It will ensure the business idea sounds professional and well-articulated. It will never add new components to the business idea and use similar language to that used in the user input. The description will always be 140 characters or less.
 
   Step 2: The assistant will describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. It will also provide the market segment chosen from the list in a separate line below the idea. It will never add core differentiating features or new concepts that are not included in the user input.
@@ -5131,7 +5138,8 @@ export const SYSTEM_IDEA_VALIDATION = {
   
   Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-    Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list`,
+    Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list
+    Strictly ensure that you return only the required JSON parsable response and nothing else`,
   PRODUCT_RATING: `Objective:
   Evaluate a given business idea/concept by rating its product on three different criteria:
   Sophistication and Advanced Nature
@@ -5289,5 +5297,6 @@ export const SYSTEM_IDEA_VALIDATION = {
     "Overall Score": 89
   }
   Additional Guidelines:
-  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()`,
+  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else`,
 };

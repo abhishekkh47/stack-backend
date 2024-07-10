@@ -552,7 +552,7 @@ class ChecklistDBService {
   ) {
     return challenges.map((challenge) => {
       if (
-        businessProfileIfExists.description &&
+        businessProfileIfExists?.description &&
         challenge.key == "ideaValidation"
       ) {
         return { ...challenge, isCompleted: true };

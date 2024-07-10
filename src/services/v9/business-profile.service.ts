@@ -2,8 +2,6 @@ import {
   BusinessProfileTable,
   UserTable,
   AIToolsUsageStatusTable,
-  BusinessPassionTable,
-  MarketSegmentInfoTable,
   ProblemScoreTable,
   MarketScoreTable,
 } from "@app/model";
@@ -312,92 +310,11 @@ class BusinessProfileService {
             productAnalysisData["Overall Score"]) /
             3
         );
-        data["ideaAnalysis"] = [];
-
-        data["ideaAnalysis"].push({
-          _id: "problem",
-          name: "Problem Analysis",
-          rating: problem.overallRating,
-          analysis: [
-            {
-              name: "Trending Topic",
-              rating: problem.trendingScore,
-              description: problem.trendingScoreExplanation,
-            },
-            {
-              name: "Willingness to Pay",
-              rating: problem.demandScore,
-              description: problem.demandScoreExplanation,
-            },
-            {
-              name: "Paying Customers",
-              rating: problem.pricePointIndex,
-              description: problem.pricePointExplanation,
-            },
-          ],
-        });
-
-        data["ideaAnalysis"].push({
-          _id: "product",
-          name: "Product Analysis",
-          rating: Math.floor(Number(productAnalysisData["Overall Score"])),
-          analysis: [
-            {
-              name: "Niche Audience",
-              rating: productAnalysisData["Audience Focus Score"],
-              description: productAnalysisData.audienceFocusScoreDescription,
-            },
-            {
-              name: "Core Features",
-              rating: productAnalysisData["Sophistication Score"],
-              description: productAnalysisData.sophisticationDescription,
-            },
-            {
-              name: "Differentiation",
-              rating: productAnalysisData["Unique Score"],
-              description: productAnalysisData.uniqueScoreDescription,
-            },
-          ],
-        });
-
-        data["ideaAnalysis"].push({
-          _id: "market",
-          name: "Market Analysis",
-          rating: market.overallRating,
-          analysis: [
-            {
-              name: "HHI",
-              rating: market.hhiRating,
-              description: market.hhiExplanation,
-            },
-            {
-              name: "CR4 + CR10",
-              rating: 94,
-              description:
-                "The full business description should always be three lines or less. so at most it should look something like this.",
-            },
-            {
-              name: "Satisfaction",
-              rating: market.customerSatisfactionRating,
-              description: market.customerSatisfactionExplanation,
-            },
-            {
-              name: "Age Index",
-              rating: market.ageIndexRating,
-              description: market.ageIndexExplanation,
-            },
-            {
-              name: "TAM",
-              rating: market.tamRating,
-              description: market.tamExplanation,
-            },
-            {
-              name: "CAGR",
-              rating: market.cagrRating,
-              description: market.cagrExplanation,
-            },
-          ],
-        });
+        data["ideaAnalysis"] = this.ideaAnalysis(
+          problem,
+          productAnalysisData,
+          market
+        );
       });
       return {
         ideas: [productizationData, distributionData, dominateNicheData],
@@ -468,92 +385,11 @@ class BusinessProfileService {
           productAnalysisData["Overall Score"]) /
           3
       );
-      validatedIdea["ideaAnalysis"] = [];
-
-      validatedIdea["ideaAnalysis"].push({
-        _id: "problem",
-        name: "Problem Analysis",
-        rating: problem.overallRating,
-        analysis: [
-          {
-            name: "Trending Topic",
-            rating: problem.trendingScore,
-            description: problem.trendingScoreExplanation,
-          },
-          {
-            name: "Willingness to Pay",
-            rating: problem.demandScore,
-            description: problem.demandScoreExplanation,
-          },
-          {
-            name: "Paying Customers",
-            rating: problem.pricePointIndex,
-            description: problem.pricePointExplanation,
-          },
-        ],
-      });
-
-      validatedIdea["ideaAnalysis"].push({
-        _id: "product",
-        name: "Product Analysis",
-        rating: Math.floor(Number(productAnalysisData["Overall Score"])),
-        analysis: [
-          {
-            name: "Niche Audience",
-            rating: productAnalysisData["Audience Focus Score"],
-            description: productAnalysisData.audienceFocusScoreDescription,
-          },
-          {
-            name: "Core Features",
-            rating: productAnalysisData["Sophistication Score"],
-            description: productAnalysisData.sophisticationDescription,
-          },
-          {
-            name: "Differentiation",
-            rating: productAnalysisData["Unique Score"],
-            description: productAnalysisData.uniqueScoreDescription,
-          },
-        ],
-      });
-
-      validatedIdea["ideaAnalysis"].push({
-        _id: "market",
-        name: "Market Analysis",
-        rating: market.overallRating,
-        analysis: [
-          {
-            name: "HHI",
-            rating: market.hhiRating,
-            description: market.hhiExplanation,
-          },
-          {
-            name: "CR4 + CR10",
-            rating: 94,
-            description:
-              "The full business description should always be three lines or less. so at most it should look something like this.",
-          },
-          {
-            name: "Satisfaction",
-            rating: market.customerSatisfactionRating,
-            description: market.customerSatisfactionExplanation,
-          },
-          {
-            name: "Age Index",
-            rating: market.ageIndexRating,
-            description: market.ageIndexExplanation,
-          },
-          {
-            name: "TAM",
-            rating: market.tamRating,
-            description: market.tamExplanation,
-          },
-          {
-            name: "CAGR",
-            rating: market.cagrRating,
-            description: market.cagrExplanation,
-          },
-        ],
-      });
+      validatedIdea["ideaAnalysis"] = this.ideaAnalysis(
+        problem,
+        productAnalysisData,
+        market
+      );
 
       let suggestions = (
         await this.generateBusinessIdea(prompt, key, businessType)
@@ -593,21 +429,14 @@ class BusinessProfileService {
   /**
    * @description this method will update the Idea Generator usage status used while onboarding
    * @param userExists
-   * @param key
-   * @param idea
    * @param data
    * @returns {*}
    */
-  public async onboardingIdeaUpdate(
-    userExists: any,
-    key: string,
-    idea: string,
-    data: string
-  ) {
+  public async onboardingIdeaUpdate(userExists: any, data: any) {
     try {
       let aiToolUsageObj = {};
-      aiToolUsageObj[key] = true;
-      if (userExists && userExists._id && idea) {
+      aiToolUsageObj[data.businessIdeaInfo[0].key] = true;
+      if (userExists && userExists._id && data.businessIdeaInfo[0].value) {
         AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
@@ -615,14 +444,110 @@ class BusinessProfileService {
         );
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,
-          { "Item Name": idea },
+          { "Item Name": data.businessIdeaInfo[0].value },
           { user_id: userExists._id }
         );
       }
 
       if (userExists && userExists._id && data) {
-        BusinessProfileServiceV7.addOrEditBusinessProfile(data, userExists, []);
+        return await BusinessProfileServiceV7.addOrEditBusinessProfile(
+          data,
+          userExists
+        );
       }
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will return the formatted market analysis report
+   * @param problem problem analysis and rating
+   * @param product product analysis and rating
+   * @param market market analysis and rating
+   * @returns {*}
+   */
+  private ideaAnalysis(problem: any, product: any, market: any) {
+    try {
+      return [
+        {
+          _id: "problem",
+          name: "Problem",
+          rating: problem.overallRating,
+          analysis: [
+            {
+              name: "Trending Topic",
+              rating: problem.trendingScore,
+              description: problem.trendingScoreExplanation,
+            },
+            {
+              name: "Willingness to Pay",
+              rating: problem.demandScore,
+              description: problem.demandScoreExplanation,
+            },
+            {
+              name: "Paying Customers",
+              rating: problem.pricePointIndex,
+              description: problem.pricePointExplanation,
+            },
+          ],
+        },
+        {
+          _id: "product",
+          name: "Product",
+          rating: Math.floor(Number(product["Overall Score"])),
+          analysis: [
+            {
+              name: "Niche Audience",
+              rating: product["Audience Focus Score"],
+              description: product.audienceFocusScoreDescription,
+            },
+            {
+              name: "Core Features",
+              rating: product["Sophistication Score"],
+              description: product.sophisticationDescription,
+            },
+            {
+              name: "Differentiation",
+              rating: product["Unique Score"],
+              description: product.uniqueScoreDescription,
+            },
+          ],
+        },
+
+        {
+          _id: "market",
+          name: "Market",
+          rating: market.overallRating,
+          analysis: [
+            {
+              name: "HHI",
+              rating: market.hhiRating,
+              description: market.hhiExplanation,
+            },
+            {
+              name: "Satisfaction",
+              rating: market.customerSatisfactionRating,
+              description: market.customerSatisfactionExplanation,
+            },
+            {
+              name: "Age Index",
+              rating: market.ageIndexRating,
+              description: market.ageIndexExplanation,
+            },
+            {
+              name: "TAM",
+              rating: market.tamRating,
+              description: market.tamExplanation,
+            },
+            {
+              name: "CAGR",
+              rating: market.cagrRating,
+              description: market.cagrExplanation,
+            },
+          ],
+        },
+      ];
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
