@@ -1,17 +1,13 @@
 import { Auth } from "@app/middleware";
-import { BusinessProfileTable, UserTable } from "@app/model";
-import { HttpMethod } from "@app/types";
 import {
-  Route,
-  IMAGE_ACTIONS,
-  IS_RETRY,
-  ANALYTICS_EVENTS,
-  SYSTEM_IDEA_GENERATOR,
-  SYSTEM_IDEA_VALIDATION,
-} from "@app/utility";
+  BusinessProfileTable,
+  UserTable,
+  AIToolsUsageStatusTable,
+} from "@app/model";
+import { HttpMethod } from "@app/types";
+import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
 import BaseController from "../base";
 import { BusinessProfileService } from "@app/services/v9";
-import { AnalyticsService } from "@app/services/v4";
 import moment from "moment";
 class BusinessProfileController extends BaseController {
   /**
@@ -139,7 +135,7 @@ class BusinessProfileController extends BaseController {
     method: HttpMethod.POST,
   })
   public async getBusinessIdea(ctx: any) {
-    const { user, body } = ctx.request;
+    const { body } = ctx.request;
 
     if (!body.idea && !body.businessType) {
       return this.BadRequest(
@@ -165,7 +161,7 @@ class BusinessProfileController extends BaseController {
     method: HttpMethod.POST,
   })
   public async maximizeBusinessIdea(ctx: any) {
-    const { user, body } = ctx.request;
+    const { body } = ctx.request;
     if (!body.idea && !body.businessType) {
       return this.BadRequest(
         ctx,
@@ -178,6 +174,32 @@ class BusinessProfileController extends BaseController {
       "ideaValidation"
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
+  }
+
+  /**
+   * @description This method is to update AI Tools usage status for idea generator and idea validator when used from AI Toolbox
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/ai-tool-status-update",
+    method: HttpMethod.POST,
+  })
+  @Auth()
+  public async updateAIToolStatus(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    let aiToolUsageObj = {};
+    aiToolUsageObj[body.ideaGenerationType] = true;
+    await AIToolsUsageStatusTable.findOneAndUpdate(
+      { userId: userExists._id },
+      { $set: aiToolUsageObj },
+      { upsert: true, new: true }
+    );
+    return this.Ok(ctx, { message: "Success" });
   }
 }
 

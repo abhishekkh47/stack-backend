@@ -418,9 +418,11 @@ class BusinessProfileService {
         systemInput,
         prompt
       );
-      return JSON.parse(
-        response.choices[0].message.content.replace(/```json|```/g, "").trim()
+      const test = JSON.parse(JSON.stringify(response.choices[0].message));
+      const returning = JSON.parse(
+        test.content.replace(/```json|```/g, "").trim()
       );
+      return returning;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
@@ -435,12 +437,12 @@ class BusinessProfileService {
   public async onboardingIdeaUpdate(userExists: any, data: any) {
     try {
       let aiToolUsageObj = {};
-      aiToolUsageObj[data.businessIdeaInfo[0].key] = true;
+      aiToolUsageObj[data.ideaGenerationType] = true;
       if (userExists && userExists._id && data.businessIdeaInfo[0].value) {
-        AIToolsUsageStatusTable.findOneAndUpdate(
+        await AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
-          { upsert: true }
+          { upsert: true, new: true }
         );
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,

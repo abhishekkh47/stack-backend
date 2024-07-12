@@ -2472,7 +2472,7 @@ export const SYSTEM_IDEA_GENERATOR = {
   Relevance: Ensure the chosen problem directly relates to the core function or benefit of the business concept.
   Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
   Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list
-  Strictly ensure that you return only the required JSON parsable response and nothing else`,
+  Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
   SOFTWARE_TECHNOLOGY: {
     PRODUCTIZATION: `Objective:
     Use the problem statement and market segment in the user input to identify a manual service that is currently the best solution to a specific aspect of the problem and create a novel business concept that automates and streamlines the solution. This business concept should compete in the market segment identified in the user input. The business concept must not already exist.
