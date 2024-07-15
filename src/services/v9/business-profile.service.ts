@@ -264,39 +264,53 @@ class BusinessProfileService {
           ),
         ]);
 
-      const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
-        await Promise.all([
-          ProblemScoreTable.find({
-            problem: {
-              $in: [
-                productizationData.problem,
-                distributionData.problem,
-                dominateNicheData.problem,
-              ],
-            },
-            type: businessType,
-          }),
-          MarketScoreTable.find({
-            marketSegment: {
-              $in: [
-                productizationData.market,
-                distributionData.market,
-                dominateNicheData.market,
-              ],
-            },
-            type: businessType,
-          }),
-          this.getFormattedSuggestions(
-            SYSTEM_IDEA_GENERATOR.PRODUCT_RATING,
-            updatedPrompt
-          ),
-        ]);
+      const [
+        problemAnalysisData,
+        marketAnalysisData,
+        productizationRatingData,
+        distributionRatingData,
+        dominateNicheRatingData,
+      ] = await Promise.all([
+        ProblemScoreTable.find({
+          problem: {
+            $in: [
+              productizationData.problem,
+              distributionData.problem,
+              dominateNicheData.problem,
+            ],
+          },
+          type: businessType,
+        }),
+        MarketScoreTable.find({
+          marketSegment: {
+            $in: [
+              productizationData.market,
+              distributionData.market,
+              dominateNicheData.market,
+            ],
+          },
+          type: businessType,
+        }),
+        this.getFormattedSuggestions(
+          systemInputDataset.PRODUCT_RATING,
+          productizationData.description
+        ),
+        this.getFormattedSuggestions(
+          systemInputDataset.PRODUCT_RATING,
+          distributionData.description
+        ),
+        this.getFormattedSuggestions(
+          systemInputDataset.PRODUCT_RATING,
+          dominateNicheData.description
+        ),
+      ]);
 
       let order = 0;
-      productizationData["ideaLabel"] = "Best Product";
+      productizationData["ideaLabel"] = "Highest Demand";
       distributionData["ideaLabel"] = "Most Innovative";
-      dominateNicheData["ideaLabel"] = "Best Market";
+      dominateNicheData["ideaLabel"] = "Best Market Fit";
       [productizationData, distributionData, dominateNicheData].map((data) => {
+        let ratingData = null;
         data["_id"] = `idea${++order}`;
         const problem = problemAnalysisData.find(
           (obj) => obj.problem == data.problem
@@ -304,17 +318,22 @@ class BusinessProfileService {
         const market = marketAnalysisData.find(
           (obj) => obj.marketSegment == data.market
         );
+
+        if (data.ideaLabel == "Highest Demand") {
+          ratingData = productizationRatingData;
+        } else if (data.ideaLabel == "Most Innovative") {
+          ratingData = distributionRatingData;
+        } else {
+          ratingData = dominateNicheRatingData;
+        }
+
         data["rating"] = Math.floor(
           (problem.overallRating +
             market.overallRating +
-            productAnalysisData["Overall Score"]) /
+            ratingData["Overall Score"]) /
             3
         );
-        data["ideaAnalysis"] = this.ideaAnalysis(
-          problem,
-          productAnalysisData,
-          market
-        );
+        data["ideaAnalysis"] = this.ideaAnalysis(problem, ratingData, market);
       });
       return {
         ideas: [productizationData, distributionData, dominateNicheData],
@@ -418,11 +437,13 @@ class BusinessProfileService {
         systemInput,
         prompt
       );
-      const test = JSON.parse(JSON.stringify(response.choices[0].message));
-      const returning = JSON.parse(
-        test.content.replace(/```json|```/g, "").trim()
+      const recommendations = JSON.parse(
+        JSON.stringify(response.choices[0].message)
       );
-      return returning;
+      const jsonResponse = JSON.parse(
+        recommendations.content.replace(/```json|```/g, "").trim()
+      );
+      return jsonResponse;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }

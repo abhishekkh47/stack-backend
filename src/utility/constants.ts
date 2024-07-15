@@ -732,6 +732,7 @@ export const INITIAL_TUTORIAL_STATUS = {
   mentorship: false,
   aiToolVisited: false,
   mentorshipVisited: false,
+  saveIdea: false,
 };
 
 export const TUTORIAL_LOOKUP = {
@@ -743,6 +744,7 @@ export const TUTORIAL_LOOKUP = {
   mentorship: { mentorship: true },
   aiToolVisited: { aiToolVisited: true },
   mentorshipVisited: { mentorshipVisited: true },
+  saveIdea: { saveIdea: true },
 };
 
 export const DAILY_GOALS = [
