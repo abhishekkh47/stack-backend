@@ -306,8 +306,8 @@ class BusinessProfileService {
       ]);
 
       let order = 0;
-      productizationData["ideaLabel"] = "Highest Demand";
-      distributionData["ideaLabel"] = "Most Innovative";
+      productizationData["ideaLabel"] = "Most Innovative";
+      distributionData["ideaLabel"] = "Highest Demand";
       dominateNicheData["ideaLabel"] = "Best Market Fit";
       [productizationData, distributionData, dominateNicheData].map((data) => {
         let ratingData = null;
