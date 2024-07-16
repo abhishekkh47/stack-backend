@@ -126,7 +126,7 @@ class AuthController extends BaseController {
               );
             }
 
-            if (reqParam.businessIdeaInfo) {
+            if (reqParam.savedBusinessIdeas) {
               const updatedUser =
                 await BusinessProfileServiceV9.onboardingIdeaUpdate(
                   userExists,

@@ -23,7 +23,6 @@ import {
   UpscaleImage,
   IS_RETRY,
   DEDUCT_RETRY_FUEL,
-  HOURS_SAVED_BY_IDEA_GENERATOR,
   delay,
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
@@ -36,48 +35,48 @@ import moment from "moment";
 class BusinessProfileService {
   /**
    * @description add or update business profile
-   * @param data
-   * @param userProgress
+   * @param data containing response from the AI tool
+   * @param userIfExists
    * @returns {*}
    */
   public async addOrEditBusinessProfile(data: any, userIfExists: any) {
     try {
+      console.log("data : \n", data);
       let obj = {};
-      let businessHistoryObj = {};
-      // when user is onboarded, 'businessIdeaInfo' key will be sent to store business-idea, description and ratings
-      const businessProfileData = await BusinessProfileTable.findOne({
-        userId: userIfExists._id,
-      });
-      if (data.businessIdeaInfo) {
-        // save business description and opportunity
-        // data.businessIdeaInfo will have 'idea', 'description'
-        obj[data.businessIdeaInfo[0].key] = data.businessIdeaInfo[0].value;
-        obj[data.businessIdeaInfo[1].key] = data.businessIdeaInfo[1].value;
-        businessHistoryObj = {
-          key: data.ideaGenerationType, // type = description or ideaValidation
-          value: {
-            idea: data.businessIdeaInfo[0].value,
-            description: data.businessIdeaInfo[1].value,
-          },
-          timestamp: Date.now(),
-        };
-        if (!businessProfileData) {
-          obj["hoursSaved"] = HOURS_SAVED_BY_IDEA_GENERATOR;
+      let businessHistoryObj = [];
+      // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
+      if (data.savedBusinessIdeas) {
+        let latestSelection = data.savedBusinessIdeas[0];
+        for (let i = 0; i < data.savedBusinessIdeas.length; i++) {
+          if (
+            data.savedBusinessIdeas[i].timeStamp < latestSelection.timeStamp
+          ) {
+            latestSelection = data.savedBusinessIdeas[i];
+          }
+          businessHistoryObj.push({
+            key: data.ideaGenerationType, // type = description or ideaValidation
+            value: data.savedBusinessIdeas[i],
+            timestamp: Date.now(),
+          });
         }
+        obj["idea"] = latestSelection.idea;
+        obj["description"] = latestSelection.description;
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
-          { "Item Name": data.businessIdeaInfo[0].value },
+          { "Item Name": latestSelection.idea },
           { user_id: userIfExists._id }
         );
       } else {
         obj[data.key] = data.value;
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        businessHistoryObj = {
-          key: data.key,
-          value: data.value,
-          timestamp: Date.now(),
-        };
+        businessHistoryObj = [
+          {
+            key: data.key,
+            value: data.value,
+            timestamp: Date.now(),
+          },
+        ];
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS[AI_TOOLS_ANALYTICS[data.key]],
           { "Item Name": data.value },

@@ -459,24 +459,16 @@ class BusinessProfileService {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[data.ideaGenerationType] = true;
-      if (userExists && userExists._id && data.businessIdeaInfo[0].value) {
-        await AIToolsUsageStatusTable.findOneAndUpdate(
-          { userId: userExists._id },
-          { $set: aiToolUsageObj },
-          { upsert: true, new: true }
-        );
-        AnalyticsService.sendEvent(
-          ANALYTICS_EVENTS.BUSINESS_IDEA_SUBMITTED,
-          { "Item Name": data.businessIdeaInfo[0].value },
-          { user_id: userExists._id }
-        );
-      }
-
-      if (userExists && userExists._id && data) {
-        return await BusinessProfileServiceV7.addOrEditBusinessProfile(
-          data,
-          userExists
-        );
+      if (userExists && userExists._id && data.savedBusinessIdeas.length) {
+        const [_, updatedUser] = await Promise.all([
+          AIToolsUsageStatusTable.findOneAndUpdate(
+            { userId: userExists._id },
+            { $set: aiToolUsageObj },
+            { upsert: true, new: true }
+          ),
+          BusinessProfileServiceV7.addOrEditBusinessProfile(data, userExists),
+        ]);
+        return updatedUser;
       }
     } catch (error) {
       throw new NetworkError(error.message, 400);
