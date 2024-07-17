@@ -9,4 +9,5 @@ export interface ITutorialStatus {
   mentorship: boolean;
   aiToolVisited: boolean;
   mentorshipVisited: boolean;
+  saveIdea: boolean;
 }

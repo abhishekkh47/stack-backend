@@ -2,6 +2,8 @@ import {
   BusinessProfileTable,
   UserTable,
   AIToolsUsageStatusTable,
+  ProblemScoreTable,
+  MarketScoreTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
@@ -12,8 +14,12 @@ import {
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
+  SYSTEM_IDEA_GENERATOR,
+  SYSTEM_IDEA_VALIDATION,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import moment from "moment";
+import { AnalyticsService } from "@app/services/v4";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
 
 class BusinessProfileService {
@@ -215,6 +221,350 @@ class BusinessProfileService {
       return response;
     } catch (error) {
       throw new NetworkError("Data not found", 400);
+    }
+  }
+
+  /**
+   * @description this will generate business idea using OpenAI GPT
+   * @param prompt
+   * @param key
+   * @param businessType
+   * @returns {*}
+   */
+  public async generateBusinessIdea(
+    prompt: string,
+    key: string,
+    businessType: number
+  ) {
+    try {
+      let aiToolUsageObj = {};
+      aiToolUsageObj[key] = true;
+      const marketSelectionData = await this.getFormattedSuggestions(
+        SYSTEM_IDEA_GENERATOR.PROBLEM_MARKET_SELECTOR,
+        prompt
+      );
+      const systemInputDataset =
+        Number(businessType) === 1
+          ? SYSTEM_IDEA_GENERATOR.PHYSICAL_PRODUCT
+          : SYSTEM_IDEA_GENERATOR.SOFTWARE_TECHNOLOGY;
+      const updatedPrompt = `${marketSelectionData.problem}\n ${marketSelectionData.market}`;
+      let [productizationData, distributionData, dominateNicheData] =
+        await Promise.all([
+          this.getFormattedSuggestions(
+            systemInputDataset["PRODUCTIZATION"],
+            updatedPrompt
+          ),
+          this.getFormattedSuggestions(
+            systemInputDataset["DISTRIBUTION"],
+            updatedPrompt
+          ),
+          this.getFormattedSuggestions(
+            systemInputDataset["DOMINATE_NICHE"],
+            updatedPrompt
+          ),
+        ]);
+
+      const [
+        problemAnalysisData,
+        marketAnalysisData,
+        productizationRatingData,
+        distributionRatingData,
+        dominateNicheRatingData,
+      ] = await Promise.all([
+        ProblemScoreTable.find({
+          problem: {
+            $in: [
+              productizationData.problem,
+              distributionData.problem,
+              dominateNicheData.problem,
+            ],
+          },
+          type: businessType,
+        }),
+        MarketScoreTable.find({
+          marketSegment: {
+            $in: [
+              productizationData.market,
+              distributionData.market,
+              dominateNicheData.market,
+            ],
+          },
+          type: businessType,
+        }),
+        this.getFormattedSuggestions(
+          systemInputDataset.PRODUCT_RATING,
+          productizationData.description
+        ),
+        this.getFormattedSuggestions(
+          systemInputDataset.PRODUCT_RATING,
+          distributionData.description
+        ),
+        this.getFormattedSuggestions(
+          systemInputDataset.PRODUCT_RATING,
+          dominateNicheData.description
+        ),
+      ]);
+
+      let order = 0;
+      productizationData["ideaLabel"] = "Most Innovative";
+      distributionData["ideaLabel"] = "Highest Demand";
+      dominateNicheData["ideaLabel"] = "Best Market Fit";
+      [productizationData, distributionData, dominateNicheData].map((data) => {
+        let ratingData = null;
+        data["_id"] = `idea${++order}`;
+        const problem = problemAnalysisData.find(
+          (obj) => obj.problem == data.problem
+        );
+        const market = marketAnalysisData.find(
+          (obj) => obj.marketSegment == data.market
+        );
+
+        if (data.ideaLabel == "Highest Demand") {
+          ratingData = productizationRatingData;
+        } else if (data.ideaLabel == "Most Innovative") {
+          ratingData = distributionRatingData;
+        } else {
+          ratingData = dominateNicheRatingData;
+        }
+
+        data["rating"] = Math.floor(
+          (problem.overallRating +
+            market.overallRating +
+            ratingData["Overall Score"]) /
+            3
+        );
+        data["ideaAnalysis"] = this.ideaAnalysis(problem, ratingData, market);
+      });
+      return {
+        ideas: [productizationData, distributionData, dominateNicheData],
+      };
+    } catch (error) {
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+    }
+  }
+
+  /**
+   * @description this will validate user provided business idea using OpenAI GPT
+   * @param prompt
+   * @param key
+   * @returns {*}
+   */
+  public async ideaValidator(prompt: string, key: string) {
+    try {
+      let aiToolUsageObj = {};
+      aiToolUsageObj[key] = true;
+
+      const businessIdeaType = await this.getFormattedSuggestions(
+        SYSTEM_IDEA_VALIDATION.BUSINESS_TYPE_SELECTOR,
+        prompt
+      );
+      const businessType = businessIdeaType === "ecommerce" ? 1 : 2;
+      const systemInputDataset =
+        businessType === 1
+          ? SYSTEM_IDEA_VALIDATION.PHYSICAL_PRODUCT
+          : SYSTEM_IDEA_VALIDATION.TECH_PRODUCT;
+      let validatedIdea = await this.getFormattedSuggestions(
+        systemInputDataset,
+        prompt
+      );
+
+      const updatedPrompt = `${validatedIdea.problem}\n ${validatedIdea.market}`;
+      const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
+        await Promise.all([
+          ProblemScoreTable.find({
+            problem: {
+              $in: [validatedIdea.problem],
+            },
+            type: businessType,
+          }),
+          MarketScoreTable.find({
+            marketSegment: {
+              $in: [validatedIdea.market],
+            },
+            type: businessType,
+          }),
+          this.getFormattedSuggestions(
+            SYSTEM_IDEA_VALIDATION.PRODUCT_RATING,
+            updatedPrompt
+          ),
+        ]);
+
+      const problem = problemAnalysisData.find(
+        (obj) => obj.problem == validatedIdea.problem
+      );
+      const market = marketAnalysisData.find(
+        (obj) => obj.marketSegment == validatedIdea.market
+      );
+
+      validatedIdea["_id"] = "selfIdea";
+      validatedIdea["ideaLabel"] = "Your Idea";
+      validatedIdea["rating"] = Math.floor(
+        (problem.overallRating +
+          market.overallRating +
+          productAnalysisData["Overall Score"]) /
+          3
+      );
+      validatedIdea["ideaAnalysis"] = this.ideaAnalysis(
+        problem,
+        productAnalysisData,
+        market
+      );
+
+      let suggestions = (
+        await this.generateBusinessIdea(prompt, key, businessType)
+      ).ideas;
+
+      let response = {
+        selfIdea: validatedIdea,
+        ideas: [...suggestions],
+      };
+
+      return response;
+    } catch (error) {
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+    }
+  }
+
+  /**
+   * @description this method will get the response and do the formatting
+   * @param systemInput
+   * @param prompt
+   * @returns {*}
+   */
+  public async getFormattedSuggestions(systemInput: string, prompt: string) {
+    try {
+      const response = await BusinessProfileServiceV7.generateTextSuggestions(
+        systemInput,
+        prompt
+      );
+      const recommendations = JSON.parse(
+        JSON.stringify(response.choices[0].message)
+      );
+      const jsonResponse = JSON.parse(
+        recommendations.content.replace(/```json|```/g, "").trim()
+      );
+      return jsonResponse;
+    } catch (error) {
+      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+    }
+  }
+
+  /**
+   * @description this method will update the Idea Generator usage status used while onboarding
+   * @param userExists
+   * @param data
+   * @returns {*}
+   */
+  public async onboardingIdeaUpdate(userExists: any, data: any) {
+    try {
+      let aiToolUsageObj = {};
+      aiToolUsageObj[data.ideaGenerationType] = true;
+      if (userExists && userExists._id && data.savedBusinessIdeas.length) {
+        const [_, updatedUser] = await Promise.all([
+          AIToolsUsageStatusTable.findOneAndUpdate(
+            { userId: userExists._id },
+            { $set: aiToolUsageObj },
+            { upsert: true, new: true }
+          ),
+          BusinessProfileServiceV7.addOrEditBusinessProfile(data, userExists),
+        ]);
+        return updatedUser;
+      }
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will return the formatted market analysis report
+   * @param problem problem analysis and rating
+   * @param product product analysis and rating
+   * @param market market analysis and rating
+   * @returns {*}
+   */
+  private ideaAnalysis(problem: any, product: any, market: any) {
+    try {
+      return [
+        {
+          _id: "problem",
+          name: "Problem",
+          rating: problem.overallRating,
+          analysis: [
+            {
+              name: "Trending Topic",
+              rating: problem.trendingScore,
+              description: problem.trendingScoreExplanation,
+            },
+            {
+              name: "Willingness to Pay",
+              rating: problem.demandScore,
+              description: problem.demandScoreExplanation,
+            },
+            {
+              name: "Paying Customers",
+              rating: problem.pricePointIndex,
+              description: problem.pricePointExplanation,
+            },
+          ],
+        },
+        {
+          _id: "product",
+          name: "Product",
+          rating: Math.floor(Number(product["Overall Score"])),
+          analysis: [
+            {
+              name: "Niche Audience",
+              rating: product["Audience Focus Score"],
+              description: product.audienceFocusScoreDescription,
+            },
+            {
+              name: "Core Features",
+              rating: product["Sophistication Score"],
+              description: product.sophisticationDescription,
+            },
+            {
+              name: "Differentiation",
+              rating: product["Unique Score"],
+              description: product.uniqueScoreDescription,
+            },
+          ],
+        },
+
+        {
+          _id: "market",
+          name: "Market",
+          rating: market.overallRating,
+          analysis: [
+            {
+              name: "HHI",
+              rating: market.hhiRating,
+              description: market.hhiExplanation,
+            },
+            {
+              name: "Satisfaction",
+              rating: market.customerSatisfactionRating,
+              description: market.customerSatisfactionExplanation,
+            },
+            {
+              name: "Age Index",
+              rating: market.ageIndexRating,
+              description: market.ageIndexExplanation,
+            },
+            {
+              name: "TAM",
+              rating: market.tamRating,
+              description: market.tamExplanation,
+            },
+            {
+              name: "CAGR",
+              rating: market.cagrRating,
+              description: market.cagrExplanation,
+            },
+          ],
+        },
+      ];
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }

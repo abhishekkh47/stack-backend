@@ -19,6 +19,10 @@ import BaseController from "@app/controllers/base";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
 import { UserDBService } from "@app/services/v6";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import {
+  BusinessProfileService as BusinessProfileServiceV9,
+  UserService as UserServiceV9,
+} from "@app/services/v9";
 import { ChecklistDBService } from "@app/services/v9";
 
 class AuthController extends BaseController {
@@ -122,6 +126,21 @@ class AuthController extends BaseController {
               );
             }
 
+            if (reqParam.savedBusinessIdeas) {
+              const updatedUser =
+                await BusinessProfileServiceV9.onboardingIdeaUpdate(
+                  userExists,
+                  reqParam
+                );
+              (async () => {
+                zohoCrmService.addAccounts(
+                  ctx.request.zohoAccessToken,
+                  updatedUser,
+                  true
+                );
+              })();
+            }
+
             const { token, refreshToken } = await TokenService.generateToken(
               userExists
             );
@@ -131,6 +150,9 @@ class AuthController extends BaseController {
             );
             const businessProfile =
               await BusinessProfileServiceV7.getBusinessProfile(userExists._id);
+            const userAIToolStatus = await UserServiceV9.userAIToolUsageStatus(
+              userExists
+            );
             if (
               businessProfile &&
               businessProfile?.businessCoachInfo?.coachId
@@ -161,6 +183,7 @@ class AuthController extends BaseController {
                 : null,
               topicDetails,
               currentLeague,
+              userAIToolStatus,
             };
 
             if (deviceToken) {

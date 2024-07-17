@@ -51,3 +51,5 @@ export * from "@app/model/aiToolsUsageStatus";
 export * from "@app/model/marketSegmentInfo";
 export * from "@app/model/tutorialStatus";
 export * from "@app/model/dailyChallenge";
+export * from "@app/model/marketScore";
+export * from "@app/model/problemScore";

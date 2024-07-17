@@ -2170,6 +2170,88 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, error.message);
     }
   }
+
+  /**
+   * @description This method is used to store problem scoring data in DB
+   * @param ctx
+   */
+  @Route({ path: "/import-problem-scoring-data", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importProblemScoringData(ctx: any) {
+    try {
+      const { category } = ctx.request.body;
+      let gid = null;
+      let type = null;
+      if (category == "software") {
+        gid = envData.SOFTWARE_PROBLEM_SCORING_SHEET_GID;
+        type = 2;
+      } else if (category == "physical") {
+        gid = envData.PHYSICAL_PROBLEM_SCORING_SHEET_GID;
+        type = 1;
+      } else {
+        return this.BadRequest(
+          ctx,
+          "Invalid category - Category can be software or physical"
+        );
+      }
+      const rows = await ScriptService.readSpreadSheet(
+        gid,
+        envData.IDEA_GENERATOR_DATA_SHEET_ID
+      );
+      if (rows.length === 0) return this.BadRequest(ctx, "Data Not Found");
+      const problemScoreData = await ScriptService.addProblemScoringDataToDB(
+        rows,
+        type
+      );
+      if (!problemScoreData) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: problemScoreData });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
+
+  /**
+   * @description This method is used to store market scoring data in DB
+   * @param ctx
+   */
+  @Route({ path: "/import-market-scoring-data", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importMarketScoringData(ctx: any) {
+    try {
+      const { category } = ctx.request.body;
+      let gid = null;
+      let type = null;
+      if (category == "software") {
+        gid = envData.SOFTWARE_MARKET_SCORING_SHEET_GID;
+        type = 2;
+      } else if (category == "physical") {
+        gid = envData.PHYSICAL_MARKET_SCORING_SHEET_GID;
+        type = 1;
+      } else {
+        return this.BadRequest(
+          ctx,
+          "Invalid category - Category can be software or physical"
+        );
+      }
+      const rows = await ScriptService.readSpreadSheet(
+        gid,
+        envData.IDEA_GENERATOR_DATA_SHEET_ID
+      );
+      if (rows.length === 0) return this.BadRequest(ctx, "Data Not Found");
+      const problemScoreData = await ScriptService.addMarketScoringDataToDB(
+        rows,
+        type
+      );
+      if (!problemScoreData) {
+        return this.BadRequest(ctx, "Something Went Wrong");
+      }
+      return this.Ok(ctx, { message: "Success", data: problemScoreData });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();

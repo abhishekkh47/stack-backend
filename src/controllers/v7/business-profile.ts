@@ -3,7 +3,6 @@ import {
   BusinessProfileTable,
   UserTable,
   WeeklyJourneyResultTable,
-  ActionScreenCopyTable,
   AIToolsUsageStatusTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
@@ -40,15 +39,11 @@ class BusinessProfileController extends BaseController {
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
-      const [userIfExists, actionScreenData] = await Promise.all([
-        UserTable.findOne({ _id: user._id }),
-        ActionScreenCopyTable.find(),
-      ]);
+      const userIfExists = await UserTable.findOne({ _id: user._id });
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       const updatedUser = await BusinessProfileService.addOrEditBusinessProfile(
         body,
-        userIfExists,
-        actionScreenData
+        userIfExists
       );
       (async () => {
         zohoCrmService.addAccounts(
@@ -105,16 +100,14 @@ class BusinessProfileController extends BaseController {
   @PrimeTrustJWT(true)
   public async updateCompanyLogo(ctx: any) {
     const { user, file } = ctx.request;
-    const [userExists, businessProfileExists, actionScreenData]: any =
-      await Promise.all([
-        UserTable.findOne({
-          _id: user._id,
-        }),
-        BusinessProfileTable.findOne({
-          userId: user._id,
-        }),
-        ActionScreenCopyTable.find(),
-      ]);
+    const [userExists, businessProfileExists]: any = await Promise.all([
+      UserTable.findOne({
+        _id: user._id,
+      }),
+      BusinessProfileTable.findOne({
+        userId: user._id,
+      }),
+    ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
@@ -124,9 +117,6 @@ class BusinessProfileController extends BaseController {
     if (businessProfileExists?.companyLogo) {
       removeImage(userExists._id, businessProfileExists.companyLogo);
     }
-    const getHoursSaved = actionScreenData.filter(
-      (action) => action?.key == "companyLogo"
-    );
     let businessProfileObj = {
       companyLogo: imageName,
     };

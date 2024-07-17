@@ -6,6 +6,7 @@ import {
   ChecklistResultTable,
   QuizTable,
   DailyChallengeTable,
+  BusinessProfileTable,
 } from "@app/model";
 import {
   QUIZ_TYPE,
@@ -544,8 +545,18 @@ class ChecklistDBService {
    * @param aiToolsUsageStatus current status of ai tools in DB
    * @returns {*}
    */
-  private updateChallenges(challenges: any[], aiToolsUsageStatus: any) {
+  private updateChallenges(
+    challenges: any[],
+    aiToolsUsageStatus: any,
+    businessProfileIfExists: any
+  ) {
     return challenges.map((challenge) => {
+      if (
+        businessProfileIfExists?.description &&
+        challenge.key == "ideaValidation"
+      ) {
+        return { ...challenge, isCompleted: true };
+      }
       if (aiToolsUsageStatus && aiToolsUsageStatus[challenge.key]) {
         return { ...challenge, isCompleted: true };
       }
@@ -563,7 +574,8 @@ class ChecklistDBService {
   private async handleAvailableDailyChallenges(
     availableDailyChallenges: any,
     aiToolsUsageStatus: any,
-    userIfExists: any
+    userIfExists: any,
+    businessProfileIfExists: any
   ) {
     if (
       availableDailyChallenges &&
@@ -574,7 +586,8 @@ class ChecklistDBService {
       if (currentLength > 3) {
         const updatedChallenges = this.updateChallenges(
           currentDailyGoalsStatus.slice(0, currentLength - 1),
-          aiToolsUsageStatus
+          aiToolsUsageStatus,
+          businessProfileIfExists
         );
         return [
           ...updatedChallenges,
@@ -603,6 +616,7 @@ class ChecklistDBService {
         lastPlayedChallenge,
         aiToolsUsageStatus,
         availableDailyChallenges,
+        businessProfileIfExists,
       ]: any = await Promise.all([
         ChecklistResultTable.findOne({
           userId: (userIfExists as any)._id,
@@ -610,6 +624,7 @@ class ChecklistDBService {
         }).sort({ createdAt: -1 }),
         UserService.userAIToolUsageStatus(userIfExists),
         DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
+        BusinessProfileTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
 
       let dateDiff = this.getDaysNum(userIfExists, userIfExists.createdAt);
@@ -620,14 +635,16 @@ class ChecklistDBService {
       const currentResponse = await this.handleAvailableDailyChallenges(
         availableDailyChallenges,
         aiToolsUsageStatus,
-        userIfExists
+        userIfExists,
+        businessProfileIfExists
       );
       if (currentResponse) return currentResponse;
 
       const getAITools = (start: number = 0, numTools: number) => {
         return this.updateChallenges(
           DAILY_GOALS.slice(start, numTools),
-          aiToolsUsageStatus
+          aiToolsUsageStatus,
+          businessProfileIfExists
         );
       };
 

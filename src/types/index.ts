@@ -35,3 +35,5 @@ export * from "@app/types/checklistResult";
 export * from "@app/types/marketSegmentInfo";
 export * from "@app/types/tutorialStatus";
 export * from "@app/types/dailyChallenge";
+export * from "@app/types/problemScore";
+export * from "@app/types/marketScore";

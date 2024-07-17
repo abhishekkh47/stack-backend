@@ -115,7 +115,7 @@ class UserController extends BaseController {
       if (!userExists) {
         return this.BadRequest(ctx, "User Not Found");
       }
-      if (!Object.keys(INITIAL_TUTORIAL_STATUS).includes(body.key)) {
+      if (!Object.keys(TUTORIAL_LOOKUP).includes(body.key)) {
         return this.BadRequest(ctx, "Invalid data");
       }
       await TutorialStatusTable.findOneAndUpdate(
