@@ -89,7 +89,7 @@ class AuthController extends BaseController {
               accountCreated = true;
 
               // for sensitive identify calls, we need to await to make sure it waits.
-              AnalyticsService.identifyOnce(userExists._id, {
+              await AnalyticsService.identifyOnce(userExists._id, {
                 Email: userExists.email,
               });
 

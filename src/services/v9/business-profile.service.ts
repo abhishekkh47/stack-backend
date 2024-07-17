@@ -239,14 +239,14 @@ class BusinessProfileService {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const marketSelectionData = await this.getFormattedSuggestions(
-        SYSTEM_IDEA_GENERATOR.PROBLEM_MARKET_SELECTOR,
-        prompt
-      );
       const systemInputDataset =
         Number(businessType) === 1
           ? SYSTEM_IDEA_GENERATOR.PHYSICAL_PRODUCT
           : SYSTEM_IDEA_GENERATOR.SOFTWARE_TECHNOLOGY;
+      const marketSelectionData = await this.getFormattedSuggestions(
+        systemInputDataset["PROBLEM_MARKET_SELECTOR"],
+        prompt
+      );
       const updatedPrompt = `${marketSelectionData.problem}\n ${marketSelectionData.market}`;
       let [productizationData, distributionData, dominateNicheData] =
         await Promise.all([
@@ -274,23 +274,24 @@ class BusinessProfileService {
         ProblemScoreTable.find({
           problem: {
             $in: [
-              productizationData.problem,
-              distributionData.problem,
-              dominateNicheData.problem,
+              // regex to remove any trailing fullstops in the suggestions
+              productizationData.problem.replace(/\.$/, ""),
+              distributionData.problem.replace(/\.$/, ""),
+              dominateNicheData.problem.replace(/\.$/, ""),
             ],
           },
           type: businessType,
-        }),
+        }).lean(),
         MarketScoreTable.find({
           marketSegment: {
             $in: [
-              productizationData.market,
-              distributionData.market,
-              dominateNicheData.market,
+              productizationData.market.replace(/\.$/, ""),
+              distributionData.market.replace(/\.$/, ""),
+              dominateNicheData.market.replace(/\.$/, ""),
             ],
           },
           type: businessType,
-        }),
+        }).lean(),
         this.getFormattedSuggestions(
           systemInputDataset.PRODUCT_RATING,
           productizationData.description
@@ -313,10 +314,10 @@ class BusinessProfileService {
         let ratingData = null;
         data["_id"] = `idea${++order}`;
         const problem = problemAnalysisData.find(
-          (obj) => obj.problem == data.problem
+          (obj) => obj.problem == data.problem.replace(/\.$/, "")
         );
         const market = marketAnalysisData.find(
-          (obj) => obj.marketSegment == data.market
+          (obj) => obj.marketSegment == data.market.replace(/\.$/, "")
         );
 
         if (data.ideaLabel == "Highest Demand") {
@@ -358,7 +359,8 @@ class BusinessProfileService {
         SYSTEM_IDEA_VALIDATION.BUSINESS_TYPE_SELECTOR,
         prompt
       );
-      const businessType = businessIdeaType === "ecommerce" ? 1 : 2;
+      const businessType =
+        JSON.stringify(businessIdeaType).indexOf("ecommerce") >= 0 ? 1 : 2;
       const systemInputDataset =
         businessType === 1
           ? SYSTEM_IDEA_VALIDATION.PHYSICAL_PRODUCT

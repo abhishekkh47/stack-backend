@@ -3898,28 +3898,38 @@ export const SYSTEM_IDEA_GENERATOR = {
     Input: 
     organic soda brand
     Output: 
-    Juice contains too much sugar
-    Beverages
+    {
+      problem: Juice contains too much sugar,
+      market: Beverages
+    }
     Input: 
     Comfortable and stylish bucket hats for men
     Output: 
-    Trendy clothes are low-quality
-    Sustainable Fashion and Textiles
+    {
+      problem: Trendy clothes are low-quality,
+      market: Sustainable Fashion and Textiles
+    }
     Input: 
     A sleep mask that keeps you cool while blocking out light
     Output: 
-    Noise makes it hard to sleep
-    Sleep Optimization Products
+    {
+      problem: Noise makes it hard to sleep,
+      market: Sleep Optimization Products
+    }
     Input: 
     Eco-friendly bamboo toothbrush that helps reduce plastic waste
     Output: 
-    Toothpaste doesn't whiten effectively
-    Reusable & Sustainable House Products
+    {
+      problem: Toothpaste doesn't whiten effectively,
+      market: Reusable & Sustainable House Products
+    }
     Input: 
     Organic baby clothing made from soft, chemical-free cotton
     Output: 
-    Kids outgrow clothes too fast
-    Parenting and Baby Care Products
+    {
+      problem: Kids outgrow clothes too fast,
+      market: Parenting and Baby Care Products
+    }
     
     Additional Guidelines:
     Relevance: Ensure the chosen problem directly relates to the core function or benefit of the business concept.
