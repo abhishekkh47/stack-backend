@@ -247,7 +247,7 @@ class BusinessProfileService {
         systemInputDataset["PROBLEM_MARKET_SELECTOR"],
         prompt
       );
-      const updatedPrompt = `${marketSelectionData.problem}\n ${marketSelectionData.market}`;
+      const updatedPrompt = `${marketSelectionData.market}`;
       let [productizationData, distributionData, dominateNicheData] =
         await Promise.all([
           this.getFormattedSuggestions(
@@ -272,24 +272,11 @@ class BusinessProfileService {
         dominateNicheRatingData,
       ] = await Promise.all([
         ProblemScoreTable.find({
-          problem: {
-            $in: [
-              // regex to remove any trailing fullstops in the suggestions
-              productizationData.problem.replace(/\.$/, ""),
-              distributionData.problem.replace(/\.$/, ""),
-              dominateNicheData.problem.replace(/\.$/, ""),
-            ],
-          },
+          problem: marketSelectionData.problem.replace(/\.$/, ""),
           type: businessType,
         }).lean(),
         MarketScoreTable.find({
-          marketSegment: {
-            $in: [
-              productizationData.market.replace(/\.$/, ""),
-              distributionData.market.replace(/\.$/, ""),
-              dominateNicheData.market.replace(/\.$/, ""),
-            ],
-          },
+          marketSegment: marketSelectionData.market.replace(/\.$/, ""),
           type: businessType,
         }).lean(),
         this.getFormattedSuggestions(
@@ -314,10 +301,11 @@ class BusinessProfileService {
         let ratingData = null;
         data["_id"] = `idea${++order}`;
         const problem = problemAnalysisData.find(
-          (obj) => obj.problem == data.problem.replace(/\.$/, "")
+          (obj) => obj.problem == marketSelectionData.problem.replace(/\.$/, "")
         );
         const market = marketAnalysisData.find(
-          (obj) => obj.marketSegment == data.market.replace(/\.$/, "")
+          (obj) =>
+            obj.marketSegment == marketSelectionData.market.replace(/\.$/, "")
         );
 
         if (data.ideaLabel == "Highest Demand") {
@@ -374,15 +362,11 @@ class BusinessProfileService {
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
           ProblemScoreTable.find({
-            problem: {
-              $in: [validatedIdea.problem],
-            },
+            problem: validatedIdea.problem,
             type: businessType,
           }),
           MarketScoreTable.find({
-            marketSegment: {
-              $in: [validatedIdea.market],
-            },
+            marketSegment: validatedIdea.market,
             type: businessType,
           }),
           this.getFormattedSuggestions(
