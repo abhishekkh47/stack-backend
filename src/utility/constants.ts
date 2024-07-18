@@ -237,6 +237,7 @@ export const ANALYTICS_EVENTS = {
   BUSINESS_LOGO_SUBMITTED: "Business Logo Submitted",
   TOP_COMPETITORS_SUBMITTED: "Top Competitors Submitted",
   BRAND_AESTHETIC_SUBMITTED: "Brand Aesthetic Submitted",
+  AI_TOOL_USED: "AI Tool Used",
 };
 
 export const XP_POINTS = {
