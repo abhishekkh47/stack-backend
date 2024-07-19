@@ -145,7 +145,6 @@ class BusinessProfileController extends BaseController {
     }
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       body.idea,
-      "description",
       Number(body.businessType)
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
@@ -169,10 +168,7 @@ class BusinessProfileController extends BaseController {
       );
     }
     const prompt = `problem: ${body.idea}.**`;
-    const businessIdea = await BusinessProfileService.ideaValidator(
-      prompt,
-      "ideaValidation"
-    );
+    const businessIdea = await BusinessProfileService.ideaValidator(prompt);
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
 

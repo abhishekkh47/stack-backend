@@ -792,3 +792,18 @@ export const DAILY_GOALS = [
     isCompleted: false,
   },
 ];
+
+export const BUSINESS_IDEA_IMAGES = {
+  PHYSICAL_PRODUCT: {
+    user: "physicalProduct_User.webp",
+    demand: "physicalProduct_Demand.webp",
+    innovative: "physicalProduct_Innovative.webp",
+    trending: "physicalProduct_Trending.webp",
+  },
+  TECH_PRODUCT: {
+    user: "techProduct_User.webp",
+    demand: "techProduct_Demand.webp",
+    innovative: "techProduct_Innovative.webp",
+    trending: "techProduct_MarketFit.webp",
+  },
+};
