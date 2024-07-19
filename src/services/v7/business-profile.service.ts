@@ -49,7 +49,7 @@ class BusinessProfileService {
         let latestSelection = data.savedBusinessIdeas[0];
         for (let i = 0; i < data.savedBusinessIdeas.length; i++) {
           if (
-            data.savedBusinessIdeas[i].timeStamp < latestSelection.timeStamp
+            data.savedBusinessIdeas[i].timeStamp > latestSelection.timeStamp
           ) {
             latestSelection = data.savedBusinessIdeas[i];
           }

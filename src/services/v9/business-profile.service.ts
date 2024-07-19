@@ -239,15 +239,15 @@ class BusinessProfileService {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const marketSelectionData = await this.getFormattedSuggestions(
-        SYSTEM_IDEA_GENERATOR.PROBLEM_MARKET_SELECTOR,
-        prompt
-      );
       const systemInputDataset =
         Number(businessType) === 1
           ? SYSTEM_IDEA_GENERATOR.PHYSICAL_PRODUCT
           : SYSTEM_IDEA_GENERATOR.SOFTWARE_TECHNOLOGY;
-      const updatedPrompt = `${marketSelectionData.problem}\n ${marketSelectionData.market}`;
+      const marketSelectionData = await this.getFormattedSuggestions(
+        systemInputDataset["PROBLEM_MARKET_SELECTOR"],
+        prompt
+      );
+      const updatedPrompt = `${marketSelectionData.market}`;
       let [productizationData, distributionData, dominateNicheData] =
         await Promise.all([
           this.getFormattedSuggestions(
@@ -272,25 +272,13 @@ class BusinessProfileService {
         dominateNicheRatingData,
       ] = await Promise.all([
         ProblemScoreTable.find({
-          problem: {
-            $in: [
-              productizationData.problem,
-              distributionData.problem,
-              dominateNicheData.problem,
-            ],
-          },
+          problem: marketSelectionData.problem.replace(/\.$/, ""),
           type: businessType,
-        }),
+        }).lean(),
         MarketScoreTable.find({
-          marketSegment: {
-            $in: [
-              productizationData.market,
-              distributionData.market,
-              dominateNicheData.market,
-            ],
-          },
+          marketSegment: marketSelectionData.market.replace(/\.$/, ""),
           type: businessType,
-        }),
+        }).lean(),
         this.getFormattedSuggestions(
           systemInputDataset.PRODUCT_RATING,
           productizationData.description
@@ -313,10 +301,11 @@ class BusinessProfileService {
         let ratingData = null;
         data["_id"] = `idea${++order}`;
         const problem = problemAnalysisData.find(
-          (obj) => obj.problem == data.problem
+          (obj) => obj.problem == marketSelectionData.problem.replace(/\.$/, "")
         );
         const market = marketAnalysisData.find(
-          (obj) => obj.marketSegment == data.market
+          (obj) =>
+            obj.marketSegment == marketSelectionData.market.replace(/\.$/, "")
         );
 
         if (data.ideaLabel == "Highest Demand") {
@@ -358,7 +347,8 @@ class BusinessProfileService {
         SYSTEM_IDEA_VALIDATION.BUSINESS_TYPE_SELECTOR,
         prompt
       );
-      const businessType = businessIdeaType === "ecommerce" ? 1 : 2;
+      const businessType =
+        JSON.stringify(businessIdeaType).indexOf("ecommerce") >= 0 ? 1 : 2;
       const systemInputDataset =
         businessType === 1
           ? SYSTEM_IDEA_VALIDATION.PHYSICAL_PRODUCT
@@ -372,15 +362,11 @@ class BusinessProfileService {
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
           ProblemScoreTable.find({
-            problem: {
-              $in: [validatedIdea.problem],
-            },
+            problem: validatedIdea.problem,
             type: businessType,
           }),
           MarketScoreTable.find({
-            marketSegment: {
-              $in: [validatedIdea.market],
-            },
+            marketSegment: validatedIdea.market,
             type: businessType,
           }),
           this.getFormattedSuggestions(

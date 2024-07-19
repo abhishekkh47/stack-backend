@@ -1939,541 +1939,6 @@ export const SYSTEM_INPUT = {
 };
 
 export const SYSTEM_IDEA_GENERATOR = {
-  PROBLEM_MARKET_SELECTOR: `Objective: To match a user input, which is always a business concept or idea, to a problem and a market segment from a specific list. The assistant should ensure the chosen problem and market segment are the closest and most relevant to the given business concept or idea.
-
-  Instructions:
-  Input:
-  Receive a business concept or idea from the user.
-  
-  Matching Process:
-  Problem Matching:
-  Please select a problem from this list that is closest to the user input:
-  Cryptocurrency markets are highly volatile and risky
-  Accessible education in remote areas is limited
-  City parking is expensive and limited in availability
-  Education for incarcerated individuals is often limited
-  Millennials prefer subscription-based car ownership
-  Tailoring clothes for a perfect fit is expensive and time-consuming
-  Electric and eco-friendly cars are expensive for consumers
-  Frequent doctor visits for chronic issues are inconvenient
-  High-demand sports tickets sell out quickly
-  Busy professionals seek quick, healthy meal solutions
-  Social media often leads to shallow relationships
-  Job training for underserved youth is often limited
-  Screening for rare diseases is expensive and limited
-  Finding reliable and vetted home repair professionals is challenging
-  Engaging remote event attendees is challenging
-  Accessible transportation in rural areas is limited
-  Busy parents want on-demand childcare services
-  One-size-fits-all education fails to meet individual needs
-  Sports streaming packages are expensive for viewers
-  Cryptocurrency exchanges lack robust security measures
-  Accessible mental health support is often limited
-  Mental health support for seniors is often limited
-  Coordinating care for elderly relatives across family members is difficult
-  Remote workers seek flexible co-working space rentals
-  Difficult to find eco-friendly products for kids
-  Limited plus-size options in sustainable fashion
-  Finding reliable and vetted personal fitness trainers is challenging
-  Gen Alpha expects gamified educational content
-  Limited sustainable options for baby products
-  Managing digital assets and passwords after death is complex
-  Online classes can be disengaging for many students
-  Dating platforms often enable harassment of users
-  Finding size-inclusive clothing rental options is limited
-  Freelancers need project-based health insurance options
-  Purebred dogs are expensive to purchase and maintain
-  Outdoor enthusiasts seek sustainable gear options
-  Online therapy lacks the human connection of in-person sessions
-  Finding reliable and vetted home organizers is time-consuming
-  Finding reliable and vetted tutors for specific subjects is time-consuming
-  Finding ethical and sustainable fashion options is time-consuming
-  Limited mental health resources for minority groups
-  Working parents need flexible, on-demand pet care services
-  Coordinating shared childcare for non-traditional work schedules is difficult
-  Finding reliable and vetted elder care services is challenging
-  Parents want kid-safe social media platforms
-  Professional-grade cameras are costly for hobbyists
-  Wearable devices often have short battery life
-  Access to healthcare in rural areas is limited
-  Buildings often have high energy consumption rates
-  Limited fashion options for plus-size teens
-  Limited sustainable menstrual product options
-  Finding reliable and vetted personal financial advisors is time-consuming
-  Managing personal digital content creation and monetization is disorganized
-  Communication with remote teams can be ineffective
-  Manual invoice processing is prone to errors
-  Interpreting personal health data is often confusing
-  Unexpected appliance breakdowns are costly and inconvenient
-  Gen Z expects instant, mobile-first customer service
-  Gen-Z consumers prefer video content over pictures or text
-  Customizing meal plans for specific health conditions is complex
-  Limited culturally diverse skin care products
-  Managing personal education and skill development plans is disorganized
-  Cryptocurrency and DeFi platforms are confusing for newcomers
-  Reselling used textbooks is often difficult
-  Gen Z prefers mobile-first insurance solutions
-  Non-English speakers lack localized streaming content
-  Electric cars have limited battery range for long trips
-  Busy professionals want on-demand home cleaning
-  Coordinating multi-family childcare arrangements is complex
-  Energy management in low-income homes is challenging
-  Sitting in traffic wastes valuable time
-  Continuing education while working full-time is challenging
-  Energy management in homes is frequently inefficient
-  Coordinating group travel for people with diverse needs is complex
-  Gig workers need flexible financial planning tools
-  Edtech raises concerns about student data privacy protection
-  Low-income areas lack access to fresh produce delivery
-  Minimalists seek multi-functional home goods
-  Tech-averse seniors need simplified telehealth services
-  Concert ticket sites charge excessive processing fees
-  Plus-size and inclusive sizing options are limited in fashion
-  Clean energy access in off-grid areas is limited
-  Dating apps are populated with fake or inactive profiles
-  Learning new skills often lacks motivation for self-learners
-  Non-tech-savvy users struggle with smart home devices
-  Virtual reality gaming equipment is expensive
-  Creating custom travel itineraries is time-intensive
-  Working mothers need flexible fitness class schedules
-  Low-income families lack affordable tutoring services
-  Managing personal genetic data and health insights is overwhelming
-  Rural areas have limited access to grocery delivery
-  Limited fashion options for gender non-conforming individuals
-  Business learning tools often lack personalization for users
-  Comparing insurance options is confusing for many consumers
-  Compatibility between smart home equipment is often limited
-  Smart homes raise privacy and security concerns
-  Working from home can lead to loneliness and burnout
-  Managing personal energy usage and efficiency is cumbersome
-  Managing personal legal document archives is disorganized
-  Students seek affordable textbook rental options
-  Gen Z expects augmented reality shopping experiences
-  Non-drivers seek better last-mile transportation solutions
-  Organizing and digitizing old family photos is tedious
-  Personalizing language learning to individual goals is difficult
-  Finding suitable part-time work is challenging
-  Cybersecurity threats are increasing in frequency and complexity
-  Old buildings have high energy costs for occupants
-  Remote work collaboration is challenging for many teams
-  Cheating and hacking ruins online gaming experiences
-  Data privacy compliance is complex and challenging for companies
-  Sensitive data is vulnerable to theft by hackers
-  Immigrants struggle to access credit-building services
-  Managing personal collections of digital memories and life events is overwhelming
-  Mental health support for LGBTQ+ individuals is often limited
-  Finding reliable and vetted personal stylists is difficult
-  Building trust and deep connections in online communities is difficult
-  Managing multiple passwords securely is frustrating for users
-  Professional certifications are often prohibitively expensive
-  Skiing and snowboarding gear is expensive for casual users
-  Mental health support for new mothers is often limited
-  LGBTQ+ community seeks inclusive dating apps
-  Tracking home maintenance schedules is often overlooked
-  Internet connectivity is limited in many rural areas
-  Lead generation is often ineffective for many businesses
-  Finding reliable and vetted personal chefs for dietary needs is challenging
-  Choosing outfits daily is time-consuming
-  Managing personal finances is overwhelming for many people
-  Energy storage for renewable sources is often inefficient
-  Home workout equipment is costly for beginners
-  Taking phone calls in noisy places is challenging
-  Wedding planning is often stressful and overwhelming
-  Carrying multiple payment and loyalty cards is cumbersome
-  Tech-savvy seniors seek age-appropriate social platforms
-  Coordinating shared ownership and maintenance of community spaces is complex
-  Ineffective methods for protecting against in-game cheating and hacks
-  High-end smart home devices are prohibitively expensive
-  Investment and trading platforms often charge high fees
-  Customer data is often fragmented across multiple systems
-  Overcoming public speaking anxiety is challenging for many
-  Football raises long-term safety and health concerns
-  Business intelligence is often fragmented across multiple tools
-  Online meditation classes often lack the ambiance of in-person sessions
-  Coordinating neighborhood renewable energy initiatives is complex
-  Finding culturally appropriate etiquette advice for travelers is difficult
-  Quality specialty shoes are expensive for consumers
-  Payroll processing is error-prone and time-consuming
-  Quality camping gear is expensive for casual campers
-  Social media platforms lack robust privacy controls
-  Device batteries degrade significantly over time
-  Gauging compatibility from online profiles is challenging
-  Textbooks are heavy and quickly become outdated
-  Air pollution monitoring in cities is often inadequate
-  Telemedicine apps can be challenging for seniors to use
-  Supply chain visibility is limited for many businesses
-  Organizing community sports leagues is administratively burdensome
-  Project management often lacks visibility for stakeholders
-  Conflicting healthy eating information abounds online
-  Controlling multiple smart home devices is complex
-  In-game purchases create unfair advantages for players
-  Online gaming communities can be toxic for newcomers
-  Locating charged micromobility vehicles can be difficult
-  Medication effectiveness varies widely between individuals
-  Marketing ROI is difficult to measure accurately
-  Finding short-term workspace in unfamiliar cities is time-consuming
-  Limited adaptive sportswear options for disabled athletes
-  Neurodiverse children need adapted learning apps
-  Legal services are expensive and intimidating
-  Coordinating shared ownership of vacation properties is complex
-  Finding reliable and vetted home stagers for real estate is time-consuming
-  Non-English speakers need localized financial literacy tools
-  Retirees struggle to find part-time job opportunities
-  Finding age-appropriate volunteer opportunities for kids is challenging
-  Seniors struggle with digital-only banking services
-  Challenges in accessing mental health support and therapy
-  Customer support is frequently slow and inefficient
-  Healthcare access for migrant workers is often limited
-  Blockchain technology is difficult for laypeople to understand
-  Effective time management is challenging for many individuals
-  Professional video equipment is cost-prohibitive
-  High-quality drawing tablets are prohibitively expensive
-  Visualizing furniture placement before purchasing is difficult
-  Niche professional education topics have limited resources
-  Understanding sports betting complexities
-  Video editing software has a steep learning curve
-  Vegans struggle to find suitable meal kit options
-  Comparing moving company prices is time-consuming
-  Difficult to find teen-friendly banking products and services
-  Older generations struggle with cryptocurrency platforms
-  Quality backpacking and camping gear is expensive
-  Employee engagement is low in many workplaces
-  Quality educational tools are expensive for schools
-  Cameras are often bulky and prone to damage
-  Estate planning is complex and often neglected by individuals
-  Managing family medical history across generations is disorganized
-  Travelers with disabilities lack accessible booking options
-  Finding specific information in user manuals is time-consuming
-  PTSD support for veterans is often inaccessible
-  Coordinating group gift-giving for special occasions is cumbersome
-  Supply chains often lack transparency for consumers
-  Clean energy access in developing nations is limited
-  Financial services for unbanked populations are limited
-  Organizing digital files efficiently is challenging for many users
-  Conducting genealogy research is time-consuming and complex
-  Tracking and improving sleep patterns is challenging for many
-  IT support is frequently overwhelmed in many organizations
-  Dating apps lack specific filters for compatibility
-  Finding licensed CBT therapists can be challenging
-  Gen X prefers desktop-based productivity tools
-  Managing multiple rental properties is administratively burdensome
-  Parking meter payment options are often restricted
-  Navigating busy stadiums and parking lots is frustrating
-  High-end skincare products are expensive for consumers
-  Live sports event tickets are expensive for fans
-  Golf equipment is prohibitively expensive for beginners
-  Achieving complex hairstyles often requires a professional
-  Professional animal training services are expensive
-  Premium personal branding tools have limited availability
-  Talent retention is challenging for many organizations
-  Finding reliable pet sitters for exotic pets is challenging
-  Tracking personal carbon emissions is cumbersome
-  Supply chain issues frequently cause product shortages
-  Screen time raises concerns for child development
-  Multiple streaming subscriptions become expensive
-  Trendy clothes often sacrifice quality for affordability
-  Premium running smartwatches are expensive
-  Audio quality often suffers on music streaming platforms
-  Finding reliable home service providers is often challenging
-  Internal communication is often disjointed in organizations
-  Sports betting often distracts from the enjoyment of game viewing
-  Coordinating carpools for kids' activities is logistically challenging
-  Organizing neighborhood watch programs is logistically challenging
-  Non-native speakers struggle with voice assistants
-  Organ transplant waitlists are often extremely long
-  Healthcare access in conflict zones is often limited
-  Ocean plastic pollution monitoring is often inadequate
-  Finding reliable information on health symptoms is often difficult
-  Football equipment is expensive for casual players
-  Finding age-appropriate activities for kids is challenging for parents
-  Dating sites lack nuanced compatibility filtering options
-  Popular ski resorts often become overcrowded
-  Securely transferring or reselling tickets is challenging
-  Gauging compatibility through online dating is challenging
-  Handwritten notes are easily lost or damaged
-  Budgeting without professional advice can be challenging
-  Virtual personal styling services often feel impersonal
-  Exotic pets and their habitats are very expensive
-  Managing personal art collections and provenance is challenging
-  Coordinating care for elderly family members is challenging
-  Online tutoring often lacks personalization for students
-  Introverts prefer text-based customer support
-  Coordinating shared ownership of expensive equipment is complex
-  Greenhouse gas emissions monitoring is often inadequate
-  Organizing and cataloging personal book collections is tedious
-  Water usage in agriculture is frequently inefficient
-  Losing keys is costly and inconvenient
-  Finding reliable product reviews is challenging for consumers
-  Sales pipeline management is often manual and inefficient
-  Trying on clothes in stores is inconvenient
-  Online friendships often focus too much on popularity metrics
-  Sports live streams often buffer or lag during peak times
-  Hunting gear is prohibitively expensive for newcomers
-  Meal planning is time-consuming for busy individuals
-  Travel booking sites often have hidden fees
-  Tracking health metrics can be cumbersome for individuals
-  Household energy costs are high in many areas
-  Neurodivergent individuals need adapted job boards
-  Urban traffic congestion management is challenging
-  Agricultural water usage management is frequently inefficient
-  Learning to create digital art has a steep learning curve
-  Rock climbing equipment is expensive for beginners
-  Working from home often leads to procrastination and distractions
-  Regional blackouts restrict access to sports streams
-  Online forums can enable unhealthy coping post-breakup
-  Industry compliance is overwhelming for many businesses
-  Managing personal collections of digital creative works is disorganized
-  Managing personal wine collections and tasting notes is disorganized
-  Night shift workers lack suitable food delivery options
-  Limited resources for improving gaming skills and strategies
-  Gene therapy treatments are rare and prohibitively expensive
-  Waste management in cities is frequently inefficient
-  Limited resources for learning to play musical instruments online
-  Water quality monitoring systems are often inadequate
-  Navigating complex financial regulations is challenging
-  Energy management in manufacturing is challenging
-  Forest fire detection systems are often inadequate
-  Last-mile delivery in cities is often inefficient
-  Energy management in commercial buildings is challenging
-  ID verification processes are time-consuming and intrusive
-  Special needs resources are limited for families
-  Professional music production software is expensive
-  Building a consistent networking habit is challenging
-  Product packaging often creates excessive waste
-  Recycling of electronic waste is frequently inefficient
-  Organ transplant recipients risk rejection complications
-  Finding local events and activities can be difficult in some areas
-  Fostering deeper connections between fans and teams is challenging
-  Self-help gurus often peddle pseudoscience to followers
-  Education access for refugees is often limited
-  Long-term value of electric cars is uncertain for buyers
-  Product development processes are often slow and inefficient
-  Real-time market data often requires paid subscriptions
-  Long lines at sports events detract from the experience
-  Finding reliable vacation rental reviews is difficult
-  Finding cheap, comfortable home office equipment is difficult
-  Comparing travel prices across platforms is time-consuming
-  Professional makeup tools are expensive for beginners
-  Constant monitoring is needed while cooking
-  Ensuring kids meet nutrition guidelines is challenging
-  Planning unique and creative dates is challenging
-  Discovering new podcasts and audiobooks is time-consuming
-  Some eco-friendly products lack long-term durability
-  Managing multiple subscriptions is time-consuming
-  Lost and found systems are often inefficient
-  Maintaining consistent mindfulness practice is challenging
-  Package shipping often experiences delays and mistakes
-  Online language learning lacks true immersion experiences
-  Wildfire smoke pollution monitoring is often inadequate
-  Monitoring of industrial emissions is often inadequate
-  Air quality monitoring in schools is often inadequate
-  Online shoe sizing information is frequently inaccurate
-  Comparing insurance options is complex and time-consuming
-  Finding high-quality public speaking techniques is difficult
-  Coordinating attendee schedules for events is challenging
-  Comparing college options is daunting for prospective students
-  Arranging pet sitting services is often challenging for pet owners
-  Language barriers complicate international travel
-  Limited access to personalized tutoring for complex subjects
-  Eco-friendly home upgrades are often expensive
-  Coupon clipping is tedious and time-consuming
-  Difficulty in receiving tailored nutritional advice and meal plans
-  Employee onboarding processes are often time-consuming for companies
-  Limited resources for reducing personal carbon footprint
-  Paper receipts are easily lost or damaged
-  Affordable housing in urban slums is scarce
-  Conflicting information on healthy eating found online
-  Language barriers complicate independent trip planning
-  Limited cloud storage for high-resolution video files
-  Few tools exist to track child behavior patterns
-  Customer feedback is poorly managed in many organizations
-  Excessive product placement disrupts reality TV viewing
-  Sports streams lack personalization options for viewers
-  Purebred cats often have breed-specific health issues
-  Mindfulness apps and courses are often expensive
-  Public soccer fields are limited in many areas
-  Coordinating community garden plots and harvests is logistically challenging
-  Cancelling subscriptions is often unnecessarily complicated
-  Select the problem that is most closely related to the business concept or idea.
-  
-  Market Segment Matching:
-  Please select a market segment from the following list that is closest to the user input:
-  AI-powered Predictive Maintenance
-  Educational Apps and Games
-  Grocery Delivery Services
-  AI Music Composition Tools
-  Home Office Equipment E-Comm
-  Remote Patient Monitoring & Wearable Integration
-  Car Rental Apps
-  Fashion E-commerce Platforms
-  Digital Payments Software
-  Social Media Platforms
-  Micromobility Data Analytics & Insights
-  Mobile Gaming Apps
-  Corporate Training Software
-  Auto Parts & Accessories E-commerce
-  Telemedicine Practice Mgmt & EHR Systems
-  Test Preparation Apps
-  Fantasy Sports Platforms
-  Solar Panel & Renewable Energy Markets
-  Collectibles Authentication & Valuation
-  AI Legal Technology
-  Music Streaming Services
-  Language Learning Software
-  Sports Analytics Software
-  P2P Lending Platforms
-  Cycling Apps
-  Personalized Learning Path & Recommendation Engines
-  AI Script Writing Tools
-  Sports Event Ticketing Software
-  Stock Trading Platforms
-  Virtual Reality Social Platforms
-  Cloud Gaming Services
-  E-books and Digital Libraries
-  Video Streaming Services
-  Gamified Employee Engagement & Performance Mgmt
-  Sports Betting Software
-  Online Ticket Booking Platforms
-  Video on Demand (VOD) Services
-  Custom Tailoring Apps
-  Online Tutoring Services
-  AI-powered Personalized Drug Discovery
-  AI-powered Tutoring & Learning Companion Apps
-  Subscription-based Home Services Markets
-  Skincare & Makeup Apps
-  Virtual Care Coordination & Collaboration
-  Wildlife Tracking Apps
-  Virtual Try-On Apps
-  Microbiome Analysis & Personalized Probiotics
-  Camping Gear Platforms
-  Fitness and Training Apps
-  Blockchain Gaming Platforms
-  Fashion Trend Analysis Software
-  Fashion Resale and Secondhand Platforms
-  Food Reservation & Delivery Apps
-  Solid-State Battery Management Systems
-  Subscription Box Services
-  Fan Engagement and Loyalty Platforms
-  Messaging Apps
-  Music Publishing and Royalty Platforms
-  Virtual Reality Gaming
-  Insurance Tech Platforms
-  Group Activity Planning Apps
-  Gear Rental Platforms
-  Virtual Field Trip Platforms
-  Zero-Waste Packaging & Shipping Solutions
-  Virtual Classroom Platforms
-  BCI-enhanced Learning & Training Apps
-  BCI-based Neurorehabilitation Tools
-  Matchmaking Apps
-  Virtual Hair Styling & Color Simulation
-  Personal Finance Software
-  AI Video Analytics & Surveillance
-  Meal Kit Delivery Services
-  Micromobility Battery Swapping & Maintenance
-  Privacy-focused Decentralized Social Networks & Messaging
-  Professional Development & Upskilling
-  Fishing Apps
-  E-sports Platforms
-  Metamaterial Antenna Design Software
-  Learning Management Systems (LMS)
-  VR Film Experiences
-  Travel Insurance Platforms
-  Robo-Advisors
-  AI-powered Personalization & Recommendation Engines
-  Electric Vehicle Charging Locators
-  Home Automation & IoT Platforms
-  Tax Preparation Software
-  Neuromorphic Speech Recognition
-  DeFi Yield Optimization Platforms
-  Adventure Travel Apps
-  Online Proposal Planning Services
-  Smart Pet Accessories & Wearables
-  Blockchain-based Supply Chain Transparency
-  Event Planning Services
-  Skill Assessment Tools
-  Mental Health Tracking & Support
-  Outdoor Sports Club & Community
-  Digital Art and Portfolio Platforms
-  Virtual Team Building & Engagement
-  Game Development Software
-  AI-driven Sales Forecasting & Demand Planning
-  Music Collaboration Tools
-  Online Learning Platforms
-  AI-powered Assistive Technology & Communication Aids
-  Personal Styling Apps
-  Solid-State Battery Mfg Process Control
-  Inclusive Virtual Try-on & Personalization for Fashion/Beauty
-  Bioprinting Process Control/Monitoring
-  Romantic Getaway Booking Apps
-  Cryptocurrency Exchanges
-  Music Production Software
-  Quantum Optimization Solvers
-  Game Streaming Services
-  Conversational AI & Chatbot Platforms
-  Sports Streaming and Media Platforms
-  AI-powered Image & Video Editing
-  Recipe Apps
-  Online Cooking Classes and Platforms
-  Autonomous Vehicle Fleet Management
-  In-Car Entertainment & Infotainment
-  Wealth Management Software
-  Pharmacogenomics & Personalized Medication
-  Online Dating Services
-  AI-driven Predictive Analytics for Healthcare
-  Gifting Apps
-  Relationship Counseling Apps
-  Concert Services & Livestreaming
-  Zero-Knowledge Proof & Secure Credential Sharing
-  Neuromorphic Sensor Processors
-  Productivity & Time Tracking Apps
-  Financial News and Analysis Platforms
-  Select the market segment that is most appropriate and aligns closely with the business concept or idea.
-  
-  Output Format:
-  { 
-    problem: [Closest Problem Statement from List],
-    market: [Closest Market Segment from List]
-  }
-  Your response should be a JSON object in given output format only, without any other description or statements
-  
-  Illustrative Examples:
-  Input: 
-  app for comparing auto repair services
-  Output: {
-    problem: Long-term value of electric cars is uncertain for buyers,
-    market: Auto Parts & Accessories E-commerce
-  }
-  Input: 
-  Freelance platform for creative professionals
-  Output: {
-    problem: Finding suitable part-time work is challenging,
-    market: Professional Development & Upskilling
-  }
-  Input: 
-  AI-driven contract negotiation tool
-  Output: {
-    problem: Legal services are expensive and intimidating,
-    market: AI Legal Technology
-  }
-  Input: 
-  personal finance app that tracks spending habits and gives personalized tips
-  Output: {
-    problem: Managing personal finances is overwhelming for many people,
-    market: Personal Finance Software
-  }
-  Input: 
-  VR game that combines fitness and adventure
-  Output: {
-    problem: Working from home often leads to procrastination and distractions,
-    market: Virtual Reality Gaming
-  }
-  
-  Additional Guidelines:
-  Relevance: Ensure the chosen problem directly relates to the core function or benefit of the business concept.
-  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-  Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list
-  Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
   SOFTWARE_TECHNOLOGY: {
     PROBLEM_MARKET_SELECTOR: `Objective: To match a user input, which is always a business concept or idea, to a problem and a market segment from a specific list. The assistant should ensure the chosen problem and market segment are the closest and most relevant to the given business concept or idea.
 
@@ -3011,14 +2476,16 @@ export const SYSTEM_IDEA_GENERATOR = {
   Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list
     Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
     PRODUCTIZATION: `Objective:
-    Use the problem statement and market segment in the user input to identify a manual service that is currently the best solution to a specific aspect of the problem and create a novel business concept that automates and streamlines the solution. This business concept should compete in the market segment identified in the user input. The business concept must not already exist.
+    Use the market segment in the user input to identify a manual service that should be replaced by a novel business concept that automates and streamlines the service. This business concept should compete in the market segment identified in the user input. The business concept must not already exist. The concept should be surprising and unique, leaving a user with the feeling that they could not have come up with that concept on their own. The concept should always highlight a unique and focused core product feature.
     
     Step 1: Analyze Manual Process Problem
-    Identify the most manual service that directly or indirectly solves the problem and note the biggest operational issues (e.g., inefficiencies, user complaints, industry reports).
+    Identify a manual service that is often used to solve a specific problem in the market segment and note the biggest operational issues (e.g., inefficiencies, user complaints, industry reports).
     Focus on the friction users experience from either (1) the effort and time required to perform the service manually or (2) the lack of consistency and reliability in the manual process. Consider programs or services that currently require many human beings to produce a high quality product. 
     
     Step 2: Create Business Concept & Description
-    Develop a business concept that directly solves the chosen problem, competes in the chosen market segment from the user input and automates the manual process observed. This new business concept must be a novel and unprecedented way to automate and streamline the manual process. The core focus of the business concept must be to systemize the manual service that it replaces while focusing on one individual pain point that is most prominently driven by manual processes and feature a novel, unique product feature that directly automates the identified pain point. Consider how the concept could replace programs or services that currently require many human beings to produce a high quality product and how this automated and systemized workflow can continue to provide as high quality of a product by leveraging cutting edge technology, etc.
+    Develop a business concept that competes in the chosen market segment from the user input and automates the manual process observed. This new business concept must be a novel and unprecedented way to automate and streamline the manual process. The concept should be surprising and unique, leaving a user feeling that they could not have come up with this concept on their own. 
+
+    The core focus of the business concept must be to systemize the manual service that it replaces while focusing on one individual pain point that is most prominently driven by manual processes. It must also feature a novel, unique product feature that directly automates the identified pain point. Consider how the concept could replace programs or services that currently require many human beings to produce a high quality product and how this automated and systemized workflow can continue to provide as high quality of a product by leveraging cutting edge technology, etc.
     
     Employ one of two strategies to do so:
     Strategy 1 - Fully Automated Workflow: Specify the target consumers and how the business will replace manual tasks with automated workflows in a way that existing solutions do not.
@@ -3028,65 +2495,57 @@ export const SYSTEM_IDEA_GENERATOR = {
     Output: Format the output to include:
     Business Overview: A 3-5 word description of the core concept.
     Business Description: A one-sentence concise description including:
-    Core feature/functionality
-    Specific audience
+    A very specific and focused core feature/functionality
+    A specific audience of the product
     Manual Process Problem Description: The first sentence will describe existing demand for a service or product that uses a manual process causing users to face inefficiencies or inconsistencies. The second sentence will comment on how the concept directly addresses this issue by systemizing and automating the process.
-    Problem: Problem directly solved (from the user input)
     Market Segment: Market segment directly mapped (from the user input)
     
     Your response should be a JSON object in given output format only, without any other description or statements
     Example Outputs:
     
     User input: 
-    Customer support is frequently slow and inefficient
     Fashion E-commerce Platforms
     Output: {
       idea: "Automated E-commerce Support",
       description: "AI-driven customer service platform for e-commerce businesses, offering real-time, personalized support and efficient issue resolution.",
       strategy: ["Customer service for e-commerce retailers requires human representatives to handle diverse issues, involving extensive research and communication." ,"The AI solution automates interactions by collecting detailed context and offering clear options, reducing costs and improving customer satisfaction through faster issue resolution."],
-      problem: "Customer support is frequently slow and inefficient",
       market: "Fashion E-commerce Platforms",
     }
     
     User input: 
-    ID verification processes are time-consuming and intrusive
     Insurance Tech Platforms
     Output: {
       idea: "Digital Notarization Service",
       description: "Remote notarization platform for legal and real estate sectors, enabling on-demand identity verification and electronic notarization.",
       strategy: ["Notarizing documents is cumbersome, requiring physical presence and causing inefficiencies.", "The technology solution enables on-demand identity verification and electronic notarization, increasing flexibility and maintaining high security standards."],
-      problem: "ID verification processes are time-consuming and intrusive",
       market: "Insurance Tech Platforms",
     }
     
     User Input:
-    Unexpected appliance breakdowns are costly and inconvenient
     AI-powered Predictive Maintenance
     Output: {
       idea: "Automated HVAC Maintenance",
       description: "IoT and AI-based platform for HVAC maintenance, providing real-time monitoring and predictive upkeep to reduce repair costs for homeowners.",
       strategy: ["HVAC maintenance involves manual inspections and scheduling professional check-ups, often leading to inefficiencies and breakdowns." ,"The solution uses IoT sensors for real-time monitoring and AI for predictive maintenance, ensuring timely upkeep and reducing repair costs."],
-      problem: "Unexpected appliance breakdowns are costly and inconvenient",
       market: "AI-powered Predictive Maintenance",
     }
     Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
     Strictly ensure that you return only the required JSON parsable response and nothing else`,
     DISTRIBUTION: `Objective:
-    Transform user-provided problem statement and market segment into refined business opportunities that have distinct distribution models and provide the best business opportunity. The transformed business opportunities must solve the problem from the user input as well as compete in the market segment provided. They must employ one of two specific strategies that solve an existing distribution problem within the segment.
+    Transform user-provided market segment into refined business opportunities that have distinct distribution models and provide the best business opportunity. The transformed business opportunities must compete in the market segment provided. They must employ one of two specific strategies that solve an existing distribution problem within the segment. The business concept must describe a specific and focused unique product feature that highlights the solutions tailoring to the observed distribution problem. This should leave the user feeling like "I could have never come up with this myself"
     
     Input:
-    A problem statement
     A market segment
     
     Step 1: Analyze Distribution Problem
-    Identify existing products that solve the problem and note the biggest distribution issues (e.g., user complaints, industry reports, social media discussions).
-    Focus on the friction users experience from either (1) the format and user experience of existing products/offerings that are not native or preferred by a specific audience or (2) users go out of their way to use the product, not in a native and seamless channel that most directly fits the activity. For example you want to learn about a financial topic right before you make that financial decision, or you want to find a cooking recipe while your shopping for groceries or about to cook a meal. 
+    Identify existing products that compete in the market segment and note the biggest distribution issues (e.g., user complaints, industry reports, social media discussions).
+    Focus on the friction users experience from either (1) the format and user experience of existing products/offerings that are not native or preferred by a specific audience or (2) users go out of their way to use the product, not in a native and seamless channel that most directly fits the activity. 
     Use these insights to tailor the business opportunity, ensuring it addresses these specific distribution challenges.
     Develop a brief description of the unique distribution problem that exists and how the proposed product uniquely addresses this problem.
     
     Create Business Description:
-    Develop a completely novel and unique business description that addresses the unique distribution problem using one of two distribution strategies for the given product space/industry:
+    Develop a completely novel and unique business description that addresses the unique distribution problem with a specific and focused product feature or format. The description should leave a user thinking "I could have never come up with this on my own". The business concept will use one of two distribution strategies for the given product space/industry:
     Strategy 1 - Creates an unprecedented distribution channel that meets consumers where they already are: Specify the target consumers and how the business will integrate into their native environment in a way that existing solutions do not.
     Strategy 2 - Creates an unprecedented and completely novel format and tailored user experience: Describe the format, user experience, and specific consumer it is meant for, emphasizing how it differs from and improves upon existing solutions.
     
@@ -3094,11 +2553,9 @@ export const SYSTEM_IDEA_GENERATOR = {
     Format the output to include:
     Business Overview: A 3-5 word description of the core concept.
     Business Description: A one-sentence concise description including:
-    Unique distribution approach/strategy
-    Core feature/functionality
-    Specific audience
+    A unique and specific product feature that highlights the distribution approach/strategy
+    The specific audience the product serves
     Distribution Problem Description: The first sentence will describe the distribution problem with existing products and offerings where users want the product badly enough to still use the product but is either not in their preferred, native format or doesn't meet them doing the right activity in the right moment to use the product. The second sentence will comment on how the concept directly addresses this issue.
-    Problem: Problem solved (from user input)
     Market Segment: Relevant market segment (from user input)
     
     Your response should be a JSON object in given output format only, without any other description or statements
@@ -3111,29 +2568,24 @@ export const SYSTEM_IDEA_GENERATOR = {
       idea: "TikTok for Restaurant Reviews",
       description: "A mobile app curating short-form videos of restaurant ambiance and menu highlights, targeting Gen Z's preference for visual food discovery.",
       strategy: ["Although Gen-Z reports wanting to discover new restaurants, existing restaurant discovery platforms focus on text/picture content." ,"This concept re-formats the restaurant discovery experience by engaging Gen-Z through short-form video, their preferred content format."],
-      problem: "Gen-Z consumers prefer video content over pictures or text",
       market: "Food Reservation & Delivery Apps",
     }
     
     User input: 
-    Sitting in traffic wastes valuable time
     Conversational AI & Chatbot Platforms
     Output: {
       idea: "AI Event Planner while Driving",
       description: "An AI assistant that detects when your driving to plan social events, sync calendars, and coordinate with potential attendees.",
       strategy: ["Although most people want to plan fun social events, they often report not having the time." ,"This concept engages users when they have an abundance of time sitting in traffic to plan events hands free."],
-      problem: "Sitting in traffic wastes valuable time",
       market: "Conversational AI & Chatbot Platforms",
     }
     
     User Input:
-    Understanding sports betting complexities
     Sports Betting Software
     Output: {
       idea: "Honey for Live Sports Betting",
       description: "A browser extension that detects the sports game you're streaming and suggests relevant live bets based on real-time game analytics.",
       strategy: ["Although online sports streamers make up the majority of sports bettors by volume, this audience reports frustration with missing game action when placing bets on betting websites." ,"This concept finds streamers in their native environment, allowing them to bet without missing any action."],
-      problem: "Understanding sports betting complexities",
       market: "Sports Betting Software",
     }
     Additional Guidelines:
@@ -3898,28 +3350,38 @@ export const SYSTEM_IDEA_GENERATOR = {
     Input: 
     organic soda brand
     Output: 
-    Juice contains too much sugar
-    Beverages
+    {
+      problem: Juice contains too much sugar,
+      market: Beverages
+    }
     Input: 
     Comfortable and stylish bucket hats for men
     Output: 
-    Trendy clothes are low-quality
-    Sustainable Fashion and Textiles
+    {
+      problem: Trendy clothes are low-quality,
+      market: Sustainable Fashion and Textiles
+    }
     Input: 
     A sleep mask that keeps you cool while blocking out light
     Output: 
-    Noise makes it hard to sleep
-    Sleep Optimization Products
+    {
+      problem: Noise makes it hard to sleep,
+      market: Sleep Optimization Products
+    }
     Input: 
     Eco-friendly bamboo toothbrush that helps reduce plastic waste
     Output: 
-    Toothpaste doesn't whiten effectively
-    Reusable & Sustainable House Products
+    {
+      problem: Toothpaste doesn't whiten effectively,
+      market: Reusable & Sustainable House Products
+    }
     Input: 
     Organic baby clothing made from soft, chemical-free cotton
     Output: 
-    Kids outgrow clothes too fast
-    Parenting and Baby Care Products
+    {
+      problem: Kids outgrow clothes too fast,
+      market: Parenting and Baby Care Products
+    }
     
     Additional Guidelines:
     Relevance: Ensure the chosen problem directly relates to the core function or benefit of the business concept.
@@ -3927,14 +3389,13 @@ export const SYSTEM_IDEA_GENERATOR = {
     Also, ensure that the problem and market should be selected from the given list and strictly do not recommend any other problem or market which is not available in the list
     Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
     PRODUCTIZATION: `Objective:
-    Transform user-provided problem statements and market segments into refined business opportunities that address specific consumer pain points through direct observation. The transformed business opportunities must solve the identified problem and compete effectively in the provided market segment by addressing key pain points and improving user experience.
+    Transform the user-provided market segment into a very specific and unique business opportunity that address a specific consumer pain point through direct observation. The business opportunity will always be for a physical product. The transformed business opportunity must compete effectively in the provided market segment by addressing a key pain point and improving user experience. The concept description must include the specific product and its unique or novel element that makes it stand out from other product and directly addresses the key pain point. The specific product will always be one specific item. For example a sufficiently specific product would be "a cooling, blackout sleep mask" and not "a sleep improvement product".
     
     Input:
-    A problem statement
     A market segment
     
     Step 1: Analyze Consumer Pain Points
-    Identify existing products that solve or attempt to solve the problem within the specified market segment.
+    Identify existing products that solve or attempt to solve customer problems within the specified market segment.
     Conduct a thorough review of user interactions with these products, focusing on:
     User complaints and feedback (from online reviews, forums, social media, etc.)
     Inefficiencies or frustrations users experience while using these products
@@ -3949,6 +3410,7 @@ export const SYSTEM_IDEA_GENERATOR = {
     Step 4: Develop a Solution
     Brainstorm potential product ideas that directly address the identified pain points.
     Ensure the proposed product idea:
+    Is specific, focused and unique while standing out from existing solutions
     Provides a tangible solution to the key pain points
     Improves user experience and satisfaction
     Offers a clear competitive advantage over existing products
@@ -3959,56 +3421,47 @@ export const SYSTEM_IDEA_GENERATOR = {
     Format the output to include:
     Business Overview: A 3-5 word description of the core concept.
     Business Description: A one-sentence concise description including:
-    Unique distribution approach/strategy
-    Core feature/functionality
+    Unique product feature or design
     Specific audience
     Distribution Problem Description: The first sentence will describe the specific pain points with existing products, based on user feedback and direct observation. The second sentence will explain how the proposed concept directly addresses these pain points.
-    Problem: Problem solved (from user input)
     Market Segment: Relevant market segment (from user input)
     
     Example Outputs:
     
     User input: 
-    Trendy clothes are low-quality
     Sustainable Fashion and Textiles
     Output:
     {
-      idea: "Durable Eco-Friendly Jeans",
-      description: "High-quality, fashionable jeans made from sustainable materials, featuring reinforced stitching and eco-friendly dyes to ensure longevity and minimal environmental impact.",
-      strategy: ["Trendy jeans often lack durability, leading to frequent replacements and contributing to waste.", "The proposed solution offers fashionable, durable jeans made with reinforced stitching and eco-friendly dyes, ensuring they last longer and reduce environmental impact."],
-      problem: "Trendy clothes are low-quality",
+      idea: "Sustainable Jacket-Backpack",
+      description: "A sustainable fashion brand offering stylish and durable outerwear made from recycled ocean plastics, featuring a jacket that transforms into a backpack for versatility and eco-friendliness.",
+      strategy: ["Sustainable fashion often lacks durability and stylish options, leaving consumers with limited and costly choices.", "This concept addresses this by offering stylish, durable outerwear made from recycled ocean plastics, featuring a versatile jacket that transforms into a backpack."],
       market: "Sustainable Fashion and Textiles",
     }
 
     User input: 
-    Noise makes it hard to sleep
     Sleep Optimization Products
     Output:
     {
-      idea: "Adaptive Sleep Noise Machine",
-      description: "A smart sound machine that uses AI to monitor and adjust white noise and soothing sounds based on real-time ambient noise levels and user sleep patterns, providing a personalized sleep environment.",
-      strategy: ["Existing sound machines offer limited customization and do not adapt to changing noise levels, leading to suboptimal sleep conditions." ,"The proposed solution is an AI-powered sound machine that continuously monitors and adjusts white noise and soothing sounds based on real-time ambient noise levels and user sleep patterns, ensuring a consistent and optimal sleep environment."],
-      problem: "Noise makes it hard to sleep",
+      idea: "Adjustable Mattress with Smart Cooling",
+      description: "A smart sleep system featuring an adjustable mattress with integrated sleep tracking and modular comfort layers, including a unique cooling and heating layer for year-round comfort.",
+      strategy: ["Sleep products often fail to provide consistent comfort and accurate tracking, leading to poor sleep quality." ,"This concept addresses this by offering a smart sleep system with an adjustable mattress, integrated sleep tracking, and a unique cooling and heating layer for optimal comfort in any season."],
       market: "Sleep Optimization Products",
     }    
     
     User Input:
-    Juice contains too much sugar
     Beverages
     Output:
     {
-      idea: "Low-Sugar Green Juice",
-      description: "A natural, low-sugar green juice blend featuring kale, spinach, and cucumber, sweetened with monk fruit and stevia, offering a healthy and refreshing beverage option for health-conscious consumers.",
-      strategy: ["Traditional green juices contain high amounts of sugar, leading to health concerns for consumers.", "The proposed solution offers a natural green juice blend made from kale, spinach, and cucumber, sweetened with monk fruit and stevia, providing a healthy and low-sugar alternative without compromising on taste."],
-      problem: "Juice contains too much sugar",
+      idea: "Organic Nutrient-Infused Water Pods",
+      description: "Nutrient-infused water pods made from organic ingredients, offering a convenient and eco-friendly way to boost hydration with specific health benefits like enhanced energy, immune support, and detoxification.",
+      strategy: ["Beverages often contain high sugar and artificial ingredients, and lack environmental sustainability.", "This concept addresses this by offering nutrient-infused water pods made from organic ingredients, providing convenient, healthy hydration with specific health benefits and eco-friendly packaging."],
       market: "Beverages",
     }
     Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
     Strictly ensure that you return only the required JSON parsable response and nothing else`,
-    DISTRIBUTION: `Objective: Transform user-provided problem statements and market segments into refined business opportunities by analyzing patents and recent innovations within the industry. The transformed business opportunities should always be unique in the market segment while solving the identified problem and competing effectively by addressing key gaps and emerging trends identified through patent analysis.
+    DISTRIBUTION: `Objective: Transform the user-provided market segment into a very specific and unique business opportunity by analyzing patents and recent innovations within the industry. The business opportunity will always be for a physical product. The transformed business opportunities should always be unique in the market segment while competing effectively by addressing key gaps and emerging trends identified through patent analysis. The concept description must include the specific product and its unique or novel element that makes it stand out from other product and directly addresses the key pain point. The specific product will always be one specific item. For example a sufficiently specific product would be "a cooling, blackout sleep mask" and not "a sleep improvement product".
     Input:
-    A problem statement
     A market segment
     Step 1: Analyze Industry Patents and Innovations
     Identify recent patent filings and innovations within the specified market segment.
@@ -4028,68 +3481,61 @@ export const SYSTEM_IDEA_GENERATOR = {
     Step 4: Develop a Solution
     Brainstorm potential product ideas that directly address the identified opportunities.
     Ensure the proposed product idea:
+    Is specific, focused and unique while standing out from existing solutions
     Leverages recent innovations and trends
     Provides a tangible solution to a key market gap
     Offers a clear competitive advantage over existing products
     Step 5: Create Business Description
     Develop a unique and compelling business description that highlights how the proposed product leverages patent findings and addresses market gaps.
+
     Output: Format the output to include:
     Business Overview:
     A 3-5 word description of the core concept.
     Business Description:
     A one-sentence concise description including:
-    Unique approach/strategy
-    Core feature/functionality
+    Unique and specific product with specific feature or design that makes it stand out
     Specific audience
     Opportunity Description:
     The first sentence will describe the specific gaps or trends identified through patent and innovation analysis. The second sentence will explain how the proposed concept directly addresses these opportunities.
-    Problem:
-    Problem solved (from user input).
     Market Segment:
     Relevant market segment (from user input).
     
     Example Outputs:
     
     User input: 
-    Traditional gardening tools are outdated.
     Home Improvement
     Output:
     {
-      idea: "Automated Garden Tools",
-      description: "An automated garden maintenance system that uses AI and smart sensors to care for plants, targeting tech-savvy home gardeners.",
-      strategy: ["Recent patents reveal a surge in smart home device innovations, but a lack of innovation in smart gardening tools. The proposed solution offers an AI-driven garden maintenance system with smart sensors, filling this gap and modernizing gardening tools."],
-      problem: "Traditional gardening tools are outdated.",
+      idea: "Smart Wall Repair Kit",
+      description: "A smart wall repair kit that includes smart sensors and a mobile app guiding users through seamless wall repairs with step-by-step instructions and real-time feedback.",
+      strategy: ["Traditional wall repair solutions can be cumbersome and prone to errors, often requiring professional help.", "This concept addresses this issue by providing a user-friendly, smart repair kit with sensors and a mobile app, making DIY wall repairs easy and accurate."],
       market: "Home Improvement",
     }
         
     User input: 
-    Home fitness equipment is bulky and hard to store.
     Fitness Equipment
     Output:
     {
-      idea: "Foldable Fitness Gear",
-      description: "A range of compact, foldable home fitness equipment designed for easy storage and convenience, targeting urban dwellers with limited space.",
-      strategy: ["Analysis of recent patents shows a focus on compact and multi-functional home fitness equipment, but few solutions address storage issues.", "The proposed solution offers foldable fitness gear that is easy to store, catering to urban dwellers with limited space."],
-      problem: "Home fitness equipment is bulky and hard to store.",
+      idea: "Wearable Resistance Trainer",
+      description: "A compact, wearable resistance trainer with adjustable bands that provide a full-body workout, combining portability and customization for versatile fitness.",
+      strategy: ["Existing portable fitness equipment often lacks versatility and customization, limiting workout effectiveness.", "FlexWear solves this by offering a compact, wearable trainer with adjustable resistance bands, allowing for a diverse and customizable full-body workout anywhere."],
       market: "Fitness Equipment",
     }    
     
     User Input:
-    Outdoor gear is often not eco-friendly.
     Outdoor Gear
     Output:
     {
-      idea: "Sustainable Hiking Gear",
-      description: "A line of eco-friendly hiking gear made from recycled materials, offering durable and sustainable options for environmentally-conscious adventurers.",
-      strategy: ["Patent analysis reveals growing interest in sustainable materials but limited application in outdoor gear.", "The proposed solution offers a line of eco-friendly hiking gear made from recycled materials, addressing the need for sustainable outdoor equipment."],
-      problem: "Outdoor gear is often not eco-friendly.",
+      idea: "Solar-Powered Multifunctional Backpack",
+      description: "A solar-powered multifunctional backpack with integrated solar panels, a built-in power bank, and detachable gear for hiking, camping, and emergency situations.",
+      strategy: ["Many camping tents are made from non-sustainable materials and lack integrated lighting solutions, causing inconvenience during nighttime use.", "These tents, made from recycled plastic bottles, offer a sustainable option and include an integrated solar-powered LED lighting system, enhancing the camping experience with convenient illumination."],
       market: "Outdoor Gear",
     }
     
     Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
     Strictly ensure that you return only the required JSON parsable response and nothing else`,
-    DOMINATE_NICHE: `Objective: Transform user-provided problem statements and market segments into refined business opportunities by identifying emerging trends and market shifts. The transformed business opportunities should always be unique in the market segment while solving the identified problem and competing effectively by aligning with consumer behavior, technological advancements, and cultural shifts. The business opportunity should always be described as a very specific and novel product that does not currently exist at scale.
+    DOMINATE_NICHE: `Objective: Transform the user-provided market segment into a specific and unique business opportunity by identifying emerging trends and market shifts. The transformed business opportunity should always be unique in the market segment while competing effectively by aligning with consumer behavior, technological advancements, and cultural shifts. The business opportunity should always be described as a very specific and novel product that does not currently exist at scale. The description should always be for one, specific, novel physical product.
 
     Consider trends such as:
     Trending sports like pickleball, alpine touring, fat-biking, outdoor water sports, virtual and non-virtual golfing, snowboarding, trail running, tennis, surfing, kayaking, indoor and outdoor climbing, fishing, paddleboarding
@@ -4106,7 +3552,6 @@ export const SYSTEM_IDEA_GENERATOR = {
     Sleep and wellness products
     
     Input:
-    A problem statement
     A market segment
     
     Step 1: Conduct Trend Analysis
@@ -4141,11 +3586,12 @@ export const SYSTEM_IDEA_GENERATOR = {
     Step 4: Develop a Solution
     Brainstorm potential product ideas that directly align with the identified trends.
     Ensure the proposed product idea:
+    Is specific and unique to one physical product with a specific feature or design that makes it stand out
     Leverages emerging trends and market shifts
     Provides a tangible solution to a key market need
     Offers a clear competitive advantage over existing products
     Step 5: Create Business Description
-    Develop a unique and compelling business description that highlights how the proposed product aligns with the identified trends and addresses market needs.
+    Develop a unique and compelling business description that highlights how the proposed product aligns with the identified trends and addresses market needs. This should leave a user feeling like they could not have come up with this idea on their own.
     
     
     Output: Format the output to include:
@@ -4153,51 +3599,42 @@ export const SYSTEM_IDEA_GENERATOR = {
     A 3-5 word description of the core concept.
     Business Description:
     A one-sentence concise description including:
-    Unique approach/strategy
-    Core feature/functionality
+    The unique physical product and its specific core feature, functionality or design
     Specific audience
-    Opportunity Description:
+    Trending Opportunity Description:
     The first sentence will describe the specific trends or market shifts identified through trendspotting and market research. The second sentence will explain how the proposed concept directly addresses these opportunities.
-    Problem:
-    Problem solved (from user input).
     Market Segment:
     Relevant market segment (from user input).
     
     Example Outputs:
     
     User input: 
-    Traditional cocktails are inconvenient to prepare and not portable
     Premium Beverages
     Output:
     {
-      idea: "Canned Coffee Cocktails",
-      description: "Ready-to-drink canned coffee cocktails made with premium coffee and spirits, offering a convenient and portable option for cocktail enthusiasts.",
-      strategy: ["The trend towards ready-to-drink and premium beverages is growing, with consumers seeking convenience without compromising on quality.", "The proposed solution offers canned coffee cocktails that combine premium coffee and spirits, providing a convenient and portable option for cocktail enthusiasts looking for a high-quality, ready-to-drink experience."],
-      problem: "Traditional cocktails are inconvenient to prepare and not portable",
+      idea: "Fermented Coffee Kombucha",
+      description: "A premium non-alcoholic beverage that blends the rich flavor of coffee with the health benefits of kombucha, offering a unique, probiotic-rich fermented drink.",
+      strategy: ["There is a growing demand for non-alcoholic beverages that combine unique flavors with health benefits, such as fermented drinks and naturally beneficial ingredients.", "The Fermented Coffee Kombucha directly addresses this trend by offering a rich, flavorful drink with the health benefits of kombucha and probiotics."],
       market: "Premium Beverages",
     }
 
     User input: 
-    Trail runners need lightweight and durable gear for long-distance running
     Outdoor Gear
     Output:
     {
-      idea: "Ultra-Light Trail Running Vest",
-      description: "A lightweight, durable trail running vest with integrated hydration system and multiple storage compartments, designed for long-distance runners.",
-      strategy: ["The trend towards trail running and ultra-endurance sports is growing, with athletes seeking lightweight and durable gear.", "The proposed solution offers an ultra-light trail running vest with an integrated hydration system and multiple storage compartments, providing essential support for long-distance trail runners."],
-      problem: "Trail runners need lightweight and durable gear for long-distance running",
+      idea: "Modular Camping Cook System",
+      description: "A modular camping cook system that combines a stove, pot, and grill into one lightweight, compact design, providing versatile cooking options and easy portability for outdoor enthusiasts.",
+      strategy: ["Outdoor enthusiasts are seeking lightweight, multifunctional gear that maximizes utility while minimizing bulk.", "The Modular Camping Cook System addresses this trend by combining a stove, pot, and grill into one compact design, providing versatile cooking options and easy portability."],
       market: "Outdoor Gear",
     }
     
     User Input:
-    Children's toys are often not educational or engaging enough
     Baby and Childcare Products
     Output:
     {
-      idea: "AR Science Explorer Kit",
-      description: "An augmented reality (AR) science explorer kit featuring interactive lessons and games that teach children about various scientific topics, designed for ages 6-10.",
-      strategy: ["The trend towards educational and engaging toys is growing, with parents seeking products that provide meaningful learning experiences.", "The proposed solution offers an AR science explorer kit that includes physical components like cards and models, which, when viewed through a companion app, come to life with interactive AR content, providing an engaging and immersive educational experience for children aged 6-10."],
-      problem: "Children's toys are often not educational or engaging enough",
+      idea: "Smart Crib and Learning Center",
+      description: "A smart crib that transforms into a learning center, featuring built-in sensors to monitor sleep and an interactive panel for educational games, combining practical functionality with developmental benefits.",
+      strategy: ["Parents are increasingly interested in smart, multifunctional products that enhance their child's development and provide convenience.", "The Smart Crib and Learning Center directly addresses this trend by combining a crib with built-in sensors for sleep monitoring and an interactive panel for educational games."],
       market: "Baby and Childcare Products",
     }
     
@@ -4264,166 +3701,6 @@ export const SYSTEM_IDEA_GENERATOR = {
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
     Strictly ensure that you return only the required JSON parsable response and nothing else`,
   },
-  PRODUCT_RATING: `Objective:
-  Evaluate a given business idea/concept by rating its product on three different criteria:
-  Sophistication and Advanced Nature
-  Novelty and Uniqueness
-  Suitability for a Specific Group of Customers
-  The scores assigned will always be between 80 and 100, never rounded to 0 or 5, and should always be an exact number. The overall rating will be an average of the three criteria scores. 
-  
-  Note: despite a spectrum of ranges from 1-100, all idea will be justified to be between an 80 and 100. All explanations will support these ratings.
-  
-  Evaluation Criteria:
-  
-  Sophistication and Advanced Nature
-  1-10: Basic, outdated technology, lacks complexity.
-  Examples: Simple static websites, basic CRUD (Create, Read, Update, Delete) applications.
-  Typical in: Legacy systems, basic informational websites.
-  11-20: Slightly better than basic, minimal advancements.
-  Examples: Basic responsive design, simple form-based web apps.
-  Typical in: Entry-level web apps, minimal interactive features.
-  21-30: Some advanced features, but mostly standard.
-  Examples: Basic APIs, simple data integration.
-  Typical in: Standard enterprise web applications, basic SaaS tools.
-  31-40: Moderately sophisticated, includes some modern technology.
-  Examples: Integrated cloud services, moderate use of JavaScript frameworks.
-  Typical in: Modern CMS (Content Management Systems), basic e-commerce platforms.
-  41-50: Fairly advanced, has noticeable improvements.
-  Examples: Enhanced user interfaces, basic machine learning models.
-  Typical in: High-quality mobile apps, advanced e-commerce platforms.
-  51-60: Advanced, incorporates recent technology trends.
-  Examples: Real-time data updates, advanced security features.
-  Typical in: Modern SaaS platforms, advanced web applications.
-  61-70: Highly sophisticated, uses cutting-edge technology.
-  Examples: AI-powered features, complex data analytics.
-  Typical in: Innovative mobile apps, high-tech web platforms.
-  71-80: Very advanced, close to the latest innovations.
-  Examples: Advanced machine learning models, real-time collaboration tools.
-  Typical in: Top-tier productivity apps, sophisticated marketplace platforms.
-  81-90: Extremely sophisticated, pushes technological boundaries.
-  Examples: Advanced AI integration, state-of-the-art UX/UI.
-  Typical in: Leading-edge fintech apps, innovative health tech platforms.
-  91-100: Top-tier sophistication, leading-edge and pioneering.
-  Examples: Quantum computing applications, pioneering AR/VR integration.
-  Typical in: Cutting-edge research tools, next-gen technology startups.
-  
-  Novelty and Uniqueness
-  1-10: Very common, no unique aspects.
-  Examples: Basic to-do list apps, simple blog platforms.
-  Typical in: Over-saturated markets, generic software solutions.
-  11-20: Slightly uncommon, minor unique elements.
-  Examples: Slight design tweaks, minor unique functionalities.
-  Typical in: Basic apps with minor customizations, entry-level market variations.
-  21-30: Some unique features, but largely similar to existing products.
-  Examples: Unique branding, specific but minor feature enhancements.
-  Typical in: Moderately differentiated SaaS tools, common marketplace platforms.
-  31-40: Moderately unique, stands out in some aspects.
-  Examples: Unique user interfaces, several distinct features.
-  Typical in: Niche productivity apps, specialized content platforms.
-  41-50: Fairly unique, distinct in several ways.
-  Examples: Multiple innovative features, unique selling propositions.
-  Typical in: Mid-range differentiated web apps, distinct service platforms.
-  51-60: Unique, has multiple innovative elements.
-  Examples: Patented algorithms, original service models.
-  Typical in: High-end SaaS products, advanced market-specific platforms.
-  61-70: Highly unique, noticeable differentiation.
-  Examples: Breakthrough features, significantly different user experience.
-  Typical in: Premium productivity tools, highly specialized service platforms.
-  71-80: Very unique, rarely seen in the market.
-  Examples: Novel technologies, market-disrupting innovations.
-  Typical in: Emerging market apps, innovative B2B solutions.
-  81-90: Extremely unique, groundbreaking.
-  Examples: Revolutionary ideas, major industry shifts.
-  Typical in: Top-tier innovative software, groundbreaking industry platforms.
-  91-100: One-of-a-kind, highly innovative and original.
-  Examples: First-of-its-kind technology, unprecedented market entries.
-  Typical in: Market leaders, pioneering software products.
-  
-  Suitability for a Specific Group of Customers
-  1-10: Generic, no specific target audience.
-  Examples: Mass-market apps, no customization.
-  Typical in: General consumer apps, undifferentiated web services.
-  11-20: Vaguely defined audience, broad applicability.
-  Examples: Basic segmentation, broad appeal.
-  Typical in: General productivity tools, basic consumer apps.
-  21-30: Somewhat targeted, but still general.
-  Examples: Broad demographic targeting, general marketing strategies.
-  Typical in: Widely applicable SaaS tools, broad enterprise solutions.
-  31-40: Moderately targeted, identifiable audience.
-  Examples: Specific age groups, general industry applications.
-  Typical in: Targeted consumer apps, industry-specific software.
-  41-50: Fairly targeted, clear customer segment.
-  Examples: Well-defined demographics, focused marketing.
-  Typical in: Mid-market enterprise tools, specialized consumer apps.
-  51-60: Well-targeted, specific customer base.
-  Examples: Niche market segments, specific business sectors.
-  Typical in: Premium SaaS products, targeted industry solutions.
-  61-70: Highly targeted, well-defined niche market.
-  Examples: Highly specific customer needs, specialized industries.
-  Typical in: High-end niche apps, bespoke enterprise solutions.
-  71-80: Very targeted, strong focus on a particular group.
-  Examples: Highly specialized demographics, unique market needs.
-  Typical in: Ultra-niche productivity tools, highly specialized B2B platforms.
-  81-90: Extremely targeted, highly specialized audience.
-  Examples: Very specific customer profiles, unique market segments.
-  Typical in: Top-tier niche markets, exclusive SaaS products.
-  91-100: Perfectly targeted, exceptionally well-suited for a specific group.
-  Examples: Custom-built solutions, perfectly matched to customer needs.
-  Typical in: Ultra-premium software products, bespoke industry platforms.
-  
-  Output Format:
-  Provide the scores in the following format:
-  {
-    "Sophistication Score": [Exact Score],
-    "sophisticationDescription": One sentence description of the score.,
-    "Unique Score": [Exact Score],
-    "uniqueScoreDescription": One sentence description of the score.,
-    "Audience Focus Score": [Exact Score],
-    "audienceFocusScoreDescription": One sentence description of the score.,
-    "Overall Score": [Average of the three scores]
-  }
-  
-  Note: Only consider explicitly mentioned advancements or features.
-  
-  Illustrative Examples:
-  Input:
-  An app that integrates with gym equipment to reserve machines and optimize workout plans based on real-time availability and user goals
-  Output: {
-    "Sophistication Score": 85,
-    "sophisticationDescription": "The app uses real-time data integration and machine optimization, which involves advanced technology and innovative use of IoT.",
-    "Unique Score": 80,
-    "uniqueScoreDescription": "Integrating with gym equipment to optimize workout plans based on real-time availability is a highly unique feature not commonly seen in fitness apps.",
-    "Audience Focus Score": 85,
-    "audienceFocusScoreDescription": "The app is exceptionally well-suited for fitness enthusiasts and gym-goers looking for a more efficient workout experience.",
-    "Overall Score": 83
-  }
-
-  Input:
-  A subscription service offering a library of immersive VR historical experiences, with historically accurate content and social experiences
-  Output: {
-    "Sophistication Score": 90,
-    "sophisticationDescription": "The service uses cutting-edge VR technology and offers an advanced level of immersion and interactivity.",
-    "Unique Score": 91,
-    "uniqueScoreDescription": "Providing historically accurate VR experiences with social interaction is an innovative and unique offering in the educational and entertainment sectors.",
-    "Audience Focus Score": 86,
-    "audienceFocusScoreDescription": "The service is well-suited for history enthusiasts and educators seeking immersive learning tools, targeting a specific customer base.",
-    "Overall Score": 89
-  }
-  
-  Input:
-  A platform that allows parents to upload a sample of their voice and picture that AI turns into a child YouTube video, so it feels like they are the star of the video and teaching their own children
-  Output: {
-    "Sophistication Score": 83,
-    "sophisticationDescription": "The platform uses extremely sophisticated AI for personalized video creation, pushing the boundaries of current AI capabilities.",
-    "Unique Score": 94,
-    "uniqueScoreDescription": "The concept is extremely unique and groundbreaking, offering highly personalized educational content for children.",
-    "Audience Focus Score": 89,
-    "audienceFocusScoreDescription": "The platform is exceptionally well-suited for parents wanting to create personalized educational content for their children, making it highly targeted.",
-    "Overall Score": 89
-  }
-  Additional Guidelines:
-  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-  Strictly ensure that you return only the required JSON parsable response and nothing else`,
 };
 
 export const SYSTEM_IDEA_VALIDATION = {
