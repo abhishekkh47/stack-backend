@@ -141,6 +141,20 @@ class AuthController extends BaseController {
               })();
             }
 
+            if (reqParam.ideaGenerationType && reqParam.ideaInputValue) {
+              const test = AnalyticsService.sendEvent(
+                ANALYTICS_EVENTS.AI_TOOL_USED,
+                {
+                  "Tool name": reqParam.ideaGenerationType,
+                  Input: reqParam.ideaInputValue,
+                },
+                {
+                  device_id: reqParam.deviceId,
+                  user_id: userExists._id,
+                }
+              );
+            }
+
             const { token, refreshToken } = await TokenService.generateToken(
               userExists
             );
