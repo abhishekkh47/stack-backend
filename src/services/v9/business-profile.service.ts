@@ -338,7 +338,10 @@ class BusinessProfileService {
       });
       return { ideas };
     } catch (error) {
-      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      throw new NetworkError(
+        `${INVALID_DESCRIPTION_ERROR} - ${error.message}`,
+        400
+      );
     }
   }
 
@@ -420,7 +423,10 @@ class BusinessProfileService {
 
       return response;
     } catch (error) {
-      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      throw new NetworkError(
+        `${INVALID_DESCRIPTION_ERROR} - ${error.message}`,
+        400
+      );
     }
   }
 
@@ -444,7 +450,10 @@ class BusinessProfileService {
       );
       return jsonResponse;
     } catch (error) {
-      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      throw new NetworkError(
+        `${INVALID_DESCRIPTION_ERROR} - ${error.message}`,
+        400
+      );
     }
   }
 
