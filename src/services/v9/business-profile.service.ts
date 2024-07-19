@@ -16,10 +16,10 @@ import {
   awsLogger,
   SYSTEM_IDEA_GENERATOR,
   SYSTEM_IDEA_VALIDATION,
-  ANALYTICS_EVENTS,
+  BUSINESS_IDEA_IMAGES,
+  PRODUCT_TYPE,
 } from "@app/utility";
 import moment from "moment";
-import { AnalyticsService } from "@app/services/v4";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
 
 class BusinessProfileService {
@@ -231,23 +231,17 @@ class BusinessProfileService {
    * @param businessType
    * @returns {*}
    */
-  public async generateBusinessIdea(
-    prompt: string,
-    key: string,
-    businessType: number
-  ) {
+  public async generateBusinessIdea(prompt: string, businessType: number) {
     try {
-      let aiToolUsageObj = {};
-      aiToolUsageObj[key] = true;
       const systemInputDataset =
-        Number(businessType) === 1
+        businessType === PRODUCT_TYPE.Physical
           ? SYSTEM_IDEA_GENERATOR.PHYSICAL_PRODUCT
           : SYSTEM_IDEA_GENERATOR.SOFTWARE_TECHNOLOGY;
       const marketSelectionData = await this.getFormattedSuggestions(
         systemInputDataset["PROBLEM_MARKET_SELECTOR"],
         prompt
       );
-      const updatedPrompt = `${marketSelectionData.market}`;
+      const updatedPrompt = marketSelectionData.market;
       let [productizationData, distributionData, dominateNicheData] =
         await Promise.all([
           this.getFormattedSuggestions(
@@ -294,39 +288,55 @@ class BusinessProfileService {
       ]);
 
       let order = 0;
-      productizationData["ideaLabel"] = "Most Innovative";
-      distributionData["ideaLabel"] = "Highest Demand";
-      dominateNicheData["ideaLabel"] = "Best Market Fit";
-      [productizationData, distributionData, dominateNicheData].map((data) => {
-        let ratingData = null;
-        data["_id"] = `idea${++order}`;
+      const ideasData = [
+        {
+          data: productizationData,
+          label: "Most Innovative",
+          imageKey: "innovative",
+          ratingData: productizationRatingData,
+        },
+        {
+          data: distributionData,
+          label: "Highest Demand",
+          imageKey: "demand",
+          ratingData: distributionRatingData,
+        },
+        {
+          data: dominateNicheData,
+          label: "Best Market Fit",
+          imageKey: "trending",
+          ratingData: dominateNicheRatingData,
+        },
+      ];
+      const BUSINESS_IDEA_IMAGES_BY_TYPE =
+        businessType === PRODUCT_TYPE.Physical
+          ? BUSINESS_IDEA_IMAGES.PHYSICAL_PRODUCT
+          : BUSINESS_IDEA_IMAGES.TECH_PRODUCT;
+      const ideas = ideasData.map(({ data, label, imageKey, ratingData }) => {
+        data.ideaLabel = label;
+        data.image = BUSINESS_IDEA_IMAGES_BY_TYPE[imageKey];
+        data._id = `idea${++order}`;
+
         const problem = problemAnalysisData.find(
-          (obj) => obj.problem == marketSelectionData.problem.replace(/\.$/, "")
+          (obj) =>
+            obj.problem === marketSelectionData.problem.replace(/\.$/, "")
         );
         const market = marketAnalysisData.find(
           (obj) =>
-            obj.marketSegment == marketSelectionData.market.replace(/\.$/, "")
+            obj.marketSegment === marketSelectionData.market.replace(/\.$/, "")
         );
 
-        if (data.ideaLabel == "Highest Demand") {
-          ratingData = productizationRatingData;
-        } else if (data.ideaLabel == "Most Innovative") {
-          ratingData = distributionRatingData;
-        } else {
-          ratingData = dominateNicheRatingData;
-        }
-
-        data["rating"] = Math.floor(
+        data.rating = Math.floor(
           (problem.overallRating +
             market.overallRating +
             ratingData["Overall Score"]) /
             3
         );
-        data["ideaAnalysis"] = this.ideaAnalysis(problem, ratingData, market);
+        data.ideaAnalysis = this.ideaAnalysis(problem, ratingData, market);
+
+        return data;
       });
-      return {
-        ideas: [productizationData, distributionData, dominateNicheData],
-      };
+      return { ideas };
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
@@ -338,19 +348,18 @@ class BusinessProfileService {
    * @param key
    * @returns {*}
    */
-  public async ideaValidator(prompt: string, key: string) {
+  public async ideaValidator(prompt: string) {
     try {
-      let aiToolUsageObj = {};
-      aiToolUsageObj[key] = true;
-
       const businessIdeaType = await this.getFormattedSuggestions(
         SYSTEM_IDEA_VALIDATION.BUSINESS_TYPE_SELECTOR,
         prompt
       );
       const businessType =
-        JSON.stringify(businessIdeaType).indexOf("ecommerce") >= 0 ? 1 : 2;
+        JSON.stringify(businessIdeaType).indexOf("ecommerce") >= 0
+          ? PRODUCT_TYPE.Physical
+          : PRODUCT_TYPE.Software;
       const systemInputDataset =
-        businessType === 1
+        businessType === PRODUCT_TYPE.Physical
           ? SYSTEM_IDEA_VALIDATION.PHYSICAL_PRODUCT
           : SYSTEM_IDEA_VALIDATION.TECH_PRODUCT;
       let validatedIdea = await this.getFormattedSuggestions(
@@ -395,10 +404,14 @@ class BusinessProfileService {
         productAnalysisData,
         market
       );
+      if (businessType == PRODUCT_TYPE.Physical) {
+        validatedIdea["image"] = BUSINESS_IDEA_IMAGES.PHYSICAL_PRODUCT.user;
+      } else {
+        validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
+      }
 
-      let suggestions = (
-        await this.generateBusinessIdea(prompt, key, businessType)
-      ).ideas;
+      let suggestions = (await this.generateBusinessIdea(prompt, businessType))
+        .ideas;
 
       let response = {
         selfIdea: validatedIdea,
