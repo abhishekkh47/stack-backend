@@ -2592,67 +2592,76 @@ export const SYSTEM_IDEA_GENERATOR = {
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
     Strictly ensure that you return only the required JSON parsable response and nothing else`,
     DOMINATE_NICHE: `Objective:
-    Use the problem statement and market segment in the user input to identify a manual service that is currently the best solution to a specific aspect of the problem and create a novel business concept that automates and streamlines the solution. This business concept should compete in the market segment identified in the user input. The business concept must not already exist.
+    Use the market segment in the user input to form of a very focused and completely unprecedented business concept that utilizes Value Chain Strategy. The business concept should directly or indirectly compete in the market segment in the user input. To employ Value Chain Strategy, you will observe an opportunity to specialize in a specific layer of the value chain that large, incumbent businesses in that market do poorly or do not focus on, creating a business opportunity. You will then infuse innovation and technology to come up with a completely novel and unique business concept that is not currently being used by another business to specialize in that layer of the value chain. The business concept will highlight a specific and unique product feature that emphasizes the value chain strategy and leaves a user feeling like "I could have never come up with this on my own". This feature will always be specific, unique and potentially even surprising. 
     
-    Step 1: Analyze Manual Process Problem
-    Identify the most manual service that directly or indirectly solves the problem and note the biggest operational issues (e.g., inefficiencies, user complaints, industry reports).
-    Focus on the friction users experience from either (1) the effort and time required to perform the service manually or (2) the lack of consistency and reliability in the manual process. Consider programs or services that currently require many human beings to produce a high quality product. 
+    Important Note: never have two product features, always have only one.
     
-    Step 2: Create Business Concept & Description
-    Develop a business concept that directly solves the chosen problem, competes in the chosen market segment from the user input and automates the manual process observed. This new business concept must be a novel and unprecedented way to automate and streamline the manual process. The core focus of the business concept must be to systemize the manual service that it replaces while focusing on one individual pain point that is most prominently driven by manual processes and feature a novel, unique product feature that directly automates the identified pain point. Consider how the concept could replace programs or services that currently require many human beings to produce a high quality product and how this automated and systemized workflow can continue to provide as high quality of a product by leveraging cutting edge technology, etc.
+    Here is a list of steps to perform this strategy:
     
-    Employ one of two strategies to do so:
-    Strategy 1 - Fully Automated Workflow: Specify the target consumers and how the business will replace manual tasks with automated workflows in a way that existing solutions do not.
-    Strategy 2 - Automate program or service with tech: Describe the automated service, user experience, and specific consumer it is meant for, emphasizing how it leverages technology like AI to rethink existing manual services.
+    Strategy: Value Chain Strategy
+    Step 1: Observe an opportunity in the value chain of the market segment in the user input
+    - First, identify a portion of the market or an adjacent market where market leaders operate across multiple layers of the value chain, handling everything from production to sales 
+    - Then, focus on the weakest component of the value chain they handle and where there is the biggest opportunity to outperform these large market leaders.
+    - Observe a specific pain point for either customers or the market leaders themselves, that if specialized on could create a significant business opportunity
     
-    Step 3: Follow the below output format
-    Output: Format the output to include:
+    Step 2:
+    Create a novel business concept that not only focuses on one specific part of the value chain where big, established companies are not particularly strong or do not focus as much but also significantly transforms or reimagines how to create an extremely high quality solution to this layer of the value chain empoying cutting edge technology and specialization.
+    
+    Before creating the chosen novel business concept, brainstorm at least five innovative and focused product feature ideas that would create a higher quality product in this weak aspect of the value chain, and then choose the idea that is most novel and deploys technology in a unique way to create a competitive edge. 
+    
+    Incorporate recent industry trends, emerging technologies, or consumer behavior insights into the novel business concept. This ensures the new idea is forward-thinking and leverages current market opportunities.
+    
+    Validate the novelty of the business concept by comparing it against existing solutions in the market. Ensure the concept introduces a significant innovation or addresses an unmet need.
+    
+    Step 3:
+    Generate a detailed description of the business concept while calling out the specific and unique core feature that the business will specialize in and the unique way it is using technology to do so. The description should:
+    - Address the value chain specialization by specifying the part of the value chain the concept focuses on.
+    - Describe the high-quality services or products provided and the specific consumer needs it meets.
+    - Highlight the novel aspects and unique innovations of the specific product feature, emphasizing how it differs from and improves upon existing solutions.
+    - Clearly articulate the creative twist that sets the product feature apart and how it disrupts or significantly enhances the current industry practices.
+    
+    Output:
+    Format the output to include:
     Business Overview: A 3-5 word description of the core concept.
     Business Description: A one-sentence concise description including:
-    Core feature/functionality
+    Specialization approach/strategy
+    A unique and specific core feature/functionality
     Specific audience
-    Manual Process Problem Description: The first sentence will describe existing demand for a service or product that uses a manual process causing users to face inefficiencies or inconsistencies. The second sentence will comment on how the concept directly addresses this issue by systemizing and automating the process.
-    Problem: Problem directly solved (from the user input)
-    Market Segment: Market segment directly mapped (from the user input)
+    Value Chain Problem Description: The first sentence will describe the value chain problem with existing products and offerings. The second sentence will comment on how the concept directly addresses this issue.
+    Market Segment: Relevant market segment (from the user input)
     
     Your response should be a JSON object in given output format only, without any other description or statements
     Example Outputs:
     
-    User input: 
-    Customer support is frequently slow and inefficient
-    Fashion E-commerce Platforms
+    Input:
+    Auto Parts & Accessories E-commerce
     Output: {
-      idea: "Automated E-commerce Support",
-      description: "AI-driven customer service platform for e-commerce businesses, offering real-time, personalized support and efficient issue resolution.",
-      strategy: ["Customer service for e-commerce retailers requires human representatives to handle diverse issues, involving extensive research and communication." ,"The AI solution automates interactions by collecting detailed context and offering clear options, reducing costs and improving customer satisfaction through faster issue resolution."],
-      problem: "Customer support is frequently slow and inefficient",
-      market: "Fashion E-commerce Platforms",
+      idea: "EV Battery Refurbishment",
+      description: "An app-based EV battery refurbishment service that tests diagnostics with mobile refurbishment units for on-site service, providing a seamless and cost-effective way to extend the life and performance of electric car batteries.",
+      strategy: ["The EV market struggles with high costs and environmental impacts associated with battery replacements due to inadequate lifecycle management.", "This concept directly addresses this issue by providing AI-driven diagnostics and mobile refurbishment units, extending battery life and performance efficiently and sustainably."],
+      market: "Auto Parts & Accessories E-commerce",
     }
     
-    User input: 
-    ID verification processes are time-consuming and intrusive
-    Insurance Tech Platforms
+    Input:
+    Professional Development & Upskilling
     Output: {
-      idea: "Digital Notarization Service",
-      description: "Remote notarization platform for legal and real estate sectors, enabling on-demand identity verification and electronic notarization.",
-      strategy: ["Notarizing documents is cumbersome, requiring physical presence and causing inefficiencies." ," The technology solution enables on-demand identity verification and electronic notarization, increasing flexibility and maintaining high security standards."],
-      problem: "ID verification processes are time-consuming and intrusive",
-      market: "Insurance Tech Platforms",
+      idea: "Talent Matching Platform for Remote Teams",
+      description: "A talent matching platform that uses project-based skill assessment tests to match remote teams with highly skilled freelancers for specific short-term projects.",
+      strategy: ["Freelance and remote work platforms often fail to quickly and accurately match highly skilled freelancers with specific short-term projects, causing inefficiencies.", "This concept resolves this problem by using AI algorithms for precise skill and project matching, along with real-time availability tracking and project-based skill assessment tests."],
+      market: "Professional Development & Upskilling",
     }
     
-    User Input:
-    Unexpected appliance breakdowns are costly and inconvenient
-    AI-powered Predictive Maintenance
+    Input:
+    AI Legal Technology
     Output: {
-      idea: "Automated HVAC Maintenance",
-      description: "IoT and AI-based platform for HVAC maintenance, providing real-time monitoring and predictive upkeep to reduce repair costs for homeowners.",
-      strategy: ["HVAC maintenance involves manual inspections and scheduling professional check-ups, often leading to inefficiencies and breakdowns." ," The solution uses IoT sensors for real-time monitoring and AI for predictive maintenance, ensuring timely upkeep and reducing repair costs."],
-      problem: "Unexpected appliance breakdowns are costly and inconvenient",
-      market: "AI-powered Predictive Maintenance",
+      idea: "AI-Powered Contract Review Service",
+      description: "An AI-driven platform that specializes in reviewing and analyzing contracts for small and medium-sized businesses, offering automated clause comparison to industry standards and predictive analytics for contract outcomes.",
+      strategy: ["Small and medium-sized businesses face high costs and time-consuming processes when reviewing and analyzing contracts with current legal services.", "This concept tackles this issue by offering AI-driven automated clause comparison to industry standards and predictive analytics for contract outcomes, making contract assessments thorough, accurate, and efficient."],
+      market: "AI Legal Technology",
     }
     Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-    Strictly ensure that you return only the required JSON parsable response and nothing else`, //need to be updated
+    Strictly ensure that you return only the required JSON parsable response and nothing else`,
     PRODUCT_RATING: `Objective:
     Evaluate a given business idea/concept by rating its product on three different criteria:
     Sophistication and Advanced Nature
