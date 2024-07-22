@@ -294,9 +294,9 @@ class BusinessProfileService {
       ]);
 
       let order = 0;
-      productizationData["ideaLabel"] = "Most Innovative";
-      distributionData["ideaLabel"] = "Highest Demand";
-      dominateNicheData["ideaLabel"] = "Best Market Fit";
+      productizationData["ideaLabel"] = systemInputDataset.PRODUCTIZATION_LABEL;
+      distributionData["ideaLabel"] = systemInputDataset.DISTRIBUTION_LABEL;
+      dominateNicheData["ideaLabel"] = systemInputDataset.DOMINATE_LABEL;
       [productizationData, distributionData, dominateNicheData].map((data) => {
         let ratingData = null;
         data["_id"] = `idea${++order}`;
@@ -308,9 +308,9 @@ class BusinessProfileService {
             obj.marketSegment == marketSelectionData.market.replace(/\.$/, "")
         );
 
-        if (data.ideaLabel == "Highest Demand") {
+        if (data.ideaLabel == systemInputDataset.PRODUCTIZATION_LABEL) {
           ratingData = productizationRatingData;
-        } else if (data.ideaLabel == "Most Innovative") {
+        } else if (data.ideaLabel == systemInputDataset.DISTRIBUTION_LABEL) {
           ratingData = distributionRatingData;
         } else {
           ratingData = dominateNicheRatingData;
@@ -383,7 +383,7 @@ class BusinessProfileService {
       );
 
       validatedIdea["_id"] = "selfIdea";
-      validatedIdea["ideaLabel"] = "Your Idea";
+      validatedIdea["ideaLabel"] = SYSTEM_IDEA_VALIDATION.IDEA_VALIDATION_LABEL;
       validatedIdea["rating"] = Math.floor(
         (problem.overallRating +
           market.overallRating +
