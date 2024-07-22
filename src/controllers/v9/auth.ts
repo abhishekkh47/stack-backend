@@ -13,7 +13,11 @@ import {
 } from "@app/services/v1";
 import { AnalyticsService } from "@app/services/v4";
 import { HttpMethod } from "@app/types";
-import { Route, makeUniqueReferalCode } from "@app/utility";
+import {
+  Route,
+  makeUniqueReferalCode,
+  TIMEZONE_TO_COUNTRY,
+} from "@app/utility";
 import { ANALYTICS_EVENTS, THINGS_TO_TALK_ABOUT } from "@app/utility/constants";
 import BaseController from "@app/controllers/base";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
@@ -99,6 +103,7 @@ class AuthController extends BaseController {
                 {
                   device_id: deviceId,
                   user_id: userExists._id,
+                  country: TIMEZONE_TO_COUNTRY[reqParam.timezone],
                 }
               );
 
@@ -142,15 +147,15 @@ class AuthController extends BaseController {
             }
 
             if (reqParam.ideaGenerationType && reqParam.ideaInputValue) {
-              const test = AnalyticsService.sendEvent(
+              AnalyticsService.sendEvent(
                 ANALYTICS_EVENTS.AI_TOOL_USED,
                 {
                   "Tool name": reqParam.ideaGenerationType,
                   Input: reqParam.ideaInputValue,
                 },
                 {
-                  device_id: reqParam.deviceId,
                   user_id: userExists._id,
+                  country: TIMEZONE_TO_COUNTRY[reqParam.timezone],
                 }
               );
             }
