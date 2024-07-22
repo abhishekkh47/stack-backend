@@ -2853,6 +2853,9 @@ export const SYSTEM_IDEA_GENERATOR = {
     Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
     Strictly ensure that you return only the required JSON parsable response and nothing else`,
+    PRODUCTIZATION_LABEL: `Most Innovative`,
+    DISTRIBUTION_LABEL: `Highest Demand`,
+    DOMINATE_LABEL: `Best Market Fit`,
   },
   PHYSICAL_PRODUCT: {
     PROBLEM_MARKET_SELECTOR: `Objective: To match a user input, which is always a business concept or idea, to a problem and a market segment from a specific list. The assistant should ensure the chosen problem and market segment are the closest and most relevant to the given business concept or idea.
@@ -3709,6 +3712,9 @@ export const SYSTEM_IDEA_GENERATOR = {
     Additional Guidelines:
     Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
     Strictly ensure that you return only the required JSON parsable response and nothing else`,
+    PRODUCTIZATION_LABEL: `Most Innovative`,
+    DISTRIBUTION_LABEL: `Highest Demand`,
+    DOMINATE_LABEL: `Top Trending`,
   },
 };
 
@@ -6185,4 +6191,5 @@ export const SYSTEM_IDEA_VALIDATION = {
   Additional Guidelines:
   Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
   Strictly ensure that you return only the required JSON parsable response and nothing else`,
+  IDEA_VALIDATION_LABEL: `Your Idea`,
 };
