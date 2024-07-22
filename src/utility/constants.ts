@@ -238,6 +238,9 @@ export const ANALYTICS_EVENTS = {
   TOP_COMPETITORS_SUBMITTED: "Top Competitors Submitted",
   BRAND_AESTHETIC_SUBMITTED: "Brand Aesthetic Submitted",
   AI_TOOL_USED: "AI Tool Used",
+  BUSINESS_GOAL_SUBMITTED: "Business Goal Submitted",
+  TECHNICAL_EXPERIENCE_SUBMITTED: "Technical Experience Submitted",
+  MONEY_INVEST_SUBMITTED: "Money Invest Submitted",
 };
 
 export const XP_POINTS = {
