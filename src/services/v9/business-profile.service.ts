@@ -291,19 +291,19 @@ class BusinessProfileService {
       const ideasData = [
         {
           data: productizationData,
-          label: "Most Innovative",
+          label: systemInputDataset.PRODUCTIZATION_LABEL,
           imageKey: "innovative",
           ratingData: productizationRatingData,
         },
         {
           data: distributionData,
-          label: "Highest Demand",
+          label: systemInputDataset.DISTRIBUTION_LABEL,
           imageKey: "demand",
           ratingData: distributionRatingData,
         },
         {
           data: dominateNicheData,
-          label: "Best Market Fit",
+          label: systemInputDataset.DOMINATE_LABEL,
           imageKey: "trending",
           ratingData: dominateNicheRatingData,
         },
@@ -392,7 +392,7 @@ class BusinessProfileService {
       );
 
       validatedIdea["_id"] = "selfIdea";
-      validatedIdea["ideaLabel"] = "Your Idea";
+      validatedIdea["ideaLabel"] = SYSTEM_IDEA_VALIDATION.IDEA_VALIDATION_LABEL;
       validatedIdea["rating"] = Math.floor(
         (problem.overallRating +
           market.overallRating +
