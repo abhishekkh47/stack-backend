@@ -160,6 +160,35 @@ class AuthController extends BaseController {
               );
             }
 
+            //track analytics events for idea generator in onboarding flow
+            const eventsMap = {
+              businessGoal: {
+                eventType: ANALYTICS_EVENTS.BUSINESS_GOAL_SUBMITTED,
+                paramName: "Business Goal",
+              },
+              technicalExperience: {
+                eventType: ANALYTICS_EVENTS.TECHNICAL_EXPERIENCE_SUBMITTED,
+                paramName: "Technical Experience",
+              },
+              moneyInvest: {
+                eventType: ANALYTICS_EVENTS.MONEY_INVEST_SUBMITTED,
+                paramName: "Invest Money",
+              },
+            };
+
+            Object.keys(eventsMap).forEach((key) => {
+              if (reqParam[key]) {
+                AnalyticsService.sendEvent(
+                  eventsMap[key].eventType,
+                  { [eventsMap[key].paramName]: reqParam[key] },
+                  {
+                    user_id: userExists._id,
+                    country: TIMEZONE_TO_COUNTRY[reqParam.timezone],
+                  }
+                );
+              }
+            });
+
             const { token, refreshToken } = await TokenService.generateToken(
               userExists
             );
