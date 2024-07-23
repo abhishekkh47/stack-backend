@@ -22,7 +22,6 @@ import {
   BusinessProfileTable,
   QuizCategoryTable,
   QuizTable,
-  IdeaGeneratorDataSetTable,
   AIToolDataSetTable,
 } from "@app/model";
 import {
@@ -45,9 +44,7 @@ import {
   NOTIFICATION_KEYS,
   DEFAULT_LIFE_COUNT,
   ALL_NULL_5_DAYS,
-  SYSTEM_INPUT,
-  SYSTEM_IDEA_GENERATOR,
-  SYSTEM_IDEA_VALIDATION,
+  OPENAI_DATASET,
 } from "@app/utility";
 import BaseController from ".././base";
 import {
@@ -2266,16 +2263,35 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async importOpenAIDataset(ctx: any) {
     try {
-      // Seed SystemInput data
-      for (const [key, value] of Object.entries(SYSTEM_INPUT)) {
-        await AIToolDataSetTable.create({ key, value });
+      let datasetContent = [];
+      for (const [key, value] of Object.entries(OPENAI_DATASET)) {
+        let type = 0;
+        if (key == "physicalProduct") {
+          type = 1;
+        } else if (key == "softwareTechnology") {
+          type = 2;
+        } else if (key == "ideaValidation") {
+          type = 3;
+        }
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              key,
+              type,
+            },
+            update: {
+              $set: {
+                type,
+                key,
+                data: value,
+              },
+            },
+            upsert: true,
+          },
+        };
+        datasetContent.push(bulkWriteObject);
       }
-      for (const [key, value] of Object.entries(SYSTEM_IDEA_GENERATOR)) {
-        await IdeaGeneratorDataSetTable.create({ key, value });
-      }
-      for (const [key, value] of Object.entries(SYSTEM_IDEA_VALIDATION)) {
-        await IdeaGeneratorDataSetTable.create({ key, value });
-      }
+      await AIToolDataSetTable.bulkWrite(datasetContent);
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);

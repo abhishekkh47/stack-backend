@@ -4,18 +4,15 @@ import {
   AIToolsUsageStatusTable,
   ProblemScoreTable,
   MarketScoreTable,
+  AIToolDataSetTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
   INVALID_DESCRIPTION_ERROR,
-  SYSTEM_INPUT,
-  BUSINESS_ACTIONS,
   IS_RETRY,
   REQUIRE_COMPANY_NAME,
   BACKUP_LOGOS,
   awsLogger,
-  SYSTEM_IDEA_GENERATOR,
-  SYSTEM_IDEA_VALIDATION,
   BUSINESS_IDEA_IMAGES,
   PRODUCT_TYPE,
 } from "@app/utility";
@@ -38,7 +35,6 @@ class BusinessProfileService {
     idea: string = null
   ) {
     try {
-      let response = null;
       if (!idea) {
         throw new NetworkError(
           "Please provide a valid business description",
@@ -48,18 +44,15 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       const prompt = `Business Name:${userBusinessProfile?.companyName}, Business Description: ${idea}`;
-      const [textResponse, _] = await Promise.all([
-        BusinessProfileServiceV7.generateTextSuggestions(
-          SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
-          prompt
-        ),
+      const systemInput = await AIToolDataSetTable.findOne({ key });
+      const [response, _] = await Promise.all([
+        this.getFormattedSuggestions(systemInput.data, prompt),
         AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
           { upsert: true }
         ),
       ]);
-      response = JSON.parse(textResponse.choices[0].message.content);
       return {
         suggestions: response,
         finished: true,
@@ -115,9 +108,10 @@ class BusinessProfileService {
       ) {
         finished = false;
         const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
+        const systemInput = await AIToolDataSetTable.findOne({ key });
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
-            SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
+            systemInput.data,
             prompt
           ),
           BusinessProfileTable.findOneAndUpdate(
@@ -227,16 +221,16 @@ class BusinessProfileService {
   /**
    * @description this will generate business idea using OpenAI GPT
    * @param prompt
-   * @param key
    * @param businessType
    * @returns {*}
    */
   public async generateBusinessIdea(prompt: string, businessType: number) {
     try {
-      const systemInputDataset =
-        businessType === PRODUCT_TYPE.Physical
-          ? SYSTEM_IDEA_GENERATOR.PHYSICAL_PRODUCT
-          : SYSTEM_IDEA_GENERATOR.SOFTWARE_TECHNOLOGY;
+      const systemInputDataset = (
+        await AIToolDataSetTable.findOne({
+          type: businessType,
+        }).lean()
+      ).data;
       const marketSelectionData = await this.getFormattedSuggestions(
         systemInputDataset["PROBLEM_MARKET_SELECTOR"],
         prompt
@@ -274,15 +268,15 @@ class BusinessProfileService {
           type: businessType,
         }).lean(),
         this.getFormattedSuggestions(
-          systemInputDataset.PRODUCT_RATING,
+          systemInputDataset["PRODUCT_RATING"],
           productizationData.description
         ),
         this.getFormattedSuggestions(
-          systemInputDataset.PRODUCT_RATING,
+          systemInputDataset["PRODUCT_RATING"],
           distributionData.description
         ),
         this.getFormattedSuggestions(
-          systemInputDataset.PRODUCT_RATING,
+          systemInputDataset["PRODUCT_RATING"],
           dominateNicheData.description
         ),
       ]);
@@ -291,19 +285,19 @@ class BusinessProfileService {
       const ideasData = [
         {
           data: productizationData,
-          label: systemInputDataset.PRODUCTIZATION_LABEL,
+          label: systemInputDataset["PRODUCTIZATION_LABEL"],
           imageKey: "innovative",
           ratingData: productizationRatingData,
         },
         {
           data: distributionData,
-          label: systemInputDataset.DISTRIBUTION_LABEL,
+          label: systemInputDataset["DISTRIBUTION_LABEL"],
           imageKey: "demand",
           ratingData: distributionRatingData,
         },
         {
           data: dominateNicheData,
-          label: systemInputDataset.DOMINATE_LABEL,
+          label: systemInputDataset["DOMINATE_LABEL"],
           imageKey: "trending",
           ratingData: dominateNicheRatingData,
         },
@@ -345,13 +339,17 @@ class BusinessProfileService {
   /**
    * @description this will validate user provided business idea using OpenAI GPT
    * @param prompt
-   * @param key
    * @returns {*}
    */
   public async ideaValidator(prompt: string) {
     try {
+      const ideaValidationDataset = (
+        await AIToolDataSetTable.findOne({
+          type: 3,
+        }).lean()
+      ).data;
       const businessIdeaType = await this.getFormattedSuggestions(
-        SYSTEM_IDEA_VALIDATION.BUSINESS_TYPE_SELECTOR,
+        ideaValidationDataset["BUSINESS_TYPE_SELECTOR"],
         prompt
       );
       const businessType =
@@ -360,8 +358,8 @@ class BusinessProfileService {
           : PRODUCT_TYPE.Software;
       const systemInputDataset =
         businessType === PRODUCT_TYPE.Physical
-          ? SYSTEM_IDEA_VALIDATION.PHYSICAL_PRODUCT
-          : SYSTEM_IDEA_VALIDATION.TECH_PRODUCT;
+          ? ideaValidationDataset["PHYSICAL_PRODUCT"]
+          : ideaValidationDataset["TECH_PRODUCT"];
       let validatedIdea = await this.getFormattedSuggestions(
         systemInputDataset,
         prompt
@@ -379,7 +377,7 @@ class BusinessProfileService {
             type: businessType,
           }),
           this.getFormattedSuggestions(
-            SYSTEM_IDEA_VALIDATION.PRODUCT_RATING,
+            ideaValidationDataset["PRODUCT_RATING"],
             updatedPrompt
           ),
         ]);
@@ -392,7 +390,8 @@ class BusinessProfileService {
       );
 
       validatedIdea["_id"] = "selfIdea";
-      validatedIdea["ideaLabel"] = SYSTEM_IDEA_VALIDATION.IDEA_VALIDATION_LABEL;
+      validatedIdea["ideaLabel"] =
+        ideaValidationDataset["IDEA_VALIDATION_LABEL"];
       validatedIdea["rating"] = Math.floor(
         (problem.overallRating +
           market.overallRating +

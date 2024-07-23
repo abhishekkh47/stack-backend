@@ -7,6 +7,14 @@ export type IAIToolDataSetSchema = MongooseModel<IAIToolDataSet> &
 
 const schema = new mongoose.Schema<IAIToolDataSetSchema>(
   {
+    /**
+     * 0-AI Tools except idea generator, 1 - PHYSICAL_PRODUCT, 2 - TECH_PRODUCT , 3 - IDEA_VALIDATOR
+     */
+    type: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 0,
+    },
     key: {
       type: mongoose.Schema.Types.String,
       required: true,
