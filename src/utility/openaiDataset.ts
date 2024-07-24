@@ -6193,3 +6193,23 @@ export const SYSTEM_IDEA_VALIDATION = {
   Strictly ensure that you return only the required JSON parsable response and nothing else`,
   IDEA_VALIDATION_LABEL: `Your Idea`,
 };
+
+export const OPENAI_DATASET = {
+  system: SYSTEM_INPUT.SYSTEM,
+  user: SYSTEM_INPUT.USER,
+  companyName: SYSTEM_INPUT.COMPANY_NAME,
+  companyLogo: SYSTEM_INPUT.COMPANY_LOGO,
+  targetAudience: SYSTEM_INPUT.TARGET_AUDIENCE,
+  competitors: SYSTEM_INPUT.COMPETITORS,
+  keyDifferentiator: SYSTEM_INPUT.KEY_DIFFERENTIATOR,
+  xForY: SYSTEM_INPUT.X_FOR_Y,
+  headline: SYSTEM_INPUT.HEADLINE,
+  valueCreators: SYSTEM_INPUT.VALUE_CREATORS,
+  colorsAndAesthetic: SYSTEM_INPUT.COLORS_AND_AESTHETIC,
+  callToAction: SYSTEM_INPUT.CALL_TO_ACTION,
+  linkYourBlog: SYSTEM_INPUT.BLOG_TOPIC,
+  linkYourWebsite: SYSTEM_INPUT.WEBSITE_LINK,
+  softwareTechnology: SYSTEM_IDEA_GENERATOR.SOFTWARE_TECHNOLOGY,
+  physicalProduct: SYSTEM_IDEA_GENERATOR.PHYSICAL_PRODUCT,
+  ideaValidation: SYSTEM_IDEA_VALIDATION,
+};
