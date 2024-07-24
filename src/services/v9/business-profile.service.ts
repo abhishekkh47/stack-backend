@@ -120,9 +120,6 @@ class BusinessProfileService {
         } else {
           prompt = `Business Description: ${idea}`;
         }
-        if (prompt.indexOf("--v 5.2") < 0) {
-          throw new Error(`Invalid Prompt : ${prompt}`);
-        }
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
@@ -140,23 +137,27 @@ class BusinessProfileService {
             { upsert: true }
           ),
         ]);
-        BusinessProfileServiceV7.generateImageSuggestions(
-          textResponse.choices[0].message.content
-        ).then(async (imageUrls) => {
-          response = [...imageUrls];
-          await BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            {
-              $set: {
-                "logoGenerationInfo.isUnderProcess": false,
-                "logoGenerationInfo.startTime": moment().unix(),
-                "logoGenerationInfo.aiSuggestions": response,
-                "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+        const imagePrompt = textResponse.choices[0].message.content;
+        if (imagePrompt.indexOf("--v 5.2") < 0) {
+          throw new Error(`Invalid Prompt : ${imagePrompt}`);
+        }
+        BusinessProfileServiceV7.generateImageSuggestions(imagePrompt).then(
+          async (imageUrls) => {
+            response = [...imageUrls];
+            await BusinessProfileTable.findOneAndUpdate(
+              { userId: userExists._id },
+              {
+                $set: {
+                  "logoGenerationInfo.isUnderProcess": false,
+                  "logoGenerationInfo.startTime": moment().unix(),
+                  "logoGenerationInfo.aiSuggestions": response,
+                  "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+                },
               },
-            },
-            { upsert: true }
-          );
-        });
+              { upsert: true }
+            );
+          }
+        );
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
