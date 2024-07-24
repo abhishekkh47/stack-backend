@@ -99,70 +99,78 @@ class BusinessProfileController extends BaseController {
   @Auth()
   @PrimeTrustJWT(true)
   public async updateCompanyLogo(ctx: any) {
-    const { user, file } = ctx.request;
-    const [userExists, businessProfileExists]: any = await Promise.all([
-      UserTable.findOne({
-        _id: user._id,
-      }),
-      BusinessProfileTable.findOne({
-        userId: user._id,
-      }),
-    ]);
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-    const imageName =
-      file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
+    try {
+      const { user, file } = ctx.request;
+      const [userExists, businessProfileExists]: any = await Promise.all([
+        UserTable.findOne({
+          _id: user._id,
+        }),
+        BusinessProfileTable.findOne({
+          userId: user._id,
+        }),
+      ]);
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
+      }
+      const imageName =
+        file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
-    if (businessProfileExists?.companyLogo) {
-      removeImage(userExists._id, businessProfileExists.companyLogo);
-    }
-    let businessProfileObj = {
-      companyLogo: imageName,
-    };
-    if (imageName) {
-      businessProfileObj["logoGenerationInfo"] = {
-        isUnderProcess: false,
-        aiSuggestions: null,
-        startTime: 0,
+      if (businessProfileExists?.companyLogo) {
+        removeImage(userExists._id, businessProfileExists.companyLogo);
+      }
+      let businessProfileObj = {
+        companyLogo: imageName,
       };
+      if (imageName) {
+        businessProfileObj["logoGenerationInfo"] = {
+          isUnderProcess: false,
+          aiSuggestions: null,
+          startTime: 0,
+        };
+      }
+      const businessHistoryObj = {
+        key: "companyLogo",
+        value: imageName,
+        timestamp: Date.now(),
+      };
+      let aiToolUsageObj = {};
+      aiToolUsageObj["companyLogo"] = true;
+      await Promise.all([
+        BusinessProfileTable.updateOne(
+          { userId: userExists._id },
+          {
+            $set: businessProfileObj,
+            $push: { businessHistory: businessHistoryObj },
+          },
+          { upsert: true }
+        ),
+        AIToolsUsageStatusTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: aiToolUsageObj },
+          { upsert: true }
+        ),
+      ]);
+      const zohoInfo = {
+        companyLogo: imageName,
+        Account_Name: userExists.firstName + " " + userExists.lastName,
+        Email: userExists.email,
+      };
+      AnalyticsService.sendEvent(
+        ANALYTICS_EVENTS.BUSINESS_LOGO_SUBMITTED,
+        { "Item Name": imageName },
+        { user_id: userExists._id }
+      );
+      (async () => {
+        zohoCrmService.addAccounts(
+          ctx.request.zohoAccessToken,
+          zohoInfo,
+          false
+        );
+      })();
+      return this.Ok(ctx, { message: "Profile Picture updated successfully." });
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
     }
-    const businessHistoryObj = {
-      key: "companyLogo",
-      value: imageName,
-      timestamp: Date.now(),
-    };
-    let aiToolUsageObj = {};
-    aiToolUsageObj["companyLogo"] = true;
-    await Promise.all([
-      BusinessProfileTable.updateOne(
-        { userId: userExists._id },
-        {
-          $set: businessProfileObj,
-          $push: { businessHistory: businessHistoryObj },
-        },
-        { upsert: true }
-      ),
-      AIToolsUsageStatusTable.findOneAndUpdate(
-        { userId: userExists._id },
-        { $set: aiToolUsageObj },
-        { upsert: true }
-      ),
-    ]);
-    const zohoInfo = {
-      companyLogo: imageName,
-      Account_Name: userExists.firstName + " " + userExists.lastName,
-      Email: userExists.email,
-    };
-    AnalyticsService.sendEvent(
-      ANALYTICS_EVENTS.BUSINESS_LOGO_SUBMITTED,
-      { "Item Name": imageName },
-      { user_id: userExists._id }
-    );
-    (async () => {
-      zohoCrmService.addAccounts(ctx.request.zohoAccessToken, zohoInfo, false);
-    })();
-    return this.Ok(ctx, { message: "Profile Picture updated successfully." });
   }
 
   /**

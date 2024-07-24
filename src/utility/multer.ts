@@ -39,21 +39,43 @@ export const uploadFileS3 = multer({
     return cb(null, true);
   },
 });
+
+const retryUpload = async (fn, retries = 3, delay = 1500) => {
+  let attempts = 0;
+  while (attempts < retries) {
+    try {
+      if (attempts == 0) {
+        throw new Error("First try");
+      }
+      return await fn();
+    } catch (error) {
+      attempts++;
+      if (attempts >= retries) throw error;
+      await new Promise((res) => setTimeout(res, delay));
+    }
+  }
+};
+
 export const uploadCompanyLogo = multer({
   storage: multerS3({
     s3,
     bucket: "stack-business-information/companyLogo",
     key: async (req, file, cb) => {
-      const response = await verifyToken(req.headers["x-access-token"]);
-      if (response && response.status && response.status === 401) {
-        return cb(new NetworkError("Unauthorised User", 401));
+      try {
+        const generateKey = async () => {
+          const response = await verifyToken(req.headers["x-access-token"]);
+          if (response && response.status && response.status === 401) {
+            throw new NetworkError("Unauthorised User", 401);
+          }
+          return `${response._id}/${file.fieldname}_${Date.now().toString()}.${
+            file.originalname.split(".")[1]
+          }`;
+        };
+        const key = await retryUpload(generateKey, 3, 1500);
+        cb(null, key);
+      } catch (error) {
+        cb(error);
       }
-      return cb(
-        null,
-        `${response._id}/${file.fieldname}_${Date.now().toString()}.${
-          file.originalname.split(".")[1]
-        }`
-      );
     },
   }),
   limit: { fileSize: 5000000 },
