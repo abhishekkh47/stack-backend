@@ -99,7 +99,7 @@ class BusinessProfileService {
         { upsert: true }
       );
 
-      const { logoGenerationInfo = null, companyName = "" } =
+      const { logoGenerationInfo = null, companyName = null } =
         userBusinessProfile ?? {};
       const {
         aiSuggestions = [],
@@ -113,8 +113,16 @@ class BusinessProfileService {
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
         (isUnderProcess && elapsedTime > 200)
       ) {
+        let prompt: string;
         finished = false;
-        const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
+        if (companyName) {
+          prompt = `Business Name:${companyName}, Business Description: ${idea}`;
+        } else {
+          prompt = `Business Description: ${idea}`;
+        }
+        if (prompt.indexOf("--v 5.2") < 0) {
+          throw new Error(`Invalid Prompt : ${prompt}`);
+        }
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
