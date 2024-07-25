@@ -115,11 +115,7 @@ class BusinessProfileService {
       ) {
         let prompt: string;
         finished = false;
-        if (companyName) {
-          prompt = `Business Name:${companyName}, Business Description: ${idea}`;
-        } else {
-          prompt = `Business Description: ${idea}`;
-        }
+        prompt = `Business Description: ${idea}`;
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
             SYSTEM_INPUT[BUSINESS_ACTIONS[key]],
