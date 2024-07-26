@@ -1,5 +1,5 @@
 import BaseController from "@app/controllers/base";
-import { Auth, PrimeTrustJWT } from "@app/middleware";
+import { Auth, PrimeTrustJWT, RevenueCatAuth } from "@app/middleware";
 import { UserDBService } from "@app/services/v6";
 import { HttpMethod } from "@app/types";
 import { Route, THINGS_TO_TALK_ABOUT } from "@app/utility";
@@ -63,20 +63,56 @@ class UserController extends BaseController {
     if (!userIfExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    let dataSentInCrm = [
-      {
-        Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
-        Email: userIfExists.email,
-        Pro_Plan: body.proPlanName || null,
-        Pro_Plan_Status: body.proPlanStatus || "Inactive",
-      },
-    ];
-    zohoCrmService.addAccounts(
-      ctx.request.zohoAccessToken,
-      dataSentInCrm,
-      true
-    );
     return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is called via a webhook from revenuecat, when a user do any transaction
+   * @param ctx
+   */
+  @Route({ path: "/update-subscription-details", method: HttpMethod.POST })
+  @RevenueCatAuth()
+  public async checkProStatus(ctx: any) {
+    try {
+      const { event } = ctx.request.body;
+      const userIfExists = await UserTable.findOne({ _id: event.app_user_id });
+      if (userIfExists) {
+        let proPlanStatus = "Active";
+        let isPremiumUser = "true";
+        if (
+          event.type == "EXPIRATION" ||
+          event.type == "CANCELLATION" ||
+          event.type == "UNSUBSCRIBE" ||
+          event.type == "SUBSCRIPTION_PAUSED"
+        ) {
+          proPlanStatus = "Inactive";
+          isPremiumUser = "false";
+        }
+        await UserTable.findOneAndUpdate(
+          { _id: userIfExists._id },
+          { $set: { isPremiumUser } },
+          { upsert: true, new: true }
+        );
+        let dataSentInCrm = [
+          {
+            Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
+            Email: userIfExists.email,
+            Pro_Plan: event.product_id || null,
+            Pro_Plan_Status: proPlanStatus,
+          },
+        ];
+        zohoCrmService.addAccounts(
+          ctx.request.zohoAccessToken,
+          dataSentInCrm,
+          true
+        );
+      }
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, {
+        message: `Error while update subscription details - ${error.message}`,
+      });
+    }
   }
 }
 

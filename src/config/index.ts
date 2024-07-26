@@ -242,4 +242,7 @@ export default {
   get PHYSICAL_MARKET_SCORING_SHEET_GID() {
     return process.env.PHYSICAL_MARKET_SCORING_SHEET_GID;
   },
+  get REVENUECAT_WEBHOOK_SECRET() {
+    return process.env.REVENUECAT_WEBHOOK_SECRET;
+  },
 };
