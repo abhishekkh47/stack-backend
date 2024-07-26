@@ -16,7 +16,7 @@ export const processPendingLogos = async () => {
           "seconds"
         );
         const timeDiffHours = timeDiff.asHours();
-        return timeDiffHours > 6;
+        return timeDiffHours > 12;
       })
       .map((user) => user.userId);
     const businessProfiles = await BusinessProfileTable.find({
