@@ -18,7 +18,7 @@ const JOBS = [
      * Time: at 00:00 and 12:00 every day
      */
     disabled: false,
-    expression: "0 */12 * * *",
+    expression: "0 0 * * *",
     func: processPendingLogos,
   },
 ];
