@@ -3,7 +3,7 @@ export interface IAIToolDataSet {
   /* 0-AI tools except idea generator, 1-physical product idea gen, 2-tech product idea gen, 3-idea validator idea gen*/
   type: EIdeaGeneratorType;
   key: string;
-  data: string;
+  data: mongoose.Schema.Types.Mixed;
 }
 
 export enum EIdeaGeneratorType {

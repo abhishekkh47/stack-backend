@@ -2263,8 +2263,9 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async importOpenAIDataset(ctx: any) {
     try {
+      const { body } = ctx.request;
       let datasetContent = [];
-      for (const [key, value] of Object.entries(OPENAI_DATASET)) {
+      for (const [key, value] of Object.entries(body)) {
         let type = 0;
         if (key == "physicalProduct") {
           type = 1;
