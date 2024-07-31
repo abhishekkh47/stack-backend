@@ -16,6 +16,8 @@ import {
   BUSINESS_IDEA_IMAGES,
   PRODUCT_TYPE,
   COMPANY_NAME_TYPE,
+  OPENAI_DATASET_NEW,
+  DEDUCT_RETRY_FUEL,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -34,7 +36,8 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 0
+    type: number = 0,
+    deductRetryFuel: boolean = false
   ) {
     try {
       if (!idea) {
@@ -46,7 +49,8 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       const prompt = `Business Description: ${idea}`;
-      let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
+      // let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
+      let systemInput: any = OPENAI_DATASET_NEW[key];
       if (key == "companyName") {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
       }
@@ -58,6 +62,9 @@ class BusinessProfileService {
           { upsert: true }
         ),
       ]);
+      if (response && deductRetryFuel) {
+        await this.updateAIToolsRetryStatus(userExists, key);
+      }
       return {
         suggestions: response,
         finished: true,
@@ -87,7 +94,8 @@ class BusinessProfileService {
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
-    idea: string = null
+    idea: string = null,
+    deductRetryFuel: boolean = false
   ) {
     try {
       let response = null;
@@ -165,6 +173,8 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    } finally {
+      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 
@@ -566,6 +576,33 @@ class BusinessProfileService {
           ],
         },
       ];
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will update whether the user has consumed the retry using fuels
+   * @param userExists
+   * @param key
+   */
+  async updateAIToolsRetryStatus(userExists: any, key: any) {
+    try {
+      let aiToolUsageObj = {};
+      let tool = `${key}Retry`;
+      aiToolUsageObj[tool] = true;
+      await Promise.all([
+        AIToolsUsageStatusTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: aiToolUsageObj },
+          { upsert: true, new: true }
+        ),
+        UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          { $set: { fuel: DEDUCT_RETRY_FUEL } },
+          { upsert: true, new: true }
+        ),
+      ]);
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

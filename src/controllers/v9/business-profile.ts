@@ -18,9 +18,9 @@ class BusinessProfileController extends BaseController {
   @Route({ path: "/get-ai-suggestions", method: HttpMethod.GET })
   @Auth()
   public async getAISuggestion(ctx: any) {
-    const { user, query, headers } = ctx.request;
+    const { user, query, headers, body } = ctx.request;
     // type - business name type
-    const { key, isRetry, idea, type } = query;
+    const { key, isRetry, idea, type, deductRetryFuel } = query;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
@@ -59,7 +59,8 @@ class BusinessProfileController extends BaseController {
         userBusinessProfile,
         isRetry,
         headers.requestid,
-        idea
+        idea,
+        deductRetryFuel
       );
     } else {
       response = await BusinessProfileService.generateAISuggestions(
@@ -67,7 +68,8 @@ class BusinessProfileController extends BaseController {
         key,
         userBusinessProfile,
         idea,
-        type
+        type,
+        deductRetryFuel
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });

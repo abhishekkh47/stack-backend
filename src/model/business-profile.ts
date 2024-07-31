@@ -55,11 +55,22 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: null,
     },
-    competitors: {
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
-    },
+    competitors: [
+      {
+        _id: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+        title: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+        description: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+      },
+    ],
     keyDifferentiator: {
       type: mongoose.Schema.Types.String,
       required: false,
@@ -281,6 +292,95 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         },
       },
     ],
+    keyMetrics: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
+    valueProposition: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
+    marketingChannelStrategy: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
+    businessModel: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
+    costStructure: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
+    unfairAdvantage: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
+    completedGoal: {
+      type: mongoose.Schema.Types.Number,
+      required: false,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

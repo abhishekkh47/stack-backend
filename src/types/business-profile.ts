@@ -22,7 +22,7 @@ export interface IBusinessProfile {
   companyName: string;
   companyLogo: string;
   targetAudience: string;
-  competitors: string;
+  competitors: IBusinessInfo[];
   keyDifferentiator: string;
   xForY: string;
   headline: string;
@@ -55,6 +55,13 @@ export interface IBusinessProfile {
   businessType: number;
   businessPreferences: IBusinessPreferences;
   businessHistory: IBusinessHistory[];
+  valueProposition: IBusinessInfo;
+  keyMetrics: IBusinessInfo;
+  marketingChannelStrategy: IBusinessInfo;
+  businessModel: IBusinessInfo;
+  costStructure: IBusinessInfo;
+  unfairAdvantage: IBusinessInfo;
+  completedGoal: number;
 }
 
 export interface ILogoGenerationInfo {
@@ -91,4 +98,17 @@ export interface IAIToolsUsageStatus {
   targetAudience: boolean;
   competitors: boolean;
   colorsAndAesthetic: boolean;
+  descriptionRetry: boolean;
+  ideaValidationRetry: boolean;
+  companyNameRetry: boolean;
+  companyLogoRetry: boolean;
+  targetAudienceRetry: boolean;
+  competitorsRetry: boolean;
+  colorsAndAestheticRetry: boolean;
+}
+
+interface IBusinessInfo {
+  _id: string;
+  title: string;
+  description: string;
 }
