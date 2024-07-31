@@ -66,7 +66,7 @@ class BusinessProfileService {
           { user_id: userIfExists._id }
         );
       } else {
-        obj[data.key] = data.value;
+        obj[data.key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
         businessHistoryObj = [
@@ -144,6 +144,7 @@ class BusinessProfileService {
                 "Example: Be the go-to platform for all emerging entrepreneurs to start their businesses.",
               isMultiLine: true,
               maxCharLimit: 280,
+              section: "About",
             },
             {
               key: "companyName",
@@ -155,6 +156,7 @@ class BusinessProfileService {
               placeHolderText: "Enter name...",
               isMultiLine: false,
               maxCharLimit: 15,
+              section: "About",
             },
             {
               key: "companyLogo",
@@ -167,6 +169,7 @@ class BusinessProfileService {
               placeHolderText: null,
               isMultiLine: false,
               maxCharLimit: 0,
+              section: "",
             },
             {
               key: "targetAudience",
@@ -179,6 +182,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
+              section: "Customers",
             },
             {
               key: "competitors",
@@ -191,6 +195,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
+              section: "Competition",
             },
             {
               key: "keyDifferentiator",
@@ -203,6 +208,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "xForY",
@@ -215,6 +221,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 40,
+              section: "",
             },
             {
               key: "headline",
@@ -227,6 +234,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "valueCreators",
@@ -239,6 +247,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "colorsAndAesthetic",
@@ -251,6 +260,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "callToAction",
@@ -263,6 +273,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 40,
+              section: "",
             },
             {
               key: "linkYourBlog",
@@ -275,6 +286,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: true,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "linkYourWebsite",
@@ -287,6 +299,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 40,
+              section: "",
             },
             {
               key: "appName",
@@ -298,6 +311,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "homescreenImage",
@@ -309,6 +323,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "customerDiscovery",
@@ -320,6 +335,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "socialFeedback",
@@ -331,6 +347,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "productUpdate",
@@ -342,6 +359,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "mvpHomeScreen",
@@ -353,6 +371,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "socialMediaAccountLink",
@@ -365,6 +384,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "firstPostLink",
@@ -377,6 +397,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "favoriteComment",
@@ -388,6 +409,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "aspiringSocialAccount",
@@ -400,6 +422,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "socialCampaignTheme",
@@ -411,6 +434,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
             },
             {
               key: "firstSocialCampaign",
@@ -422,6 +446,79 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
+              section: "",
+            },
+            {
+              key: "valueProposition",
+              type: "text",
+              value: "$valueProposition",
+              title: "Value Proposition",
+              description:
+                "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
+              placeHolderText: "Enter description...",
+              isMultiLine: false,
+              maxCharLimit: 280,
+              section: "",
+            },
+            {
+              key: "keyMetrics",
+              type: "text",
+              value: "$keyMetrics",
+              title: "Key Metrics",
+              description:
+                "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
+              placeHolderText: "Enter description...",
+              isMultiLine: false,
+              maxCharLimit: 280,
+              section: "About",
+            },
+            {
+              key: "marketingChannelStrategy",
+              type: "text",
+              value: "$marketingChannelStrategy",
+              title: "Marketing Channel Strategy",
+              description:
+                "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
+              placeHolderText: "Enter description...",
+              isMultiLine: false,
+              maxCharLimit: 280,
+              section: "Customers",
+            },
+            {
+              key: "businessModel",
+              type: "text",
+              value: "$businessModel",
+              title: "Business Model",
+              description:
+                "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
+              placeHolderText: "Enter description...",
+              isMultiLine: false,
+              maxCharLimit: 280,
+              section: "Financial Viability",
+            },
+            {
+              key: "costStructure",
+              type: "text",
+              value: "$costStructure",
+              title: "Key Expenses",
+              description:
+                "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
+              placeHolderText: "Enter description...",
+              isMultiLine: false,
+              maxCharLimit: 280,
+              section: "Financial Viability",
+            },
+            {
+              key: "unfairAdvantage",
+              type: "text",
+              value: "$unfairAdvantage",
+              title: "Unfair Advantage",
+              description:
+                "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
+              placeHolderText: "Enter description...",
+              isMultiLine: false,
+              maxCharLimit: 280,
+              section: "",
             },
           ],
         },

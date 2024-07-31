@@ -1,4 +1,4 @@
-import { AIToolsUsageStatusTable } from "@app/model";
+import { AIToolsUsageStatusTable, UserTable } from "@app/model";
 
 class UserService {
   /**

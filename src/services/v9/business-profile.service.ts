@@ -16,7 +16,6 @@ import {
   BUSINESS_IDEA_IMAGES,
   PRODUCT_TYPE,
   COMPANY_NAME_TYPE,
-  OPENAI_DATASET_NEW,
   DEDUCT_RETRY_FUEL,
 } from "@app/utility";
 import moment from "moment";
@@ -36,8 +35,7 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 0,
-    deductRetryFuel: boolean = false
+    type: number = 0
   ) {
     try {
       if (!idea) {
@@ -49,8 +47,7 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       const prompt = `Business Description: ${idea}`;
-      // let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
-      let systemInput: any = OPENAI_DATASET_NEW[key];
+      let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
       if (key == "companyName") {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
       }
@@ -62,7 +59,7 @@ class BusinessProfileService {
           { upsert: true }
         ),
       ]);
-      if (response && deductRetryFuel) {
+      if (response && !userExists.isPremiumUser) {
         await this.updateAIToolsRetryStatus(userExists, key);
       }
       return {

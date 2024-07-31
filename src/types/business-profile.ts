@@ -19,9 +19,9 @@ export interface IBusinessProfile {
   description: string;
   idea: string;
   marketOpportunity: string;
-  companyName: string;
+  companyName: IBusinessInfo;
   companyLogo: string;
-  targetAudience: string;
+  targetAudience: ITargetAudience;
   competitors: IBusinessInfo[];
   keyDifferentiator: string;
   xForY: string;
@@ -111,4 +111,15 @@ interface IBusinessInfo {
   _id: string;
   title: string;
   description: string;
+}
+
+interface ITargetAudience {
+  _id: string;
+  title: string;
+  description: ITargetAudienceDesc;
+}
+interface ITargetAudienceDesc {
+  Demographics: string;
+  Psychographics: string;
+  Population: string;
 }

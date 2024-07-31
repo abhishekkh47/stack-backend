@@ -41,9 +41,14 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       default: null,
     },
     companyName: {
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
     },
     companyLogo: {
       type: mongoose.Schema.Types.String,
@@ -51,9 +56,24 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       default: null,
     },
     targetAudience: {
-      type: mongoose.Schema.Types.String,
-      required: false,
-      default: null,
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        Demographics: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+        Psychographics: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+        Population: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+      },
     },
     competitors: [
       {
@@ -293,10 +313,6 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       },
     ],
     keyMetrics: {
-      _id: {
-        type: mongoose.Schema.Types.String,
-        required: false,
-      },
       title: {
         type: mongoose.Schema.Types.String,
         required: false,
@@ -307,10 +323,6 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       },
     },
     valueProposition: {
-      _id: {
-        type: mongoose.Schema.Types.String,
-        required: false,
-      },
       title: {
         type: mongoose.Schema.Types.String,
         required: false,
@@ -321,10 +333,6 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       },
     },
     marketingChannelStrategy: {
-      _id: {
-        type: mongoose.Schema.Types.String,
-        required: false,
-      },
       title: {
         type: mongoose.Schema.Types.String,
         required: false,
@@ -335,10 +343,6 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       },
     },
     businessModel: {
-      _id: {
-        type: mongoose.Schema.Types.String,
-        required: false,
-      },
       title: {
         type: mongoose.Schema.Types.String,
         required: false,
@@ -349,10 +353,6 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       },
     },
     costStructure: {
-      _id: {
-        type: mongoose.Schema.Types.String,
-        required: false,
-      },
       title: {
         type: mongoose.Schema.Types.String,
         required: false,
@@ -363,10 +363,6 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       },
     },
     unfairAdvantage: {
-      _id: {
-        type: mongoose.Schema.Types.String,
-        required: false,
-      },
       title: {
         type: mongoose.Schema.Types.String,
         required: false,

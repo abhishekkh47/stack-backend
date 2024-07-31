@@ -20,7 +20,8 @@ class BusinessProfileController extends BaseController {
   public async getAISuggestion(ctx: any) {
     const { user, query, headers, body } = ctx.request;
     // type - business name type
-    const { key, isRetry, idea, type, deductRetryFuel } = query;
+    const { key, isRetry, idea, type } = query;
+    // const { key, isRetry, idea, type } = body;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
@@ -31,6 +32,12 @@ class BusinessProfileController extends BaseController {
     }
     if (userExists.requestId && userExists.requestId == headers.requestid) {
       return this.Ok(ctx, { message: "Success", data: "Multiple Requests" });
+    }
+    if (!idea && !userBusinessProfile.description) {
+      return this.BadRequest(
+        ctx,
+        "Please generate a business idea and try again"
+      );
     }
     if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
@@ -59,17 +66,15 @@ class BusinessProfileController extends BaseController {
         userBusinessProfile,
         isRetry,
         headers.requestid,
-        idea,
-        deductRetryFuel
+        idea
       );
     } else {
       response = await BusinessProfileService.generateAISuggestions(
         userExists,
         key,
         userBusinessProfile,
-        idea,
-        type,
-        deductRetryFuel
+        idea || userBusinessProfile.description,
+        type
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });
