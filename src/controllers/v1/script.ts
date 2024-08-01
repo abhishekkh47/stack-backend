@@ -22,6 +22,7 @@ import {
   BusinessProfileTable,
   QuizCategoryTable,
   QuizTable,
+  AIToolDataSetTable,
 } from "@app/model";
 import {
   EAction,
@@ -43,6 +44,7 @@ import {
   NOTIFICATION_KEYS,
   DEFAULT_LIFE_COUNT,
   ALL_NULL_5_DAYS,
+  OPENAI_DATASET,
 } from "@app/utility";
 import BaseController from ".././base";
 import {
@@ -2248,6 +2250,49 @@ class ScriptController extends BaseController {
         return this.BadRequest(ctx, "Something Went Wrong");
       }
       return this.Ok(ctx, { message: "Success", data: problemScoreData });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
+
+  /**
+   * @description This method is used to move the open-ai dataset from utility files to DB
+   * @param ctx
+   */
+  @Route({ path: "/import-openai-dataset", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importOpenAIDataset(ctx: any) {
+    try {
+      let datasetContent = [];
+      for (const [key, value] of Object.entries(OPENAI_DATASET)) {
+        let type = 0;
+        if (key == "physicalProduct") {
+          type = 1;
+        } else if (key == "softwareTechnology") {
+          type = 2;
+        } else if (key == "ideaValidation") {
+          type = 3;
+        }
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              key,
+              type,
+            },
+            update: {
+              $set: {
+                type,
+                key,
+                data: value,
+              },
+            },
+            upsert: true,
+          },
+        };
+        datasetContent.push(bulkWriteObject);
+      }
+      await AIToolDataSetTable.bulkWrite(datasetContent);
+      return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
