@@ -470,13 +470,20 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[data.ideaGenerationType] = true;
       if (userExists && userExists._id && data.savedBusinessIdeas.length) {
+        const businessProfile = await BusinessProfileTable.findOne({
+          userId: userExists._id,
+        });
         const [_, updatedUser] = await Promise.all([
           AIToolsUsageStatusTable.findOneAndUpdate(
             { userId: userExists._id },
             { $set: aiToolUsageObj },
             { upsert: true, new: true }
           ),
-          BusinessProfileServiceV7.addOrEditBusinessProfile(data, userExists),
+          BusinessProfileServiceV7.addOrEditBusinessProfile(
+            data,
+            userExists,
+            businessProfile
+          ),
         ]);
         return updatedUser;
       }

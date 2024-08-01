@@ -98,13 +98,6 @@ export interface IAIToolsUsageStatus {
   targetAudience: boolean;
   competitors: boolean;
   colorsAndAesthetic: boolean;
-  descriptionRetry: boolean;
-  ideaValidationRetry: boolean;
-  companyNameRetry: boolean;
-  companyLogoRetry: boolean;
-  targetAudienceRetry: boolean;
-  competitorsRetry: boolean;
-  colorsAndAestheticRetry: boolean;
 }
 
 interface IBusinessInfo {

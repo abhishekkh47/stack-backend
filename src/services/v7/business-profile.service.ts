@@ -39,7 +39,11 @@ class BusinessProfileService {
    * @param userIfExists
    * @returns {*}
    */
-  public async addOrEditBusinessProfile(data: any, userIfExists: any) {
+  public async addOrEditBusinessProfile(
+    data: any,
+    userIfExists: any,
+    businessProfile: any
+  ) {
     try {
       let obj = {};
       let businessHistoryObj = [];
@@ -58,6 +62,9 @@ class BusinessProfileService {
             timestamp: Date.now(),
           });
         }
+        if (businessProfile && !businessProfile?.description) {
+          obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
+        }
         obj["idea"] = latestSelection.idea;
         obj["description"] = latestSelection.description;
         AnalyticsService.sendEvent(
@@ -66,13 +73,16 @@ class BusinessProfileService {
           { user_id: userIfExists._id }
         );
       } else {
+        if (businessProfile && !businessProfile[data.key]) {
+          obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
+        }
         obj[data.key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
         businessHistoryObj = [
           {
             key: data.key,
-            value: data.value,
+            value: { title: data.value, description: data.description },
             timestamp: Date.now(),
           },
         ];

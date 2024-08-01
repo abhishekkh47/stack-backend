@@ -48,41 +48,6 @@ const schema = new mongoose.Schema<IAIToolsUsageStatusSchema>(
       required: true,
       default: false,
     },
-    descriptionRetry: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
-    },
-    ideaValidationRetry: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
-    },
-    companyNameRetry: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
-    },
-    companyLogoRetry: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
-    },
-    targetAudienceRetry: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
-    },
-    competitorsRetry: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
-    },
-    colorsAndAestheticRetry: {
-      type: mongoose.Schema.Types.Boolean,
-      required: true,
-      default: false,
-    },
   },
   { timestamps: true }
 );
