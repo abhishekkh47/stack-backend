@@ -54,3 +54,4 @@ export * from "@app/model/dailyChallenge";
 export * from "@app/model/marketScore";
 export * from "@app/model/problemScore";
 export * from "@app/model/unsavedLogo";
+export * from "@app/model/aiToolsDataset";
