@@ -112,7 +112,7 @@ interface ITargetAudience {
   description: ITargetAudienceDesc;
 }
 interface ITargetAudienceDesc {
-  Demographics: string;
-  Psychographics: string;
-  Population: string;
+  demographics: string;
+  psychographics: string;
+  population: string;
 }

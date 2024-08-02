@@ -76,7 +76,11 @@ class BusinessProfileService {
         if (businessProfile && !businessProfile[data.key]) {
           obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
         }
-        obj[data.key] = { title: data.value, description: data.description };
+        if (data.key == "competitors") {
+          obj[data.key] = data.description;
+        } else {
+          obj[data.key] = { title: data.value, description: data.description };
+        }
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
         businessHistoryObj = [
@@ -462,13 +466,13 @@ class BusinessProfileService {
               key: "valueProposition",
               type: "text",
               value: "$valueProposition",
-              title: "Value Proposition",
+              title: "Unique Value Proposition",
               description:
                 "Pro-tip: send your post over text, email or other mediums to family and friends so you can get the view count up!",
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
-              section: "",
+              section: "About",
             },
             {
               key: "keyMetrics",
@@ -528,7 +532,7 @@ class BusinessProfileService {
               placeHolderText: "Enter description...",
               isMultiLine: false,
               maxCharLimit: 280,
-              section: "",
+              section: "Competition",
             },
           ],
         },

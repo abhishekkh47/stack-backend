@@ -61,15 +61,15 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         required: false,
       },
       description: {
-        Demographics: {
+        demographics: {
           type: mongoose.Schema.Types.String,
           required: false,
         },
-        Psychographics: {
+        psychographics: {
           type: mongoose.Schema.Types.String,
           required: false,
         },
-        Population: {
+        population: {
           type: mongoose.Schema.Types.String,
           required: false,
         },
