@@ -242,4 +242,7 @@ export default {
   get PHYSICAL_MARKET_SCORING_SHEET_GID() {
     return process.env.PHYSICAL_MARKET_SCORING_SHEET_GID;
   },
+  get OPENAI_DATASET_GID() {
+    return process.env.OPENAI_DATASET_GID;
+  },
 };

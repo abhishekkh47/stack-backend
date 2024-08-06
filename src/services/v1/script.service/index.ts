@@ -19,6 +19,7 @@ import {
   MarketSegmentInfoTable,
   ProblemScoreTable,
   MarketScoreTable,
+  AIToolDataSetTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1902,6 +1903,88 @@ class ScriptService {
 
       await MarketScoreTable.bulkWrite(bulkWriteOperations);
       return marketScoresData;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON by filtering with key referring the action to be performed
+   * @param rows
+   * @returns {*}
+   */
+  public async convertOpenAIDatasetSheetToJSON(rows: any) {
+    try {
+      const result = {};
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const key = row.key;
+        const objectSize = row.objectSize;
+        const dataset = row.dataset;
+
+        if (objectSize > 0) {
+          const obj = {};
+          for (let j = 0; j < objectSize; j++) {
+            const currentRow = rows[i + j];
+            if (currentRow.name && currentRow.dataset) {
+              if (currentRow.datasetSplit == "TRUE") {
+                obj[
+                  currentRow.name
+                ] = `${currentRow.dataset} ${currentRow.dataset2}`;
+              } else {
+                obj[currentRow.name] = currentRow.dataset;
+              }
+            }
+          }
+          result[key] = obj;
+          i += objectSize - 1;
+        } else if (key && dataset) {
+          result[key] = dataset;
+        }
+      }
+      return result;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param openAIDataset
+   * @returns {*}
+   */
+  public async addOpenAIDataToDB(openAIDataset: any) {
+    let datasetContent = [];
+    try {
+      for (const [key, value] of Object.entries(openAIDataset)) {
+        let type = 0;
+        if (key == "physicalProduct") {
+          type = 1;
+        } else if (key == "softwareTechnology") {
+          type = 2;
+        } else if (key == "ideaValidation") {
+          type = 3;
+        }
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              key,
+              type,
+            },
+            update: {
+              $set: {
+                type,
+                key,
+                data: value,
+              },
+            },
+            upsert: true,
+          },
+        };
+        datasetContent.push(bulkWriteObject);
+      }
+      await AIToolDataSetTable.bulkWrite(datasetContent);
+      return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

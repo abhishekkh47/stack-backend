@@ -2263,36 +2263,17 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async importOpenAIDataset(ctx: any) {
     try {
-      const { body } = ctx.request;
-      let datasetContent = [];
-      for (const [key, value] of Object.entries(body)) {
-        let type = 0;
-        if (key == "physicalProduct") {
-          type = 1;
-        } else if (key == "softwareTechnology") {
-          type = 2;
-        } else if (key == "ideaValidation") {
-          type = 3;
-        }
-        let bulkWriteObject = {
-          updateOne: {
-            filter: {
-              key,
-              type,
-            },
-            update: {
-              $set: {
-                type,
-                key,
-                data: value,
-              },
-            },
-            upsert: true,
-          },
-        };
-        datasetContent.push(bulkWriteObject);
+      const rows = await ScriptService.readSpreadSheet(
+        envData.OPENAI_DATASET_GID,
+        envData.SHEET_ID
+      );
+      if (rows.length === 0) {
+        return this.BadRequest(ctx, "Passion Not Found");
       }
-      await AIToolDataSetTable.bulkWrite(datasetContent);
+      const openAIDataset = await ScriptService.convertOpenAIDatasetSheetToJSON(
+        rows
+      );
+      await ScriptService.addOpenAIDataToDB(openAIDataset);
       return this.Ok(ctx, { message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);

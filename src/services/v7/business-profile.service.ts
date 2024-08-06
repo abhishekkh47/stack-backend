@@ -72,6 +72,9 @@ class BusinessProfileService {
           { "Item Name": latestSelection.idea },
           { user_id: userIfExists._id }
         );
+      } else if (data.key == "description" || data.key == "ideaValidation") {
+        obj["idea"] = data.value;
+        obj["description"] = data.description;
       } else {
         if (businessProfile && !businessProfile[data.key]) {
           obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
@@ -547,6 +550,7 @@ class BusinessProfileService {
                 $and: [
                   { $ne: ["$$plan.value", null] },
                   { $ne: ["$$plan.value", undefined] },
+                  { $ne: ["$$plan.value", []] },
                   { $ne: [{ $type: "$$plan.value" }, "missing"] },
                 ],
               },

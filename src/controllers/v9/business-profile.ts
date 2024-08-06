@@ -25,7 +25,7 @@ class BusinessProfileController extends BaseController {
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
-      BusinessProfileTable.findOne({ userId: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }).lean(),
     ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");

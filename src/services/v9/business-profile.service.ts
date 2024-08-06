@@ -17,6 +17,8 @@ import {
   PRODUCT_TYPE,
   COMPANY_NAME_TYPE,
   DEDUCT_RETRY_FUEL,
+  KEY_METRICS_TYPE,
+  TARGET_AUDIENCE_REQUIRED,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -46,10 +48,12 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const prompt = `Business Description: ${idea}`;
+      const prompt = this.getUserPrompt(userBusinessProfile, key, idea);
       let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
       if (key == "companyName") {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
+      } else if (key == "keyMetrics") {
+        systemInput = systemInput[KEY_METRICS_TYPE[type]];
       }
       const [response, _] = await Promise.all([
         this.getFormattedSuggestions(systemInput, prompt),
@@ -71,6 +75,12 @@ class BusinessProfileService {
           : null,
       };
     } catch (error) {
+      if (
+        TARGET_AUDIENCE_REQUIRED.includes(key) &&
+        !userBusinessProfile.targetAudience
+      ) {
+        throw new Error("Please add your target audience and try again!");
+      }
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
   }
@@ -117,7 +127,15 @@ class BusinessProfileService {
         (isUnderProcess && elapsedTime > 200)
       ) {
         finished = false;
-        const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
+        if (!idea) {
+          throw new NetworkError(
+            "Please provide a valid business description",
+            404
+          );
+        }
+        const prompt = companyName
+          ? `Company Name:${companyName}, Business Idea: ${idea}`
+          : `Business Idea: ${idea}`;
         const systemInput = await AIToolDataSetTable.findOne({ key });
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
@@ -607,6 +625,30 @@ class BusinessProfileService {
           { upsert: true, new: true }
         ),
       ]);
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will return the user input prompt corresponding to the AI Tool being used
+   * @param businessProfile
+   * @param key
+   * @returns prompt
+   */
+  getUserPrompt(businessProfile: any, key: string, idea: string) {
+    try {
+      if (TARGET_AUDIENCE_REQUIRED.includes(key)) {
+        if (
+          businessProfile.targetAudience &&
+          businessProfile.targetAudience.description
+        ) {
+          return `Business Description: ${idea} ${businessProfile.targetAudience.description}`;
+        } else {
+          throw new Error("Please add your target audience and try again!");
+        }
+      }
+      return `Business Description: ${idea}`;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

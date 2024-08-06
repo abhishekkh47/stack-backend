@@ -312,16 +312,18 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         },
       },
     ],
-    keyMetrics: {
-      title: {
-        type: mongoose.Schema.Types.String,
-        required: false,
+    keyMetrics: [
+      {
+        title: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+        description: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
       },
-      description: {
-        type: mongoose.Schema.Types.String,
-        required: false,
-      },
-    },
+    ],
     valueProposition: {
       title: {
         type: mongoose.Schema.Types.String,

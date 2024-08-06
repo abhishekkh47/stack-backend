@@ -56,7 +56,7 @@ export interface IBusinessProfile {
   businessPreferences: IBusinessPreferences;
   businessHistory: IBusinessHistory[];
   valueProposition: IBusinessInfo;
-  keyMetrics: IBusinessInfo;
+  keyMetrics: IBusinessInfo[];
   marketingChannelStrategy: IBusinessInfo;
   businessModel: IBusinessInfo;
   costStructure: IBusinessInfo;
