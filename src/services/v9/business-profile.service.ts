@@ -4,6 +4,7 @@ import {
   AIToolsUsageStatusTable,
   ProblemScoreTable,
   MarketScoreTable,
+  UnsavedLogoTable,
   AIToolDataSetTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
@@ -130,10 +131,8 @@ class BusinessProfileService {
           ),
         ]);
         const imagePrompt = textResponse.choices[0].message.content;
-        BusinessProfileServiceV7.generateImageSuggestions(imagePrompt).then(
-          async (imageUrls) => {
-            response = [...imageUrls];
-            await BusinessProfileTable.findOneAndUpdate(
+          await Promise.all([
+            BusinessProfileTable.findOneAndUpdate(
               { userId: userExists._id },
               {
                 $set: {
@@ -144,9 +143,14 @@ class BusinessProfileService {
                 },
               },
               { upsert: true }
-            );
-          }
-        );
+            ),
+            UnsavedLogoTable.findOneAndUpdate(
+              { userId: userExists._id },
+              { $set: { logoGeneratedAt: moment().unix() } },
+              { upsert: true, new: true }
+            ),
+          ]);
+        });
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {

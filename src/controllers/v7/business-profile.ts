@@ -4,6 +4,7 @@ import {
   UserTable,
   WeeklyJourneyResultTable,
   AIToolsUsageStatusTable,
+  UnsavedLogoTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
@@ -148,6 +149,7 @@ class BusinessProfileController extends BaseController {
         { $set: aiToolUsageObj },
         { upsert: true }
       ),
+      UnsavedLogoTable.deleteMany({ userId: userExists._id }),
     ]);
     const zohoInfo = {
       companyLogo: imageName,

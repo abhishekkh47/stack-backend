@@ -37,4 +37,5 @@ export * from "@app/types/tutorialStatus";
 export * from "@app/types/dailyChallenge";
 export * from "@app/types/problemScore";
 export * from "@app/types/marketScore";
+export * from "@app/types/unsavedLogo";
 export * from "@app/types/openAiDataset";
