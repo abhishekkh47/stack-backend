@@ -422,12 +422,6 @@ class ChecklistDBService {
           },
           { upsert: true }
         ),
-        BusinessProfileTable.findOneAndUpdate(
-          { userId: userId },
-          {
-            $inc: { completedGoal: 1 },
-          }
-        ),
       ]);
       return;
     } catch (err) {
