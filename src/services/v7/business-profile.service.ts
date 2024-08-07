@@ -41,7 +41,6 @@ class BusinessProfileService {
    */
   public async addOrEditBusinessProfile(data: any, userIfExists: any) {
     try {
-      console.log("data : \n", data);
       let obj = {};
       let businessHistoryObj = [];
       // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
