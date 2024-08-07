@@ -652,34 +652,61 @@ class ChecklistDBService {
 
       const areDay1AIToolsCompleted = () => {
         return (
-          (aiToolsUsageStatus?.description ||
-            aiToolsUsageStatus?.ideaValidation) &&
-          aiToolsUsageStatus?.targetAudience &&
-          aiToolsUsageStatus?.competitors
+          (businessProfileIfExists?.description ||
+            businessProfileIfExists?.ideaValidation) &&
+          businessProfileIfExists?.companyLogo &&
+          businessProfileIfExists?.companyName &&
+          businessProfileIfExists?.targetAudience
         );
       };
       const areDay2AIToolsCompleted = () => {
         return (
-          aiToolsUsageStatus?.companyLogo &&
-          aiToolsUsageStatus?.companyName &&
-          aiToolsUsageStatus?.colorsAndAesthetic
+          businessProfileIfExists?.valueProposition &&
+          businessProfileIfExists?.unfairAdvantage &&
+          businessProfileIfExists?.marketingStrategy
+        );
+      };
+      const areDay3AIToolsCompleted = () => {
+        return (
+          businessProfileIfExists?.keyMetrics &&
+          businessProfileIfExists?.businessModel &&
+          businessProfileIfExists?.costStructure
         );
       };
 
       if (dateDiff < 1) {
         response = [
-          ...getAITools(0, 3),
+          ...getAITools(0, 4),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
-      } else if (!areDay1AIToolsCompleted()) {
+      } else if (!areDay1AIToolsCompleted() && dateDiff < 2) {
         response = [
-          ...getAITools(0, 6),
+          ...getAITools(0, 7),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
-      } else if (areDay1AIToolsCompleted() && !areDay2AIToolsCompleted()) {
+      } else if (
+        areDay1AIToolsCompleted() &&
+        !areDay2AIToolsCompleted() &&
+        dateDiff < 2
+      ) {
         response = [
-          ...getAITools(3, 6),
+          ...getAITools(4, 7),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
+      } else if (!areDay1AIToolsCompleted() && dateDiff < 3) {
+        response = [
+          ...getAITools(0, 11),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+        ];
+      } else if (!areDay2AIToolsCompleted() && dateDiff < 3) {
+        response = [
+          ...getAITools(4, 11),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+        ];
+      } else if (!areDay3AIToolsCompleted() && dateDiff < 3) {
+        response = [
+          ...getAITools(7, 11),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
         ];
       } else {
         response = [

@@ -756,6 +756,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "About",
+    day: 1,
   },
   {
     id: 2,
@@ -764,6 +765,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "About",
+    day: 1,
   },
   {
     id: 3,
@@ -772,6 +774,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "",
+    day: 1,
   },
   {
     id: 4,
@@ -780,6 +783,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "Competition",
+    day: 1,
   },
   {
     id: 5,
@@ -788,6 +792,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "Customers",
+    day: 1,
   },
   {
     id: 6,
@@ -796,6 +801,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "About",
+    day: 2,
   },
   {
     id: 7,
@@ -804,6 +810,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "",
+    day: 2,
   },
   {
     id: 8,
@@ -812,6 +819,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "Customers",
+    day: 2,
   },
   {
     id: 9,
@@ -820,6 +828,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "About",
+    day: 3,
   },
   {
     id: 10,
@@ -828,6 +837,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "Financial Viability",
+    day: 3,
   },
   {
     id: 11,
@@ -836,6 +846,7 @@ export const DAILY_GOALS = [
     time: "2 min",
     isCompleted: false,
     section: "Financial Viability",
+    day: 3,
   },
 ];
 
