@@ -108,7 +108,9 @@ class BusinessProfileService {
       ) {
         let prompt: string;
         finished = false;
-        const prompt = `Business Name:${companyName}, Business Description: ${idea}`;
+        prompt = companyName
+          ? `Business Name:${companyName}, Business Description: ${idea}`
+          : `Business Description: ${idea}`;
         const systemInput = await AIToolDataSetTable.findOne({ key });
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
@@ -128,9 +130,6 @@ class BusinessProfileService {
           ),
         ]);
         const imagePrompt = textResponse.choices[0].message.content;
-        if (imagePrompt.indexOf("--v 5.2") < 0) {
-          throw new Error(`Invalid Prompt : ${imagePrompt}`);
-        }
         BusinessProfileServiceV7.generateImageSuggestions(imagePrompt).then(
           async (imageUrls) => {
             response = [...imageUrls];
