@@ -4,6 +4,7 @@ import {
   AIToolsUsageStatusTable,
   ProblemScoreTable,
   MarketScoreTable,
+  UnsavedLogoTable,
   AIToolDataSetTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
@@ -130,18 +131,25 @@ class BusinessProfileService {
           textResponse.choices[0].message.content
         ).then(async (imageUrls) => {
           response = [...imageUrls];
-          await BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            {
-              $set: {
-                "logoGenerationInfo.isUnderProcess": false,
-                "logoGenerationInfo.startTime": moment().unix(),
-                "logoGenerationInfo.aiSuggestions": response,
-                "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+          await Promise.all([
+            BusinessProfileTable.findOneAndUpdate(
+              { userId: userExists._id },
+              {
+                $set: {
+                  "logoGenerationInfo.isUnderProcess": false,
+                  "logoGenerationInfo.startTime": moment().unix(),
+                  "logoGenerationInfo.aiSuggestions": response,
+                  "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+                },
               },
-            },
-            { upsert: true }
-          );
+              { upsert: true }
+            ),
+            UnsavedLogoTable.findOneAndUpdate(
+              { userId: userExists._id },
+              { $set: { logoGeneratedAt: moment().unix() } },
+              { upsert: true, new: true }
+            ),
+          ]);
         });
       }
 
