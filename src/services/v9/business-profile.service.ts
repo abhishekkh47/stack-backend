@@ -131,26 +131,30 @@ class BusinessProfileService {
           ),
         ]);
         const imagePrompt = textResponse.choices[0].message.content;
-          await Promise.all([
-            BusinessProfileTable.findOneAndUpdate(
-              { userId: userExists._id },
-              {
-                $set: {
-                  "logoGenerationInfo.isUnderProcess": false,
-                  "logoGenerationInfo.startTime": moment().unix(),
-                  "logoGenerationInfo.aiSuggestions": response,
-                  "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+        BusinessProfileServiceV7.generateImageSuggestions(imagePrompt).then(
+          async (imageUrls) => {
+            response = [...imageUrls];
+            await Promise.all([
+              BusinessProfileTable.findOneAndUpdate(
+                { userId: userExists._id },
+                {
+                  $set: {
+                    "logoGenerationInfo.isUnderProcess": false,
+                    "logoGenerationInfo.startTime": moment().unix(),
+                    "logoGenerationInfo.aiSuggestions": response,
+                    "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+                  },
                 },
-              },
-              { upsert: true }
-            ),
-            UnsavedLogoTable.findOneAndUpdate(
-              { userId: userExists._id },
-              { $set: { logoGeneratedAt: moment().unix() } },
-              { upsert: true, new: true }
-            ),
-          ]);
-        });
+                { upsert: true }
+              ),
+              UnsavedLogoTable.findOneAndUpdate(
+                { userId: userExists._id },
+                { $set: { logoGeneratedAt: moment().unix() } },
+                { upsert: true, new: true }
+              ),
+            ]);
+          }
+        );
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
