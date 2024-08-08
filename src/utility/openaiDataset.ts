@@ -8223,3 +8223,8 @@ export const TARGET_AUDIENCE_REQUIRED = [
   "strategy",
   "businessModel",
 ];
+
+export const COST_STRUCTURE_TYPE = {
+  1: "buildMyself",
+  2: "hireSomeone",
+};

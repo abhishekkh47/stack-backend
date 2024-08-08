@@ -20,6 +20,7 @@ import {
   ProblemScoreTable,
   MarketScoreTable,
   AIToolDataSetTable,
+  MilestoneTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1984,6 +1985,98 @@ class ScriptService {
         datasetContent.push(bulkWriteObject);
       }
       await AIToolDataSetTable.bulkWrite(datasetContent);
+      return "Dataset Updated";
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert Milestone spreadsheet to JSON
+   * @param rows
+   * @returns {*}
+   */
+  public async convertMilestoneDatasetSheetToJSON(rows: any) {
+    try {
+      const result = [];
+      let currentTopic = null;
+      let currentTopicId = null;
+      let currentMilestone = null;
+      let currentDay = 0;
+      let currentTitle = null;
+      let currentOrder = 0;
+      let currentGoal = null;
+      let order = 0;
+      let idx = -1;
+      const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
+      for (const row of rows) {
+        if (row["topic"] && row["topic"] != currentTopic) {
+          currentTopic = row["topic"];
+          currentTopicId = quizTopics.find(
+            (obj) => obj.topic == currentTopic
+          )._id;
+          currentMilestone = row["milestone"];
+        }
+        if (row["day"] && row["day"] != currentDay) {
+          currentDay = Number(row["day"]);
+          currentTitle = row["title"];
+          currentOrder = 0;
+          idx += 1;
+          result.push({
+            topicId: currentTopicId,
+            milestone: currentMilestone,
+            day: currentDay,
+            title: currentTitle,
+            order: ++order,
+            goals: [],
+          });
+        }
+        currentGoal = {
+          order: ++currentOrder,
+          title: row["goalTitle"],
+          key: row["identifier"],
+        };
+        result[idx].goals.push(currentGoal);
+      }
+      return result;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param milestones
+   * @returns {*}
+   */
+  public async addMilestoneDataToDB(milestones: any) {
+    let milestoneContent = [];
+    try {
+      milestones.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              topicId: obj.topicId,
+              title: obj.title,
+              day: obj.day,
+            },
+            update: {
+              $set: {
+                topicId: obj.topicId,
+                milestone: obj.milestone,
+                title: obj.title,
+                day: obj.day,
+                order: obj.order,
+                time: obj.time || "2 min",
+                goals: obj.goals,
+              },
+            },
+            upsert: true,
+          },
+        };
+        milestoneContent.push(bulkWriteObject);
+      });
+      await MilestoneTable.bulkWrite(milestoneContent);
       return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);

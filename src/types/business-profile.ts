@@ -109,7 +109,7 @@ interface IBusinessInfo {
 interface ITargetAudience {
   _id: string;
   title: string;
-  description: ITargetAudienceDesc;
+  description: string;
 }
 interface ITargetAudienceDesc {
   demographics: string;

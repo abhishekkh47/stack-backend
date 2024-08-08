@@ -2268,13 +2268,37 @@ class ScriptController extends BaseController {
         envData.SHEET_ID
       );
       if (rows.length === 0) {
-        return this.BadRequest(ctx, "Passion Not Found");
+        return this.BadRequest(ctx, "Dataset Not Found");
       }
       const openAIDataset = await ScriptService.convertOpenAIDatasetSheetToJSON(
         rows
       );
       await ScriptService.addOpenAIDataToDB(openAIDataset);
       return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
+
+  /**
+   * @description This method is used to move the open-ai dataset from utility files to DB
+   * @param ctx
+   */
+  @Route({ path: "/import-milestones", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importMilestones(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.MILESTONE_SHEET_GID,
+        envData.SHEET_ID
+      );
+      if (rows.length === 0) {
+        return this.BadRequest(ctx, "No Milestones to import");
+      }
+      const milestoneData =
+        await ScriptService.convertMilestoneDatasetSheetToJSON(rows);
+      await ScriptService.addMilestoneDataToDB(milestoneData);
+      return this.Ok(ctx, { message: "Success", data: milestoneData });
     } catch (error) {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }

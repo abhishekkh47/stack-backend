@@ -18,6 +18,7 @@ import {
   COMPANY_NAME_TYPE,
   DEDUCT_RETRY_FUEL,
   KEY_METRICS_TYPE,
+  COST_STRUCTURE_TYPE,
   TARGET_AUDIENCE_REQUIRED,
 } from "@app/utility";
 import moment from "moment";
@@ -37,7 +38,7 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 0
+    type: number = 1
   ) {
     try {
       if (!idea) {
@@ -54,6 +55,8 @@ class BusinessProfileService {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
       } else if (key == "keyMetrics") {
         systemInput = systemInput[KEY_METRICS_TYPE[type]];
+      } else if (key == "costStructure") {
+        systemInput = systemInput[COST_STRUCTURE_TYPE[type]];
       }
       const [response, _] = await Promise.all([
         this.getFormattedSuggestions(systemInput, prompt),
@@ -621,7 +624,7 @@ class BusinessProfileService {
         ),
         UserTable.findOneAndUpdate(
           { _id: userExists._id },
-          { $set: { fuel: DEDUCT_RETRY_FUEL } },
+          { $set: { quizCoins: DEDUCT_RETRY_FUEL } },
           { upsert: true, new: true }
         ),
       ]);
