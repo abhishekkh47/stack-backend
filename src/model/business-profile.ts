@@ -379,6 +379,12 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: 0,
     },
+    currentMilestone: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "milestones",
+      required: false,
+      default: null,
+    },
   },
   { timestamps: true }
 );

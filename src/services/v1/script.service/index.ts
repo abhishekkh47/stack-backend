@@ -2035,6 +2035,8 @@ class ScriptService {
           order: ++currentOrder,
           title: row["goalTitle"],
           key: row["identifier"],
+          template: row["template"],
+          time: row["time"] || "AI-Assisted - 2 min",
         };
         result[idx].goals.push(currentGoal);
       }
@@ -2067,7 +2069,7 @@ class ScriptService {
                 title: obj.title,
                 day: obj.day,
                 order: obj.order,
-                time: obj.time || "2 min",
+                time: obj.time || "7 Days - 15 min/day",
                 goals: obj.goals,
               },
             },

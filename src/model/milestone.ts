@@ -53,6 +53,16 @@ const schema = new mongoose.Schema<IMilestoneSchema>(
           required: true,
           default: null,
         },
+        template: {
+          type: mongoose.Schema.Types.Number,
+          required: true,
+          default: 1,
+        },
+        time: {
+          type: mongoose.Schema.Types.String,
+          required: true,
+          default: null,
+        },
       },
     ],
   },

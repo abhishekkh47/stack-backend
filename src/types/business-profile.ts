@@ -62,6 +62,7 @@ export interface IBusinessProfile {
   costStructure: IBusinessInfo;
   unfairAdvantage: IBusinessInfo;
   completedGoal: number;
+  currentMilestone: mongoose.Schema.Types.ObjectId;
 }
 
 export interface ILogoGenerationInfo {

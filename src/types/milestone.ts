@@ -14,4 +14,6 @@ interface IMilestoneGoals {
   order: number;
   title: string;
   key: string;
+  template: number;
+  time: string;
 }

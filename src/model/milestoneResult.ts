@@ -7,8 +7,21 @@ export type IMilestoneResultSchema = MongooseModel<IMilestoneResult> &
 
 const schema = new mongoose.Schema<IMilestoneResultSchema>(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      required: true,
+      default: null,
+    },
+    topicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "quiztopics",
+      required: true,
+      default: null,
+    },
     milestoneId: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "milestones",
       required: true,
       default: null,
     },
@@ -21,6 +34,16 @@ const schema = new mongoose.Schema<IMilestoneResultSchema>(
       type: mongoose.Schema.Types.Number,
       required: true,
       default: 0,
+    },
+    goalId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      default: null,
+    },
+    identifier: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
     },
   },
   { timestamps: true }
