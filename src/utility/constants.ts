@@ -814,7 +814,7 @@ export const DAILY_GOALS = [
   },
   {
     id: 8,
-    key: "marketingStrategy",
+    key: "marketingChannelStrategy",
     title: "Create Your Marketing Strategy",
     time: "2 min",
     isCompleted: false,
@@ -864,3 +864,5 @@ export const BUSINESS_IDEA_IMAGES = {
     trending: "techProduct_MarketFit.webp",
   },
 };
+
+export const DEFAULT_MILESTONE = "Foundations of Successful Company Building";

@@ -21,6 +21,7 @@ import {
   MarketScoreTable,
   AIToolDataSetTable,
   MilestoneTable,
+  MilestoneGoalsTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1999,46 +2000,51 @@ class ScriptService {
   public async convertMilestoneDatasetSheetToJSON(rows: any) {
     try {
       const result = [];
-      let currentTopic = null;
-      let currentTopicId = null;
       let currentMilestone = null;
       let currentDay = 0;
-      let currentTitle = null;
-      let currentOrder = 0;
-      let currentGoal = null;
       let order = 0;
-      let idx = -1;
+      let currentMilestoneId = null;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
-      for (const row of rows) {
-        if (row["topic"] && row["topic"] != currentTopic) {
-          currentTopic = row["topic"];
-          currentTopicId = quizTopics.find(
-            (obj) => obj.topic == currentTopic
-          )._id;
-          currentMilestone = row["milestone"];
-        }
-        if (row["day"] && row["day"] != currentDay) {
-          currentDay = Number(row["day"]);
-          currentTitle = row["title"];
-          currentOrder = 0;
-          idx += 1;
-          result.push({
-            topicId: currentTopicId,
-            milestone: currentMilestone,
-            day: currentDay,
-            title: currentTitle,
-            order: ++order,
-            goals: [],
+
+      const milestonesArray = rows.reduce((acc, row) => {
+        const topic = row.topic.trim();
+        const milestone = row.milestone?.trimEnd();
+        if (milestone.length > 1) {
+          acc.push({
+            milestone: milestone,
+            topicId: quizTopics.find((obj) => obj.topic == topic)._id,
+            description: "7 Days - 15 min/day",
           });
         }
-        currentGoal = {
-          order: ++currentOrder,
-          title: row["goalTitle"],
-          key: row["identifier"],
-          template: row["template"],
-          time: row["time"] || "AI-Assisted - 2 min",
-        };
-        result[idx].goals.push(currentGoal);
+        return acc;
+      }, []);
+      const milestoneDetails = await MilestoneTable.insertMany(milestonesArray);
+      let milestoneIdMap = {};
+      milestoneDetails.forEach((obj) => {
+        milestoneIdMap[obj.milestone] = obj._id;
+      });
+      for (const row of rows) {
+        if (row["milestone"] && row["milestone"] != currentMilestone) {
+          currentMilestoneId = milestoneIdMap[row["milestone"]];
+        }
+
+        if (row["day"] && row["day"] != currentDay) {
+          currentDay = Number(row["day"]);
+          order = 0;
+        }
+        {
+          result.push({
+            milestoneId: currentMilestoneId,
+            day: currentDay,
+            title: row["goalTitle"]?.trimEnd(),
+            key: row["identifier"]?.trimEnd(),
+            order: ++order,
+            time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
+            icon: row["icon"]?.trimEnd() || null,
+            dependency: row["dependency"]?.trimEnd().split(","),
+            template: Number(row["template"]?.trimEnd()),
+          });
+        }
       }
       return result;
     } catch (error) {
@@ -2058,19 +2064,21 @@ class ScriptService {
         let bulkWriteObject = {
           updateOne: {
             filter: {
-              topicId: obj.topicId,
+              milestoneId: obj.milestoneId,
               title: obj.title,
               day: obj.day,
             },
             update: {
               $set: {
-                topicId: obj.topicId,
-                milestone: obj.milestone,
-                title: obj.title,
+                milestoneId: obj.milestoneId,
                 day: obj.day,
+                title: obj.title,
+                key: obj.key,
                 order: obj.order,
-                time: obj.time || "7 Days - 15 min/day",
-                goals: obj.goals,
+                time: obj.time,
+                icon: obj.icon,
+                dependency: obj.dependency,
+                template: obj.template,
               },
             },
             upsert: true,
@@ -2078,7 +2086,7 @@ class ScriptService {
         };
         milestoneContent.push(bulkWriteObject);
       });
-      await MilestoneTable.bulkWrite(milestoneContent);
+      await MilestoneGoalsTable.bulkWrite(milestoneContent);
       return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);

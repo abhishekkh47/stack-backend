@@ -75,22 +75,20 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         },
       },
     },
-    competitors: [
-      {
-        _id: {
-          type: mongoose.Schema.Types.String,
-          required: false,
-        },
-        title: {
-          type: mongoose.Schema.Types.String,
-          required: false,
-        },
-        description: {
-          type: mongoose.Schema.Types.String,
-          required: false,
-        },
+    competitors: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
       },
-    ],
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
     keyDifferentiator: {
       type: mongoose.Schema.Types.String,
       required: false,
@@ -312,18 +310,16 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         },
       },
     ],
-    keyMetrics: [
-      {
-        title: {
-          type: mongoose.Schema.Types.String,
-          required: false,
-        },
-        description: {
-          type: mongoose.Schema.Types.String,
-          required: false,
-        },
+    keyMetrics: {
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
       },
-    ],
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
     valueProposition: {
       title: {
         type: mongoose.Schema.Types.String,
@@ -380,10 +376,17 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       default: 0,
     },
     currentMilestone: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "milestones",
-      required: false,
-      default: null,
+      milestoneId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "milestones",
+        required: false,
+        default: null,
+      },
+      milestoneUpdatedAt: {
+        type: mongoose.Schema.Types.Date,
+        required: false,
+        default: new Date(),
+      },
     },
   },
   { timestamps: true }

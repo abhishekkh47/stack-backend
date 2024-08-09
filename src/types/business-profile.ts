@@ -22,7 +22,7 @@ export interface IBusinessProfile {
   companyName: IBusinessInfo;
   companyLogo: string;
   targetAudience: ITargetAudience;
-  competitors: IBusinessInfo[];
+  competitors: IBusinessInfo;
   keyDifferentiator: string;
   xForY: string;
   headline: string;
@@ -56,13 +56,16 @@ export interface IBusinessProfile {
   businessPreferences: IBusinessPreferences;
   businessHistory: IBusinessHistory[];
   valueProposition: IBusinessInfo;
-  keyMetrics: IBusinessInfo[];
+  keyMetrics: IBusinessInfo;
   marketingChannelStrategy: IBusinessInfo;
   businessModel: IBusinessInfo;
   costStructure: IBusinessInfo;
   unfairAdvantage: IBusinessInfo;
   completedGoal: number;
-  currentMilestone: mongoose.Schema.Types.ObjectId;
+  currentMilestone: {
+    milestoneId: mongoose.Schema.Types.ObjectId;
+    milestoneUpdatedAt: mongoose.Schema.Types.Date;
+  };
 }
 
 export interface ILogoGenerationInfo {

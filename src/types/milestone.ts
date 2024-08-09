@@ -1,19 +1,25 @@
 import mongoose from "mongoose";
 
 export interface IMilestone {
-  milestone: string;
-  title: string;
   topicId: mongoose.Schema.Types.ObjectId;
-  day: number;
-  order: number;
-  time: string;
-  goals: IMilestoneGoals[];
+  milestone: string;
+  description: string;
 }
 
-interface IMilestoneGoals {
-  order: number;
+export interface IMilestoneGoals {
+  milestoneId: mongoose.Schema.Types.ObjectId;
+  day: number;
   title: string;
   key: string;
-  template: number;
+  order: number;
   time: string;
+  icon: string;
+  dependency: string[];
+  template: IInputTemplate;
+}
+
+enum IInputTemplate {
+  "single_choice" = "single_choice",
+  "checkbox" = "checkbox",
+  "free_text" = "free_text",
 }

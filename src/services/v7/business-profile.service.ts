@@ -79,11 +79,7 @@ class BusinessProfileService {
         if (businessProfile && !businessProfile[data.key]) {
           obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
         }
-        if (data.key == "competitors") {
-          obj[data.key] = data.description;
-        } else {
-          obj[data.key] = { title: data.value, description: data.description };
-        }
+        obj[data.key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
         businessHistoryObj = [

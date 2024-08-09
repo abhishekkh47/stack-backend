@@ -21,10 +21,11 @@ import {
   convertDateToTimeZone,
   getDaysBetweenDates,
   DEFAULT_TIMEZONE,
+  getDaysNum,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
-import { UserService } from "@services/v9";
+import { UserService, MilestoneDBService } from "@services/v9";
 class ChecklistDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -504,23 +505,6 @@ class ChecklistDBService {
 
   /**
    * @description get the date difference between today and last updated goals
-   * @param dateToCompare the udpatedAt timestamp of the record
-   * @returns {*}
-   */
-  private getDaysNum(userIfExists, dateToCompare: string) {
-    const firstDate = convertDateToTimeZone(
-      new Date(dateToCompare),
-      userIfExists?.timezone || DEFAULT_TIMEZONE
-    );
-    const secondDate = convertDateToTimeZone(
-      new Date(),
-      userIfExists?.timezone || DEFAULT_TIMEZONE
-    );
-    return getDaysBetweenDates(firstDate, secondDate);
-  }
-
-  /**
-   * @description get the date difference between today and last updated goals
    * @param userIfExists
    * @param goals array of checklist challenges
    * @returns {*}
@@ -581,7 +565,7 @@ class ChecklistDBService {
   ) {
     if (
       availableDailyChallenges &&
-      this.getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
+      getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
     ) {
       const currentDailyGoalsStatus = availableDailyChallenges.dailyGoalStatus;
       const currentLength = currentDailyGoalsStatus.length;
@@ -629,7 +613,7 @@ class ChecklistDBService {
         BusinessProfileTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
 
-      let dateDiff = this.getDaysNum(userIfExists, userIfExists.createdAt);
+      let dateDiff = getDaysNum(userIfExists, userIfExists.createdAt);
       const currentCategory = lastPlayedChallenge
         ? lastPlayedChallenge.categoryId
         : categoryId;
@@ -641,6 +625,11 @@ class ChecklistDBService {
         businessProfileIfExists
       );
       if (currentResponse) return currentResponse;
+
+      const milestones = await MilestoneDBService.getNextMilestone(
+        userIfExists,
+        businessProfileIfExists
+      );
 
       const getAITools = (start: number = 0, numTools: number) => {
         return this.updateChallenges(
@@ -663,7 +652,7 @@ class ChecklistDBService {
         return (
           businessProfileIfExists?.valueProposition &&
           businessProfileIfExists?.unfairAdvantage &&
-          businessProfileIfExists?.marketingStrategy
+          businessProfileIfExists?.marketingChannelStrategy
         );
       };
       const areDay3AIToolsCompleted = () => {
@@ -673,6 +662,15 @@ class ChecklistDBService {
           businessProfileIfExists?.costStructure
         );
       };
+
+      milestones.tasks[0].data.push(
+        ...(await this.getNextChallenges(userIfExists, currentCategory, 2))
+      );
+      return milestones;
+      // return [
+      //   ...milestones,
+      //   ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+      // ];
 
       if (dateDiff < 1) {
         response = [
@@ -776,7 +774,7 @@ class ChecklistDBService {
           (await this.checkActiveCategory(nextLevel.categoryId))
         ) {
           todayChallenges.push({
-            id: nextLevel._id,
+            _id: nextLevel._id,
             title: `Level ${nextLevel.level}: ${nextLevel.title}`,
             key: "challenges",
             time: "6 min",
