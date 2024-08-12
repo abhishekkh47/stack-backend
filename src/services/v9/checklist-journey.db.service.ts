@@ -626,11 +626,6 @@ class ChecklistDBService {
       );
       if (currentResponse) return currentResponse;
 
-      const milestones = await MilestoneDBService.getNextMilestone(
-        userIfExists,
-        businessProfileIfExists
-      );
-
       const getAITools = (start: number = 0, numTools: number) => {
         return this.updateChallenges(
           DAILY_GOALS.slice(start, numTools),
@@ -662,15 +657,6 @@ class ChecklistDBService {
           businessProfileIfExists?.costStructure
         );
       };
-
-      milestones.tasks[0].data.push(
-        ...(await this.getNextChallenges(userIfExists, currentCategory, 2))
-      );
-      return milestones;
-      // return [
-      //   ...milestones,
-      //   ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
-      // ];
 
       if (dateDiff < 1) {
         response = [
@@ -751,6 +737,7 @@ class ChecklistDBService {
         levelIndex: number
       ) => ({
         id: challenges.levels[levelIndex]._id,
+        _id: challenges.levels[levelIndex]._id, // need to check with FE about which one to be used
         title: `Level ${level}: ${challenges.levels[levelIndex].title}`,
         key: "challenges",
         time: "6 min",

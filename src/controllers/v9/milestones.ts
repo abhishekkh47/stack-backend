@@ -1,5 +1,5 @@
 import { Auth } from "@app/middleware";
-import { UserTable } from "@app/model";
+import { BusinessProfileTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import BaseController from "../base";
@@ -43,6 +43,55 @@ class MilestoneController extends BaseController {
     return this.Ok(ctx, {
       data: milestoneGoals,
     });
+  }
+
+  /**
+   * @description This is to select and update the current milestones
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/select-milestone", method: HttpMethod.POST })
+  @Auth()
+  public async selectMilestone(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    let obj = {
+      currentMilestone: {
+        milestoneId: body.milestoneId,
+        milestoneUpdatedAt: new Date().toISOString(),
+      },
+    };
+    await BusinessProfileTable.findOneAndUpdate(
+      { userId: user.Id },
+      { $set: obj }
+    );
+    return this.Ok(ctx, { message: "success" });
+  }
+
+  /**
+   * @description This is to select and update the current milestones
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-daily-milestone", method: HttpMethod.GET })
+  @Auth()
+  public async getUserMilestoneGoals(ctx: any) {
+    const { user, body } = ctx.request;
+    const [userExists, businessProfile] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }),
+    ]);
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const goals = await MilestoneDBService.getCurrentMilestoneGoals(
+      userExists,
+      businessProfile
+    );
+    return this.Ok(ctx, { data: goals });
   }
 }
 

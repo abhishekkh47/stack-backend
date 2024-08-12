@@ -13,9 +13,12 @@ class MilestoneDBService {
    */
   public async getMilestones() {
     try {
-      const milestones = await MilestoneTable.find({
-        order: { $lte: 5 },
-      })
+      const milestones = await MilestoneTable.find(
+        {
+          order: { $lte: 5 },
+        },
+        { _id: 1, title: "$milestone", topicId: 1, time: "$description" }
+      )
         .sort({ order: 1 })
         .lean();
       return milestones;
@@ -28,134 +31,11 @@ class MilestoneDBService {
   }
 
   /**
-   * @description get next milestone
-   * @param userIfExists
+   * @description get milestones goals based on milestoneId
+   * @param milestoneId
    * @returns {*}
    */
-  public async getNextMilestone(
-    userIfExists: any,
-    businessProfileIfExists: any
-  ) {
-    try {
-      const [lastMilestoneCompleted, milestones] = await Promise.all([
-        MilestoneResultTable.find({
-          userId: userIfExists._id,
-        })
-          .sort({ updatedAt: -1 })
-          .lean(),
-        MilestoneTable.find({ order: { $lte: 5 } })
-          .sort({ order: 1 })
-          .lean(),
-      ]);
-      if (!lastMilestoneCompleted.length) {
-        const initialMilestone = await MilestoneTable.findOne({
-          milestone: DEFAULT_MILESTONE,
-        });
-        const currentDate = new Date().toISOString();
-        const updateObj = {
-          milestoneId: initialMilestone._id,
-          milestoneUpdatedAt: currentDate,
-        };
-        const [businessProfile, initialGoals] = await Promise.all([
-          BusinessProfileTable.findOneAndUpdate(
-            { userId: userIfExists._id },
-            { $set: updateObj },
-            { new: true }
-          ),
-          MilestoneGoalsTable.find({
-            milestoneId: initialMilestone._id,
-          })
-            .sort({ order: 1 })
-            .lean(),
-        ]);
-        return this.formatMilestones(
-          userIfExists,
-          businessProfile,
-          initialGoals
-        );
-        // return this.getFlattendMilestoneArray(milestones[0]);
-      }
-      const ifNextGoalAvailable = await this.checkNextDayMilestone(
-        lastMilestoneCompleted
-      );
-      return this.formatMilestones(
-        businessProfileIfExists,
-        ifNextGoalAvailable,
-        milestones
-      );
-    } catch (error) {
-      throw new NetworkError(
-        "Error occurred while retrieving coach profile",
-        400
-      );
-    }
-  }
-
-  private getFlattendMilestoneArray(milestones: any) {
-    const { goals, _id, createdAt, updatedAt, ...parentFields } = milestones;
-    const flattenedArray = goals.map((goal) => {
-      const { _id: goalId, title, ...goalFields } = goal;
-      return {
-        ...parentFields,
-        goalTitle: title,
-        ...goalFields,
-      };
-    });
-    return flattenedArray;
-  }
-
-  private async formatMilestones(
-    userIfExists: any,
-    businessProfile: any,
-    milestones: any
-  ) {
-    let response = null;
-    const lastUpdated = businessProfile.currentMilestone.milestoneUpdatedAt;
-    const dateDiff = getDaysNum(userIfExists, lastUpdated);
-
-    response = {
-      isMilestoneHit: false,
-      tasks: [
-        { title: "Goals of the day", data: [] },
-        { title: "Completed", data: [] },
-      ],
-    };
-    milestones.forEach((milestone) => {
-      if (businessProfile[milestone.key]) {
-        milestone["isCompleted"] = true;
-        milestone["isLocked"] = false;
-        response.tasks[1].data.push(milestone);
-      } else {
-        milestone["isCompleted"] = false;
-        milestone["isLocked"] = false;
-        response.tasks[0].data.push(milestone);
-      }
-    });
-
-    return response;
-  }
-
-  private async checkNextDayMilestone(lastGoalCompleted) {
-    try {
-      const { day, milestoneId } = lastGoalCompleted;
-      let nextDayGoalData = null;
-      const milestoneGoals = await MilestoneGoalsTable.find({ milestoneId });
-      // order=1 on next day
-      if (!nextDayGoalData) {
-        nextDayGoalData = milestoneGoals.find(
-          (item) => item.order == 1 && item.day == day + 1
-        );
-      }
-      return nextDayGoalData;
-    } catch (error) {
-      throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
-        400
-      );
-    }
-  }
-
-  public async getMilestoneGoals(milestoneId) {
+  public async getMilestoneGoals(milestoneId: any) {
     const [milestoneData, milestoneGoals] = await Promise.all([
       MilestoneTable.findOne({ _id: milestoneId }),
       MilestoneGoalsTable.find({ milestoneId }).lean(),
@@ -182,6 +62,218 @@ class MilestoneDBService {
       title: milestoneData.milestone,
       data: aggregatedGoals,
     };
+  }
+
+  /**
+   * @description get current goals
+   * @param userIfExists
+   * @param businessProfile
+   * @returns {*}
+   */
+  public async getCurrentMilestoneGoals(
+    userIfExists: any,
+    businessProfile: any
+  ) {
+    try {
+      const [lastMilestoneCompleted, defaultMilestone] = await Promise.all([
+        MilestoneResultTable.find({
+          userId: userIfExists._id,
+        })
+          .sort({ updatedAt: -1 })
+          .lean(),
+        MilestoneTable.findOne({
+          milestone: DEFAULT_MILESTONE,
+        }).then((doc) => doc?._id),
+      ]);
+      // when user signup/login after updating app on day-1, return day-1 goals of default Milestone
+      if (
+        lastMilestoneCompleted.length === 0 ||
+        !businessProfile.currentMilestone?.milestoneId
+      ) {
+        return await this.getFirstDayMilestoneGoals(userIfExists);
+      } else if (
+        businessProfile.currentMilestone?.milestoneId &&
+        (businessProfile.currentMilestone?.milestoneId).toString() ==
+          defaultMilestone.toString()
+      ) {
+        return await this.checkDefaultMilestoneStatus(
+          userIfExists,
+          businessProfile,
+          defaultMilestone
+        );
+      }
+      return await this.getNextDayMilestone(userIfExists, businessProfile);
+    } catch (error) {
+      throw new NetworkError("Error occurred while retrieving milestones", 400);
+    }
+  }
+
+  /**
+   * @description get current goals
+   * @param userIfExists
+   * @param businessProfile
+   * @param milestones goals array of current milestone
+   * @param isMilestoneHit if all goals of current milestone are hit or not
+   * @returns {*}
+   */
+  private formatMilestones(
+    userIfExists: any,
+    businessProfile: any,
+    milestones: any,
+    isMilestoneHit: boolean = false
+  ) {
+    let response = null;
+    const lastUpdated =
+      businessProfile?.currentMilestone?.milestoneUpdatedAt ||
+      new Date().toISOString();
+    const dateDiff = getDaysNum(userIfExists, lastUpdated);
+    response = {
+      isMilestoneHit,
+      tasks: [
+        { title: "Goals of the day", data: [] },
+        { title: "Completed", data: [] },
+      ],
+    };
+    milestones.forEach((milestone) => {
+      if (milestone.key == "ideaValidation" || milestone.key == "description") {
+        if (businessProfile.description) {
+          if (dateDiff < milestone.day) {
+            milestone["isCompleted"] = true;
+            milestone["isLocked"] = false;
+            response.tasks[1].data.push(milestone);
+          }
+        } else {
+          milestone["isCompleted"] = false;
+          milestone["isLocked"] = false;
+          response.tasks[0].data.push(milestone);
+        }
+      } else if (
+        businessProfile[milestone.key] &&
+        (businessProfile[milestone.key].title ||
+          businessProfile[milestone.key].length)
+      ) {
+        if (dateDiff < milestone.day) {
+          milestone["isCompleted"] = true;
+          milestone["isLocked"] = false;
+          response.tasks[1].data.push(milestone);
+        }
+      } else {
+        milestone["isCompleted"] = false;
+        milestone["isLocked"] = false;
+        response.tasks[0].data.push(milestone);
+      }
+    });
+
+    return response;
+  }
+
+  /**
+   * @description get day-1 goals of defualt milestone
+   * @param userIfExists
+   * @returns {*}
+   */
+  public async getFirstDayMilestoneGoals(userIfExists) {
+    const initialMilestone = (
+      await MilestoneTable.findOne({
+        milestone: DEFAULT_MILESTONE,
+      })
+    )._id;
+    const currentDate = new Date().toISOString();
+    const updateObj = {
+      currentMilestone: {
+        milestoneId: initialMilestone._id,
+        milestoneUpdatedAt: currentDate,
+      },
+    };
+    const [businessProfile, initialGoals] = await Promise.all([
+      BusinessProfileTable.findOneAndUpdate(
+        { userId: userIfExists._id },
+        { $set: updateObj },
+        { new: true }
+      ),
+      MilestoneGoalsTable.find({
+        milestoneId: initialMilestone._id,
+        day: 1,
+      })
+        .sort({ order: 1 })
+        .lean(),
+    ]);
+    return this.formatMilestones(userIfExists, businessProfile, initialGoals);
+  }
+
+  /**
+   * @description get day-1 goals of defualt milestone
+   * @param userIfExists
+   * @param businessProfile
+   * @param milestoneId
+   * @returns {*}
+   */
+  public async checkDefaultMilestoneStatus(
+    userIfExists: any,
+    businessProfile: any,
+    milestoneId: any
+  ) {
+    let isMilestoneHit = false;
+    const milestoneUpdatedAt =
+      businessProfile.currentMilestone.milestoneUpdatedAt;
+    const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
+    const initialGoals = await MilestoneGoalsTable.find({
+      milestoneId,
+      day: { $lte: daysNum + 1 },
+    })
+      .sort({ day: 1, order: 1 })
+      .lean();
+    if (!initialGoals.length) {
+      isMilestoneHit = true;
+    }
+    return this.formatMilestones(
+      userIfExists,
+      businessProfile,
+      initialGoals,
+      isMilestoneHit
+    );
+  }
+
+  private async getNextDayMilestone(userIfExists: any, businessProfile: any) {
+    try {
+      let filteredGoals = [];
+      const { milestoneId, milestoneUpdatedAt } =
+        businessProfile.currentMilestone;
+      const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
+      const [currentMilestoneGoals, lastMilestoneCompleted] = await Promise.all(
+        [
+          MilestoneGoalsTable.find({
+            milestoneId,
+          })
+            .sort({ day: 1, order: 1 })
+            .lean(),
+          MilestoneResultTable.find({
+            userId: businessProfile.userId,
+            milestoneId,
+          })
+            .sort({ day: -1, order: -1 })
+            .limit(1)
+            .lean()[0],
+        ]
+      );
+
+      if (!lastMilestoneCompleted) {
+        filteredGoals = currentMilestoneGoals.filter(
+          (goal) => goal.day <= daysNum + 1
+        );
+      }
+      return this.formatMilestones(
+        userIfExists,
+        businessProfile,
+        filteredGoals
+      );
+    } catch (error) {
+      console.log("ERROR : ", error);
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
   }
 }
 export default new MilestoneDBService();
