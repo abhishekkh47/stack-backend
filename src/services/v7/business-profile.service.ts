@@ -62,7 +62,10 @@ class BusinessProfileService {
             timestamp: Date.now(),
           });
         }
-        if (businessProfile && !businessProfile?.description) {
+        if (
+          !businessProfile ||
+          (businessProfile && !businessProfile?.description)
+        ) {
           obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
         }
         obj["idea"] = latestSelection.idea;
@@ -76,7 +79,12 @@ class BusinessProfileService {
         obj["idea"] = data.value;
         obj["description"] = data.description;
       } else {
-        if (businessProfile && !businessProfile[data.key]) {
+        if (
+          businessProfile &&
+          (!businessProfile[data.key] ||
+            (!businessProfile[data.key].title &&
+              !businessProfile[data.key].length))
+        ) {
           obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
         }
         obj[data.key] = { title: data.value, description: data.description };
@@ -564,6 +572,7 @@ class BusinessProfileService {
           hoursSaved: 1,
           businessCoachInfo: 1,
           enableStealthMode: 1,
+          completedGoal: 1,
         },
       },
     ]).exec();

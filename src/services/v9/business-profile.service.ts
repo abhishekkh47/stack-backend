@@ -31,6 +31,7 @@ class BusinessProfileService {
    * @param key
    * @param userBusinessProfile
    * @param idea user input to generate business logo
+   * @param deductRetryFuel
    * @returns {*}
    */
   public async generateAISuggestions(
@@ -38,7 +39,8 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 1
+    type: number = 1,
+    deductRetryFuel: boolean = false
   ) {
     try {
       if (!idea) {
@@ -50,7 +52,8 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       const prompt = this.getUserPrompt(userBusinessProfile, key, idea);
-      let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
+      let systemInput: any = (await AIToolDataSetTable.findOne({ key }).lean())
+        .data;
       if (key == "companyName") {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
       } else if (key == "keyMetrics") {
@@ -85,6 +88,8 @@ class BusinessProfileService {
         throw new Error("Please add your target audience and try again!");
       }
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+    } finally {
+      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 
@@ -624,7 +629,7 @@ class BusinessProfileService {
         ),
         UserTable.findOneAndUpdate(
           { _id: userExists._id },
-          { $set: { quizCoins: DEDUCT_RETRY_FUEL } },
+          { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
           { upsert: true, new: true }
         ),
       ]);

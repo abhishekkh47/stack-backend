@@ -2010,9 +2010,9 @@ class ScriptService {
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
-        const topic = row.topic.trim();
+        const topic = row.topic?.trimEnd();
         const milestone = row.milestone?.trimEnd();
-        if (milestone.length > 1) {
+        if (milestone?.length > 1) {
           acc.push({
             milestone: milestone,
             topicId: quizTopics.find((obj) => obj.topic == topic)._id,
@@ -2068,18 +2068,22 @@ class ScriptService {
             key: row["identifier"]?.trimEnd(),
             order: ++order,
             time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
-            icon: row["icon"]?.trimEnd() || null,
+            iconImage: row["icon"]?.trimEnd() || null,
+            iconBackgroundColor: row["iconBackgroundColor"]?.trimEnd() || null,
             dependency: row["dependency"]?.trimEnd().split(","),
             template: Number(row["template"]?.trimEnd()),
-            options: optionCount
-              ? { title: row["optionHeading"]?.trimEnd(), option: [] }
+            inputTemplate: optionCount
+              ? {
+                  optionScreenTitle: row["optionHeading"]?.trimEnd(),
+                  options: [],
+                }
               : null,
           });
         }
         if (row["optionTitle"]) {
-          result[currentIndex].options.option.push({
+          result[currentIndex].inputTemplate.options.push({
             title: row["optionTitle"]?.trimEnd(),
-            description: row["optionDescription"]?.trimEnd(),
+            description: row["optionDescription"]?.trimEnd() || null,
             type: Number(row["optionType"]?.trimEnd()),
             image: row["optionIcon"]?.trimEnd() || null,
           });
@@ -2115,10 +2119,11 @@ class ScriptService {
                 key: obj.key,
                 order: obj.order,
                 time: obj.time,
-                icon: obj.icon,
+                iconImage: obj.iconImage,
+                iconBackgroundColor: obj.iconBackgroundColor,
                 dependency: obj.dependency,
                 template: obj.template,
-                options: obj.options,
+                inputTemplate: obj.inputTemplate,
               },
             },
             upsert: true,

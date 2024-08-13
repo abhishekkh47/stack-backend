@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-import type { IMilestoneGoals, MongooseModel } from "@app/types";
+import { IMilestoneGoals, EInputTemplate, MongooseModel } from "@app/types";
 
 export type IMilestoneGoalsSchema = MongooseModel<IMilestoneGoals> &
   mongoose.Document;
@@ -23,7 +23,12 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       required: true,
       default: null,
     },
-    icon: {
+    iconImage: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    iconBackgroundColor: {
       type: mongoose.Schema.Types.String,
       required: true,
       default: null,
@@ -44,9 +49,14 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       default: null,
     },
     template: {
-      type: mongoose.Schema.Types.String,
+      type: mongoose.Schema.Types.Number,
       required: true,
-      default: null,
+      isIn: [
+        EInputTemplate.CHECKBOX,
+        EInputTemplate.SINGLE_CHOICE,
+        EInputTemplate.FREETEXT,
+      ],
+      default: 1,
     },
     dependency: [
       {
@@ -55,13 +65,13 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
         default: null,
       },
     ],
-    options: {
-      title: {
+    inputTemplate: {
+      optionScreenTitle: {
         type: mongoose.Schema.Types.String,
         required: true,
         default: null,
       },
-      option: [
+      options: [
         {
           title: {
             type: mongoose.Schema.Types.String,

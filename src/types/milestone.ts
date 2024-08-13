@@ -13,21 +13,22 @@ export interface IMilestoneGoals {
   key: string;
   order: number;
   time: string;
-  icon: string;
+  iconImage: string;
   dependency: string[];
-  template: EInputTemplate;
-  options: IMilestoneGoalOptions;
+  template: number;
+  iconBackgroundColor: string;
+  inputTemplate: IMilestoneGoalOptions;
 }
 
-enum EInputTemplate {
-  "single_choice" = "single_choice",
-  "checkbox" = "checkbox",
-  "free_text" = "free_text",
+export enum EInputTemplate {
+  SINGLE_CHOICE = 1,
+  CHECKBOX = 2,
+  FREETEXT = 3,
 }
 
 interface IMilestoneGoalOptions {
-  title: string;
-  option: IGoalOptions[];
+  optionScreenTitle: string;
+  options: IGoalOptions[];
 }
 
 interface IGoalOptions {

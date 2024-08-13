@@ -5,7 +5,7 @@ export interface IDailyChallenge {
   dailyGoalStatus: ICurrentDayChallenge[];
 }
 
-interface ICurrentDayChallenge {
+interface ICurrentDayChallenge_ {
   id: string;
   title: string;
   key: string;
@@ -14,18 +14,32 @@ interface ICurrentDayChallenge {
   categoryId: mongoose.Schema.Types.ObjectId;
 }
 
-interface ICurrentDayChallenge_ {
+interface ICurrentDayChallenge {
   id: string;
-  _id: mongoose.Schema.Types.ObjectId;
-  title: string;
+  _id: string;
   day: number;
   milestoneId: mongoose.Schema.Types.ObjectId;
+  title: string;
+  dependency: string[];
+  iconBackgroundColor: string;
+  inputTemplate: IMilestoneGoalOptions;
   key: string;
-  icon: string;
   order: number;
+  template: number;
   time: string;
-  isCompleted: boolean;
+  iconImage: string;
   isLocked: boolean;
-  template: mongoose.Schema.Types.Mixed;
-  categoryId: mongoose.Schema.Types.ObjectId;
+  isCompleted: boolean;
+}
+
+interface IMilestoneGoalOptions {
+  optionScreenTitle: string;
+  options: IGoalOptions[];
+}
+
+interface IGoalOptions {
+  title: string;
+  description: string;
+  type: number;
+  image: string;
 }
