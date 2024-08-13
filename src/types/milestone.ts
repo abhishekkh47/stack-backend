@@ -15,11 +15,24 @@ export interface IMilestoneGoals {
   time: string;
   icon: string;
   dependency: string[];
-  template: IInputTemplate;
+  template: EInputTemplate;
+  options: IMilestoneGoalOptions;
 }
 
-enum IInputTemplate {
+enum EInputTemplate {
   "single_choice" = "single_choice",
   "checkbox" = "checkbox",
   "free_text" = "free_text",
+}
+
+interface IMilestoneGoalOptions {
+  title: string;
+  option: IGoalOptions[];
+}
+
+interface IGoalOptions {
+  title: string;
+  description: string;
+  type: number;
+  image: string;
 }

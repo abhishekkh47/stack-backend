@@ -55,6 +55,37 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
         default: null,
       },
     ],
+    options: {
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: true,
+        default: null,
+      },
+      option: [
+        {
+          title: {
+            type: mongoose.Schema.Types.String,
+            required: true,
+            default: null,
+          },
+          description: {
+            type: mongoose.Schema.Types.String,
+            required: true,
+            default: null,
+          },
+          type: {
+            type: mongoose.Schema.Types.Number,
+            required: true,
+            default: null,
+          },
+          image: {
+            type: mongoose.Schema.Types.String,
+            required: true,
+            default: null,
+          },
+        },
+      ],
+    },
   },
   { timestamps: true }
 );

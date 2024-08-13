@@ -2000,10 +2000,13 @@ class ScriptService {
   public async convertMilestoneDatasetSheetToJSON(rows: any) {
     try {
       const result = [];
+      let milestoneContent = [];
       let currentMilestone = null;
       let currentDay = 0;
       let order = 0;
       let currentMilestoneId = null;
+      let currentIndex = -1;
+      let currentIdentifier = null;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2018,7 +2021,27 @@ class ScriptService {
         }
         return acc;
       }, []);
-      const milestoneDetails = await MilestoneTable.insertMany(milestonesArray);
+      milestonesArray.forEach((goal) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              milestone: goal.milestone,
+              topicId: goal.topicId,
+            },
+            update: {
+              $set: {
+                milestone: goal.milestone,
+                topicId: goal.topicId,
+                description: "7 Days - 15 min/day",
+              },
+            },
+            upsert: true,
+          },
+        };
+        milestoneContent.push(bulkWriteObject);
+      });
+      await MilestoneTable.bulkWrite(milestoneContent);
+      const milestoneDetails = await MilestoneTable.find();
       let milestoneIdMap = {};
       milestoneDetails.forEach((obj) => {
         milestoneIdMap[obj.milestone] = obj._id;
@@ -2032,7 +2055,12 @@ class ScriptService {
           currentDay = Number(row["day"]);
           order = 0;
         }
-        {
+        const optionCount = Number(row["options"]?.trimEnd()) || null;
+        if (
+          row["identifier"] &&
+          currentIdentifier != row["identifier"]?.trimEnd()
+        ) {
+          currentIndex++;
           result.push({
             milestoneId: currentMilestoneId,
             day: currentDay,
@@ -2043,6 +2071,17 @@ class ScriptService {
             icon: row["icon"]?.trimEnd() || null,
             dependency: row["dependency"]?.trimEnd().split(","),
             template: Number(row["template"]?.trimEnd()),
+            options: optionCount
+              ? { title: row["optionHeading"]?.trimEnd(), option: [] }
+              : null,
+          });
+        }
+        if (row["optionTitle"]) {
+          result[currentIndex].options.option.push({
+            title: row["optionTitle"]?.trimEnd(),
+            description: row["optionDescription"]?.trimEnd(),
+            type: Number(row["optionType"]?.trimEnd()),
+            image: row["optionIcon"]?.trimEnd() || null,
           });
         }
       }
@@ -2079,6 +2118,7 @@ class ScriptService {
                 icon: obj.icon,
                 dependency: obj.dependency,
                 template: obj.template,
+                options: obj.options,
               },
             },
             upsert: true,
