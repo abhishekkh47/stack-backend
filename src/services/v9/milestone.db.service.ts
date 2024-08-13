@@ -139,12 +139,10 @@ class MilestoneDBService {
         if (businessProfile.description) {
           if (dateDiff < milestone.day) {
             milestone["isCompleted"] = true;
-            milestone["isLocked"] = false;
             response.tasks[1].data.push(milestone);
           }
         } else {
           milestone["isCompleted"] = false;
-          milestone["isLocked"] = false;
           response.tasks[0].data.push(milestone);
         }
       } else if (
@@ -154,12 +152,10 @@ class MilestoneDBService {
       ) {
         if (dateDiff < milestone.day) {
           milestone["isCompleted"] = true;
-          milestone["isLocked"] = false;
           response.tasks[1].data.push(milestone);
         }
       } else {
         milestone["isCompleted"] = false;
-        milestone["isLocked"] = false;
         response.tasks[0].data.push(milestone);
       }
     });
@@ -198,7 +194,17 @@ class MilestoneDBService {
         .sort({ order: 1 })
         .lean(),
     ]);
-    return this.formatMilestones(userIfExists, businessProfile, initialGoals);
+    const updatedGoals = initialGoals.map((goal) => {
+      const isLocked = goal?.dependency?.some((dependencyKey) => {
+        return !businessProfile[dependencyKey];
+      });
+
+      return {
+        ...goal,
+        isLocked, // add isLocked key to the object
+      };
+    });
+    return this.formatMilestones(userIfExists, businessProfile, updatedGoals);
   }
 
   /**
@@ -213,25 +219,39 @@ class MilestoneDBService {
     businessProfile: any,
     milestoneId: any
   ) {
-    let isMilestoneHit = false;
-    const milestoneUpdatedAt =
-      businessProfile.currentMilestone.milestoneUpdatedAt;
-    const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
-    const initialGoals = await MilestoneGoalsTable.find({
-      milestoneId,
-      day: { $lte: daysNum + 1 },
-    })
-      .sort({ day: 1, order: 1 })
-      .lean();
-    if (!initialGoals.length) {
-      isMilestoneHit = true;
+    try {
+      let isMilestoneHit = false;
+      const milestoneUpdatedAt =
+        businessProfile.currentMilestone.milestoneUpdatedAt;
+      const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
+      const initialGoals = await MilestoneGoalsTable.find({
+        milestoneId,
+        day: { $lte: daysNum + 1 },
+      })
+        .sort({ day: 1, order: 1 })
+        .lean();
+      if (!initialGoals.length) {
+        isMilestoneHit = true;
+      }
+      const updatedGoals = initialGoals.map((goal) => {
+        const isLocked = goal?.dependency?.some((dependencyKey) => {
+          return !businessProfile[dependencyKey];
+        });
+
+        return {
+          ...goal,
+          isLocked, // add isLocked key to the object
+        };
+      });
+      return this.formatMilestones(
+        userIfExists,
+        businessProfile,
+        updatedGoals,
+        isMilestoneHit
+      );
+    } catch (error) {
+      throw new NetworkError("Error occurred while retrieving milestones", 400);
     }
-    return this.formatMilestones(
-      userIfExists,
-      businessProfile,
-      initialGoals,
-      isMilestoneHit
-    );
   }
 
   private async getNextDayMilestone(userIfExists: any, businessProfile: any) {
@@ -262,13 +282,18 @@ class MilestoneDBService {
           (goal) => goal.day <= daysNum + 1
         );
       }
-      return this.formatMilestones(
-        userIfExists,
-        businessProfile,
-        filteredGoals
-      );
+      const updatedGoals = filteredGoals.map((goal) => {
+        const isLocked = goal?.dependency?.some(
+          (dependencyKey) => !businessProfile[dependencyKey]
+        );
+
+        return {
+          ...goal,
+          isLocked, // add isLocked key to the object
+        };
+      });
+      return this.formatMilestones(userIfExists, businessProfile, updatedGoals);
     } catch (error) {
-      console.log("ERROR : ", error);
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
         400
