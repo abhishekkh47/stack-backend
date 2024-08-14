@@ -866,3 +866,46 @@ export const BUSINESS_IDEA_IMAGES = {
 };
 
 export const DEFAULT_MILESTONE = "Foundations of Successful Company Building";
+
+const StepStatus = {
+  STARTED: 1,
+  NOT_STARTED: 0,
+};
+
+export const IDEA_VALIDATION_STEPS = [
+  {
+    stepName: "Reviewing your business idea",
+    stepStatus: StepStatus.STARTED,
+    value: 100,
+  },
+  {
+    stepName: "Comparing 1000’s of funded startups",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Assessing market demand",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Refining your unique selling point",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Evaluating potential risks & threats",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Optimizing market opportunity",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Maximizing your business concept",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+];

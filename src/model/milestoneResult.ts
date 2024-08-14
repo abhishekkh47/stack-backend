@@ -13,12 +13,6 @@ const schema = new mongoose.Schema<IMilestoneResultSchema>(
       required: true,
       default: null,
     },
-    topicId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "quiztopics",
-      required: true,
-      default: null,
-    },
     milestoneId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "milestones",
@@ -40,7 +34,7 @@ const schema = new mongoose.Schema<IMilestoneResultSchema>(
       required: true,
       default: null,
     },
-    identifier: {
+    key: {
       type: mongoose.Schema.Types.String,
       required: true,
       default: null,

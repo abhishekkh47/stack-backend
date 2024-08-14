@@ -65,7 +65,7 @@ class MilestoneController extends BaseController {
       },
     };
     await BusinessProfileTable.findOneAndUpdate(
-      { userId: user.Id },
+      { userId: user._id },
       { $set: obj }
     );
     return this.Ok(ctx, { message: "success" });

@@ -2303,6 +2303,30 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is used to import screen copy for all milestones goals
+   * @param ctx
+   */
+  @Route({ path: "/import-suggestion-screen-copy", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importSuggestionScreenCopy(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.SUGGESTION_SCREEN_COPY_GID,
+        envData.ACTION_SCREEN_COPY_SHEET_ID
+      );
+      if (rows.length === 0) {
+        return this.BadRequest(ctx, "No Milestones to import");
+      }
+      const screenCopyData =
+        await ScriptService.convertSuggestionScreenDataToJSON(rows);
+      await ScriptService.addSuggestionScreenDataToDB(screenCopyData);
+      return this.Ok(ctx, { message: "Success", data: screenCopyData });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();

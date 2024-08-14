@@ -30,6 +30,7 @@ import {
   AI_TOOLS_ANALYTICS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
+import { MilestoneDBService } from "@app/services/v9";
 import moment from "moment";
 
 class BusinessProfileService {
@@ -102,6 +103,9 @@ class BusinessProfileService {
           { "Item Name": data.value },
           { user_id: userIfExists._id }
         );
+      }
+      if (data.goalId) {
+        MilestoneDBService.saveMilestoneGoalResults(userIfExists, data.goalId);
       }
       await BusinessProfileTable.findOneAndUpdate(
         {

@@ -43,7 +43,7 @@ class MilestoneDBService {
       ]);
       const updatedMilestones = milestones.map((goal) => {
         const isCompleted = milestoneResults.some(
-          (res) => res.milestoneId === goal._id
+          (res) => res.milestoneId.toString() == goal._id.toString()
         );
         return { ...goal, isCompleted };
       });
@@ -98,18 +98,14 @@ class MilestoneDBService {
     businessProfile: any
   ) {
     try {
-      const [availableChallenges, lastMilestoneCompleted, defaultMilestone] =
-        await Promise.all([
-          MilestoneResultTable.find({
-            userId: userIfExists._id,
-          })
-            .sort({ updatedAt: -1 })
-            .lean(),
-          MilestoneTable.findOne({
-            milestone: DEFAULT_MILESTONE,
-          }).then((doc) => doc?._id),
-          DailyChallengeTable.find({ userId: userIfExists._id }),
-        ]);
+      const [lastMilestoneCompleted, defaultMilestone] = await Promise.all([
+        MilestoneResultTable.find({
+          userId: userIfExists._id,
+        })
+          .sort({ updatedAt: -1 })
+          .lean(),
+        DailyChallengeTable.find({ userId: userIfExists._id }),
+      ]);
 
       // when user signup/login after updating app on day-1, return day-1 goals of default Milestone
       if (
@@ -140,6 +136,7 @@ class MilestoneDBService {
    * @param businessProfile
    * @param milestones goals array of current milestone
    * @param isMilestoneHit if all goals of current milestone are hit or not
+   * @param daysInCurrentMilestone total number of days in current milestone
    * @returns {*}
    */
   private formatMilestones(
@@ -191,13 +188,15 @@ class MilestoneDBService {
           response.tasks[0].data.push(milestone);
         }
       });
-      if (!response.tasks[0].data.length) {
-        response.tasks.shift();
-        isMilestoneHit = response.tasks[0].data.some(
+      if (!response?.tasks[0]?.data?.length) {
+        isMilestoneHit = response?.tasks[1]?.data.some(
           (obj) => obj.day == daysInCurrentMilestone
         );
-      }
-      if (!response.tasks[1].data.length) {
+        response.isMilestoneHit = isMilestoneHit;
+        if (isMilestoneHit) {
+          response.tasks.shift();
+        }
+      } else if (!response?.tasks[1]?.data.length) {
         response.tasks.pop();
       }
 
@@ -290,36 +289,25 @@ class MilestoneDBService {
     }
   }
 
+  /**
+   * @description this method will fetch the next available milestone goals
+   * @param userIfExists
+   * @param businessProfile
+   * @returns prompt
+   */
   private async getNextDayMilestone(userIfExists: any, businessProfile: any) {
     try {
-      let filteredGoals = [],
-        isMilestoneHit = false;
+      let isMilestoneHit = false;
       const { milestoneId, milestoneUpdatedAt } =
         businessProfile.currentMilestone;
       const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
-      const [currentMilestoneGoals, lastMilestoneCompleted] = await Promise.all(
-        [
-          MilestoneGoalsTable.find({
-            milestoneId,
-            day: { $lte: daysNum + 1 },
-          })
-            .sort({ day: 1, order: 1 })
-            .lean(),
-          MilestoneResultTable.find({
-            userId: businessProfile.userId,
-            milestoneId,
-          })
-            .sort({ day: -1, order: -1 })
-            .limit(1)
-            .lean()[0],
-        ]
-      );
+      const currentMilestoneGoals = await MilestoneGoalsTable.find({
+        milestoneId,
+        day: { $lte: daysNum + 1 },
+      })
+        .sort({ day: 1, order: 1 })
+        .lean();
 
-      // if (!lastMilestoneCompleted) {
-      //   filteredGoals = currentMilestoneGoals.filter(
-      //     (goal) => goal.day <= daysNum + 1
-      //   );
-      // }
       const updatedGoals = this.setLockedGoals(
         currentMilestoneGoals,
         businessProfile
@@ -341,20 +329,52 @@ class MilestoneDBService {
     }
   }
 
+  /**
+   * @description this method will set the isLocked status for each goal based on their dependency
+   * @param goals array of milestone goals
+   * @param businessProfile
+   * @returns prompt
+   */
   private setLockedGoals(goals: any, businessProfile: any) {
     return goals?.map((goal) => {
-      const isLocked = !goal?.dependency?.every(
-        (dependencyKey) =>
-          businessProfile &&
-          businessProfile[dependencyKey] &&
-          (businessProfile[dependencyKey].title ||
-            businessProfile[dependencyKey].length)
-      );
+      const isLocked =
+        !goal?.dependency || (goal?.dependency && !goal?.dependency.length)
+          ? false
+          : !goal?.dependency?.every(
+              (dependencyKey) =>
+                businessProfile &&
+                businessProfile[dependencyKey] &&
+                (businessProfile[dependencyKey].title ||
+                  businessProfile[dependencyKey].length)
+            );
       return {
         ...goal,
         isLocked, // add isLocked key to the object
       };
     });
+  }
+
+  /**
+   * @description this method will return the user input prompt corresponding to the AI Tool being used
+   * @param userIfExists
+   * @param goalId
+   * @returns prompt
+   */
+  public async saveMilestoneGoalResults(userIfExists: any, goalId: any) {
+    try {
+      const goal = await MilestoneGoalsTable.findOne({ _id: goalId }).lean();
+      const resultObj = {
+        userId: userIfExists._id,
+        milestoneId: goal.milestoneId,
+        day: goal.day,
+        order: goal.order,
+        goalId: goal._id,
+        key: goal.key,
+      };
+      await MilestoneResultTable.create(resultObj);
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 export default new MilestoneDBService();

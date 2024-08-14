@@ -40,3 +40,5 @@ export * from "@app/types/marketScore";
 export * from "@app/types/aiToolsDataset";
 export * from "@app/types/milestone";
 export * from "@app/types/milestoneResult";
+export * from "@app/types/aiToolsUsageStatus";
+export * from "@app/types/suggestionScreenCopy";

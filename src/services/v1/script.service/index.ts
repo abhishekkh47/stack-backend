@@ -22,6 +22,7 @@ import {
   AIToolDataSetTable,
   MilestoneTable,
   MilestoneGoalsTable,
+  SuggestionScreenCopyTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -45,6 +46,7 @@ import {
   CHECKLIST_QUESTION_LENGTH,
   CORRECT_ANSWER_FUEL_POINTS,
   PRODUCT_TYPE,
+  IDEA_VALIDATION_STEPS,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2133,6 +2135,81 @@ class ScriptService {
       });
       await MilestoneGoalsTable.bulkWrite(milestoneContent);
       return "Dataset Updated";
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert Suggestion Screen Copy spreadsheet to JSON
+   * It contains Screen Text for each action/goal
+   * @param rows
+   * @returns {*}
+   */
+  public async convertSuggestionScreenDataToJSON(rows: any) {
+    try {
+      const result = [];
+      let key = null;
+      for (const row of rows) {
+        key = row["Key"]?.trimEnd();
+        if (key) {
+          result.push({
+            key: key,
+            name: row["Name"]?.trimEnd(),
+            title: row["Title"]?.trimEnd(),
+            actionName: row["Action Name"]?.trimEnd(),
+            placeHolderText: row["Place Holder Text"]?.trimEnd() || null,
+            maxCharLimit: row["Character Limit"]?.trimEnd(),
+            isMultiLine: row["IsMultiLine"]?.trimEnd() == "TRUE" ? true : false,
+            inputType: row["Action Input Type"]?.trimEnd(),
+            isGrid: row["isGrid"]?.trimEnd() == "TRUE" ? true : false,
+            section: row["Section"]?.trimEnd() || null,
+            stepList: key == "ideaValidation" ? IDEA_VALIDATION_STEPS : null,
+          });
+        }
+      }
+      return result;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param data
+   * @returns {*}
+   */
+  public async addSuggestionScreenDataToDB(data: any) {
+    let suggestionScreenData = [];
+    try {
+      data.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              key: obj.key,
+            },
+            update: {
+              $set: {
+                key: obj.key,
+                name: obj.name,
+                title: obj.title,
+                actionName: obj.actionName,
+                placeHolderText: obj.placeHolderText,
+                maxCharLimit: obj.maxCharLimit,
+                isMultiLine: obj.isMultiLine,
+                inputType: obj.inputType,
+                isGrid: obj.isGrid,
+                section: obj.section,
+                stepList: obj.stepList,
+              },
+            },
+            upsert: true,
+          },
+        };
+        suggestionScreenData.push(bulkWriteObject);
+      });
+      await SuggestionScreenCopyTable.bulkWrite(suggestionScreenData);
+      return;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

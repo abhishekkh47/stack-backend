@@ -57,3 +57,4 @@ export * from "@app/model/aiToolsDataset";
 export * from "@app/model/milestone";
 export * from "@app/model/milestoneResult";
 export * from "@app/model/milestoneGoals";
+export * from "@app/model/suggestionScreenCopy";

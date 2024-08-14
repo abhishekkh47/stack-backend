@@ -248,4 +248,7 @@ export default {
   get MILESTONE_SHEET_GID() {
     return process.env.MILESTONE_SHEET_GID;
   },
+  get SUGGESTION_SCREEN_COPY_GID() {
+    return process.env.SUGGESTION_SCREEN_COPY_GID;
+  },
 };

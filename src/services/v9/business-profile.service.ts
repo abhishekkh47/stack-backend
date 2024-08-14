@@ -5,6 +5,7 @@ import {
   ProblemScoreTable,
   MarketScoreTable,
   AIToolDataSetTable,
+  SuggestionScreenCopyTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import { ObjectId } from "mongodb";
 
 class BusinessProfileService {
   /**
@@ -31,7 +33,6 @@ class BusinessProfileService {
    * @param key
    * @param userBusinessProfile
    * @param idea user input to generate business logo
-   * @param deductRetryFuel
    * @returns {*}
    */
   public async generateAISuggestions(
@@ -39,8 +40,7 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 1,
-    deductRetryFuel: boolean = false
+    type: number = 1
   ) {
     try {
       if (!idea) {
@@ -88,8 +88,6 @@ class BusinessProfileService {
         throw new Error("Please add your target audience and try again!");
       }
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
-    } finally {
-      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 
@@ -109,8 +107,7 @@ class BusinessProfileService {
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
-    idea: string = null,
-    deductRetryFuel: boolean = false
+    idea: string = null
   ) {
     try {
       let response = null;
@@ -196,22 +193,21 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
-    } finally {
-      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 
   /**
    * @description get business history in descending order of dates
+   * @param businessHistory
+   * @param milestoneGoals
    * @returns {*}
    */
-  public async getBusinessHistory(businessHistory) {
+  public async getBusinessHistory(businessHistory, milestoneGoals) {
     try {
       const today = new Date(Date.now()).toLocaleDateString();
       const sortedHistory = businessHistory.sort(
         (a, b) => b.timestamp - a.timestamp
       );
-
       const groupedHistory = sortedHistory.reduce((acc, entry) => {
         const date = new Date(entry.timestamp);
         const year = date.getFullYear();
@@ -219,6 +215,9 @@ class BusinessProfileService {
         const day = date.toLocaleDateString();
 
         const groupKey = day == today ? "Today" : `In ${month} ${year}`;
+        const matchedGoal = milestoneGoals.find(
+          (goal) => goal.key == entry.key
+        );
 
         if (!acc[groupKey]) {
           acc[groupKey] = [];
@@ -229,6 +228,8 @@ class BusinessProfileService {
           value: entry.value,
           timestamp: entry.timestamp,
           day: day,
+          iconImage: matchedGoal?.iconImage,
+          iconBackgroundColor: matchedGoal?.iconBackgroundColor,
         });
         return acc;
       }, {});
@@ -240,12 +241,16 @@ class BusinessProfileService {
           return {
             _id: ++periodId,
             title: key,
-            data: values.map(({ key, value, day }) => ({
-              _id: ++order,
-              key: key,
-              details: value,
-              date: day,
-            })),
+            data: values.map(
+              ({ key, value, day, iconImage, iconBackgroundColor }) => ({
+                _id: ++order,
+                key: key,
+                details: value,
+                date: day,
+                iconImage,
+                iconBackgroundColor,
+              })
+            ),
           };
         }
       );
@@ -642,6 +647,7 @@ class BusinessProfileService {
    * @description this method will return the user input prompt corresponding to the AI Tool being used
    * @param businessProfile
    * @param key
+   * @param idea
    * @returns prompt
    */
   getUserPrompt(businessProfile: any, key: string, idea: string) {
@@ -660,6 +666,77 @@ class BusinessProfileService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description get business profile
+   */
+  public async getBusinessProfile(id: string) {
+    let [userBusinessProfile, suggestionsScreenCopy, businessIdeaCopy] =
+      await Promise.all([
+        BusinessProfileTable.findOne({
+          userId: new ObjectId(id),
+        }).lean(),
+        SuggestionScreenCopyTable.find().lean(),
+        SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
+      ]);
+    const {
+      userId,
+      impacts,
+      passions,
+      hoursSaved,
+      businessCoachInfo,
+      enableStealthMode,
+      completedGoal,
+    } = userBusinessProfile;
+    let businessProfile = {
+      userId,
+      impacts,
+      passions,
+      hoursSaved,
+      businessCoachInfo,
+      enableStealthMode,
+      completedGoal,
+      businessPlans: [],
+    };
+
+    if (userBusinessProfile) {
+      if (userBusinessProfile.description) {
+        businessProfile.businessPlans.push({
+          key: "description",
+          type: businessIdeaCopy.inputType,
+          value: userBusinessProfile.description,
+          idea: userBusinessProfile.idea,
+          title: businessIdeaCopy.name,
+          actionName: businessIdeaCopy.actionName,
+          placeHolderText: businessIdeaCopy.placeHolderText,
+          isMultiLine: businessIdeaCopy.isMultiLine,
+          maxCharLimit: businessIdeaCopy.maxCharLimit,
+          section: businessIdeaCopy.section,
+        });
+      }
+      suggestionsScreenCopy.forEach((data) => {
+        if (
+          userBusinessProfile[data.key] &&
+          (userBusinessProfile[data.key].length ||
+            userBusinessProfile[data.key].title)
+        ) {
+          const obj = {
+            key: data.key,
+            type: data.inputType,
+            value: userBusinessProfile[data.key],
+            title: data.name,
+            actionName: data.actionName,
+            placeHolderText: data.placeHolderText,
+            isMultiLine: data.isMultiLine,
+            maxCharLimit: data.maxCharLimit,
+            section: data.section,
+          };
+          businessProfile.businessPlans.push(obj);
+        }
+      });
+    }
+    return businessProfile;
   }
 }
 export default new BusinessProfileService();

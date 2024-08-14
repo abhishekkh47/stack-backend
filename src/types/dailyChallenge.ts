@@ -5,15 +5,6 @@ export interface IDailyChallenge {
   dailyGoalStatus: ICurrentDayChallenge[];
 }
 
-interface ICurrentDayChallenge_ {
-  id: string;
-  title: string;
-  key: string;
-  time: string;
-  isCompleted: boolean;
-  categoryId: mongoose.Schema.Types.ObjectId;
-}
-
 interface ICurrentDayChallenge {
   id: string;
   _id: string;
