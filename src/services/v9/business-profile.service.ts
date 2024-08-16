@@ -6,6 +6,7 @@ import {
   MarketScoreTable,
   AIToolDataSetTable,
   SuggestionScreenCopyTable,
+  MilestoneGoalsTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
@@ -219,18 +220,20 @@ class BusinessProfileService {
           (goal) => goal.key == entry.key
         );
 
-        if (!acc[groupKey]) {
-          acc[groupKey] = [];
-        }
+        if (entry.key) {
+          if (!acc[groupKey]) {
+            acc[groupKey] = [];
+          }
 
-        acc[groupKey].push({
-          key: entry.key,
-          value: entry.value,
-          timestamp: entry.timestamp,
-          day: day,
-          iconImage: matchedGoal?.iconImage,
-          iconBackgroundColor: matchedGoal?.iconBackgroundColor,
-        });
+          acc[groupKey].push({
+            key: entry.key,
+            value: entry.value,
+            timestamp: entry.timestamp,
+            day: day,
+            iconImage: matchedGoal?.iconImage,
+            iconBackgroundColor: matchedGoal?.iconBackgroundColor,
+          });
+        }
         return acc;
       }, {});
 
@@ -672,14 +675,19 @@ class BusinessProfileService {
    * @description get business profile
    */
   public async getBusinessProfile(id: string) {
-    let [userBusinessProfile, suggestionsScreenCopy, businessIdeaCopy] =
-      await Promise.all([
-        BusinessProfileTable.findOne({
-          userId: new ObjectId(id),
-        }).lean(),
-        SuggestionScreenCopyTable.find().lean(),
-        SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
-      ]);
+    let [
+      userBusinessProfile,
+      suggestionsScreenCopy,
+      businessIdeaCopy,
+      milestoneGoals,
+    ] = await Promise.all([
+      BusinessProfileTable.findOne({
+        userId: new ObjectId(id),
+      }).lean(),
+      SuggestionScreenCopyTable.find().lean(),
+      SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
+      MilestoneGoalsTable.find().lean(),
+    ]);
     const {
       userId,
       impacts,
@@ -702,6 +710,9 @@ class BusinessProfileService {
 
     if (userBusinessProfile) {
       if (userBusinessProfile.description) {
+        const action = milestoneGoals.find(
+          (goal) => goal.key == "ideaValidation"
+        );
         businessProfile.businessPlans.push({
           key: "description",
           type: businessIdeaCopy.inputType,
@@ -713,6 +724,8 @@ class BusinessProfileService {
           isMultiLine: businessIdeaCopy.isMultiLine,
           maxCharLimit: businessIdeaCopy.maxCharLimit,
           section: businessIdeaCopy.section,
+          iconImage: action.iconImage,
+          iconBackgroundColor: action.iconBackgroundColor,
         });
       }
       suggestionsScreenCopy.forEach((data) => {
@@ -721,6 +734,7 @@ class BusinessProfileService {
           (userBusinessProfile[data.key].length ||
             userBusinessProfile[data.key].title)
         ) {
+          const action = milestoneGoals.find((goal) => goal.key == data.key);
           const obj = {
             key: data.key,
             type: data.inputType,
@@ -731,6 +745,8 @@ class BusinessProfileService {
             isMultiLine: data.isMultiLine,
             maxCharLimit: data.maxCharLimit,
             section: data.section,
+            iconImage: action.iconImage,
+            iconBackgroundColor: action.iconBackgroundColor,
           };
           businessProfile.businessPlans.push(obj);
         }

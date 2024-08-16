@@ -5,6 +5,7 @@ import {
   BusinessProfileTable,
   MilestoneGoalsTable,
   DailyChallengeTable,
+  SuggestionScreenCopyTable,
 } from "@app/model";
 import { DEFAULT_MILESTONE, getDaysNum } from "@app/utility";
 class MilestoneDBService {
@@ -241,7 +242,9 @@ class MilestoneDBService {
           .sort({ order: 1 })
           .lean(),
       ]);
-      const updatedGoals = this.setLockedGoals(initialGoals, businessProfile);
+      const goalsData = await this.suggestionScreenInfo(initialGoals);
+
+      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
       return this.formatMilestones(userIfExists, businessProfile, updatedGoals);
     } catch (error) {
       throw new NetworkError(
@@ -277,7 +280,8 @@ class MilestoneDBService {
       if (!initialGoals.length) {
         isMilestoneHit = true;
       }
-      const updatedGoals = this.setLockedGoals(initialGoals, businessProfile);
+      const goalsData = await this.suggestionScreenInfo(initialGoals);
+      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
       return this.formatMilestones(
         userIfExists,
         businessProfile,
@@ -293,7 +297,7 @@ class MilestoneDBService {
    * @description this method will fetch the next available milestone goals
    * @param userIfExists
    * @param businessProfile
-   * @returns prompt
+   * @returns {*}
    */
   private async getNextDayMilestone(userIfExists: any, businessProfile: any) {
     try {
@@ -308,10 +312,8 @@ class MilestoneDBService {
         .sort({ day: 1, order: 1 })
         .lean();
 
-      const updatedGoals = this.setLockedGoals(
-        currentMilestoneGoals,
-        businessProfile
-      );
+      const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
+      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
       const daysInCurrentMilestone =
         currentMilestoneGoals[currentMilestoneGoals.length - 1].day;
       return this.formatMilestones(
@@ -333,7 +335,7 @@ class MilestoneDBService {
    * @description this method will set the isLocked status for each goal based on their dependency
    * @param goals array of milestone goals
    * @param businessProfile
-   * @returns prompt
+   * @returns {*}
    */
   private setLockedGoals(goals: any, businessProfile: any) {
     return goals?.map((goal) => {
@@ -358,7 +360,7 @@ class MilestoneDBService {
    * @description this method will return the user input prompt corresponding to the AI Tool being used
    * @param userIfExists
    * @param goalId
-   * @returns prompt
+   * @returns {*}
    */
   public async saveMilestoneGoalResults(userIfExists: any, goalId: any) {
     try {
@@ -372,6 +374,34 @@ class MilestoneDBService {
         key: goal.key,
       };
       await MilestoneResultTable.create(resultObj);
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will add suggestionScreenInfo object to each goal of current milestone
+   * @param initialGoals
+   * @returns {*}
+   */
+  public async suggestionScreenInfo(initialGoals: any) {
+    try {
+      const suggestionScreenCopy =
+        await SuggestionScreenCopyTable.find().lean();
+      const updatedGoals = initialGoals.map((goal) => {
+        const copyData = suggestionScreenCopy.find(
+          (obj) => obj.key == goal.key
+        );
+        if (goal.inputTemplate) {
+          goal.inputTemplate["suggestionScreenInfo"] = copyData;
+          return goal;
+        } else {
+          goal["inputTemplate"] = {};
+          goal.inputTemplate["suggestionScreenInfo"] = copyData;
+          return goal;
+        }
+      });
+      return updatedGoals;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
