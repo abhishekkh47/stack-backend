@@ -53,9 +53,8 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       const prompt = this.getUserPrompt(userBusinessProfile, key, idea);
-      let systemInput: any = (
-        await AIToolDataSetTable.findOne({ key: "valueProposition" }).lean()
-      ).data;
+      let systemInput: any = (await AIToolDataSetTable.findOne({ key }).lean())
+        .data;
       if (key == "companyName") {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
       } else if (key == "keyMetrics") {
