@@ -715,7 +715,7 @@ class BusinessProfileService {
         );
         businessProfile.businessPlans.push({
           key: "description",
-          type: businessIdeaCopy.inputType,
+          type: businessIdeaCopy.actionType,
           value: userBusinessProfile.description,
           idea: userBusinessProfile.idea,
           title: businessIdeaCopy.name,
@@ -737,7 +737,7 @@ class BusinessProfileService {
           const action = milestoneGoals.find((goal) => goal.key == data.key);
           const obj = {
             key: data.key,
-            type: data.inputType,
+            type: data.actionType,
             value: userBusinessProfile[data.key],
             title: data.name,
             actionName: data.actionName,

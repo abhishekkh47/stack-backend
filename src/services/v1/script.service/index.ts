@@ -2058,10 +2058,20 @@ class ScriptService {
           order = 0;
         }
         const optionCount = Number(row["options"]?.trimEnd()) || null;
+        const inputQuestion = row["userInputQuestion"]?.trimEnd();
         if (
           row["identifier"] &&
           currentIdentifier != row["identifier"]?.trimEnd()
         ) {
+          const inputTemplate = {
+            optionsScreenInfo: optionCount
+              ? {
+                  title: row["optionHeading"]?.trimEnd(),
+                  options: [],
+                }
+              : null,
+            questionScreenInfo: inputQuestion ? inputQuestion : null,
+          };
           currentIndex++;
           result.push({
             milestoneId: currentMilestoneId,
@@ -2074,12 +2084,7 @@ class ScriptService {
             iconBackgroundColor: row["iconBackgroundColor"]?.trimEnd() || null,
             dependency: row["dependency"]?.trimEnd().split(","),
             template: Number(row["template"]?.trimEnd()),
-            inputTemplate: optionCount
-              ? {
-                  optionScreenTitle: row["optionHeading"]?.trimEnd(),
-                  options: [],
-                }
-              : null,
+            inputTemplate: inputTemplate,
           });
         }
         if (row["optionTitle"]) {
@@ -2161,7 +2166,7 @@ class ScriptService {
             placeHolderText: row["Place Holder Text"]?.trimEnd() || null,
             maxCharLimit: row["Character Limit"]?.trimEnd(),
             isMultiLine: row["IsMultiLine"]?.trimEnd() == "TRUE" ? true : false,
-            inputType: row["Action Input Type"]?.trimEnd(),
+            actionType: row["Action Input Type"]?.trimEnd(),
             isGrid: row["isGrid"]?.trimEnd() == "TRUE" ? true : false,
             section: row["Section"]?.trimEnd() || null,
             stepList: key == "ideaValidation" ? IDEA_VALIDATION_STEPS : null,
@@ -2197,7 +2202,7 @@ class ScriptService {
                 placeHolderText: obj.placeHolderText,
                 maxCharLimit: obj.maxCharLimit,
                 isMultiLine: obj.isMultiLine,
-                inputType: obj.inputType,
+                actionType: obj.actionType,
                 isGrid: obj.isGrid,
                 section: obj.section,
                 stepList: obj.stepList,

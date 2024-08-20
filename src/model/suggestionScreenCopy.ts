@@ -37,7 +37,7 @@ const schema = new mongoose.Schema<ISuggestionScreenCopy>(
       type: mongoose.Schema.Types.Boolean,
       required: true,
     },
-    inputType: {
+    actionType: {
       type: mongoose.Schema.Types.String,
       required: true,
     },

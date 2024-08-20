@@ -6,7 +6,7 @@ export interface ISuggestionScreenCopy {
   placeHolderText: string;
   maxCharLimit: number;
   isMultiLine: boolean;
-  inputType: string;
+  actionType: string;
   isGrid: boolean;
   section: string;
   stepList: IStepList[];

@@ -66,7 +66,7 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       },
     ],
     inputTemplate: {
-      optionScreenTitle: {
+      title: {
         type: mongoose.Schema.Types.String,
         required: true,
         default: null,

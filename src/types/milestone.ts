@@ -27,7 +27,7 @@ export enum EInputTemplate {
 }
 
 interface IMilestoneGoalOptions {
-  optionScreenTitle: string;
+  title: string;
   options: IGoalOptions[];
 }
 
