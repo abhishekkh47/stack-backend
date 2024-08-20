@@ -2050,7 +2050,8 @@ class ScriptService {
       });
       for (const row of rows) {
         if (row["milestone"] && row["milestone"] != currentMilestone) {
-          currentMilestoneId = milestoneIdMap[row["milestone"]];
+          currentMilestone = row["milestone"].trimEnd();
+          currentMilestoneId = milestoneIdMap[currentMilestone];
         }
 
         if (row["day"] && row["day"] != currentDay) {
@@ -2088,7 +2089,7 @@ class ScriptService {
           });
         }
         if (row["optionTitle"]) {
-          result[currentIndex].inputTemplate.options.push({
+          result[currentIndex].inputTemplate.optionsScreenInfo.options.push({
             title: row["optionTitle"]?.trimEnd(),
             description: row["optionDescription"]?.trimEnd() || null,
             type: Number(row["optionType"]?.trimEnd()),

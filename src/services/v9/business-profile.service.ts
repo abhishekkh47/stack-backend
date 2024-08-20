@@ -675,6 +675,7 @@ class BusinessProfileService {
    * @description get business profile
    */
   public async getBusinessProfile(id: string) {
+    let businessProfile;
     let [
       userBusinessProfile,
       suggestionsScreenCopy,
@@ -688,27 +689,27 @@ class BusinessProfileService {
       SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
       MilestoneGoalsTable.find().lean(),
     ]);
-    const {
-      userId,
-      impacts,
-      passions,
-      hoursSaved,
-      businessCoachInfo,
-      enableStealthMode,
-      completedGoal,
-    } = userBusinessProfile;
-    let businessProfile = {
-      userId,
-      impacts,
-      passions,
-      hoursSaved,
-      businessCoachInfo,
-      enableStealthMode,
-      completedGoal,
-      businessPlans: [],
-    };
 
     if (userBusinessProfile) {
+      const {
+        userId,
+        impacts,
+        passions,
+        hoursSaved,
+        businessCoachInfo,
+        enableStealthMode,
+        completedGoal,
+      } = userBusinessProfile;
+      businessProfile = {
+        userId,
+        impacts,
+        passions,
+        hoursSaved,
+        businessCoachInfo,
+        enableStealthMode,
+        completedGoal,
+        businessPlans: [],
+      };
       if (userBusinessProfile.description) {
         const action = milestoneGoals.find(
           (goal) => goal.key == "ideaValidation"

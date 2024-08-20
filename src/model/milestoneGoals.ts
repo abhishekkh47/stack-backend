@@ -66,35 +66,44 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       },
     ],
     inputTemplate: {
-      title: {
-        type: mongoose.Schema.Types.String,
-        required: true,
-        default: null,
-      },
-      options: [
-        {
-          title: {
-            type: mongoose.Schema.Types.String,
-            required: true,
-            default: null,
-          },
-          description: {
-            type: mongoose.Schema.Types.String,
-            required: true,
-            default: null,
-          },
-          type: {
-            type: mongoose.Schema.Types.Number,
-            required: true,
-            default: null,
-          },
-          image: {
-            type: mongoose.Schema.Types.String,
-            required: true,
-            default: null,
-          },
+      optionsScreenInfo: {
+        title: {
+          type: mongoose.Schema.Types.String,
+          required: true,
+          default: null,
         },
-      ],
+        options: [
+          {
+            title: {
+              type: mongoose.Schema.Types.String,
+              required: true,
+              default: null,
+            },
+            description: {
+              type: mongoose.Schema.Types.String,
+              required: true,
+              default: null,
+            },
+            type: {
+              type: mongoose.Schema.Types.Number,
+              required: true,
+              default: null,
+            },
+            image: {
+              type: mongoose.Schema.Types.String,
+              required: true,
+              default: null,
+            },
+          },
+        ],
+      },
+      questionScreenInfo: {
+        title: {
+          type: mongoose.Schema.Types.String,
+          required: true,
+          default: null,
+        },
+      },
     },
   },
   { timestamps: true }
