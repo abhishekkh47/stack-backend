@@ -797,7 +797,7 @@ class BusinessProfileService {
    * @param data
    * @returns {*}
    */
-  public async generateTextSuggestions(systemInput: string, prompt: string) {
+  public async generateTextSuggestions(systemInput: any, prompt: string) {
     try {
       const openai = new OpenAI({
         apiKey: envData.OPENAI_API_KEY,

@@ -16,6 +16,7 @@ import {
   awsLogger,
   BUSINESS_IDEA_IMAGES,
   PRODUCT_TYPE,
+  COMPANY_NAME_TYPE,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -33,7 +34,8 @@ class BusinessProfileService {
     userExists: any,
     key: string,
     userBusinessProfile: any,
-    idea: string = null
+    idea: string = null,
+    type: number = 0
   ) {
     try {
       if (!idea) {
@@ -44,10 +46,13 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const prompt = `Business Name:${userBusinessProfile?.companyName}, Business Description: ${idea}`;
-      const systemInput = await AIToolDataSetTable.findOne({ key });
+      const prompt = `Business Description: ${idea}`;
+      let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
+      if (key == "companyName") {
+        systemInput = systemInput[COMPANY_NAME_TYPE[type]];
+      }
       const [response, _] = await Promise.all([
-        this.getFormattedSuggestions(systemInput.data, prompt),
+        this.getFormattedSuggestions(systemInput, prompt),
         AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
