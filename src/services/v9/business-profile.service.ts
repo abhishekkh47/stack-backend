@@ -53,8 +53,9 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       const prompt = this.getUserPrompt(userBusinessProfile, key, idea);
-      let systemInput: any = (await AIToolDataSetTable.findOne({ key }).lean())
-        .data;
+      let systemInput: any = (
+        await AIToolDataSetTable.findOne({ key: "valueProposition" }).lean()
+      ).data;
       if (key == "companyName") {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
       } else if (key == "keyMetrics") {
@@ -201,9 +202,14 @@ class BusinessProfileService {
    * @description get business history in descending order of dates
    * @param businessHistory
    * @param milestoneGoals
+   * @param suggestionsScreenCopy
    * @returns {*}
    */
-  public async getBusinessHistory(businessHistory, milestoneGoals) {
+  public async getBusinessHistory(
+    businessHistory: any,
+    milestoneGoals: any,
+    suggestionsScreenCopy: any
+  ) {
     try {
       const today = new Date(Date.now()).toLocaleDateString();
       const sortedHistory = businessHistory.sort(
@@ -216,8 +222,15 @@ class BusinessProfileService {
         const day = date.toLocaleDateString();
 
         const groupKey = day == today ? "Today" : `In ${month} ${year}`;
+        const currentKey =
+          entry.key == "description" || entry.key == "ideaValidation"
+            ? "ideaValidation"
+            : entry.key;
         const matchedGoal = milestoneGoals.find(
-          (goal) => goal.key == entry.key
+          (goal) => goal.key == currentKey
+        );
+        const matchedGoalCopy = suggestionsScreenCopy.find(
+          (obj) => obj.key == currentKey
         );
 
         if (entry.key) {
@@ -226,12 +239,14 @@ class BusinessProfileService {
           }
 
           acc[groupKey].push({
+            title: matchedGoalCopy.actionName,
             key: entry.key,
             value: entry.value,
             timestamp: entry.timestamp,
             day: day,
             iconImage: matchedGoal?.iconImage,
             iconBackgroundColor: matchedGoal?.iconBackgroundColor,
+            name: matchedGoalCopy.name,
           });
         }
         return acc;
@@ -245,13 +260,23 @@ class BusinessProfileService {
             _id: ++periodId,
             title: key,
             data: values.map(
-              ({ key, value, day, iconImage, iconBackgroundColor }) => ({
+              ({
+                title,
+                key,
+                value,
+                day,
+                iconImage,
+                iconBackgroundColor,
+                name,
+              }) => ({
                 _id: ++order,
-                key: key,
+                title,
+                key,
                 details: value,
                 date: day,
                 iconImage,
                 iconBackgroundColor,
+                name,
               })
             ),
           };

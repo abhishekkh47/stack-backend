@@ -4,6 +4,7 @@ import {
   UserTable,
   AIToolsUsageStatusTable,
   MilestoneGoalsTable,
+  SuggestionScreenCopyTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
@@ -113,13 +114,15 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getBusinessHistory(ctx: any) {
     const { user } = ctx.request;
-    const [userExists, businessProfile, milestoneGoals] = await Promise.all([
-      UserTable.findOne({ _id: user._id }),
-      BusinessProfileTable.findOne({ userId: user._id }).select(
-        "businessHistory"
-      ),
-      MilestoneGoalsTable.find(),
-    ]);
+    const [userExists, businessProfile, milestoneGoals, suggestionsScreenCopy] =
+      await Promise.all([
+        UserTable.findOne({ _id: user._id }),
+        BusinessProfileTable.findOne({ userId: user._id }).select(
+          "businessHistory"
+        ),
+        MilestoneGoalsTable.find(),
+        SuggestionScreenCopyTable.find(),
+      ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
@@ -131,7 +134,8 @@ class BusinessProfileController extends BaseController {
     if (businessProfile?.businessHistory) {
       response = await BusinessProfileService.getBusinessHistory(
         businessProfile.businessHistory,
-        milestoneGoals
+        milestoneGoals,
+        suggestionsScreenCopy
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });

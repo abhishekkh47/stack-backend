@@ -314,8 +314,13 @@ class MilestoneDBService {
 
       const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
       const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
-      const daysInCurrentMilestone =
-        currentMilestoneGoals[currentMilestoneGoals.length - 1].day;
+      const daysInCurrentMilestone = (
+        await MilestoneGoalsTable.find({
+          milestoneId,
+        })
+          .sort({ day: -1 })
+          .lean()
+      )[0].day;
       return this.formatMilestones(
         userIfExists,
         businessProfile,

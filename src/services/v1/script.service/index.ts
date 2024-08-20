@@ -2071,7 +2071,7 @@ class ScriptService {
                   options: [],
                 }
               : null,
-            questionScreenInfo: inputQuestion ? inputQuestion : null,
+            questionScreenInfo: inputQuestion ? { title: inputQuestion } : null,
           };
           currentIndex++;
           result.push({
