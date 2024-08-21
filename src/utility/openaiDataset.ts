@@ -8228,3 +8228,10 @@ export const COST_STRUCTURE_TYPE = {
   1: "buildMyself",
   2: "hireSomeone",
 };
+
+export const COMPANY_NAME_TYPE = {
+  1: "PEOPLE_AND_PLACES",
+  2: "OBJECTS_AND_PATTERNS",
+  3: "ADJECTIVES_AND_SOUNDS",
+  4: "WORD_COMBINATIONS",
+};
