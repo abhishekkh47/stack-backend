@@ -113,7 +113,7 @@ class BusinessProfileService {
         { upsert: true }
       );
 
-      const { logoGenerationInfo = null, companyName = "" } =
+      const { logoGenerationInfo = null, companyName = null } =
         userBusinessProfile ?? {};
       const {
         aiSuggestions = [],
@@ -127,6 +127,7 @@ class BusinessProfileService {
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
         (isUnderProcess && elapsedTime > 200)
       ) {
+        let prompt: string;
         finished = false;
         if (!idea) {
           throw new NetworkError(
@@ -134,9 +135,9 @@ class BusinessProfileService {
             404
           );
         }
-        const prompt = companyName
-          ? `Company Name:${companyName}, Business Idea: ${idea}`
-          : `Business Idea: ${idea}`;
+        prompt = companyName
+          ? `Business Name:${companyName}, Business Description: ${idea}`
+          : `Business Description: ${idea}`;
         const systemInput = await AIToolDataSetTable.findOne({ key });
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
@@ -155,30 +156,31 @@ class BusinessProfileService {
             { upsert: true }
           ),
         ]);
-        BusinessProfileServiceV7.generateImageSuggestions(
-          textResponse.choices[0].message.content
-        ).then(async (imageUrls) => {
-          response = [...imageUrls];
-          await Promise.all([
-            BusinessProfileTable.findOneAndUpdate(
-              { userId: userExists._id },
-              {
-                $set: {
-                  "logoGenerationInfo.isUnderProcess": false,
-                  "logoGenerationInfo.startTime": moment().unix(),
-                  "logoGenerationInfo.aiSuggestions": response,
-                  "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+        const imagePrompt = textResponse.choices[0].message.content;
+        BusinessProfileServiceV7.generateImageSuggestions(imagePrompt).then(
+          async (imageUrls) => {
+            response = [...imageUrls];
+            await Promise.all([
+              BusinessProfileTable.findOneAndUpdate(
+                { userId: userExists._id },
+                {
+                  $set: {
+                    "logoGenerationInfo.isUnderProcess": false,
+                    "logoGenerationInfo.startTime": moment().unix(),
+                    "logoGenerationInfo.aiSuggestions": response,
+                    "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+                  },
                 },
-              },
-              { upsert: true }
-            ),
-            UnsavedLogoTable.findOneAndUpdate(
-              { userId: userExists._id },
-              { $set: { logoGeneratedAt: moment().unix() } },
-              { upsert: true, new: true }
-            ),
-          ]);
-        });
+                { upsert: true }
+              ),
+              UnsavedLogoTable.findOneAndUpdate(
+                { userId: userExists._id },
+                { $set: { logoGeneratedAt: moment().unix() } },
+                { upsert: true, new: true }
+              ),
+            ]);
+          }
+        );
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
