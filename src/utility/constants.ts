@@ -566,7 +566,7 @@ export const IS_RETRY = {
   TRUE: "true",
   FALSE: "false",
 };
-export const DEDUCT_RETRY_FUEL = -200;
+export const DEDUCT_RETRY_FUEL = -30;
 export const HOURS_SAVED_BY_IDEA_GENERATOR = 28;
 export const BACKUP_LOGOS = [
   "https://s3.amazonaws.com/stack-business-information/backupLogos/BackupBusinessLogo-1.png",
@@ -758,41 +758,98 @@ export const DAILY_GOALS = [
     title: "Create Your Business Idea",
     time: "2 min",
     isCompleted: false,
+    section: "About",
+    day: 1,
   },
   {
     id: 2,
-    key: "targetAudience",
-    title: "Describe Your Target Audience",
-    time: "2 min",
-    isCompleted: false,
-  },
-  {
-    id: 3,
-    key: "competitors",
-    title: "Identify Your Top Competitors",
-    time: "2 min",
-    isCompleted: false,
-  },
-  {
-    id: 4,
     key: "companyName",
     title: "Name Your Business",
     time: "2 min",
     isCompleted: false,
+    section: "About",
+    day: 1,
   },
   {
-    id: 5,
+    id: 3,
     key: "companyLogo",
     title: "Design Your Logo",
     time: "2 min",
     isCompleted: false,
+    section: "",
+    day: 1,
+  },
+  {
+    id: 4,
+    key: "competitors",
+    title: "Identify Your Top Competitors",
+    time: "2 min",
+    isCompleted: false,
+    section: "Competition",
+    day: 1,
+  },
+  {
+    id: 5,
+    key: "targetAudience",
+    title: "Describe Your Target Audience",
+    time: "2 min",
+    isCompleted: false,
+    section: "Customers",
+    day: 1,
   },
   {
     id: 6,
-    key: "colorsAndAesthetic",
-    title: "Create Your Brand Aesthetic",
+    key: "valueProposition",
+    title: "Create Your Value Proposition",
     time: "2 min",
     isCompleted: false,
+    section: "About",
+    day: 2,
+  },
+  {
+    id: 7,
+    key: "unfairAdvantage",
+    title: "Create Your Unfair Advantage",
+    time: "2 min",
+    isCompleted: false,
+    section: "",
+    day: 2,
+  },
+  {
+    id: 8,
+    key: "marketingChannelStrategy",
+    title: "Create Your Marketing Strategy",
+    time: "2 min",
+    isCompleted: false,
+    section: "Customers",
+    day: 2,
+  },
+  {
+    id: 9,
+    key: "keyMetrics",
+    title: "Create Your Key Metrics",
+    time: "2 min",
+    isCompleted: false,
+    section: "About",
+    day: 3,
+  },
+  {
+    id: 10,
+    key: "businessModel",
+    title: "Create Your Business Model",
+    time: "2 min",
+    isCompleted: false,
+    section: "Financial Viability",
+    day: 3,
+  },
+  {
+    id: 11,
+    key: "costStructure",
+    title: "Create Your Cost Structure",
+    time: "2 min",
+    isCompleted: false,
+    section: "Financial Viability",
+    day: 3,
   },
 ];
 
@@ -810,3 +867,48 @@ export const BUSINESS_IDEA_IMAGES = {
     trending: "techProduct_MarketFit.webp",
   },
 };
+
+export const DEFAULT_MILESTONE = "Foundations of Successful Company Building";
+
+const StepStatus = {
+  STARTED: 1,
+  NOT_STARTED: 0,
+};
+
+export const IDEA_VALIDATION_STEPS = [
+  {
+    stepName: "Reviewing your business idea",
+    stepStatus: StepStatus.STARTED,
+    value: 100,
+  },
+  {
+    stepName: "Comparing 1000’s of funded startups",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Assessing market demand",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Refining your unique selling point",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Evaluating potential risks & threats",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Optimizing market opportunity",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+  {
+    stepName: "Maximizing your business concept",
+    stepStatus: StepStatus.NOT_STARTED,
+    value: 0,
+  },
+];

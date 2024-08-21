@@ -19,6 +19,10 @@ import {
   MarketSegmentInfoTable,
   ProblemScoreTable,
   MarketScoreTable,
+  AIToolDataSetTable,
+  MilestoneTable,
+  MilestoneGoalsTable,
+  SuggestionScreenCopyTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -42,6 +46,7 @@ import {
   CHECKLIST_QUESTION_LENGTH,
   CORRECT_ANSWER_FUEL_POINTS,
   PRODUCT_TYPE,
+  IDEA_VALIDATION_STEPS,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -1902,6 +1907,309 @@ class ScriptService {
 
       await MarketScoreTable.bulkWrite(bulkWriteOperations);
       return marketScoresData;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON by filtering with key referring the action to be performed
+   * @param rows
+   * @returns {*}
+   */
+  public async convertOpenAIDatasetSheetToJSON(rows: any) {
+    try {
+      const result = {};
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const key = row.key;
+        const objectSize = row.objectSize;
+        const dataset = row.dataset;
+
+        if (objectSize > 0) {
+          const obj = {};
+          for (let j = 0; j < objectSize; j++) {
+            const currentRow = rows[i + j];
+            if (currentRow.name && currentRow.dataset) {
+              if (currentRow.datasetSplit == "TRUE") {
+                obj[
+                  currentRow.name
+                ] = `${currentRow.dataset} ${currentRow.dataset2}`;
+              } else {
+                obj[currentRow.name] = currentRow.dataset;
+              }
+            }
+          }
+          result[key] = obj;
+          i += objectSize - 1;
+        } else if (key && dataset) {
+          result[key] = dataset;
+        }
+      }
+      return result;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param openAIDataset
+   * @returns {*}
+   */
+  public async addOpenAIDataToDB(openAIDataset: any) {
+    let datasetContent = [];
+    try {
+      for (const [key, value] of Object.entries(openAIDataset)) {
+        let type = 0;
+        if (key == "physicalProduct") {
+          type = 1;
+        } else if (key == "softwareTechnology") {
+          type = 2;
+        } else if (key == "ideaValidation") {
+          type = 3;
+        }
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              key,
+              type,
+            },
+            update: {
+              $set: {
+                type,
+                key,
+                data: value,
+              },
+            },
+            upsert: true,
+          },
+        };
+        datasetContent.push(bulkWriteObject);
+      }
+      await AIToolDataSetTable.bulkWrite(datasetContent);
+      return "Dataset Updated";
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert Milestone spreadsheet to JSON
+   * @param rows
+   * @returns {*}
+   */
+  public async convertMilestoneDatasetSheetToJSON(rows: any) {
+    try {
+      const result = [];
+      let milestoneContent = [];
+      let currentMilestone = null;
+      let currentDay = 0;
+      let order = 0;
+      let currentMilestoneId = null;
+      let currentIndex = -1;
+      let currentIdentifier = null;
+      const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
+
+      const milestonesArray = rows.reduce((acc, row) => {
+        const topic = row.topic?.trimEnd();
+        const milestone = row.milestone?.trimEnd();
+        if (milestone?.length > 1) {
+          acc.push({
+            milestone: milestone,
+            topicId: quizTopics.find((obj) => obj.topic == topic)._id,
+            description: "7 Days - 15 min/day",
+          });
+        }
+        return acc;
+      }, []);
+      milestonesArray.forEach((goal) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              milestone: goal.milestone,
+              topicId: goal.topicId,
+            },
+            update: {
+              $set: {
+                milestone: goal.milestone,
+                topicId: goal.topicId,
+                description: "7 Days - 15 min/day",
+              },
+            },
+            upsert: true,
+          },
+        };
+        milestoneContent.push(bulkWriteObject);
+      });
+      await MilestoneTable.bulkWrite(milestoneContent);
+      const milestoneDetails = await MilestoneTable.find();
+      let milestoneIdMap = {};
+      milestoneDetails.forEach((obj) => {
+        milestoneIdMap[obj.milestone] = obj._id;
+      });
+      for (const row of rows) {
+        if (row["milestone"] && row["milestone"] != currentMilestone) {
+          currentMilestoneId = milestoneIdMap[row["milestone"]];
+        }
+
+        if (row["day"] && row["day"] != currentDay) {
+          currentDay = Number(row["day"]);
+          order = 0;
+        }
+        const optionCount = Number(row["options"]?.trimEnd()) || null;
+        if (
+          row["identifier"] &&
+          currentIdentifier != row["identifier"]?.trimEnd()
+        ) {
+          currentIndex++;
+          result.push({
+            milestoneId: currentMilestoneId,
+            day: currentDay,
+            title: row["goalTitle"]?.trimEnd(),
+            key: row["identifier"]?.trimEnd(),
+            order: ++order,
+            time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
+            iconImage: row["icon"]?.trimEnd() || null,
+            iconBackgroundColor: row["iconBackgroundColor"]?.trimEnd() || null,
+            dependency: row["dependency"]?.trimEnd().split(","),
+            template: Number(row["template"]?.trimEnd()),
+            inputTemplate: optionCount
+              ? {
+                  optionScreenTitle: row["optionHeading"]?.trimEnd(),
+                  options: [],
+                }
+              : null,
+          });
+        }
+        if (row["optionTitle"]) {
+          result[currentIndex].inputTemplate.options.push({
+            title: row["optionTitle"]?.trimEnd(),
+            description: row["optionDescription"]?.trimEnd() || null,
+            type: Number(row["optionType"]?.trimEnd()),
+            image: row["optionIcon"]?.trimEnd() || null,
+          });
+        }
+      }
+      return result;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param milestones
+   * @returns {*}
+   */
+  public async addMilestoneDataToDB(milestones: any) {
+    let milestoneContent = [];
+    try {
+      milestones.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              milestoneId: obj.milestoneId,
+              title: obj.title,
+              day: obj.day,
+            },
+            update: {
+              $set: {
+                milestoneId: obj.milestoneId,
+                day: obj.day,
+                title: obj.title,
+                key: obj.key,
+                order: obj.order,
+                time: obj.time,
+                iconImage: obj.iconImage,
+                iconBackgroundColor: obj.iconBackgroundColor,
+                dependency: obj.dependency,
+                template: obj.template,
+                inputTemplate: obj.inputTemplate,
+              },
+            },
+            upsert: true,
+          },
+        };
+        milestoneContent.push(bulkWriteObject);
+      });
+      await MilestoneGoalsTable.bulkWrite(milestoneContent);
+      return "Dataset Updated";
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert Suggestion Screen Copy spreadsheet to JSON
+   * It contains Screen Text for each action/goal
+   * @param rows
+   * @returns {*}
+   */
+  public async convertSuggestionScreenDataToJSON(rows: any) {
+    try {
+      const result = [];
+      let key = null;
+      for (const row of rows) {
+        key = row["Key"]?.trimEnd();
+        if (key) {
+          result.push({
+            key: key,
+            name: row["Name"]?.trimEnd(),
+            title: row["Title"]?.trimEnd(),
+            actionName: row["Action Name"]?.trimEnd(),
+            placeHolderText: row["Place Holder Text"]?.trimEnd() || null,
+            maxCharLimit: row["Character Limit"]?.trimEnd(),
+            isMultiLine: row["IsMultiLine"]?.trimEnd() == "TRUE" ? true : false,
+            inputType: row["Action Input Type"]?.trimEnd(),
+            isGrid: row["isGrid"]?.trimEnd() == "TRUE" ? true : false,
+            section: row["Section"]?.trimEnd() || null,
+            stepList: key == "ideaValidation" ? IDEA_VALIDATION_STEPS : null,
+          });
+        }
+      }
+      return result;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert problem score spreadsheet data to JSON
+   * @param data
+   * @returns {*}
+   */
+  public async addSuggestionScreenDataToDB(data: any) {
+    let suggestionScreenData = [];
+    try {
+      data.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              key: obj.key,
+            },
+            update: {
+              $set: {
+                key: obj.key,
+                name: obj.name,
+                title: obj.title,
+                actionName: obj.actionName,
+                placeHolderText: obj.placeHolderText,
+                maxCharLimit: obj.maxCharLimit,
+                isMultiLine: obj.isMultiLine,
+                inputType: obj.inputType,
+                isGrid: obj.isGrid,
+                section: obj.section,
+                stepList: obj.stepList,
+              },
+            },
+            upsert: true,
+          },
+        };
+        suggestionScreenData.push(bulkWriteObject);
+      });
+      await SuggestionScreenCopyTable.bulkWrite(suggestionScreenData);
+      return;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

@@ -21,10 +21,11 @@ import {
   convertDateToTimeZone,
   getDaysBetweenDates,
   DEFAULT_TIMEZONE,
+  getDaysNum,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
-import { UserService } from "@services/v9";
+import { UserService, MilestoneDBService } from "@services/v9";
 class ChecklistDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -403,24 +404,26 @@ class ChecklistDBService {
    */
   public async storeWeeklyReward(userId: any, reqParam: any) {
     try {
-      await ChecklistResultTable.findOneAndUpdate(
-        {
-          userId: userId,
-          levelId: reqParam.levelId,
-          actionNum: reqParam.actionNum,
-        },
-        {
-          $set: {
-            userId,
-            topicId: reqParam.topicId,
-            categoryId: reqParam.categoryId,
+      await Promise.all([
+        ChecklistResultTable.findOneAndUpdate(
+          {
+            userId: userId,
             levelId: reqParam.levelId,
-            level: reqParam.level,
             actionNum: reqParam.actionNum,
           },
-        },
-        { upsert: true }
-      );
+          {
+            $set: {
+              userId,
+              topicId: reqParam.topicId,
+              categoryId: reqParam.categoryId,
+              levelId: reqParam.levelId,
+              level: reqParam.level,
+              actionNum: reqParam.actionNum,
+            },
+          },
+          { upsert: true }
+        ),
+      ]);
       return;
     } catch (err) {
       throw new NetworkError("Error occured while claiming the reward", 400);
@@ -502,23 +505,6 @@ class ChecklistDBService {
 
   /**
    * @description get the date difference between today and last updated goals
-   * @param dateToCompare the udpatedAt timestamp of the record
-   * @returns {*}
-   */
-  private getDaysNum(userIfExists, dateToCompare: string) {
-    const firstDate = convertDateToTimeZone(
-      new Date(dateToCompare),
-      userIfExists?.timezone || DEFAULT_TIMEZONE
-    );
-    const secondDate = convertDateToTimeZone(
-      new Date(),
-      userIfExists?.timezone || DEFAULT_TIMEZONE
-    );
-    return getDaysBetweenDates(firstDate, secondDate);
-  }
-
-  /**
-   * @description get the date difference between today and last updated goals
    * @param userIfExists
    * @param goals array of checklist challenges
    * @returns {*}
@@ -579,7 +565,7 @@ class ChecklistDBService {
   ) {
     if (
       availableDailyChallenges &&
-      this.getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
+      getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
     ) {
       const currentDailyGoalsStatus = availableDailyChallenges.dailyGoalStatus;
       const currentLength = currentDailyGoalsStatus.length;
@@ -627,7 +613,7 @@ class ChecklistDBService {
         BusinessProfileTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
 
-      let dateDiff = this.getDaysNum(userIfExists, userIfExists.createdAt);
+      let dateDiff = getDaysNum(userIfExists, userIfExists.createdAt);
       const currentCategory = lastPlayedChallenge
         ? lastPlayedChallenge.categoryId
         : categoryId;
@@ -650,34 +636,61 @@ class ChecklistDBService {
 
       const areDay1AIToolsCompleted = () => {
         return (
-          (aiToolsUsageStatus?.description ||
-            aiToolsUsageStatus?.ideaValidation) &&
-          aiToolsUsageStatus?.targetAudience &&
-          aiToolsUsageStatus?.competitors
+          (businessProfileIfExists?.description ||
+            businessProfileIfExists?.ideaValidation) &&
+          businessProfileIfExists?.companyLogo &&
+          businessProfileIfExists?.companyName &&
+          businessProfileIfExists?.targetAudience
         );
       };
       const areDay2AIToolsCompleted = () => {
         return (
-          aiToolsUsageStatus?.companyLogo &&
-          aiToolsUsageStatus?.companyName &&
-          aiToolsUsageStatus?.colorsAndAesthetic
+          businessProfileIfExists?.valueProposition &&
+          businessProfileIfExists?.unfairAdvantage &&
+          businessProfileIfExists?.marketingChannelStrategy
+        );
+      };
+      const areDay3AIToolsCompleted = () => {
+        return (
+          businessProfileIfExists?.keyMetrics &&
+          businessProfileIfExists?.businessModel &&
+          businessProfileIfExists?.costStructure
         );
       };
 
       if (dateDiff < 1) {
         response = [
-          ...getAITools(0, 3),
+          ...getAITools(0, 4),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
-      } else if (!areDay1AIToolsCompleted()) {
+      } else if (!areDay1AIToolsCompleted() && dateDiff < 2) {
         response = [
-          ...getAITools(0, 6),
+          ...getAITools(0, 7),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
         ];
-      } else if (areDay1AIToolsCompleted() && !areDay2AIToolsCompleted()) {
+      } else if (
+        areDay1AIToolsCompleted() &&
+        !areDay2AIToolsCompleted() &&
+        dateDiff < 2
+      ) {
         response = [
-          ...getAITools(3, 6),
+          ...getAITools(4, 7),
           ...(await this.getNextChallenges(userIfExists, currentCategory, 1)),
+        ];
+      } else if (!areDay1AIToolsCompleted() && dateDiff < 3) {
+        response = [
+          ...getAITools(0, 11),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+        ];
+      } else if (!areDay2AIToolsCompleted() && dateDiff < 3) {
+        response = [
+          ...getAITools(4, 11),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
+        ];
+      } else if (!areDay3AIToolsCompleted() && dateDiff < 3) {
+        response = [
+          ...getAITools(7, 11),
+          ...(await this.getNextChallenges(userIfExists, currentCategory, 2)),
         ];
       } else {
         response = [
@@ -724,6 +737,7 @@ class ChecklistDBService {
         levelIndex: number
       ) => ({
         id: challenges.levels[levelIndex]._id,
+        _id: challenges.levels[levelIndex]._id, // need to check with FE about which one to be used
         title: `Level ${level}: ${challenges.levels[levelIndex].title}`,
         key: "challenges",
         time: "6 min",
@@ -747,7 +761,7 @@ class ChecklistDBService {
           (await this.checkActiveCategory(nextLevel.categoryId))
         ) {
           todayChallenges.push({
-            id: nextLevel._id,
+            _id: nextLevel._id,
             title: `Level ${nextLevel.level}: ${nextLevel.title}`,
             key: "challenges",
             time: "6 min",

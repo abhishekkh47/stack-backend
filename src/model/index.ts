@@ -55,3 +55,7 @@ export * from "@app/model/marketScore";
 export * from "@app/model/problemScore";
 export * from "@app/model/unsavedLogo";
 export * from "@app/model/aiToolsDataset";
+export * from "@app/model/milestone";
+export * from "@app/model/milestoneResult";
+export * from "@app/model/milestoneGoals";
+export * from "@app/model/suggestionScreenCopy";

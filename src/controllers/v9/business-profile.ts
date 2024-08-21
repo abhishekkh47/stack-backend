@@ -3,6 +3,7 @@ import {
   BusinessProfileTable,
   UserTable,
   AIToolsUsageStatusTable,
+  MilestoneGoalsTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
@@ -18,19 +19,26 @@ class BusinessProfileController extends BaseController {
   @Route({ path: "/get-ai-suggestions", method: HttpMethod.GET })
   @Auth()
   public async getAISuggestion(ctx: any) {
-    const { user, query, headers } = ctx.request;
+    const { user, query, headers, body } = ctx.request;
     // type - business name type
     const { key, isRetry, idea, type } = query;
+    // const { key, isRetry, idea, type } = body;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
-      BusinessProfileTable.findOne({ userId: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }).lean(),
     ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
     if (userExists.requestId && userExists.requestId == headers.requestid) {
       return this.Ok(ctx, { message: "Success", data: "Multiple Requests" });
+    }
+    if (!idea && !userBusinessProfile.description) {
+      return this.BadRequest(
+        ctx,
+        "Please generate a business idea and try again"
+      );
     }
     if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
@@ -66,7 +74,7 @@ class BusinessProfileController extends BaseController {
         userExists,
         key,
         userBusinessProfile,
-        idea,
+        idea || userBusinessProfile.description,
         type
       );
     }
@@ -105,11 +113,12 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getBusinessHistory(ctx: any) {
     const { user } = ctx.request;
-    const [userExists, businessProfile] = await Promise.all([
+    const [userExists, businessProfile, milestoneGoals] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
       BusinessProfileTable.findOne({ userId: user._id }).select(
         "businessHistory"
       ),
+      MilestoneGoalsTable.find(),
     ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
@@ -121,7 +130,8 @@ class BusinessProfileController extends BaseController {
     let response = [];
     if (businessProfile?.businessHistory) {
       response = await BusinessProfileService.getBusinessHistory(
-        businessProfile.businessHistory
+        businessProfile.businessHistory,
+        milestoneGoals
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });

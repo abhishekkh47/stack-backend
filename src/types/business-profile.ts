@@ -19,10 +19,10 @@ export interface IBusinessProfile {
   description: string;
   idea: string;
   marketOpportunity: string;
-  companyName: string;
+  companyName: IBusinessInfo;
   companyLogo: string;
-  targetAudience: string;
-  competitors: string;
+  targetAudience: ITargetAudience;
+  competitors: IBusinessInfo;
   keyDifferentiator: string;
   xForY: string;
   headline: string;
@@ -55,6 +55,17 @@ export interface IBusinessProfile {
   businessType: number;
   businessPreferences: IBusinessPreferences;
   businessHistory: IBusinessHistory[];
+  valueProposition: IBusinessInfo;
+  keyMetrics: IBusinessInfo;
+  marketingChannelStrategy: IBusinessInfo;
+  businessModel: IBusinessInfo;
+  costStructure: IBusinessInfo;
+  unfairAdvantage: IBusinessInfo;
+  completedGoal: number;
+  currentMilestone: {
+    milestoneId: mongoose.Schema.Types.ObjectId;
+    milestoneUpdatedAt: mongoose.Schema.Types.Date;
+  };
 }
 
 export interface ILogoGenerationInfo {
@@ -82,13 +93,19 @@ interface IBusinessHistory {
   image: string;
 }
 
-export interface IAIToolsUsageStatus {
-  userId: mongoose.Schema.Types.ObjectId;
-  description: boolean;
-  ideaValidation: boolean;
-  companyName: boolean;
-  companyLogo: boolean;
-  targetAudience: boolean;
-  competitors: boolean;
-  colorsAndAesthetic: boolean;
+interface IBusinessInfo {
+  _id: string;
+  title: string;
+  description: string;
+}
+
+interface ITargetAudience {
+  _id: string;
+  title: string;
+  description: string;
+}
+interface ITargetAudienceDesc {
+  demographics: string;
+  psychographics: string;
+  population: string;
 }

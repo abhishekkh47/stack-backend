@@ -40,11 +40,15 @@ class BusinessProfileController extends BaseController {
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
-      const userIfExists = await UserTable.findOne({ _id: user._id });
+      const [userIfExists, businessProfile] = await Promise.all([
+        UserTable.findOne({ _id: user._id }),
+        BusinessProfileTable.findOne({ userId: user._id }),
+      ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       const updatedUser = await BusinessProfileService.addOrEditBusinessProfile(
         body,
-        userIfExists
+        userIfExists,
+        businessProfile
       );
       (async () => {
         zohoCrmService.addAccounts(

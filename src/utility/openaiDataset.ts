@@ -131,86 +131,560 @@ export const SYSTEM_INPUT = {
   WHY THIS?
   An estimated 200 million health app users are interested in apps for managing screen time.”`,
 
-  COMPANY_NAME: `Generate four unique business names based on the provided business description. Each name should meet distinct criteria outlined below, and present your suggestions in a straightforward array format. Avoid including explanations or the business description in your final output.
-
-  Criteria for Each Business Name Suggestion:
-  Suggestion 1 criteria: a real or fictional character's name that is either directly or loosely correlated to the business description.
-    Example 1:
-    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-    - Suggestion: Beethoven
-    - Explanation: Beethoven, one of the most famous classical musicians ever, is universally recognizable for his association with music and his famous composing that is strongly metaphorical for a platform that democratizes high quality music production.
-    Example 2: 
-    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-    - Suggestion: Houdini
-    - Explanation: Harry Houdini, one of the most famous magicians of all time, is both associated with magic and his famous magic tricks are a beacon for a community of magicians.
-    Example 3:
-    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-    - Suggestion: Stockton
-    - Explanation: John Stockton, famous for assists in the NBA, is both associated with sports and his smooth passing is a metaphor for a ticketing platform that allows you to buy and sell during an event.
-    Example 4:
-    - Business description: a dating app that pairs users based on their vision of their perfect married life
-    - Suggestion: Pamela
-    - Explanation: Pamela Anderson, a famous playboy playmate and supermodel, is both associated with romance and dating as well as famous for having a higher than usual amount of husbands, strongly associating her with a dating app that focuses on picturing your ideal married life.
+  COMPANY_NAME: {
+    PEOPLE_AND_PLACES: `Objective: Generate four diverse business names based on a user-provided business description. The names will be a mixture of real and mythical/fiction names and places. Each name selected must have a correlation to the business description and also be appropriate for the type of business.
+    Inputs:
+    Business Description: A detailed description of the business provided by the user.
+    Outputs:
+    Four business names.
+    A brief explanation of the correlation between each suggested name and the business description.
+    Guidelines:
+    Famous People or Characters:
+    First Name:
+    Categories: Historical figures, Musicians/Artists, Famous people.
+    Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the person's achievements, characteristics, roles, or themes. Ensure the name is fitting for the type of business (e.g., a fashion icon for an apparel brand).
+    Second Name:
+    Categories: Movie/TV show characters, Literary Characters, Comic Book Characters, characters from folklore, video game characters.
+    Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the character's traits, story arcs, or thematic relevance. Ensure the name is appropriate for the type of business (e.g., a character known for strategic thinking for a tech product).
+    Places:
+    Third Name:
+    Categories: Cities, towns, rivers, lakes, oceans, other bodies of water, mountains, trails, deserts, forests, areas, neighborhoods, buildings, countries.
+    Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the place's characteristics, historical significance, cultural symbolism, or thematic relevance. Ensure the name is appropriate for the type of business (e.g., a location known for stability for a financial service).
+    Fourth Name:
+    Categories: Planets, stars, moons, mythical locations, movie/TV show locations, folklore locations.
+    Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the place's characteristics, historical significance, cultural symbolism, or thematic relevance. Ensure the name is appropriate for the type of business (e.g., a mythical location known for prosperity for a financial service).
+    Process:
+    Step 1: Read and understand the user-provided business description.
+    Step 2: Identify key themes, characteristics, and values from the business description.
+    Step 3: Note typical naming conventions of the business type (e.g., if it’s a clothing company, it should follow naming conventions similar to well-known clothing companies; if it’s a tech company, it should follow naming conventions of other tech companies, etc.).
+    Step 4: Research and select appropriate names from the specified categories (famous people, characters, or places) that align with the identified themes, characteristics, and values.
+    Step 5: Ensure that all names generated fit the business type.
+    Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
     
-  Suggestion 2 criteria: a slang or fictitious one word name that has at least one of these letters: Z, Q, X, J, K, F, H, V, W, and Y, is 1-3 syllables, and has a double letter.
-    Example 1:
-    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-    - Suggestion: Razzmatazz
-    - Explanation: Razzmatazz is a slang word for creative jazz music that emphasizes expression. this word would be well-suited for an app that allows musicians to use their creativity in producing their own music.
-    Example 2: 
-    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-    - Suggestion: Zzephyr
-    - Explanation: a modification of the word 'zephyr', a gentle breeze, this name could be associated with a magician who has control over air or weather elements, has the double letter ""zz"" and is two syllables
-    Example 3:
-    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-    - Suggestion: Hooper
-    - Explanation: A slang name for a basketball player who is skilled and has the double letter ""oo"" and the letter ""h"" as well has two syllables
-    Example 4:
-    - Business description: a dating app that pairs users based on their vision of their perfect married life
-    - Suggestion: Vowwy
-    - Explanation: a modification of the word vow, associated with wedding vows, that has the letters ""V"" ""W"" ""Y"" and double letter ""ww"" as well as is two syllables
+    Format:
+    List the four business names with the corresponding brief explanation for each.
+    Example Format:
+    [
+      {
+        _id: "1",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "2",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "3",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "4",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      }
+    ]
+    Notes:
+    Ensure the names are culturally sensitive and appropriate.
+    Avoid names that are overly complex or difficult to pronounce.
+    Strive for names that are memorable and have positive connotations.
     
-  Suggestion 3 criteria: a direct and strong connection to the business description that is easy to pronounce, spell and say
-    Example 1:
-    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-    - Suggestion: Mixer AI
-    - Explanation: A mixer is a piece of musical equipment that is used to mix sounds and has a very strong and literal correlation to an AI music editing app 
-    Example 2: 
-    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-    - Suggestion: Spellbound
-    - Explanation: spellbound is a word that describes someone who is directly under the influence of. magical spells and has a strong and direct correlation to a social and education app for magicians
-    Example 3:
-    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-    - Suggestion: VIP
-    - Explanation: VIP is associated with a pass that is a special ticket usually issued to VIPs to get access to the field or court for many sporting games which would have a strong correlation to a sports ticketing platform
-    Example 4:
-    - Business description: a dating app that pairs users based on their vision of their perfect married life
-    - Suggestion: Spouse
-    - Explanation: spouse is a word to describe your marriage partner and is directly correlated to marriage, the goal of a dating platform that has you picture your ideal married life
+    Illustrative Examples
+    Input: 
+    A smart temperature-regulating jacket made from sustainable materials, featuring built-in technology that adapts to the wearer's body heat and external conditions for optimal comfort.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Olivia",
+        description: "Named after Olivia Newton-John, famous for wearing a stylish motorcycle jacket in the movie "Grease," aligning with fashion and iconic jackets."
+      },
+      {
+        _id: "2",
+        title: "Maverick",
+        description: "Named after Tom Cruise's character in the movie "Top Gun," known for his iconic air force fighter jacket, symbolizing style and adaptability."
+      },
+      {
+        _id: "3",
+        title: "Como",
+        description: "Named after Lake Como, known for its moderate year-round temperatures, symbolizing the jacket’s ability to adapt to various conditions for comfort."
+      },
+      {
+        _id: "4",
+        title: "452b",
+        description: "Named after Kepler-452b, the exoplanet with Earth-like conditions, representing the jacket’s advanced technology for maintaining ideal comfort."
+      }
+    ]
     
-  Suggestion 4 criteria: a well-known real or fictitious place that is directly or loosely correlated to the business description
-    Example 1:
-    - Business description: an AI music editing app with a rich library of sounds and beats that gives users high-quality music production at their finger tips.
-    - Suggestion: Woodstock
-    - Explanation: woodstock, new york was a famous concert venue for 1960s and 1970s rock bands and their followers
-    Example 2: 
-    - Business description: a gamified education platform for learning magic tricks and sharing best practices among the magician community
-    - Suggestion: Fantasia
-    - Explanation: fantasia was the magical location of the movie a never ending story, full of magical and mythical beings and events
-    Example 3:
-    - Business description: a sports event ticketing platform that allows users to buy and sell tickets during the event 
-    - Suggestion: Daytona
-    - Explanation: daytona is a location of nascar events as well as featured in various video games as a location of events
-    Example 4:
-    - Business description: a dating app that pairs users based on their vision of their perfect married life
-    - Suggestion: Eden
-    - Explanation: a place known for being paradise and associated with love"
+    Input: 
+    A browser extension that detects the sports game you're streaming and suggests relevant live bets based on real-time game analytics.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Jordan",
+        description: "Named after Michael Jordan, symbolizing excellence in sports and strategic decision-making, aligning with sports analytics."
+      },
+      {
+        _id: "2",
+        title: "Titan",
+        description: "Named after the powerful race of deities in Greek mythology, symbolizing immense strength and strategic prowess, aligning with the analytical and strategic nature of sports betting."
+      },
+      {
+        _id: "3",
+        title: "Madison",
+        description: "Named after Madison Square Garden, an iconic sports arena in New York City, symbolizing the connection to sports events."
+      },
+      {
+        _id: "4",
+        title: "Valhalla",
+        description: "Named after the mythical hall of warriors in Norse mythology, representing a place of strategic planning and excellence in sports."
+      }
+    ]
   
-  Output Format Expectation:
-  Ensure the response is formatted as an array containing all four business name suggestions, strictly adhering to the criteria provided for each. Also, each business name should not exceed the character limit of 15 character. The output should look similar to this template, omitting any explanations for the choices:
-  ["Oberon", "Buzzify", "WeddingWink", "Verona"]
+    Input: 
+    An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Franklin",
+        description: "Named after Benjamin Franklin, known for his financial wisdom and contributions to economic principles, symbolizing financial management and guidance."
+      },
+      {
+        _id: "2",
+        title: "Athena",
+        description: "Named after the Greek goddess of wisdom and strategy, symbolizing intelligent and strategic debt management."
+      },
+      {
+        _id: "3",
+        title: "Hudson",
+        description: "Named after the Hudson River, symbolizing stability and flow, aligning with the platform's approach to managing debt effectively."
+      },
+      {
+        _id: "4",
+        title: "Camelot",
+        description: "Named after the legendary castle and court of King Arthur, symbolizing an ideal and well-organized society, reflecting the platform’s comprehensive approach to debt management."
+      }
+    ]
   
-  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the company names within an array, adhering to the detailed criteria provided. The output must not contain the business description or any additional explanatory text. Strictly ensure that each company name does not exceed 15 characters.`,
+    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+    OBJECTS_AND_PATTERNS: `Objective: Generate four diverse business names based on a user-provided business description. The names will be a mixture of objects and patterns. Each name selected must have a correlation to the business description and also be appropriate for the type of business.
+    Inputs:
+    Business Description: A detailed description of the business provided by the user.
+    Outputs:
+    Four business names.
+    A brief explanation of the correlation between each suggested name and the business description.
+    Guidelines:
+    The first suggestion will always be one of the following types of common objects:
+    Categories: Common food items, fruit, vegetables, common household objects
+    Correlation: The object chosen does not have to have any real correlation with the business or concept. Optimize for objects that are well-known and extremely common. There may be a loose connection to the object.
+    Examples: Oatmeal, Spoon, Couch, Apple, Acorns
+    Note: be creative. these will always be one word objects that are easy to read, say and understand. They should always have a small correlation to the business while optimizing for really well known objects.
+    The second suggestion will always be one of the following types of common objects:
+    Categories: objects that are metaphorical to the business concept, objects that symbolize an aspect of the product or value created by the product.
+    Correlation: Ensure that at least one suggested name has a clear and logical connection to the business description through the object's characteristics, functions, or symbolic meanings. Ensure the name is fitting for the type of business.
+    The third suggestion will always be a Mythical or Fictional Object:
+    Categories: Mythical, other-worldly, magical, folklore, fictional objects. These objects will have appeared in movies, tv shows, novels, famous stories, video games, etc.
+    Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the object's characteristics, functions, or symbolic meanings. Ensure the name is appropriate for the type of business.
+    Examples: Palantir, Magic Lamp, Elder Tree, Lightsaber, Excalibur, The Aleph, Arkenstone, Nightblade, Dreamstone
+    The fourth suggestion will always be patterns or shapes:
+    Categories: Patterns or shapes.
+    Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the pattern's or shape's characteristics, functions, or symbolic meanings. Ensure the name is appropriate for the type of business.
+    Process:
+    Step 1: Read and understand the user-provided business description.
+    Step 2: Identify key themes, characteristics, and values from the business description.
+    Step 3: Note typical naming conventions of the business type (e.g., if it’s a clothing company, it should follow naming conventions similar to well-known clothing companies; if it’s a tech company, it should follow naming conventions of other tech companies, etc.).
+    Step 4: Research and select appropriate names from the specified categories (common objects, lesser known objects, mythical objects, patterns or shapes) that align with the identified themes, characteristics, and values.
+    Step 5: Ensure that all names generated fit the business type.
+    Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
+    Format:
+    List the four business names with the corresponding brief explanation for each.
+    Example Format:
+    [
+      {
+        _id: "1",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "2",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "3",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "4",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      }
+    ]
+    Notes:
+    Ensure the names are culturally sensitive and appropriate.
+    Avoid names that are overly complex or difficult to pronounce.
+    Strive for names that are memorable and have positive connotations.
+    
+    Illustrative Examples
+    Input: 
+    An herbal stress relief pillow infused with natural herbs like lavender and chamomile, designed to release calming scents that promote relaxation and improve sleep quality.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Feather",
+        description: "The object 'Feather' captures the calming and soothing effects of the pillow, aligning with the natural and serene experience it provides."
+      },
+      {
+        _id: "2",
+        title: "Lavender",
+        description: "Lavender, known for its soothing and calming properties, symbolizes the stress-relief and relaxation provided by our herbal-infused pillow."
+      },
+      {
+        _id: "3",
+        title: "Ambrosia",
+        description: "Named after the mythical food of the gods, 'Ambrosia' evokes supreme relaxation and tranquility, fitting the luxurious and calming nature of the stress relief pillow."
+      },
+      {
+        _id: "4",
+        title: "Mosaic",
+        description: "'Mosaic' representing a beautiful pattern, symbolizes the diverse and harmonious blend of herbs, enhancing the relaxing experience provided by the pillow."
+      }
+    ]
+  
+    Input: 
+    An app-based EV battery refurbishment service that tests diagnostics with mobile refurbishment units for on-site service, providing a seamless and cost-effective way to extend the life and performance of electric car batteries.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Juice",
+        description: "'Juice' symbolizes the vital energy we restore to electric car batteries, highlighting the commitment to extending battery life and optimizing performance."
+      },
+      {
+        _id: "2",
+        title: "Lightning",
+        description: "Lightning" conveys the speed and power of convenient EV battery refurbishment."
+      },
+      {
+        _id: "3",
+        title: "Phoenix",
+        description: "Named after the mythical bird that rises from its ashes, "Phoenix" represents renewal and rejuvenation, mirroring the service’s ability to revive and extend the lifespan of batteries."
+      },
+      {
+        _id: "4",
+        title: "Helix",
+        description: "'Helix', a shape associated with advanced science and technology, reflects the innovative and methodical process of battery refurbishment, aligning with the tech-driven nature of the service."
+      }
+    ]
+    
+    Input: 
+    An AI-driven platform that specializes in reviewing and analyzing contracts for small and medium-sized businesses, offering automated clause comparison to industry standards and predictive analytics for contract outcomes.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Paperclip",
+        description: "'Paperclip' is a small but essential tool for organizing documents, reflects the platform's ability to efficiently manage and streamline contract review and analysis for businesses."
+      },
+      {
+        _id: "2",
+        title: "Keystone",
+        description: "'Keystone', an essential element in architecture, symbolizes strength and support, reflecting the platform's role in providing solid and reliable contract analysis."
+      },
+      {
+        _id: "3",
+        title: "Excalibur",
+        description: "Named after the legendary sword of King Arthur, "Excalibur" signifies power and precision, mirroring the platform’s ability to deliver sharp and accurate contract reviews."
+      },
+      {
+        _id: "4",
+        title: "Matrix",
+        description: "'Matrix' representing an interconnected structure, symbolizes the comprehensive and systematic analysis provided by the platform, fitting the intricate and detailed work of contract management"
+      }
+    ]
+    
+    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+    ADJECTIVES_AND_SOUNDS: `Objective: Generate four diverse business names based on a user-provided business description. Each name will be a combination of two words that evoke correlations to the business idea, industry, product, and customers. The names should offer variety while maintaining relevance to the business.
+    Inputs:
+    Business Description: A detailed description of the business provided by the user.
+    Outputs:
+    Four business names.
+    A brief explanation of the correlation between each suggested name and the business description.
+    Guidelines:
+    For the first two suggestions, they will always be:
+    Combination of two words that are directly or symbolically related to the business idea, industry, product, and customers.
+    One word when combined.
+    Abbreviate longer words so that the combined word is not too long.
+    Feel free to use well known slang terms or abbreviations.
+    Ensure the name is fitting for the type of business and is culturally sensitive and appropriate.
+    Avoid names that are overly complex or difficult to pronounce.
+    Strive for names that are memorable and have positive connotations.
+    The second two suggestions will always be:
+    One word that symbolizes or is metaphorical to the main product or business and a word that directly represents the product.
+    Examples: Rocket Mortgage, Cash App, Square Payments, Slack Technologies, Dropbox Storage, Apple Pay
+    Process:
+    Step 1: Read and understand the user-provided business description.
+    Step 2: Identify key themes, characteristics, and values from the business description.
+    Step 3: Note typical naming conventions of the business type (e.g., if it’s a tech company, it should follow naming conventions similar to well-known tech companies).
+    Step 4: Research and select appropriate word combinations that align with the identified themes, characteristics, and values.
+    Step 5: Ensure that all names generated fit the business type.
+    Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
+    Format: List the four business names with the corresponding brief explanation for each.
+    Example Format:
+    [
+      {
+        _id: "1",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "2",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "3",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "4",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      }
+    ]
+    Notes:
+    Ensure the names are culturally sensitive and appropriate.
+    Avoid names that are overly complex or difficult to pronounce.
+    Strive for names that are memorable and have positive connotations.
+    Illustrative Examples
+    Input: 
+    An app that uses AI to analyze artworks and provide detailed, personalized critique and improvement suggestions.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "ArtMaven",
+        description: "Combines 'Art' and 'Maven' to convey expertise and mastery in art analysis and critique."
+      },
+      {
+        _id: "2",
+        title: "PaintGenius",
+        description: "Combines 'Paint' and 'Genius' to convey the app's capability to provide intelligent, personalized art critiques."
+      },
+      {
+        _id: "3",
+        title: "Brush Critic",
+        description: "'Brush' symbolizes the primary tool of an artist, while "Critic" implies the app's role in providing detailed and expert analysis of artworks."
+      },
+      {
+        _id: "4",
+        title: "Art Advisor",
+        description: "'Art' signifies the focus on artistic works, and "Advisor" correlates with the app’s function of offering professional advice and improvement suggestions."
+      }
+    ]
+    
+    Input: 
+    An insurance feature that allows users to insure their bets, providing a partial refund if the bet loses, reducing risk.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "BetShield",
+        description: "Combines 'Bet' and 'Shield' to indicate protection for users' bets, reducing risk."
+      },
+      {
+        _id: "2",
+        title: "WagerGuard",
+        description: "Combines 'Wager' and 'Guard' to emphasize the safeguarding feature of the insurance."
+      },
+      {
+        _id: "3",
+        title: "Safe Bets",
+        description: "'Safe' conveys the security and risk reduction provided by the feature, while 'Bets' directly relates to the activity being insured."
+      },
+      {
+        _id: "4",
+        title: "Fortress Bets",
+        description: "'Fortress' symbolizes strength and protection, aligning with the feature's purpose of safeguarding bets against losses."
+      }
+    ]
+    
+    Input: 
+    An app that creates family-friendly fitness challenges, encouraging family members of all ages to work out together and earn rewards.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "FitFam",
+        description: "Combines 'Fit' and 'Fam' (short for family) to indicate a fitness app designed for families."
+      },
+      {
+        _id: "2",
+        title: "WeStride",
+        description: "Combines 'We' and 'Stride' to emphasize collective fitness activities and progress."
+      },
+      {
+        _id: "3",
+        title: "Harmony Workouts",
+        description: "'Harmony' evokes a sense of unity and balance, suitable for an app that encourages family members to work out together, while 'Workouts' specifies the fitness aspect."
+      },
+      {
+        _id: "4",
+        title: "Pulse Fitness",
+        description: "'Pulse' suggests energy and activity, resonating with the app’s goal to keep families active, while 'Fitness' clarifies the context."
+      }
+    ]
+    
+    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+    WORD_COMBINATIONS: `Objective: Generate four diverse business names based on a user-provided business description. The names will be a mixture of adjectives and sounds. Each name selected must have a correlation to the business description and also be appropriate for the type of business.
+    Input2s:
+    Busin2ess Description: A detailed description of the business provided by the user.
+    Outpu3ts:
+    **Fou3r business names.
+    **A b4rief explanation of the correlation between each suggested name and the business description.
+    Guide4lines:
+    Simple, Well-Known Adjectives:
+    Categories: Simple, well-known adjectives like calm and away. OR well-known emotions.
+    Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the adjective's characteristics or symbolic meanings. Ensure the name is fitting for the type of business.
+    Rarely Known and Unique Adjectives:
+    Categories: Adjectives that describe sophisticated or lesser-known aspects of life, the planet, space, and beyond, such as "luminous" or "ethereal." These may also include adjectives that encapsulate complex, nuanced emotions.
+    Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the adjective's characteristics or symbolic meanings. Ensure the name is appropriate for the type of business.
+    Well-Known Sounds:
+    Categories: Well-known sounds, noises, or words associated with sounds like whoop, chime, or yahoo.
+    Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the sound's characteristics or symbolic meanings. Ensure the name is appropriate for the type of business.
+    Lesser Known Sounds:
+    Categories: Lesser known sounds, noises, or words associated with sounds like Arpeggio or Motif.
+    Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the sound's characteristics or symbolic meanings. Ensure the name is appropriate for the type of business.
+    Process: 
+    Step 1: Read and understand the user-provided business description. 
+    Step 2: Identify key themes, characteristics, and values from the business description. 
+    Step 3: Note typical naming conventions of the business type (e.g., if it’s a clothing company, it should follow naming conventions similar to well-known clothing companies; if it’s a tech company, it should follow naming conventions of other tech companies, etc.). 
+    Step 4: Research and select appropriate names from the specified categories (adjectives and sounds) that align with the identified themes, characteristics, and values. 
+    Step 5: Ensure that all names generated fit the business type. 
+    Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
+    Format:
+    List the four business names with the corresponding brief explanation for each.
+    Example Format:
+    [
+      {
+        _id: "1",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "2",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "3",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      },
+      {
+        _id: "4",
+        title: [Name Suggestion],
+        description: [Explanation Sentence]
+      }
+    ]
+    
+    Notes:
+    Ensure the names are culturally sensitive and appropriate.
+    Avoid names that are overly complex or difficult to pronounce.
+    Strive for names that are memorable and have positive connotations.
+    
+    Illustrative Examples
+    Input: 
+    A smart pet health collar with sensors that monitor vital signs and activity levels, providing personalized health insights and care recommendations via a connected app.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Alert",
+        description: "'Alert' is a simple, well-known adjective that directly correlates to the collar's focus on monitoring and keeping track of pet health."
+      },
+      {
+        _id: "2",
+        title: "Luminant",
+        description: "'Luminant' meaning shining or glowing, symbolizes the collar’s ability to illuminate vital health insights and activity levels, providing clarity and care recommendations for pet owners."
+      },
+      {
+        _id: "3",
+        title: "Whistle",
+        description: "'Whistle' is a well-known sound associated with pets, symbolizing alertness and communication, fitting the collar’s function in health monitoring."
+      },
+      {
+        _id: "4",
+        title: "Cadence",
+        description: "'Cadence' a lesser known sound word, represents rhythm and regularity, reflecting the consistent health tracking provided by the collar."
+      }
+    ]
+    
+    Input: 
+    A virtual reality fitness platform for working mothers, offering on-demand immersive classes with real-time coaching and AI-generated dynamic environments that adapt based on user performance.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Fit",
+        description: "'Fit' is a simple, well-known adjective that directly correlates to the fitness focus of the platform, emphasizing physical health and exercise."
+      },
+      {
+        _id: "2",
+        title: "Vivacious",
+        description: "'Vivacious' a rarely known and unique adjective, conveys a sense of liveliness and spirited energy, aligning with the engaging and dynamic nature of the fitness platform."
+      },
+      {
+        _id: "3",
+        title: "Pulse",
+        description: "'Pulse' is a well-known sound word associated with the heartbeat, symbolizing health and vitality, fitting the platform’s goal of improving fitness."
+      },
+      {
+        _id: "4",
+        title: "Crescendo",
+        description: "'Crescendo' a lesser known sound word, refers to a gradual increase in intensity, reflecting the progressive and adaptive nature of the virtual fitness classes."
+      }
+    ]
+    
+    Input: 
+    A reusable food storage wrap made from washable materials with a self-adhesive property, offering an eco-friendly alternative to single-use plastic wrap.
+    Output:
+    [
+      {
+        _id: "1",
+        title: "Fresh",
+        description: "'Fresh' is a simple, well-known adjective that directly correlates to the goal of keeping food fresh, highlighting the wrap’s primary function."
+      },
+      {
+        _id: "2",
+        title: "Perennial",
+        description: "'Perennial', meaning lasting for an indefinitely long time, reflects the sustainable and reusable nature of the food storage wrap, highlighting its longevity and eco-friendliness."
+      },
+      {
+        _id: "3",
+        title: "Snap",
+        description: "'Snap' is a well-known sound word that evokes the action of closing and sealing, symbolizing the effectiveness of the wrap in keeping food contained."
+      },
+      {
+        _id: "4",
+        title: "Sizzle",
+        description: "'Sizzle' a lesser known sound word, represents the lively and effective nature of the wrap, reflecting its capability to keep food fresh and ready to use."
+      }
+    ]
+    
+    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+  },
 
   COMPANY_LOGO_: [
     `Based on the business name and business description provided, I want you to generate a business logo using below given Logo prompt. Make sure that if logo contains any text, it should be in english language words only. 
@@ -226,39 +700,30 @@ export const SYSTEM_INPUT = {
   You will insert thing into the following quote as [THING]: simple vector graphic logo of [THING], flat, 2d`,
   ],
 
-  COMPANY_LOGO: `"Provide a 1-5 word visual description of an engaging and distinctive object that vividly represents the core service or theme of the following business description. The visual description should include one of the specified design styles and an object that is not only directly related to the business but also visually striking and easily identifiable. The object should be something that can be rendered in a simple yet captivating manner in a logo design. Include a color if it enhances the visual appeal and relevance. Choose both a design style and an object that have unmistakable and exciting associations with the business description. Replace OBJECT with the chosen object and STYLE with the chosen style in the following format: 'simple logo of OBJECT, STYLE --v 5.2 --turbo'. Avoid generic or abstract concepts in favor of concrete and visually stimulating elements.
+  COMPANY_LOGO: `Input: business idea and company name
 
-  Styles: pixel art, contemporary 3d, synthwave, low poly art, flat, vibrant color
-  
-  Business description: [INSERT BUSINESS DESCRIPTION]
-  
-  Provide only the output without quotations or an explanation.
-  
-  Illustrative examples:
-  
-  Example 1
-  Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education
-  Object: green bull
-  Style: contemporary 3d 
-  Output: simple logo of green bull, contemporary 3d --v 5.2 --turbo
-  
-  Example 2
-  Business description: an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
-  Object: headphones
-  Style: synthwave
-  Output: simple logo of headphones, synthwave --v 5.2 --turbo
-  
-  Example 3
-  Business description: a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them
-  Object: sports car
-  Style: pixel art
-  Output: simple logo of sports car, pixel art --v 5.2 --turbo
-  
-  Example 4
-  Business description: a dating app that pairs users based on their vision of their perfect married life
-  Object: diamond ring
-  Style: low poly art
-  Output: simple logo of diamond ring, low poly art --v 5.2 --turbo"`,
+  Task: Generate a visual description of a distinctive and engaging logo that vividly represents the core service or theme of the provided business idea. 
+
+  Workflow:
+  Randomly select a logo style between company name first letter-based or business-based logo styles:
+  Output only the prompt.
+
+  First letter-based logo styles.:
+  a simple modern logo for creative agency, letter "[FIRST_LETTER]" shape, solid color
+  a minimalist and futuristic logo for a start up with the letter "[FIRST_LETTER]" 
+  modern and simple logo design, [FIRST_LETTER], letter [FIRST_LETTER], one color, vector, 8k
+  a minimal logo for a tech company, shaped like the letter [FIRST_LETTER]
+
+  Business-based logo styles:
+  a minimalist logo for [BUSINESS_IDEA], designed by Carolyn Davidson
+  a minimalist logo for [BUSINESS_IDEA], designed by Lindon Leader
+  a minimalist logo for [BUSINESS_IDEA], designed by Hr Giger
+  a brandmark logo design for [BUSINESS_IDEA]
+  a mascot logo for  [BUSINESS_IDEA]
+  a social media icon logo for [BUSINESS_IDEA]
+  a streamer logo for [BUSINESS_IDEA]
+  a esports logo for [BUSINESS_IDEA]
+  a modern and simple logo for [BUSINESS_IDEA]`,
 
   TARGET_AUDIENCE: `Generate three distinct and highly specific target audience profiles based solely on the provided business description. Each profile should be formatted as a concise sentence, not exceeding 45 words, detailing 3-5 pivotal characteristics such as age, gender, specific social media interactions, precise job titles, relationship status, clear income levels, or particular interests and activities. The output should strictly be an array containing only these three target audience descriptions, without including the business description or any other context. Ensure each entry in the array focuses on niche or hyper-specific audience traits.
 
@@ -6194,13 +6659,1532 @@ export const SYSTEM_IDEA_VALIDATION = {
   IDEA_VALIDATION_LABEL: `Your Idea`,
 };
 
+export const COMPETITORS = `Identify 5 most direct company competitors based solely on the provided business description. 2 of these competitors should be well-known billion-dollar companies. The other 3 should be niche companies you would be unlikely to know unless you were familiar with the specific industry or niche of the industry. All of these companies must be real and have an active website. You will add one explanation sentence for each company selected, commenting on the core product and how it relates to the user input business description. This explanation sentence will include a link to the company's website and be concise and to the point. Present your findings as an array containing a single string, listing each of the five competitor names consecutively the one sentence explanation for each in between each name. Add and '_id' field to each of the competitor as given in the below examples. The array should not include any additional context or information.
+
+  Business Description Examples and Corresponding Competitor:
+
+  Example 1:
+  User Input: 
+  an investing mobile app for high school and college students that promotes social investing and gamified financial education.
+  Output: 
+  [
+    {
+      _id: "1",
+      title: "Robinhood",
+      description: "Robinhood (https://robinhood.com/) offers commission-free trading and a user-friendly mobile app, making it accessible for young investors"
+    },
+    {
+      _id: "2",
+      title: "Schwab", 
+      description: "Schwab (https://www.schwab.com/) provides comprehensive trading tools and educational resources, catering to novice investors with detailed financial education"
+    },
+    {
+      _id: "3",
+      title: "Stash",
+      description: "Stash (https://www.stash.com/) combines fractional share investing with educational content, appealing to young investors seeking both investment opportunities and financial literacy"
+    },
+    {
+      _id: "4",
+      title: "Bloom",
+      description: "Bloom (https://bloomapp.com/) specializes in educational investing for students, offering personalized financial guidance and social investing"
+    },
+    {
+      _id: "5",
+      title: "Stockpile",
+      description: "Stockpile (https://www.stockpile.com/) allows fractional share purchases and gift cards for stocks, making investing accessible and educational for younger users"
+    },
+  ]
+    
+  Example 2:
+  Input: 
+  an AI music creation app with a rich library of sounds and beats as well as a strong community of musicians
+  Output: 
+  [
+    {
+      _id: "1",
+      title: "Audacity", 
+      description: "Audacity (https://www.audacityteam.org/) offers open-source audio editing software with extensive editing features, appealing to musicians looking for robust tools"
+    },
+    {
+      _id: "2",
+      title: "GarageBand",
+      description: "GarageBand (https://www.apple.com/ios/garageband/) provides a comprehensive music creation suite with a rich library of loops and sounds, along with community sharing features"
+    },
+    {
+      _id: "3",
+      title: "Mayk.it",
+      description: "Mayk.it (https://www.mayk.it/) focuses on easy-to-use music creation with a library of beats and a strong social component, catering directly to musicians seeking both creativity and community"
+    },
+    {
+      _id: "4",
+      title: "sunhou.se",
+      description: "sunhou.se (https://sunhou.se/) offers advanced drum software that integrates with physical drumming, providing a niche yet innovative approach to sound creation"
+    },
+    {
+      _id: "5",
+      title: "Volta",
+      description: "Volta (https://www.volta-xr.com/) provides immersive audio-visual experiences and creative tools for musicians, emphasizing innovative sound creation and community engagement"
+    },
+  ]
+    
+  Example 3:
+  User Input: 
+  a mobile app that automates car maintenance, allowing car owners to pay a membership fee for routine auto care (like oil changes, tire rotation, etc) that comes to them.
+  Output: 
+  [
+    {
+      _id: "1",
+      title: "Jiffy Lube", 
+      description: "Jiffy Lube (https://www.jiffylube.com/) offers extensive quick car maintenance services through numerous locations, focusing on convenience but lacks a mobile or automated membership model"
+    },
+    {
+      _id: "2",
+      title: "Valvoline",
+      description: "Valvoline (https://www.valvoline.com/) provides fast oil changes and auto services with drive-through convenience, similar in convenience but lacks a mobile or automated membership model"
+    },
+    {
+      _id: "3",
+      title: "Wrench",
+      description: "Wrench (https://wrench.com/) delivers mobile car repair and maintenance services with automated and on-location convenience"
+    },
+    {
+      _id: "4",
+      title: "ServiceUp",
+      description: "ServiceUp (https://www.serviceup.com/) facilitates car maintenance and repair services with pick-up and drop-off options, offering convenience but not fully automated"
+    },
+    {
+      _id: "5",
+      title: "Get Spiffy",
+      description: "Get Spiffy (https://www.getspiffy.com/) offers mobile car care services, including washes and detailing along with maintenance"
+    },
+  ]
+    
+  Example 4:
+  User Input: 
+  a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
+  Output: 
+  [
+    {
+      _id: "1",
+      title: "Shopify", 
+      description: "Shopify (https://www.shopify.com/) provides an e-commerce platform with tools to build and run online stores, supporting entrepreneurs with practical business tools but lacks comprehensive education and mentorship features"
+    },
+    {
+      _id: "2",
+      title: "HubSpot",
+      description: "HubSpot (https://www.hubspot.com/) offers marketing, sales, and CRM software with extensive educational resources and business tools, supporting business growth but doesn't focus on gamified education or daily action"
+    },
+    {
+      _id: "3",
+      title: "Buildspace",
+      description: "Buildspace (https://buildspace.so/) provides a community-driven platform with project-based learning and mentorship for startup founders"
+    },
+    {
+      _id: "4",
+      title: "Beta Blox",
+      description: "Beta Blox (https://www.betablox.com/) offers an accelerator program with mentorship and resources for startups"
+    },
+    {
+      _id: "5",
+      title: "StartItUp",
+      description: "StartItUp (https://www.startitup.me/) provides a structured program for new entrepreneurs with actionable steps and guidance"
+    },
+  ]
+    
+  Instruction for Enhanced Precision: Ensure the output is formatted to exclusively include the competitor company names and one sentence explanations within an array, adhering to the detailed criteria provided. The output must not contain any additional explanatory text.
+  Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`;
+
+export const COMPANY_NAME = {
+  PEOPLE_AND_PLACES: `Objective: Generate four diverse business names based on a user-provided business description. The names will be a mixture of real and mythical/fiction names and places. Each name selected must have a correlation to the business description and also be appropriate for the type of business.
+  Inputs:
+  Business Description: A detailed description of the business provided by the user.
+  Outputs:
+  Four business names.
+  A brief explanation of the correlation between each suggested name and the business description.
+  Guidelines:
+  Famous People or Characters:
+  First Name:
+  Categories: Historical figures, Musicians/Artists, Famous people.
+  Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the person's achievements, characteristics, roles, or themes. Ensure the name is fitting for the type of business (e.g., a fashion icon for an apparel brand).
+  Second Name:
+  Categories: Movie/TV show characters, Literary Characters, Comic Book Characters, characters from folklore, video game characters.
+  Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the character's traits, story arcs, or thematic relevance. Ensure the name is appropriate for the type of business (e.g., a character known for strategic thinking for a tech product).
+  Places:
+  Third Name:
+  Categories: Cities, towns, rivers, lakes, oceans, other bodies of water, mountains, trails, deserts, forests, areas, neighborhoods, buildings, countries.
+  Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the place's characteristics, historical significance, cultural symbolism, or thematic relevance. Ensure the name is appropriate for the type of business (e.g., a location known for stability for a financial service).
+  Fourth Name:
+  Categories: Planets, stars, moons, mythical locations, movie/TV show locations, folklore locations.
+  Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the place's characteristics, historical significance, cultural symbolism, or thematic relevance. Ensure the name is appropriate for the type of business (e.g., a mythical location known for prosperity for a financial service).
+  Process:
+  Step 1: Read and understand the user-provided business description.
+  Step 2: Identify key themes, characteristics, and values from the business description.
+  Step 3: Note typical naming conventions of the business type (e.g., if it’s a clothing company, it should follow naming conventions similar to well-known clothing companies; if it’s a tech company, it should follow naming conventions of other tech companies, etc.).
+  Step 4: Research and select appropriate names from the specified categories (famous people, characters, or places) that align with the identified themes, characteristics, and values.
+  Step 5: Ensure that all names generated fit the business type.
+  Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
+  
+  Format:
+  List the four business names with the corresponding brief explanation for each.
+  Example Format:
+  [
+    {
+      _id: "1",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "2",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "3",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "4",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    }
+  ]
+  Notes:
+  Ensure the names are culturally sensitive and appropriate.
+  Avoid names that are overly complex or difficult to pronounce.
+  Strive for names that are memorable and have positive connotations.
+  
+  Illustrative Examples
+  Input: 
+  A smart temperature-regulating jacket made from sustainable materials, featuring built-in technology that adapts to the wearer's body heat and external conditions for optimal comfort.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Olivia",
+      description: "Named after Olivia Newton-John, famous for wearing a stylish motorcycle jacket in the movie "Grease," aligning with fashion and iconic jackets."
+    },
+    {
+      _id: "2",
+      title: "Maverick",
+      description: "Named after Tom Cruise's character in the movie "Top Gun," known for his iconic air force fighter jacket, symbolizing style and adaptability."
+    },
+    {
+      _id: "3",
+      title: "Como",
+      description: "Named after Lake Como, known for its moderate year-round temperatures, symbolizing the jacket’s ability to adapt to various conditions for comfort."
+    },
+    {
+      _id: "4",
+      title: "452b",
+      description: "Named after Kepler-452b, the exoplanet with Earth-like conditions, representing the jacket’s advanced technology for maintaining ideal comfort."
+    }
+  ]
+  
+  Input: 
+  A browser extension that detects the sports game you're streaming and suggests relevant live bets based on real-time game analytics.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Jordan",
+      description: "Named after Michael Jordan, symbolizing excellence in sports and strategic decision-making, aligning with sports analytics."
+    },
+    {
+      _id: "2",
+      title: "Titan",
+      description: "Named after the powerful race of deities in Greek mythology, symbolizing immense strength and strategic prowess, aligning with the analytical and strategic nature of sports betting."
+    },
+    {
+      _id: "3",
+      title: "Madison",
+      description: "Named after Madison Square Garden, an iconic sports arena in New York City, symbolizing the connection to sports events."
+    },
+    {
+      _id: "4",
+      title: "Valhalla",
+      description: "Named after the mythical hall of warriors in Norse mythology, representing a place of strategic planning and excellence in sports."
+    }
+  ]
+
+  Input: 
+  An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Franklin",
+      description: "Named after Benjamin Franklin, known for his financial wisdom and contributions to economic principles, symbolizing financial management and guidance."
+    },
+    {
+      _id: "2",
+      title: "Athena",
+      description: "Named after the Greek goddess of wisdom and strategy, symbolizing intelligent and strategic debt management."
+    },
+    {
+      _id: "3",
+      title: "Hudson",
+      description: "Named after the Hudson River, symbolizing stability and flow, aligning with the platform's approach to managing debt effectively."
+    },
+    {
+      _id: "4",
+      title: "Camelot",
+      description: "Named after the legendary castle and court of King Arthur, symbolizing an ideal and well-organized society, reflecting the platform’s comprehensive approach to debt management."
+    }
+  ]
+
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+  OBJECTS_AND_PATTERNS: `Objective: Generate four diverse business names based on a user-provided business description. The names will be a mixture of objects and patterns. Each name selected must have a correlation to the business description and also be appropriate for the type of business.
+  Inputs:
+  Business Description: A detailed description of the business provided by the user.
+  Outputs:
+  Four business names.
+  A brief explanation of the correlation between each suggested name and the business description.
+  Guidelines:
+  The first suggestion will always be one of the following types of common objects:
+  Categories: Common food items, fruit, vegetables, common household objects
+  Correlation: The object chosen does not have to have any real correlation with the business or concept. Optimize for objects that are well-known and extremely common. There may be a loose connection to the object.
+  Examples: Oatmeal, Spoon, Couch, Apple, Acorns
+  Note: be creative. these will always be one word objects that are easy to read, say and understand. They should always have a small correlation to the business while optimizing for really well known objects.
+  The second suggestion will always be one of the following types of common objects:
+  Categories: objects that are metaphorical to the business concept, objects that symbolize an aspect of the product or value created by the product.
+  Correlation: Ensure that at least one suggested name has a clear and logical connection to the business description through the object's characteristics, functions, or symbolic meanings. Ensure the name is fitting for the type of business.
+  The third suggestion will always be a Mythical or Fictional Object:
+  Categories: Mythical, other-worldly, magical, folklore, fictional objects. These objects will have appeared in movies, tv shows, novels, famous stories, video games, etc.
+  Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the object's characteristics, functions, or symbolic meanings. Ensure the name is appropriate for the type of business.
+  Examples: Palantir, Magic Lamp, Elder Tree, Lightsaber, Excalibur, The Aleph, Arkenstone, Nightblade, Dreamstone
+  The fourth suggestion will always be patterns or shapes:
+  Categories: Patterns or shapes.
+  Correlation: Ensure that each suggested name has a clear and logical connection to the business description through the pattern's or shape's characteristics, functions, or symbolic meanings. Ensure the name is appropriate for the type of business.
+  Process:
+  Step 1: Read and understand the user-provided business description.
+  Step 2: Identify key themes, characteristics, and values from the business description.
+  Step 3: Note typical naming conventions of the business type (e.g., if it’s a clothing company, it should follow naming conventions similar to well-known clothing companies; if it’s a tech company, it should follow naming conventions of other tech companies, etc.).
+  Step 4: Research and select appropriate names from the specified categories (common objects, lesser known objects, mythical objects, patterns or shapes) that align with the identified themes, characteristics, and values.
+  Step 5: Ensure that all names generated fit the business type.
+  Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
+  Format:
+  List the four business names with the corresponding brief explanation for each.
+  Example Format:
+  [
+    {
+      _id: "1",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "2",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "3",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "4",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    }
+  ]
+  Notes:
+  Ensure the names are culturally sensitive and appropriate.
+  Avoid names that are overly complex or difficult to pronounce.
+  Strive for names that are memorable and have positive connotations.
+  
+  Illustrative Examples
+  Input: 
+  An herbal stress relief pillow infused with natural herbs like lavender and chamomile, designed to release calming scents that promote relaxation and improve sleep quality.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Feather",
+      description: "The object 'Feather' captures the calming and soothing effects of the pillow, aligning with the natural and serene experience it provides."
+    },
+    {
+      _id: "2",
+      title: "Lavender",
+      description: "Lavender, known for its soothing and calming properties, symbolizes the stress-relief and relaxation provided by our herbal-infused pillow."
+    },
+    {
+      _id: "3",
+      title: "Ambrosia",
+      description: "Named after the mythical food of the gods, 'Ambrosia' evokes supreme relaxation and tranquility, fitting the luxurious and calming nature of the stress relief pillow."
+    },
+    {
+      _id: "4",
+      title: "Mosaic",
+      description: "'Mosaic' representing a beautiful pattern, symbolizes the diverse and harmonious blend of herbs, enhancing the relaxing experience provided by the pillow."
+    }
+  ]
+
+  Input: 
+  An app-based EV battery refurbishment service that tests diagnostics with mobile refurbishment units for on-site service, providing a seamless and cost-effective way to extend the life and performance of electric car batteries.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Juice",
+      description: "'Juice' symbolizes the vital energy we restore to electric car batteries, highlighting the commitment to extending battery life and optimizing performance."
+    },
+    {
+      _id: "2",
+      title: "Lightning",
+      description: "Lightning" conveys the speed and power of convenient EV battery refurbishment."
+    },
+    {
+      _id: "3",
+      title: "Phoenix",
+      description: "Named after the mythical bird that rises from its ashes, "Phoenix" represents renewal and rejuvenation, mirroring the service’s ability to revive and extend the lifespan of batteries."
+    },
+    {
+      _id: "4",
+      title: "Helix",
+      description: "'Helix', a shape associated with advanced science and technology, reflects the innovative and methodical process of battery refurbishment, aligning with the tech-driven nature of the service."
+    }
+  ]
+  
+  Input: 
+  An AI-driven platform that specializes in reviewing and analyzing contracts for small and medium-sized businesses, offering automated clause comparison to industry standards and predictive analytics for contract outcomes.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Paperclip",
+      description: "'Paperclip' is a small but essential tool for organizing documents, reflects the platform's ability to efficiently manage and streamline contract review and analysis for businesses."
+    },
+    {
+      _id: "2",
+      title: "Keystone",
+      description: "'Keystone', an essential element in architecture, symbolizes strength and support, reflecting the platform's role in providing solid and reliable contract analysis."
+    },
+    {
+      _id: "3",
+      title: "Excalibur",
+      description: "Named after the legendary sword of King Arthur, "Excalibur" signifies power and precision, mirroring the platform’s ability to deliver sharp and accurate contract reviews."
+    },
+    {
+      _id: "4",
+      title: "Matrix",
+      description: "'Matrix' representing an interconnected structure, symbolizes the comprehensive and systematic analysis provided by the platform, fitting the intricate and detailed work of contract management"
+    }
+  ]
+  
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+  ADJECTIVES_AND_SOUNDS: `Objective: Generate four diverse business names based on a user-provided business description. Each name will be a combination of two words that evoke correlations to the business idea, industry, product, and customers. The names should offer variety while maintaining relevance to the business.
+  Inputs:
+  Business Description: A detailed description of the business provided by the user.
+  Outputs:
+  Four business names.
+  A brief explanation of the correlation between each suggested name and the business description.
+  Guidelines:
+  For the first two suggestions, they will always be:
+  Combination of two words that are directly or symbolically related to the business idea, industry, product, and customers.
+  One word when combined.
+  Abbreviate longer words so that the combined word is not too long.
+  Feel free to use well known slang terms or abbreviations.
+  Ensure the name is fitting for the type of business and is culturally sensitive and appropriate.
+  Avoid names that are overly complex or difficult to pronounce.
+  Strive for names that are memorable and have positive connotations.
+  The second two suggestions will always be:
+  One word that symbolizes or is metaphorical to the main product or business and a word that directly represents the product.
+  Examples: Rocket Mortgage, Cash App, Square Payments, Slack Technologies, Dropbox Storage, Apple Pay
+  Process:
+  Step 1: Read and understand the user-provided business description.
+  Step 2: Identify key themes, characteristics, and values from the business description.
+  Step 3: Note typical naming conventions of the business type (e.g., if it’s a tech company, it should follow naming conventions similar to well-known tech companies).
+  Step 4: Research and select appropriate word combinations that align with the identified themes, characteristics, and values.
+  Step 5: Ensure that all names generated fit the business type.
+  Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
+  Format: List the four business names with the corresponding brief explanation for each.
+  Example Format:
+  [
+    {
+      _id: "1",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "2",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "3",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "4",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    }
+  ]
+  Notes:
+  Ensure the names are culturally sensitive and appropriate.
+  Avoid names that are overly complex or difficult to pronounce.
+  Strive for names that are memorable and have positive connotations.
+  Illustrative Examples
+  Input: 
+  An app that uses AI to analyze artworks and provide detailed, personalized critique and improvement suggestions.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "ArtMaven",
+      description: "Combines 'Art' and 'Maven' to convey expertise and mastery in art analysis and critique."
+    },
+    {
+      _id: "2",
+      title: "PaintGenius",
+      description: "Combines 'Paint' and 'Genius' to convey the app's capability to provide intelligent, personalized art critiques."
+    },
+    {
+      _id: "3",
+      title: "Brush Critic",
+      description: "'Brush' symbolizes the primary tool of an artist, while "Critic" implies the app's role in providing detailed and expert analysis of artworks."
+    },
+    {
+      _id: "4",
+      title: "Art Advisor",
+      description: "'Art' signifies the focus on artistic works, and "Advisor" correlates with the app’s function of offering professional advice and improvement suggestions."
+    }
+  ]
+  
+  Input: 
+  An insurance feature that allows users to insure their bets, providing a partial refund if the bet loses, reducing risk.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "BetShield",
+      description: "Combines 'Bet' and 'Shield' to indicate protection for users' bets, reducing risk."
+    },
+    {
+      _id: "2",
+      title: "WagerGuard",
+      description: "Combines 'Wager' and 'Guard' to emphasize the safeguarding feature of the insurance."
+    },
+    {
+      _id: "3",
+      title: "Safe Bets",
+      description: "'Safe' conveys the security and risk reduction provided by the feature, while 'Bets' directly relates to the activity being insured."
+    },
+    {
+      _id: "4",
+      title: "Fortress Bets",
+      description: "'Fortress' symbolizes strength and protection, aligning with the feature's purpose of safeguarding bets against losses."
+    }
+  ]
+  
+  Input: 
+  An app that creates family-friendly fitness challenges, encouraging family members of all ages to work out together and earn rewards.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "FitFam",
+      description: "Combines 'Fit' and 'Fam' (short for family) to indicate a fitness app designed for families."
+    },
+    {
+      _id: "2",
+      title: "WeStride",
+      description: "Combines 'We' and 'Stride' to emphasize collective fitness activities and progress."
+    },
+    {
+      _id: "3",
+      title: "Harmony Workouts",
+      description: "'Harmony' evokes a sense of unity and balance, suitable for an app that encourages family members to work out together, while 'Workouts' specifies the fitness aspect."
+    },
+    {
+      _id: "4",
+      title: "Pulse Fitness",
+      description: "'Pulse' suggests energy and activity, resonating with the app’s goal to keep families active, while 'Fitness' clarifies the context."
+    }
+  ]
+  
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+  WORD_COMBINATIONS: `Objective: Generate four diverse business names based on a user-provided business description. The names will be a mixture of adjectives and sounds. Each name selected must have a correlation to the business description and also be appropriate for the type of business.
+  Input2s:
+  Busin2ess Description: A detailed description of the business provided by the user.
+  Outpu3ts:
+  **Fou3r business names.
+  **A b4rief explanation of the correlation between each suggested name and the business description.
+  Guide4lines:
+  Simple, Well-Known Adjectives:
+  Categories: Simple, well-known adjectives like calm and away. OR well-known emotions.
+  Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the adjective's characteristics or symbolic meanings. Ensure the name is fitting for the type of business.
+  Rarely Known and Unique Adjectives:
+  Categories: Adjectives that describe sophisticated or lesser-known aspects of life, the planet, space, and beyond, such as "luminous" or "ethereal." These may also include adjectives that encapsulate complex, nuanced emotions.
+  Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the adjective's characteristics or symbolic meanings. Ensure the name is appropriate for the type of business.
+  Well-Known Sounds:
+  Categories: Well-known sounds, noises, or words associated with sounds like whoop, chime, or yahoo.
+  Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the sound's characteristics or symbolic meanings. Ensure the name is appropriate for the type of business.
+  Lesser Known Sounds:
+  Categories: Lesser known sounds, noises, or words associated with sounds like Arpeggio or Motif.
+  Correlation: Ensure that the suggested name has a clear and logical connection to the business description through the sound's characteristics or symbolic meanings. Ensure the name is appropriate for the type of business.
+  Process: 
+  Step 1: Read and understand the user-provided business description. 
+  Step 2: Identify key themes, characteristics, and values from the business description. 
+  Step 3: Note typical naming conventions of the business type (e.g., if it’s a clothing company, it should follow naming conventions similar to well-known clothing companies; if it’s a tech company, it should follow naming conventions of other tech companies, etc.). 
+  Step 4: Research and select appropriate names from the specified categories (adjectives and sounds) that align with the identified themes, characteristics, and values. 
+  Step 5: Ensure that all names generated fit the business type. 
+  Step 6: Provide a brief explanation of the correlation between each suggested name and the business description.
+  Format:
+  List the four business names with the corresponding brief explanation for each.
+  Example Format:
+  [
+    {
+      _id: "1",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "2",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "3",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    },
+    {
+      _id: "4",
+      title: [Name Suggestion],
+      description: [Explanation Sentence]
+    }
+  ]
+  
+  Notes:
+  Ensure the names are culturally sensitive and appropriate.
+  Avoid names that are overly complex or difficult to pronounce.
+  Strive for names that are memorable and have positive connotations.
+  
+  Illustrative Examples
+  Input: 
+  A smart pet health collar with sensors that monitor vital signs and activity levels, providing personalized health insights and care recommendations via a connected app.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Alert",
+      description: "'Alert' is a simple, well-known adjective that directly correlates to the collar's focus on monitoring and keeping track of pet health."
+    },
+    {
+      _id: "2",
+      title: "Luminant",
+      description: "'Luminant' meaning shining or glowing, symbolizes the collar’s ability to illuminate vital health insights and activity levels, providing clarity and care recommendations for pet owners."
+    },
+    {
+      _id: "3",
+      title: "Whistle",
+      description: "'Whistle' is a well-known sound associated with pets, symbolizing alertness and communication, fitting the collar’s function in health monitoring."
+    },
+    {
+      _id: "4",
+      title: "Cadence",
+      description: "'Cadence' a lesser known sound word, represents rhythm and regularity, reflecting the consistent health tracking provided by the collar."
+    }
+  ]
+  
+  Input: 
+  A virtual reality fitness platform for working mothers, offering on-demand immersive classes with real-time coaching and AI-generated dynamic environments that adapt based on user performance.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Fit",
+      description: "'Fit' is a simple, well-known adjective that directly correlates to the fitness focus of the platform, emphasizing physical health and exercise."
+    },
+    {
+      _id: "2",
+      title: "Vivacious",
+      description: "'Vivacious' a rarely known and unique adjective, conveys a sense of liveliness and spirited energy, aligning with the engaging and dynamic nature of the fitness platform."
+    },
+    {
+      _id: "3",
+      title: "Pulse",
+      description: "'Pulse' is a well-known sound word associated with the heartbeat, symbolizing health and vitality, fitting the platform’s goal of improving fitness."
+    },
+    {
+      _id: "4",
+      title: "Crescendo",
+      description: "'Crescendo' a lesser known sound word, refers to a gradual increase in intensity, reflecting the progressive and adaptive nature of the virtual fitness classes."
+    }
+  ]
+  
+  Input: 
+  A reusable food storage wrap made from washable materials with a self-adhesive property, offering an eco-friendly alternative to single-use plastic wrap.
+  Output:
+  [
+    {
+      _id: "1",
+      title: "Fresh",
+      description: "'Fresh' is a simple, well-known adjective that directly correlates to the goal of keeping food fresh, highlighting the wrap’s primary function."
+    },
+    {
+      _id: "2",
+      title: "Perennial",
+      description: "'Perennial', meaning lasting for an indefinitely long time, reflects the sustainable and reusable nature of the food storage wrap, highlighting its longevity and eco-friendliness."
+    },
+    {
+      _id: "3",
+      title: "Snap",
+      description: "'Snap' is a well-known sound word that evokes the action of closing and sealing, symbolizing the effectiveness of the wrap in keeping food contained."
+    },
+    {
+      _id: "4",
+      title: "Sizzle",
+      description: "'Sizzle' a lesser known sound word, represents the lively and effective nature of the wrap, reflecting its capability to keep food fresh and ready to use."
+    }
+  ]
+  
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response and nothing else and the strings should be in quotes`,
+};
+
+export const VALUE_PROPOSITION = `Objective:
+  Use the business description and target audience in the user input to create three short and concise value proposition statements. The three value propositions should be written in different styles to provide variety while communicating the value of the same core product of the business to the same audience. Value proposition statements will always be concise and engaging. They will never exceed 10 words.
+
+  Guidelines: A value proposition is a short, concise statement that communicates why buyers should choose your products or services. It's more than just a product or service description — it's the specific solution that your business provides and the promise of value that a customer can expect you to deliver.
+
+  Here are a few examples of how value propositions differ from other statements:
+  Value Proposition Vs. Mission Statement
+  Example: HubSpot
+  Value Proposition: "An easy-to-use CRM."
+  Mission Statement: "To help businesses grow better."
+  Value Proposition Vs. Slogan
+  Example: De Beers Group
+  Value Proposition: "Exquisite diamonds, world-class designs, breathtaking jewelry."
+  Slogan: "A diamond is forever."
+  Value Proposition Vs. Tagline
+  Example: Apple
+  Value Proposition: "The best experiences. Only on Apple."
+  Tagline: "Think Different."
+  Value Proposition vs Mission Statement vs Slogan vs Tagline
+  Example: Nike
+  Value Proposition: "Customizable performance or lifestyle sneakers with unique colorways and materials."
+  Mission Statement: "To bring inspiration and innovation to every athlete in the world."
+  Slogan: "Twice the guts. Double the glory."
+  Tagline: "Just do it."
+
+  Here are the steps to crafting a great value proposition:
+  Identify your customer's main problem.
+  Identify all the benefits your product offers.
+  Describe what makes these benefits valuable.
+  Connect this value to your buyer's problem.
+  Differentiate yourself as the preferred provider of this value.
+
+  You may consider using one or more of the following methods of writing a value proposition:
+
+  Steve Blank Method:
+  Instead of focusing on the features themselves, Blank saw the need to emphasize the benefits derived from the features in a simple sentence. By following this formula you'll connect the target market and their pain points to the solution:
+  "We help (X) do (Y) by doing (Z)"
+
+  Geoff Moore Method:
+  Moore provides a template that's more specific in identifying the industry categories alongside the benefits customers value. This makes a more clear value proposition formula as follows:
+  "For [target customer] who [needs or wants X], our [product/service] is [category of industry] that [benefits]"
+
+  Harvard Business School Method:
+  According to HBS a value proposition is executed best when it answers the following questions:
+  "What is my brand offering?"
+  "What job does the customer hire my brand to do?"
+  "What companies and products compete with my brand to do this job for the customer?"
+  "What sets my brand apart from competitors?"
+
+  Examples of good value propositions:
+  HubSpot: An Easy-to-Use CRM
+  FedEx: Manage Your Home Deliveries
+  LG: State-of-the-art Living Experience
+  Subaru: The most adventurous, most reliable, safest, best Subaru Outback ever
+  Samsung: Get Ready to Unfold Your World
+  Imperfect Foods: Groceries that help you fight food waste
+  Hulu: All The TV You Love
+
+  Illustrative examples:
+  Input:
+  An app where users swipe through fantasy sports trade ideas, integrated with league data and suggested based on team needs and balanced trades.
+  Young, tech-savvy sports fans
+  Demographics: Male, 25-35 years old, MBA or STEM degree, Resides in sports-centric cities
+  Psychographics: Participates in sports betting forums, Reads "The Economist" magazine, Seeks validation from peers
+  Output:
+  Personalized fantasy trades for your dream team
+  Fantasy trade suggestions your league-mates will actually accept
+  Fantasy sports trades powered by real league data
+
+  Input:
+  An AI tool that dynamically adjusts film scores based on scene changes and director input, providing adaptive music that enhances the visual experience.
+  Advertising Agency Creatives
+  Demographics: 30-45 years old, Creative directors, Based in New York City
+  Psychographics: Values cutting-edge tools, Regularly pitches multimedia campaigns, Engages with creative technology blogs
+  Output:
+  We help creatives enhance films with adaptive, dynamic scores
+  Real-time, adaptive film scores for advertising creatives
+  Enhance your films with AI-driven dynamic scores
+
+  Input:
+  An app that uses AI to restore and enhance old or damaged photos, improving clarity, color, and detail.
+  Amateur Genealogists
+  Demographics: 35-60 years old, Hobbyists, Suburban areas
+  Psychographics: Passionate about family history, Participates in genealogy forums, Attends local history events
+  Output:
+  Bring new life to old photos with AI
+  Restore and preserve your family memories with AI
+  Revive your family history with AI-powered photo restoration`;
+
+export const UNFAIR_ADVANTAGE = `Objective:
+  Use the business description and target audience in the user input to identify three potential unfair advantages for the core product of the business. These unfair advantages should be unique to the business and product, inherently defensible and sets the business apart from its competition. The proposed unfair advantages should all be specific, focused and unique. The proposed unfair advantages should also directly address what the target audience wants/needs. The unfair advantages may exploit an aspect of the product/business that competitors are not typically good at.
+
+  Output format:
+  [
+    {
+      "title": [Short phrase describing the unfair advantage],
+      "description": [Two sentence in depth explanation of the unfair advantage strategy]
+    },
+    {
+      "title": [Short phrase describing the unfair advantage],
+      "description": [Two sentence in depth explanation of the unfair advantage strategy]
+    },
+    {
+      "title": [Short phrase describing the unfair advantage],
+      "description": [Two sentence in depth explanation of the unfair advantage strategy]
+    }
+  ]
+
+  Steps:
+  Input Collection:
+  Gather the business description and target audience information from the user input.
+  Ensure clarity on the core product of the business, its features, and the specific needs/wants of the target audience.
+  Understanding the Business and Product:
+  Analyze the business description to understand the unique aspects of the product.
+  Identify key features, technologies, processes, or aspects that differentiate the product from competitors.
+  Analyzing the Target Audience:
+  Examine the target audience information to determine their primary needs, desires, and pain points.
+  Consider what aspects of the product would most appeal to this audience and why.
+  Identifying Potential Unfair Advantages:
+  Step 1: List all unique features, technologies, or processes identified in the product analysis.
+  Step 2: Cross-reference these features with the target audience's needs to find overlaps where the product excels.
+  Step 3: Evaluate which of these overlapping features are inherently defensible, meaning they cannot be easily replicated by competitors.
+  Evaluating Defensibility:
+  Consider intellectual property (patents, trademarks), exclusive partnerships, unique technology, or proprietary processes.
+  Assess barriers to entry for competitors, such as high initial costs, specialized expertise, or regulatory approvals.
+  Expanding on Existing Features:
+  For features already mentioned in the business description, identify ways to expand on them by adding novel or unique elements that make them more defensible.
+  Consider enhancements, integrations, or unique applications that set these features apart from the standard offering.
+  Considering Non-Product Advantages:
+  Identify potential marketing, operational, or strategic advantages that could also be unique and defensible.
+  Consider aspects like unique marketing strategies, exclusive partnerships, brand positioning, or community engagement.
+  Proposing Specific Unfair Advantages:
+  Formulate three specific, focused, and unique unfair advantages.
+  Each advantage should clearly articulate how it sets the business apart from competitors and directly addresses the target audience’s needs.
+  Ensure each advantage exploits a competitor's weakness or an area where competitors typically underperform.
+  Verification and Refinement:
+  Review the proposed unfair advantages to ensure they are distinct, realistic, and directly tied to the business’s core product and target audience.
+  Refine the advantages for clarity and impact, ensuring they are specific and actionable.
+  Output Generation:
+  Present the three proposed unfair advantages in a clear and concise manner.
+  Provide a brief explanation for each advantage, detailing why it is unique and defensible, and how it meets the target audience's needs.
+
+  Illustrative Examples:
+  Example 1:
+  Input:
+  A mobile app that helps entrepreneurs take action and make progress on their business concept through daily goals/actions and just-in-time business education.
+  Demographics:
+  Age: 18-24 years old
+  University students studying business, technology, or entrepreneurship
+  Resides in cities with active startup ecosystems (e.g., San Francisco, Berlin)
+  Psychographics:
+  Passionate about startup culture
+  Participates in university incubators and entrepreneurial clubs
+  Enjoys gamified learning experiences and hackathons
+
+  Steps Conducted:
+  Identify unique features: Personalized daily goals, interactive learning modules, integration with university incubators.
+  Cross-reference with target audience needs: Gamified experiences, practical entrepreneurship guidance, support from startup ecosystems.
+  Evaluate defensibility: Exclusive university partnerships, proprietary gamification techniques, unique content tailored to young entrepreneurs.
+  Expand on existing features:
+  For Personalized daily goals, add a novel element like "Integration with AI-driven mentorship programs that connect users with experienced startup founders for real-time advice and feedback."
+  Consider non-product advantages:
+  Unique marketing strategy: "Leverage exclusive university incubator networks to create a campus ambassador program that promotes the app and offers workshops on entrepreneurship."
+
+  Output:
+  [
+    {
+      "title": "Exclusive University Partnerships",
+      "description": "The app collaborates with top universities and startup incubators to offer exclusive resources, mentorship programs, and networking opportunities that are not available on other platforms. This unique access to academic and entrepreneurial resources sets the app apart from competitors and directly appeals to university students immersed in startup ecosystems."
+    },
+    {
+      "title": "Proprietary Gamified Learning Modules",
+      "description": "Utilizing a unique gamification system, the app turns business education into an engaging and competitive experience. This feature includes interactive challenges, rewards, and leaderboards, catering to the target audience's love for gamified learning and hackathons, making the educational process more enjoyable and motivating."
+    },
+    {
+      "title": "AI-driven Mentorship Integration",
+      "description": "The app integrates AI-driven mentorship programs that connect users with experienced startup founders for real-time advice and feedback. This feature provides personalized guidance and support, addressing the need for practical, hands-on mentorship, and creating a unique, defensible advantage over competitors."
+    }
+  ]
+
+  Example 2:
+  Input:
+  A browser extension that detects the sports game you're streaming and suggests relevant live bets based on real-time game analytics.
+  Demographics:
+  Age: 25-35 years old
+  Male
+  Urban areas
+  Psychographics:
+  Enjoys sports data analysis
+  Active on sports betting forums
+  Thrives on instant gratification
+
+  Steps Conducted:
+  Identify unique features: Real-time game detection, live bet suggestions, integration with sports analytics.
+  Cross-reference with target audience needs: Instant betting suggestions, accurate game analytics, seamless user experience.
+  Evaluate defensibility: Proprietary game detection algorithms, exclusive partnerships with sports analytics providers, unique user interface.
+  Expand on existing features:
+  For Live Bet Suggestions, add a novel element like "AI-driven predictive analytics that not only suggests bets but also provides a confidence score for each suggestion based on real-time data."
+  Consider non-product advantages:
+  Unique marketing strategy: "Leverage influencers in sports betting forums to create buzz and trust around the extension, providing exclusive promo codes and early access to new features."
+  Propose three specific unfair advantages:
+  Proprietary Game Detection Algorithms:
+  The extension uses proprietary algorithms to accurately detect and analyze the sports game being streamed in real-time, ensuring precise and timely bet suggestions. This advanced detection capability sets it apart from competitors who rely on less accurate methods.
+  AI-driven Predictive Analytics with Confidence Scores:
+  The extension not only suggests live bets based on real-time game analytics but also includes AI-driven predictive analytics that provide a confidence score for each bet. This feature gives users an additional layer of information to make more informed betting decisions, enhancing user trust and engagement.
+  Exclusive Partnerships with Leading Sports Analytics Providers:
+  The platform has secured exclusive partnerships with top sports analytics providers, offering users access to premium data and insights that are not available on other betting platforms. This exclusive access ensures the most accurate and up-to-date information for live betting suggestions.
+  Review and refine:
+  Ensure the proposed unfair advantages are distinct, realistic, and directly aligned with the business’s core product and target audience.
+  Refine for clarity and impact, ensuring they are specific and actionable.
+  Output generation:
+  Present the three proposed unfair advantages in a clear and concise manner.
+  Provide a brief explanation for each advantage, detailing why it is unique and defensible, and how it meets the target audience's needs.
+
+  Output:
+  [
+    {
+      "title": "Proprietary Game Detection Algorithms",
+      "description": "The extension uses proprietary algorithms to accurately detect and analyze the sports game being streamed in real-time, ensuring precise and timely bet suggestions. This advanced detection capability sets it apart from competitors who rely on less accurate methods, providing a seamless and reliable user experience."
+    },
+    {
+      "title": "AI-driven Predictive Analytics with Confidence Scores",
+      "description": "The extension not only suggests live bets based on real-time game analytics but also includes AI-driven predictive analytics that provide a confidence score for each bet. This feature gives users an additional layer of information to make more informed betting decisions, enhancing user trust and engagement and providing a unique edge in the market."
+    },
+    {
+      "title": "Exclusive Partnerships with Leading Sports Analytics Providers",
+      "description": "The platform has secured exclusive partnerships with top sports analytics providers, offering users access to premium data and insights that are not available on other betting platforms. This exclusive access ensures the most accurate and up-to-date information for live betting suggestions, making the extension a must-have tool for serious sports bettors."
+    }
+  ]
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+  Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`;
+
+export const KEY_METRICS = {
+  preProduct: `Objective: Examine the business type, target audience and unfair advantage provided in the user input and use it to identify three key metrics. The key metrics should be the most commonly used and measured metrics in the given business/product type. All metrics provided will assume that the business is pre-product, meaning the product is not currently live, does not have actual customers yet or revenue. You will add both an explanation and application to each metric selected. The explanation will be a concise description of the metric, how it works and what it measures. The application will explain why the metrics was selected given the business, product, audience and/or unfair advantage.
+
+    Steps:
+    Break Down Company Type
+    Step 1: Identify the company type based on the business description.
+    Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
+    Note: you may select a company type not on this list.
+    2. Examine Inputs
+    2.1 Business Description
+    Step 1: Parse the business description to understand the core offering and features.
+    2.2 Target Audience
+    Step 1: Analyze the demographic and psychographic details.
+    Step 2: Identify key characteristics and pain points of the target audience.
+    2.3 Unfair Advantage
+    Step 1: Identify the unique selling points or unfair advantages.
+    3. Suggest Key Metrics
+    3.1 Generate 3 Key Metric
+    Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
+    Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
+    
+    Illustrative Example:
+    Input:
+    An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
+    Young Professionals with Student Loans 
+    Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
+    Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
+    Unfair Advantage: Exclusive Financial Data Partnerships 
+    The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
+    
+    Step-by-Step Workflow with Example Output
+    1. Break Down Company Type
+    Step 1: Identify the company type based on the business description.
+    Company Type: Fintech
+    2. Examine Inputs
+    2.1 Business Description
+    Step 1: Parse the business description to understand the core offering and features.
+    Core Offering: AI-driven platform for personalized debt management.
+    Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
+    2.2 Target Audience
+    Step 1: Analyze the demographic and psychographic details.
+    Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
+    Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
+    Step 2: Identify key characteristics and pain points of the target audience.
+    Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
+    Pain Points: High student loan debt, need for efficient debt management tools.
+    2.3 Unfair Advantage
+    Step 1: Identify the unique selling points or unfair advantages.
+    Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
+    3. Suggest Key Metrics
+    
+    Output:
+    [
+      {
+        "title": "Customer Discovery Calls Completed",
+        "Explanation": "This metric tracks the number of discovery calls conducted with potential users.",
+        "Application": "Discovery calls help gather in-depth insights into the debt management challenges faced by young professionals, informing the development of tailored features."
+      },
+      {
+        "title": "Waitlist User Signups",
+        "Explanation": "This measures the number of users who sign up for the product waitlist to use the beta version of the product.",
+        "Application": "Early engagement with waitlist users helps refine the platform’s features based on feedback from your target audience."
+      },
+      {
+        "title": "Exclusive Partnership Leads",
+        "Explanation": "This metric tracks the number of potential partnerships with financial institutions for exclusive data access.",
+        "Application": "Developing partnerships with financial institutions is essential for leveraging the unfair advantage of exclusive data to provide personalized debt management advice."
+      },
+    ]
+    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+    Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
+  preRevenue: `Objective: Examine the business type, target audience and unfair advantage provided in the user input and use it to identify three key metrics. The key metrics should be the most commonly used and measured metrics in the given business/product type. All metrics provided will assume that the business has a live product but is not currently generating revenue. You will add both an explanation and application to each metric selected. The explanation will be a concise description of the metric, how it works and what it measures. The application will explain why the metrics was selected given the business, product, audience and/or unfair advantage.
+
+    Steps:
+    Break Down Company Type
+    Step 1: Identify the company type based on the business description.
+    Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
+    Note: you may select a company type not on this list.
+    2. Examine Inputs
+    2.1 Business Description
+    Step 1: Parse the business description to understand the core offering and features.
+    2.2 Target Audience
+    Step 1: Analyze the demographic and psychographic details.
+    Step 2: Identify key characteristics and pain points of the target audience.
+    2.3 Unfair Advantage
+    Step 1: Identify the unique selling points or unfair advantages.
+    3. Suggest Key Metrics
+    3.1 Generate Metrics
+    Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
+    Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
+    
+    Illustrative Example:
+    Input:
+    An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
+    Young Professionals with Student Loans 
+    Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
+    Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
+    Unfair Advantage: Exclusive Financial Data Partnerships 
+    The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
+    
+    Step-by-Step Workflow with Example Output
+    1. Break Down Company Type
+    Step 1: Identify the company type based on the business description.
+    Company Type: Fintech
+    2. Examine Inputs
+    2.1 Business Description
+    Step 1: Parse the business description to understand the core offering and features.
+    Core Offering: AI-driven platform for personalized debt management.
+    Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
+    2.2 Target Audience
+    Step 1: Analyze the demographic and psychographic details.
+    Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
+    Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
+    Step 2: Identify key characteristics and pain points of the target audience.
+    Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
+    Pain Points: High student loan debt, need for efficient debt management tools.
+    2.3 Unfair Advantage
+    Step 1: Identify the unique selling points or unfair advantages.
+    Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
+    3. Suggest Key Metrics
+    
+    Output:
+    [
+      {
+        "title": "Monthly Active Users (MAUs)",
+        "Importance": "Measures the overall engagement and usage of the platform, indicating its popularity and relevance to the target audience."
+        "Application": "A high number of MAUs demonstrates that the platform is becoming a regular tool for young professionals to manage their student loans and improve financial health."
+      },
+      {
+        "title": "User Feedback and Reviews",
+        "Importance": "Provides qualitative insights into user satisfaction and areas for improvement, which is essential for iterating and enhancing the platform."
+        "Application": "Positive feedback and reviews highlight the platform’s strengths and the unique value of its exclusive data partnerships, attracting more users concerned about financial health."
+      },
+      {
+        "title": "Viral Coefficient",
+        "Importance": "Indicates the organic growth potential by measuring how many new users each existing user brings in, essential for understanding the platform's ability to grow through word-of-mouth and referrals."
+        "Application": "A high viral coefficient suggests that users are recommending the platform to their peers, driven by the exclusive financial insights and effective debt management tools."
+      }
+    ]
+    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+    Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
+  postRevenue: `Objective: Examine the business type, target audience and unfair advantage provided in the user input and use it to identify three key metrics. The key metrics should be the most commonly used and measured metrics in the given business/product type. All metrics provided will assume that the business has a live product and is currently generating revenue. You will add both an explanation and application to each metric selected. The explanation will be a concise description of the metric, how it works and what it measures. The application will explain why the metrics was selected given the business, product, audience and/or unfair advantage.
+
+    Steps:
+    Break Down Company Type
+    Step 1: Identify the company type based on the business description.
+    Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
+    Note: you may select a company type not on this list.
+    2. Examine Inputs
+    2.1 Business Description
+    Step 1: Parse the business description to understand the core offering and features.
+    2.2 Target Audience
+    Step 1: Analyze the demographic and psychographic details.
+    Step 2: Identify key characteristics and pain points of the target audience.
+    2.3 Unfair Advantage
+    Step 1: Identify the unique selling points or unfair advantages.
+    3. Suggest Key Metrics
+    3.1 Generate Metric Sets
+    Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
+    Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
+    Step 3: Create three different key metrics, each unique and diverse from one another.
+    
+    Illustrative Example:
+    Input:
+    An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
+    Young Professionals with Student Loans 
+    Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
+    Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
+    Unfair Advantage: Exclusive Financial Data Partnerships 
+    The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
+    
+    Step-by-Step Workflow with Example Output
+    1. Break Down Company Type
+    Step 1: Identify the company type based on the business description.
+    Company Type: Fintech
+    2. Examine Inputs
+    2.1 Business Description
+    Step 1: Parse the business description to understand the core offering and features.
+    Core Offering: AI-driven platform for personalized debt management.
+    Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
+    2.2 Target Audience
+    Step 1: Analyze the demographic and psychographic details.
+    Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
+    Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
+    Step 2: Identify key characteristics and pain points of the target audience.
+    Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
+    Pain Points: High student loan debt, need for efficient debt management tools.
+    2.3 Unfair Advantage
+    Step 1: Identify the unique selling points or unfair advantages.
+    Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
+    3. Suggest Key Metrics
+    
+    Output:
+    [
+      {
+        "title": "Monthly Recurring Revenue (MRR)",
+        "Explanation": "Importance: Measures the predictable revenue generated from subscriptions on a monthly basis.",
+        "Application": "Application: Tracking MRR helps the platform understand its financial health and growth trajectory, ensuring stable and predictable income from young professionals using the service."
+      },
+      {
+        "title": "Customer Lifetime Value (CLV)",
+        "Application": "High CLV indicates that users find long-term value in the platform’s debt management services and continue to engage and pay for the service."
+        "Importance": "Estimates the total revenue a user is expected to generate over their relationship with the platform."
+      },
+      {
+        "title": "Churn Rate",
+        "Explanation": "Measures the percentage of users who stop using the platform over a given period.",
+        "Application": "A low churn rate suggests high user retention and satisfaction, crucial for sustaining revenue growth."
+      },
+    ]
+    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+    Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+    Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
+};
+
+export const BUSINESS_MODEL = `Inputs:
+  Business Description: A detailed overview of the business, including its products or services.
+  Target Audience: A detailed description of the primary customers, including demographics, preferences, and behaviors.
+
+  Output:
+  Three Suggested Business Models: Three business models that could realistically fit the given business description and target audience.
+  Explanation for Each Model: A concise sentence explaining what the business model is and how it correlates specifically to the business.
+  Business Models to Consider:
+  Subscription Model:
+  Customers pay a recurring fee (monthly, yearly) to access a product or service.
+  Freemium Model:
+  Basic services are provided for free while premium features are available for a fee.
+  Marketplace Model:
+  A platform connects buyers and sellers, earning a commission on each transaction.
+  E-commerce Model:
+  Selling products directly to customers through an online store.
+  Advertising Model:
+  Revenue is generated by selling advertising space or promoting sponsored content.
+  Franchise Model:
+  A business allows individuals to operate under its brand and business model for a fee and share of revenue.
+  On-Demand Model:
+  Services or products are provided instantly at the customer's request.
+  Direct Sales Model:
+  Selling products directly to consumers outside of a fixed retail environment, often through personal network marketing.
+  Affiliate Marketing Model:
+  Businesses earn commission by promoting other companies' products and driving sales or leads.
+  Licensing Model:
+  Companies grant permission to other businesses to use their intellectual property or technology in exchange for a fee.
+  Steps for the Assistant:
+  Analyze Business Description:
+  Identify the core product or service.
+  Determine the unique value proposition.
+  Assess the scalability and delivery method of the product or service.
+  Examine Target Audience:
+  Understand the demographics (age, gender, income, location, etc.).
+  Identify customer preferences and behaviors.
+  Evaluate customer pain points and needs.
+  Match with Business Models:
+  Compare the business characteristics and target audience with the 10 business models listed above.
+  Consider factors such as recurring revenue potential, initial investment, customer acquisition cost, and market competition.
+  Suggest the Best Fits:
+  Recommend three business models that align with the business goals and target audience needs.
+  Provide a concise explanation for each suggested business model.
+
+  Output Format:
+  [
+    {
+      title: [Business Model Option 1],
+      description: [One sentence description of business model and how it correlates to the business]
+    },
+    {
+      title: [Business Model Option 2],
+      description: [One sentence description of business model and how it correlates to the business]
+    },
+    {
+      title: [Business Model Option 3],
+      description: [One sentence description of business model and how it correlates to the business]
+    }
+  ]
+
+  Illustrative Examples:
+  Input:
+  A mobile app that helps entrepreneurs take action on a business idea and gamifies embedded education. 
+  Young Aspiring Entrepreneurs 
+  Demographics: 22-30 years old, Recent college graduates with degrees in business or technology, Residing in urban areas with vibrant startup scenes (e.g., San Francisco, Berlin, Tel Aviv) 
+  Psychographics: Values continuous learning and self-improvement, Enjoys competitive environments and challenges, Active on startup forums and attends local startup events, Seeks mentorship and advice from established entrepreneurs
+  Output:
+  [
+    {
+      title: "Freemium Model",
+      description: "Basic educational content and business planning tools are provided for free, while advanced features, personalized mentorship, and premium educational modules are available for a fee. This model attracts a broad user base and incentivizes users to upgrade for additional value."
+    },
+    {
+      title: "Subscription Model",
+      description: "Users pay a recurring fee to access comprehensive educational content, mentorship programs, and gamified business challenges. This ensures a steady revenue stream and fosters ongoing user engagement, appealing to young entrepreneurs who value continuous learning and development."
+    },
+    {
+      title: "On-Demand Model",
+      description: "The app offers pay-per-use access to specialized content, mentorship sessions, and specific business tools. This model provides flexibility for users who prefer to pay only for the services they need when they need them, catering to young entrepreneurs who seek immediate and customized support."
+    }
+  ]
+
+  Input:
+  A browser extension that detects the sports game you’re streaming and suggests relevant live bets based on real-time game analytics.
+  Tech-Savvy Sports Bettors
+  Demographics: 25-35 years old, Male, Urban areas
+  Psychographics: Enjoys sports data analysis, Active on sports betting forums, Thrives on instant gratification
+  Output:
+  [
+    {
+      title: "Advertising Model",
+      description: "Revenue is generated by selling advertising space within the extension to betting platforms and sports-related brands. This model leverages the high engagement of users who are actively seeking betting opportunities, making it attractive for advertisers."
+    },
+    {
+      title: "Affiliate Marketing Model",
+      description: "The extension earns commission by directing users to partner betting platforms whenever they place bets through the suggested links. This model aligns with the users' desire for instant betting opportunities and provides a continuous revenue stream based on user activity."
+    },
+    {
+      title: "Freemium Model",
+      description: "Basic game detection and betting suggestions are offered for free, while advanced analytics, personalized betting tips, and premium features are available for a subscription fee. This model attracts a wide user base and monetizes through upselling premium features to those who seek deeper insights and better betting opportunities."
+    }
+  ]
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+  Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`;
+
+export const TARGET_AUDIENCE = `Objective: Generate 3 specific and unique target audience populations based on the business description. Each suggestion should be distinct, detailed, and non-obvious. Aim for small, focused audiences with at least two shared characteristics, avoiding broad generalizations.
+
+Steps:
+Analyze the Business Idea:
+Understand the problem the business aims to solve and the benefits it offers.
+Identify the Ideal Target Audience:
+a. Target Audience Description: Craft a concise 3-5 word description that captures a unique and niche aspect of the target audience's identity.
+b. Demographics: Identify 3 highly specific and niche demographic characteristics (maximum 4 words each). Consider factors such as:
+Age range
+Gender
+Income level
+Education
+Occupation
+Location (be specific, e.g., "tech hubs like San Francisco")
+c. Psychographics: Identify 3 unique and non-obvious psychographic traits (maximum 4 words each). Use a mix of:
+Interests (e.g., "avid marathon runners")
+Values (e.g., "sustainability advocates")
+Attitudes (e.g., "early tech adopters")
+Lifestyle (e.g., "frequent international travelers")
+Personality traits (e.g., "risk-tolerant investors")
+d. Estimated Population Size: Estimate the size of the target audience based on existing behaviors that demonstrate interest in solving the problem. Aim for populations in the tens of thousands.
+
+Guidelines:
+Ensure the target audience already pays for a solution to the problem, with similar spending habits to the proposed solution.
+Provide a summary of key demographic and psychographic criteria defining the target audience.
+Include a data point demonstrating the target audience size and an estimate of the average amount they currently spend on solving the problem. Provide a credible source for the data point.
+
+Output Format:
+[
+  {
+    _id: "1",
+    title: Target Audience Description: 3-5 word description,
+    description: {
+      demographics: Demographic Information - List 3 chosen characteristics, separated by comma
+      psychographics: Psychographic Information - List 3 chosen traits, separated by comma
+      population: Target Audience Size: Provide a concise commentary including the data point estimate and source,
+    }
+  },
+  {
+    _id: "2",
+    title: Target Audience Description: 3-5 word description,
+    description: {
+      demographics: Demographic Information - List 3 chosen characteristics, separated by comma
+      psychographics: Psychographic Information - List 3 chosen traits, separated by comma
+      population: Target Audience Size: Provide a concise commentary including the data point estimate and source,
+    }
+  },
+  {
+    _id: "3",
+    title: Target Audience Description: 3-5 word description,
+    description: {
+      demographics: Demographic Information - List 3 chosen characteristics, separated by comma
+      psychographics: Psychographic Information - List 3 chosen traits, separated by comma
+      population: Target Audience Size: Provide a concise commentary including the data point estimate and source,
+    }
+  }
+]
+
+Illustrative example:
+Input:
+An app where users swipe through fantasy sports trade ideas, integrated with league data and suggested based on team needs and balanced trades.
+Output:
+[
+  {
+    _id: "1",
+    title: "Young, tech-savvy sports fans",
+    description: {
+      demographics: "Male, 25-35 years old, MBA or STEM degree, Resides in cities with multiple sports franchises (e.g., Boston, Chicago)",
+      psychographics: "Active participants in sports analytics forums, Regular readers of "The Economist" and "FiveThirtyEight," Enjoys socializing at sports bars and discussing fantasy sports strategies",
+      population: "~25,000 subscribers to Rotowire’s fantasy sports analytics services"
+    }.
+  },
+  {
+    _id: "2",
+    title: "Urban, Avid Sports Gamblers",
+    description: {
+      demographics: 30-45 years old, Finance professionals working in high-stress jobs (e.g., stock traders, hedge fund managers), Master's degree in Economics,
+      psychographics: Regularly uses multiple betting apps, Participates in online poker tournaments and in-person casino events, Follows and contributes to sports analytics blogs and podcasts,
+      population: Approximately 18,000 active users of DraftKings in major metropolitan areas
+    }
+  },
+  {
+    _id: "3",
+    title: "Young, Female Football Fans",
+    description: {
+      demographics: 22-30 years old, Marketing professionals employed at sports-related companies, Bachelor's degree in Communication or Sports Management,
+      psychographics: Highly active on Instagram following sports influencers and engaging in sports-themed communities, Frequently attends live football matches and tailgating events, Enjoys participating in social media sports debates and fantasy leagues,
+      population: Approximately 20,000 active followers of @ESPNW on Instagram
+    }
+  }
+]
+
+Input:
+An AI tool that dynamically adjusts film scores based on scene changes and director input, providing adaptive music that enhances the visual experience.
+Output: 
+[
+  {
+    _id: "1",
+    title: "Independent Filmmakers",
+    description: {
+      demographics: 25-40 years old, Film school graduates from top institutions (e.g., USC, NYU), Based in film production hubs like Los Angeles or New York City,
+      psychographics: Passionate about innovative storytelling techniques, Regularly attends and networks at Sundance and Tribeca film festivals, Embraces new technologies to enhance film production and post-production processes,
+      population: Approximately 15,000 members of the Independent Filmmaker Project (IFP)
+    }.
+  },
+  {
+    _id: "2",
+    title: "Video Game Developers",
+    description: {
+      demographics: 28-38 years old, Employed at mid-sized studios specializing in immersive experiences (e.g., narrative-driven games, VR experiences), Bachelor's degree in Game Design or Computer Science,
+      psychographics: Enthusiastic about integrating cutting-edge audio technologies, Follows industry leaders and trends via GDC and online communities, Actively participates in game jams and hackathons to experiment with adaptive music,
+      population: Approximately 22,000 active members of the International Game Developers Association (IGDA)
+    }
+  },
+  {
+    _id: "3",
+    title: "Advertising Agency Creatives",
+    description: {
+      demographics: 30-45 years old, Creative directors and senior creatives, Based in global advertising hubs like New York City or London,
+      psychographics: Highly values innovative tools that offer competitive edges, Regularly pitches multimedia campaigns to high-profile clients, Engages with blogs and forums dedicated to creative technologies and marketing innovations,
+      population: Approximately 18,000 members of the American Association of Advertising Agencies (4A’s)
+    }
+  }
+]
+
+Input:
+An app that uses AI to restore and enhance old or damaged photos, improving clarity, color, and detail.
+Output:
+[
+  {
+    _id: "1",
+    title: "Amateur Genealogists",
+    description: {
+      demographics: 35-60 years old, Hobbyists with a deep interest in family history, Resides in suburban areas with access to local archives and historical societies,
+      psychographics: Dedicated to uncovering and preserving family histories, Actively participates in genealogy forums and local historical societies, Attends and presents at genealogy conferences and workshops,
+      population: Approximately 30,000 members of the National Genealogical Society
+    }.
+  },
+  {
+    _id: "2",
+    title: "Professional Photographers",
+    description: {
+      demographics: 25-40 years old, Freelancers or small business owners, Bachelor's degree in Photography or Visual Arts,
+      psychographics: Passionate about preserving the quality of old photographs, Follows industry trends through photography magazines and blogs, Frequently participates in photo restoration projects and exhibitions to showcase their skills,
+      population: Approximately 20,000 members of the Professional Photographers of America (PPA)
+    }
+  },
+  {
+    _id: "3",
+    title: "Historical Archivists",
+    description: {
+      demographics: 30-50 years old, Employed by reputable museums, libraries, or academic institutions, Master's degree in Archival Studies or History,
+      psychographics: Deeply committed to the preservation of historical documents and photos, Engages with the latest archival technologies and methodologies, Regularly visits and contributes to historical sites, museums, and archives,
+      population: Approximately 12,000 members of the Society of American Archivists
+    }
+  }
+]
+Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`;
+
+export const STRATEGY = `Objective:
+Use the business description and target audience in the user input to suggest three different and unique marketing channel strategies. Each channel strategy will be a concise phrase that specifically calls out the marketing channel chosen as well as a brief overview of the specific, unique and novel strategy to use within that channel. Each of the three options will be unique from one another (different channel and different strategy), while correlating specifically to the audience, product and business. You will also provide a more detailed 2 sentence explanation of the channel and strategy chosen, calling out how it relates to the product/business as well as the target audience and how it is unique or different and has an opportunity to be successful.
+
+Channel Options:
+TikTok
+Instagram
+Facebook
+Webinars
+SMS Marketing
+Google/SEO
+Email/Newsletters
+Twitter
+LinkedIn
+YouTube
+Snapchat
+Pinterest
+Reddit
+Quora
+Medium
+Tumblr
+WhatsApp
+WeChat
+Telegram
+
+Selection of channels and strategies:
+One of the channels that you select will be the channel where the audience is most prominently found and native to their discovery of new products. For this channel you will identify a unique, focused and novel approach to stand out from what will likely be a very difficult channel to compete in.
+For the other two channels that you select, you will identify unique approaches to finding customers in less common channels with focused and unique strategies. 
+
+Format:
+[
+  {
+    title: [1st channel & strategy short description],
+    description: [2 sentence explanation for this channel and strategy]
+  },
+  {
+    title: [2nd channel & strategy short description],
+    description: [2 sentence explanation for this channel and strategy]
+  },
+  {
+    title: [3rd channel & strategy short description],
+    description: [2 sentence explanation for this channel and strategy]
+  }
+]
+
+Illustrative examples:
+Input:
+A smart temperature-regulating jacket made from sustainable materials, featuring built-in technology that adapts to the wearer's body heat and external conditions for optimal comfort.
+Eco-conscious Tech Enthusiasts 
+Demographics: 25-40 years old, High-income professionals, Based in tech-centric cities 
+Psychographics: Prioritizes eco-friendly products, Early adopters of tech, Enjoys outdoor activities
+Output:
+[
+  {
+    title: "Instagram - Influencer Partnerships with Eco-Fashion Enthusiasts",
+    description: "Collaborate with eco-conscious fashion influencers to showcase the jacket's sustainable and tech-forward features through engaging posts and stories. By choosing influencers committed to sustainability and technology, the brand can create authentic content that resonates with eco-conscious tech enthusiasts, making it stand out from typical fashion promotions."
+  },
+  {
+    title: "YouTube - Tech Review and Sustainability Vlogs",
+    description: "Engage popular tech and sustainability vloggers to review the jacket, demonstrating its technology and sustainable benefits in real-world scenarios. This approach appeals to tech-savvy consumers who prioritize sustainability, providing comprehensive content that stands out in both tech and fashion spaces."
+  },
+  {
+    title: "Pinterest - Eco-Fashion Boards and DIY Styling Tips",
+    description: "Create visually appealing Pinterest boards featuring the jacket in various eco-friendly outfits, accompanied by DIY styling tips and sustainable fashion guides. By combining style inspiration with practical DIY tips, the brand can attract eco-conscious consumers looking for sustainable fashion options, distinguishing itself through useful, value-added"
+  }
+]
+
+Input:
+A browser extension that detects the sports game you're streaming and suggests relevant live bets based on real-time game analytics. 
+Tech-Savvy Sports Bettors 
+Demographics: 25-35 years old, Male, Urban areas 
+Psychographics: Enjoys sports data analysis, Active on sports betting forums, Thrives on instant gratification
+Output:
+[
+  {
+    title: "Twitter - Real-Time Betting Tips and Game Analytics",
+    description: "Utilize Twitter to share live betting tips and real-time game analytics, engaging sports fans during peak game times. Twitter's real-time nature makes it an ideal platform for up-to-the-minute betting tips and game analytics. By actively engaging with sports fans during live events, this strategy ensures immediate relevance and interaction, standing out by providing real-time value to tech-savvy sports bettors who thrive on instant gratification."
+  },
+  {
+    title: "Reddit - Sports Betting Communities and AMA Sessions",
+    description: "Participate in Reddit sports betting communities with informative posts and host AMA sessions with betting experts. Reddit offers niche communities where sports betting enthusiasts gather, providing a focused audience for targeted engagement. By offering expert advice and transparent interactions through AMAs, the brand can build trust and credibility, setting itself apart from less interactive competitors in the eyes of data-driven, engaged bettors."
+  },
+  {
+    title: "Telegram - Exclusive Betting Group and Alerts",
+    description: "Create an exclusive Telegram group offering instant betting alerts and game predictions for subscribers. Telegram's group messaging and alert features make it a powerful tool for real-time communication. By offering exclusive access to timely and accurate betting insights, this strategy fosters a sense of community and provides added value, differentiating the brand through personalized and immediate betting support for tech-savvy users who value quick, data-driven decisions."
+  }
+]
+
+Input:
+An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
+Young Professionals with Student Loans 
+Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
+Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars
+Output:
+[
+  {
+    title: "LinkedIn - Financial Wellness Webinars and Case Studies",
+    description: "Host webinars on LinkedIn focusing on financial wellness and share case studies demonstrating the platform's impact on debt reduction. LinkedIn is a professional network where users seek career and financial advice. By presenting expert-led webinars and real success stories, the brand can attract young professionals looking for effective debt management solutions, making its approach stand out through educational and evidence-based content that directly addresses their financial concerns."
+  },
+  {
+    title: "Quora - Expert Answers and Financial Advice Threads",
+    description: "Provide expert answers to debt management questions and engage in financial advice threads on Quora. Quora is a platform for asking and answering questions, making it ideal for providing expert advice. By consistently contributing valuable insights in debt management discussions, the brand can build authority and drive awareness, standing out through the depth and specificity of its expert advice which caters to young professionals concerned about their financial health."
+  },
+  {
+    title: "In-Depth Articles and Success Stories",
+    description: "Publish in-depth articles and success stories on Medium, highlighting the platform's AI-driven approach to debt reduction. Medium's readership is interested in insightful and detailed content. By offering comprehensive articles that explain the technology and share impactful success stories, the brand can attract readers serious about financial health, distinguishing itself through the quality and depth of its content that provides clear, actionable insights for young professionals with student loans."
+  }
+]
+Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`;
+
 export const OPENAI_DATASET = {
   system: SYSTEM_INPUT.SYSTEM,
   user: SYSTEM_INPUT.USER,
-  companyName: SYSTEM_INPUT.COMPANY_NAME,
+  companyName: COMPANY_NAME,
   companyLogo: SYSTEM_INPUT.COMPANY_LOGO,
-  targetAudience: SYSTEM_INPUT.TARGET_AUDIENCE,
-  competitors: SYSTEM_INPUT.COMPETITORS,
+  targetAudience: TARGET_AUDIENCE,
+  competitors: COMPETITORS,
   keyDifferentiator: SYSTEM_INPUT.KEY_DIFFERENTIATOR,
   xForY: SYSTEM_INPUT.X_FOR_Y,
   headline: SYSTEM_INPUT.HEADLINE,
@@ -6212,6 +8196,37 @@ export const OPENAI_DATASET = {
   softwareTechnology: SYSTEM_IDEA_GENERATOR.SOFTWARE_TECHNOLOGY,
   physicalProduct: SYSTEM_IDEA_GENERATOR.PHYSICAL_PRODUCT,
   ideaValidation: SYSTEM_IDEA_VALIDATION,
+  marketingChannelStrategy: STRATEGY,
+  businessModel: BUSINESS_MODEL,
+  keyMetrics: KEY_METRICS,
+  valueProposition: VALUE_PROPOSITION,
+  unfairAdvantage: UNFAIR_ADVANTAGE,
+};
+
+export const COMPANY_NAME_TYPE = {
+  1: "PEOPLE_AND_PLACES",
+  2: "OBJECTS_AND_PATTERNS",
+  3: "ADJECTIVES_AND_SOUNDS",
+  4: "WORD_COMBINATIONS",
+};
+
+export const KEY_METRICS_TYPE = {
+  1: "preProduct",
+  2: "preRevenue",
+  3: "postRevenue",
+};
+
+export const TARGET_AUDIENCE_REQUIRED = [
+  "keyMetrics",
+  "unfairAdvantage",
+  "valueProposition",
+  "strategy",
+  "businessModel",
+];
+
+export const COST_STRUCTURE_TYPE = {
+  1: "buildMyself",
+  2: "hireSomeone",
 };
 
 export const COMPANY_NAME_TYPE = {

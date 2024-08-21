@@ -63,7 +63,13 @@ const toUpperCase = (str) => {
   return "";
 };
 export const checkValidImageExtension = (file) => {
-  let fileArray = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+  let fileArray = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "application/pdf",
+    "image/webp",
+  ];
   if (file.fieldname === "profile_picture")
     fileArray = ["image/jpeg", "image/jpg", "image/png"];
   if (file && fileArray.includes(file.mimetype)) return true;
@@ -229,4 +235,16 @@ export const executeWeeklyChallengeStepFunction = (
 
 export const delay = async (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+export const getDaysNum = (userIfExists, dateToCompare: string) => {
+  const firstDate = convertDateToTimeZone(
+    new Date(dateToCompare),
+    userIfExists?.timezone || DEFAULT_TIMEZONE
+  );
+  const secondDate = convertDateToTimeZone(
+    new Date(),
+    userIfExists?.timezone || DEFAULT_TIMEZONE
+  );
+  return getDaysBetweenDates(firstDate, secondDate);
 };
