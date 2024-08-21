@@ -6,6 +6,8 @@ import {
   MarketScoreTable,
   UnsavedLogoTable,
   AIToolDataSetTable,
+  SuggestionScreenCopyTable,
+  MilestoneGoalsTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
@@ -19,10 +21,12 @@ import {
   COMPANY_NAME_TYPE,
   DEDUCT_RETRY_FUEL,
   KEY_METRICS_TYPE,
+  COST_STRUCTURE_TYPE,
   TARGET_AUDIENCE_REQUIRED,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import { ObjectId } from "mongodb";
 
 class BusinessProfileService {
   /**
@@ -38,7 +42,7 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 0
+    type: number = 1
   ) {
     try {
       if (!idea) {
@@ -50,11 +54,14 @@ class BusinessProfileService {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       const prompt = this.getUserPrompt(userBusinessProfile, key, idea);
-      let systemInput: any = (await AIToolDataSetTable.findOne({ key })).data;
+      let systemInput: any = (await AIToolDataSetTable.findOne({ key }).lean())
+        .data;
       if (key == "companyName") {
         systemInput = systemInput[COMPANY_NAME_TYPE[type]];
       } else if (key == "keyMetrics") {
         systemInput = systemInput[KEY_METRICS_TYPE[type]];
+      } else if (key == "costStructure") {
+        systemInput = systemInput[COST_STRUCTURE_TYPE[type]];
       }
       const [response, _] = await Promise.all([
         this.getFormattedSuggestions(systemInput, prompt),
@@ -127,7 +134,6 @@ class BusinessProfileService {
         (!isUnderProcess && isRetry == IS_RETRY.TRUE && finished) ||
         (isUnderProcess && elapsedTime > 200)
       ) {
-        let prompt: string;
         finished = false;
         if (!idea) {
           throw new NetworkError(
@@ -135,9 +141,9 @@ class BusinessProfileService {
             404
           );
         }
-        prompt = companyName
-          ? `Business Name:${companyName}, Business Description: ${idea}`
-          : `Business Description: ${idea}`;
+        const prompt = companyName
+          ? `Company Name:${companyName}, Business Idea: ${idea}`
+          : `Business Idea: ${idea}`;
         const systemInput = await AIToolDataSetTable.findOne({ key });
         const [textResponse, _] = await Promise.all([
           BusinessProfileServiceV7.generateTextSuggestions(
@@ -205,15 +211,16 @@ class BusinessProfileService {
 
   /**
    * @description get business history in descending order of dates
+   * @param businessHistory
+   * @param milestoneGoals
    * @returns {*}
    */
-  public async getBusinessHistory(businessHistory) {
+  public async getBusinessHistory(businessHistory, milestoneGoals) {
     try {
       const today = new Date(Date.now()).toLocaleDateString();
       const sortedHistory = businessHistory.sort(
         (a, b) => b.timestamp - a.timestamp
       );
-
       const groupedHistory = sortedHistory.reduce((acc, entry) => {
         const date = new Date(entry.timestamp);
         const year = date.getFullYear();
@@ -221,17 +228,24 @@ class BusinessProfileService {
         const day = date.toLocaleDateString();
 
         const groupKey = day == today ? "Today" : `In ${month} ${year}`;
+        const matchedGoal = milestoneGoals.find(
+          (goal) => goal.key == entry.key
+        );
 
-        if (!acc[groupKey]) {
-          acc[groupKey] = [];
+        if (entry.key) {
+          if (!acc[groupKey]) {
+            acc[groupKey] = [];
+          }
+
+          acc[groupKey].push({
+            key: entry.key,
+            value: entry.value,
+            timestamp: entry.timestamp,
+            day: day,
+            iconImage: matchedGoal?.iconImage,
+            iconBackgroundColor: matchedGoal?.iconBackgroundColor,
+          });
         }
-
-        acc[groupKey].push({
-          key: entry.key,
-          value: entry.value,
-          timestamp: entry.timestamp,
-          day: day,
-        });
         return acc;
       }, {});
 
@@ -242,12 +256,16 @@ class BusinessProfileService {
           return {
             _id: ++periodId,
             title: key,
-            data: values.map(({ key, value, day }) => ({
-              _id: ++order,
-              key: key,
-              details: value,
-              date: day,
-            })),
+            data: values.map(
+              ({ key, value, day, iconImage, iconBackgroundColor }) => ({
+                _id: ++order,
+                key: key,
+                details: value,
+                date: day,
+                iconImage,
+                iconBackgroundColor,
+              })
+            ),
           };
         }
       );
@@ -631,7 +649,7 @@ class BusinessProfileService {
         ),
         UserTable.findOneAndUpdate(
           { _id: userExists._id },
-          { $set: { fuel: DEDUCT_RETRY_FUEL } },
+          { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
           { upsert: true, new: true }
         ),
       ]);
@@ -644,6 +662,7 @@ class BusinessProfileService {
    * @description this method will return the user input prompt corresponding to the AI Tool being used
    * @param businessProfile
    * @param key
+   * @param idea
    * @returns prompt
    */
   getUserPrompt(businessProfile: any, key: string, idea: string) {
@@ -662,6 +681,90 @@ class BusinessProfileService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description get business profile
+   */
+  public async getBusinessProfile(id: string) {
+    let [
+      userBusinessProfile,
+      suggestionsScreenCopy,
+      businessIdeaCopy,
+      milestoneGoals,
+    ] = await Promise.all([
+      BusinessProfileTable.findOne({
+        userId: new ObjectId(id),
+      }).lean(),
+      SuggestionScreenCopyTable.find().lean(),
+      SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
+      MilestoneGoalsTable.find().lean(),
+    ]);
+    const {
+      userId,
+      impacts,
+      passions,
+      hoursSaved,
+      businessCoachInfo,
+      enableStealthMode,
+      completedGoal,
+    } = userBusinessProfile;
+    let businessProfile = {
+      userId,
+      impacts,
+      passions,
+      hoursSaved,
+      businessCoachInfo,
+      enableStealthMode,
+      completedGoal,
+      businessPlans: [],
+    };
+
+    if (userBusinessProfile) {
+      if (userBusinessProfile.description) {
+        const action = milestoneGoals.find(
+          (goal) => goal.key == "ideaValidation"
+        );
+        businessProfile.businessPlans.push({
+          key: "description",
+          type: businessIdeaCopy.inputType,
+          value: userBusinessProfile.description,
+          idea: userBusinessProfile.idea,
+          title: businessIdeaCopy.name,
+          actionName: businessIdeaCopy.actionName,
+          placeHolderText: businessIdeaCopy.placeHolderText,
+          isMultiLine: businessIdeaCopy.isMultiLine,
+          maxCharLimit: businessIdeaCopy.maxCharLimit,
+          section: businessIdeaCopy.section,
+          iconImage: action.iconImage,
+          iconBackgroundColor: action.iconBackgroundColor,
+        });
+      }
+      suggestionsScreenCopy.forEach((data) => {
+        if (
+          userBusinessProfile[data.key] &&
+          (userBusinessProfile[data.key].length ||
+            userBusinessProfile[data.key].title)
+        ) {
+          const action = milestoneGoals.find((goal) => goal.key == data.key);
+          const obj = {
+            key: data.key,
+            type: data.inputType,
+            value: userBusinessProfile[data.key],
+            title: data.name,
+            actionName: data.actionName,
+            placeHolderText: data.placeHolderText,
+            isMultiLine: data.isMultiLine,
+            maxCharLimit: data.maxCharLimit,
+            section: data.section,
+            iconImage: action.iconImage,
+            iconBackgroundColor: action.iconBackgroundColor,
+          };
+          businessProfile.businessPlans.push(obj);
+        }
+      });
+    }
+    return businessProfile;
   }
 }
 export default new BusinessProfileService();

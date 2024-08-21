@@ -9,6 +9,7 @@ import {
   TUTORIAL_LOOKUP,
 } from "@app/utility";
 import { BusinessProfileService } from "@app/services/v7";
+import { BusinessProfileService as BusinessProfileServiceV9 } from "@app/services/v9";
 import {
   CoachProfileTable,
   UserTable,
@@ -36,7 +37,7 @@ class UserController extends BaseController {
       await Promise.all([
         UserTable.findOne({ _id: user._id }),
         UserDBService.getProfile(id),
-        BusinessProfileService.getBusinessProfile(id),
+        BusinessProfileServiceV9.getBusinessProfile(id),
         LeagueTable.find(
           {},
           { _id: 0, name: 1, image: 1, colorCode: 1, minPoint: 1, maxPoint: 1 }

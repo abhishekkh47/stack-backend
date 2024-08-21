@@ -236,3 +236,15 @@ export const executeWeeklyChallengeStepFunction = (
 export const delay = async (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
+
+export const getDaysNum = (userIfExists, dateToCompare: string) => {
+  const firstDate = convertDateToTimeZone(
+    new Date(dateToCompare),
+    userIfExists?.timezone || DEFAULT_TIMEZONE
+  );
+  const secondDate = convertDateToTimeZone(
+    new Date(),
+    userIfExists?.timezone || DEFAULT_TIMEZONE
+  );
+  return getDaysBetweenDates(firstDate, secondDate);
+};

@@ -30,6 +30,7 @@ import {
   AI_TOOLS_ANALYTICS,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
+import { MilestoneDBService } from "@app/services/v9";
 import moment from "moment";
 
 class BusinessProfileService {
@@ -62,7 +63,10 @@ class BusinessProfileService {
             timestamp: Date.now(),
           });
         }
-        if (businessProfile && !businessProfile?.description) {
+        if (
+          !businessProfile ||
+          (businessProfile && !businessProfile?.description)
+        ) {
           obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
         }
         obj["idea"] = latestSelection.idea;
@@ -76,14 +80,15 @@ class BusinessProfileService {
         obj["idea"] = data.value;
         obj["description"] = data.description;
       } else {
-        if (businessProfile && !businessProfile[data.key]) {
+        if (
+          businessProfile &&
+          (!businessProfile[data.key] ||
+            (!businessProfile[data.key].title &&
+              !businessProfile[data.key].length))
+        ) {
           obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
         }
-        if (data.key == "competitors") {
-          obj[data.key] = data.description;
-        } else {
-          obj[data.key] = { title: data.value, description: data.description };
-        }
+        obj[data.key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
         businessHistoryObj = [
@@ -98,6 +103,9 @@ class BusinessProfileService {
           { "Item Name": data.value },
           { user_id: userIfExists._id }
         );
+      }
+      if (data.goalId) {
+        MilestoneDBService.saveMilestoneGoalResults(userIfExists, data.goalId);
       }
       await BusinessProfileTable.findOneAndUpdate(
         {
@@ -568,6 +576,7 @@ class BusinessProfileService {
           hoursSaved: 1,
           businessCoachInfo: 1,
           enableStealthMode: 1,
+          completedGoal: 1,
         },
       },
     ]).exec();

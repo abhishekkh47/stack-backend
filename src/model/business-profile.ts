@@ -75,6 +75,20 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         },
       },
     },
+    competitors: {
+      _id: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
     competitors: [
       {
         _id: {
@@ -312,18 +326,16 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         },
       },
     ],
-    keyMetrics: [
-      {
-        title: {
-          type: mongoose.Schema.Types.String,
-          required: false,
-        },
-        description: {
-          type: mongoose.Schema.Types.String,
-          required: false,
-        },
+    keyMetrics: {
+      title: {
+        type: mongoose.Schema.Types.String,
+        required: false,
       },
-    ],
+      description: {
+        type: mongoose.Schema.Types.String,
+        required: false,
+      },
+    },
     valueProposition: {
       title: {
         type: mongoose.Schema.Types.String,
@@ -378,6 +390,19 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       type: mongoose.Schema.Types.Number,
       required: false,
       default: 0,
+    },
+    currentMilestone: {
+      milestoneId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "milestones",
+        required: false,
+        default: null,
+      },
+      milestoneUpdatedAt: {
+        type: mongoose.Schema.Types.Date,
+        required: false,
+        default: new Date(),
+      },
     },
   },
   { timestamps: true }

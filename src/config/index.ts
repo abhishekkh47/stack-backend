@@ -245,4 +245,10 @@ export default {
   get OPENAI_DATASET_GID() {
     return process.env.OPENAI_DATASET_GID;
   },
+  get MILESTONE_SHEET_GID() {
+    return process.env.MILESTONE_SHEET_GID;
+  },
+  get SUGGESTION_SCREEN_COPY_GID() {
+    return process.env.SUGGESTION_SCREEN_COPY_GID;
+  },
 };
