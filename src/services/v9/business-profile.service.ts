@@ -109,7 +109,8 @@ class BusinessProfileService {
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
-    idea: string = null
+    idea: string = null,
+    deductRetryFuel: boolean = false
   ) {
     try {
       let response = null;
@@ -203,6 +204,8 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    } finally {
+      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 

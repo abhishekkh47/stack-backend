@@ -89,6 +89,22 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         required: false,
       },
     },
+    competitors: [
+      {
+        _id: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+        title: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+        description: {
+          type: mongoose.Schema.Types.String,
+          required: false,
+        },
+      },
+    ],
     keyDifferentiator: {
       type: mongoose.Schema.Types.String,
       required: false,
