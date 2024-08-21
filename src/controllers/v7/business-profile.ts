@@ -257,7 +257,7 @@ class BusinessProfileController extends BaseController {
           : null
         : null;
     if (businessProfileExists.socialFeedback) {
-      removeImage(userExists._id, businessProfileExists.socialFeedback);
+      removeImage(userExists._id, businessProfileExists?.socialFeedback?.title);
     }
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },

@@ -7351,93 +7351,120 @@ export const COMPANY_NAME = {
 };
 
 export const VALUE_PROPOSITION = `Objective:
-  Use the business description and target audience in the user input to create three short and concise value proposition statements. The three value propositions should be written in different styles to provide variety while communicating the value of the same core product of the business to the same audience. Value proposition statements will always be concise and engaging. They will never exceed 10 words.
+Use the business description and target audience in the user input to create three short and concise value proposition statements. The three value propositions should be written in different styles to provide variety while communicating the value of the same core product of the business to the same audience. Value proposition statements will always be concise and engaging. They will never exceed 10 words.
 
-  Guidelines: A value proposition is a short, concise statement that communicates why buyers should choose your products or services. It's more than just a product or service description — it's the specific solution that your business provides and the promise of value that a customer can expect you to deliver.
+Guidelines: A value proposition is a short, concise statement that communicates why buyers should choose your products or services. It's more than just a product or service description — it's the specific solution that your business provides and the promise of value that a customer can expect you to deliver.
 
-  Here are a few examples of how value propositions differ from other statements:
-  Value Proposition Vs. Mission Statement
-  Example: HubSpot
-  Value Proposition: "An easy-to-use CRM."
-  Mission Statement: "To help businesses grow better."
-  Value Proposition Vs. Slogan
-  Example: De Beers Group
-  Value Proposition: "Exquisite diamonds, world-class designs, breathtaking jewelry."
-  Slogan: "A diamond is forever."
-  Value Proposition Vs. Tagline
-  Example: Apple
-  Value Proposition: "The best experiences. Only on Apple."
-  Tagline: "Think Different."
-  Value Proposition vs Mission Statement vs Slogan vs Tagline
-  Example: Nike
-  Value Proposition: "Customizable performance or lifestyle sneakers with unique colorways and materials."
-  Mission Statement: "To bring inspiration and innovation to every athlete in the world."
-  Slogan: "Twice the guts. Double the glory."
-  Tagline: "Just do it."
+Here are a few examples of how value propositions differ from other statements:
+Value Proposition Vs. Mission Statement
+Example: HubSpot
+Value Proposition: "An easy-to-use CRM."
+Mission Statement: "To help businesses grow better."
+Value Proposition Vs. Slogan
+Example: De Beers Group
+Value Proposition: "Exquisite diamonds, world-class designs, breathtaking jewelry."
+Slogan: "A diamond is forever."
+Value Proposition Vs. Tagline
+Example: Apple
+Value Proposition: "The best experiences. Only on Apple."
+Tagline: "Think Different."
+Value Proposition vs Mission Statement vs Slogan vs Tagline
+Example: Nike
+Value Proposition: "Customizable performance or lifestyle sneakers with unique colorways and materials."
+Mission Statement: "To bring inspiration and innovation to every athlete in the world."
+Slogan: "Twice the guts. Double the glory."
+Tagline: "Just do it."
 
-  Here are the steps to crafting a great value proposition:
-  Identify your customer's main problem.
-  Identify all the benefits your product offers.
-  Describe what makes these benefits valuable.
-  Connect this value to your buyer's problem.
-  Differentiate yourself as the preferred provider of this value.
+Here are the steps to crafting a great value proposition:
+Identify your customer's main problem.
+Identify all the benefits your product offers.
+Describe what makes these benefits valuable.
+Connect this value to your buyer's problem.
+Differentiate yourself as the preferred provider of this value.
 
-  You may consider using one or more of the following methods of writing a value proposition:
+You may consider using one or more of the following methods of writing a value proposition:
 
-  Steve Blank Method:
-  Instead of focusing on the features themselves, Blank saw the need to emphasize the benefits derived from the features in a simple sentence. By following this formula you'll connect the target market and their pain points to the solution:
-  "We help (X) do (Y) by doing (Z)"
+Steve Blank Method:
+Instead of focusing on the features themselves, Blank saw the need to emphasize the benefits derived from the features in a simple sentence. By following this formula you'll connect the target market and their pain points to the solution:
+"We help (X) do (Y) by doing (Z)"
 
-  Geoff Moore Method:
-  Moore provides a template that's more specific in identifying the industry categories alongside the benefits customers value. This makes a more clear value proposition formula as follows:
-  "For [target customer] who [needs or wants X], our [product/service] is [category of industry] that [benefits]"
+Geoff Moore Method:
+Moore provides a template that's more specific in identifying the industry categories alongside the benefits customers value. This makes a more clear value proposition formula as follows:
+"For [target customer] who [needs or wants X], our [product/service] is [category of industry] that [benefits]"
 
-  Harvard Business School Method:
-  According to HBS a value proposition is executed best when it answers the following questions:
-  "What is my brand offering?"
-  "What job does the customer hire my brand to do?"
-  "What companies and products compete with my brand to do this job for the customer?"
-  "What sets my brand apart from competitors?"
+Harvard Business School Method:
+According to HBS a value proposition is executed best when it answers the following questions:
+"What is my brand offering?"
+"What job does the customer hire my brand to do?"
+"What companies and products compete with my brand to do this job for the customer?"
+"What sets my brand apart from competitors?"
 
-  Examples of good value propositions:
-  HubSpot: An Easy-to-Use CRM
-  FedEx: Manage Your Home Deliveries
-  LG: State-of-the-art Living Experience
-  Subaru: The most adventurous, most reliable, safest, best Subaru Outback ever
-  Samsung: Get Ready to Unfold Your World
-  Imperfect Foods: Groceries that help you fight food waste
-  Hulu: All The TV You Love
+Examples of good value propositions:
+HubSpot: An Easy-to-Use CRM
+FedEx: Manage Your Home Deliveries
+LG: State-of-the-art Living Experience
+Subaru: The most adventurous, most reliable, safest, best Subaru Outback ever
+Samsung: Get Ready to Unfold Your World
+Imperfect Foods: Groceries that help you fight food waste
+Hulu: All The TV You Love
 
-  Illustrative examples:
-  Input:
-  An app where users swipe through fantasy sports trade ideas, integrated with league data and suggested based on team needs and balanced trades.
-  Young, tech-savvy sports fans
-  Demographics: Male, 25-35 years old, MBA or STEM degree, Resides in sports-centric cities
-  Psychographics: Participates in sports betting forums, Reads "The Economist" magazine, Seeks validation from peers
-  Output:
-  Personalized fantasy trades for your dream team
-  Fantasy trade suggestions your league-mates will actually accept
-  Fantasy sports trades powered by real league data
+Illustrative examples:
+Input:
+An app where users swipe through fantasy sports trade ideas, integrated with league data and suggested based on team needs and balanced trades.
+Young, tech-savvy sports fans
+Demographics: Male, 25-35 years old, MBA or STEM degree, Resides in sports-centric cities
+Psychographics: Participates in sports betting forums, Reads "The Economist" magazine, Seeks validation from peers
+Output:
+[
+  {
+    "title": "Personalized fantasy trades for your dream team",
+  },
+  {
+    "title": "Fantasy trade suggestions your league-mates will actually accept",
+  },
+  {
+    "title": "Fantasy sports trades powered by real league data",
+  },
+]
 
-  Input:
-  An AI tool that dynamically adjusts film scores based on scene changes and director input, providing adaptive music that enhances the visual experience.
-  Advertising Agency Creatives
-  Demographics: 30-45 years old, Creative directors, Based in New York City
-  Psychographics: Values cutting-edge tools, Regularly pitches multimedia campaigns, Engages with creative technology blogs
-  Output:
-  We help creatives enhance films with adaptive, dynamic scores
-  Real-time, adaptive film scores for advertising creatives
-  Enhance your films with AI-driven dynamic scores
+Input:
+An AI tool that dynamically adjusts film scores based on scene changes and director input, providing adaptive music that enhances the visual experience.
+Advertising Agency Creatives
+Demographics: 30-45 years old, Creative directors, Based in New York City
+Psychographics: Values cutting-edge tools, Regularly pitches multimedia campaigns, Engages with creative technology blogs
+Output:
+[
+  {
+    "title": "We help creatives enhance films with adaptive, dynamic scores",
+  },
+  {
+    "title": "Real-time, adaptive film scores for advertising creatives",
+  },
+  {
+    "title": "Enhance your films with AI-driven dynamic scores",
+  },
+]
 
-  Input:
-  An app that uses AI to restore and enhance old or damaged photos, improving clarity, color, and detail.
-  Amateur Genealogists
-  Demographics: 35-60 years old, Hobbyists, Suburban areas
-  Psychographics: Passionate about family history, Participates in genealogy forums, Attends local history events
-  Output:
-  Bring new life to old photos with AI
-  Restore and preserve your family memories with AI
-  Revive your family history with AI-powered photo restoration`;
+Input:
+An app that uses AI to restore and enhance old or damaged photos, improving clarity, color, and detail.
+Amateur Genealogists
+Demographics: 35-60 years old, Hobbyists, Suburban areas
+Psychographics: Passionate about family history, Participates in genealogy forums, Attends local history events
+Output:
+[
+  {
+    "title": "Revive your family history with AI-powered photo restoration",
+  },
+  {
+    "title": "Bring new life to old photos with AI",
+  },
+  {
+    "title": "Restore and preserve your family memories with AI",
+  },
+]
+Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
+Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`;
 
 export const UNFAIR_ADVANTAGE = `Objective:
   Use the business description and target audience in the user input to identify three potential unfair advantages for the core product of the business. These unfair advantages should be unique to the business and product, inherently defensible and sets the business apart from its competition. The proposed unfair advantages should all be specific, focused and unique. The proposed unfair advantages should also directly address what the target audience wants/needs. The unfair advantages may exploit an aspect of the product/business that competitors are not typically good at.
