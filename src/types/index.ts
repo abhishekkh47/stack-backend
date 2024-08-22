@@ -43,4 +43,3 @@ export * from "@app/types/milestoneResult";
 export * from "@app/types/aiToolsUsageStatus";
 export * from "@app/types/suggestionScreenCopy";
 export * from "@app/types/unsavedLogo";
-export * from "@app/types/openAiDataset";

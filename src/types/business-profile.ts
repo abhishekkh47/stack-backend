@@ -109,20 +109,3 @@ interface ITargetAudienceDesc {
   psychographics: string;
   population: string;
 }
-
-interface IBusinessInfo {
-  _id: string;
-  title: string;
-  description: string;
-}
-
-interface ITargetAudience {
-  _id: string;
-  title: string;
-  description: ITargetAudienceDesc;
-}
-interface ITargetAudienceDesc {
-  demographics: string;
-  psychographics: string;
-  population: string;
-}
