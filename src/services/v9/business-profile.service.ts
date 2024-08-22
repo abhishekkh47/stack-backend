@@ -805,15 +805,16 @@ class BusinessProfileService {
    * @description get AI toolbox
    */
   public async getAIToolbox() {
-    let [businessIdeaCopy, milestoneGoals] = await Promise.all([
-      SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
-      MilestoneGoalsTable.find({ isAiToolbox: true }).lean(),
-    ]);
+    let ideaValidationObj = {};
+    let milestoneGoals = await MilestoneGoalsTable.find({
+      isAiToolbox: true,
+    }).lean();
     let response = await MilestoneDBService.suggestionScreenInfo(
       milestoneGoals
     );
     response = response.map((obj) => {
       if (obj.key == "ideaValidation") {
+        ideaValidationObj = obj;
         return { ...obj, name: "Business Idea", key: "description" };
       } else if (obj.key == "colorsAndAesthetic") {
         return {
@@ -825,7 +826,7 @@ class BusinessProfileService {
       return obj;
     });
     const ideaValidationTool = {
-      ...businessIdeaCopy,
+      ...ideaValidationObj,
       name: "Idea Validation",
       key: "ideaValidation",
       iconBackgroundColor: "#00FF8729",
