@@ -17,14 +17,13 @@ import {
   awsLogger,
   BUSINESS_IDEA_IMAGES,
   PRODUCT_TYPE,
-  COMPANY_NAME_TYPE,
   DEDUCT_RETRY_FUEL,
-  KEY_METRICS_TYPE,
-  COST_STRUCTURE_TYPE,
   TARGET_AUDIENCE_REQUIRED,
+  AI_TOOL_DATASET_TYPES,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import { MilestoneDBService } from "@app/services/v9";
 import { ObjectId } from "mongodb";
 
 class BusinessProfileService {
@@ -41,7 +40,8 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 1
+    type: number = 1,
+    answerOfTheQuestion: string = null
   ) {
     try {
       if (!idea) {
@@ -52,15 +52,23 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const prompt = this.getUserPrompt(userBusinessProfile, key, idea);
-      let systemInput: any = (await AIToolDataSetTable.findOne({ key }).lean())
-        .data;
-      if (key == "companyName") {
-        systemInput = systemInput[COMPANY_NAME_TYPE[type]];
-      } else if (key == "keyMetrics") {
-        systemInput = systemInput[KEY_METRICS_TYPE[type]];
-      } else if (key == "costStructure") {
-        systemInput = systemInput[COST_STRUCTURE_TYPE[type]];
+      const [systemDataset, goalDetails, suggestionsScreenCopy] =
+        await Promise.all([
+          AIToolDataSetTable.findOne({ key }).lean(),
+          MilestoneGoalsTable.findOne({ key }).lean(),
+          SuggestionScreenCopyTable.find().lean(),
+        ]);
+      const prompt = this.getUserPrompt(
+        userBusinessProfile,
+        key,
+        idea,
+        goalDetails?.dependency,
+        suggestionsScreenCopy,
+        answerOfTheQuestion
+      );
+      let systemInput: any = systemDataset.data;
+      if (Object.keys(AI_TOOL_DATASET_TYPES).includes(key)) {
+        systemInput = systemInput[AI_TOOL_DATASET_TYPES[key][type]];
       }
       const [response, _] = await Promise.all([
         this.getFormattedSuggestions(systemInput, prompt),
@@ -675,21 +683,34 @@ class BusinessProfileService {
    * @param businessProfile
    * @param key
    * @param idea
+   * @param dependency
+   * @param screenCopy
+   * @param userAnswer
    * @returns prompt
    */
-  getUserPrompt(businessProfile: any, key: string, idea: string) {
+  getUserPrompt(
+    businessProfile: any,
+    key: string,
+    idea: string,
+    dependency: string[] = [],
+    screenCopy: any,
+    userAnswer: string = null
+  ) {
     try {
-      if (TARGET_AUDIENCE_REQUIRED.includes(key)) {
-        if (
-          businessProfile.targetAudience &&
-          businessProfile.targetAudience.description
-        ) {
-          return `Business Description: ${idea} ${businessProfile.targetAudience.description}`;
+      let prompt = ``;
+      for (let i = 0; i < dependency.length; i++) {
+        if (dependency[i] == "description") {
+          prompt = `${prompt}\nBusiness Description: ${idea}`;
         } else {
-          throw new Error("Please add your target audience and try again!");
+          const depDetails = screenCopy.find((obj) => obj.key == dependency[i]);
+          if (depDetails.name && businessProfile[dependency[i]]) {
+            prompt = `${prompt}\n${depDetails.name}: ${
+              businessProfile[dependency[i]]
+            }`;
+          }
         }
       }
-      return `Business Description: ${idea}`;
+      return prompt;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -778,6 +799,41 @@ class BusinessProfileService {
       });
     }
     return businessProfile;
+  }
+
+  /**
+   * @description get AI toolbox
+   */
+  public async getAIToolbox() {
+    let [businessIdeaCopy, milestoneGoals] = await Promise.all([
+      SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
+      MilestoneGoalsTable.find({ isAiToolbox: true }).lean(),
+    ]);
+    let response = await MilestoneDBService.suggestionScreenInfo(
+      milestoneGoals
+    );
+    response = response.map((obj) => {
+      if (obj.key == "ideaValidation") {
+        return { ...obj, name: "Business Idea", key: "description" };
+      } else if (obj.key == "colorsAndAesthetic") {
+        return {
+          ...obj,
+          name: "Brand Aestheitic",
+          iconImage: "artist_palette.webp",
+        };
+      }
+      return obj;
+    });
+    const ideaValidationTool = {
+      ...businessIdeaCopy,
+      name: "Idea Validation",
+      key: "ideaValidation",
+      iconBackgroundColor: "#00FF8729",
+      iconImage: "magnifire.webp",
+    };
+    response.unshift(ideaValidationTool);
+
+    return response;
   }
 }
 export default new BusinessProfileService();

@@ -105,6 +105,11 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
         },
       },
     },
+    isAiToolbox: {
+      type: mongoose.Schema.Types.Boolean,
+      required: true,
+      default: false,
+    },
   },
   { timestamps: true }
 );

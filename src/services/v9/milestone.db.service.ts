@@ -166,7 +166,7 @@ class MilestoneDBService {
           milestone.key == "description"
         ) {
           if (businessProfile?.description) {
-            if (dateDiff < milestone.day) {
+            if (dateDiff <= milestone.day) {
               milestone["isCompleted"] = true;
               response.tasks[1].data.push(milestone);
             }
@@ -180,7 +180,7 @@ class MilestoneDBService {
           (businessProfile[milestone.key].title ||
             businessProfile[milestone.key].length)
         ) {
-          if (dateDiff < milestone.day) {
+          if (dateDiff <= milestone.day) {
             milestone["isCompleted"] = true;
             response.tasks[1].data.push(milestone);
           }
@@ -397,6 +397,7 @@ class MilestoneDBService {
         const copyData = suggestionScreenCopy.find(
           (obj) => obj.key == goal.key
         );
+        goal["name"] = copyData.name;
         if (goal.inputTemplate) {
           goal.inputTemplate["suggestionScreenInfo"] = copyData;
           return goal;

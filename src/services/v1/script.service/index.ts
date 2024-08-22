@@ -2086,6 +2086,7 @@ class ScriptService {
             dependency: row["dependency"]?.trimEnd().split(","),
             template: Number(row["template"]?.trimEnd()),
             inputTemplate: inputTemplate,
+            isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
           });
         }
         if (row["optionTitle"]) {
@@ -2132,6 +2133,7 @@ class ScriptService {
                 dependency: obj.dependency,
                 template: obj.template,
                 inputTemplate: obj.inputTemplate,
+                isAiToolbox: obj.isAiToolbox,
               },
             },
             upsert: true,

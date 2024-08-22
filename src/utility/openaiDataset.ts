@@ -845,7 +845,7 @@ export const SYSTEM_INPUT = {
   Business description: a mobile application that coaches users through starting their first business, including gamified education, a daily action checklist and a human mentorship portal
   Headlines: ["Launch Success: Your Business Journey Starts Now with Our Guiding App!", "Startup Triumph: Unlock Business Success with Our Guiding Mobile App Experience!", "Launch Your Dream: Gamified Coaching App for First-Time Entrepreneurs!"]`,
 
-  VALUE_CREATORS: `"Based on the business description provided in the user prompt, I want you to provide three strings, each string containing 3 Value Creators regarding that business, with not more than 3 words each. The response should be only an array containing three strings, with each string containing a combination of 3 value creator strings as provided in below examples. below are 3 illustrative examples:
+  VALUE_CREATORS: `"Based on the business description provided in the user prompt, I want you to provide three strings, each string containing 3 Value Creators regarding that business, with not more than 3 words each. The response should be only an array containing three strings, with each string containing a combination containing single value creator strings as provided in below examples. below are 3 illustrative examples:
 
   Example 1
   Business description: an investing mobile app for high school and college students that promotes social investing and gamified financial education.
@@ -7613,218 +7613,209 @@ export const UNFAIR_ADVANTAGE = `Objective:
 export const KEY_METRICS = {
   preProduct: `Objective: Examine the business type, target audience and unfair advantage provided in the user input and use it to identify three key metrics. The key metrics should be the most commonly used and measured metrics in the given business/product type. All metrics provided will assume that the business is pre-product, meaning the product is not currently live, does not have actual customers yet or revenue. You will add both an explanation and application to each metric selected. The explanation will be a concise description of the metric, how it works and what it measures. The application will explain why the metrics was selected given the business, product, audience and/or unfair advantage.
 
-    Steps:
-    Break Down Company Type
-    Step 1: Identify the company type based on the business description.
-    Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
-    Note: you may select a company type not on this list.
-    2. Examine Inputs
-    2.1 Business Description
-    Step 1: Parse the business description to understand the core offering and features.
-    2.2 Target Audience
-    Step 1: Analyze the demographic and psychographic details.
-    Step 2: Identify key characteristics and pain points of the target audience.
-    2.3 Unfair Advantage
-    Step 1: Identify the unique selling points or unfair advantages.
-    3. Suggest Key Metrics
-    3.1 Generate 3 Key Metric
-    Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
-    Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
-    
-    Illustrative Example:
-    Input:
-    An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
-    Young Professionals with Student Loans 
-    Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
-    Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
-    Unfair Advantage: Exclusive Financial Data Partnerships 
-    The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
-    
-    Step-by-Step Workflow with Example Output
-    1. Break Down Company Type
-    Step 1: Identify the company type based on the business description.
-    Company Type: Fintech
-    2. Examine Inputs
-    2.1 Business Description
-    Step 1: Parse the business description to understand the core offering and features.
-    Core Offering: AI-driven platform for personalized debt management.
-    Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
-    2.2 Target Audience
-    Step 1: Analyze the demographic and psychographic details.
-    Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
-    Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
-    Step 2: Identify key characteristics and pain points of the target audience.
-    Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
-    Pain Points: High student loan debt, need for efficient debt management tools.
-    2.3 Unfair Advantage
-    Step 1: Identify the unique selling points or unfair advantages.
-    Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
-    3. Suggest Key Metrics
-    
-    Output:
-    [
-      {
-        "title": "Customer Discovery Calls Completed",
-        "Explanation": "This metric tracks the number of discovery calls conducted with potential users.",
-        "Application": "Discovery calls help gather in-depth insights into the debt management challenges faced by young professionals, informing the development of tailored features."
-      },
-      {
-        "title": "Waitlist User Signups",
-        "Explanation": "This measures the number of users who sign up for the product waitlist to use the beta version of the product.",
-        "Application": "Early engagement with waitlist users helps refine the platform’s features based on feedback from your target audience."
-      },
-      {
-        "title": "Exclusive Partnership Leads",
-        "Explanation": "This metric tracks the number of potential partnerships with financial institutions for exclusive data access.",
-        "Application": "Developing partnerships with financial institutions is essential for leveraging the unfair advantage of exclusive data to provide personalized debt management advice."
-      },
-    ]
-    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-    Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
-    Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
+  Steps:
+  Break Down Company Type
+  Step 1: Identify the company type based on the business description.
+  Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
+  Note: you may select a company type not on this list.
+  2. Examine Inputs
+  2.1 Business Description
+  Step 1: Parse the business description to understand the core offering and features.
+  2.2 Target Audience
+  Step 1: Analyze the demographic and psychographic details.
+  Step 2: Identify key characteristics and pain points of the target audience.
+  2.3 Unfair Advantage
+  Step 1: Identify the unique selling points or unfair advantages.
+  3. Suggest Key Metrics
+  3.1 Generate 3 Key Metric
+  Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
+  Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
+
+  Illustrative Example:
+  Input:
+  An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
+  Young Professionals with Student Loans 
+  Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
+  Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
+  Unfair Advantage: Exclusive Financial Data Partnerships 
+  The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
+
+  Step-by-Step Workflow with Example Output
+  1. Break Down Company Type
+  Step 1: Identify the company type based on the business description.
+  Company Type: Fintech
+  2. Examine Inputs
+  2.1 Business Description
+  Step 1: Parse the business description to understand the core offering and features.
+  Core Offering: AI-driven platform for personalized debt management.
+  Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
+  2.2 Target Audience
+  Step 1: Analyze the demographic and psychographic details.
+  Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
+  Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
+  Step 2: Identify key characteristics and pain points of the target audience.
+  Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
+  Pain Points: High student loan debt, need for efficient debt management tools.
+  2.3 Unfair Advantage
+  Step 1: Identify the unique selling points or unfair advantages.
+  Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
+  3. Suggest Key Metrics
+
+  Output:
+  [
+    {
+      "title": "Customer Discovery Calls Completed
+              Explanation: This metric tracks the number of discovery calls conducted with potential users.
+              Application: Discovery calls help gather in-depth insights into the debt management challenges faced by young professionals, informing the development of tailored features.
+              Waitlist User Signups
+              Explanation: This measures the number of users who sign up for the product waitlist to use the beta version of the product.
+              Application: Early engagement with waitlist users helps refine the platform’s features based on feedback from your target audience.
+              Exclusive Partnership Leads
+              Explanation: This metric tracks the number of potential partnerships with financial institutions for exclusive data access.
+              Application: Developing partnerships with financial institutions is essential for leveraging the unfair advantage of exclusive data to provide personalized debt management advice.",
+    },
+  ]
+
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response which should be an array containing single suggestion in the given format only and nothing else and, the strings should be in quotes.
+  Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
   preRevenue: `Objective: Examine the business type, target audience and unfair advantage provided in the user input and use it to identify three key metrics. The key metrics should be the most commonly used and measured metrics in the given business/product type. All metrics provided will assume that the business has a live product but is not currently generating revenue. You will add both an explanation and application to each metric selected. The explanation will be a concise description of the metric, how it works and what it measures. The application will explain why the metrics was selected given the business, product, audience and/or unfair advantage.
 
-    Steps:
-    Break Down Company Type
-    Step 1: Identify the company type based on the business description.
-    Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
-    Note: you may select a company type not on this list.
-    2. Examine Inputs
-    2.1 Business Description
-    Step 1: Parse the business description to understand the core offering and features.
-    2.2 Target Audience
-    Step 1: Analyze the demographic and psychographic details.
-    Step 2: Identify key characteristics and pain points of the target audience.
-    2.3 Unfair Advantage
-    Step 1: Identify the unique selling points or unfair advantages.
-    3. Suggest Key Metrics
-    3.1 Generate Metrics
-    Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
-    Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
-    
-    Illustrative Example:
-    Input:
-    An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
-    Young Professionals with Student Loans 
-    Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
-    Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
-    Unfair Advantage: Exclusive Financial Data Partnerships 
-    The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
-    
-    Step-by-Step Workflow with Example Output
-    1. Break Down Company Type
-    Step 1: Identify the company type based on the business description.
-    Company Type: Fintech
-    2. Examine Inputs
-    2.1 Business Description
-    Step 1: Parse the business description to understand the core offering and features.
-    Core Offering: AI-driven platform for personalized debt management.
-    Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
-    2.2 Target Audience
-    Step 1: Analyze the demographic and psychographic details.
-    Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
-    Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
-    Step 2: Identify key characteristics and pain points of the target audience.
-    Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
-    Pain Points: High student loan debt, need for efficient debt management tools.
-    2.3 Unfair Advantage
-    Step 1: Identify the unique selling points or unfair advantages.
-    Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
-    3. Suggest Key Metrics
-    
-    Output:
-    [
-      {
-        "title": "Monthly Active Users (MAUs)",
-        "Importance": "Measures the overall engagement and usage of the platform, indicating its popularity and relevance to the target audience."
-        "Application": "A high number of MAUs demonstrates that the platform is becoming a regular tool for young professionals to manage their student loans and improve financial health."
-      },
-      {
-        "title": "User Feedback and Reviews",
-        "Importance": "Provides qualitative insights into user satisfaction and areas for improvement, which is essential for iterating and enhancing the platform."
-        "Application": "Positive feedback and reviews highlight the platform’s strengths and the unique value of its exclusive data partnerships, attracting more users concerned about financial health."
-      },
-      {
-        "title": "Viral Coefficient",
-        "Importance": "Indicates the organic growth potential by measuring how many new users each existing user brings in, essential for understanding the platform's ability to grow through word-of-mouth and referrals."
-        "Application": "A high viral coefficient suggests that users are recommending the platform to their peers, driven by the exclusive financial insights and effective debt management tools."
-      }
-    ]
-    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-    Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
-    Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
+  Steps:
+  Break Down Company Type
+  Step 1: Identify the company type based on the business description.
+  Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
+  Note: you may select a company type not on this list.
+  2. Examine Inputs
+  2.1 Business Description
+  Step 1: Parse the business description to understand the core offering and features.
+  2.2 Target Audience
+  Step 1: Analyze the demographic and psychographic details.
+  Step 2: Identify key characteristics and pain points of the target audience.
+  2.3 Unfair Advantage
+  Step 1: Identify the unique selling points or unfair advantages.
+  3. Suggest Key Metrics
+  3.1 Generate Metrics
+  Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
+  Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
+
+  Illustrative Example:
+  Input:
+  An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
+  Young Professionals with Student Loans 
+  Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
+  Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
+  Unfair Advantage: Exclusive Financial Data Partnerships 
+  The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
+
+  Step-by-Step Workflow with Example Output
+  1. Break Down Company Type
+  Step 1: Identify the company type based on the business description.
+  Company Type: Fintech
+  2. Examine Inputs
+  2.1 Business Description
+  Step 1: Parse the business description to understand the core offering and features.
+  Core Offering: AI-driven platform for personalized debt management.
+  Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
+  2.2 Target Audience
+  Step 1: Analyze the demographic and psychographic details.
+  Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
+  Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
+  Step 2: Identify key characteristics and pain points of the target audience.
+  Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
+  Pain Points: High student loan debt, need for efficient debt management tools.
+  2.3 Unfair Advantage
+  Step 1: Identify the unique selling points or unfair advantages.
+  Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
+  3. Suggest Key Metrics
+
+  Output:
+  [
+    {
+      "title": "Monthly Active Users (MAUs):
+              Importance: Measures the overall engagement and usage of the platform, indicating its popularity and relevance to the target audience.
+              Application: A high number of MAUs demonstrates that the platform is becoming a regular tool for young professionals to manage their student loans and improve financial health.
+              User Feedback and Reviews:
+              Importance: Provides qualitative insights into user satisfaction and areas for improvement, which is essential for iterating and enhancing the platform.
+              Application: Positive feedback and reviews highlight the platform’s strengths and the unique value of its exclusive data partnerships, attracting more users concerned about financial health.
+              Viral Coefficient:
+              Importance: Indicates the organic growth potential by measuring how many new users each existing user brings in, essential for understanding the platform's ability to grow through word-of-mouth and referrals.
+              Application: A high viral coefficient suggests that users are recommending the platform to their peers, driven by the exclusive financial insights and effective debt management tools.",
+    },
+  ]
+
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response which should be an array containing single suggestion in the given format only and nothing else and, the strings should be in quotes.
+  Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
   postRevenue: `Objective: Examine the business type, target audience and unfair advantage provided in the user input and use it to identify three key metrics. The key metrics should be the most commonly used and measured metrics in the given business/product type. All metrics provided will assume that the business has a live product and is currently generating revenue. You will add both an explanation and application to each metric selected. The explanation will be a concise description of the metric, how it works and what it measures. The application will explain why the metrics was selected given the business, product, audience and/or unfair advantage.
 
-    Steps:
-    Break Down Company Type
-    Step 1: Identify the company type based on the business description.
-    Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
-    Note: you may select a company type not on this list.
-    2. Examine Inputs
-    2.1 Business Description
-    Step 1: Parse the business description to understand the core offering and features.
-    2.2 Target Audience
-    Step 1: Analyze the demographic and psychographic details.
-    Step 2: Identify key characteristics and pain points of the target audience.
-    2.3 Unfair Advantage
-    Step 1: Identify the unique selling points or unfair advantages.
-    3. Suggest Key Metrics
-    3.1 Generate Metric Sets
-    Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
-    Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
-    Step 3: Create three different key metrics, each unique and diverse from one another.
-    
-    Illustrative Example:
-    Input:
-    An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
-    Young Professionals with Student Loans 
-    Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
-    Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
-    Unfair Advantage: Exclusive Financial Data Partnerships 
-    The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
-    
-    Step-by-Step Workflow with Example Output
-    1. Break Down Company Type
-    Step 1: Identify the company type based on the business description.
-    Company Type: Fintech
-    2. Examine Inputs
-    2.1 Business Description
-    Step 1: Parse the business description to understand the core offering and features.
-    Core Offering: AI-driven platform for personalized debt management.
-    Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
-    2.2 Target Audience
-    Step 1: Analyze the demographic and psychographic details.
-    Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
-    Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
-    Step 2: Identify key characteristics and pain points of the target audience.
-    Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
-    Pain Points: High student loan debt, need for efficient debt management tools.
-    2.3 Unfair Advantage
-    Step 1: Identify the unique selling points or unfair advantages.
-    Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
-    3. Suggest Key Metrics
-    
-    Output:
-    [
-      {
-        "title": "Monthly Recurring Revenue (MRR)",
-        "Explanation": "Importance: Measures the predictable revenue generated from subscriptions on a monthly basis.",
-        "Application": "Application: Tracking MRR helps the platform understand its financial health and growth trajectory, ensuring stable and predictable income from young professionals using the service."
-      },
-      {
-        "title": "Customer Lifetime Value (CLV)",
-        "Application": "High CLV indicates that users find long-term value in the platform’s debt management services and continue to engage and pay for the service."
-        "Importance": "Estimates the total revenue a user is expected to generate over their relationship with the platform."
-      },
-      {
-        "title": "Churn Rate",
-        "Explanation": "Measures the percentage of users who stop using the platform over a given period.",
-        "Application": "A low churn rate suggests high user retention and satisfaction, crucial for sustaining revenue growth."
-      },
-    ]
-    Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
-    Strictly ensure that you return only the required JSON parsable response which should be an array of 3 suggestion in the given format only and nothing else and, the strings should be in quotes.
-    Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
+  Steps:
+  Break Down Company Type
+  Step 1: Identify the company type based on the business description.
+  Examples: Software as a Service (SaaS), Mobile Applications, E-commerce, Fintech, Healthcare Technology, Edtech, Consumer Hardware, Marketplaces, B2B Services, Subscription Services, Gaming, Green Technology, Real Estate Technology (PropTech), Logistics and Supply Chain, Social Media and Networking, Travel and Hospitality, Automotive Technology, Retail Technology, Consumer Electronics, Wearables, Home Appliances, Furniture, Apparel and Accessories, Food and Beverage Products, Health and Wellness Products, Toys and Games, Sporting Goods, Beauty and Personal Care Products, Pet Products, Outdoor and Adventure Gear
+  Note: you may select a company type not on this list.
+  2. Examine Inputs
+  2.1 Business Description
+  Step 1: Parse the business description to understand the core offering and features.
+  2.2 Target Audience
+  Step 1: Analyze the demographic and psychographic details.
+  Step 2: Identify key characteristics and pain points of the target audience.
+  2.3 Unfair Advantage
+  Step 1: Identify the unique selling points or unfair advantages.
+  3. Suggest Key Metrics
+  3.1 Generate Metric Sets
+  Step 1: Based on the company type, business description, target audience, and unfair advantage, generate potential key metrics.
+  Step 2: Ensure diversity by including metrics from different aspects such as customer acquisition, product validation, and engagement.
+  Step 3: Create three different key metrics, each unique and diverse from one another.
+
+  Illustrative Example:
+  Input:
+  An AI-driven platform for personalized debt management, integrating real-time debt reduction adjustments based on spending habits, predictive analytics, and interactive financial simulation games. 
+  Young Professionals with Student Loans 
+  Demographics: 25-35 years old, Bachelor's degree, Urban professionals 
+  Psychographics: Concerned about financial health, Regularly uses budgeting apps, Engages in financial literacy webinars 
+  Unfair Advantage: Exclusive Financial Data Partnerships 
+  The platform collaborates with leading financial institutions to access exclusive data, allowing for more accurate and personalized debt management advice. This unique data access provides users with insights that are not available on other platforms, ensuring the advice is tailored to their specific financial situation.
+
+  Step-by-Step Workflow with Example Output
+  1. Break Down Company Type
+  Step 1: Identify the company type based on the business description.
+  Company Type: Fintech
+  2. Examine Inputs
+  2.1 Business Description
+  Step 1: Parse the business description to understand the core offering and features.
+  Core Offering: AI-driven platform for personalized debt management.
+  Features: Real-time debt reduction adjustments, predictive analytics, interactive financial simulation games.
+  2.2 Target Audience
+  Step 1: Analyze the demographic and psychographic details.
+  Demographics: Young professionals, 25-35 years old, Bachelor's degree, Urban professionals.
+  Psychographics: Concerned about financial health, uses budgeting apps, engages in financial literacy webinars.
+  Step 2: Identify key characteristics and pain points of the target audience.
+  Key Characteristics: Tech-savvy, financially conscious, seeking personalized financial advice.
+  Pain Points: High student loan debt, need for efficient debt management tools.
+  2.3 Unfair Advantage
+  Step 1: Identify the unique selling points or unfair advantages.
+  Unfair Advantage: Exclusive Financial Data Partnerships providing unique and accurate debt management insights.
+  3. Suggest Key Metrics
+
+  Output:
+  [
+    {
+      "title": "Monthly Recurring Revenue (MRR):
+              Importance: Measures the predictable revenue generated from subscriptions on a monthly basis.
+              Application: Tracking MRR helps the platform understand its financial health and growth trajectory, ensuring stable and predictable income from young professionals using the service.
+              Customer Lifetime Value (CLV):
+              Importance: Estimates the total revenue a user is expected to generate over their relationship with the platform.
+              Application: High CLV indicates that users find long-term value in the platform’s debt management services and continue to engage and pay for the service.
+              Churn Rate:
+              Importance: Measures the percentage of users who stop using the platform over a given period.
+              Application: A low churn rate suggests high user retention and satisfaction, crucial for sustaining revenue growth.",
+    },
+  ]
+
+  Also, Before returning the response, strictly ensure and verify that the response structure should strictly be in such a way that it can be parsed to JSON using JSON.parse()
+  Strictly ensure that you return only the required JSON parsable response which should be an array containing single suggestion in the given format only and nothing else and, the strings should be in quotes.
+  Also, before returning the response, recheck if the response is a proper structured array which can be parsed JSON.parse().`,
 };
 
 export const BUSINESS_MODEL = `Inputs:
@@ -8254,4 +8245,107 @@ export const TARGET_AUDIENCE_REQUIRED = [
 export const COST_STRUCTURE_TYPE = {
   1: "buildMyself",
   2: "hireSomeone",
+};
+
+export const YOUR_HOOK_TYPE = {
+  1: "literalDescription",
+  2: "sellOutcome",
+  3: "xForYFramework",
+};
+
+export const SHOWCASE_PROBLEM_TYPE = {
+  1: "viralResearch",
+  2: "customerFrustration",
+  3: "keyDataPoint",
+};
+
+export const GOTO_MARKET_STRATEGY_TYPE = {
+  1: "marketing",
+  2: "productDevelopment",
+  3: "salesDev",
+  4: "teamBuilding",
+};
+
+export const PROGRESS_METRICS_TYPE = {
+  1: "customerDiscovery",
+  2: "productWaitlist",
+  3: "users",
+  4: "revenue",
+};
+
+export const MARKET_SIZE_TYPE = {
+  1: "traditionalMethod",
+  2: "bottomsUpMethod",
+};
+
+export const WHY_NOW_STORY_TYPE = {
+  1: "soceitalShift",
+  2: "nascentTechnology",
+  3: "regulatoryTailwinds",
+  4: "economicClimate",
+};
+
+export const THE_ASK_TYPE = {
+  1: "raiseMoney",
+  2: "highCalibreIntros",
+  3: "strategicAdvice",
+  4: "betaTester",
+};
+
+export const NETWORKING_STRATEGY_TYPE = {
+  1: "investors",
+  2: "entrepreneurs",
+  3: "teamMembers",
+};
+
+export const OUTLINE_DEMAND_TEST_TYPE = {
+  1: "surveyInvite",
+  2: "socialMediaPoll",
+  3: "ambientPost",
+};
+
+export const HEADLINE_TYPE = {
+  1: "literalDescription",
+  2: "sellOutcome",
+  3: "nailPainPoint",
+  4: "sparkCuriosity",
+};
+
+export const CALL_TO_ACTION_TYPE = {
+  1: "matchFeeling",
+  2: "handleObjection",
+  3: "nextStep",
+  4: "makeSpecific",
+};
+
+export const COLORS_AND_AESTHETIC_TYPE = {
+  1: "founderVideo",
+  2: "productVisual",
+  3: "customerOutcome",
+};
+
+export const PERFECT_HOOK_TYPE = {
+  1: "challenge",
+  2: "funny",
+  3: "curiosity",
+  4: "personalConnection",
+};
+
+export const AI_TOOL_DATASET_TYPES = {
+  companyName: COMPANY_NAME_TYPE,
+  keyMetrics: KEY_METRICS_TYPE,
+  costStructure: COST_STRUCTURE_TYPE,
+  yourHook: YOUR_HOOK_TYPE,
+  showcaseProblem: SHOWCASE_PROBLEM_TYPE,
+  gotoMarketStrategy: GOTO_MARKET_STRATEGY_TYPE,
+  progressMetrics: PROGRESS_METRICS_TYPE,
+  marketSize: MARKET_SIZE_TYPE,
+  whyNowStory: WHY_NOW_STORY_TYPE,
+  theAsk: THE_ASK_TYPE,
+  networkingStrategy: NETWORKING_STRATEGY_TYPE,
+  outlineDemandTest: OUTLINE_DEMAND_TEST_TYPE,
+  headline: HEADLINE_TYPE,
+  callToAction: CALL_TO_ACTION_TYPE,
+  colorsAndAesthetic: COLORS_AND_AESTHETIC_TYPE,
+  perfectHook: PERFECT_HOOK_TYPE,
 };

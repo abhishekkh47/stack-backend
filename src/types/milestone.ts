@@ -18,6 +18,7 @@ export interface IMilestoneGoals {
   template: number;
   iconBackgroundColor: string;
   inputTemplate: IMilestoneGoalOptions;
+  isAiToolbox: boolean;
 }
 
 export enum EInputTemplate {
