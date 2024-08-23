@@ -1,5 +1,9 @@
 import { Auth } from "@app/middleware";
-import { BusinessProfileTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  DailyChallengeTable,
+  UserTable,
+} from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import BaseController from "../base";
@@ -67,6 +71,10 @@ class MilestoneController extends BaseController {
     await BusinessProfileTable.findOneAndUpdate(
       { userId: user._id },
       { $set: obj }
+    );
+    await DailyChallengeTable.findOneAndUpdate(
+      { userId: user._id },
+      { $set: { dailyGoalStatus: null } }
     );
     return this.Ok(ctx, { message: "success" });
   }

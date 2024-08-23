@@ -110,7 +110,9 @@ class MilestoneDBService {
         })
           .sort({ updatedAt: -1 })
           .lean(),
-        DailyChallengeTable.find({ userId: userIfExists._id }),
+        MilestoneGoalsTable.findOne({
+          milestone: "Foundations of Successful Company Building",
+        }),
         DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
       const existingResponse = await this.handleAvailableDailyChallenges(
