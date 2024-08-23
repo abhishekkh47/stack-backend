@@ -70,14 +70,14 @@ class BusinessProfileService {
       if (Object.keys(AI_TOOL_DATASET_TYPES).includes(key)) {
         systemInput = systemInput[AI_TOOL_DATASET_TYPES[key][type]];
       }
-      const [response, _] = await Promise.all([
-        this.getFormattedSuggestions(systemInput, prompt),
-        AIToolsUsageStatusTable.findOneAndUpdate(
+      const response = await this.getFormattedSuggestions(systemInput, prompt);
+      if (response) {
+        await AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
           { upsert: true }
-        ),
-      ]);
+        );
+      }
       if (response && !userExists.isPremiumUser) {
         await this.updateAIToolsRetryStatus(userExists, key);
       }

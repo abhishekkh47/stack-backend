@@ -118,12 +118,14 @@ class BusinessProfileController extends BaseController {
     const imageName =
       file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
-    if (businessProfileExists?.companyLogo) {
-      removeImage(userExists._id, businessProfileExists.companyLogo);
-    }
     let businessProfileObj = {
       companyLogo: imageName,
     };
+    if (businessProfileExists?.companyLogo) {
+      removeImage(userExists._id, businessProfileExists.companyLogo);
+      businessProfileObj["completedGoal"] =
+        businessProfileExists?.completedGoal + 1 || 1;
+    }
     if (imageName) {
       businessProfileObj["logoGenerationInfo"] = {
         isUnderProcess: false,
