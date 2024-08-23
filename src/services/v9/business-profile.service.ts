@@ -4,6 +4,7 @@ import {
   AIToolsUsageStatusTable,
   ProblemScoreTable,
   MarketScoreTable,
+  UnsavedLogoTable,
   AIToolDataSetTable,
   SuggestionScreenCopyTable,
   MilestoneGoalsTable,
@@ -116,7 +117,8 @@ class BusinessProfileService {
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
-    idea: string = null
+    idea: string = null,
+    deductRetryFuel: boolean = false
   ) {
     try {
       let response = null;
@@ -126,7 +128,7 @@ class BusinessProfileService {
         { upsert: true }
       );
 
-      const { logoGenerationInfo = null, companyName = "" } =
+      const { logoGenerationInfo = null, companyName = null } =
         userBusinessProfile ?? {};
       const {
         aiSuggestions = [],
@@ -168,23 +170,31 @@ class BusinessProfileService {
             { upsert: true }
           ),
         ]);
-        BusinessProfileServiceV7.generateImageSuggestions(
-          textResponse.choices[0].message.content
-        ).then(async (imageUrls) => {
-          response = [...imageUrls];
-          await BusinessProfileTable.findOneAndUpdate(
-            { userId: userExists._id },
-            {
-              $set: {
-                "logoGenerationInfo.isUnderProcess": false,
-                "logoGenerationInfo.startTime": moment().unix(),
-                "logoGenerationInfo.aiSuggestions": response,
-                "logoGenerationInfo.isInitialSuggestionsCompleted": true,
-              },
-            },
-            { upsert: true }
-          );
-        });
+        const imagePrompt = textResponse.choices[0].message.content;
+        BusinessProfileServiceV7.generateImageSuggestions(imagePrompt).then(
+          async (imageUrls) => {
+            response = [...imageUrls];
+            await Promise.all([
+              BusinessProfileTable.findOneAndUpdate(
+                { userId: userExists._id },
+                {
+                  $set: {
+                    "logoGenerationInfo.isUnderProcess": false,
+                    "logoGenerationInfo.startTime": moment().unix(),
+                    "logoGenerationInfo.aiSuggestions": response,
+                    "logoGenerationInfo.isInitialSuggestionsCompleted": true,
+                  },
+                },
+                { upsert: true }
+              ),
+              UnsavedLogoTable.findOneAndUpdate(
+                { userId: userExists._id },
+                { $set: { logoGeneratedAt: moment().unix() } },
+                { upsert: true, new: true }
+              ),
+            ]);
+          }
+        );
       }
 
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
@@ -202,6 +212,8 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
+    } finally {
+      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 
