@@ -226,7 +226,7 @@ class BusinessProfileController extends BaseController {
   })
   @Auth()
   public async getAIToolBox(ctx: any) {
-    const { user, body } = ctx.request;
+    const { user } = ctx.request;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");

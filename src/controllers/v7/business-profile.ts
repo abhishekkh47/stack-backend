@@ -4,6 +4,8 @@ import {
   UserTable,
   WeeklyJourneyResultTable,
   AIToolsUsageStatusTable,
+  MilestoneResultTable,
+  MilestoneGoalsTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import {
@@ -39,16 +41,34 @@ class BusinessProfileController extends BaseController {
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
-      const [userIfExists, businessProfile] = await Promise.all([
-        UserTable.findOne({ _id: user._id }),
-        BusinessProfileTable.findOne({ userId: user._id }),
-      ]);
+      const [userIfExists, businessProfile, milestoneResult] =
+        await Promise.all([
+          UserTable.findOne({ _id: user._id }),
+          BusinessProfileTable.findOne({ userId: user._id }),
+          MilestoneResultTable.findOne({ userId: user._id }),
+        ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       const updatedUser = await BusinessProfileService.addOrEditBusinessProfile(
         body,
         userIfExists,
         businessProfile
       );
+
+      // in case, if user complete day-1 goals from ai-tool box and not from homescreen, we need atleast one entry in result collection
+      if (!milestoneResult) {
+        const goal = await MilestoneGoalsTable.findOne({
+          key: "ideaValidation",
+        }).lean();
+        const resultObj = {
+          userId: userIfExists._id,
+          milestoneId: goal.milestoneId,
+          day: goal.day,
+          order: goal.order,
+          goalId: goal._id,
+          key: goal.key,
+        };
+        await MilestoneResultTable.create(resultObj);
+      }
       (async () => {
         zohoCrmService.addAccounts(
           ctx.request.zohoAccessToken,

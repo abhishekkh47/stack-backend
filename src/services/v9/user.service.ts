@@ -6,21 +6,9 @@ class UserService {
    * @param userIfExists
    */
   public async userAIToolUsageStatus(userIfExists: any) {
-    const response = await AIToolsUsageStatusTable.find(
-      {
-        userId: userIfExists._id,
-      },
-      {
-        _id: 0,
-        description: 1,
-        ideaValidation: 1,
-        targetAudience: 1,
-        companyName: 1,
-        companyLogo: 1,
-        colorsAndAesthetic: 1,
-        competitors: 1,
-      }
-    );
+    const response = await AIToolsUsageStatusTable.find({
+      userId: userIfExists._id,
+    });
     return response[0];
   }
 }

@@ -23,6 +23,8 @@ import {
   MilestoneTable,
   MilestoneGoalsTable,
   SuggestionScreenCopyTable,
+  BusinessProfileTable,
+  UserTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2217,6 +2219,37 @@ class ScriptService {
         suggestionScreenData.push(bulkWriteObject);
       });
       await SuggestionScreenCopyTable.bulkWrite(suggestionScreenData);
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function update the number of goals completed already for existing users
+   * @returns {*}
+   */
+  public async updateCompletedGoalCountInDB() {
+    try {
+      const users = await UserTable.find({});
+      for (let user of users) {
+        const businessProfile = await BusinessProfileTable.findOne({
+          userId: user._id,
+        });
+        let completedGoals = 0;
+        if (businessProfile) {
+          if (businessProfile.description) completedGoals++;
+          if (businessProfile.competitors) completedGoals++;
+          if (businessProfile.companyName) completedGoals++;
+          if (businessProfile.companyLogo) completedGoals++;
+          if (businessProfile.targetAudience) completedGoals++;
+          if (businessProfile.colorsAndAesthetic) completedGoals++;
+        }
+        await BusinessProfileTable.findOneAndUpdate(
+          { _userId: user._id },
+          { $set: { completedGoals: completedGoals } }
+        );
+      }
       return;
     } catch (error) {
       throw new NetworkError(error.message, 400);
