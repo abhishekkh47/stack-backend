@@ -832,7 +832,7 @@ class BusinessProfileService {
       iconBackgroundColor: "#00FF8729",
       iconImage: "magnifire.webp",
     };
-    response.unshift(ideaValidationTool);
+    response.splice(1, 0, ideaValidationTool);
 
     return response;
   }
