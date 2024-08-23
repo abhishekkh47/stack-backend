@@ -22,11 +22,13 @@ interface ICurrentDayChallenge {
   iconImage: string;
   isLocked: boolean;
   isCompleted: boolean;
+  categoryId: mongoose.Schema.Types.ObjectId;
 }
 
 interface IMilestoneGoalOptions {
-  title: string;
-  options: IGoalOptions[];
+  optionsScreenInfo: any;
+  questionScreenInfo: any;
+  suggestionScreenInfo: any;
 }
 
 interface IGoalOptions {
