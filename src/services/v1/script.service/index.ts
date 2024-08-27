@@ -2240,7 +2240,7 @@ class ScriptService {
       for (let user of users) {
         const businessProfile = await BusinessProfileTable.findOne({
           userId: user._id,
-        });
+        }).lean();
         let completedGoals = 0;
         if (businessProfile) {
           const {
@@ -2251,27 +2251,27 @@ class ScriptService {
             targetAudience,
             colorsAndAesthetic,
           } = businessProfile;
-          if (description && description.length > 0) {
+          if (description && description != null && description.length > 0) {
             completedGoals += 1;
           }
-          if (competitors && competitors.toString().length > 0) {
+          if (competitors && competitors != null) {
             completedGoals += 1;
           }
-          if (companyName && companyName.toString().length > 0) {
+          if (companyName && companyName != null) {
             completedGoals += 1;
           }
-          if (companyLogo && companyLogo.toString().length > 0) {
+          if (companyLogo && companyLogo != null) {
             completedGoals += 1;
           }
-          if (targetAudience && targetAudience.toString().length > 0) {
+          if (targetAudience && targetAudience != null) {
             completedGoals += 1;
           }
-          if (colorsAndAesthetic && colorsAndAesthetic.toString().length > 0) {
+          if (colorsAndAesthetic && colorsAndAesthetic != null) {
             completedGoals += 1;
           }
         }
         await BusinessProfileTable.findOneAndUpdate(
-          { _userId: user._id },
+          { userId: user._id },
           { $set: { completedGoal: completedGoals } }
         );
       }
