@@ -4,6 +4,8 @@ export interface IMilestone {
   topicId: mongoose.Schema.Types.ObjectId;
   milestone: string;
   description: string;
+  order: number;
+  locked: boolean;
 }
 
 export interface IMilestoneGoals {

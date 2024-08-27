@@ -21,6 +21,16 @@ const schema = new mongoose.Schema<IMilestoneSchema>(
       required: true,
       default: null,
     },
+    order: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 0,
+    },
+    locked: {
+      type: mongoose.Schema.Types.Boolean,
+      required: true,
+      default: false,
+    },
   },
   { timestamps: true }
 );

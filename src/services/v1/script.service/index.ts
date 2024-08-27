@@ -2011,6 +2011,7 @@ class ScriptService {
       let currentMilestoneId = null;
       let currentIndex = -1;
       let currentIdentifier = null;
+      let milestoneOrder = 0;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2021,6 +2022,8 @@ class ScriptService {
             milestone: milestone,
             topicId: quizTopics.find((obj) => obj.topic == topic)._id,
             description: "7 Days - 15 min/day",
+            order: ++milestoneOrder,
+            locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
           });
         }
         return acc;
@@ -2036,7 +2039,9 @@ class ScriptService {
               $set: {
                 milestone: goal.milestone,
                 topicId: goal.topicId,
-                description: "7 Days - 15 min/day",
+                description: goal.description,
+                order: goal.order,
+                locked: goal.locked,
               },
             },
             upsert: true,
@@ -2238,16 +2243,36 @@ class ScriptService {
         });
         let completedGoals = 0;
         if (businessProfile) {
-          if (businessProfile.description) completedGoals++;
-          if (businessProfile.competitors) completedGoals++;
-          if (businessProfile.companyName) completedGoals++;
-          if (businessProfile.companyLogo) completedGoals++;
-          if (businessProfile.targetAudience) completedGoals++;
-          if (businessProfile.colorsAndAesthetic) completedGoals++;
+          const {
+            description,
+            competitors,
+            companyName,
+            companyLogo,
+            targetAudience,
+            colorsAndAesthetic,
+          } = businessProfile;
+          if (description && description.length > 0) {
+            completedGoals += 1;
+          }
+          if (competitors && competitors.toString().length > 0) {
+            completedGoals += 1;
+          }
+          if (companyName && companyName.toString().length > 0) {
+            completedGoals += 1;
+          }
+          if (companyLogo && companyLogo.toString().length > 0) {
+            completedGoals += 1;
+          }
+          if (targetAudience && targetAudience.toString().length > 0) {
+            completedGoals += 1;
+          }
+          if (colorsAndAesthetic && colorsAndAesthetic.toString().length > 0) {
+            completedGoals += 1;
+          }
         }
         await BusinessProfileTable.findOneAndUpdate(
           { _userId: user._id },
-          { $set: { completedGoals: completedGoals } }
+          { $set: { completedGoal: completedGoals } }
         );
       }
       return;

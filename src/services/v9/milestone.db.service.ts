@@ -19,6 +19,7 @@ class MilestoneDBService {
         MilestoneTable.find(
           {
             order: { $lte: 5 },
+            locked: false,
           },
           {
             _id: 1,
@@ -461,6 +462,10 @@ class MilestoneDBService {
         availableDailyChallenges?.dailyGoalStatus &&
         getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
       ) {
+        const lastUpdated =
+          businessProfile?.currentMilestone?.milestoneUpdatedAt ||
+          new Date().toISOString();
+        const dateDiff = getDaysNum(userIfExists, lastUpdated);
         const updatedGoals = this.setLockedGoals(
           availableDailyChallenges.dailyGoalStatus,
           businessProfile
@@ -475,8 +480,10 @@ class MilestoneDBService {
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
             if (businessProfile?.description) {
-              goal["isCompleted"] = true;
-              response.tasks[1].data.push(goal);
+              if (dateDiff < 1) {
+                goal["isCompleted"] = true;
+                response.tasks[1].data.push(goal);
+              }
             } else {
               goal["isCompleted"] = false;
               response.tasks[0].data.push(goal);
