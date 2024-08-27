@@ -42,7 +42,8 @@ class BusinessProfileService {
     userBusinessProfile: any,
     idea: string = null,
     type: number = 1,
-    answerOfTheQuestion: string = null
+    answerOfTheQuestion: string = null,
+    retry: boolean = false
   ) {
     try {
       if (!idea) {
@@ -79,7 +80,7 @@ class BusinessProfileService {
           { upsert: true }
         );
       }
-      if (response && !userExists.isPremiumUser) {
+      if (response && !userExists.isPremiumUser && retry) {
         await this.updateAIToolsRetryStatus(userExists, key);
       }
       return {
@@ -117,8 +118,7 @@ class BusinessProfileService {
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
-    idea: string = null,
-    deductRetryFuel: boolean = false
+    idea: string = null
   ) {
     try {
       let response = null;
@@ -200,6 +200,9 @@ class BusinessProfileService {
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
         finished = false;
       }
+      if (finished && !userExists.isPremiumUser && isRetry) {
+        await this.updateAIToolsRetryStatus(userExists, key);
+      }
       return {
         finished,
         suggestions: finished ? (response ? response : aiSuggestions) : null,
@@ -212,8 +215,6 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
-    } finally {
-      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 
@@ -671,20 +672,11 @@ class BusinessProfileService {
   async updateAIToolsRetryStatus(userExists: any, key: any) {
     try {
       let aiToolUsageObj = {};
-      let tool = `${key}Retry`;
-      aiToolUsageObj[tool] = true;
-      await Promise.all([
-        AIToolsUsageStatusTable.findOneAndUpdate(
-          { userId: userExists._id },
-          { $set: aiToolUsageObj },
-          { upsert: true, new: true }
-        ),
-        UserTable.findOneAndUpdate(
-          { _id: userExists._id },
-          { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
-          { upsert: true, new: true }
-        ),
-      ]);
+      await UserTable.findOneAndUpdate(
+        { _id: userExists._id },
+        { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
+        { upsert: true, new: true }
+      );
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

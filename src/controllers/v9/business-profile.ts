@@ -77,7 +77,8 @@ class BusinessProfileController extends BaseController {
         userBusinessProfile,
         idea || userBusinessProfile.description,
         type,
-        answerOfTheQuestion
+        answerOfTheQuestion,
+        isRetry
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });
