@@ -494,8 +494,10 @@ class MilestoneDBService {
             (businessProfile[goal.key].title ||
               businessProfile[goal.key].length)
           ) {
-            goal["isCompleted"] = true;
-            response.tasks[1].data.push(goal);
+            if (dateDiff < 1) {
+              goal["isCompleted"] = true;
+              response.tasks[1].data.push(goal);
+            }
           } else {
             goal["isCompleted"] = false;
             response.tasks[0].data.push(goal);
