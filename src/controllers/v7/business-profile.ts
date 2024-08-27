@@ -142,10 +142,12 @@ class BusinessProfileController extends BaseController {
     let businessProfileObj = {
       companyLogo: imageName,
     };
-    if (businessProfileExists?.companyLogo) {
-      removeImage(userExists._id, businessProfileExists.companyLogo);
+    if (!businessProfileExists?.companyLogo) {
       businessProfileObj["completedGoal"] =
         businessProfileExists?.completedGoal + 1 || 1;
+    }
+    if (businessProfileExists?.companyLogo) {
+      removeImage(userExists._id, businessProfileExists.companyLogo);
     }
     if (imageName) {
       businessProfileObj["logoGenerationInfo"] = {

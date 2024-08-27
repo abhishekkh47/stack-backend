@@ -480,7 +480,7 @@ class MilestoneDBService {
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
             if (businessProfile?.description) {
-              if (dateDiff < 1) {
+              if (dateDiff < goal.day) {
                 goal["isCompleted"] = true;
                 response.tasks[1].data.push(goal);
               }
@@ -494,7 +494,7 @@ class MilestoneDBService {
             (businessProfile[goal.key].title ||
               businessProfile[goal.key].length)
           ) {
-            if (dateDiff < 1) {
+            if (dateDiff < goal.day) {
               goal["isCompleted"] = true;
               response.tasks[1].data.push(goal);
             }
