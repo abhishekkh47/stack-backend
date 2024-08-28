@@ -43,7 +43,7 @@ class BusinessProfileService {
     idea: string = null,
     type: number = 1,
     answerOfTheQuestion: string = null,
-    retry: boolean = false
+    isRetry: string = IS_RETRY.FALSE
   ) {
     try {
       if (!idea) {
@@ -80,7 +80,7 @@ class BusinessProfileService {
           { upsert: true }
         );
       }
-      if (response && !userExists.isPremiumUser && retry) {
+      if (response && !userExists.isPremiumUser && isRetry == IS_RETRY.TRUE) {
         await this.updateAIToolsRetryStatus(userExists);
       }
       return {
@@ -200,7 +200,7 @@ class BusinessProfileService {
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
         finished = false;
       }
-      if (finished && !userExists.isPremiumUser && isRetry) {
+      if (finished && !userExists.isPremiumUser && isRetry == IS_RETRY.TRUE) {
         await this.updateAIToolsRetryStatus(userExists);
       }
       return {

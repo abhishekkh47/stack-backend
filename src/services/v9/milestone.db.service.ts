@@ -240,7 +240,7 @@ class MilestoneDBService {
     try {
       const initialMilestone = (
         await MilestoneTable.findOne({
-          milestone: DEFAULT_MILESTONE,
+          order: 1,
         })
       )._id;
       const currentDate = new Date().toISOString();
@@ -254,7 +254,7 @@ class MilestoneDBService {
         BusinessProfileTable.findOneAndUpdate(
           { userId: userIfExists._id },
           { $set: updateObj },
-          { new: true }
+          { new: true, upsert: true }
         ),
         MilestoneGoalsTable.find({
           milestoneId: initialMilestone._id,
