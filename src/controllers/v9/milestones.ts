@@ -99,7 +99,7 @@ class MilestoneController extends BaseController {
       userExists,
       businessProfile
     );
-    return this.Ok(ctx, { data: goals });
+    return this.Ok(ctx, { data: { ...goals, userId: user._id } });
   }
 }
 
