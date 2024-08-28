@@ -4,6 +4,8 @@ export interface IMilestone {
   topicId: mongoose.Schema.Types.ObjectId;
   milestone: string;
   description: string;
+  order: number;
+  locked: boolean;
 }
 
 export interface IMilestoneGoals {
@@ -18,6 +20,7 @@ export interface IMilestoneGoals {
   template: number;
   iconBackgroundColor: string;
   inputTemplate: IMilestoneGoalOptions;
+  isAiToolbox: boolean;
 }
 
 export enum EInputTemplate {
@@ -27,8 +30,13 @@ export enum EInputTemplate {
 }
 
 interface IMilestoneGoalOptions {
-  optionScreenTitle: string;
-  options: IGoalOptions[];
+  optionsScreenInfo: {
+    title: string;
+    options: IGoalOptions[];
+  };
+  questionScreenInfo: {
+    title: string;
+  };
 }
 
 interface IGoalOptions {

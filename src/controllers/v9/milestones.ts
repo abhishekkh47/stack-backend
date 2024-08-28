@@ -1,5 +1,9 @@
 import { Auth } from "@app/middleware";
-import { BusinessProfileTable, UserTable } from "@app/model";
+import {
+  BusinessProfileTable,
+  DailyChallengeTable,
+  UserTable,
+} from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import BaseController from "../base";
@@ -68,6 +72,10 @@ class MilestoneController extends BaseController {
       { userId: user._id },
       { $set: obj }
     );
+    await DailyChallengeTable.findOneAndUpdate(
+      { userId: user._id },
+      { $set: { dailyGoalStatus: null } }
+    );
     return this.Ok(ctx, { message: "success" });
   }
 
@@ -79,7 +87,7 @@ class MilestoneController extends BaseController {
   @Route({ path: "/get-daily-milestone", method: HttpMethod.GET })
   @Auth()
   public async getUserMilestoneGoals(ctx: any) {
-    const { user, body } = ctx.request;
+    const { user } = ctx.request;
     const [userExists, businessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
       BusinessProfileTable.findOne({ userId: user._id }),
@@ -91,7 +99,7 @@ class MilestoneController extends BaseController {
       userExists,
       businessProfile
     );
-    return this.Ok(ctx, { data: goals });
+    return this.Ok(ctx, { data: { ...goals, userId: user._id } });
   }
 }
 

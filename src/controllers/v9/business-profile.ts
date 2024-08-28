@@ -4,6 +4,7 @@ import {
   UserTable,
   AIToolsUsageStatusTable,
   MilestoneGoalsTable,
+  SuggestionScreenCopyTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route, IMAGE_ACTIONS, IS_RETRY } from "@app/utility";
@@ -21,7 +22,7 @@ class BusinessProfileController extends BaseController {
   public async getAISuggestion(ctx: any) {
     const { user, query, headers, body } = ctx.request;
     // type - business name type
-    const { key, isRetry, idea, type } = query;
+    const { key, isRetry, idea, type, answerOfTheQuestion } = query;
     // const { key, isRetry, idea, type } = body;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
@@ -75,7 +76,9 @@ class BusinessProfileController extends BaseController {
         key,
         userBusinessProfile,
         idea || userBusinessProfile.description,
-        type
+        type,
+        answerOfTheQuestion,
+        isRetry
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });
@@ -113,13 +116,15 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getBusinessHistory(ctx: any) {
     const { user } = ctx.request;
-    const [userExists, businessProfile, milestoneGoals] = await Promise.all([
-      UserTable.findOne({ _id: user._id }),
-      BusinessProfileTable.findOne({ userId: user._id }).select(
-        "businessHistory"
-      ),
-      MilestoneGoalsTable.find(),
-    ]);
+    const [userExists, businessProfile, milestoneGoals, suggestionsScreenCopy] =
+      await Promise.all([
+        UserTable.findOne({ _id: user._id }),
+        BusinessProfileTable.findOne({ userId: user._id }).select(
+          "businessHistory"
+        ),
+        MilestoneGoalsTable.find(),
+        SuggestionScreenCopyTable.find(),
+      ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
@@ -131,7 +136,8 @@ class BusinessProfileController extends BaseController {
     if (businessProfile?.businessHistory) {
       response = await BusinessProfileService.getBusinessHistory(
         businessProfile.businessHistory,
-        milestoneGoals
+        milestoneGoals,
+        suggestionsScreenCopy
       );
     }
     return this.Ok(ctx, { message: "Success", data: response });
@@ -208,6 +214,26 @@ class BusinessProfileController extends BaseController {
       { upsert: true, new: true }
     );
     return this.Ok(ctx, { message: "Success" });
+  }
+
+  /**
+   * @description This method is to update AI Tools usage status for idea generator and idea validator when used from AI Toolbox
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/get-ai-toolbox",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getAIToolBox(ctx: any) {
+    const { user } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    let aiToolUsageObj = await BusinessProfileService.getAIToolbox();
+    return this.Ok(ctx, { message: "Success", data: aiToolUsageObj });
   }
 }
 

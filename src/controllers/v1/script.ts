@@ -2327,6 +2327,36 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is used to update completedGoals field for all existing users.
+   * @param ctx
+   */
+  @Route({ path: "/update-completed-goal-count", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateCompletedGoalCount(ctx: any) {
+    try {
+      await ScriptService.updateCompletedGoalCountInDB();
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
+
+  /**
+   * @description This method is used to update format of existing business information as title and description
+   * @param ctx
+   */
+  @Route({ path: "/update-completed-business-goals", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateCompletedBusinessGoals(ctx: any) {
+    try {
+      await ScriptService.updateCompletedBusinessProfileDetails();
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();

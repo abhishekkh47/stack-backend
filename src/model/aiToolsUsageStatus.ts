@@ -264,6 +264,106 @@ const schema = new mongoose.Schema<IAIToolsUsageStatusSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    yourHook: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    founderStory: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    showcaseProblem: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    gotoMarketStrategy: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    progressMetrics: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    unitEconomics: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    opitmizePitch: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    networkingStrategy: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    outreachDM: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    investorOutreachEmail: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    painPointSearchPhrase: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    socialDemand: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    customerExperienceMap: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    painPointOpportunity: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    outlineDemandTest: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    demandTestGoal: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    interviewPipelineStrategy: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    pipelineMessage: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    supportingVisual: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    targetUsersCommunity: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    defineMarketingChannelStrategy: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    developCallToAction: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    updateStrategy: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    updateCategories: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
+    firstCompanyUpdate: {
+      type: mongoose.Schema.Types.Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

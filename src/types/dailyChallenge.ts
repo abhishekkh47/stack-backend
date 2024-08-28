@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// this collection stores the current days goals only for each user
 export interface IDailyChallenge {
   userId: mongoose.Schema.Types.ObjectId;
   dailyGoalStatus: ICurrentDayChallenge[];
@@ -21,11 +22,13 @@ interface ICurrentDayChallenge {
   iconImage: string;
   isLocked: boolean;
   isCompleted: boolean;
+  categoryId: mongoose.Schema.Types.ObjectId;
 }
 
 interface IMilestoneGoalOptions {
-  optionScreenTitle: string;
-  options: IGoalOptions[];
+  optionsScreenInfo: any;
+  questionScreenInfo: any;
+  suggestionScreenInfo: any;
 }
 
 interface IGoalOptions {

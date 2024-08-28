@@ -23,6 +23,8 @@ import {
   MilestoneTable,
   MilestoneGoalsTable,
   SuggestionScreenCopyTable,
+  BusinessProfileTable,
+  UserTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2009,6 +2011,7 @@ class ScriptService {
       let currentMilestoneId = null;
       let currentIndex = -1;
       let currentIdentifier = null;
+      let milestoneOrder = 0;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2019,6 +2022,8 @@ class ScriptService {
             milestone: milestone,
             topicId: quizTopics.find((obj) => obj.topic == topic)._id,
             description: "7 Days - 15 min/day",
+            order: ++milestoneOrder,
+            locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
           });
         }
         return acc;
@@ -2034,7 +2039,9 @@ class ScriptService {
               $set: {
                 milestone: goal.milestone,
                 topicId: goal.topicId,
-                description: "7 Days - 15 min/day",
+                description: goal.description,
+                order: goal.order,
+                locked: goal.locked,
               },
             },
             upsert: true,
@@ -2050,7 +2057,8 @@ class ScriptService {
       });
       for (const row of rows) {
         if (row["milestone"] && row["milestone"] != currentMilestone) {
-          currentMilestoneId = milestoneIdMap[row["milestone"]];
+          currentMilestone = row["milestone"].trimEnd();
+          currentMilestoneId = milestoneIdMap[currentMilestone];
         }
 
         if (row["day"] && row["day"] != currentDay) {
@@ -2058,10 +2066,20 @@ class ScriptService {
           order = 0;
         }
         const optionCount = Number(row["options"]?.trimEnd()) || null;
+        const inputQuestion = row["userInputQuestion"]?.trimEnd();
         if (
           row["identifier"] &&
           currentIdentifier != row["identifier"]?.trimEnd()
         ) {
+          const inputTemplate = {
+            optionsScreenInfo: optionCount
+              ? {
+                  title: row["optionHeading"]?.trimEnd(),
+                  options: [],
+                }
+              : null,
+            questionScreenInfo: inputQuestion ? { title: inputQuestion } : null,
+          };
           currentIndex++;
           result.push({
             milestoneId: currentMilestoneId,
@@ -2074,16 +2092,12 @@ class ScriptService {
             iconBackgroundColor: row["iconBackgroundColor"]?.trimEnd() || null,
             dependency: row["dependency"]?.trimEnd().split(","),
             template: Number(row["template"]?.trimEnd()),
-            inputTemplate: optionCount
-              ? {
-                  optionScreenTitle: row["optionHeading"]?.trimEnd(),
-                  options: [],
-                }
-              : null,
+            inputTemplate: inputTemplate,
+            isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
           });
         }
         if (row["optionTitle"]) {
-          result[currentIndex].inputTemplate.options.push({
+          result[currentIndex].inputTemplate.optionsScreenInfo.options.push({
             title: row["optionTitle"]?.trimEnd(),
             description: row["optionDescription"]?.trimEnd() || null,
             type: Number(row["optionType"]?.trimEnd()),
@@ -2126,6 +2140,7 @@ class ScriptService {
                 dependency: obj.dependency,
                 template: obj.template,
                 inputTemplate: obj.inputTemplate,
+                isAiToolbox: obj.isAiToolbox,
               },
             },
             upsert: true,
@@ -2161,7 +2176,7 @@ class ScriptService {
             placeHolderText: row["Place Holder Text"]?.trimEnd() || null,
             maxCharLimit: row["Character Limit"]?.trimEnd(),
             isMultiLine: row["IsMultiLine"]?.trimEnd() == "TRUE" ? true : false,
-            inputType: row["Action Input Type"]?.trimEnd(),
+            actionType: row["Action Input Type"]?.trimEnd(),
             isGrid: row["isGrid"]?.trimEnd() == "TRUE" ? true : false,
             section: row["Section"]?.trimEnd() || null,
             stepList: key == "ideaValidation" ? IDEA_VALIDATION_STEPS : null,
@@ -2197,7 +2212,7 @@ class ScriptService {
                 placeHolderText: obj.placeHolderText,
                 maxCharLimit: obj.maxCharLimit,
                 isMultiLine: obj.isMultiLine,
-                inputType: obj.inputType,
+                actionType: obj.actionType,
                 isGrid: obj.isGrid,
                 section: obj.section,
                 stepList: obj.stepList,
@@ -2209,6 +2224,146 @@ class ScriptService {
         suggestionScreenData.push(bulkWriteObject);
       });
       await SuggestionScreenCopyTable.bulkWrite(suggestionScreenData);
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function update the number of goals completed already for existing users
+   * @returns {*}
+   */
+  public async updateCompletedGoalCountInDB() {
+    try {
+      const users = await UserTable.find({});
+      for (let user of users) {
+        const businessProfile = await BusinessProfileTable.findOne({
+          userId: user._id,
+        }).lean();
+        let completedGoals = 0;
+        if (businessProfile) {
+          const {
+            description,
+            competitors,
+            companyName,
+            companyLogo,
+            targetAudience,
+            colorsAndAesthetic,
+          } = businessProfile;
+          if (description && description != null && description.length > 0) {
+            completedGoals += 1;
+          }
+          if (competitors && competitors != null) {
+            completedGoals += 1;
+          }
+          if (companyName && companyName != null) {
+            completedGoals += 1;
+          }
+          if (companyLogo && companyLogo != null) {
+            completedGoals += 1;
+          }
+          if (targetAudience && targetAudience != null) {
+            completedGoals += 1;
+          }
+          if (colorsAndAesthetic && colorsAndAesthetic != null) {
+            completedGoals += 1;
+          }
+        }
+        await BusinessProfileTable.findOneAndUpdate(
+          { userId: user._id },
+          { $set: { completedGoal: completedGoals } }
+        );
+      }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function update the number of goals completed already for existing users
+   * @returns {*}
+   */
+  public async updateCompletedBusinessProfileDetails() {
+    try {
+      const profilesToMigrate = await BusinessProfileTable.find({}).lean();
+      for (let profile of profilesToMigrate) {
+        let updateObj = {};
+        if (profile && profile.completedGoal > 0) {
+          const {
+            description,
+            competitors,
+            companyName,
+            targetAudience,
+            colorsAndAesthetic,
+          }: any = profile;
+          if (description && !profile.idea) {
+            updateObj["idea"] = description.substring(0, 40);
+          }
+          if (
+            competitors &&
+            Array.isArray(competitors) &&
+            competitors.length > 0
+          ) {
+            const [firstCompetitor, ...remainingCompetitors] = competitors;
+            const descData = [
+              firstCompetitor.description,
+              ...remainingCompetitors.map(
+                (comp) => `${comp.title}\n${comp.description}`
+              ),
+            ].join("\n");
+
+            updateObj["competitors"] = {
+              title: firstCompetitor.title,
+              description: descData,
+            };
+          } else if (competitors && typeof competitors == "string") {
+            updateObj["competitors"] = {
+              title: competitors.substring(0, 40),
+              description: competitors,
+            };
+          }
+
+          if (companyName && typeof companyName == "string") {
+            updateObj["companyName"] = {
+              title: companyName,
+              description: " ",
+            };
+          }
+
+          if (targetAudience) {
+            if (targetAudience?.title && typeof targetAudience == "object") {
+              updateObj["targetAudience"] = {
+                title: targetAudience?.title,
+                description: JSON.stringify(targetAudience?.description),
+              };
+            } else if (targetAudience && typeof targetAudience == "string") {
+              updateObj["targetAudience"] = {
+                title: targetAudience.substring(0, 40),
+                description: targetAudience,
+              };
+            } else {
+              updateObj["targetAudience"] = {
+                title: targetAudience,
+                description: " ",
+              };
+            }
+          }
+
+          if (colorsAndAesthetic && typeof colorsAndAesthetic == "string") {
+            updateObj["colorsAndAesthetic"] = {
+              title: colorsAndAesthetic.substring(0, 40),
+              description: colorsAndAesthetic,
+            };
+          }
+          await BusinessProfileTable.findOneAndUpdate(
+            { userId: profile.userId },
+            { $set: updateObj },
+            { upsert: true }
+          );
+        }
+      }
       return;
     } catch (error) {
       throw new NetworkError(error.message, 400);

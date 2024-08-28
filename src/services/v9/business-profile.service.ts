@@ -18,14 +18,13 @@ import {
   awsLogger,
   BUSINESS_IDEA_IMAGES,
   PRODUCT_TYPE,
-  COMPANY_NAME_TYPE,
   DEDUCT_RETRY_FUEL,
-  KEY_METRICS_TYPE,
-  COST_STRUCTURE_TYPE,
   TARGET_AUDIENCE_REQUIRED,
+  AI_TOOL_DATASET_TYPES,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
+import { MilestoneDBService } from "@app/services/v9";
 import { ObjectId } from "mongodb";
 
 class BusinessProfileService {
@@ -42,7 +41,9 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 1
+    type: number = 1,
+    answerOfTheQuestion: string = null,
+    isRetry: string = IS_RETRY.FALSE
   ) {
     try {
       if (!idea) {
@@ -53,26 +54,34 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const prompt = this.getUserPrompt(userBusinessProfile, key, idea);
-      let systemInput: any = (await AIToolDataSetTable.findOne({ key }).lean())
-        .data;
-      if (key == "companyName") {
-        systemInput = systemInput[COMPANY_NAME_TYPE[type]];
-      } else if (key == "keyMetrics") {
-        systemInput = systemInput[KEY_METRICS_TYPE[type]];
-      } else if (key == "costStructure") {
-        systemInput = systemInput[COST_STRUCTURE_TYPE[type]];
+      const [systemDataset, goalDetails, suggestionsScreenCopy] =
+        await Promise.all([
+          AIToolDataSetTable.findOne({ key }).lean(),
+          MilestoneGoalsTable.findOne({ key }).lean(),
+          SuggestionScreenCopyTable.find().lean(),
+        ]);
+      const prompt = this.getUserPrompt(
+        userBusinessProfile,
+        key,
+        idea,
+        goalDetails?.dependency,
+        suggestionsScreenCopy,
+        answerOfTheQuestion
+      );
+      let systemInput: any = systemDataset.data;
+      if (Object.keys(AI_TOOL_DATASET_TYPES).includes(key)) {
+        systemInput = systemInput[AI_TOOL_DATASET_TYPES[key][type]];
       }
-      const [response, _] = await Promise.all([
-        this.getFormattedSuggestions(systemInput, prompt),
-        AIToolsUsageStatusTable.findOneAndUpdate(
+      const response = await this.getFormattedSuggestions(systemInput, prompt);
+      if (response) {
+        await AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
           { $set: aiToolUsageObj },
           { upsert: true }
-        ),
-      ]);
-      if (response && !userExists.isPremiumUser) {
-        await this.updateAIToolsRetryStatus(userExists, key);
+        );
+      }
+      if (response && !userExists.isPremiumUser && isRetry == IS_RETRY.TRUE) {
+        await this.updateAIToolsRetryStatus(userExists);
       }
       return {
         suggestions: response,
@@ -109,8 +118,7 @@ class BusinessProfileService {
     userBusinessProfile: any,
     isRetry: string = IS_RETRY.FALSE,
     requestId: string = null,
-    idea: string = null,
-    deductRetryFuel: boolean = false
+    idea: string = null
   ) {
     try {
       let response = null;
@@ -192,6 +200,9 @@ class BusinessProfileService {
       if (isRetry == IS_RETRY.TRUE && isUnderProcess) {
         finished = false;
       }
+      if (finished && !userExists.isPremiumUser && isRetry == IS_RETRY.TRUE) {
+        await this.updateAIToolsRetryStatus(userExists);
+      }
       return {
         finished,
         suggestions: finished ? (response ? response : aiSuggestions) : null,
@@ -204,8 +215,6 @@ class BusinessProfileService {
         suggestions: BACKUP_LOGOS,
         isRetry: true,
       };
-    } finally {
-      if (deductRetryFuel) await this.updateAIToolsRetryStatus(userExists, key);
     }
   }
 
@@ -213,9 +222,14 @@ class BusinessProfileService {
    * @description get business history in descending order of dates
    * @param businessHistory
    * @param milestoneGoals
+   * @param suggestionsScreenCopy
    * @returns {*}
    */
-  public async getBusinessHistory(businessHistory, milestoneGoals) {
+  public async getBusinessHistory(
+    businessHistory: any,
+    milestoneGoals: any,
+    suggestionsScreenCopy: any
+  ) {
     try {
       const today = new Date(Date.now()).toLocaleDateString();
       const sortedHistory = businessHistory.sort(
@@ -228,8 +242,15 @@ class BusinessProfileService {
         const day = date.toLocaleDateString();
 
         const groupKey = day == today ? "Today" : `In ${month} ${year}`;
+        const currentKey =
+          entry.key == "description" || entry.key == "ideaValidation"
+            ? "ideaValidation"
+            : entry.key;
         const matchedGoal = milestoneGoals.find(
-          (goal) => goal.key == entry.key
+          (goal) => goal.key == currentKey
+        );
+        const matchedGoalCopy = suggestionsScreenCopy.find(
+          (obj) => obj.key == currentKey
         );
 
         if (entry.key) {
@@ -238,12 +259,14 @@ class BusinessProfileService {
           }
 
           acc[groupKey].push({
+            title: matchedGoalCopy.actionName,
             key: entry.key,
             value: entry.value,
             timestamp: entry.timestamp,
             day: day,
             iconImage: matchedGoal?.iconImage,
             iconBackgroundColor: matchedGoal?.iconBackgroundColor,
+            name: matchedGoalCopy.name,
           });
         }
         return acc;
@@ -257,13 +280,23 @@ class BusinessProfileService {
             _id: ++periodId,
             title: key,
             data: values.map(
-              ({ key, value, day, iconImage, iconBackgroundColor }) => ({
+              ({
+                title,
+                key,
+                value,
+                day,
+                iconImage,
+                iconBackgroundColor,
+                name,
+              }) => ({
                 _id: ++order,
-                key: key,
+                title,
+                key,
                 details: value,
                 date: day,
                 iconImage,
                 iconBackgroundColor,
+                name,
               })
             ),
           };
@@ -499,6 +532,16 @@ class BusinessProfileService {
       const jsonResponse = JSON.parse(
         recommendations.content.replace(/```json|```/g, "").trim()
       );
+      if (
+        jsonResponse &&
+        Array.isArray(jsonResponse) &&
+        jsonResponse.length > 0 &&
+        (jsonResponse[0]?.title == "N/A" ||
+          jsonResponse[0]?.title == undefined ||
+          jsonResponse[0]?.title == "undefined")
+      ) {
+        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      }
       return jsonResponse;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
@@ -636,23 +679,13 @@ class BusinessProfileService {
    * @param userExists
    * @param key
    */
-  async updateAIToolsRetryStatus(userExists: any, key: any) {
+  async updateAIToolsRetryStatus(userExists: any) {
     try {
-      let aiToolUsageObj = {};
-      let tool = `${key}Retry`;
-      aiToolUsageObj[tool] = true;
-      await Promise.all([
-        AIToolsUsageStatusTable.findOneAndUpdate(
-          { userId: userExists._id },
-          { $set: aiToolUsageObj },
-          { upsert: true, new: true }
-        ),
-        UserTable.findOneAndUpdate(
-          { _id: userExists._id },
-          { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
-          { upsert: true, new: true }
-        ),
-      ]);
+      await UserTable.findOneAndUpdate(
+        { _id: userExists._id },
+        { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
+        { upsert: true, new: true }
+      );
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -663,21 +696,34 @@ class BusinessProfileService {
    * @param businessProfile
    * @param key
    * @param idea
+   * @param dependency
+   * @param screenCopy
+   * @param userAnswer
    * @returns prompt
    */
-  getUserPrompt(businessProfile: any, key: string, idea: string) {
+  getUserPrompt(
+    businessProfile: any,
+    key: string,
+    idea: string,
+    dependency: string[] = [],
+    screenCopy: any,
+    userAnswer: string = null
+  ) {
     try {
-      if (TARGET_AUDIENCE_REQUIRED.includes(key)) {
-        if (
-          businessProfile.targetAudience &&
-          businessProfile.targetAudience.description
-        ) {
-          return `Business Description: ${idea} ${businessProfile.targetAudience.description}`;
+      let prompt = ``;
+      for (let i = 0; i < dependency.length; i++) {
+        if (dependency[i] == "description") {
+          prompt = `${prompt}\nBusiness Description: ${idea}`;
         } else {
-          throw new Error("Please add your target audience and try again!");
+          const depDetails = screenCopy.find((obj) => obj.key == dependency[i]);
+          if (depDetails.name && businessProfile[dependency[i]]) {
+            prompt = `${prompt}\n${depDetails.name}: ${
+              businessProfile[dependency[i]]
+            }`;
+          }
         }
       }
-      return `Business Description: ${idea}`;
+      return prompt;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -687,6 +733,7 @@ class BusinessProfileService {
    * @description get business profile
    */
   public async getBusinessProfile(id: string) {
+    let businessProfile;
     let [
       userBusinessProfile,
       suggestionsScreenCopy,
@@ -700,44 +747,45 @@ class BusinessProfileService {
       SuggestionScreenCopyTable.findOne({ key: "ideaValidation" }).lean(),
       MilestoneGoalsTable.find().lean(),
     ]);
-    const {
-      userId,
-      impacts,
-      passions,
-      hoursSaved,
-      businessCoachInfo,
-      enableStealthMode,
-      completedGoal,
-    } = userBusinessProfile;
-    let businessProfile = {
-      userId,
-      impacts,
-      passions,
-      hoursSaved,
-      businessCoachInfo,
-      enableStealthMode,
-      completedGoal,
-      businessPlans: [],
-    };
 
     if (userBusinessProfile) {
+      const {
+        userId,
+        impacts,
+        passions,
+        hoursSaved,
+        businessCoachInfo,
+        enableStealthMode,
+        completedGoal,
+      } = userBusinessProfile;
+      businessProfile = {
+        userId,
+        impacts,
+        passions,
+        hoursSaved,
+        businessCoachInfo,
+        enableStealthMode,
+        completedGoal,
+        businessPlans: [],
+      };
       if (userBusinessProfile.description) {
         const action = milestoneGoals.find(
           (goal) => goal.key == "ideaValidation"
         );
         businessProfile.businessPlans.push({
+          _id: "description",
           key: "description",
-          type: businessIdeaCopy.inputType,
           value: userBusinessProfile.description,
           idea: userBusinessProfile.idea,
-          title: businessIdeaCopy.name,
-          actionName: businessIdeaCopy.actionName,
-          placeHolderText: businessIdeaCopy.placeHolderText,
-          isMultiLine: businessIdeaCopy.isMultiLine,
-          maxCharLimit: businessIdeaCopy.maxCharLimit,
-          section: businessIdeaCopy.section,
+          title: businessIdeaCopy.actionName,
           iconImage: action.iconImage,
           iconBackgroundColor: action.iconBackgroundColor,
+          inputTemplate: {
+            ...action.inputTemplate,
+            suggestionScreenInfo: businessIdeaCopy,
+          },
+          template: action.template,
+          name: businessIdeaCopy.name,
         });
       }
       suggestionsScreenCopy.forEach((data) => {
@@ -748,23 +796,60 @@ class BusinessProfileService {
         ) {
           const action = milestoneGoals.find((goal) => goal.key == data.key);
           const obj = {
+            _id: data.key,
             key: data.key,
-            type: data.inputType,
             value: userBusinessProfile[data.key],
-            title: data.name,
-            actionName: data.actionName,
-            placeHolderText: data.placeHolderText,
-            isMultiLine: data.isMultiLine,
-            maxCharLimit: data.maxCharLimit,
-            section: data.section,
+            title: data.actionName,
             iconImage: action.iconImage,
             iconBackgroundColor: action.iconBackgroundColor,
+            inputTemplate: {
+              ...action.inputTemplate,
+              suggestionScreenInfo: data,
+            },
+            template: action.template,
+            name: data.name,
           };
           businessProfile.businessPlans.push(obj);
         }
       });
     }
     return businessProfile;
+  }
+
+  /**
+   * @description get AI toolbox
+   */
+  public async getAIToolbox() {
+    let ideaValidationObj = {};
+    let milestoneGoals = await MilestoneGoalsTable.find({
+      isAiToolbox: true,
+    }).lean();
+    let response = await MilestoneDBService.suggestionScreenInfo(
+      milestoneGoals
+    );
+    response = response.map((obj) => {
+      if (obj.key == "ideaValidation") {
+        ideaValidationObj = obj;
+        return { ...obj, name: "Business Idea", key: "description" };
+      } else if (obj.key == "colorsAndAesthetic") {
+        return {
+          ...obj,
+          name: "Brand Aestheitic",
+          iconImage: "artist_palette.webp",
+        };
+      }
+      return obj;
+    });
+    const ideaValidationTool = {
+      ...ideaValidationObj,
+      name: "Idea Validation",
+      key: "ideaValidation",
+      iconBackgroundColor: "#00FF8729",
+      iconImage: "magnifire.webp",
+    };
+    response.splice(1, 0, ideaValidationTool);
+
+    return response;
   }
 }
 export default new BusinessProfileService();

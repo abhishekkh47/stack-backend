@@ -4,6 +4,8 @@ import {
   UserTable,
   WeeklyJourneyResultTable,
   AIToolsUsageStatusTable,
+  MilestoneResultTable,
+  MilestoneGoalsTable,
   UnsavedLogoTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
@@ -40,16 +42,34 @@ class BusinessProfileController extends BaseController {
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
-      const [userIfExists, businessProfile] = await Promise.all([
-        UserTable.findOne({ _id: user._id }),
-        BusinessProfileTable.findOne({ userId: user._id }),
-      ]);
+      const [userIfExists, businessProfile, milestoneResult] =
+        await Promise.all([
+          UserTable.findOne({ _id: user._id }),
+          BusinessProfileTable.findOne({ userId: user._id }),
+          MilestoneResultTable.findOne({ userId: user._id }),
+        ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       const updatedUser = await BusinessProfileService.addOrEditBusinessProfile(
         body,
         userIfExists,
         businessProfile
       );
+
+      // in case, if user complete day-1 goals from ai-tool box and not from homescreen, we need atleast one entry in result collection
+      if (!milestoneResult) {
+        const goal = await MilestoneGoalsTable.findOne({
+          key: "ideaValidation",
+        }).lean();
+        const resultObj = {
+          userId: userIfExists._id,
+          milestoneId: goal.milestoneId,
+          day: goal.day,
+          order: goal.order,
+          goalId: goal._id,
+          key: goal.key,
+        };
+        await MilestoneResultTable.create(resultObj);
+      }
       (async () => {
         zohoCrmService.addAccounts(
           ctx.request.zohoAccessToken,
@@ -119,12 +139,16 @@ class BusinessProfileController extends BaseController {
     const imageName =
       file?.size > 0 ? file?.key?.split("/")?.[1] || null : null;
 
-    if (businessProfileExists?.companyLogo) {
-      removeImage(userExists._id, businessProfileExists.companyLogo);
-    }
     let businessProfileObj = {
       companyLogo: imageName,
     };
+    if (!businessProfileExists?.companyLogo) {
+      businessProfileObj["completedGoal"] =
+        businessProfileExists?.completedGoal + 1 || 1;
+    }
+    if (businessProfileExists?.companyLogo) {
+      removeImage(userExists._id, businessProfileExists.companyLogo);
+    }
     if (imageName) {
       businessProfileObj["logoGenerationInfo"] = {
         isUnderProcess: false,
@@ -259,7 +283,7 @@ class BusinessProfileController extends BaseController {
           : null
         : null;
     if (businessProfileExists.socialFeedback) {
-      removeImage(userExists._id, businessProfileExists.socialFeedback);
+      removeImage(userExists._id, businessProfileExists?.socialFeedback?.title);
     }
     await BusinessProfileTable.updateOne(
       { userId: userExists._id },

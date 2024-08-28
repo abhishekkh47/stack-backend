@@ -235,32 +235,36 @@ class UserController extends BaseController {
   @Route({ path: "/set-profile-picture-leader", method: HttpMethod.POST })
   @Auth()
   public async setProfilePictureName(ctx: any) {
-    const { user, body } = ctx.request;
-    const userExists: any = await UserTable.findOne({
-      _id: user._id,
-    });
-    if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
-    }
-
-    return validationsV4.setProfilePictureLeaderValidation(
-      body,
-      ctx,
-      async (validate) => {
-        if (validate) {
-          const updatedUser = await UserTable.findOneAndUpdate(
-            { _id: userExists._id },
-            {
-              $set: { profilePicture: `leaders/${body.name}` },
-            }
-          );
-          return this.Ok(ctx, {
-            data: updatedUser,
-            message: "Profile Picture name set successfully.",
-          });
-        }
+    try {
+      const { user, body } = ctx.request;
+      const userExists: any = await UserTable.findOne({
+        _id: user._id,
+      });
+      if (!userExists) {
+        return this.BadRequest(ctx, "User Not Found");
       }
-    );
+
+      return validationsV4.setProfilePictureLeaderValidation(
+        body,
+        ctx,
+        async (validate) => {
+          if (validate) {
+            const updatedUser = await UserTable.findOneAndUpdate(
+              { _id: userExists._id },
+              {
+                $set: { profilePicture: `leaders/${body.name}` },
+              }
+            );
+            return this.Ok(ctx, {
+              data: updatedUser,
+              message: "Profile Picture name set successfully.",
+            });
+          }
+        }
+      );
+    } catch (error) {
+      return this.BadRequest(ctx, error.message);
+    }
   }
 
   /**
