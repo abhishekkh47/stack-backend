@@ -773,18 +773,19 @@ class BusinessProfileService {
           (goal) => goal.key == "ideaValidation"
         );
         businessProfile.businessPlans.push({
+          _id: "description",
           key: "description",
-          type: businessIdeaCopy.actionType,
           value: userBusinessProfile.description,
           idea: userBusinessProfile.idea,
-          title: businessIdeaCopy.name,
-          actionName: businessIdeaCopy.actionName,
-          placeHolderText: businessIdeaCopy.placeHolderText,
-          isMultiLine: businessIdeaCopy.isMultiLine,
-          maxCharLimit: businessIdeaCopy.maxCharLimit,
-          section: businessIdeaCopy.section,
+          title: businessIdeaCopy.actionName,
           iconImage: action.iconImage,
           iconBackgroundColor: action.iconBackgroundColor,
+          inputTemplate: {
+            ...action.inputTemplate,
+            suggestionScreenInfo: businessIdeaCopy,
+          },
+          template: action.template,
+          name: businessIdeaCopy.name,
         });
       }
       suggestionsScreenCopy.forEach((data) => {
@@ -795,17 +796,18 @@ class BusinessProfileService {
         ) {
           const action = milestoneGoals.find((goal) => goal.key == data.key);
           const obj = {
+            _id: data.key,
             key: data.key,
-            type: data.actionType,
             value: userBusinessProfile[data.key],
-            title: data.name,
-            actionName: data.actionName,
-            placeHolderText: data.placeHolderText,
-            isMultiLine: data.isMultiLine,
-            maxCharLimit: data.maxCharLimit,
-            section: data.section,
+            title: data.actionName,
             iconImage: action.iconImage,
             iconBackgroundColor: action.iconBackgroundColor,
+            inputTemplate: {
+              ...action.inputTemplate,
+              suggestionScreenInfo: data,
+            },
+            template: action.template,
+            name: data.name,
           };
           businessProfile.businessPlans.push(obj);
         }
