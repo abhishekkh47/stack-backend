@@ -81,7 +81,7 @@ class BusinessProfileService {
         );
       }
       if (response && !userExists.isPremiumUser && retry) {
-        await this.updateAIToolsRetryStatus(userExists, key);
+        await this.updateAIToolsRetryStatus(userExists);
       }
       return {
         suggestions: response,
@@ -201,7 +201,7 @@ class BusinessProfileService {
         finished = false;
       }
       if (finished && !userExists.isPremiumUser && isRetry) {
-        await this.updateAIToolsRetryStatus(userExists, key);
+        await this.updateAIToolsRetryStatus(userExists);
       }
       return {
         finished,
@@ -679,9 +679,8 @@ class BusinessProfileService {
    * @param userExists
    * @param key
    */
-  async updateAIToolsRetryStatus(userExists: any, key: any) {
+  async updateAIToolsRetryStatus(userExists: any) {
     try {
-      let aiToolUsageObj = {};
       await UserTable.findOneAndUpdate(
         { _id: userExists._id },
         { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },

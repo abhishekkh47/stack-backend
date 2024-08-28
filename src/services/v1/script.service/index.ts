@@ -2280,6 +2280,95 @@ class ScriptService {
       throw new NetworkError(error.message, 400);
     }
   }
+
+  /**
+   * @description This function update the number of goals completed already for existing users
+   * @returns {*}
+   */
+  public async updateCompletedBusinessProfileDetails() {
+    try {
+      const profilesToMigrate = await BusinessProfileTable.find({}).lean();
+      for (let profile of profilesToMigrate) {
+        let updateObj = {};
+        if (profile && profile.completedGoal > 0) {
+          const {
+            description,
+            competitors,
+            companyName,
+            targetAudience,
+            colorsAndAesthetic,
+          }: any = profile;
+          if (description && !profile.idea) {
+            updateObj["idea"] = description.substring(0, 40);
+          }
+          if (
+            competitors &&
+            Array.isArray(competitors) &&
+            competitors.length > 0
+          ) {
+            const [firstCompetitor, ...remainingCompetitors] = competitors;
+            const descData = [
+              firstCompetitor.description,
+              ...remainingCompetitors.map(
+                (comp) => `${comp.title}\n${comp.description}`
+              ),
+            ].join("\n");
+
+            updateObj["competitors"] = {
+              title: firstCompetitor.title,
+              description: descData,
+            };
+          } else if (competitors && typeof competitors == "string") {
+            updateObj["competitors"] = {
+              title: competitors.substring(0, 40),
+              description: competitors,
+            };
+          }
+
+          if (companyName && typeof companyName == "string") {
+            updateObj["companyName"] = {
+              title: companyName,
+              description: "",
+            };
+          }
+
+          if (targetAudience) {
+            if (targetAudience?.title && typeof targetAudience == "object") {
+              updateObj["targetAudience"] = {
+                title: targetAudience?.title,
+                description: JSON.stringify(targetAudience?.description),
+              };
+            } else if (targetAudience && typeof targetAudience == "string") {
+              updateObj["targetAudience"] = {
+                title: targetAudience.substring(0, 40),
+                description: targetAudience,
+              };
+            } else {
+              updateObj["targetAudience"] = {
+                title: targetAudience,
+                description: "",
+              };
+            }
+          }
+
+          if (colorsAndAesthetic && typeof colorsAndAesthetic == "string") {
+            updateObj["colorsAndAesthetic"] = {
+              title: colorsAndAesthetic.substring(0, 40),
+              description: colorsAndAesthetic,
+            };
+          }
+          await BusinessProfileTable.findOneAndUpdate(
+            { userId: profile.userId },
+            { $set: updateObj },
+            { upsert: true }
+          );
+        }
+      }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
 }
 
 export default new ScriptService();
