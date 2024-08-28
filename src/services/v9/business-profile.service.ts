@@ -532,6 +532,16 @@ class BusinessProfileService {
       const jsonResponse = JSON.parse(
         recommendations.content.replace(/```json|```/g, "").trim()
       );
+      if (
+        jsonResponse &&
+        Array.isArray(jsonResponse) &&
+        jsonResponse.length > 0 &&
+        (jsonResponse[0]?.title == "N/A" ||
+          jsonResponse[0]?.title == undefined ||
+          jsonResponse[0]?.title == "undefined")
+      ) {
+        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      }
       return jsonResponse;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
