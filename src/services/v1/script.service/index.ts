@@ -2328,7 +2328,7 @@ class ScriptService {
           if (companyName && typeof companyName == "string") {
             updateObj["companyName"] = {
               title: companyName,
-              description: "",
+              description: " ",
             };
           }
 
@@ -2346,7 +2346,7 @@ class ScriptService {
             } else {
               updateObj["targetAudience"] = {
                 title: targetAudience,
-                description: "",
+                description: " ",
               };
             }
           }
