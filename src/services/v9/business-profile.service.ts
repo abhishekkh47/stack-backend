@@ -257,11 +257,18 @@ class BusinessProfileService {
           if (!acc[groupKey]) {
             acc[groupKey] = [];
           }
+          let value = entry.value;
+          if (typeof entry.value === "string") {
+            value = {
+              title: entry.value,
+              descripition: " ",
+            };
+          }
 
           acc[groupKey].push({
             title: matchedGoalCopy.actionName,
             key: entry.key,
-            value: entry.value,
+            value: value,
             timestamp: entry.timestamp,
             day: day,
             iconImage: matchedGoal?.iconImage,
