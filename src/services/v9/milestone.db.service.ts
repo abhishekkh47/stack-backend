@@ -7,7 +7,7 @@ import {
   DailyChallengeTable,
   SuggestionScreenCopyTable,
 } from "@app/model";
-import { DEFAULT_MILESTONE, getDaysNum } from "@app/utility";
+import { getDaysNum } from "@app/utility";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -111,8 +111,8 @@ class MilestoneDBService {
         })
           .sort({ updatedAt: -1 })
           .lean(),
-        MilestoneGoalsTable.findOne({
-          milestone: "Foundations of Successful Company Building",
+        MilestoneTable.findOne({
+          order: 1,
         }),
         DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
       ]);
@@ -131,16 +131,16 @@ class MilestoneDBService {
         !businessProfile?.currentMilestone?.milestoneId
       ) {
         response = await this.getFirstDayMilestoneGoals(userIfExists);
-      } else if (
-        businessProfile.currentMilestone?.milestoneId &&
-        (businessProfile.currentMilestone?.milestoneId).toString() ==
-          defaultMilestone.toString()
-      ) {
-        response = await this.checkDefaultMilestoneStatus(
-          userIfExists,
-          businessProfile,
-          defaultMilestone
-        );
+        // } else if (
+        //   businessProfile.currentMilestone?.milestoneId &&
+        //   (businessProfile.currentMilestone?.milestoneId).toString() ==
+        //     defaultMilestone._id.toString()
+        // ) {
+        //   response = await this.checkDefaultMilestoneStatus(
+        //     userIfExists,
+        //     businessProfile,
+        //     defaultMilestone
+        //   );
       } else {
         response = await this.getNextDayMilestone(
           userIfExists,
@@ -340,6 +340,10 @@ class MilestoneDBService {
 
       const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
       const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
+      const remainingGoals = this.removeCompletedGoals(
+        updatedGoals,
+        businessProfile
+      );
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
           milestoneId,
@@ -349,7 +353,7 @@ class MilestoneDBService {
       )[0].day;
       await DailyChallengeTable.updateOne(
         { userId: userIfExists._id },
-        { $set: { userId: userIfExists._id, dailyGoalStatus: updatedGoals } },
+        { $set: { userId: userIfExists._id, dailyGoalStatus: remainingGoals } },
         { upsert: true }
       );
       return this.formatMilestones(
@@ -480,10 +484,8 @@ class MilestoneDBService {
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
             if (businessProfile?.description) {
-              if (dateDiff < goal.day) {
-                goal["isCompleted"] = true;
-                response.tasks[1].data.push(goal);
-              }
+              goal["isCompleted"] = true;
+              response.tasks[1].data.push(goal);
             } else {
               goal["isCompleted"] = false;
               response.tasks[0].data.push(goal);
@@ -494,10 +496,8 @@ class MilestoneDBService {
             (businessProfile[goal.key].title ||
               businessProfile[goal.key].length)
           ) {
-            if (dateDiff < goal.day) {
-              goal["isCompleted"] = true;
-              response.tasks[1].data.push(goal);
-            }
+            goal["isCompleted"] = true;
+            response.tasks[1].data.push(goal);
           } else {
             goal["isCompleted"] = false;
             response.tasks[0].data.push(goal);
@@ -528,6 +528,24 @@ class MilestoneDBService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description this method will remove completed actions from the goals list
+   * @param goals array of milestone goals
+   * @param businessProfile
+   * @returns {*}
+   */
+  private removeCompletedGoals(goals: any, businessProfile: any) {
+    return goals?.filter((goal) => {
+      let profileField = null;
+      if (goal.key == "ideaValidation") {
+        profileField = businessProfile?.description;
+      } else {
+        profileField = businessProfile?.[goal.key];
+      }
+      return !(profileField && (profileField.title || profileField.length > 0));
+    });
   }
 }
 export default new MilestoneDBService();
