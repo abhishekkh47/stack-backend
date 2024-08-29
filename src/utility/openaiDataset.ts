@@ -8318,7 +8318,7 @@ export const CALL_TO_ACTION_TYPE = {
   4: "makeSpecific",
 };
 
-export const COLORS_AND_AESTHETIC_TYPE = {
+export const SUPPORTING_VISUAL_TYPE = {
   1: "founderVideo",
   2: "productVisual",
   3: "customerOutcome",
@@ -8346,6 +8346,6 @@ export const AI_TOOL_DATASET_TYPES = {
   outlineDemandTest: OUTLINE_DEMAND_TEST_TYPE,
   headline: HEADLINE_TYPE,
   callToAction: CALL_TO_ACTION_TYPE,
-  colorsAndAesthetic: COLORS_AND_AESTHETIC_TYPE,
+  supportingVisual: SUPPORTING_VISUAL_TYPE,
   perfectHook: PERFECT_HOOK_TYPE,
 };
