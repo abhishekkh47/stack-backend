@@ -131,16 +131,6 @@ class MilestoneDBService {
         !businessProfile?.currentMilestone?.milestoneId
       ) {
         response = await this.getFirstDayMilestoneGoals(userIfExists);
-        // } else if (
-        //   businessProfile.currentMilestone?.milestoneId &&
-        //   (businessProfile.currentMilestone?.milestoneId).toString() ==
-        //     defaultMilestone._id.toString()
-        // ) {
-        //   response = await this.checkDefaultMilestoneStatus(
-        //     userIfExists,
-        //     businessProfile,
-        //     defaultMilestone
-        //   );
       } else {
         response = await this.getNextDayMilestone(
           userIfExists,
@@ -277,45 +267,6 @@ class MilestoneDBService {
         "Error occurred while retrieving new Milestone",
         400
       );
-    }
-  }
-
-  /**
-   * @description get day-1 goals of defualt milestone
-   * @param userIfExists
-   * @param businessProfile
-   * @param milestoneId
-   * @returns {*}
-   */
-  public async checkDefaultMilestoneStatus(
-    userIfExists: any,
-    businessProfile: any,
-    milestoneId: any
-  ) {
-    try {
-      let isMilestoneHit = false;
-      const milestoneUpdatedAt =
-        businessProfile.currentMilestone.milestoneUpdatedAt;
-      const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
-      const initialGoals = await MilestoneGoalsTable.find({
-        milestoneId,
-        day: { $lte: daysNum + 1 },
-      })
-        .sort({ day: 1, order: 1 })
-        .lean();
-      if (!initialGoals.length) {
-        isMilestoneHit = true;
-      }
-      const goalsData = await this.suggestionScreenInfo(initialGoals);
-      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
-      return this.formatMilestones(
-        userIfExists,
-        businessProfile,
-        updatedGoals,
-        isMilestoneHit
-      );
-    } catch (error) {
-      throw new NetworkError("Error occurred while retrieving milestones", 400);
     }
   }
 
