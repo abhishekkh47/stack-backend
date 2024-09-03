@@ -912,3 +912,5 @@ export const IDEA_VALIDATION_STEPS = [
     value: 0,
   },
 ];
+
+export const COLORS_AND_AESTHETIC = "colorsAndAesthetic";

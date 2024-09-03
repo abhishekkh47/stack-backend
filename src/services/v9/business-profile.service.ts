@@ -21,6 +21,7 @@ import {
   DEDUCT_RETRY_FUEL,
   TARGET_AUDIENCE_REQUIRED,
   AI_TOOL_DATASET_TYPES,
+  COLORS_AND_AESTHETIC,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -72,7 +73,11 @@ class BusinessProfileService {
       if (Object.keys(AI_TOOL_DATASET_TYPES).includes(key)) {
         systemInput = systemInput[AI_TOOL_DATASET_TYPES[key][type]];
       }
-      const response = await this.getFormattedSuggestions(systemInput, prompt);
+      const response = await this.getFormattedSuggestions(
+        systemInput,
+        prompt,
+        key
+      );
       if (response) {
         await AIToolsUsageStatusTable.findOneAndUpdate(
           { userId: userExists._id },
@@ -527,7 +532,11 @@ class BusinessProfileService {
    * @param prompt
    * @returns {*}
    */
-  public async getFormattedSuggestions(systemInput: string, prompt: string) {
+  public async getFormattedSuggestions(
+    systemInput: string,
+    prompt: string,
+    key: string = null
+  ) {
     try {
       const response = await BusinessProfileServiceV7.generateTextSuggestions(
         systemInput,
@@ -539,6 +548,9 @@ class BusinessProfileService {
       const jsonResponse = JSON.parse(
         recommendations.content.replace(/```json|```/g, "").trim()
       );
+      if (key == COLORS_AND_AESTHETIC) {
+        return jsonResponse;
+      }
       if (
         jsonResponse &&
         Array.isArray(jsonResponse) &&
