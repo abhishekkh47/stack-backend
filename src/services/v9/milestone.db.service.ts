@@ -100,22 +100,16 @@ class MilestoneDBService {
     businessProfile: any
   ) {
     try {
-      let response = null;
-      const [
-        lastMilestoneCompleted,
-        defaultMilestone,
-        availableDailyChallenges,
-      ] = await Promise.all([
-        MilestoneResultTable.find({
-          userId: userIfExists._id,
-        })
-          .sort({ updatedAt: -1 })
-          .lean(),
-        MilestoneTable.findOne({
-          order: 1,
-        }),
-        DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
-      ]);
+      let response: any = {};
+      const [lastMilestoneCompleted, availableDailyChallenges] =
+        await Promise.all([
+          MilestoneResultTable.find({
+            userId: userIfExists._id,
+          })
+            .sort({ updatedAt: -1 })
+            .lean(),
+          DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
+        ]);
       const existingResponse = await this.handleAvailableDailyChallenges(
         userIfExists,
         businessProfile,
@@ -136,6 +130,12 @@ class MilestoneDBService {
           userIfExists,
           businessProfile
         );
+      }
+      if (
+        !response?.tasks[0]?.data.length &&
+        !response?.tasks[1]?.data.length
+      ) {
+        return { isMilestoneHit: true };
       }
       return response;
     } catch (error) {
@@ -177,10 +177,8 @@ class MilestoneDBService {
           milestone.key == "description"
         ) {
           if (businessProfile?.description) {
-            if (dateDiff < milestone.day) {
-              milestone["isCompleted"] = true;
-              response.tasks[1].data.push(milestone);
-            }
+            milestone["isCompleted"] = true;
+            response.tasks[1].data.push(milestone);
           } else {
             milestone["isCompleted"] = false;
             response.tasks[0].data.push(milestone);
@@ -191,10 +189,8 @@ class MilestoneDBService {
           (businessProfile[milestone.key].title ||
             businessProfile[milestone.key].length)
         ) {
-          if (dateDiff < milestone.day) {
-            milestone["isCompleted"] = true;
-            response.tasks[1].data.push(milestone);
-          }
+          milestone["isCompleted"] = true;
+          response.tasks[1].data.push(milestone);
         } else {
           milestone["isCompleted"] = false;
           response.tasks[0].data.push(milestone);
@@ -291,10 +287,6 @@ class MilestoneDBService {
 
       const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
       const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
-      const remainingGoals = this.removeCompletedGoals(
-        updatedGoals,
-        businessProfile
-      );
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
           milestoneId,
@@ -304,7 +296,7 @@ class MilestoneDBService {
       )[0].day;
       await DailyChallengeTable.updateOne(
         { userId: userIfExists._id },
-        { $set: { userId: userIfExists._id, dailyGoalStatus: remainingGoals } },
+        { $set: { userId: userIfExists._id, dailyGoalStatus: updatedGoals } },
         { upsert: true }
       );
       return this.formatMilestones(
@@ -413,14 +405,15 @@ class MilestoneDBService {
   ) {
     try {
       let isMilestoneHit = false;
+      const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
       if (
-        availableDailyChallenges?.dailyGoalStatus &&
-        getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
+        goalsLength &&
+        getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 &&
+        businessProfile.currentMilestone?.milestoneId?.toString() ==
+          availableDailyChallenges?.dailyGoalStatus[
+            goalsLength - 1
+          ].milestoneId.toString()
       ) {
-        const lastUpdated =
-          businessProfile?.currentMilestone?.milestoneUpdatedAt ||
-          new Date().toISOString();
-        const dateDiff = getDaysNum(userIfExists, lastUpdated);
         const updatedGoals = this.setLockedGoals(
           availableDailyChallenges.dailyGoalStatus,
           businessProfile

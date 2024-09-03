@@ -72,10 +72,6 @@ class MilestoneController extends BaseController {
       { userId: user._id },
       { $set: obj }
     );
-    await DailyChallengeTable.findOneAndUpdate(
-      { userId: user._id },
-      { $set: { dailyGoalStatus: null } }
-    );
     return this.Ok(ctx, { message: "success" });
   }
 
