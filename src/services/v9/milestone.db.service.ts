@@ -126,7 +126,7 @@ class MilestoneDBService {
       ) {
         response = await this.getFirstDayMilestoneGoals(userIfExists);
       } else {
-        response = await this.getNextDayMilestone(
+        response = await this.getNextDayMilestoneGoals(
           userIfExists,
           businessProfile
         );
@@ -272,21 +272,15 @@ class MilestoneDBService {
    * @param businessProfile
    * @returns {*}
    */
-  private async getNextDayMilestone(userIfExists: any, businessProfile: any) {
+  private async getNextDayMilestoneGoals(
+    userIfExists: any,
+    businessProfile: any
+  ) {
     try {
       let isMilestoneHit = false;
       const { milestoneId, milestoneUpdatedAt } =
         businessProfile.currentMilestone;
       const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
-      const currentMilestoneGoals = await MilestoneGoalsTable.find({
-        milestoneId,
-        day: { $lte: daysNum + 1 },
-      })
-        .sort({ day: 1, order: 1 })
-        .lean();
-
-      const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
-      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
           milestoneId,
@@ -294,18 +288,47 @@ class MilestoneDBService {
           .sort({ day: -1 })
           .lean()
       )[0].day;
-      await DailyChallengeTable.updateOne(
-        { userId: userIfExists._id },
-        { $set: { userId: userIfExists._id, dailyGoalStatus: updatedGoals } },
-        { upsert: true }
-      );
-      return this.formatMilestones(
-        userIfExists,
-        businessProfile,
-        updatedGoals,
-        isMilestoneHit,
-        daysInCurrentMilestone
-      );
+      if (daysNum + 1 <= daysInCurrentMilestone) {
+        const currentMilestoneGoals = await MilestoneGoalsTable.find({
+          milestoneId,
+          day: { $eq: daysNum + 1 },
+        })
+          .sort({ day: 1, order: 1 })
+          .lean();
+
+        const goalsData = await this.suggestionScreenInfo(
+          currentMilestoneGoals
+        );
+        const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
+        await DailyChallengeTable.updateOne(
+          { userId: userIfExists._id },
+          {
+            $push: {
+              dailyGoalStatus: { $each: updatedGoals },
+            },
+          },
+          { upsert: true }
+        );
+        const availableDailyChallenges = await DailyChallengeTable.findOne({
+          userId: userIfExists._id,
+        }).lean();
+        return await this.handleAvailableDailyChallenges(
+          userIfExists,
+          businessProfile,
+          availableDailyChallenges,
+          true
+        );
+      } else {
+        const availableDailyChallenges = await DailyChallengeTable.findOne({
+          userId: userIfExists._id,
+        }).lean();
+        return await this.handleAvailableDailyChallenges(
+          userIfExists,
+          businessProfile,
+          availableDailyChallenges,
+          true
+        );
+      }
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
@@ -401,14 +424,16 @@ class MilestoneDBService {
   private async handleAvailableDailyChallenges(
     userIfExists: any,
     businessProfile: any,
-    availableDailyChallenges: any
+    availableDailyChallenges: any,
+    override: boolean = false
   ) {
     try {
       let isMilestoneHit = false;
       const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
       if (
         goalsLength &&
-        getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 &&
+        (getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 ||
+          override) &&
         businessProfile.currentMilestone?.milestoneId?.toString() ==
           availableDailyChallenges?.dailyGoalStatus[
             goalsLength - 1
@@ -456,9 +481,10 @@ class MilestoneDBService {
               .sort({ day: -1 })
               .lean()
           )[0].day;
-          isMilestoneHit = response?.tasks[1]?.data.some(
-            (obj) => obj.day == daysInCurrentMilestone
-          );
+          const completedGoalsLength = response?.tasks[1]?.data.length;
+          isMilestoneHit =
+            response?.tasks[1]?.data[completedGoalsLength - 1].day ==
+            daysInCurrentMilestone;
           response.isMilestoneHit = isMilestoneHit;
           if (isMilestoneHit) {
             response.tasks.shift();
