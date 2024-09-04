@@ -100,22 +100,16 @@ class MilestoneDBService {
     businessProfile: any
   ) {
     try {
-      let response = null;
-      const [
-        lastMilestoneCompleted,
-        defaultMilestone,
-        availableDailyChallenges,
-      ] = await Promise.all([
-        MilestoneResultTable.find({
-          userId: userIfExists._id,
-        })
-          .sort({ updatedAt: -1 })
-          .lean(),
-        MilestoneTable.findOne({
-          order: 1,
-        }),
-        DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
-      ]);
+      let response: any = {};
+      const [lastMilestoneCompleted, availableDailyChallenges] =
+        await Promise.all([
+          MilestoneResultTable.findOne({
+            userId: userIfExists._id,
+          })
+            .sort({ createdAt: -1 })
+            .lean(),
+          DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
+        ]);
       const existingResponse = await this.handleAvailableDailyChallenges(
         userIfExists,
         businessProfile,
@@ -124,18 +118,45 @@ class MilestoneDBService {
       if (existingResponse) {
         return existingResponse;
       }
+      const existingResponseWithPendingActions =
+        await this.handleAvailableDailyChallenges(
+          userIfExists,
+          businessProfile,
+          availableDailyChallenges,
+          true
+        );
+
+      const tasks = existingResponseWithPendingActions?.tasks;
+      if (tasks?.length == 2 && tasks[0]?.data?.length > 0) {
+        await DailyChallengeTable.findOneAndUpdate(
+          {
+            userId: userIfExists._id,
+          },
+          { $set: {} }
+        );
+        return existingResponseWithPendingActions;
+      }
 
       // when user signup/login after updating app on day-1, return day-1 goals of default Milestone
       if (
-        lastMilestoneCompleted.length === 0 ||
+        !lastMilestoneCompleted ||
         !businessProfile?.currentMilestone?.milestoneId
       ) {
         response = await this.getFirstDayMilestoneGoals(userIfExists);
       } else {
-        response = await this.getNextDayMilestone(
+        response = await this.getNextDayMilestoneGoals(
           userIfExists,
-          businessProfile
+          businessProfile,
+          lastMilestoneCompleted,
+          existingResponseWithPendingActions
         );
+      }
+      if (
+        response?.tasks?.length &&
+        !response?.tasks[0]?.data?.length &&
+        !response?.tasks[1]?.data?.length
+      ) {
+        return { isMilestoneHit: true };
       }
       return response;
     } catch (error) {
@@ -177,10 +198,8 @@ class MilestoneDBService {
           milestone.key == "description"
         ) {
           if (businessProfile?.description) {
-            if (dateDiff < milestone.day) {
-              milestone["isCompleted"] = true;
-              response.tasks[1].data.push(milestone);
-            }
+            milestone["isCompleted"] = true;
+            response.tasks[1].data.push(milestone);
           } else {
             milestone["isCompleted"] = false;
             response.tasks[0].data.push(milestone);
@@ -191,10 +210,8 @@ class MilestoneDBService {
           (businessProfile[milestone.key].title ||
             businessProfile[milestone.key].length)
         ) {
-          if (dateDiff < milestone.day) {
-            milestone["isCompleted"] = true;
-            response.tasks[1].data.push(milestone);
-          }
+          milestone["isCompleted"] = true;
+          response.tasks[1].data.push(milestone);
         } else {
           milestone["isCompleted"] = false;
           response.tasks[0].data.push(milestone);
@@ -276,25 +293,16 @@ class MilestoneDBService {
    * @param businessProfile
    * @returns {*}
    */
-  private async getNextDayMilestone(userIfExists: any, businessProfile: any) {
+  private async getNextDayMilestoneGoals(
+    userIfExists: any,
+    businessProfile: any,
+    lastMilestoneCompleted: any,
+    existingResponseWithPendingActions: any
+  ) {
     try {
-      let isMilestoneHit = false;
-      const { milestoneId, milestoneUpdatedAt } =
-        businessProfile.currentMilestone;
-      const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
-      const currentMilestoneGoals = await MilestoneGoalsTable.find({
-        milestoneId,
-        day: { $lte: daysNum + 1 },
-      })
-        .sort({ day: 1, order: 1 })
-        .lean();
-
-      const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
-      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
-      const remainingGoals = this.removeCompletedGoals(
-        updatedGoals,
-        businessProfile
-      );
+      const isMilestoneHit = existingResponseWithPendingActions?.isMilestoneHit;
+      const { milestoneId } = businessProfile.currentMilestone;
+      let prevDayNum = lastMilestoneCompleted.day;
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
           milestoneId,
@@ -302,17 +310,41 @@ class MilestoneDBService {
           .sort({ day: -1 })
           .lean()
       )[0].day;
+      if (
+        lastMilestoneCompleted.milestoneId.toString() != milestoneId.toString()
+      ) {
+        prevDayNum = 0;
+      }
+      if (prevDayNum + 1 > daysInCurrentMilestone && isMilestoneHit) {
+        return existingResponseWithPendingActions;
+      }
+      const dayToFetch = Math.min(prevDayNum + 1, daysInCurrentMilestone);
+      const currentMilestoneGoals = await MilestoneGoalsTable.find({
+        milestoneId,
+        day: dayToFetch,
+      })
+        .sort({ day: 1, order: 1 })
+        .lean();
+
+      const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
+      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
       await DailyChallengeTable.updateOne(
         { userId: userIfExists._id },
-        { $set: { userId: userIfExists._id, dailyGoalStatus: remainingGoals } },
+        {
+          $push: {
+            dailyGoalStatus: { $each: updatedGoals },
+          },
+        },
         { upsert: true }
       );
-      return this.formatMilestones(
+      const availableDailyChallenges = await DailyChallengeTable.findOne({
+        userId: userIfExists._id,
+      }).lean();
+      return await this.handleAvailableDailyChallenges(
         userIfExists,
         businessProfile,
-        updatedGoals,
-        isMilestoneHit,
-        daysInCurrentMilestone
+        availableDailyChallenges,
+        true
       );
     } catch (error) {
       throw new NetworkError(
@@ -409,18 +441,21 @@ class MilestoneDBService {
   private async handleAvailableDailyChallenges(
     userIfExists: any,
     businessProfile: any,
-    availableDailyChallenges: any
+    availableDailyChallenges: any,
+    override: boolean = false
   ) {
     try {
       let isMilestoneHit = false;
+      const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
       if (
-        availableDailyChallenges?.dailyGoalStatus &&
-        getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
+        goalsLength &&
+        (getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 ||
+          override) &&
+        businessProfile.currentMilestone?.milestoneId?.toString() ==
+          availableDailyChallenges?.dailyGoalStatus[
+            goalsLength - 1
+          ].milestoneId.toString()
       ) {
-        const lastUpdated =
-          businessProfile?.currentMilestone?.milestoneUpdatedAt ||
-          new Date().toISOString();
-        const dateDiff = getDaysNum(userIfExists, lastUpdated);
         const updatedGoals = this.setLockedGoals(
           availableDailyChallenges.dailyGoalStatus,
           businessProfile
@@ -463,9 +498,10 @@ class MilestoneDBService {
               .sort({ day: -1 })
               .lean()
           )[0].day;
-          isMilestoneHit = response?.tasks[1]?.data.some(
-            (obj) => obj.day == daysInCurrentMilestone
-          );
+          const completedGoalsLength = response?.tasks[1]?.data.length;
+          isMilestoneHit =
+            response?.tasks[1]?.data[completedGoalsLength - 1].day ==
+            daysInCurrentMilestone;
           response.isMilestoneHit = isMilestoneHit;
           if (isMilestoneHit) {
             response.tasks.shift();
