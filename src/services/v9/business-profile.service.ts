@@ -560,11 +560,11 @@ class BusinessProfileService {
           jsonResponse[0]?.title == undefined ||
           jsonResponse[0]?.title == "undefined")
       ) {
-        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+        throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
       }
       return jsonResponse;
     } catch (error) {
-      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
     }
   }
 
