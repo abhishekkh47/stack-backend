@@ -263,7 +263,9 @@ class BusinessProfileService {
             acc[groupKey] = [];
           }
           let value = entry.value;
-          if (typeof entry.value === "string") {
+          if (entry.key == "companyLogo") {
+            value = entry.value;
+          } else if (typeof entry.value === "string") {
             value = {
               title: entry.value,
               descripition: " ",
