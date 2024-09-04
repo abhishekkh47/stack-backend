@@ -22,6 +22,7 @@ import {
   TARGET_AUDIENCE_REQUIRED,
   AI_TOOL_DATASET_TYPES,
   COLORS_AND_AESTHETIC,
+  SUGGESTIONS_NOT_FOUND_ERROR,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -103,7 +104,7 @@ class BusinessProfileService {
       ) {
         throw new Error("Please add your target audience and try again!");
       }
-      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
     }
   }
 
@@ -561,11 +562,11 @@ class BusinessProfileService {
           jsonResponse[0]?.title == undefined ||
           jsonResponse[0]?.title == "undefined")
       ) {
-        throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+        throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
       }
       return jsonResponse;
     } catch (error) {
-      throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
+      throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
     }
   }
 
