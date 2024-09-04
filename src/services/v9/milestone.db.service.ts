@@ -103,10 +103,10 @@ class MilestoneDBService {
       let response: any = {};
       const [lastMilestoneCompleted, availableDailyChallenges] =
         await Promise.all([
-          MilestoneResultTable.find({
+          MilestoneResultTable.findOne({
             userId: userIfExists._id,
           })
-            .sort({ updatedAt: -1 })
+            .sort({ createdAt: -1 })
             .lean(),
           DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
         ]);
@@ -118,22 +118,43 @@ class MilestoneDBService {
       if (existingResponse) {
         return existingResponse;
       }
+      const existingResponseWithPendingActions =
+        await this.handleAvailableDailyChallenges(
+          userIfExists,
+          businessProfile,
+          availableDailyChallenges,
+          true
+        );
+
+      const tasks = existingResponseWithPendingActions?.tasks;
+      if (tasks?.length == 2 && tasks[0]?.data?.length > 0) {
+        await DailyChallengeTable.findOneAndUpdate(
+          {
+            userId: userIfExists._id,
+          },
+          { $set: {} }
+        );
+        return existingResponseWithPendingActions;
+      }
 
       // when user signup/login after updating app on day-1, return day-1 goals of default Milestone
       if (
-        lastMilestoneCompleted.length === 0 ||
+        !lastMilestoneCompleted ||
         !businessProfile?.currentMilestone?.milestoneId
       ) {
         response = await this.getFirstDayMilestoneGoals(userIfExists);
       } else {
         response = await this.getNextDayMilestoneGoals(
           userIfExists,
-          businessProfile
+          businessProfile,
+          lastMilestoneCompleted,
+          existingResponseWithPendingActions
         );
       }
       if (
-        !response?.tasks[0]?.data.length &&
-        !response?.tasks[1]?.data.length
+        response?.tasks?.length &&
+        !response?.tasks[0]?.data?.length &&
+        !response?.tasks[1]?.data?.length
       ) {
         return { isMilestoneHit: true };
       }
@@ -274,13 +295,15 @@ class MilestoneDBService {
    */
   private async getNextDayMilestoneGoals(
     userIfExists: any,
-    businessProfile: any
+    businessProfile: any,
+    lastMilestoneCompleted: any,
+    existingResponseWithPendingActions: any
   ) {
     try {
-      let isMilestoneHit = false;
+      const isMilestoneHit = existingResponseWithPendingActions?.isMilestoneHit;
       const { milestoneId, milestoneUpdatedAt } =
         businessProfile.currentMilestone;
-      const daysNum = getDaysNum(userIfExists, milestoneUpdatedAt);
+      let prevDayNum = lastMilestoneCompleted.day;
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
           milestoneId,
@@ -288,10 +311,15 @@ class MilestoneDBService {
           .sort({ day: -1 })
           .lean()
       )[0].day;
-      if (daysNum + 1 <= daysInCurrentMilestone) {
+      if (
+        lastMilestoneCompleted.milestoneId.toString() != milestoneId.toString()
+      ) {
+        prevDayNum = 0;
+      }
+      if (prevDayNum + 1 < daysInCurrentMilestone) {
         const currentMilestoneGoals = await MilestoneGoalsTable.find({
           milestoneId,
-          day: { $eq: daysNum + 1 },
+          day: { $eq: prevDayNum + 1 },
         })
           .sort({ day: 1, order: 1 })
           .lean();
@@ -318,7 +346,27 @@ class MilestoneDBService {
           availableDailyChallenges,
           true
         );
-      } else {
+      } else if (!isMilestoneHit) {
+        const currentMilestoneGoals = await MilestoneGoalsTable.find({
+          milestoneId,
+          day: { $eq: daysInCurrentMilestone },
+        })
+          .sort({ day: 1, order: 1 })
+          .lean();
+
+        const goalsData = await this.suggestionScreenInfo(
+          currentMilestoneGoals
+        );
+        const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
+        await DailyChallengeTable.updateOne(
+          { userId: userIfExists._id },
+          {
+            $push: {
+              dailyGoalStatus: { $each: updatedGoals },
+            },
+          },
+          { upsert: true }
+        );
         const availableDailyChallenges = await DailyChallengeTable.findOne({
           userId: userIfExists._id,
         }).lean();
@@ -328,6 +376,9 @@ class MilestoneDBService {
           availableDailyChallenges,
           true
         );
+      }
+      if (isMilestoneHit) {
+        return existingResponseWithPendingActions;
       }
     } catch (error) {
       throw new NetworkError(
