@@ -2236,50 +2236,47 @@ class ScriptService {
    */
   public async updateCompletedGoalCountInDB() {
     try {
-      const users = await UserTable.find({});
-      for (let user of users) {
-        const businessProfile = await BusinessProfileTable.findOne({
-          userId: user._id,
-        }).lean();
+      const businessProfiles = await BusinessProfileTable.find({}).lean(); // Get all business profiles directly
+    
+      for (let businessProfile of businessProfiles) {
         let completedGoals = 0;
-        if (businessProfile) {
-          const {
-            description,
-            competitors,
-            companyName,
-            companyLogo,
-            targetAudience,
-            colorsAndAesthetic,
-          } = businessProfile;
-          if (description && description != null && description.length > 0) {
-            completedGoals += 1;
-          }
-          if (competitors && competitors != null) {
-            completedGoals += 1;
-          }
-          if (companyName && companyName != null) {
-            completedGoals += 1;
-          }
-          if (companyLogo && companyLogo != null) {
-            completedGoals += 1;
-          }
-          if (targetAudience && targetAudience != null) {
-            completedGoals += 1;
-          }
-          if (colorsAndAesthetic && colorsAndAesthetic != null) {
-            completedGoals += 1;
-          }
+        const {
+          description,
+          competitors,
+          companyName,
+          companyLogo,
+          targetAudience,
+          colorsAndAesthetic,
+        } = businessProfile;
+        if (description && description != null && description.length > 0) {
+          completedGoals += 1;
         }
+        if (competitors && competitors != null) {
+          completedGoals += 1;
+        }
+        if (companyName && companyName != null) {
+          completedGoals += 1;
+        }
+        if (companyLogo && companyLogo != null) {
+          completedGoals += 1;
+        }
+        if (targetAudience && targetAudience != null) {
+          completedGoals += 1;
+        }
+        if (colorsAndAesthetic && colorsAndAesthetic != null) {
+          completedGoals += 1;
+        }
+        // Update the completedGoal count in the business profile
         await BusinessProfileTable.findOneAndUpdate(
-          { userId: user._id },
+          { _id: businessProfile._id },
           { $set: { completedGoal: completedGoals } }
         );
       }
       return;
-    } catch (error) {
-      throw new NetworkError(error.message, 400);
-    }
+  } catch (error) {
+    throw new NetworkError(error.message, 400);
   }
+}
 
   /**
    * @description This function update the number of goals completed already for existing users
