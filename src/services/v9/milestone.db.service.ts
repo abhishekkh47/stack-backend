@@ -301,8 +301,7 @@ class MilestoneDBService {
   ) {
     try {
       const isMilestoneHit = existingResponseWithPendingActions?.isMilestoneHit;
-      const { milestoneId, milestoneUpdatedAt } =
-        businessProfile.currentMilestone;
+      const { milestoneId } = businessProfile.currentMilestone;
       let prevDayNum = lastMilestoneCompleted.day;
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
@@ -316,70 +315,37 @@ class MilestoneDBService {
       ) {
         prevDayNum = 0;
       }
-      if (prevDayNum + 1 < daysInCurrentMilestone) {
-        const currentMilestoneGoals = await MilestoneGoalsTable.find({
-          milestoneId,
-          day: { $eq: prevDayNum + 1 },
-        })
-          .sort({ day: 1, order: 1 })
-          .lean();
-
-        const goalsData = await this.suggestionScreenInfo(
-          currentMilestoneGoals
-        );
-        const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
-        await DailyChallengeTable.updateOne(
-          { userId: userIfExists._id },
-          {
-            $push: {
-              dailyGoalStatus: { $each: updatedGoals },
-            },
-          },
-          { upsert: true }
-        );
-        const availableDailyChallenges = await DailyChallengeTable.findOne({
-          userId: userIfExists._id,
-        }).lean();
-        return await this.handleAvailableDailyChallenges(
-          userIfExists,
-          businessProfile,
-          availableDailyChallenges,
-          true
-        );
-      } else if (!isMilestoneHit) {
-        const currentMilestoneGoals = await MilestoneGoalsTable.find({
-          milestoneId,
-          day: { $eq: daysInCurrentMilestone },
-        })
-          .sort({ day: 1, order: 1 })
-          .lean();
-
-        const goalsData = await this.suggestionScreenInfo(
-          currentMilestoneGoals
-        );
-        const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
-        await DailyChallengeTable.updateOne(
-          { userId: userIfExists._id },
-          {
-            $push: {
-              dailyGoalStatus: { $each: updatedGoals },
-            },
-          },
-          { upsert: true }
-        );
-        const availableDailyChallenges = await DailyChallengeTable.findOne({
-          userId: userIfExists._id,
-        }).lean();
-        return await this.handleAvailableDailyChallenges(
-          userIfExists,
-          businessProfile,
-          availableDailyChallenges,
-          true
-        );
-      }
-      if (isMilestoneHit) {
+      if (prevDayNum + 1 > daysInCurrentMilestone && isMilestoneHit) {
         return existingResponseWithPendingActions;
       }
+      const dayToFetch = Math.min(prevDayNum + 1, daysInCurrentMilestone);
+      const currentMilestoneGoals = await MilestoneGoalsTable.find({
+        milestoneId,
+        day: dayToFetch,
+      })
+        .sort({ day: 1, order: 1 })
+        .lean();
+
+      const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
+      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
+      await DailyChallengeTable.updateOne(
+        { userId: userIfExists._id },
+        {
+          $push: {
+            dailyGoalStatus: { $each: updatedGoals },
+          },
+        },
+        { upsert: true }
+      );
+      const availableDailyChallenges = await DailyChallengeTable.findOne({
+        userId: userIfExists._id,
+      }).lean();
+      return await this.handleAvailableDailyChallenges(
+        userIfExists,
+        businessProfile,
+        availableDailyChallenges,
+        true
+      );
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
