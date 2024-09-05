@@ -2357,6 +2357,21 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is used to update format of existing business information as title and description
+   * @param ctx
+   */
+  @Route({ path: "/update-completed-actions", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateCompletedActions(ctx: any) {
+    try {
+      await ScriptService.updateCompletedActions();
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();

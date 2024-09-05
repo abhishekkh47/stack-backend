@@ -28,6 +28,8 @@ import {
   BACKUP_LOGOS,
   awsLogger,
   AI_TOOLS_ANALYTICS,
+  mapHasGoalKey,
+  hasGoalKey,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import { MilestoneDBService } from "@app/services/v9";
@@ -80,17 +82,24 @@ class BusinessProfileService {
         obj["idea"] = data.value;
         obj["description"] = data.description;
       } else {
-        if (
-          businessProfile &&
-          (!businessProfile[data.key] ||
-            (!businessProfile[data.key].title &&
-              !businessProfile[data.key].length))
-        ) {
-          obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
+        if (businessProfile) {
+          const hasGoalInProfile = hasGoalKey(businessProfile, data.key);
+          const hasGoalInCompletedActions = mapHasGoalKey(
+            businessProfile.completedActions,
+            data.key
+          );
+          if (!(hasGoalInProfile && hasGoalInCompletedActions)) {
+            obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
+          }
         }
         obj[data.key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
+        obj["completedActions"] = {};
+        obj["completedActions"][data.key] = {
+          title: data.value,
+          description: data.description,
+        };
         businessHistoryObj = [
           {
             key: data.key,
@@ -126,6 +135,7 @@ class BusinessProfileService {
         },
       ];
     } catch (error) {
+      console.log("Error : ", error);
       throw new NetworkError("Something went wrong", 400);
     }
   }

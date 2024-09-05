@@ -2237,7 +2237,7 @@ class ScriptService {
   public async updateCompletedGoalCountInDB() {
     try {
       const businessProfiles = await BusinessProfileTable.find({}).lean(); // Get all business profiles directly
-    
+
       for (let businessProfile of businessProfiles) {
         let completedGoals = 0;
         const {
@@ -2273,10 +2273,10 @@ class ScriptService {
         );
       }
       return;
-  } catch (error) {
-    throw new NetworkError(error.message, 400);
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
-}
 
   /**
    * @description This function update the number of goals completed already for existing users
@@ -2360,6 +2360,70 @@ class ScriptService {
             { upsert: true }
           );
         }
+      }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function update the number of goals completed already for existing users
+   * @returns {*}
+   */
+  public async updateCompletedActions() {
+    try {
+      const profilesToMigrate = await BusinessProfileTable.find({
+        completedGoal: { $gt: 0 },
+      }).lean();
+      const actions = [
+        "ideaValidation",
+        "companyName",
+        "companyLogo",
+        "targetAudience",
+        "competitors",
+        "valueProposition",
+        "unfairAdvantage",
+        "marketingChannelStrategy",
+        "keyMetrics",
+        "businessModel",
+        "costStructure",
+        "yourHook",
+        "founderStory",
+        "showcaseProblem",
+        "coreFeature",
+        "gotoMarketStrategy",
+        "progressMetrics",
+        "unitEconomics",
+        "marketSize",
+        "whyNowStory",
+        "theAsk",
+        "colorsAndAesthetic",
+      ];
+      const bulkOperations = profilesToMigrate
+        .map((profile) => {
+          const updateObj = {};
+
+          actions.forEach((action) => {
+            if (profile[action]) {
+              updateObj[action] = profile[action];
+            }
+          });
+
+          if (Object.keys(updateObj).length > 0) {
+            return {
+              updateOne: {
+                filter: { userId: profile.userId },
+                update: { $set: { completedActions: updateObj } },
+                upsert: true,
+              },
+            };
+          }
+        })
+        .filter(Boolean);
+
+      if (bulkOperations.length > 0) {
+        await BusinessProfileTable.bulkWrite(bulkOperations);
       }
       return;
     } catch (error) {
