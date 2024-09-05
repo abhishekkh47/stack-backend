@@ -4,7 +4,6 @@ export const RevenueCatAuth = () => {
   return (_: Object, __?: string, descriptor?: PropertyDescriptor) => {
     const fn: Function = descriptor.value;
     descriptor.value = async function (ctx: any) {
-      console.log("ctx.request.headers : ", ctx.request.headers);
       const token =
         (<string>ctx.request.headers && ctx.request.headers["authorization"]) ||
         (ctx.request.query.token as string);
