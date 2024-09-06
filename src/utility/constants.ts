@@ -917,3 +917,5 @@ export const COLORS_AND_AESTHETIC = "colorsAndAesthetic";
 
 export const SUGGESTIONS_NOT_FOUND_ERROR =
   "Oops! I can't find any suggestions at the moment";
+
+export const DEFAULT_BUSINESS_LOGO = "default_biz_logo.png";
