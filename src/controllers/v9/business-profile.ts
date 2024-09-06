@@ -44,43 +44,18 @@ class BusinessProfileController extends BaseController {
     if (!key) {
       return this.BadRequest(ctx, "Please provide a valid requirement");
     }
-    const elapsedTime =
-      moment().unix() - userBusinessProfile?.logoGenerationInfo.startTime;
-    if (
-      IMAGE_ACTIONS.includes(key) &&
-      isRetry == IS_RETRY.TRUE &&
-      userBusinessProfile?.logoGenerationInfo.isUnderProcess &&
-      elapsedTime < 200
-    ) {
-      return this.Ok(ctx, {
-        message: "Success",
-        data: {
-          finished: false,
-          suggestions: null,
-          isRetry: true,
-        },
-      });
-    }
-    if (IMAGE_ACTIONS.includes(key)) {
-      response = await BusinessProfileService.generateAILogos(
-        userExists,
-        key,
-        userBusinessProfile,
-        isRetry,
-        headers.requestid,
-        idea
-      );
-    } else {
-      response = await BusinessProfileService.generateAISuggestions(
-        userExists,
-        key,
-        userBusinessProfile,
-        idea || userBusinessProfile.description,
-        type,
-        answerOfTheQuestion,
-        isRetry
-      );
-    }
+
+    // Generating AI suggestions based on the given key
+    response = await BusinessProfileService.generateAISuggestions(
+      userExists,
+      key,
+      userBusinessProfile,
+      idea || userBusinessProfile.description,
+      type,
+      answerOfTheQuestion,
+      isRetry
+    );
+
     return this.Ok(ctx, { message: "Success", data: response });
   }
 
