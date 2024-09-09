@@ -2359,7 +2359,7 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is used to update format of existing business information as title and description
+   * @description This method is used move completed actions to completedActions object
    * @param ctx
    */
   @Route({ path: "/update-completed-actions", method: HttpMethod.POST })

@@ -23,6 +23,8 @@ import {
   TARGET_AUDIENCE_REQUIRED,
   COLORS_AND_AESTHETIC,
   SUGGESTIONS_NOT_FOUND_ERROR,
+  mapHasGoalKey,
+  hasGoalKey,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -65,7 +67,6 @@ class BusinessProfileService {
         ]);
       const prompt = this.getUserPrompt(
         userBusinessProfile,
-        key,
         idea,
         goalDetails?.dependency,
         suggestionsScreenCopy,
@@ -96,7 +97,7 @@ class BusinessProfileService {
           ? userBusinessProfile.companyName
           : null,
       };
-    } catch (error) {
+    } catch (error) { 
       if (
         TARGET_AUDIENCE_REQUIRED.includes(key) &&
         !userBusinessProfile.targetAudience
@@ -715,7 +716,6 @@ class BusinessProfileService {
   /**
    * @description this method will return the user input prompt corresponding to the AI Tool being used
    * @param businessProfile
-   * @param key
    * @param idea
    * @param dependency
    * @param screenCopy
@@ -724,7 +724,6 @@ class BusinessProfileService {
    */
   getUserPrompt(
     businessProfile: any,
-    key: string,
     idea: string,
     dependency: string[] = [],
     screenCopy: any,
@@ -737,9 +736,13 @@ class BusinessProfileService {
           prompt = `${prompt}\nBusiness Description: ${idea}`;
         } else {
           const depDetails = screenCopy.find((obj) => obj.key == dependency[i]);
-          if (depDetails.name && businessProfile[dependency[i]]) {
+          const hasGoalInCompletedActions = mapHasGoalKey(
+            businessProfile?.completedActions,
+            dependency[i]
+          );
+          if (depDetails?.name && hasGoalInCompletedActions) {
             prompt = `${prompt}\n${depDetails.name}: ${
-              businessProfile[dependency[i]]
+              businessProfile.completedActions[dependency[i]]
             }`;
           }
         }
@@ -813,11 +816,12 @@ class BusinessProfileService {
         });
       }
       suggestionsScreenCopy.forEach((data) => {
-        if (
-          userBusinessProfile[data.key] &&
-          (userBusinessProfile[data.key].length ||
-            userBusinessProfile[data.key].title)
-        ) {
+        const hasGoalInProfile = hasGoalKey(businessProfile, data.key);
+        const hasGoalInCompletedActions = mapHasGoalKey(
+          businessProfile.completedActions,
+          data.key
+        );
+        if (hasGoalInProfile || hasGoalInCompletedActions) {
           const action = milestoneGoals.find((goal) => goal.key == data.key);
           if (action) {
             const obj = {

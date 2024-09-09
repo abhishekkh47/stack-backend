@@ -50,6 +50,7 @@ import {
   CORRECT_ANSWER_FUEL_POINTS,
   PRODUCT_TYPE,
   IDEA_VALIDATION_STEPS,
+  ACTIONS_TO_MOVE,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2403,35 +2404,11 @@ class ScriptService {
       const profilesToMigrate = await BusinessProfileTable.find({
         completedGoal: { $gt: 0 },
       }).lean();
-      const actions = [
-        "ideaValidation",
-        "companyName",
-        "companyLogo",
-        "targetAudience",
-        "competitors",
-        "valueProposition",
-        "unfairAdvantage",
-        "marketingChannelStrategy",
-        "keyMetrics",
-        "businessModel",
-        "costStructure",
-        "yourHook",
-        "founderStory",
-        "showcaseProblem",
-        "coreFeature",
-        "gotoMarketStrategy",
-        "progressMetrics",
-        "unitEconomics",
-        "marketSize",
-        "whyNowStory",
-        "theAsk",
-        "colorsAndAesthetic",
-      ];
       const bulkOperations = profilesToMigrate
         .map((profile) => {
           const updateObj = {};
 
-          actions.forEach((action) => {
+          ACTIONS_TO_MOVE.forEach((action) => {
             if (profile[action]) {
               updateObj[action] = profile[action];
             }
