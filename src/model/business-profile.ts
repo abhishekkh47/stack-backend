@@ -1143,6 +1143,11 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
         required: false,
       },
     },
+    completedActions: {
+      type: Map,
+      of: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   { timestamps: true }
 );

@@ -86,7 +86,7 @@ class MilestoneController extends BaseController {
     const { user } = ctx.request;
     const [userExists, businessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
-      BusinessProfileTable.findOne({ userId: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }).lean(),
     ]);
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
