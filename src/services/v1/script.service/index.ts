@@ -25,6 +25,7 @@ import {
   SuggestionScreenCopyTable,
   BusinessProfileTable,
   UserTable,
+  AIToolDataSetTypesTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -1922,6 +1923,7 @@ class ScriptService {
   public async convertOpenAIDatasetSheetToJSON(rows: any) {
     try {
       const result = {};
+      const types = {};
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const key = row.key;
@@ -1930,6 +1932,7 @@ class ScriptService {
 
         if (objectSize > 0) {
           const obj = {};
+          const typeObj = {};
           for (let j = 0; j < objectSize; j++) {
             const currentRow = rows[i + j];
             if (currentRow.name && currentRow.dataset) {
@@ -1941,14 +1944,16 @@ class ScriptService {
                 obj[currentRow.name] = currentRow.dataset;
               }
             }
+            typeObj[j + 1] = currentRow.name;
           }
           result[key] = obj;
+          types[key] = typeObj;
           i += objectSize - 1;
         } else if (key && dataset) {
           result[key] = dataset;
         }
       }
-      return result;
+      return { result, types };
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -1961,8 +1966,9 @@ class ScriptService {
    */
   public async addOpenAIDataToDB(openAIDataset: any) {
     let datasetContent = [];
+    let typeContent = [];
     try {
-      for (const [key, value] of Object.entries(openAIDataset)) {
+      for (const [key, value] of Object.entries(openAIDataset.result)) {
         let type = 0;
         if (key == "physicalProduct") {
           type = 1;
@@ -1990,6 +1996,27 @@ class ScriptService {
         datasetContent.push(bulkWriteObject);
       }
       await AIToolDataSetTable.bulkWrite(datasetContent);
+
+      const datasetDetails = await AIToolDataSetTable.find(
+        {},
+        { key: 1, _id: 1 }
+      );
+
+      for (const [key, types] of Object.entries(openAIDataset.types)) {
+        const dataset = datasetDetails.find((obj) => obj.key == key);
+        let bulkWriteTypeObject = {
+          updateOne: {
+            filter: { key },
+            update: {
+              $set: { key, types, datasetId: dataset._id },
+            },
+            upsert: true,
+          },
+        };
+        typeContent.push(bulkWriteTypeObject);
+      }
+
+      await AIToolDataSetTypesTable.bulkWrite(typeContent);
       return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);

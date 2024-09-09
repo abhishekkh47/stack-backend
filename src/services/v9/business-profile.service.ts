@@ -8,6 +8,7 @@ import {
   AIToolDataSetTable,
   SuggestionScreenCopyTable,
   MilestoneGoalsTable,
+  AIToolDataSetTypesTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
@@ -20,7 +21,6 @@ import {
   PRODUCT_TYPE,
   DEDUCT_RETRY_FUEL,
   TARGET_AUDIENCE_REQUIRED,
-  AI_TOOL_DATASET_TYPES,
   COLORS_AND_AESTHETIC,
   SUGGESTIONS_NOT_FOUND_ERROR,
 } from "@app/utility";
@@ -43,7 +43,7 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 1,
+    type: string = "1",
     answerOfTheQuestion: string = null,
     isRetry: string = IS_RETRY.FALSE
   ) {
@@ -56,11 +56,12 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const [systemDataset, goalDetails, suggestionsScreenCopy] =
+      const [systemDataset, goalDetails, suggestionsScreenCopy, datasetTypes] =
         await Promise.all([
           AIToolDataSetTable.findOne({ key }).lean(),
           MilestoneGoalsTable.findOne({ key }).lean(),
           SuggestionScreenCopyTable.find().lean(),
+          AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
       const prompt = this.getUserPrompt(
         userBusinessProfile,
@@ -71,9 +72,7 @@ class BusinessProfileService {
         answerOfTheQuestion
       );
       let systemInput: any = systemDataset.data;
-      if (Object.keys(AI_TOOL_DATASET_TYPES).includes(key)) {
-        systemInput = systemInput[AI_TOOL_DATASET_TYPES[key][type]];
-      }
+      systemInput = systemInput[datasetTypes.types[type]];
       const response = await this.getFormattedSuggestions(
         systemInput,
         prompt,
