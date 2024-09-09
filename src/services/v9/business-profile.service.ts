@@ -73,7 +73,9 @@ class BusinessProfileService {
         answerOfTheQuestion
       );
       let systemInput: any = systemDataset.data;
-      systemInput = systemInput[datasetTypes.types[type]];
+      if (type && typeof systemInput == "object") {
+        systemInput = systemInput[datasetTypes.types[type]];
+      }
       const response = await this.getFormattedSuggestions(
         systemInput,
         prompt,
@@ -97,7 +99,7 @@ class BusinessProfileService {
           ? userBusinessProfile.companyName
           : null,
       };
-    } catch (error) { 
+    } catch (error) {
       if (
         TARGET_AUDIENCE_REQUIRED.includes(key) &&
         !userBusinessProfile.targetAudience

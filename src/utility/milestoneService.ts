@@ -1,6 +1,6 @@
 export const mapHasGoalKey = (profile: any, key: string) => {
-  if (profile && profile?.key) {
-    const value = profile.key;
+  if (profile && profile[key]) {
+    const value = profile[key];
     if (value?.title || value?.length) return true;
   }
   return false;

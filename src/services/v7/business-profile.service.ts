@@ -95,8 +95,7 @@ class BusinessProfileService {
         obj[data.key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        obj["completedActions"] = {};
-        obj["completedActions"][data.key] = {
+        obj[`completedActions.${data.key}`] = {
           title: data.value,
           description: data.description,
         };
