@@ -25,6 +25,7 @@ import {
   SuggestionScreenCopyTable,
   BusinessProfileTable,
   UserTable,
+  DailyChallengeTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2237,7 +2238,7 @@ class ScriptService {
   public async updateCompletedGoalCountInDB() {
     try {
       const businessProfiles = await BusinessProfileTable.find({}).lean(); // Get all business profiles directly
-    
+
       for (let businessProfile of businessProfiles) {
         let completedGoals = 0;
         const {
@@ -2273,10 +2274,10 @@ class ScriptService {
         );
       }
       return;
-  } catch (error) {
-    throw new NetworkError(error.message, 400);
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
-}
 
   /**
    * @description This function update the number of goals completed already for existing users
@@ -2361,6 +2362,31 @@ class ScriptService {
           );
         }
       }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function remove the logo generation action from the daily challenges for all users
+   * @returns {*}
+   */
+  public async removeLogoActionChallenge() {
+    try {
+      const profilesToUpdate = await DailyChallengeTable.find({}).lean();
+      for (let profile of profilesToUpdate) {
+        if (profile && profile.dailyGoalStatus.length > 0) {
+          await DailyChallengeTable.updateOne(
+            { userId: profile.userId },
+            { $pull: { dailyGoalStatus: { key: "companyLogo" } } }
+          );
+        }
+      }
+      await MilestoneGoalsTable.updateOne(
+        { key: "companyLogo" },
+        { $set: { milestoneId: null, isAiToolbox: false } }
+      );
       return;
     } catch (error) {
       throw new NetworkError(error.message, 400);
