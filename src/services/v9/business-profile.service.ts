@@ -817,21 +817,23 @@ class BusinessProfileService {
             userBusinessProfile[data.key].title)
         ) {
           const action = milestoneGoals.find((goal) => goal.key == data.key);
-          const obj = {
-            _id: data.key,
-            key: data.key,
-            value: userBusinessProfile[data.key],
-            title: data.actionName,
-            iconImage: action.iconImage,
-            iconBackgroundColor: action.iconBackgroundColor,
-            inputTemplate: {
-              ...action.inputTemplate,
-              suggestionScreenInfo: data,
-            },
-            template: action.template,
-            name: data.name,
-          };
-          businessProfile.businessPlans.push(obj);
+          if (action) {
+            const obj = {
+              _id: data.key,
+              key: data.key,
+              value: userBusinessProfile[data.key],
+              title: data.actionName,
+              iconImage: action.iconImage,
+              iconBackgroundColor: action.iconBackgroundColor,
+              inputTemplate: {
+                ...action.inputTemplate,
+                suggestionScreenInfo: data,
+              },
+              template: action.template,
+              name: data.name,
+            };
+            businessProfile.businessPlans.push(obj);
+          }
         }
       });
     }
