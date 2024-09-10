@@ -29,13 +29,17 @@ class UserController extends BaseController {
   public async getProfile(ctx: any) {
     const { id } = ctx.request.params;
     const { user } = ctx.request;
+    const userIfExists = await UserTable.findOne({ _id: user._id });
+    if (!userIfExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
     let coachProfile = null;
     let initialMessage = null;
     if (!/^[0-9a-fA-F]{24}$/.test(id))
       return this.BadRequest(ctx, "Enter valid ID.");
     const [userExists, userProfile, businessProfile, leagues] =
       await Promise.all([
-        UserTable.findOne({ _id: user._id }),
+        UserTable.findOne({ _id: id }),
         UserDBService.getProfile(id),
         BusinessProfileServiceV9.getBusinessProfile(id),
         LeagueTable.find(
@@ -70,7 +74,7 @@ class UserController extends BaseController {
           }
         : null,
       topicDetails,
-      userAIToolStatus,
+      userAIToolStatus: userAIToolStatus || {},
     };
 
     return this.Ok(ctx, data, true);
