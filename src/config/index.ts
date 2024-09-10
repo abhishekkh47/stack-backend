@@ -251,4 +251,7 @@ export default {
   get SUGGESTION_SCREEN_COPY_GID() {
     return process.env.SUGGESTION_SCREEN_COPY_GID;
   },
+  get REVENUECAT_WEBHOOK_SECRET() {
+    return process.env.REVENUECAT_WEBHOOK_SECRET;
+  },
 };
