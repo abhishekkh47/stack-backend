@@ -137,6 +137,9 @@ export interface IBusinessProfile {
   updateStrategy: IBusinessInfo;
   updateCategories: IBusinessInfo;
   firstCompanyUpdate: IBusinessInfo;
+  completedActions: {
+    [key: string]: string | IBusinessInfo;
+  };
 }
 
 export interface ILogoGenerationInfo {

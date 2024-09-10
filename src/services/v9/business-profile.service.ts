@@ -8,6 +8,7 @@ import {
   AIToolDataSetTable,
   SuggestionScreenCopyTable,
   MilestoneGoalsTable,
+  AIToolDataSetTypesTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
@@ -20,9 +21,10 @@ import {
   PRODUCT_TYPE,
   DEDUCT_RETRY_FUEL,
   TARGET_AUDIENCE_REQUIRED,
-  AI_TOOL_DATASET_TYPES,
   COLORS_AND_AESTHETIC,
   SUGGESTIONS_NOT_FOUND_ERROR,
+  mapHasGoalKey,
+  hasGoalKey,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -43,7 +45,7 @@ class BusinessProfileService {
     key: string,
     userBusinessProfile: any,
     idea: string = null,
-    type: number = 1,
+    type: string = "1",
     answerOfTheQuestion: string = null,
     isRetry: string = IS_RETRY.FALSE
   ) {
@@ -56,23 +58,23 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
-      const [systemDataset, goalDetails, suggestionsScreenCopy] =
+      const [systemDataset, goalDetails, suggestionsScreenCopy, datasetTypes] =
         await Promise.all([
           AIToolDataSetTable.findOne({ key }).lean(),
           MilestoneGoalsTable.findOne({ key }).lean(),
           SuggestionScreenCopyTable.find().lean(),
+          AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
       const prompt = this.getUserPrompt(
         userBusinessProfile,
-        key,
         idea,
         goalDetails?.dependency,
         suggestionsScreenCopy,
         answerOfTheQuestion
       );
       let systemInput: any = systemDataset.data;
-      if (Object.keys(AI_TOOL_DATASET_TYPES).includes(key)) {
-        systemInput = systemInput[AI_TOOL_DATASET_TYPES[key][type]];
+      if (type && typeof systemInput == "object") {
+        systemInput = systemInput[datasetTypes.types[type]];
       }
       const response = await this.getFormattedSuggestions(
         systemInput,
@@ -716,7 +718,6 @@ class BusinessProfileService {
   /**
    * @description this method will return the user input prompt corresponding to the AI Tool being used
    * @param businessProfile
-   * @param key
    * @param idea
    * @param dependency
    * @param screenCopy
@@ -725,7 +726,6 @@ class BusinessProfileService {
    */
   getUserPrompt(
     businessProfile: any,
-    key: string,
     idea: string,
     dependency: string[] = [],
     screenCopy: any,
@@ -738,12 +738,19 @@ class BusinessProfileService {
           prompt = `${prompt}\nBusiness Description: ${idea}`;
         } else {
           const depDetails = screenCopy.find((obj) => obj.key == dependency[i]);
-          if (depDetails.name && businessProfile[dependency[i]]) {
-            prompt = `${prompt}\n${depDetails.name}: ${
-              businessProfile[dependency[i]]
-            }`;
+          const hasGoalInCompletedActions = mapHasGoalKey(
+            businessProfile?.completedActions,
+            dependency[i]
+          );
+          if (depDetails?.name && hasGoalInCompletedActions) {
+            prompt = `${prompt}\n${depDetails.name}: ${JSON.stringify(
+              businessProfile.completedActions[dependency[i]]
+            )}`;
           }
         }
+      }
+      if (userAnswer) {
+        prompt = `${prompt}\nCommentary : ${userAnswer}}`;
       }
       return prompt;
     } catch (error) {
@@ -779,7 +786,11 @@ class BusinessProfileService {
         businessCoachInfo,
         enableStealthMode,
         completedGoal,
+        description,
+        idea,
+        completedActions = {},
       } = userBusinessProfile;
+
       businessProfile = {
         userId,
         impacts,
@@ -790,15 +801,23 @@ class BusinessProfileService {
         completedGoal,
         businessPlans: [],
       };
-      if (userBusinessProfile.description) {
+
+      const milestoneGoalsMap = new Map(
+        milestoneGoals.map((goal) => [goal.key, goal])
+      );
+      const suggestionCopyMap = new Map(
+        suggestionsScreenCopy.map((copy) => [copy.key, copy])
+      );
+
+      if (description) {
         const action = milestoneGoals.find(
           (goal) => goal.key == "ideaValidation"
         );
         businessProfile.businessPlans.push({
           _id: "description",
           key: "description",
-          value: userBusinessProfile.description,
-          idea: userBusinessProfile.idea,
+          value: description,
+          idea: idea,
           title: businessIdeaCopy.actionName,
           iconImage: action.iconImage,
           iconBackgroundColor: action.iconBackgroundColor,
@@ -810,26 +829,24 @@ class BusinessProfileService {
           name: businessIdeaCopy.name,
         });
       }
-      suggestionsScreenCopy.forEach((data) => {
-        if (
-          userBusinessProfile[data.key] &&
-          (userBusinessProfile[data.key].length ||
-            userBusinessProfile[data.key].title)
-        ) {
-          const action = milestoneGoals.find((goal) => goal.key == data.key);
+
+      Object.entries(completedActions)?.forEach(([key, value]) => {
+        const action = milestoneGoalsMap.get(key);
+        const actionCopy = suggestionCopyMap.get(key);
+        if (action) {
           const obj = {
-            _id: data.key,
-            key: data.key,
-            value: userBusinessProfile[data.key],
-            title: data.actionName,
+            _id: key,
+            key: key,
+            value: value,
+            title: actionCopy.actionName,
             iconImage: action.iconImage,
             iconBackgroundColor: action.iconBackgroundColor,
             inputTemplate: {
               ...action.inputTemplate,
-              suggestionScreenInfo: data,
+              suggestionScreenInfo: actionCopy,
             },
             template: action.template,
-            name: data.name,
+            name: actionCopy.name,
           };
           businessProfile.businessPlans.push(obj);
         }

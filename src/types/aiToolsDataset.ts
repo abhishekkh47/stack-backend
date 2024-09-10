@@ -12,3 +12,9 @@ export enum EIdeaGeneratorType {
   TECH_PRODUCT = 2,
   IDEA_VALIDATOR = 3,
 }
+
+export interface IAIToolDataSetTypes {
+  key: string;
+  types: mongoose.Schema.Types.Mixed;
+  datasetId: mongoose.Schema.Types.ObjectId;
+}
