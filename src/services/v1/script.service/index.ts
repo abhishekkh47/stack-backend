@@ -25,6 +25,7 @@ import {
   SuggestionScreenCopyTable,
   BusinessProfileTable,
   UserTable,
+  AIToolDataSetTypesTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -49,6 +50,7 @@ import {
   CORRECT_ANSWER_FUEL_POINTS,
   PRODUCT_TYPE,
   IDEA_VALIDATION_STEPS,
+  ACTIONS_TO_MOVE,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -1922,6 +1924,7 @@ class ScriptService {
   public async convertOpenAIDatasetSheetToJSON(rows: any) {
     try {
       const result = {};
+      const types = {};
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const key = row.key;
@@ -1930,6 +1933,7 @@ class ScriptService {
 
         if (objectSize > 0) {
           const obj = {};
+          const typeObj = {};
           for (let j = 0; j < objectSize; j++) {
             const currentRow = rows[i + j];
             if (currentRow.name && currentRow.dataset) {
@@ -1941,14 +1945,16 @@ class ScriptService {
                 obj[currentRow.name] = currentRow.dataset;
               }
             }
+            typeObj[j + 1] = currentRow.name;
           }
           result[key] = obj;
+          types[key] = typeObj;
           i += objectSize - 1;
         } else if (key && dataset) {
           result[key] = dataset;
         }
       }
-      return result;
+      return { result, types };
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -1961,8 +1967,9 @@ class ScriptService {
    */
   public async addOpenAIDataToDB(openAIDataset: any) {
     let datasetContent = [];
+    let typeContent = [];
     try {
-      for (const [key, value] of Object.entries(openAIDataset)) {
+      for (const [key, value] of Object.entries(openAIDataset.result)) {
         let type = 0;
         if (key == "physicalProduct") {
           type = 1;
@@ -1990,6 +1997,27 @@ class ScriptService {
         datasetContent.push(bulkWriteObject);
       }
       await AIToolDataSetTable.bulkWrite(datasetContent);
+
+      const datasetDetails = await AIToolDataSetTable.find(
+        {},
+        { key: 1, _id: 1 }
+      );
+
+      for (const [key, types] of Object.entries(openAIDataset.types)) {
+        const dataset = datasetDetails.find((obj) => obj.key == key);
+        let bulkWriteTypeObject = {
+          updateOne: {
+            filter: { key },
+            update: {
+              $set: { key, types, datasetId: dataset._id },
+            },
+            upsert: true,
+          },
+        };
+        typeContent.push(bulkWriteTypeObject);
+      }
+
+      await AIToolDataSetTypesTable.bulkWrite(typeContent);
       return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -2237,7 +2265,7 @@ class ScriptService {
   public async updateCompletedGoalCountInDB() {
     try {
       const businessProfiles = await BusinessProfileTable.find({}).lean(); // Get all business profiles directly
-    
+
       for (let businessProfile of businessProfiles) {
         let completedGoals = 0;
         const {
@@ -2273,10 +2301,10 @@ class ScriptService {
         );
       }
       return;
-  } catch (error) {
-    throw new NetworkError(error.message, 400);
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
-}
 
   /**
    * @description This function update the number of goals completed already for existing users
@@ -2360,6 +2388,46 @@ class ScriptService {
             { upsert: true }
           );
         }
+      }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function update the number of goals completed already for existing users
+   * @returns {*}
+   */
+  public async updateCompletedActions() {
+    try {
+      const profilesToMigrate = await BusinessProfileTable.find({
+        completedGoal: { $gt: 0 },
+      }).lean();
+      const bulkOperations = profilesToMigrate
+        .map((profile) => {
+          const updateObj = {};
+
+          ACTIONS_TO_MOVE.forEach((action) => {
+            if (profile[action]) {
+              updateObj[action] = profile[action];
+            }
+          });
+
+          if (Object.keys(updateObj).length > 0) {
+            return {
+              updateOne: {
+                filter: { userId: profile.userId },
+                update: { $set: { completedActions: updateObj } },
+                upsert: true,
+              },
+            };
+          }
+        })
+        .filter(Boolean);
+
+      if (bulkOperations.length > 0) {
+        await BusinessProfileTable.bulkWrite(bulkOperations);
       }
       return;
     } catch (error) {
