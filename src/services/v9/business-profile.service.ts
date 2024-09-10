@@ -743,9 +743,9 @@ class BusinessProfileService {
             dependency[i]
           );
           if (depDetails?.name && hasGoalInCompletedActions) {
-            prompt = `${prompt}\n${depDetails.name}: ${
+            prompt = `${prompt}\n${depDetails.name}: ${JSON.stringify(
               businessProfile.completedActions[dependency[i]]
-            }`;
+            )}`;
           }
         }
       }
