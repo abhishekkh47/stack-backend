@@ -148,7 +148,8 @@ class MilestoneDBService {
           userIfExists,
           businessProfile,
           lastMilestoneCompleted,
-          existingResponseWithPendingActions
+          existingResponseWithPendingActions,
+          availableDailyChallenges
         );
       }
       if (
@@ -298,12 +299,12 @@ class MilestoneDBService {
     userIfExists: any,
     businessProfile: any,
     lastMilestoneCompleted: any,
-    existingResponseWithPendingActions: any
+    existingResponseWithPendingActions: any,
+    availableDailyChallengesIfExists: any
   ) {
     try {
       const isMilestoneHit = existingResponseWithPendingActions?.isMilestoneHit;
       const { milestoneId } = businessProfile.currentMilestone;
-      let prevDayNum = lastMilestoneCompleted.day;
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
           milestoneId,
@@ -311,11 +312,10 @@ class MilestoneDBService {
           .sort({ day: -1 })
           .lean()
       )[0].day;
-      if (
-        lastMilestoneCompleted.milestoneId.toString() != milestoneId.toString()
-      ) {
-        prevDayNum = 0;
-      }
+      let prevDayNum =
+        lastMilestoneCompleted.milestoneId.toString() === milestoneId.toString()
+          ? lastMilestoneCompleted.day
+          : 0;
       if (prevDayNum + 1 > daysInCurrentMilestone && isMilestoneHit) {
         return existingResponseWithPendingActions;
       }
@@ -326,6 +326,21 @@ class MilestoneDBService {
       })
         .sort({ day: 1, order: 1 })
         .lean();
+
+      const availableChallengesMap = new Map(
+        availableDailyChallengesIfExists?.dailyGoalStatus.map((goal) => [
+          goal.key,
+          goal,
+        ]) ?? []
+      );
+      if (availableChallengesMap.has(currentMilestoneGoals[0]?.key)) {
+        return await this.handleAvailableDailyChallenges(
+          userIfExists,
+          businessProfile,
+          availableDailyChallengesIfExists,
+          true
+        );
+      }
 
       const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
       const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
