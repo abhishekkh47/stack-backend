@@ -366,13 +366,19 @@ class MilestoneDBService {
       const isLocked =
         !goal?.dependency || (goal?.dependency && !goal?.dependency.length)
           ? false
-          : !goal?.dependency?.every(
-              (dependencyKey) =>
-                businessProfile &&
-                businessProfile[dependencyKey] &&
-                (businessProfile[dependencyKey].title ||
-                  businessProfile[dependencyKey].length)
-            );
+          : !goal?.dependency?.every((dependencyKey) => {
+              const hasGoalInProfile = hasGoalKey(
+                businessProfile,
+                dependencyKey
+              );
+              const hasGoalInCompletedActions = mapHasGoalKey(
+                businessProfile.completedActions,
+                dependencyKey
+              );
+              if (hasGoalInProfile || hasGoalInCompletedActions) {
+                return true;
+              }
+            });
       return {
         ...goal,
         isLocked, // add isLocked key to the object
