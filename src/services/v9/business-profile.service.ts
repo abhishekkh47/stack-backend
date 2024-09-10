@@ -786,7 +786,11 @@ class BusinessProfileService {
         businessCoachInfo,
         enableStealthMode,
         completedGoal,
+        description,
+        idea,
+        completedActions = {},
       } = userBusinessProfile;
+
       businessProfile = {
         userId,
         impacts,
@@ -797,15 +801,23 @@ class BusinessProfileService {
         completedGoal,
         businessPlans: [],
       };
-      if (userBusinessProfile.description) {
+
+      const milestoneGoalsMap = new Map(
+        milestoneGoals.map((goal) => [goal.key, goal])
+      );
+      const suggestionCopyMap = new Map(
+        suggestionsScreenCopy.map((copy) => [copy.key, copy])
+      );
+
+      if (description) {
         const action = milestoneGoals.find(
           (goal) => goal.key == "ideaValidation"
         );
         businessProfile.businessPlans.push({
           _id: "description",
           key: "description",
-          value: userBusinessProfile.description,
-          idea: userBusinessProfile.idea,
+          value: description,
+          idea: idea,
           title: businessIdeaCopy.actionName,
           iconImage: action.iconImage,
           iconBackgroundColor: action.iconBackgroundColor,
@@ -817,31 +829,26 @@ class BusinessProfileService {
           name: businessIdeaCopy.name,
         });
       }
-      suggestionsScreenCopy.forEach((data) => {
-        const hasGoalInProfile = hasGoalKey(businessProfile, data.key);
-        const hasGoalInCompletedActions = mapHasGoalKey(
-          businessProfile.completedActions,
-          data.key
-        );
-        if (hasGoalInProfile || hasGoalInCompletedActions) {
-          const action = milestoneGoals.find((goal) => goal.key == data.key);
-          if (action) {
-            const obj = {
-              _id: data.key,
-              key: data.key,
-              value: userBusinessProfile[data.key],
-              title: data.actionName,
-              iconImage: action.iconImage,
-              iconBackgroundColor: action.iconBackgroundColor,
-              inputTemplate: {
-                ...action.inputTemplate,
-                suggestionScreenInfo: data,
-              },
-              template: action.template,
-              name: data.name,
-            };
-            businessProfile.businessPlans.push(obj);
-          }
+
+      Object.entries(completedActions)?.forEach(([key, value]) => {
+        const action = milestoneGoalsMap.get(key);
+        const actionCopy = suggestionCopyMap.get(key);
+        if (action) {
+          const obj = {
+            _id: key,
+            key: key,
+            value: value,
+            title: actionCopy.actionName,
+            iconImage: action.iconImage,
+            iconBackgroundColor: action.iconBackgroundColor,
+            inputTemplate: {
+              ...action.inputTemplate,
+              suggestionScreenInfo: actionCopy,
+            },
+            template: action.template,
+            name: actionCopy.name,
+          };
+          businessProfile.businessPlans.push(obj);
         }
       });
     }
