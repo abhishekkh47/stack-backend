@@ -45,8 +45,8 @@ class ChecklistDBService {
           .lean(),
       ]);
 
-      let topics = quizTopics.map((topic) => {
-        const topicQuizzes = completedQuizzes.filter(
+      let topics = quizTopics?.map((topic) => {
+        const topicQuizzes = completedQuizzes?.filter(
           (quiz) => quiz.topicId.toString() == topic._id.toString()
         );
         const numCompletedQuizzes = topicQuizzes.length;
