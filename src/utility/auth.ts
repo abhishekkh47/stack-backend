@@ -1,4 +1,5 @@
 import Jwt from "jsonwebtoken";
+import config from "@app/config";
 
 export const getJwtToken = (body: any, expireTime: any = null) => {
   return Jwt.sign(body, process.env.JWT_SECRET ?? "secret", {
@@ -29,4 +30,12 @@ export const getRefreshToken = (body: any) => {
 
 export const decodeJwtToken = (body: any) => {
   return Jwt.decode(body);
+};
+
+export const verifyRevenueCatAuth = (token: string) => {
+  if (token == config.REVENUECAT_WEBHOOK_SECRET) {
+    return true;
+  } else {
+    return false;
+  }
 };
