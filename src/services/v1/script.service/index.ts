@@ -25,6 +25,7 @@ import {
   SuggestionScreenCopyTable,
   BusinessProfileTable,
   UserTable,
+  DailyChallengeTable,
   AIToolDataSetTypesTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
@@ -2389,6 +2390,31 @@ class ScriptService {
           );
         }
       }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function remove the logo generation action from the daily challenges for all users
+   * @returns {*}
+   */
+  public async removeLogoActionChallenge() {
+    try {
+      const profilesToUpdate = await DailyChallengeTable.find({}).lean();
+      for (let profile of profilesToUpdate) {
+        if (profile && profile.dailyGoalStatus.length > 0) {
+          await DailyChallengeTable.updateOne(
+            { userId: profile.userId },
+            { $pull: { dailyGoalStatus: { key: "companyLogo" } } }
+          );
+        }
+      }
+      await MilestoneGoalsTable.updateOne(
+        { key: "companyLogo" },
+        { $set: { milestoneId: null, isAiToolbox: false } }
+      );
       return;
     } catch (error) {
       throw new NetworkError(error.message, 400);

@@ -28,8 +28,9 @@ import {
   BACKUP_LOGOS,
   awsLogger,
   AI_TOOLS_ANALYTICS,
+  DEFAULT_BUSINESS_LOGO,
   mapHasGoalKey,
-  hasGoalKey,
+  hasGoalKey
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import { MilestoneDBService } from "@app/services/v9";
@@ -90,6 +91,9 @@ class BusinessProfileService {
           );
           if (!(hasGoalInProfile && hasGoalInCompletedActions)) {
             obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
+            if(data.key == "companyName"){
+              obj["companyLogo"] = DEFAULT_BUSINESS_LOGO
+            }
           }
         }
         obj[data.key] = { title: data.value, description: data.description };

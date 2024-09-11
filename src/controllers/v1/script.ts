@@ -2359,6 +2359,21 @@ class ScriptController extends BaseController {
   }
 
   /**
+   * @description This method remove the logo generation action from the daily challenges for all users
+   * @param ctx
+   */
+  @Route({ path: "/remove-logo-action-challenge", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async removeLogoActionChallenge(ctx: any) {
+    try {
+      await ScriptService.removeLogoActionChallenge();
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
+
+  /**
    * @description This method is used move completed actions to completedActions object
    * @param ctx
    */
