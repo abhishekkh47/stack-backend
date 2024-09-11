@@ -2387,6 +2387,21 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is to move used AI Tools to usedAITools object in aiToolsUsageStatus collection
+   * @param ctx
+   */
+  @Route({ path: "/update-used-ai-tools", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async updateUsedAITools(ctx: any) {
+    try {
+      await ScriptService.updateUsedAITools();
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();

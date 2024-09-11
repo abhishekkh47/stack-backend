@@ -89,4 +89,7 @@ export interface IAIToolsUsageStatus {
   updateStrategy: boolean;
   updateCategories: boolean;
   firstCompanyUpdate: boolean;
+  usedAITools: {
+    [key: string]: boolean;
+  };
 }

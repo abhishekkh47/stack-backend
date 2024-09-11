@@ -364,6 +364,11 @@ const schema = new mongoose.Schema<IAIToolsUsageStatusSchema>(
       type: mongoose.Schema.Types.Boolean,
       default: false,
     },
+    usedAITools: {
+      type: Object,
+      of: mongoose.Schema.Types.Boolean,
+      default: {},
+    },
   },
   { timestamps: true }
 );
