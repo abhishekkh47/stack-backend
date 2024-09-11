@@ -12,7 +12,7 @@ class UserService {
       },
       { usedAITools: 1 }
     );
-    return response[0].usedAITools;
+    return response[0]?.usedAITools;
   }
 }
 
