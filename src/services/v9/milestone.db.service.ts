@@ -213,6 +213,9 @@ class MilestoneDBService {
           if (hasGoalInProfile || hasGoalInCompletedActions) {
             milestone["isCompleted"] = true;
             response.tasks[1].data.push(milestone);
+          } else {
+            milestone["isCompleted"] = false;
+            response.tasks[0].data.push(milestone);
           }
         } else {
           milestone["isCompleted"] = false;
