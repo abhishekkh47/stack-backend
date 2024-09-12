@@ -24,7 +24,7 @@ import {
   COLORS_AND_AESTHETIC,
   SUGGESTIONS_NOT_FOUND_ERROR,
   mapHasGoalKey,
-  hasGoalKey,
+  IDEA_GENERATOR_INFO,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -332,60 +332,78 @@ class BusinessProfileService {
    * @param businessType
    * @returns {*}
    */
-  public async generateBusinessIdea(prompt: string, businessType: number) {
+  public async generateBusinessIdea(prompt: string, businessType: number = 2) {
     try {
-      const systemInputDataset = (
-        await AIToolDataSetTable.findOne({
-          type: businessType,
-        }).lean()
-      ).data;
-      const marketSelectionData = await this.getFormattedSuggestions(
-        systemInputDataset["PROBLEM_MARKET_SELECTOR"],
-        prompt
-      );
-      const updatedPrompt = marketSelectionData.market;
-      let [productizationData, distributionData, dominateNicheData] =
-        await Promise.all([
-          this.getFormattedSuggestions(
-            systemInputDataset["PRODUCTIZATION"],
-            updatedPrompt
-          ),
-          this.getFormattedSuggestions(
-            systemInputDataset["DISTRIBUTION"],
-            updatedPrompt
-          ),
-          this.getFormattedSuggestions(
-            systemInputDataset["DOMINATE_NICHE"],
-            updatedPrompt
-          ),
-        ]);
+      const systemInputDataset = await AIToolDataSetTable.find({
+        key: { $in: ["softwareTechnology", "ideaGenerator"] },
+      }).lean();
+      const ideaGenerator = systemInputDataset.find(
+        (obj) => obj.key == "ideaGenerator"
+      )?.data;
+      const softwareTechnology = systemInputDataset.find(
+        (obj) => obj.key == "softwareTechnology"
+      )?.data;
 
+      const types = ["type1", "type2", "type3"];
+      const ideaPromises = types.map((type) =>
+        this.getFormattedSuggestions(ideaGenerator[type], prompt)
+      );
+      const ideaResults = await Promise.all(ideaPromises);
+
+      const problemPromises = ideaResults.map((idea) =>
+        this.getFormattedSuggestions(
+          ideaGenerator["problemGenerator"],
+          idea.businessDescription
+        )
+      );
+
+      const ratingPromises = ideaResults.map((idea) =>
+        this.getFormattedSuggestions(
+          softwareTechnology["PRODUCT_RATING"],
+          idea.businessDescription
+        )
+      );
+
+      const marketPromises = ideaResults.map((idea) =>
+        this.getFormattedSuggestions(
+          softwareTechnology["PROBLEM_MARKET_SELECTOR"],
+          idea.businessDescription
+        )
+      );
+
+      // Fetch problem, rating, and market suggestions in parallel
+      const [problemResults, ratingResults, marketResults] = await Promise.all([
+        Promise.all(problemPromises),
+        Promise.all(ratingPromises),
+        Promise.all(marketPromises),
+      ]);
+
+      const marketSegments = marketResults.map((market) =>
+        market.market.replace(/\.$/, "")
+      );
       const [
-        problemAnalysisData,
         marketAnalysisData,
-        productizationRatingData,
-        distributionRatingData,
-        dominateNicheRatingData,
+        productizationData,
+        distributionData,
+        dominateNicheData,
       ] = await Promise.all([
-        ProblemScoreTable.find({
-          problem: marketSelectionData.problem.replace(/\.$/, ""),
-          type: businessType,
-        }).lean(),
         MarketScoreTable.find({
-          marketSegment: marketSelectionData.market.replace(/\.$/, ""),
+          marketSegment: {
+            $in: marketSegments,
+          },
           type: businessType,
         }).lean(),
         this.getFormattedSuggestions(
-          systemInputDataset["PRODUCT_RATING"],
-          productizationData.description
+          softwareTechnology["PRODUCTIZATION"],
+          marketResults[0].market
         ),
         this.getFormattedSuggestions(
-          systemInputDataset["PRODUCT_RATING"],
-          distributionData.description
+          softwareTechnology["DISTRIBUTION"],
+          marketResults[1].market
         ),
         this.getFormattedSuggestions(
-          systemInputDataset["PRODUCT_RATING"],
-          dominateNicheData.description
+          softwareTechnology["DOMINATE_NICHE"],
+          marketResults[2].market
         ),
       ]);
 
@@ -393,51 +411,51 @@ class BusinessProfileService {
       const ideasData = [
         {
           data: productizationData,
-          label: systemInputDataset["PRODUCTIZATION_LABEL"],
+          problem: problemResults[0],
+          label: softwareTechnology["PRODUCTIZATION_LABEL"],
           imageKey: "innovative",
-          ratingData: productizationRatingData,
+          ratingData: ratingResults[0],
+          marketData: marketResults[0],
         },
         {
           data: distributionData,
-          label: systemInputDataset["DISTRIBUTION_LABEL"],
+          problem: problemResults[1],
+          label: softwareTechnology["DISTRIBUTION_LABEL"],
           imageKey: "demand",
-          ratingData: distributionRatingData,
+          ratingData: ratingResults[1],
+          marketData: marketResults[1],
         },
         {
           data: dominateNicheData,
-          label: systemInputDataset["DOMINATE_LABEL"],
+          problem: problemResults[2],
+          label: softwareTechnology["DOMINATE_LABEL"],
           imageKey: "trending",
-          ratingData: dominateNicheRatingData,
+          ratingData: ratingResults[2],
+          marketData: marketResults[2],
         },
       ];
-      const BUSINESS_IDEA_IMAGES_BY_TYPE =
-        businessType === PRODUCT_TYPE.Physical
-          ? BUSINESS_IDEA_IMAGES.PHYSICAL_PRODUCT
-          : BUSINESS_IDEA_IMAGES.TECH_PRODUCT;
-      const ideas = ideasData.map(({ data, label, imageKey, ratingData }) => {
-        data.ideaLabel = label;
-        data.image = BUSINESS_IDEA_IMAGES_BY_TYPE[imageKey];
-        data._id = `idea${++order}`;
+      const BUSINESS_IDEA_IMAGES_BY_TYPE = BUSINESS_IDEA_IMAGES.TECH_PRODUCT;
+      const ideas = ideasData.map(
+        ({ data, problem, label, imageKey, ratingData, marketData }) => {
+          data.ideaLabel = label;
+          data.image = BUSINESS_IDEA_IMAGES_BY_TYPE[imageKey];
+          data._id = `idea${++order}`;
 
-        const problem = problemAnalysisData.find(
-          (obj) =>
-            obj.problem === marketSelectionData.problem.replace(/\.$/, "")
-        );
-        const market = marketAnalysisData.find(
-          (obj) =>
-            obj.marketSegment === marketSelectionData.market.replace(/\.$/, "")
-        );
+          const market = marketAnalysisData.find(
+            (obj) => obj.marketSegment === marketData.market.replace(/\.$/, "")
+          );
 
-        data.rating = Math.floor(
-          (problem.overallRating +
-            market.overallRating +
-            ratingData["Overall Score"]) /
-            3
-        );
-        data.ideaAnalysis = this.ideaAnalysis(problem, ratingData, market);
+          data.rating = Math.floor(
+            (Number(problem.average) +
+              market.overallRating +
+              ratingData["Overall Score"]) /
+              3
+          );
+          data.ideaAnalysis = this.ideaAnalysis(problem, ratingData, market);
 
-        return data;
-      });
+          return data;
+        }
+      );
       return { ideas };
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
@@ -451,38 +469,32 @@ class BusinessProfileService {
    */
   public async ideaValidator(prompt: string) {
     try {
-      const ideaValidationDataset = (
-        await AIToolDataSetTable.findOne({
-          type: 3,
-        }).lean()
-      ).data;
-      const businessIdeaType = await this.getFormattedSuggestions(
-        ideaValidationDataset["BUSINESS_TYPE_SELECTOR"],
-        prompt
-      );
-      const businessType =
-        JSON.stringify(businessIdeaType).indexOf("ecommerce") >= 0
-          ? PRODUCT_TYPE.Physical
-          : PRODUCT_TYPE.Software;
-      const systemInputDataset =
-        businessType === PRODUCT_TYPE.Physical
-          ? ideaValidationDataset["PHYSICAL_PRODUCT"]
-          : ideaValidationDataset["TECH_PRODUCT"];
+      const systemInputDataset = await AIToolDataSetTable.find({
+        key: { $in: ["ideaValidation", "ideaGenerator"] },
+      }).lean();
+
+      const ideaGenerator = systemInputDataset.find(
+        (obj) => obj.key == "ideaGenerator"
+      )?.data;
+      const ideaValidationDataset = systemInputDataset.find(
+        (obj) => obj.key == "ideaValidation"
+      )?.data;
+
       let validatedIdea = await this.getFormattedSuggestions(
-        systemInputDataset,
+        ideaValidationDataset["TECH_PRODUCT"],
         prompt
       );
 
       const updatedPrompt = `${validatedIdea.problem}\n ${validatedIdea.market}`;
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
-          ProblemScoreTable.find({
-            problem: validatedIdea.problem,
-            type: businessType,
-          }),
+          this.getFormattedSuggestions(
+            ideaGenerator["problemGenerator"],
+            validatedIdea.description
+          ),
           MarketScoreTable.find({
             marketSegment: validatedIdea.market,
-            type: businessType,
+            type: PRODUCT_TYPE.Software,
           }),
           this.getFormattedSuggestions(
             ideaValidationDataset["PRODUCT_RATING"],
@@ -490,9 +502,6 @@ class BusinessProfileService {
           ),
         ]);
 
-      const problem = problemAnalysisData.find(
-        (obj) => obj.problem == validatedIdea.problem
-      );
       const market = marketAnalysisData.find(
         (obj) => obj.marketSegment == validatedIdea.market
       );
@@ -501,31 +510,21 @@ class BusinessProfileService {
       validatedIdea["ideaLabel"] =
         ideaValidationDataset["IDEA_VALIDATION_LABEL"];
       validatedIdea["rating"] = Math.floor(
-        (problem.overallRating +
+        (Number(problemAnalysisData.average) +
           market.overallRating +
           productAnalysisData["Overall Score"]) /
           3
       );
       validatedIdea["ideaAnalysis"] = this.ideaAnalysis(
-        problem,
+        problemAnalysisData,
         productAnalysisData,
         market
       );
-      if (businessType == PRODUCT_TYPE.Physical) {
-        validatedIdea["image"] = BUSINESS_IDEA_IMAGES.PHYSICAL_PRODUCT.user;
-      } else {
-        validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
-      }
+      validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
 
-      let suggestions = (await this.generateBusinessIdea(prompt, businessType))
-        .ideas;
-
-      let response = {
-        selfIdea: validatedIdea,
-        ideas: [...suggestions],
+      return {
+        ideas: [validatedIdea],
       };
-
-      return response;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
@@ -618,22 +617,22 @@ class BusinessProfileService {
         {
           _id: "problem",
           name: "Problem",
-          rating: problem.overallRating,
+          rating: problem.average,
           analysis: [
             {
-              name: "Trending Topic",
-              rating: problem.trendingScore,
-              description: problem.trendingScoreExplanation,
+              name: "Trending Score",
+              rating: problem.problemScore,
+              description: `How it works:\nTrend Score is an evaluation of how often this problem appears in search engines or on social media platforms. We currently use data from Google, TikTok, Instagram and Reddit\n\nTop Search Phrase:\n${problem.title}\n\nExplanation:\nThis phrase had strong search engine indicators as well as strong virality on social media. This indicates significant social proof and widespread attention, suggesting a rapidly growing awareness and interest in the problem`,
             },
             {
-              name: "Willingness to Pay",
-              rating: problem.demandScore,
-              description: problem.demandScoreExplanation,
+              name: "Wallet Score",
+              rating: problem.priceRating,
+              description: `How it works:\nWallet Score is an evaluation of the willingness to pay for a solution to this problem. To do so, we examine pricing of the top products that most directly solve this problem.\n\nTop Brands:\n${problem.products}\n\nAverage Annual Price:\n${problem.price}\n\nExplanation:\nThis indicates that customers currently pay a premium price for solutions.`,
             },
             {
-              name: "Paying Customers",
-              rating: problem.pricePointIndex,
-              description: problem.pricePointExplanation,
+              name: "Audience Score",
+              rating: problem.customerRating,
+              description: `How it works:\nAudience Score is an evaluation of how many customers may be willing to pay for a solution to this problem. To do so, we examine existing demand for the 5 products that most directly solve this problem.\n\nTop Brands:\n${problem.products}\n\nPaying Customers:\n${problem.customer}\n\nExplanation:\nThis indicates high demand and a strong market need for solutions.`,
             },
           ],
         },
@@ -643,17 +642,17 @@ class BusinessProfileService {
           rating: Math.floor(Number(product["Overall Score"])),
           analysis: [
             {
-              name: "Niche Audience",
+              name: "Niche Score",
               rating: product["Audience Focus Score"],
               description: product.audienceFocusScoreDescription,
             },
             {
-              name: "Core Features",
+              name: "Key Feature Score",
               rating: product["Sophistication Score"],
               description: product.sophisticationDescription,
             },
             {
-              name: "Differentiation",
+              name: "Differentiation Score",
               rating: product["Unique Score"],
               description: product.uniqueScoreDescription,
             },
@@ -666,27 +665,27 @@ class BusinessProfileService {
           rating: market.overallRating,
           analysis: [
             {
-              name: "HHI",
+              name: "HHI Score",
               rating: market.hhiRating,
               description: market.hhiExplanation,
             },
             {
-              name: "Satisfaction",
+              name: "Dissatisfaction Score",
               rating: market.customerSatisfactionRating,
               description: market.customerSatisfactionExplanation,
             },
             {
-              name: "Age Index",
+              name: "Industry Age Score",
               rating: market.ageIndexRating,
               description: market.ageIndexExplanation,
             },
             {
-              name: "TAM",
+              name: "Market Size Score",
               rating: market.tamRating,
               description: market.tamExplanation,
             },
             {
-              name: "CAGR",
+              name: "Market Growth Score",
               rating: market.cagrRating,
               description: market.cagrExplanation,
             },

@@ -130,7 +130,7 @@ class BusinessProfileController extends BaseController {
   public async getBusinessIdea(ctx: any) {
     const { body } = ctx.request;
 
-    if (!body.idea && !body.businessType) {
+    if (!body.idea) {
       return this.BadRequest(
         ctx,
         "Please provide your Business Idea and Business Type"
@@ -138,7 +138,7 @@ class BusinessProfileController extends BaseController {
     }
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
       body.idea,
-      Number(body.businessType)
+      2
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }

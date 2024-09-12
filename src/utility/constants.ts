@@ -966,3 +966,51 @@ export const ACTIONS_TO_MOVE = [
   "firstCompanyUpdate",
   "firstCompanyUpdateGoals",
 ];
+
+export const IDEA_GENERATOR_INFO = {
+  SOFTWARE_TECHNOLOGY: "softwareTechnology",
+  IDEA_GENERATOR: "ideaGenerator",
+  PROBLEM_GENERATOR: "problemGenerator",
+  PRODUCT_RATING: "PRODUCT_RATING",
+  PROBLEM_MARKET_SELECTOR: "PROBLEM_MARKET_SELECTOR",
+  PRODUCTIZATION: {
+    name: "PRODUCTIZATION",
+    label: "PRODUCTIZATION_LABEL",
+    image: "innovative",
+  },
+  DISTRIBUTION: {
+    name: "DISTRIBUTION",
+    label: "DISTRIBUTION_LABEL",
+    image: "demand",
+  },
+  DOMINATE_NICHE: {
+    name: "DOMINATE_NICHE",
+    label: "DOMINATE_LABEL",
+    image: "trending",
+  },
+  ANALYSIS: {
+    PROBLEM: {
+      _id: "problem",
+      name: "Problem",
+      trending: { name: "Trending Score", description: "" },
+      wallet: { name: "Wallet Score", description: "" },
+      audience: { name: "Audience Score", description: "" },
+    },
+    PRODUCT: {
+      _id: "product",
+      name: "Product",
+      niche: "Niche Score",
+      feature: "Key Feature Score",
+      differentiator: "Differentiation Score",
+    },
+    MARKET: {
+      _id: "market",
+      name: "Market",
+      hhi: "HHI Score",
+      satisfaction: "Dissatisfaction Score",
+      industryAge: "Industry Age Score",
+      marketSize: "Market Size Score",
+      marketGrowth: "Market Growth Score",
+    },
+  },
+};
