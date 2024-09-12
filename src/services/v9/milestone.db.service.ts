@@ -468,6 +468,9 @@ class MilestoneDBService {
     override: boolean = false
   ) {
     try {
+      const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
+        {}
+      ).lean();
       let isMilestoneHit = false;
       const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
       if (
@@ -490,6 +493,14 @@ class MilestoneDBService {
             { title: "Completed", data: [] },
           ],
         };
+
+        updatedGoals.forEach((goal) => {
+          const copyData = suggestionScreenCopy.find(
+            (obj) => obj.key == goal.key
+          );
+          goal.inputTemplate.suggestionScreenInfo = copyData;
+        });
+
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
             if (businessProfile?.description) {
