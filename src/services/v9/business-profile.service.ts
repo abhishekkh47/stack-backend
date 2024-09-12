@@ -58,6 +58,7 @@ class BusinessProfileService {
       }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
+      aiToolUsageObj = { [`usedAITools.${key}`]: true };
       const [systemDataset, goalDetails, suggestionsScreenCopy, datasetTypes] =
         await Promise.all([
           AIToolDataSetTable.findOne({ key }).lean(),
@@ -582,6 +583,9 @@ class BusinessProfileService {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[data.ideaGenerationType] = true;
+      aiToolUsageObj = {
+        [`usedAITools.${data.ideaGenerationType}`]: true,
+      };
       if (userExists && userExists._id && data.savedBusinessIdeas.length) {
         const businessProfile = await BusinessProfileTable.findOne({
           userId: userExists._id,

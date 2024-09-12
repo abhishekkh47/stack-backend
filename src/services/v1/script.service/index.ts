@@ -27,6 +27,7 @@ import {
   UserTable,
   DailyChallengeTable,
   AIToolDataSetTypesTable,
+  AIToolsUsageStatusTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2454,6 +2455,44 @@ class ScriptService {
 
       if (bulkOperations.length > 0) {
         await BusinessProfileTable.bulkWrite(bulkOperations);
+      }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function move the used AI Tools to usedAITools object in aiToolsUsageStatus collection
+   * @returns {*}
+   */
+  public async updateUsedAITools() {
+    try {
+      const profilesToMigrate = await AIToolsUsageStatusTable.find({}).lean();
+      const bulkOperations = profilesToMigrate
+        .map((profile) => {
+          let updateObj = { description: true };
+
+          ACTIONS_TO_MOVE.forEach((action) => {
+            if (profile[action]) {
+              updateObj[action] = profile[action];
+            }
+          });
+
+          if (Object.keys(updateObj).length > 0) {
+            return {
+              updateOne: {
+                filter: { userId: profile.userId },
+                update: { $set: { usedAITools: updateObj } },
+                upsert: true,
+              },
+            };
+          }
+        })
+        .filter(Boolean);
+
+      if (bulkOperations.length > 0) {
+        await AIToolsUsageStatusTable.bulkWrite(bulkOperations);
       }
       return;
     } catch (error) {
