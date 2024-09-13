@@ -22,7 +22,6 @@ import { ANALYTICS_EVENTS, THINGS_TO_TALK_ABOUT } from "@app/utility/constants";
 import BaseController from "@app/controllers/base";
 import { validationsV3 } from "@app/validations/v3/apiValidation";
 import { UserDBService } from "@app/services/v6";
-import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
 import {
   BusinessProfileService as BusinessProfileServiceV9,
   UserService as UserServiceV9,
@@ -197,7 +196,7 @@ class AuthController extends BaseController {
               userExists._id
             );
             const businessProfile =
-              await BusinessProfileServiceV7.getBusinessProfile(userExists._id);
+              await BusinessProfileServiceV9.getBusinessProfile(userExists._id);
             const userAIToolStatus = await UserServiceV9.userAIToolUsageStatus(
               userExists
             );
