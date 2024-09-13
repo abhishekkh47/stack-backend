@@ -970,9 +970,11 @@ export const ACTIONS_TO_MOVE = [
 export const IDEA_GENERATOR_INFO = {
   SOFTWARE_TECHNOLOGY: "softwareTechnology",
   IDEA_GENERATOR: "ideaGenerator",
+  IDEA_VALIDATION: "ideaValidation",
   PROBLEM_GENERATOR: "problemGenerator",
   PRODUCT_RATING: "PRODUCT_RATING",
   PROBLEM_MARKET_SELECTOR: "PROBLEM_MARKET_SELECTOR",
+  TECH_PRODUCT: "TECH_PRODUCT",
   PRODUCTIZATION: {
     name: "PRODUCTIZATION",
     label: "PRODUCTIZATION_LABEL",
@@ -988,29 +990,39 @@ export const IDEA_GENERATOR_INFO = {
     label: "DOMINATE_LABEL",
     image: "trending",
   },
-  ANALYSIS: {
-    PROBLEM: {
-      _id: "problem",
-      name: "Problem",
-      trending: { name: "Trending Score", description: "" },
-      wallet: { name: "Wallet Score", description: "" },
-      audience: { name: "Audience Score", description: "" },
+};
+
+export const IDEA_ANALYSIS = {
+  PROBLEM: {
+    _id: "problem",
+    name: "Problem",
+    trending: {
+      name: "Trending Score",
+      description: `How it works:\nTrend Score is an evaluation of how often this problem appears in search engines or on social media platforms. We currently use data from Google, TikTok, Instagram and Reddit\n\nTop Search Phrase:\n{problemTitle}\n\nExplanation:\nThis phrase had strong search engine indicators as well as strong virality on social media. This indicates significant social proof and widespread attention, suggesting a rapidly growing awareness and interest in the problem`,
     },
-    PRODUCT: {
-      _id: "product",
-      name: "Product",
-      niche: "Niche Score",
-      feature: "Key Feature Score",
-      differentiator: "Differentiation Score",
+    wallet: {
+      name: "Wallet Score",
+      description: `How it works:\nWallet Score is an evaluation of the willingness to pay for a solution to this problem. To do so, we examine pricing of the top products that most directly solve this problem.\n\nTop Brands:\n{problemProducts}\n\nAverage Annual Price:\n{problemPrice}\n\nExplanation:\nThis indicates that customers currently pay a premium price for solutions.`,
     },
-    MARKET: {
-      _id: "market",
-      name: "Market",
-      hhi: "HHI Score",
-      satisfaction: "Dissatisfaction Score",
-      industryAge: "Industry Age Score",
-      marketSize: "Market Size Score",
-      marketGrowth: "Market Growth Score",
+    audience: {
+      name: "Audience Score",
+      description: `How it works:\nAudience Score is an evaluation of how many customers may be willing to pay for a solution to this problem. To do so, we examine existing demand for the 5 products that most directly solve this problem.\n\nTop Brands:\n{problemProducts}\n\nPaying Customers:\n{problemCustomer}\n\nExplanation:\nThis indicates high demand and a strong market need for solutions.`,
     },
+  },
+  PRODUCT: {
+    _id: "product",
+    name: "Product",
+    niche: "Niche Score",
+    feature: "Key Feature Score",
+    differentiator: "Differentiation Score",
+  },
+  MARKET: {
+    _id: "market",
+    name: "Market",
+    hhi: "HHI Score",
+    satisfaction: "Dissatisfaction Score",
+    industryAge: "Industry Age Score",
+    marketSize: "Market Size Score",
+    marketGrowth: "Market Growth Score",
   },
 };

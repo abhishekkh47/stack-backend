@@ -25,6 +25,8 @@ import {
   SUGGESTIONS_NOT_FOUND_ERROR,
   mapHasGoalKey,
   IDEA_GENERATOR_INFO,
+  IDEA_ANALYSIS,
+  replacePlaceholders,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -335,13 +337,18 @@ class BusinessProfileService {
   public async generateBusinessIdea(prompt: string, businessType: number = 2) {
     try {
       const systemInputDataset = await AIToolDataSetTable.find({
-        key: { $in: ["softwareTechnology", "ideaGenerator"] },
+        key: {
+          $in: [
+            IDEA_GENERATOR_INFO.SOFTWARE_TECHNOLOGY,
+            IDEA_GENERATOR_INFO.IDEA_GENERATOR,
+          ],
+        },
       }).lean();
       const ideaGenerator = systemInputDataset.find(
-        (obj) => obj.key == "ideaGenerator"
+        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_GENERATOR
       )?.data;
       const softwareTechnology = systemInputDataset.find(
-        (obj) => obj.key == "softwareTechnology"
+        (obj) => obj.key == IDEA_GENERATOR_INFO.SOFTWARE_TECHNOLOGY
       )?.data;
 
       const types = ["type1", "type2", "type3"];
@@ -352,21 +359,21 @@ class BusinessProfileService {
 
       const problemPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
-          ideaGenerator["problemGenerator"],
+          ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
           idea.businessDescription
         )
       );
 
       const ratingPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
-          softwareTechnology["PRODUCT_RATING"],
+          softwareTechnology[IDEA_GENERATOR_INFO.PRODUCT_RATING],
           idea.businessDescription
         )
       );
 
       const marketPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
-          softwareTechnology["PROBLEM_MARKET_SELECTOR"],
+          softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_MARKET_SELECTOR],
           idea.businessDescription
         )
       );
@@ -394,15 +401,15 @@ class BusinessProfileService {
           type: businessType,
         }).lean(),
         this.getFormattedSuggestions(
-          softwareTechnology["PRODUCTIZATION"],
+          softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.name],
           marketResults[0].market
         ),
         this.getFormattedSuggestions(
-          softwareTechnology["DISTRIBUTION"],
+          softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.name],
           marketResults[1].market
         ),
         this.getFormattedSuggestions(
-          softwareTechnology["DOMINATE_NICHE"],
+          softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.name],
           marketResults[2].market
         ),
       ]);
@@ -412,24 +419,24 @@ class BusinessProfileService {
         {
           data: productizationData,
           problem: problemResults[0],
-          label: softwareTechnology["PRODUCTIZATION_LABEL"],
-          imageKey: "innovative",
+          label: softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.label],
+          imageKey: IDEA_GENERATOR_INFO.PRODUCTIZATION.image,
           ratingData: ratingResults[0],
           marketData: marketResults[0],
         },
         {
           data: distributionData,
           problem: problemResults[1],
-          label: softwareTechnology["DISTRIBUTION_LABEL"],
-          imageKey: "demand",
+          label: softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.label],
+          imageKey: IDEA_GENERATOR_INFO.DISTRIBUTION.image,
           ratingData: ratingResults[1],
           marketData: marketResults[1],
         },
         {
           data: dominateNicheData,
           problem: problemResults[2],
-          label: softwareTechnology["DOMINATE_LABEL"],
-          imageKey: "trending",
+          label: softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.label],
+          imageKey: IDEA_GENERATOR_INFO.DOMINATE_NICHE.image,
           ratingData: ratingResults[2],
           marketData: marketResults[2],
         },
@@ -470,18 +477,23 @@ class BusinessProfileService {
   public async ideaValidator(prompt: string) {
     try {
       const systemInputDataset = await AIToolDataSetTable.find({
-        key: { $in: ["ideaValidation", "ideaGenerator"] },
+        key: {
+          $in: [
+            IDEA_GENERATOR_INFO.IDEA_VALIDATION,
+            IDEA_GENERATOR_INFO.IDEA_GENERATOR,
+          ],
+        },
       }).lean();
 
       const ideaGenerator = systemInputDataset.find(
-        (obj) => obj.key == "ideaGenerator"
+        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_GENERATOR
       )?.data;
       const ideaValidationDataset = systemInputDataset.find(
-        (obj) => obj.key == "ideaValidation"
+        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_VALIDATION
       )?.data;
 
       let validatedIdea = await this.getFormattedSuggestions(
-        ideaValidationDataset["TECH_PRODUCT"],
+        ideaValidationDataset[IDEA_GENERATOR_INFO.TECH_PRODUCT],
         prompt
       );
 
@@ -489,7 +501,7 @@ class BusinessProfileService {
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
           this.getFormattedSuggestions(
-            ideaGenerator["problemGenerator"],
+            ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
             validatedIdea.description
           ),
           MarketScoreTable.find({
@@ -497,7 +509,7 @@ class BusinessProfileService {
             type: PRODUCT_TYPE.Software,
           }),
           this.getFormattedSuggestions(
-            ideaValidationDataset["PRODUCT_RATING"],
+            ideaValidationDataset[IDEA_GENERATOR_INFO.PRODUCT_RATING],
             updatedPrompt
           ),
         ]);
@@ -612,47 +624,62 @@ class BusinessProfileService {
    * @returns {*}
    */
   private ideaAnalysis(problem: any, product: any, market: any) {
+    const problemPlaceHolders = {
+      problemTitle: problem.title,
+      problemProducts: problem.products,
+      problemPrice: problem.price,
+      problemCustomer: problem.customer,
+    };
     try {
       return [
         {
-          _id: "problem",
-          name: "Problem",
+          _id: IDEA_ANALYSIS.PROBLEM._id,
+          name: IDEA_ANALYSIS.PROBLEM.name,
           rating: problem.average,
           analysis: [
             {
-              name: "Trending Score",
+              name: IDEA_ANALYSIS.PROBLEM.trending.name,
               rating: problem.problemScore,
-              description: `How it works:\nTrend Score is an evaluation of how often this problem appears in search engines or on social media platforms. We currently use data from Google, TikTok, Instagram and Reddit\n\nTop Search Phrase:\n${problem.title}\n\nExplanation:\nThis phrase had strong search engine indicators as well as strong virality on social media. This indicates significant social proof and widespread attention, suggesting a rapidly growing awareness and interest in the problem`,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PROBLEM.trending.description,
+                problemPlaceHolders
+              ),
             },
             {
-              name: "Wallet Score",
+              name: IDEA_ANALYSIS.PROBLEM.wallet.name,
               rating: problem.priceRating,
-              description: `How it works:\nWallet Score is an evaluation of the willingness to pay for a solution to this problem. To do so, we examine pricing of the top products that most directly solve this problem.\n\nTop Brands:\n${problem.products}\n\nAverage Annual Price:\n${problem.price}\n\nExplanation:\nThis indicates that customers currently pay a premium price for solutions.`,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PROBLEM.trending.description,
+                problemPlaceHolders
+              ),
             },
             {
-              name: "Audience Score",
+              name: IDEA_ANALYSIS.PROBLEM.audience.name,
               rating: problem.customerRating,
-              description: `How it works:\nAudience Score is an evaluation of how many customers may be willing to pay for a solution to this problem. To do so, we examine existing demand for the 5 products that most directly solve this problem.\n\nTop Brands:\n${problem.products}\n\nPaying Customers:\n${problem.customer}\n\nExplanation:\nThis indicates high demand and a strong market need for solutions.`,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PROBLEM.trending.description,
+                problemPlaceHolders
+              ),
             },
           ],
         },
         {
-          _id: "product",
-          name: "Product",
+          _id: IDEA_ANALYSIS.PRODUCT._id,
+          name: IDEA_ANALYSIS.PRODUCT.name,
           rating: Math.floor(Number(product["Overall Score"])),
           analysis: [
             {
-              name: "Niche Score",
+              name: IDEA_ANALYSIS.PRODUCT.niche,
               rating: product["Audience Focus Score"],
               description: product.audienceFocusScoreDescription,
             },
             {
-              name: "Key Feature Score",
+              name: IDEA_ANALYSIS.PRODUCT.feature,
               rating: product["Sophistication Score"],
               description: product.sophisticationDescription,
             },
             {
-              name: "Differentiation Score",
+              name: IDEA_ANALYSIS.PRODUCT.differentiator,
               rating: product["Unique Score"],
               description: product.uniqueScoreDescription,
             },
@@ -660,32 +687,32 @@ class BusinessProfileService {
         },
 
         {
-          _id: "market",
-          name: "Market",
+          _id: IDEA_ANALYSIS.MARKET._id,
+          name: IDEA_ANALYSIS.MARKET.name,
           rating: market.overallRating,
           analysis: [
             {
-              name: "HHI Score",
+              name: IDEA_ANALYSIS.MARKET.hhi,
               rating: market.hhiRating,
               description: market.hhiExplanation,
             },
             {
-              name: "Dissatisfaction Score",
+              name: IDEA_ANALYSIS.MARKET.satisfaction,
               rating: market.customerSatisfactionRating,
               description: market.customerSatisfactionExplanation,
             },
             {
-              name: "Industry Age Score",
+              name: IDEA_ANALYSIS.MARKET.industryAge,
               rating: market.ageIndexRating,
               description: market.ageIndexExplanation,
             },
             {
-              name: "Market Size Score",
+              name: IDEA_ANALYSIS.MARKET.marketSize,
               rating: market.tamRating,
               description: market.tamExplanation,
             },
             {
-              name: "Market Growth Score",
+              name: IDEA_ANALYSIS.MARKET.marketGrowth,
               rating: market.cagrRating,
               description: market.cagrExplanation,
             },
