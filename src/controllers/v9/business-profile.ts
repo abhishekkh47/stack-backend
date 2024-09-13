@@ -183,6 +183,7 @@ class BusinessProfileController extends BaseController {
     }
     let aiToolUsageObj = {};
     aiToolUsageObj[body.ideaGenerationType] = true;
+    aiToolUsageObj = { [`usedAITools.${body.ideaGenerationType}`]: true };
     await AIToolsUsageStatusTable.findOneAndUpdate(
       { userId: userExists._id },
       { $set: aiToolUsageObj },

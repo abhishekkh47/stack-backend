@@ -1,4 +1,4 @@
-import { AIToolsUsageStatusTable, UserTable } from "@app/model";
+import { AIToolsUsageStatusTable } from "@app/model";
 
 class UserService {
   /**
@@ -6,10 +6,13 @@ class UserService {
    * @param userIfExists
    */
   public async userAIToolUsageStatus(userIfExists: any) {
-    const response = await AIToolsUsageStatusTable.find({
-      userId: userIfExists._id,
-    });
-    return response[0];
+    const response = await AIToolsUsageStatusTable.find(
+      {
+        userId: userIfExists._id,
+      },
+      { usedAITools: 1 }
+    );
+    return response[0]?.usedAITools;
   }
 }
 

@@ -168,8 +168,7 @@ class BusinessProfileController extends BaseController {
       value: imageName,
       timestamp: Date.now(),
     };
-    let aiToolUsageObj = {};
-    aiToolUsageObj["companyLogo"] = true;
+    let aiToolUsageObj = { "usedAITools.companyLogo": true };
     await Promise.all([
       BusinessProfileTable.updateOne(
         { userId: userExists._id },

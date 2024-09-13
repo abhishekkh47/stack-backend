@@ -167,7 +167,6 @@ class MilestoneDBService {
 
   /**
    * @description get current goals
-   * @param userIfExists
    * @param businessProfile
    * @param milestones goals array of current milestone
    * @param isMilestoneHit if all goals of current milestone are hit or not
@@ -175,7 +174,6 @@ class MilestoneDBService {
    * @returns {*}
    */
   private formatMilestones(
-    userIfExists: any,
     businessProfile: any,
     milestones: any,
     isMilestoneHit: boolean = false,
@@ -213,6 +211,9 @@ class MilestoneDBService {
           if (hasGoalInProfile || hasGoalInCompletedActions) {
             milestone["isCompleted"] = true;
             response.tasks[1].data.push(milestone);
+          } else {
+            milestone["isCompleted"] = false;
+            response.tasks[0].data.push(milestone);
           }
         } else {
           milestone["isCompleted"] = false;
@@ -280,7 +281,7 @@ class MilestoneDBService {
         { $set: { userId: userIfExists._id, dailyGoalStatus: updatedGoals } },
         { upsert: true }
       );
-      return this.formatMilestones(userIfExists, businessProfile, updatedGoals);
+      return this.formatMilestones(businessProfile, updatedGoals);
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",

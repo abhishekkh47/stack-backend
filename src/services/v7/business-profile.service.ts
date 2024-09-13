@@ -30,7 +30,7 @@ import {
   AI_TOOLS_ANALYTICS,
   DEFAULT_BUSINESS_LOGO,
   mapHasGoalKey,
-  hasGoalKey
+  hasGoalKey,
 } from "@app/utility";
 import { AnalyticsService } from "@app/services/v4";
 import { MilestoneDBService } from "@app/services/v9";
@@ -91,8 +91,8 @@ class BusinessProfileService {
           );
           if (!(hasGoalInProfile && hasGoalInCompletedActions)) {
             obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
-            if(data.key == "companyName"){
-              obj["companyLogo"] = DEFAULT_BUSINESS_LOGO
+            if (data.key == "companyName") {
+              obj["completedActions.companyLogo"] = DEFAULT_BUSINESS_LOGO;
             }
           }
         }
@@ -617,6 +617,7 @@ class BusinessProfileService {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
+      aiToolUsageObj = { [`usedAITools.${key}`]: true };
       let [
         uniqueness_response,
         marketSize_response,
@@ -1008,6 +1009,7 @@ class BusinessProfileService {
     try {
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
+      aiToolUsageObj = { [`usedAITools.${key}`]: true };
       let [validatedIdea, _] = await Promise.all([
         this.generateTextSuggestions(systemInputDataset, prompt),
         AIToolsUsageStatusTable.findOneAndUpdate(
