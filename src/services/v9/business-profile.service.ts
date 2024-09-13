@@ -837,19 +837,19 @@ class BusinessProfileService {
       Object.entries(completedActions)?.forEach(([key, value]) => {
         const action = milestoneGoalsMap.get(key);
         const actionCopy = suggestionCopyMap.get(key);
-        if (action) {
+        if (action || key == "companyLogo") {
           const obj = {
             _id: key,
             key: key,
             value: value,
-            title: actionCopy.actionName,
-            iconImage: action.iconImage,
-            iconBackgroundColor: action.iconBackgroundColor,
+            title: actionCopy?.actionName,
+            iconImage: action?.iconImage || "sparkles.webp",
+            iconBackgroundColor: action?.iconBackgroundColor || "#FFFFFF29",
             inputTemplate: {
-              ...action.inputTemplate,
+              ...action?.inputTemplate,
               suggestionScreenInfo: actionCopy,
             },
-            template: action.template,
+            template: action?.template || 3,
             name: actionCopy.name,
           };
           businessProfile.businessPlans.push(obj);
