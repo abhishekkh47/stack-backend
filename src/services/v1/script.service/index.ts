@@ -917,10 +917,9 @@ class ScriptService {
   };
 
   /**
-   * @description This function is add simulations into db
-   * @param rows
-   * @param topic
-   * @param stages
+   * @description This function is to add stories/case studies into db
+   * @param storyNums
+   * @param rowData
    */
   public async convertStorySpreadSheetToJSON(storyNums: any, rowData: any) {
     const fallbackQuizTopic = new ObjectId("6594011ab1fc7ea1f458e8c8");
@@ -1260,7 +1259,7 @@ class ScriptService {
       if (!imagineRes) {
         throw new NetworkError("Something Went Wrong in imagineRes", 400);
       }
-      const myImage = await UpscaleImage(imagineRes, 2, IMPORT_SCRIPT);
+      const myImage = await UpscaleImage(imagineRes, 3, IMPORT_SCRIPT);
       if (!myImage) {
         throw new NetworkError("Something Went Wrong in myImage", 400);
       }
