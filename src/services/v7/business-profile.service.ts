@@ -89,7 +89,7 @@ class BusinessProfileService {
             businessProfile.completedActions,
             data.key
           );
-          if (!(hasGoalInProfile && hasGoalInCompletedActions)) {
+          if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
             obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
             if (data.key == "companyName") {
               obj["completedActions.companyLogo"] = DEFAULT_BUSINESS_LOGO;
