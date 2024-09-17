@@ -2208,7 +2208,11 @@ class ScriptService {
             actionType: row["Action Input Type"]?.trimEnd(),
             isGrid: row["isGrid"]?.trimEnd() == "TRUE" ? true : false,
             section: row["Section"]?.trimEnd() || null,
-            stepList: key == "ideaValidation" ? IDEA_VALIDATION_STEPS : null,
+            stepList:
+              key == "ideaValidation" || key == "description"
+                ? IDEA_VALIDATION_STEPS
+                : null,
+            saveButtonText: row["Save Button Text"] || "SAVE",
           });
         }
       }
@@ -2245,6 +2249,7 @@ class ScriptService {
                 isGrid: obj.isGrid,
                 section: obj.section,
                 stepList: obj.stepList,
+                saveButtonText: obj.saveButtonText,
               },
             },
             upsert: true,

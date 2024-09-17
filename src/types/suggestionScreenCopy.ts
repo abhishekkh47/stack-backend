@@ -10,6 +10,7 @@ export interface ISuggestionScreenCopy {
   isGrid: boolean;
   section: string;
   stepList: IStepList[];
+  saveButtonText: string;
 }
 
 interface IStepList {

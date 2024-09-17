@@ -895,7 +895,18 @@ class BusinessProfileService {
     response = response.map((obj) => {
       if (obj.key == "ideaValidation") {
         ideaValidationObj = obj;
-        return { ...obj, name: "Business Idea", key: "description" };
+        return {
+          ...obj,
+          name: "Business Idea",
+          key: "description",
+          inputTemplate: {
+            ...obj.inputTemplate,
+            suggestionScreenInfo: {
+              ...obj.inputTemplate?.suggestionScreenInfo,
+              key: "description",
+            },
+          },
+        };
       } else if (obj.key == "colorsAndAesthetic") {
         return {
           ...obj,

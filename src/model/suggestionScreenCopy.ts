@@ -65,6 +65,10 @@ const schema = new mongoose.Schema<ISuggestionScreenCopy>(
         },
       },
     ],
+    saveButtonText: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
   },
   {
     timestamps: true,
