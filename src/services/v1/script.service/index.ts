@@ -2213,6 +2213,8 @@ class ScriptService {
                 ? IDEA_VALIDATION_STEPS
                 : null,
             saveButtonText: row["Save Button Text"] || "SAVE",
+            iconImage: row["Icon"]?.trimEnd() || null,
+            iconBackgroundColor: row["IconBackgroundColor"]?.trimEnd() || null,
           });
         }
       }
@@ -2250,6 +2252,8 @@ class ScriptService {
                 section: obj.section,
                 stepList: obj.stepList,
                 saveButtonText: obj.saveButtonText,
+                iconImage: obj.iconImage,
+                iconBackgroundColor: obj.iconBackgroundColor,
               },
             },
             upsert: true,

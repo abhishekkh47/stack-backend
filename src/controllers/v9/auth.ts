@@ -197,7 +197,7 @@ class AuthController extends BaseController {
               userExists._id
             );
             const businessProfile =
-              await BusinessProfileServiceV7.getBusinessProfile(userExists._id);
+              await BusinessProfileServiceV9.getBusinessProfile(userExists._id);
             const userAIToolStatus = await UserServiceV9.userAIToolUsageStatus(
               userExists
             );

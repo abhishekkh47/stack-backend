@@ -11,6 +11,8 @@ export interface ISuggestionScreenCopy {
   section: string;
   stepList: IStepList[];
   saveButtonText: string;
+  iconImage: string;
+  iconBackgroundColor: string;
 }
 
 interface IStepList {

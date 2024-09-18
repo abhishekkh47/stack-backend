@@ -69,6 +69,16 @@ const schema = new mongoose.Schema<ISuggestionScreenCopy>(
       type: mongoose.Schema.Types.String,
       required: true,
     },
+    iconImage: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    iconBackgroundColor: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   {
     timestamps: true,

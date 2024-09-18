@@ -253,14 +253,12 @@ class BusinessProfileService {
 
         const groupKey = day == today ? "Today" : `In ${month} ${year}`;
         const currentKey =
-          entry.key == "description" || entry.key == "ideaValidation"
-            ? "ideaValidation"
-            : entry.key;
+          entry.key == "description" ? "ideaValidation" : entry.key;
         const matchedGoal = milestoneGoals.find(
           (goal) => goal.key == currentKey
         );
         const matchedGoalCopy = suggestionsScreenCopy.find(
-          (obj) => obj.key == currentKey
+          (obj) => obj.key == entry.key
         );
 
         if (entry.key) {
@@ -283,8 +281,8 @@ class BusinessProfileService {
             value: value,
             timestamp: entry.timestamp,
             day: day,
-            iconImage: matchedGoal?.iconImage,
-            iconBackgroundColor: matchedGoal?.iconBackgroundColor,
+            iconImage: matchedGoalCopy?.iconImage,
+            iconBackgroundColor: matchedGoalCopy?.iconBackgroundColor,
             name: matchedGoalCopy.name,
           });
         }
@@ -331,11 +329,17 @@ class BusinessProfileService {
   /**
    * @description this will generate business idea using OpenAI GPT
    * @param prompt
-   * @param businessType
+   * @param isRetry
+   * @param userExists
    * @returns {*}
    */
-  public async generateBusinessIdea(prompt: string, businessType: number = 2) {
+  public async generateBusinessIdea(
+    prompt: string,
+    isRetry: boolean,
+    userExists: any
+  ) {
     try {
+      const businessType = 2; // Only tech product
       const systemInputDataset = await AIToolDataSetTable.find({
         key: {
           $in: [
@@ -463,6 +467,9 @@ class BusinessProfileService {
           return data;
         }
       );
+      if (ideas && !userExists.isPremiumUser && isRetry) {
+        await this.updateAIToolsRetryStatus(userExists);
+      }
       return { ideas };
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
@@ -472,9 +479,15 @@ class BusinessProfileService {
   /**
    * @description this will validate user provided business idea using OpenAI GPT
    * @param prompt
+   * @param isRetry
+   * @param userExists
    * @returns {*}
    */
-  public async ideaValidator(prompt: string) {
+  public async ideaValidator(
+    prompt: string,
+    isRetry: boolean,
+    userExists: any
+  ) {
     try {
       const systemInputDataset = await AIToolDataSetTable.find({
         key: {
@@ -534,6 +547,9 @@ class BusinessProfileService {
       );
       validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
 
+      if (validatedIdea && !userExists.isPremiumUser && isRetry) {
+        await this.updateAIToolsRetryStatus(userExists);
+      }
       return {
         ideas: [validatedIdea],
       };
