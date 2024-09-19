@@ -18,7 +18,6 @@ class MilestoneDBService {
       const [milestones, milestoneResults] = await Promise.all([
         MilestoneTable.find(
           {
-            order: { $lte: 5 },
             locked: false,
           },
           {
