@@ -53,6 +53,9 @@ import {
   PRODUCT_TYPE,
   IDEA_VALIDATION_STEPS,
   ACTIONS_TO_MOVE,
+  hasGoalKey,
+  mapHasGoalKey,
+  DEFAULT_BUSINESS_LOGO,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2493,6 +2496,48 @@ class ScriptService {
 
       if (bulkOperations.length > 0) {
         await AIToolsUsageStatusTable.bulkWrite(bulkOperations);
+      }
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function assign default logo to the users who have already completed the company name action but do not have any logo
+   * @returns {*}
+   */
+  public async assignDefaultLogo() {
+    try {
+      const profilesToUpdate = await BusinessProfileTable.find({}).lean();
+      const logo = "companyLogo";
+      const name = "companyName";
+      const bulkOperations = profilesToUpdate
+        .map((profile) => {
+          const hasNameInCompletedActions = mapHasGoalKey(
+            profile.completedActions,
+            name
+          );
+          const hasLogoInCompletedActions = mapHasGoalKey(
+            profile.completedActions,
+            logo
+          );
+          if (hasNameInCompletedActions && !hasLogoInCompletedActions) {
+            return {
+              updateOne: {
+                filter: { userId: profile.userId },
+                update: {
+                  $set: {
+                    "completedActions.companyLogo": DEFAULT_BUSINESS_LOGO,
+                  },
+                },
+              },
+            };
+          }
+        })
+        .filter(Boolean);
+      if (bulkOperations.length > 0) {
+        await BusinessProfileTable.bulkWrite(bulkOperations);
       }
       return;
     } catch (error) {

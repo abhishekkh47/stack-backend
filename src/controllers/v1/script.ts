@@ -2402,6 +2402,21 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+  
+  /**
+   * @description This method is to assign default logo to existing users who have not yet created a logo
+   * @param ctx
+   */
+  @Route({ path: "/assign-default-logo", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async assignDefaultLogo(ctx: any) {
+    try {
+      await ScriptService.assignDefaultLogo();
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();
