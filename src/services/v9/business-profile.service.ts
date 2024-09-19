@@ -24,7 +24,9 @@ import {
   COLORS_AND_AESTHETIC,
   SUGGESTIONS_NOT_FOUND_ERROR,
   mapHasGoalKey,
-  hasGoalKey,
+  IDEA_GENERATOR_INFO,
+  IDEA_ANALYSIS,
+  replacePlaceholders,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -252,14 +254,12 @@ class BusinessProfileService {
 
         const groupKey = day == today ? "Today" : `In ${month} ${year}`;
         const currentKey =
-          entry.key == "description" || entry.key == "ideaValidation"
-            ? "ideaValidation"
-            : entry.key;
+          entry.key == "description" ? "ideaValidation" : entry.key;
         const matchedGoal = milestoneGoals.find(
           (goal) => goal.key == currentKey
         );
         const matchedGoalCopy = suggestionsScreenCopy.find(
-          (obj) => obj.key == currentKey
+          (obj) => obj.key == entry.key
         );
 
         if (entry.key) {
@@ -282,8 +282,8 @@ class BusinessProfileService {
             value: value,
             timestamp: entry.timestamp,
             day: day,
-            iconImage: matchedGoal?.iconImage,
-            iconBackgroundColor: matchedGoal?.iconBackgroundColor,
+            iconImage: matchedGoalCopy?.iconImage,
+            iconBackgroundColor: matchedGoalCopy?.iconBackgroundColor,
             name: matchedGoalCopy.name,
           });
         }
@@ -330,63 +330,92 @@ class BusinessProfileService {
   /**
    * @description this will generate business idea using OpenAI GPT
    * @param prompt
-   * @param businessType
+   * @param isRetry
+   * @param userExists
    * @returns {*}
    */
-  public async generateBusinessIdea(prompt: string, businessType: number) {
+  public async generateBusinessIdea(
+    prompt: string,
+    isRetry: boolean,
+    userExists: any
+  ) {
     try {
-      const systemInputDataset = (
-        await AIToolDataSetTable.findOne({
-          type: businessType,
-        }).lean()
-      ).data;
-      const marketSelectionData = await this.getFormattedSuggestions(
-        systemInputDataset["PROBLEM_MARKET_SELECTOR"],
-        prompt
-      );
-      const updatedPrompt = marketSelectionData.market;
-      let [productizationData, distributionData, dominateNicheData] =
-        await Promise.all([
-          this.getFormattedSuggestions(
-            systemInputDataset["PRODUCTIZATION"],
-            updatedPrompt
-          ),
-          this.getFormattedSuggestions(
-            systemInputDataset["DISTRIBUTION"],
-            updatedPrompt
-          ),
-          this.getFormattedSuggestions(
-            systemInputDataset["DOMINATE_NICHE"],
-            updatedPrompt
-          ),
-        ]);
+      const businessType = 2; // Only tech product
+      const systemInputDataset = await AIToolDataSetTable.find({
+        key: {
+          $in: [
+            IDEA_GENERATOR_INFO.SOFTWARE_TECHNOLOGY,
+            IDEA_GENERATOR_INFO.IDEA_GENERATOR,
+          ],
+        },
+      }).lean();
+      const ideaGenerator = systemInputDataset.find(
+        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_GENERATOR
+      )?.data;
+      const softwareTechnology = systemInputDataset.find(
+        (obj) => obj.key == IDEA_GENERATOR_INFO.SOFTWARE_TECHNOLOGY
+      )?.data;
 
+      const types = ["type1", "type2", "type3"];
+      const ideaPromises = types.map((type) =>
+        this.getFormattedSuggestions(ideaGenerator[type], prompt)
+      );
+      const ideaResults = await Promise.all(ideaPromises);
+
+      const problemPromises = ideaResults.map((idea) =>
+        this.getFormattedSuggestions(
+          ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
+          idea.businessDescription
+        )
+      );
+
+      const ratingPromises = ideaResults.map((idea) =>
+        this.getFormattedSuggestions(
+          softwareTechnology[IDEA_GENERATOR_INFO.PRODUCT_RATING],
+          idea.businessDescription
+        )
+      );
+
+      const marketPromises = ideaResults.map((idea) =>
+        this.getFormattedSuggestions(
+          softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_MARKET_SELECTOR],
+          idea.businessDescription
+        )
+      );
+
+      // Fetch problem, rating, and market suggestions in parallel
+      const [problemResults, ratingResults, marketResults] = await Promise.all([
+        Promise.all(problemPromises),
+        Promise.all(ratingPromises),
+        Promise.all(marketPromises),
+      ]);
+
+      const marketSegments = marketResults.map((market) =>
+        market.market.replace(/\.$/, "")
+      );
       const [
-        problemAnalysisData,
         marketAnalysisData,
-        productizationRatingData,
-        distributionRatingData,
-        dominateNicheRatingData,
+        productizationData,
+        distributionData,
+        dominateNicheData,
       ] = await Promise.all([
-        ProblemScoreTable.find({
-          problem: marketSelectionData.problem.replace(/\.$/, ""),
-          type: businessType,
-        }).lean(),
         MarketScoreTable.find({
-          marketSegment: marketSelectionData.market.replace(/\.$/, ""),
+          marketSegment: {
+            $in: marketSegments,
+          },
           type: businessType,
         }).lean(),
         this.getFormattedSuggestions(
-          systemInputDataset["PRODUCT_RATING"],
-          productizationData.description
+          softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.name],
+          marketResults[0].market
         ),
         this.getFormattedSuggestions(
-          systemInputDataset["PRODUCT_RATING"],
-          distributionData.description
+          softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.name],
+          marketResults[1].market
         ),
         this.getFormattedSuggestions(
-          systemInputDataset["PRODUCT_RATING"],
-          dominateNicheData.description
+          softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.name],
+          marketResults[2].market
         ),
       ]);
 
@@ -394,51 +423,54 @@ class BusinessProfileService {
       const ideasData = [
         {
           data: productizationData,
-          label: systemInputDataset["PRODUCTIZATION_LABEL"],
-          imageKey: "innovative",
-          ratingData: productizationRatingData,
+          problem: problemResults[0],
+          label: softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.label],
+          imageKey: IDEA_GENERATOR_INFO.PRODUCTIZATION.image,
+          ratingData: ratingResults[0],
+          marketData: marketResults[0],
         },
         {
           data: distributionData,
-          label: systemInputDataset["DISTRIBUTION_LABEL"],
-          imageKey: "demand",
-          ratingData: distributionRatingData,
+          problem: problemResults[1],
+          label: softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.label],
+          imageKey: IDEA_GENERATOR_INFO.DISTRIBUTION.image,
+          ratingData: ratingResults[1],
+          marketData: marketResults[1],
         },
         {
           data: dominateNicheData,
-          label: systemInputDataset["DOMINATE_LABEL"],
-          imageKey: "trending",
-          ratingData: dominateNicheRatingData,
+          problem: problemResults[2],
+          label: softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.label],
+          imageKey: IDEA_GENERATOR_INFO.DOMINATE_NICHE.image,
+          ratingData: ratingResults[2],
+          marketData: marketResults[2],
         },
       ];
-      const BUSINESS_IDEA_IMAGES_BY_TYPE =
-        businessType === PRODUCT_TYPE.Physical
-          ? BUSINESS_IDEA_IMAGES.PHYSICAL_PRODUCT
-          : BUSINESS_IDEA_IMAGES.TECH_PRODUCT;
-      const ideas = ideasData.map(({ data, label, imageKey, ratingData }) => {
-        data.ideaLabel = label;
-        data.image = BUSINESS_IDEA_IMAGES_BY_TYPE[imageKey];
-        data._id = `idea${++order}`;
+      const BUSINESS_IDEA_IMAGES_BY_TYPE = BUSINESS_IDEA_IMAGES.TECH_PRODUCT;
+      const ideas = ideasData.map(
+        ({ data, problem, label, imageKey, ratingData, marketData }) => {
+          data.ideaLabel = label;
+          data.image = BUSINESS_IDEA_IMAGES_BY_TYPE[imageKey];
+          data._id = `idea${++order}`;
 
-        const problem = problemAnalysisData.find(
-          (obj) =>
-            obj.problem === marketSelectionData.problem.replace(/\.$/, "")
-        );
-        const market = marketAnalysisData.find(
-          (obj) =>
-            obj.marketSegment === marketSelectionData.market.replace(/\.$/, "")
-        );
+          const market = marketAnalysisData.find(
+            (obj) => obj.marketSegment === marketData.market.replace(/\.$/, "")
+          );
 
-        data.rating = Math.floor(
-          (problem.overallRating +
-            market.overallRating +
-            ratingData["Overall Score"]) /
-            3
-        );
-        data.ideaAnalysis = this.ideaAnalysis(problem, ratingData, market);
+          data.rating = Math.floor(
+            (Number(problem.average) +
+              market.overallRating +
+              ratingData["Overall Score"]) /
+              3
+          );
+          data.ideaAnalysis = this.ideaAnalysis(problem, ratingData, market);
 
-        return data;
-      });
+          return data;
+        }
+      );
+      if (ideas && !userExists.isPremiumUser && isRetry) {
+        await this.updateAIToolsRetryStatus(userExists);
+      }
       return { ideas };
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
@@ -448,52 +480,54 @@ class BusinessProfileService {
   /**
    * @description this will validate user provided business idea using OpenAI GPT
    * @param prompt
+   * @param isRetry
+   * @param userExists
    * @returns {*}
    */
-  public async ideaValidator(prompt: string) {
+  public async ideaValidator(
+    prompt: string,
+    isRetry: boolean,
+    userExists: any
+  ) {
     try {
-      const ideaValidationDataset = (
-        await AIToolDataSetTable.findOne({
-          type: 3,
-        }).lean()
-      ).data;
-      const businessIdeaType = await this.getFormattedSuggestions(
-        ideaValidationDataset["BUSINESS_TYPE_SELECTOR"],
-        prompt
-      );
-      const businessType =
-        JSON.stringify(businessIdeaType).indexOf("ecommerce") >= 0
-          ? PRODUCT_TYPE.Physical
-          : PRODUCT_TYPE.Software;
-      const systemInputDataset =
-        businessType === PRODUCT_TYPE.Physical
-          ? ideaValidationDataset["PHYSICAL_PRODUCT"]
-          : ideaValidationDataset["TECH_PRODUCT"];
+      const systemInputDataset = await AIToolDataSetTable.find({
+        key: {
+          $in: [
+            IDEA_GENERATOR_INFO.IDEA_VALIDATION,
+            IDEA_GENERATOR_INFO.IDEA_GENERATOR,
+          ],
+        },
+      }).lean();
+
+      const ideaGenerator = systemInputDataset.find(
+        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_GENERATOR
+      )?.data;
+      const ideaValidationDataset = systemInputDataset.find(
+        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_VALIDATION
+      )?.data;
+
       let validatedIdea = await this.getFormattedSuggestions(
-        systemInputDataset,
+        ideaValidationDataset[IDEA_GENERATOR_INFO.TECH_PRODUCT],
         prompt
       );
 
       const updatedPrompt = `${validatedIdea.problem}\n ${validatedIdea.market}`;
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
-          ProblemScoreTable.find({
-            problem: validatedIdea.problem,
-            type: businessType,
-          }),
+          this.getFormattedSuggestions(
+            ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
+            validatedIdea.description
+          ),
           MarketScoreTable.find({
             marketSegment: validatedIdea.market,
-            type: businessType,
+            type: PRODUCT_TYPE.Software,
           }),
           this.getFormattedSuggestions(
-            ideaValidationDataset["PRODUCT_RATING"],
+            ideaValidationDataset[IDEA_GENERATOR_INFO.PRODUCT_RATING],
             updatedPrompt
           ),
         ]);
 
-      const problem = problemAnalysisData.find(
-        (obj) => obj.problem == validatedIdea.problem
-      );
       const market = marketAnalysisData.find(
         (obj) => obj.marketSegment == validatedIdea.market
       );
@@ -502,31 +536,24 @@ class BusinessProfileService {
       validatedIdea["ideaLabel"] =
         ideaValidationDataset["IDEA_VALIDATION_LABEL"];
       validatedIdea["rating"] = Math.floor(
-        (problem.overallRating +
+        (Number(problemAnalysisData.average) +
           market.overallRating +
           productAnalysisData["Overall Score"]) /
           3
       );
       validatedIdea["ideaAnalysis"] = this.ideaAnalysis(
-        problem,
+        problemAnalysisData,
         productAnalysisData,
         market
       );
-      if (businessType == PRODUCT_TYPE.Physical) {
-        validatedIdea["image"] = BUSINESS_IDEA_IMAGES.PHYSICAL_PRODUCT.user;
-      } else {
-        validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
+      validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
+
+      if (validatedIdea && !userExists.isPremiumUser && isRetry) {
+        await this.updateAIToolsRetryStatus(userExists);
       }
-
-      let suggestions = (await this.generateBusinessIdea(prompt, businessType))
-        .ideas;
-
-      let response = {
-        selfIdea: validatedIdea,
-        ideas: [...suggestions],
+      return {
+        ideas: [validatedIdea],
       };
-
-      return response;
     } catch (error) {
       throw new NetworkError(INVALID_DESCRIPTION_ERROR, 400);
     }
@@ -617,47 +644,62 @@ class BusinessProfileService {
    * @returns {*}
    */
   private ideaAnalysis(problem: any, product: any, market: any) {
+    const problemPlaceHolders = {
+      problemTitle: problem.title,
+      problemProducts: problem.products,
+      problemPrice: problem.price,
+      problemCustomer: problem.customer,
+    };
     try {
       return [
         {
-          _id: "problem",
-          name: "Problem",
-          rating: problem.overallRating,
+          _id: IDEA_ANALYSIS.PROBLEM._id,
+          name: IDEA_ANALYSIS.PROBLEM.name,
+          rating: problem.average,
           analysis: [
             {
-              name: "Trending Topic",
-              rating: problem.trendingScore,
-              description: problem.trendingScoreExplanation,
+              name: IDEA_ANALYSIS.PROBLEM.trending.name,
+              rating: problem.problemScore,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PROBLEM.trending.description,
+                problemPlaceHolders
+              ),
             },
             {
-              name: "Willingness to Pay",
-              rating: problem.demandScore,
-              description: problem.demandScoreExplanation,
+              name: IDEA_ANALYSIS.PROBLEM.wallet.name,
+              rating: problem.priceRating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PROBLEM.trending.description,
+                problemPlaceHolders
+              ),
             },
             {
-              name: "Paying Customers",
-              rating: problem.pricePointIndex,
-              description: problem.pricePointExplanation,
+              name: IDEA_ANALYSIS.PROBLEM.audience.name,
+              rating: problem.customerRating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PROBLEM.trending.description,
+                problemPlaceHolders
+              ),
             },
           ],
         },
         {
-          _id: "product",
-          name: "Product",
+          _id: IDEA_ANALYSIS.PRODUCT._id,
+          name: IDEA_ANALYSIS.PRODUCT.name,
           rating: Math.floor(Number(product["Overall Score"])),
           analysis: [
             {
-              name: "Niche Audience",
+              name: IDEA_ANALYSIS.PRODUCT.niche,
               rating: product["Audience Focus Score"],
               description: product.audienceFocusScoreDescription,
             },
             {
-              name: "Core Features",
+              name: IDEA_ANALYSIS.PRODUCT.feature,
               rating: product["Sophistication Score"],
               description: product.sophisticationDescription,
             },
             {
-              name: "Differentiation",
+              name: IDEA_ANALYSIS.PRODUCT.differentiator,
               rating: product["Unique Score"],
               description: product.uniqueScoreDescription,
             },
@@ -665,32 +707,32 @@ class BusinessProfileService {
         },
 
         {
-          _id: "market",
-          name: "Market",
+          _id: IDEA_ANALYSIS.MARKET._id,
+          name: IDEA_ANALYSIS.MARKET.name,
           rating: market.overallRating,
           analysis: [
             {
-              name: "HHI",
+              name: IDEA_ANALYSIS.MARKET.hhi,
               rating: market.hhiRating,
               description: market.hhiExplanation,
             },
             {
-              name: "Satisfaction",
+              name: IDEA_ANALYSIS.MARKET.satisfaction,
               rating: market.customerSatisfactionRating,
               description: market.customerSatisfactionExplanation,
             },
             {
-              name: "Age Index",
+              name: IDEA_ANALYSIS.MARKET.industryAge,
               rating: market.ageIndexRating,
               description: market.ageIndexExplanation,
             },
             {
-              name: "TAM",
+              name: IDEA_ANALYSIS.MARKET.marketSize,
               rating: market.tamRating,
               description: market.tamExplanation,
             },
             {
-              name: "CAGR",
+              name: IDEA_ANALYSIS.MARKET.marketGrowth,
               rating: market.cagrRating,
               description: market.cagrExplanation,
             },
@@ -873,7 +915,18 @@ class BusinessProfileService {
     response = response.map((obj) => {
       if (obj.key == "ideaValidation") {
         ideaValidationObj = obj;
-        return { ...obj, name: "Business Idea", key: "description" };
+        return {
+          ...obj,
+          name: "Business Idea",
+          key: "description",
+          inputTemplate: {
+            ...obj.inputTemplate,
+            suggestionScreenInfo: {
+              ...obj.inputTemplate?.suggestionScreenInfo,
+              key: "description",
+            },
+          },
+        };
       } else if (obj.key == "colorsAndAesthetic") {
         return {
           ...obj,

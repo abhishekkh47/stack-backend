@@ -2212,7 +2212,13 @@ class ScriptService {
             actionType: row["Action Input Type"]?.trimEnd(),
             isGrid: row["isGrid"]?.trimEnd() == "TRUE" ? true : false,
             section: row["Section"]?.trimEnd() || null,
-            stepList: key == "ideaValidation" ? IDEA_VALIDATION_STEPS : null,
+            stepList:
+              key == "ideaValidation" || key == "description"
+                ? IDEA_VALIDATION_STEPS
+                : null,
+            saveButtonText: row["Save Button Text"] || "SAVE",
+            iconImage: row["Icon"]?.trimEnd() || null,
+            iconBackgroundColor: row["IconBackgroundColor"]?.trimEnd() || null,
           });
         }
       }
@@ -2249,6 +2255,9 @@ class ScriptService {
                 isGrid: obj.isGrid,
                 section: obj.section,
                 stepList: obj.stepList,
+                saveButtonText: obj.saveButtonText,
+                iconImage: obj.iconImage,
+                iconBackgroundColor: obj.iconBackgroundColor,
               },
             },
             upsert: true,
