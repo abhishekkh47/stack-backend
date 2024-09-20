@@ -56,6 +56,7 @@ import {
   hasGoalKey,
   mapHasGoalKey,
   DEFAULT_BUSINESS_LOGO,
+  MILESTONE_LEARNING_FUEL,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2595,16 +2596,13 @@ class ScriptService {
       reward = 0;
     if (type == "simulation") {
       quizType = 2;
-      reward =
-        CHECKLIST_QUESTION_LENGTH.SIMULATION *
-        CORRECT_ANSWER_FUEL_POINTS.SIMULATION;
+      reward = MILESTONE_LEARNING_FUEL.SIMULATION;
     } else if (type == "story") {
       quizType = 3;
-      reward =
-        CHECKLIST_QUESTION_LENGTH.STORY * CORRECT_ANSWER_FUEL_POINTS.STORY;
+      reward = MILESTONE_LEARNING_FUEL.STORY;
     } else {
       quizType = 1;
-      reward = CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
+      reward = MILESTONE_LEARNING_FUEL.QUIZ;
     }
     const quizInfo = await QuizTable.findOne({
       quizNum,
