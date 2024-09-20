@@ -966,3 +966,8 @@ export const ACTIONS_TO_MOVE = [
   "firstCompanyUpdate",
   "firstCompanyUpdateGoals",
 ];
+
+export const LEARNING_CONTENT = {
+  icon: "goldCoin.webp",
+  iconBGColor: "#B0A34E38",
+};

@@ -718,7 +718,7 @@ class ChecklistDBService {
    * @param nums number of challenges to played on current day
    * @returns {*}
    */
-  private async getNextChallenges(
+  public async getNextChallenges(
     userIfExists: any,
     currentCategory: any,
     nums: number

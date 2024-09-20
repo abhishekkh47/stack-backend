@@ -55,6 +55,16 @@ const schema = new mongoose.Schema<IQuizLevelSchema>(
         },
       },
     ],
+    milestoneId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "milestones",
+      default: null,
+    },
+    day: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
