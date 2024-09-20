@@ -6,8 +6,16 @@ import {
   MilestoneGoalsTable,
   DailyChallengeTable,
   SuggestionScreenCopyTable,
+  QuizLevelTable,
+  QuizTable,
+  QuizResult,
 } from "@app/model";
-import { getDaysNum, mapHasGoalKey, hasGoalKey } from "@app/utility";
+import {
+  getDaysNum,
+  mapHasGoalKey,
+  hasGoalKey,
+  LEARNING_CONTENT,
+} from "@app/utility";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -109,35 +117,33 @@ class MilestoneDBService {
             .lean(),
           DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
         ]);
-      const existingResponse = await this.handleAvailableDailyChallenges(
-        userIfExists,
-        businessProfile,
-        availableDailyChallenges
-      );
-      if (existingResponse) {
-        return existingResponse;
-      }
-      const existingResponseWithPendingActions =
-        await this.handleAvailableDailyChallenges(
-          userIfExists,
-          businessProfile,
-          availableDailyChallenges,
-          true
-        );
-
+      const [existingResponse, existingResponseWithPendingActions] =
+        await Promise.all([
+          this.handleAvailableDailyChallenges(
+            userIfExists,
+            businessProfile,
+            availableDailyChallenges
+          ),
+          this.handleAvailableDailyChallenges(
+            userIfExists,
+            businessProfile,
+            availableDailyChallenges,
+            true
+          ),
+        ]);
       const tasks = existingResponseWithPendingActions?.tasks;
-      if (tasks?.length == 2 && tasks[0]?.data?.length > 0) {
+      if (existingResponse) {
+        response = existingResponse;
+      } else if (tasks?.length == 2 && tasks[0]?.data?.length > 0) {
         await DailyChallengeTable.findOneAndUpdate(
           {
             userId: userIfExists._id,
           },
           { $set: {} }
         );
-        return existingResponseWithPendingActions;
-      }
-
-      // when user signup/login after updating app on day-1, return day-1 goals of default Milestone
-      if (
+        response = existingResponseWithPendingActions;
+      } else if (
+        // when user signup/login after updating app on day-1, return day-1 goals of default Milestone
         !lastMilestoneCompleted ||
         !businessProfile?.currentMilestone?.milestoneId
       ) {
@@ -157,6 +163,22 @@ class MilestoneDBService {
         !response?.tasks[1]?.data?.length
       ) {
         return { isMilestoneHit: true };
+      }
+      if (response?.tasks[0]?.data?.length || !businessProfile?.description) {
+        const learningContent = await this.getLearningContent(
+          response.tasks[0].data[0]
+        );
+        await Promise.all(
+          learningContent?.map(async (obj) => {
+            const quizResult = await QuizResult.findOne({
+              userId: userIfExists._id,
+              quizId: obj?.quizId,
+            });
+            if (!quizResult) {
+              response.tasks[0].data.push(obj);
+            }
+          })
+        );
       }
       return response;
     } catch (error) {
@@ -547,6 +569,77 @@ class MilestoneDBService {
         return response;
       }
       return null;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will fetch the required learning content
+   * @param actionObj Ai action details of current active milestone
+   * @returns {*}
+   */
+  private async getLearningContent(actionObj: any) {
+    let learningActions = null;
+    if (actionObj?.milestoneId) {
+      learningActions = await QuizLevelTable.findOne({
+        milestoneId: actionObj?.milestoneId,
+        day: actionObj?.day,
+      }).lean();
+    }
+    if (!learningActions) return null;
+    const challengeDetails = await this.getQuizDetails(
+      learningActions?.actions
+    );
+    return challengeDetails;
+  }
+
+  /**
+   * @description get formatted quiz content
+   * @param actions array of learning content
+   * @returns {*}
+   */
+  private async getQuizDetails(actions: any) {
+    try {
+      const updatedActions = await Promise.all(
+        actions.map(async (action) => {
+          const quizDetails = await QuizTable.findOne({ _id: action?.quizId });
+          const time =
+            action.type == 1
+              ? "Earn 50 tokens - 1 min"
+              : "Earn 100 tokens - 3 min";
+          if (quizDetails) {
+            return {
+              ...action,
+              title: quizDetails?.quizName,
+              iconBackgroundColor: LEARNING_CONTENT.iconBGColor,
+              iconImage: LEARNING_CONTENT.icon,
+              characterName: quizDetails?.characterName,
+              characterImage: quizDetails?.characterImage,
+              time,
+              key: "challenges",
+            };
+          }
+        })
+      );
+      return updatedActions;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get AI action details and related screen copy
+   * @param key identifier of action
+   * @returns {*}
+   */
+  public async getActionDetails(key: string) {
+    try {
+      const [goalDetails, inputTemplate] = await Promise.all([
+        MilestoneGoalsTable.findOne({ key }).lean(),
+        this.suggestionScreenInfo([{ key }]),
+      ]);
+      return { ...goalDetails, inputTemplate };
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
