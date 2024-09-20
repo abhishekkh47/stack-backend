@@ -364,11 +364,8 @@ class MilestoneDBService {
         );
       }
 
-      // const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
-      const updatedGoals = this.setLockedGoals(
-        currentMilestoneGoals,
-        businessProfile
-      );
+      const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
+      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
       await DailyChallengeTable.updateOne(
         { userId: userIfExists._id },
         {
