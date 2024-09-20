@@ -164,7 +164,7 @@ class MilestoneDBService {
       ) {
         return { isMilestoneHit: true };
       }
-      if (response?.tasks?.length > 1) {
+      if (response?.tasks?.length > 1 || !businessProfile?.description) {
         const learningContent = await this.getLearningContent(
           response.tasks[0].data[0]
         );
@@ -597,10 +597,10 @@ class MilestoneDBService {
           return {
             ...action,
             title: quizDetails?.quizName,
-            quizDetails: quizDetails,
             iconBackgroundColor: LEARNING_CONTENT.iconBGColor,
             iconImage: LEARNING_CONTENT.icon,
             time,
+            key: "challenges",
           };
         })
       );
