@@ -127,18 +127,24 @@ class BusinessProfileController extends BaseController {
     path: "/generate-business-idea",
     method: HttpMethod.POST,
   })
+  @Auth()
   public async getBusinessIdea(ctx: any) {
-    const { body } = ctx.request;
-
-    if (!body.idea && !body.businessType) {
+    const { user, body } = ctx.request;
+    const { idea, isRetry } = body;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!idea) {
       return this.BadRequest(
         ctx,
         "Please provide your Business Idea and Business Type"
       );
     }
     const businessIdea = await BusinessProfileService.generateBusinessIdea(
-      body.idea,
-      Number(body.businessType)
+      idea,
+      isRetry,
+      userExists
     );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
@@ -152,16 +158,26 @@ class BusinessProfileController extends BaseController {
     path: "/maximize-business-idea",
     method: HttpMethod.POST,
   })
+  @Auth()
   public async maximizeBusinessIdea(ctx: any) {
-    const { body } = ctx.request;
-    if (!body.idea && !body.businessType) {
+    const { user, body } = ctx.request;
+    const { idea, isRetry } = body;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    if (!idea) {
       return this.BadRequest(
         ctx,
         "Please provide your Business Idea and Business Type"
       );
     }
-    const prompt = `problem: ${body.idea}.**`;
-    const businessIdea = await BusinessProfileService.ideaValidator(prompt);
+    const prompt = `problem: ${idea}.**`;
+    const businessIdea = await BusinessProfileService.ideaValidator(
+      prompt,
+      isRetry,
+      userExists
+    );
     return this.Ok(ctx, { message: "Success", data: businessIdea });
   }
 
