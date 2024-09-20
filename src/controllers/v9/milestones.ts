@@ -97,6 +97,24 @@ class MilestoneController extends BaseController {
     );
     return this.Ok(ctx, { data: { ...goals, userId: user._id } });
   }
+
+  /**
+   * @description This is to select and update the current milestones
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/get-action-details/:key", method: HttpMethod.GET })
+  @Auth()
+  public async actionDetails(ctx: any) {
+    const { user, params } = ctx.request;
+    const key = params.key;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const goals = await MilestoneDBService.getActionDetails(key);
+    return this.Ok(ctx, { data: goals });
+  }
 }
 
 export default new MilestoneController();

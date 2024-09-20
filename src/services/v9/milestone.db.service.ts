@@ -8,6 +8,7 @@ import {
   SuggestionScreenCopyTable,
   QuizLevelTable,
   QuizTable,
+  QuizResult,
 } from "@app/model";
 import {
   getDaysNum,
@@ -15,7 +16,6 @@ import {
   hasGoalKey,
   LEARNING_CONTENT,
 } from "@app/utility";
-import { ChecklistDBService } from "@app/services/v9";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -164,13 +164,21 @@ class MilestoneDBService {
       ) {
         return { isMilestoneHit: true };
       }
-      if (response?.tasks?.length > 1 || !businessProfile?.description) {
+      if (response?.tasks[0]?.data?.length || !businessProfile?.description) {
         const learningContent = await this.getLearningContent(
           response.tasks[0].data[0]
         );
-        learningContent?.map((obj) => {
-          response.tasks[0].data.push(obj);
-        });
+        await Promise.all(
+          learningContent?.map(async (obj) => {
+            const quizResult = await QuizResult.findOne({
+              userId: userIfExists._id,
+              quizId: obj?.quizId,
+            });
+            if (!quizResult) {
+              response.tasks[0].data.push(obj);
+            }
+          })
+        );
       }
       return response;
     } catch (error) {
@@ -356,8 +364,11 @@ class MilestoneDBService {
         );
       }
 
-      const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
-      const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
+      // const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
+      const updatedGoals = this.setLockedGoals(
+        currentMilestoneGoals,
+        businessProfile
+      );
       await DailyChallengeTable.updateOne(
         { userId: userIfExists._id },
         {
@@ -572,11 +583,17 @@ class MilestoneDBService {
    * @returns {*}
    */
   private async getLearningContent(actionObj: any) {
-    const learningActions = await QuizLevelTable.findOne({
-      milestoneId: actionObj.milestoneId,
-    }).lean();
+    let learningActions = null;
+    if (actionObj?.milestoneId) {
+      learningActions = await QuizLevelTable.findOne({
+        milestoneId: actionObj?.milestoneId,
+        day: actionObj?.day,
+      }).lean();
+    }
     if (!learningActions) return null;
-    const challengeDetails = await this.getQuizDetails(learningActions.actions);
+    const challengeDetails = await this.getQuizDetails(
+      learningActions?.actions
+    );
     return challengeDetails;
   }
 
@@ -594,17 +611,38 @@ class MilestoneDBService {
             action.type == 1
               ? "Earn 50 tokens - 1 min"
               : "Earn 100 tokens - 3 min";
-          return {
-            ...action,
-            title: quizDetails?.quizName,
-            iconBackgroundColor: LEARNING_CONTENT.iconBGColor,
-            iconImage: LEARNING_CONTENT.icon,
-            time,
-            key: "challenges",
-          };
+          if (quizDetails) {
+            return {
+              ...action,
+              title: quizDetails?.quizName,
+              iconBackgroundColor: LEARNING_CONTENT.iconBGColor,
+              iconImage: LEARNING_CONTENT.icon,
+              characterName: quizDetails?.characterName,
+              characterImage: quizDetails?.characterImage,
+              time,
+              key: "challenges",
+            };
+          }
         })
       );
       return updatedActions;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get AI action details and related screen copy
+   * @param key identifier of action
+   * @returns {*}
+   */
+  public async getActionDetails(key: string) {
+    try {
+      const [goalDetails, inputTemplate] = await Promise.all([
+        MilestoneGoalsTable.findOne({ key }).lean(),
+        this.suggestionScreenInfo([{ key }]),
+      ]);
+      return { ...goalDetails, inputTemplate };
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
