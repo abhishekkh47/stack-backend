@@ -2295,10 +2295,10 @@ class ScriptController extends BaseController {
       if (rows.length === 0) {
         return this.BadRequest(ctx, "No Milestones to import");
       }
-      const milestoneData =
+      const { result, learningContent } =
         await ScriptService.convertMilestoneDatasetSheetToJSON(rows);
-      await ScriptService.addMilestoneDataToDB(milestoneData);
-      return this.Ok(ctx, { message: "Success", data: milestoneData });
+      await ScriptService.addMilestoneDataToDB(result, learningContent);
+      return this.Ok(ctx, { message: "Success", data: result });
     } catch (error) {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
@@ -2402,7 +2402,7 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
-  
+
   /**
    * @description This method is to assign default logo to existing users who have not yet created a logo
    * @param ctx

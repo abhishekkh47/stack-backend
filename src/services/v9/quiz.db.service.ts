@@ -70,21 +70,23 @@ class QuizDBService {
         : CORRECT_ANSWER_FUEL_POINTS.QUIZ * reqParam.solvedQuestions.length;
 
     QuizResult.create({
-      topicId: reqParam.topicId,
+      topicId: reqParam?.topicId,
       quizId: quizExists._id,
       userId: userIfExists._id,
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
       numOfIncorrectAnswers: reqParam.numOfIncorrectAnswers || 0,
     });
-    ChecklistResultTable.create({
-      userId: userIfExists._id,
-      topicId: reqParam.topicId,
-      categoryId: reqParam.categoryId,
-      levelId: reqParam.levelId,
-      level: reqParam.level,
-      actionNum: reqParam.actionNum,
-    });
+    if (reqParam?.levelId && reqParam?.categoryId) {
+      ChecklistResultTable.create({
+        userId: userIfExists._id,
+        topicId: reqParam.topicId,
+        categoryId: reqParam.categoryId,
+        levelId: reqParam.levelId,
+        level: reqParam.level,
+        actionNum: reqParam.actionNum,
+      });
+    }
     let incrementObj: any = {
       quizCoins: pointsEarnedFromQuiz,
     };

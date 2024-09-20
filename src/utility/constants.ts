@@ -1026,3 +1026,13 @@ export const IDEA_ANALYSIS = {
     marketGrowth: "Market Growth Score",
   },
 };
+export const LEARNING_CONTENT = {
+  icon: "goldCoin.webp",
+  iconBGColor: "#B0A34E38",
+};
+
+export const MILESTONE_LEARNING_FUEL = {
+  QUIZ: 50,
+  STORY: 100,
+  SIMULATION: 100,
+};
