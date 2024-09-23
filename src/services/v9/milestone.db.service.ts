@@ -606,8 +606,8 @@ class MilestoneDBService {
           const quizDetails = await QuizTable.findOne({ _id: action?.quizId });
           const time =
             action.type == 1
-              ? "Earn 50 tokens - 1 min"
-              : "Earn 100 tokens - 3 min";
+              ? `Earn ${action?.reward} tokens - 1 min`
+              : `Earn ${action?.reward} tokens - 3 min`;
           if (quizDetails) {
             return {
               ...action,
