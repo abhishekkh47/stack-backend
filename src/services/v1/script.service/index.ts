@@ -56,6 +56,7 @@ import {
   hasGoalKey,
   mapHasGoalKey,
   DEFAULT_BUSINESS_LOGO,
+  MILESTONE_LEARNING_FUEL,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2045,6 +2046,8 @@ class ScriptService {
       let currentIndex = -1;
       let currentIdentifier = null;
       let milestoneOrder = 0;
+      let learningContent = [];
+      let learningContentIdx = -1;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2097,6 +2100,25 @@ class ScriptService {
         if (row["day"] && row["day"] != currentDay) {
           currentDay = Number(row["day"]);
           order = 0;
+          learningContent.push({
+            milestoneId: currentMilestoneId || null,
+            day: currentDay,
+            actions: [],
+          });
+          learningContentIdx += 1;
+        }
+        const learningId =
+          Number(parseInt(row["learningId"]?.trimEnd())) || null;
+        const learningType = row["learningType"]?.trimEnd() || null;
+        if (learningId) {
+          const quizData = await this.getQuizMetaData(learningId, learningType);
+          const action = {
+            type: quizData.quizType,
+            quizNum: learningId,
+            quizId: quizData.quizId || null,
+            reward: quizData.reward,
+          };
+          learningContent[learningContentIdx].actions.push(action);
         }
         const optionCount = Number(row["options"]?.trimEnd()) || null;
         const inputQuestion = row["userInputQuestion"]?.trimEnd();
@@ -2138,7 +2160,7 @@ class ScriptService {
           });
         }
       }
-      return result;
+      return { result, learningContent };
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -2149,8 +2171,9 @@ class ScriptService {
    * @param milestones
    * @returns {*}
    */
-  public async addMilestoneDataToDB(milestones: any) {
-    let milestoneContent = [];
+  public async addMilestoneDataToDB(milestones: any, learningContent: any) {
+    let milestoneContent = [],
+      learningContentData = [];
     try {
       milestones.forEach((obj) => {
         let bulkWriteObject = {
@@ -2181,7 +2204,30 @@ class ScriptService {
         };
         milestoneContent.push(bulkWriteObject);
       });
-      await MilestoneGoalsTable.bulkWrite(milestoneContent);
+
+      learningContent.forEach((obj) => {
+        let learningBulkWriteObject = {
+          updateOne: {
+            filter: {
+              milestoneId: obj.milestoneId,
+              day: obj.day,
+            },
+            update: {
+              $set: {
+                milestoneId: obj.milestoneId,
+                day: obj.day,
+                actions: obj.actions,
+              },
+            },
+            upsert: true,
+          },
+        };
+        learningContentData.push(learningBulkWriteObject);
+      });
+      await Promise.all([
+        MilestoneGoalsTable.bulkWrite(milestoneContent),
+        QuizLevelTable.bulkWrite(learningContentData),
+      ]);
       return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -2552,6 +2598,34 @@ class ScriptService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  private async getQuizMetaData(quizNum: number, type: string) {
+    let quizType = 0,
+      reward = 0;
+    if (type == "simulation") {
+      quizType = 2;
+      reward =
+        CHECKLIST_QUESTION_LENGTH.SIMULATION *
+        CORRECT_ANSWER_FUEL_POINTS.SIMULATION;
+    } else if (type == "story") {
+      quizType = 3;
+      reward =
+        CHECKLIST_QUESTION_LENGTH.STORY * CORRECT_ANSWER_FUEL_POINTS.STORY;
+    } else {
+      quizType = 1;
+      reward = CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
+    }
+    const quizInfo = await QuizTable.findOne({
+      quizNum,
+      quizType,
+    }).select("_id");
+    const quizId = quizInfo?._id || null;
+    return {
+      quizType,
+      reward,
+      quizId,
+    };
   }
 }
 

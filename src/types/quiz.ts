@@ -118,6 +118,8 @@ export interface IQuizLevel {
   level: number;
   title: string;
   actions: IQuizDetail[];
+  milestoneId: mongoose.Schema.Types.ObjectId;
+  day: number;
 }
 
 export interface IQuizDetail {

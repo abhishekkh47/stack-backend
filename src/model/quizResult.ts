@@ -9,7 +9,6 @@ const schema = new mongoose.Schema<IQuizResultSchema>(
     topicId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "quizTopic",
-      required: true,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
