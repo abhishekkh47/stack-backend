@@ -248,3 +248,7 @@ export const getDaysNum = (userIfExists, dateToCompare: string) => {
   );
   return getDaysBetweenDates(firstDate, secondDate);
 };
+
+export const replacePlaceholders = (template, values) => {
+  return template.replace(/{(\w+)}/g, (_, key) => values[key] || "");
+};
