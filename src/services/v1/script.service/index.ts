@@ -2596,13 +2596,16 @@ class ScriptService {
       reward = 0;
     if (type == "simulation") {
       quizType = 2;
-      reward = MILESTONE_LEARNING_FUEL.SIMULATION;
+      reward =
+        CHECKLIST_QUESTION_LENGTH.SIMULATION *
+        CORRECT_ANSWER_FUEL_POINTS.SIMULATION;
     } else if (type == "story") {
       quizType = 3;
-      reward = MILESTONE_LEARNING_FUEL.STORY;
+      reward =
+        CHECKLIST_QUESTION_LENGTH.STORY * CORRECT_ANSWER_FUEL_POINTS.STORY;
     } else {
       quizType = 1;
-      reward = MILESTONE_LEARNING_FUEL.QUIZ;
+      reward = CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
     }
     const quizInfo = await QuizTable.findOne({
       quizNum,
