@@ -116,19 +116,27 @@ class BusinessProfileService {
           { user_id: userIfExists._id }
         );
       }
-      if (data.goalId) {
-        MilestoneDBService.saveMilestoneGoalResults(userIfExists, data.goalId);
-      }
-      await BusinessProfileTable.findOneAndUpdate(
-        {
-          userId: userIfExists._id,
-        },
-        {
-          $set: obj,
-          $push: { businessHistory: businessHistoryObj },
-        },
-        { upsert: true }
-      );
+      await Promise.all([
+        data?.goalId
+          ? MilestoneDBService.saveMilestoneGoalResults(
+              userIfExists,
+              data.goalId
+            )
+          : Promise.resolve(),
+        data?.goalId
+          ? MilestoneDBService.removeCompletedAction(userIfExists, data.key)
+          : Promise.resolve(),
+        BusinessProfileTable.findOneAndUpdate(
+          {
+            userId: userIfExists._id,
+          },
+          {
+            $set: obj,
+            $push: { businessHistory: businessHistoryObj },
+          },
+          { upsert: true }
+        ),
+      ]);
       return [
         {
           ...obj,
@@ -138,7 +146,6 @@ class BusinessProfileService {
         },
       ];
     } catch (error) {
-      console.log("Error : ", error);
       throw new NetworkError("Something went wrong", 400);
     }
   }

@@ -2618,6 +2618,61 @@ class ScriptService {
       quizId,
     };
   }
+
+  /**
+   * @description This function assign default logo to the users who have already completed the company name action but do not have any logo
+   * @returns {*}
+   */
+  public async removeCompletedActions() {
+    try {
+      // const profilesToUpdate = await DailyChallengeTable.find({}).lean();
+      const profilesToUpdate = await DailyChallengeTable.aggregate([
+        {
+          $match: { userId: new ObjectId("66e3eaa2a882fd03b5a56b9e") },
+        },
+        {
+          $lookup: {
+            from: "business-profiles",
+            localField: "userId",
+            foreignField: "userId",
+            as: "businessProfiles",
+          },
+        },
+        {
+          $project: {
+            userId: 1,
+            dailyGoalStatus: 1,
+            completedActions: {
+              $arrayElemAt: ["$businessProfiles.completedActions", 0],
+            },
+          },
+        },
+      ]).exec();
+      const IDEA = "ideaValidation";
+      const bulkOperations = profilesToUpdate?.map((profile) => {
+        const completedActions = [
+          IDEA,
+          ...Object.keys(profile.completedActions),
+        ];
+        return {
+          updateOne: {
+            filter: { userId: profile.userId },
+            update: {
+              $pull: {
+                dailyGoalStatus: { key: { $in: completedActions } },
+              },
+            },
+          },
+        };
+      });
+      if (bulkOperations.length > 0) {
+        await DailyChallengeTable.bulkWrite(bulkOperations);
+      }
+      return profilesToUpdate;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
 }
 
 export default new ScriptService();

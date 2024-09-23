@@ -117,20 +117,29 @@ class MilestoneDBService {
             .lean(),
           DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
         ]);
-      const [existingResponse, existingResponseWithPendingActions] =
-        await Promise.all([
-          this.handleAvailableDailyChallenges(
-            userIfExists,
-            businessProfile,
-            availableDailyChallenges
-          ),
-          this.handleAvailableDailyChallenges(
-            userIfExists,
-            businessProfile,
-            availableDailyChallenges,
-            true
-          ),
-        ]);
+      let completedActions = Object.keys(businessProfile?.completedActions);
+      if (businessProfile.description) {
+        completedActions = ["ideaValidation", ...completedActions];
+      }
+      const [
+        existingResponse,
+        existingResponseWithPendingActions,
+        completedActionsResponse,
+      ] = await Promise.all([
+        this.handleAvailableDailyChallenges(
+          userIfExists,
+          businessProfile,
+          availableDailyChallenges
+        ),
+        this.handleAvailableDailyChallenges(
+          userIfExists,
+          businessProfile,
+          availableDailyChallenges,
+          true
+        ),
+        // ideaValidation is not saved in completedActions array in businessProfile collection
+        this.getActionDetails(completedActions),
+      ]);
       const tasks = existingResponseWithPendingActions?.tasks;
       if (existingResponse) {
         response = existingResponse;
@@ -180,6 +189,12 @@ class MilestoneDBService {
           })
         );
       }
+      if (completedActionsResponse?.length) {
+        response.tasks.push({
+          title: "Completed",
+          data: completedActionsResponse,
+        });
+      }
       return response;
     } catch (error) {
       throw new NetworkError("Error occurred while retrieving milestones", 400);
@@ -201,9 +216,6 @@ class MilestoneDBService {
     daysInCurrentMilestone: number = 0
   ) {
     try {
-      const lastUpdated =
-        businessProfile?.currentMilestone?.milestoneUpdatedAt ||
-        new Date().toISOString();
       let response = {
         isMilestoneHit,
         tasks: [
@@ -524,10 +536,7 @@ class MilestoneDBService {
 
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
-            if (businessProfile?.description) {
-              goal["isCompleted"] = true;
-              response.tasks[1].data.push(goal);
-            } else {
+            if (!businessProfile?.description) {
               goal["isCompleted"] = false;
               response.tasks[0].data.push(goal);
             }
@@ -537,10 +546,7 @@ class MilestoneDBService {
               businessProfile.completedActions,
               goal.key
             );
-            if (hasGoalInProfile || hasGoalInCompletedActions) {
-              goal["isCompleted"] = true;
-              response.tasks[1].data.push(goal);
-            } else {
+            if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
               goal["isCompleted"] = false;
               response.tasks[0].data.push(goal);
             }
@@ -580,18 +586,22 @@ class MilestoneDBService {
    * @returns {*}
    */
   private async getLearningContent(actionObj: any) {
-    let learningActions = null;
-    if (actionObj?.milestoneId) {
-      learningActions = await QuizLevelTable.findOne({
-        milestoneId: actionObj?.milestoneId,
-        day: actionObj?.day,
-      }).lean();
+    try {
+      let learningActions = null;
+      if (actionObj?.milestoneId) {
+        learningActions = await QuizLevelTable.findOne({
+          milestoneId: actionObj?.milestoneId,
+          day: actionObj?.day,
+        }).lean();
+      }
+      if (!learningActions) return null;
+      const challengeDetails = await this.getQuizDetails(
+        learningActions?.actions
+      );
+      return challengeDetails;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
-    if (!learningActions) return null;
-    const challengeDetails = await this.getQuizDetails(
-      learningActions?.actions
-    );
-    return challengeDetails;
   }
 
   /**
@@ -630,16 +640,68 @@ class MilestoneDBService {
 
   /**
    * @description get AI action details and related screen copy
-   * @param key identifier of action
+   * @param keys array of action identifiers
    * @returns {*}
    */
-  public async getActionDetails(key: string) {
+  public async getActionDetails(keys: string[]) {
     try {
       const [goalDetails, inputTemplate] = await Promise.all([
-        MilestoneGoalsTable.findOne({ key }).lean(),
-        this.suggestionScreenInfo([{ key }]),
+        MilestoneGoalsTable.find(
+          { key: { $in: keys } },
+          { id: 0, dependency: 0, categoryId: 0, createdAt: 0, updatedAt: 0 }
+        ).lean(),
+        this.keyBasedSuggestionScreenInfo(keys),
       ]);
-      return { ...goalDetails, inputTemplate };
+      goalDetails.forEach((goal) => {
+        goal["inputTemplate"]["suggestionScreenInfo"] = inputTemplate[goal.key];
+        goal["isCompleted"] = true;
+        goal["isLocked"] = false;
+      });
+      return goalDetails;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will add suggestionScreenInfo object to each goal of current milestone
+   * @param keys array of action identifiers
+   * @returns {*}
+   */
+  public async keyBasedSuggestionScreenInfo(keys: any) {
+    try {
+      const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
+        {},
+        { createdAt: 0, updatedAt: 0 }
+      ).lean();
+      const suggestionScreenCopyMap = new Map(
+        suggestionScreenCopy.map((obj) => [obj.key, obj])
+      );
+      const updatedGoals = keys?.reduce((acc, key) => {
+        const copyData = suggestionScreenCopyMap.get(key);
+        if (copyData) {
+          acc[copyData.key] = copyData;
+        }
+        return acc;
+      }, {});
+      return updatedGoals;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description this method will remove the completed action from the current goals list
+   * @param userIfExists
+   * @param key
+   * @returns {*}
+   */
+  public async removeCompletedAction(userIfExists: any, key: any) {
+    try {
+      await DailyChallengeTable.updateOne(
+        { userId: userIfExists._id },
+        { $pull: { dailyGoalStatus: { key } } }
+      );
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

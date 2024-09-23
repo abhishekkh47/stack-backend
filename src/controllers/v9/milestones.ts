@@ -112,7 +112,7 @@ class MilestoneController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const goals = await MilestoneDBService.getActionDetails(key);
+    const goals = await MilestoneDBService.getActionDetails([key]);
     return this.Ok(ctx, { data: goals });
   }
 }
