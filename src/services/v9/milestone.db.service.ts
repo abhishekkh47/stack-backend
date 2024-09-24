@@ -175,7 +175,7 @@ class MilestoneDBService {
               quizId: obj?.quizId,
             });
             if (!quizResult) {
-              response.tasks[0].data.push(obj);
+              response.tasks[0].data.unshift(obj);
             }
           })
         );
