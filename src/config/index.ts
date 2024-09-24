@@ -254,4 +254,10 @@ export default {
   get REVENUECAT_WEBHOOK_SECRET() {
     return process.env.REVENUECAT_WEBHOOK_SECRET;
   },
+  get COMMUNITIES_SHEET_ID() {
+    return process.env.COMMUNITIES_SHEET_ID;
+  },
+  get COMMUNITIES_SHEET_GID() {
+    return process.env.COMMUNITIES_SHEET_GID;
+  },
 };

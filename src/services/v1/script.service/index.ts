@@ -28,6 +28,7 @@ import {
   DailyChallengeTable,
   AIToolDataSetTypesTable,
   AIToolsUsageStatusTable,
+  CommunityTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -56,7 +57,7 @@ import {
   hasGoalKey,
   mapHasGoalKey,
   DEFAULT_BUSINESS_LOGO,
-  MILESTONE_LEARNING_FUEL,
+  CHALLENGE_TYPE,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2626,6 +2627,82 @@ class ScriptService {
       reward,
       quizId,
     };
+  }
+
+  /**
+   * @description This function import the entrepreneur communities from the spreadsheet
+   * @returns {*}
+   */
+  public async addEntrepreneurCommunities(rows) {
+    try {
+      const user = await UserTable.findOne({
+        email: "nataliezx2010@gmail.com",
+      });
+      const communities = [];
+      let name = null,
+        location = null;
+      for (const row of rows) {
+        name = row["Name"]?.trimEnd();
+        location = row["Location"]?.trimEnd();
+        if (name) {
+          communities.push({
+            name: name,
+            location: location,
+            isNextChallengeScheduled: false,
+            googlePlaceId: location,
+            createdBy: user._id,
+            type: 1,
+            challenge: {
+              type: CHALLENGE_TYPE[0],
+              xpGoal: 0,
+              endAt: null,
+              reward: 0,
+            },
+          });
+        }
+      }
+      return communities;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function add entrepreneur communities to DB
+   * @param data
+   * @returns {*}
+   */
+  public async addCommunitiesToDB(data: any) {
+    let communities = [];
+    try {
+      data.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              name: obj.name,
+              type: obj.type
+            },
+            update: {
+              $set: {
+                name: obj.name,
+                location: obj.location,
+                isNextChallengeScheduled: obj.isNextChallengeScheduled,
+                googlePlaceId: obj.googlePlaceId,
+                createdBy: obj.createdBy,
+                challenge: obj.challenge,
+                type: obj.type
+              },
+            },
+            upsert: true,
+          },
+        };
+        communities.push(bulkWriteObject);
+      });
+      await CommunityTable.bulkWrite(communities);
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 

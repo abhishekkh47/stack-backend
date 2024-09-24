@@ -10,6 +10,7 @@ export interface ICommunity {
     duration: number;
   };
   isNextChallengeScheduled: boolean;
+  type: number;
 }
 export interface IUserCommunity {
   communityId: mongoose.Schema.Types.ObjectId;
