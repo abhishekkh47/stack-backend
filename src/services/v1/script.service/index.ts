@@ -2654,7 +2654,9 @@ class ScriptService {
             name: name,
             location: location,
             isNextChallengeScheduled: false,
-            googlePlaceId: location,
+            googlePlaceId: `${name.split(" ").join("")}${location
+              .split(" ")
+              .join("")}`,
             createdBy: user._id,
             type: 1,
             challenge: {

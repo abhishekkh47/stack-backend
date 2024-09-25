@@ -33,7 +33,7 @@ class MilestoneDBService {
             title: "$milestone",
             topicId: 1,
             time: "$description",
-            icon: 1,
+            iconImage: "$icon",
             iconBackgroundColor: 1,
           }
         )
@@ -671,6 +671,59 @@ class MilestoneDBService {
         { $set: updateObj },
         { new: true, upsert: true }
       );
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description get current milestone progress
+   * @param businessProfile
+   * @returns {*}
+   */
+  public async getMilestoneProgress(businessProfile) {
+    try {
+      const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
+      const [
+        currentMilestone,
+        milestoneGoals,
+        lastGoalCompleted,
+        completedMilestoneGoals,
+      ] = await Promise.all([
+        MilestoneTable.findOne({ _id: currentMilestoneId }),
+        MilestoneGoalsTable.find({ milestoneId: currentMilestoneId }).sort({
+          day: 1,
+        }),
+        MilestoneResultTable.findOne({
+          userId: businessProfile.userId,
+          milestoneId: currentMilestoneId,
+        }).sort({
+          createdAt: -1,
+        }),
+        MilestoneResultTable.find({
+          userId: businessProfile.userId,
+          milestoneId: currentMilestoneId,
+        }),
+      ]);
+
+      const goalsLength = milestoneGoals?.length;
+      const completedGoalsLength =
+        completedMilestoneGoals?.length >= 1
+          ? completedMilestoneGoals?.length - 1
+          : 0;
+      const totalDays = milestoneGoals[goalsLength - 1]?.day || 1;
+      const currentDay = lastGoalCompleted?.day || 1;
+      const progress = (completedGoalsLength / goalsLength) * 100;
+      return {
+        title: currentMilestone.milestone,
+        icon: currentMilestone.icon,
+        iconiconBackgroundColor: currentMilestone.iconBackgroundColor,
+        progress,
+        description: `Day ${currentDay}/${totalDays}`,
+      };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",

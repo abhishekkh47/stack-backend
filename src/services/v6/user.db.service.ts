@@ -135,6 +135,8 @@ class UserDBService {
             isClaimed: "$userCommunity.isClaimed",
             isPremiumUser: 1,
             focusAreaTopic: 1,
+            milestoneId:
+              "$businessProfile.currentMilestone.milestoneId" || null,
           },
         },
       ]).exec()
