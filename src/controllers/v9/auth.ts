@@ -25,6 +25,7 @@ import { UserDBService } from "@app/services/v6";
 import {
   BusinessProfileService as BusinessProfileServiceV9,
   UserService as UserServiceV9,
+  MilestoneDBService,
 } from "@app/services/v9";
 import { ChecklistDBService } from "@app/services/v9";
 
@@ -77,17 +78,22 @@ class AuthController extends BaseController {
               };
               userExists = await UserTable.create(createQuery);
               // To handle inaccurate streak counts for users who signup again after deleting their accounts
-              await UserTable.findOneAndUpdate(
-                { _id: userExists._id },
-                {
-                  $set: {
-                    "streak.last5days": [null, null, null, null, null],
-                    "streak.updatedDate.day": 0,
-                    "streak.updatedDate.month": 0,
-                    "streak.updatedDate.year": 0,
-                  },
-                }
-              );
+              await Promise.all([
+                UserTable.findOneAndUpdate(
+                  { _id: userExists._id },
+                  {
+                    $set: {
+                      "streak.last5days": [null, null, null, null, null],
+                      "streak.updatedDate.day": 0,
+                      "streak.updatedDate.month": 0,
+                      "streak.updatedDate.year": 0,
+                    },
+                  }
+                ),
+                MilestoneDBService.setDefaultMilestoneToBusinessProfile(
+                  userExists
+                ),
+              ]);
 
               accountCreated = true;
 

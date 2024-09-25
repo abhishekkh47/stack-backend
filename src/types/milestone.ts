@@ -6,6 +6,8 @@ export interface IMilestone {
   description: string;
   order: number;
   locked: boolean;
+  icon: string;
+  iconBackgroundColor: string;
 }
 
 export interface IMilestoneGoals {

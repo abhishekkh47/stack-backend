@@ -33,6 +33,8 @@ class MilestoneDBService {
             title: "$milestone",
             topicId: 1,
             time: "$description",
+            icon: 1,
+            iconBackgroundColor: 1,
           }
         )
           .sort({ order: 1 })
@@ -642,6 +644,38 @@ class MilestoneDBService {
       return { ...goalDetails, inputTemplate };
     } catch (error) {
       throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description set default milestone while user signup
+   * @param userIfExists
+   * @returns {*}
+   */
+  public async setDefaultMilestoneToBusinessProfile(userIfExists) {
+    try {
+      const initialMilestone = (
+        await MilestoneTable.findOne({
+          order: 1,
+        })
+      )._id;
+      const currentDate = new Date().toISOString();
+      const updateObj = {
+        currentMilestone: {
+          milestoneId: initialMilestone._id,
+          milestoneUpdatedAt: currentDate,
+        },
+      };
+      await BusinessProfileTable.findOneAndUpdate(
+        { userId: userIfExists._id },
+        { $set: updateObj },
+        { new: true, upsert: true }
+      );
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
     }
   }
 }

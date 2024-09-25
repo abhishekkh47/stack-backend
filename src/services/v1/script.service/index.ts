@@ -2061,6 +2061,9 @@ class ScriptService {
             description: "7 Days - 15 min/day",
             order: ++milestoneOrder,
             locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
+            icon: row["milestoneIcon"]?.trimEnd() || null,
+            iconBackgroundColor:
+              row["milestoneIconBGColor"]?.trimEnd() || "#ffffff19",
           });
         }
         return acc;
@@ -2079,6 +2082,8 @@ class ScriptService {
                 description: goal.description,
                 order: goal.order,
                 locked: goal.locked,
+                icon: goal.icon,
+                iconBackgroundColor: goal.iconBackgroundColor,
               },
             },
             upsert: true,
@@ -2680,7 +2685,7 @@ class ScriptService {
           updateOne: {
             filter: {
               name: obj.name,
-              type: obj.type
+              type: obj.type,
             },
             update: {
               $set: {
@@ -2690,7 +2695,7 @@ class ScriptService {
                 googlePlaceId: obj.googlePlaceId,
                 createdBy: obj.createdBy,
                 challenge: obj.challenge,
-                type: obj.type
+                type: obj.type,
               },
             },
             upsert: true,

@@ -835,6 +835,7 @@ class BusinessProfileService {
         description,
         idea,
         completedActions = {},
+        currentMilestone,
       } = userBusinessProfile;
 
       businessProfile = {
@@ -846,6 +847,7 @@ class BusinessProfileService {
         enableStealthMode,
         completedGoal,
         businessPlans: [],
+        currentMilestone,
       };
 
       const milestoneGoalsMap = new Map(
