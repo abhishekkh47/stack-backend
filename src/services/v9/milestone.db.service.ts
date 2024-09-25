@@ -713,7 +713,7 @@ class MilestoneDBService {
         }).sort({
           createdAt: -1,
         }),
-        MilestoneResultTable.find({
+        MilestoneResultTable.countDocuments({
           userId,
           milestoneId: currentMilestoneId,
         }),
@@ -721,9 +721,9 @@ class MilestoneDBService {
       ]);
 
       let currentGoalId = null;
-      if (currentGoals && currentGoals.dailyGoalStatus.length > 1) {
-        currentGoalId =
-          currentGoals.dailyGoalStatus[currentGoals.dailyGoalStatus.length - 1];
+      const dailyGoalStatus = currentGoals.dailyGoalStatus;
+      if (currentGoals && dailyGoalStatus.length > 1) {
+        currentGoalId = dailyGoalStatus[dailyGoalStatus.length - 1];
       } else {
         currentGoalId = lastGoalCompleted?.goalId;
       }
@@ -731,14 +731,12 @@ class MilestoneDBService {
         _id: currentGoalId,
       });
 
-      const goalsLength = milestoneGoals?.length;
+      const totalGoals = milestoneGoals?.length;
       const completedGoalsLength =
-        completedMilestoneGoals?.length >= 1
-          ? completedMilestoneGoals?.length - 1
-          : 0;
-      const totalDays = milestoneGoals[goalsLength - 1]?.day || 1;
+        completedMilestoneGoals >= 1 ? completedMilestoneGoals - 1 : 0;
+      const totalDays = milestoneGoals[totalGoals - 1]?.day || 1;
       const currentDay = lastGoalCompleted?.day || 1;
-      const progress = (completedGoalsLength / goalsLength) * 100;
+      const progress = (completedGoalsLength / totalGoals) * 100;
       return {
         title: currentMilestone.milestone,
         icon: currentMilestone.icon,
