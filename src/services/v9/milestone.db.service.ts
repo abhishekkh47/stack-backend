@@ -166,22 +166,30 @@ class MilestoneDBService {
       ) {
         return { isMilestoneHit: true };
       }
-      if (response?.tasks[0]?.data?.length || !businessProfile?.description) {
-        const learningContent = await this.getLearningContent(
-          response.tasks[0].data[0]
-        );
-        await Promise.all(
-          learningContent?.map(async (obj) => {
-            const quizResult = await QuizResult.findOne({
-              userId: userIfExists._id,
-              quizId: obj?.quizId,
-            });
-            if (!quizResult) {
-              response.tasks[0].data.unshift(obj);
-            }
-          })
-        );
+      let currentGoal = {};
+      if (response.isMilestoneHit) {
+        response.tasks.unshift({
+          title: "Today's Goals",
+          data: [],
+        });
       }
+      if (response?.tasks[0]?.data[0]) {
+        currentGoal = response?.tasks[0]?.data[0];
+      } else {
+        currentGoal = lastMilestoneCompleted;
+      }
+      const learningContent = await this.getLearningContent(currentGoal);
+      await Promise.all(
+        learningContent?.map(async (obj) => {
+          const quizResult = await QuizResult.findOne({
+            userId: userIfExists._id,
+            quizId: obj?.quizId,
+          });
+          if (!quizResult) {
+            response.tasks[0].data.unshift(obj);
+          }
+        })
+      );
       return response;
     } catch (error) {
       throw new NetworkError("Error occurred while retrieving milestones", 400);
@@ -209,7 +217,7 @@ class MilestoneDBService {
       let response = {
         isMilestoneHit,
         tasks: [
-          { title: "Goals of the day", data: [] },
+          { title: "Today's Goals", data: [] },
           { title: "Completed", data: [] },
         ],
       };
@@ -512,7 +520,7 @@ class MilestoneDBService {
         let response = {
           isMilestoneHit: false,
           tasks: [
-            { title: "Goals of the day", data: [] },
+            { title: "Today's Goals", data: [] },
             { title: "Completed", data: [] },
           ],
         };
