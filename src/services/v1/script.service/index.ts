@@ -2049,6 +2049,7 @@ class ScriptService {
       let milestoneOrder = 0;
       let learningContent = [];
       let learningContentIdx = -1;
+      let dayTitle = null;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2105,6 +2106,7 @@ class ScriptService {
 
         if (row["day"] && row["day"] != currentDay) {
           currentDay = Number(row["day"]);
+          dayTitle = row["title"]?.trimEnd() || null;
           order = 0;
           learningContent.push({
             milestoneId: currentMilestoneId || null,
@@ -2155,6 +2157,7 @@ class ScriptService {
             template: Number(row["template"]?.trimEnd()),
             inputTemplate: inputTemplate,
             isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
+            dayTitle,
           });
         }
         if (row["optionTitle"]) {
@@ -2203,6 +2206,7 @@ class ScriptService {
                 template: obj.template,
                 inputTemplate: obj.inputTemplate,
                 isAiToolbox: obj.isAiToolbox,
+                dayTitle: obj.dayTitle,
               },
             },
             upsert: true,

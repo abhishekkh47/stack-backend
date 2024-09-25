@@ -694,28 +694,42 @@ class MilestoneDBService {
    */
   public async getMilestoneProgress(businessProfile) {
     try {
+      const userId = businessProfile.userId;
       const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
       const [
         currentMilestone,
         milestoneGoals,
         lastGoalCompleted,
         completedMilestoneGoals,
+        currentGoals,
       ] = await Promise.all([
         MilestoneTable.findOne({ _id: currentMilestoneId }),
         MilestoneGoalsTable.find({ milestoneId: currentMilestoneId }).sort({
           day: 1,
         }),
         MilestoneResultTable.findOne({
-          userId: businessProfile.userId,
+          userId,
           milestoneId: currentMilestoneId,
         }).sort({
           createdAt: -1,
         }),
         MilestoneResultTable.find({
-          userId: businessProfile.userId,
+          userId,
           milestoneId: currentMilestoneId,
         }),
+        DailyChallengeTable.findOne({ userId }),
       ]);
+
+      let currentGoalId = null;
+      if (currentGoals && currentGoals.dailyGoalStatus.length > 1) {
+        currentGoalId =
+          currentGoals.dailyGoalStatus[currentGoals.dailyGoalStatus.length - 1];
+      } else {
+        currentGoalId = lastGoalCompleted?.goalId;
+      }
+      const dailyGoal = await MilestoneGoalsTable.findOne({
+        _id: currentGoalId,
+      });
 
       const goalsLength = milestoneGoals?.length;
       const completedGoalsLength =
@@ -730,7 +744,7 @@ class MilestoneDBService {
         icon: currentMilestone.icon,
         iconiconBackgroundColor: currentMilestone.iconBackgroundColor,
         progress,
-        description: `Day ${currentDay}/${totalDays}`,
+        description: `${dailyGoal.dayTitle} - Day ${currentDay}/${totalDays}`,
       };
     } catch (error) {
       throw new NetworkError(

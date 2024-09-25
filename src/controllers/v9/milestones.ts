@@ -104,8 +104,12 @@ class MilestoneController extends BaseController {
       MilestoneDBService.getCurrentMilestoneGoals(userExists, businessProfile),
       MilestoneDBService.getMilestoneProgress(businessProfile),
     ]);
+    goals.tasks.unshift({
+      title: "Current Milestone",
+      data: milestoneProgress,
+    });
     return this.Ok(ctx, {
-      data: { ...goals, userId: user._id, milestoneProgress },
+      data: { ...goals, userId: user._id },
     });
   }
 

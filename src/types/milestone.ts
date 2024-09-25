@@ -23,6 +23,7 @@ export interface IMilestoneGoals {
   iconBackgroundColor: string;
   inputTemplate: IMilestoneGoalOptions;
   isAiToolbox: boolean;
+  dayTitle: string;
 }
 
 export enum EInputTemplate {
