@@ -180,18 +180,13 @@ class MilestoneDBService {
       } else {
         currentGoal = lastMilestoneCompleted;
       }
-      const learningContent = await this.getLearningContent(currentGoal);
-      await Promise.all(
-        learningContent?.map(async (obj) => {
-          const quizResult = await QuizResult.findOne({
-            userId: userIfExists._id,
-            quizId: obj?.quizId,
-          });
-          if (!quizResult) {
-            response.tasks[0].data.unshift(obj);
-          }
-        })
+      const learningContent = (await this.getLearningContent(currentGoal)).sort(
+        (a, b) => b?.type - a?.type
       );
+
+      learningContent?.map(async (obj) => {
+        response.tasks[0].data.unshift(obj);
+      });
       return response;
     } catch (error) {
       throw new NetworkError("Error occurred while retrieving milestones", 400);
