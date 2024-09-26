@@ -188,7 +188,10 @@ class MilestoneDBService {
         { quizId: 1 }
       );
       learningContent?.forEach(async (obj) => {
-        if (!completedQuizzes?.includes(obj?.quizId)) {
+        const isQuizCompleted = completedQuizzes.some(
+          (quiz) => quiz.quizId.toString() == obj.quizId.toString()
+        );
+        if (!isQuizCompleted) {
           response.tasks[0].data.unshift(obj);
         }
       });
