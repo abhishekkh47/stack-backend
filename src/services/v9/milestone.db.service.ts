@@ -15,7 +15,9 @@ import {
   mapHasGoalKey,
   hasGoalKey,
   LEARNING_CONTENT,
+  ACTIVE_MILESTONE,
 } from "@app/utility";
+import { ObjectId } from "mongodb";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -695,7 +697,11 @@ class MilestoneDBService {
   public async getMilestoneProgress(businessProfile) {
     try {
       const userId = businessProfile.userId;
-      const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
+      let dailyGoal = null;
+      let currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
+      if (!currentMilestoneId) {
+        currentMilestoneId = await MilestoneTable.findOne({ order: 1 });
+      }
       const [
         currentMilestone,
         milestoneGoals,
@@ -721,28 +727,36 @@ class MilestoneDBService {
       ]);
 
       let currentGoalId = null;
-      const dailyGoalStatus = currentGoals.dailyGoalStatus;
-      if (currentGoals && dailyGoalStatus.length > 1) {
-        currentGoalId = dailyGoalStatus[dailyGoalStatus.length - 1];
+      const dailyGoalStatus = currentGoals?.dailyGoalStatus || [];
+      if (dailyGoalStatus?.length > 0) {
+        currentGoalId = new ObjectId(
+          dailyGoalStatus[dailyGoalStatus.length - 1]._id
+        );
       } else {
         currentGoalId = lastGoalCompleted?.goalId;
       }
-      const dailyGoal = await MilestoneGoalsTable.findOne({
-        _id: currentGoalId,
-      });
+      if (!currentGoalId && currentMilestoneId) {
+        dailyGoal = await MilestoneGoalsTable.findOne({
+          milestoneId: currentMilestoneId,
+          day: 1,
+        });
+      } else {
+        dailyGoal = await MilestoneGoalsTable.findOne({
+          _id: currentGoalId,
+        });
+      }
 
       const totalGoals = milestoneGoals?.length;
-      const completedGoalsLength =
-        completedMilestoneGoals >= 1 ? completedMilestoneGoals - 1 : 0;
       const totalDays = milestoneGoals[totalGoals - 1]?.day || 1;
       const currentDay = lastGoalCompleted?.day || 1;
-      const progress = (completedGoalsLength / totalGoals) * 100;
+      const progress = (completedMilestoneGoals / totalGoals) * 100;
       return {
         title: currentMilestone.milestone,
-        icon: currentMilestone.icon,
-        iconiconBackgroundColor: currentMilestone.iconBackgroundColor,
+        iconImage: currentMilestone.icon,
+        iconBackgroundColor: currentMilestone.iconBackgroundColor,
         progress,
-        description: `${dailyGoal.dayTitle} - Day ${currentDay}/${totalDays}`,
+        time: `${dailyGoal.dayTitle} - Day ${currentDay}/${totalDays}`,
+        key: ACTIVE_MILESTONE,
       };
     } catch (error) {
       throw new NetworkError(

@@ -79,7 +79,8 @@ class MilestoneController extends BaseController {
     };
     await BusinessProfileTable.findOneAndUpdate(
       { userId: user._id },
-      { $set: obj }
+      { $set: obj },
+      { upsert: true }
     );
     return this.Ok(ctx, { message: "success" });
   }
@@ -106,7 +107,7 @@ class MilestoneController extends BaseController {
     ]);
     goals.tasks.unshift({
       title: "Current Milestone",
-      data: milestoneProgress,
+      data: [milestoneProgress],
     });
     return this.Ok(ctx, {
       data: { ...goals, userId: user._id },

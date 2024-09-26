@@ -796,26 +796,6 @@ class ScriptService {
             rows[index + 1] == undefined ||
             rows[index + 1]["Simulation #"] !== data["Simulation #"]
           ) {
-            if (lastQuizCategory) {
-              const isCategoryExists = allTopics.find(
-                (x) => x.topic == lastQuizCategory
-              );
-              if (!isCategoryExists) {
-                categories.push({
-                  topic: lastQuizCategory,
-                  image: null,
-                  status: 1,
-                  type: 2,
-                });
-                filterCategory.push({
-                  key: data["Simulation #"],
-                  value: lastQuizCategory,
-                });
-                topicId = null;
-              } else {
-                topicId = isCategoryExists._id;
-              }
-            }
             let quizData = {
               topicId: topicId,
               quizNum: data["Simulation #"].trimEnd(),
