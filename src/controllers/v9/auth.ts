@@ -207,9 +207,6 @@ class AuthController extends BaseController {
               userExists
             );
 
-            // let { profileData } = await UserDBService.getProfile(
-            //   userExists._id
-            // );
             const [
               userProfileData,
               businessProfile,
