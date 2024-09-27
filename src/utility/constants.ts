@@ -1036,3 +1036,5 @@ export const MILESTONE_LEARNING_FUEL = {
   STORY: 100,
   SIMULATION: 100,
 };
+
+export const ACTIVE_MILESTONE = "activeMilestone";

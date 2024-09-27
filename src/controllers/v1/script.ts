@@ -2417,6 +2417,31 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is to add new local entrepreneurs communities to the communities collection
+   * @param ctx
+   */
+  @Route({ path: "/import-entrepreneur-communities", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importEntrepreneurCommunities(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.COMMUNITIES_SHEET_GID,
+        envData.COMMUNITIES_SHEET_ID
+      );
+      if (rows.length === 0) {
+        return this.BadRequest(ctx, "Dataset Not Found");
+      }
+      const communitiesData = await ScriptService.addEntrepreneurCommunities(
+        rows
+      );
+      await ScriptService.addCommunitiesToDB(communitiesData);
+      return this.Ok(ctx, { message: "Success" });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();

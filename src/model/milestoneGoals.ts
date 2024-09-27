@@ -110,6 +110,11 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       required: true,
       default: false,
     },
+    dayTitle: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

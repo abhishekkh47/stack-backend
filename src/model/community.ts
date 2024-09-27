@@ -43,6 +43,15 @@ const schema = new mongoose.Schema<ICommunity>(
       required: true,
       default: false,
     },
+    /*
+     * type 0 = google place/school community
+     * type 1 = local entrepreneurs community
+     */
+    type: {
+      type: mongoose.Schema.Types.Number,
+      required: false,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

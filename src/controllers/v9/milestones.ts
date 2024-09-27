@@ -3,6 +3,7 @@ import {
   BusinessProfileTable,
   DailyChallengeTable,
   UserTable,
+  MilestoneTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
@@ -58,19 +59,28 @@ class MilestoneController extends BaseController {
   @Auth()
   public async selectMilestone(ctx: any) {
     const { user, body } = ctx.request;
-    const userExists = await UserTable.findOne({ _id: user._id });
+    const [userExists, defaultMilestone] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      MilestoneTable.findOne({
+        order: 1,
+      }),
+    ]);
+    const milestoneId = body.isFromOnboarding
+      ? defaultMilestone._id
+      : body.milestoneId;
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
     let obj = {
       currentMilestone: {
-        milestoneId: body.milestoneId,
+        milestoneId: milestoneId,
         milestoneUpdatedAt: new Date().toISOString(),
       },
     };
     await BusinessProfileTable.findOneAndUpdate(
       { userId: user._id },
-      { $set: obj }
+      { $set: obj },
+      { upsert: true }
     );
     return this.Ok(ctx, { message: "success" });
   }
@@ -91,11 +101,17 @@ class MilestoneController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const goals = await MilestoneDBService.getCurrentMilestoneGoals(
-      userExists,
-      businessProfile
-    );
-    return this.Ok(ctx, { data: { ...goals, userId: user._id } });
+    const [goals, milestoneProgress] = await Promise.all([
+      MilestoneDBService.getCurrentMilestoneGoals(userExists, businessProfile),
+      MilestoneDBService.getMilestoneProgress(businessProfile),
+    ]);
+    goals.tasks.unshift({
+      title: "Current Milestone",
+      data: [milestoneProgress],
+    });
+    return this.Ok(ctx, {
+      data: { ...goals, userId: user._id },
+    });
   }
 
   /**

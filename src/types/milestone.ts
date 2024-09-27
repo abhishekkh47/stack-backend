@@ -6,6 +6,8 @@ export interface IMilestone {
   description: string;
   order: number;
   locked: boolean;
+  icon: string;
+  iconBackgroundColor: string;
 }
 
 export interface IMilestoneGoals {
@@ -21,6 +23,7 @@ export interface IMilestoneGoals {
   iconBackgroundColor: string;
   inputTemplate: IMilestoneGoalOptions;
   isAiToolbox: boolean;
+  dayTitle: string;
 }
 
 export enum EInputTemplate {

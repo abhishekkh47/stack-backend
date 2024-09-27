@@ -127,7 +127,10 @@ class CommunityController extends BaseController {
       if (userExistsInCommunity)
         return this.BadRequest(ctx, "User already exists in community");
 
-      let placeApiResponse: any = await searchSchools(query.input);
+      let [placeApiResponse, entrepreneurCommunities]: any = await Promise.all([
+        searchSchools(query.input),
+        CommunityTable.find({ name: { $regex: query.input, $options: "i" } }),
+      ]);
       const uniqueNames = new Set();
       const filteredData = [];
       placeApiResponse.data.predictions.forEach((item) => {
@@ -159,6 +162,15 @@ class CommunityController extends BaseController {
           })
         );
       }
+      entrepreneurCommunities?.forEach((obj) => {
+        result.push({
+          isCommunityExists: true,
+          name: obj.name,
+          placeId: obj.googlePlaceId,
+          address: `${obj.googlePlaceId}, USA`,
+          state: obj.googlePlaceId.split(",")[1],
+        });
+      });
       return this.Ok(ctx, { data: result });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

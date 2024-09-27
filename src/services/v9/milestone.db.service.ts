@@ -15,7 +15,9 @@ import {
   mapHasGoalKey,
   hasGoalKey,
   LEARNING_CONTENT,
+  ACTIVE_MILESTONE,
 } from "@app/utility";
+import { ObjectId } from "mongodb";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -33,6 +35,8 @@ class MilestoneDBService {
             title: "$milestone",
             topicId: 1,
             time: "$description",
+            iconImage: "$icon",
+            iconBackgroundColor: 1,
           }
         )
           .sort({ order: 1 })
@@ -657,6 +661,115 @@ class MilestoneDBService {
       return { ...goalDetails, inputTemplate };
     } catch (error) {
       throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description set default milestone while user signup
+   * @param userIfExists
+   * @returns {*}
+   */
+  public async setDefaultMilestoneToBusinessProfile(userIfExists) {
+    try {
+      const initialMilestone = (
+        await MilestoneTable.findOne({
+          order: 1,
+        })
+      )._id;
+      const currentDate = new Date().toISOString();
+      const updateObj = {
+        currentMilestone: {
+          milestoneId: initialMilestone._id,
+          milestoneUpdatedAt: currentDate,
+        },
+      };
+      await BusinessProfileTable.findOneAndUpdate(
+        { userId: userIfExists._id },
+        { $set: updateObj },
+        { new: true, upsert: true }
+      );
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description get current milestone progress
+   * @param businessProfile
+   * @returns {*}
+   */
+  public async getMilestoneProgress(businessProfile) {
+    try {
+      const userId = businessProfile.userId;
+      let dailyGoal = null;
+      let currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
+      if (!currentMilestoneId) {
+        currentMilestoneId = await MilestoneTable.findOne({ order: 1 });
+      }
+      const [
+        currentMilestone,
+        milestoneGoals,
+        lastGoalCompleted,
+        completedMilestoneGoals,
+        currentGoals,
+      ] = await Promise.all([
+        MilestoneTable.findOne({ _id: currentMilestoneId }),
+        MilestoneGoalsTable.find({ milestoneId: currentMilestoneId }).sort({
+          day: 1,
+        }),
+        MilestoneResultTable.findOne({
+          userId,
+          milestoneId: currentMilestoneId,
+        }).sort({
+          createdAt: -1,
+        }),
+        MilestoneResultTable.countDocuments({
+          userId,
+          milestoneId: currentMilestoneId,
+        }),
+        DailyChallengeTable.findOne({ userId }),
+      ]);
+
+      let currentGoalId = null;
+      const dailyGoalStatus = currentGoals?.dailyGoalStatus || [];
+      if (dailyGoalStatus?.length > 0) {
+        currentGoalId = new ObjectId(
+          dailyGoalStatus[dailyGoalStatus.length - 1]._id
+        );
+      } else {
+        currentGoalId = lastGoalCompleted?.goalId;
+      }
+      if (!currentGoalId && currentMilestoneId) {
+        dailyGoal = await MilestoneGoalsTable.findOne({
+          milestoneId: currentMilestoneId,
+          day: 1,
+        });
+      } else {
+        dailyGoal = await MilestoneGoalsTable.findOne({
+          _id: currentGoalId,
+        });
+      }
+
+      const totalGoals = milestoneGoals?.length;
+      const totalDays = milestoneGoals[totalGoals - 1]?.day || 1;
+      const currentDay = lastGoalCompleted?.day || 1;
+      const progress = (completedMilestoneGoals / totalGoals) * 100;
+      return {
+        title: currentMilestone.milestone,
+        iconImage: currentMilestone.icon,
+        iconBackgroundColor: currentMilestone.iconBackgroundColor,
+        progress,
+        time: `${dailyGoal.dayTitle} - Day ${currentDay}/${totalDays}`,
+        key: ACTIVE_MILESTONE,
+      };
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
     }
   }
 }

@@ -28,6 +28,7 @@ import {
   DailyChallengeTable,
   AIToolDataSetTypesTable,
   AIToolsUsageStatusTable,
+  CommunityTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -56,7 +57,7 @@ import {
   hasGoalKey,
   mapHasGoalKey,
   DEFAULT_BUSINESS_LOGO,
-  MILESTONE_LEARNING_FUEL,
+  CHALLENGE_TYPE,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -795,26 +796,6 @@ class ScriptService {
             rows[index + 1] == undefined ||
             rows[index + 1]["Simulation #"] !== data["Simulation #"]
           ) {
-            if (lastQuizCategory) {
-              const isCategoryExists = allTopics.find(
-                (x) => x.topic == lastQuizCategory
-              );
-              if (!isCategoryExists) {
-                categories.push({
-                  topic: lastQuizCategory,
-                  image: null,
-                  status: 1,
-                  type: 2,
-                });
-                filterCategory.push({
-                  key: data["Simulation #"],
-                  value: lastQuizCategory,
-                });
-                topicId = null;
-              } else {
-                topicId = isCategoryExists._id;
-              }
-            }
             let quizData = {
               topicId: topicId,
               quizNum: data["Simulation #"].trimEnd(),
@@ -2048,6 +2029,7 @@ class ScriptService {
       let milestoneOrder = 0;
       let learningContent = [];
       let learningContentIdx = -1;
+      let dayTitle = null;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2060,6 +2042,9 @@ class ScriptService {
             description: "7 Days - 15 min/day",
             order: ++milestoneOrder,
             locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
+            icon: row["milestoneIcon"]?.trimEnd() || null,
+            iconBackgroundColor:
+              row["milestoneIconBGColor"]?.trimEnd() || "#ffffff19",
           });
         }
         return acc;
@@ -2078,6 +2063,8 @@ class ScriptService {
                 description: goal.description,
                 order: goal.order,
                 locked: goal.locked,
+                icon: goal.icon,
+                iconBackgroundColor: goal.iconBackgroundColor,
               },
             },
             upsert: true,
@@ -2099,6 +2086,7 @@ class ScriptService {
 
         if (row["day"] && row["day"] != currentDay) {
           currentDay = Number(row["day"]);
+          dayTitle = row["title"]?.trimEnd() || null;
           order = 0;
           learningContent.push({
             milestoneId: currentMilestoneId || null,
@@ -2149,6 +2137,7 @@ class ScriptService {
             template: Number(row["template"]?.trimEnd()),
             inputTemplate: inputTemplate,
             isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
+            dayTitle,
           });
         }
         if (row["optionTitle"]) {
@@ -2197,6 +2186,7 @@ class ScriptService {
                 template: obj.template,
                 inputTemplate: obj.inputTemplate,
                 isAiToolbox: obj.isAiToolbox,
+                dayTitle: obj.dayTitle,
               },
             },
             upsert: true,
@@ -2626,6 +2616,84 @@ class ScriptService {
       reward,
       quizId,
     };
+  }
+
+  /**
+   * @description This function import the entrepreneur communities from the spreadsheet
+   * @returns {*}
+   */
+  public async addEntrepreneurCommunities(rows) {
+    try {
+      const user = await UserTable.findOne({
+        email: "nataliezx2010@gmail.com",
+      });
+      const communities = [];
+      let name = null,
+        location = null;
+      for (const row of rows) {
+        name = row["Name"]?.trimEnd();
+        location = row["Location"]?.trimEnd();
+        if (name) {
+          communities.push({
+            name: name,
+            location: location,
+            isNextChallengeScheduled: false,
+            googlePlaceId: `${name.split(" ").join("")}${location
+              .split(" ")
+              .join("")}`,
+            createdBy: user._id,
+            type: 1,
+            challenge: {
+              type: CHALLENGE_TYPE[0],
+              xpGoal: 0,
+              endAt: null,
+              reward: 0,
+            },
+          });
+        }
+      }
+      return communities;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function add entrepreneur communities to DB
+   * @param data
+   * @returns {*}
+   */
+  public async addCommunitiesToDB(data: any) {
+    let communities = [];
+    try {
+      data.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              name: obj.name,
+              type: obj.type,
+            },
+            update: {
+              $set: {
+                name: obj.name,
+                location: obj.location,
+                isNextChallengeScheduled: obj.isNextChallengeScheduled,
+                googlePlaceId: obj.googlePlaceId,
+                createdBy: obj.createdBy,
+                challenge: obj.challenge,
+                type: obj.type,
+              },
+            },
+            upsert: true,
+          },
+        };
+        communities.push(bulkWriteObject);
+      });
+      await CommunityTable.bulkWrite(communities);
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 

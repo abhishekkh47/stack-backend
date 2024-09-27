@@ -31,6 +31,16 @@ const schema = new mongoose.Schema<IMilestoneSchema>(
       required: true,
       default: false,
     },
+    icon: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    iconBackgroundColor: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );
