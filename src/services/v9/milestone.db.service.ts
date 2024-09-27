@@ -706,7 +706,8 @@ class MilestoneDBService {
   public async getMilestoneProgress(businessProfile) {
     try {
       const userId = businessProfile.userId;
-      let dailyGoal = null;
+      let dailyGoal = null,
+        progress = 0;
       let currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
       if (!currentMilestoneId) {
         currentMilestoneId = await MilestoneTable.findOne({ order: 1 });
@@ -758,7 +759,11 @@ class MilestoneDBService {
       const totalGoals = milestoneGoals?.length;
       const totalDays = milestoneGoals[totalGoals - 1]?.day || 1;
       const currentDay = lastGoalCompleted?.day || 1;
-      const progress = (completedMilestoneGoals / totalGoals) * 100;
+      if (currentMilestone.order == 1 && businessProfile.description) {
+        progress = ((completedMilestoneGoals + 1) / totalGoals) * 100;
+      } else {
+        progress = (completedMilestoneGoals / totalGoals) * 100;
+      }
       return {
         title: currentMilestone.milestone,
         iconImage: currentMilestone.icon,
