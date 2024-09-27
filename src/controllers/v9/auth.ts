@@ -237,7 +237,7 @@ class AuthController extends BaseController {
                 x.maxPoint >= userExists.xpPoints
             );
             const profileData = {
-              ...userProfileData,
+              ...userProfileData.data,
               businessProfile,
               assignedCoach: coachProfile
                 ? {
