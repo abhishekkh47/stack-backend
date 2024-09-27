@@ -750,7 +750,12 @@ class ScriptService {
       await Promise.all(
         await rows.map(async (data, index) => {
           if (data["Simulation Title"] != "") {
-            simulationTitle = data["Simulation Title"].trimEnd();
+            const titleData = data["Simulation Title"].trimEnd().split("NEW: ");
+            if (titleData?.length > 1 && titleData[0] == "") {
+              simulationTitle = titleData[1];
+            } else {
+              simulationTitle = `Simulation: ${titleData[0]}`;
+            }
           }
           if (data["Simulation Image"] != "") {
             simulationImage = data["Simulation Image"].trimEnd();
