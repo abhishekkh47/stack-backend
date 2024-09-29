@@ -180,8 +180,10 @@ class MilestoneDBService {
       } else {
         currentGoal = lastMilestoneCompleted;
       }
+      // order -> quiz, story, simulation
+      const order = { 1: 0, 3: 1, 2: 2 };
       const learningContent = (await this.getLearningContent(currentGoal)).sort(
-        (a, b) => b?.type - a?.type
+        (a, b) => order[b?.type] - order[a?.type]
       );
       const quizIds = learningContent.map((obj) => obj.quizId);
       const completedQuizzes = await QuizResult.find(
