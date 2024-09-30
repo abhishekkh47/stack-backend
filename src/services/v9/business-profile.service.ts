@@ -669,7 +669,7 @@ class BusinessProfileService {
               name: IDEA_ANALYSIS.PROBLEM.wallet.name,
               rating: problem.priceRating,
               description: replacePlaceholders(
-                IDEA_ANALYSIS.PROBLEM.trending.description,
+                IDEA_ANALYSIS.PROBLEM.wallet.description,
                 problemPlaceHolders
               ),
             },
@@ -677,7 +677,7 @@ class BusinessProfileService {
               name: IDEA_ANALYSIS.PROBLEM.audience.name,
               rating: problem.customerRating,
               description: replacePlaceholders(
-                IDEA_ANALYSIS.PROBLEM.trending.description,
+                IDEA_ANALYSIS.PROBLEM.audience.description,
                 problemPlaceHolders
               ),
             },
