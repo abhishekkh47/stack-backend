@@ -99,7 +99,7 @@ class MilestoneController extends BaseController {
       BusinessProfileTable.findOne({ userId: user._id }).lean(),
     ]);
     if (!userExists) {
-      return this.BadRequest(ctx, "User Not Found");
+      return this.UnAuthorized(ctx, "User Not Found");
     }
     const [goals, milestoneProgress] = await Promise.all([
       MilestoneDBService.getCurrentMilestoneGoals(userExists, businessProfile),

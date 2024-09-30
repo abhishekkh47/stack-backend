@@ -31,7 +31,7 @@ class UserController extends BaseController {
     const { user } = ctx.request;
     const userIfExists = await UserTable.findOne({ _id: user._id });
     if (!userIfExists) {
-      return this.BadRequest(ctx, "User Not Found");
+      return this.UnAuthorized(ctx, "User Not Found");
     }
     let coachProfile = null;
     let initialMessage = null;
