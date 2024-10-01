@@ -514,12 +514,13 @@ class MilestoneDBService {
         {}
       ).lean();
       let isMilestoneHit = false;
+      const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
       const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
       if (
         goalsLength &&
         (getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 ||
           override) &&
-        businessProfile.currentMilestone?.milestoneId?.toString() ==
+        currentMilestoneId?.toString() ==
           availableDailyChallenges?.dailyGoalStatus[
             goalsLength - 1
           ].milestoneId.toString()
@@ -568,10 +569,9 @@ class MilestoneDBService {
           }
         });
         if (!response?.tasks[0]?.data?.length) {
-          const milestoneId = response?.tasks[1]?.data[0]?.milestoneId;
           const daysInCurrentMilestone = (
             await MilestoneGoalsTable.find({
-              milestoneId,
+              milestoneId: currentMilestoneId,
             })
               .sort({ day: -1 })
               .lean()
