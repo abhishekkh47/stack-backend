@@ -766,15 +766,10 @@ class MilestoneDBService {
             day: currentDay,
           }),
         ]);
-      if (
-        lastGoalCompleted?.day ==
-        dailyGoalStatus[dailyGoalStatus.length - 1]?.day
-      ) {
-        progress =
-          (100 / totalDays) * (currentDay - 1) +
-          (100 / totalDays / totalCurrentDayGoals) *
-            currentGoalCompletedChallenges;
-      }
+      progress =
+        (100 / totalDays) * (currentDay - 1) +
+        (100 / totalDays / totalCurrentDayGoals) *
+          currentGoalCompletedChallenges;
       return {
         title: currentMilestone.milestone,
         iconImage: currentMilestone.icon,
