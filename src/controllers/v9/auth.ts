@@ -102,20 +102,24 @@ class AuthController extends BaseController {
 
               accountCreated = true;
 
-              // for sensitive identify calls, we need to await to make sure it waits.
-              await AnalyticsService.identifyOnce(userExists._id, {
-                Email: userExists.email,
-              });
-
-              AnalyticsService.sendEvent(
-                ANALYTICS_EVENTS.SIGNED_UP_SSO,
-                undefined,
-                {
-                  device_id: deviceId,
-                  user_id: userExists._id,
-                  country: TIMEZONE_TO_COUNTRY[reqParam.timezone],
+              (async () => {
+                try {
+                  await AnalyticsService.identifyOnce(userExists._id, {
+                    Email: userExists.email,
+                  });
+                  await AnalyticsService.sendEvent(
+                    ANALYTICS_EVENTS.SIGNED_UP_SSO,
+                    undefined,
+                    {
+                      device_id: deviceId,
+                      user_id: userExists._id,
+                      country: TIMEZONE_TO_COUNTRY[reqParam.timezone],
+                    }
+                  );
+                } catch (error) {
+                  console.error("Error in analytics flow:", error);
                 }
-              );
+              })();
 
               let dataSentInCrm: any = {
                 Account_Name: reqParam.firstName + " " + reqParam.lastName,
@@ -203,14 +207,17 @@ class AuthController extends BaseController {
               userExists
             );
 
-            let { data: profileData } = await UserDBService.getProfile(
-              userExists._id
-            );
-            const businessProfile =
-              await BusinessProfileServiceV9.getBusinessProfile(userExists._id);
-            const userAIToolStatus = await UserServiceV9.userAIToolUsageStatus(
-              userExists
-            );
+            const [
+              userProfileData,
+              businessProfile,
+              userAIToolStatus,
+              topicDetails,
+            ] = await Promise.all([
+              UserDBService.getProfile(userExists._id),
+              BusinessProfileServiceV9.getBusinessProfile(userExists._id),
+              UserServiceV9.userAIToolUsageStatus(userExists),
+              ChecklistDBService.getQuizTopics(userExists),
+            ]);
             if (
               businessProfile &&
               businessProfile?.businessCoachInfo?.coachId
@@ -221,16 +228,13 @@ class AuthController extends BaseController {
               initialMessage = businessProfile.businessCoachInfo.initialMessage;
               thingsToTalkAbout = THINGS_TO_TALK_ABOUT;
             }
-            const topicDetails = await ChecklistDBService.getQuizTopics(
-              userExists
-            );
             let currentLeague = leagues.find(
               (x) =>
                 x.minPoint <= userExists.xpPoints &&
                 x.maxPoint >= userExists.xpPoints
             );
-            profileData = {
-              ...profileData,
+            const profileData = {
+              ...userProfileData.data,
               businessProfile,
               assignedCoach: coachProfile
                 ? {

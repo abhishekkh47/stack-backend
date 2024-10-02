@@ -452,7 +452,12 @@ class MilestoneDBService {
    */
   public async saveMilestoneGoalResults(userIfExists: any, goalId: any) {
     try {
-      const goal = await MilestoneGoalsTable.findOne({ _id: goalId }).lean();
+      const result = await DailyChallengeTable.findOne(
+        { "dailyGoalStatus._id": goalId },
+        { "dailyGoalStatus.$": 1 }
+      );
+      const key = result?.dailyGoalStatus[0]?.key;
+      const goal = await MilestoneGoalsTable.findOne({ key }).lean();
       const resultObj = {
         userId: userIfExists._id,
         milestoneId: goal.milestoneId,
@@ -514,12 +519,13 @@ class MilestoneDBService {
         {}
       ).lean();
       let isMilestoneHit = false;
+      const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
       const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
       if (
         goalsLength &&
         (getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 ||
           override) &&
-        businessProfile.currentMilestone?.milestoneId?.toString() ==
+        currentMilestoneId?.toString() ==
           availableDailyChallenges?.dailyGoalStatus[
             goalsLength - 1
           ].milestoneId.toString()
@@ -568,10 +574,9 @@ class MilestoneDBService {
           }
         });
         if (!response?.tasks[0]?.data?.length) {
-          const milestoneId = response?.tasks[1]?.data[0]?.milestoneId;
           const daysInCurrentMilestone = (
             await MilestoneGoalsTable.find({
-              milestoneId,
+              milestoneId: currentMilestoneId,
             })
               .sort({ day: -1 })
               .lean()
@@ -731,23 +736,21 @@ class MilestoneDBService {
         DailyChallengeTable.findOne({ userId }),
       ]);
 
-      let currentGoalId = null;
+      let currentGoalKey = null;
       const dailyGoalStatus = currentGoals?.dailyGoalStatus || [];
       if (dailyGoalStatus?.length > 0) {
-        currentGoalId = new ObjectId(
-          dailyGoalStatus[dailyGoalStatus.length - 1]._id
-        );
+        currentGoalKey = dailyGoalStatus[dailyGoalStatus.length - 1].key;
       } else {
-        currentGoalId = lastGoalCompleted?.goalId;
+        currentGoalKey = lastGoalCompleted?.key;
       }
-      if (!currentGoalId && currentMilestoneId) {
+      if (!currentGoalKey && currentMilestoneId) {
         dailyGoal = await MilestoneGoalsTable.findOne({
           milestoneId: currentMilestoneId,
           day: 1,
         });
       } else {
         dailyGoal = await MilestoneGoalsTable.findOne({
-          _id: currentGoalId,
+          key: currentGoalKey,
         });
       }
 
@@ -766,15 +769,10 @@ class MilestoneDBService {
             day: currentDay,
           }),
         ]);
-      if (
-        lastGoalCompleted?.day ==
-        dailyGoalStatus[dailyGoalStatus.length - 1]?.day
-      ) {
-        progress =
-          (100 / totalDays) * (currentDay - 1) +
-          (100 / totalDays / totalCurrentDayGoals) *
-            currentGoalCompletedChallenges;
-      }
+      progress =
+        (100 / totalDays) * (currentDay - 1) +
+        (100 / totalDays / totalCurrentDayGoals) *
+          currentGoalCompletedChallenges;
       return {
         title: currentMilestone.milestone,
         iconImage: currentMilestone.icon,

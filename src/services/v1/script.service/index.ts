@@ -2639,13 +2639,14 @@ class ScriptService {
         name = row["Name"]?.trimEnd();
         location = row["Location"]?.trimEnd();
         if (name) {
+          // Remove all special characters from name and location for googlePlaceId
+        const sanitizedGooglePlaceId = `${name.replace(/[^a-zA-Z0-9]/g, '')}${location.replace(/[^a-zA-Z0-9]/g, '')}`;
+        
           communities.push({
             name: name,
             location: location,
             isNextChallengeScheduled: false,
-            googlePlaceId: `${name.split(" ").join("")}${location
-              .split(" ")
-              .join("")}`,
+            googlePlaceId: sanitizedGooglePlaceId,
             createdBy: user._id,
             type: 1,
             challenge: {
