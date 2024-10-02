@@ -452,7 +452,12 @@ class MilestoneDBService {
    */
   public async saveMilestoneGoalResults(userIfExists: any, goalId: any) {
     try {
-      const goal = await MilestoneGoalsTable.findOne({ _id: goalId }).lean();
+      const result = await DailyChallengeTable.findOne(
+        { "dailyGoalStatus._id": goalId },
+        { "dailyGoalStatus.$": 1 }
+      );
+      const key = result?.dailyGoalStatus[0]?.key;
+      const goal = await MilestoneGoalsTable.findOne({ key }).lean();
       const resultObj = {
         userId: userIfExists._id,
         milestoneId: goal.milestoneId,
