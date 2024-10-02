@@ -2639,13 +2639,14 @@ class ScriptService {
         name = row["Name"]?.trimEnd();
         location = row["Location"]?.trimEnd();
         if (name) {
+          // Remove spaces and commas from name and location for googlePlaceId
+          const sanitizedGooglePlaceId = `${name.replace(/\s+/g, '').replace(/,/g, '')}${location.replace(/\s+/g, '').replace(/,/g, '')}`;
+        
           communities.push({
             name: name,
             location: location,
             isNextChallengeScheduled: false,
-            googlePlaceId: `${name.split(" ").join("")}${location
-              .split(" ")
-              .join("")}`,
+            googlePlaceId: sanitizedGooglePlaceId,
             createdBy: user._id,
             type: 1,
             challenge: {
