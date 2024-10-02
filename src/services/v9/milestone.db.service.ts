@@ -452,7 +452,12 @@ class MilestoneDBService {
    */
   public async saveMilestoneGoalResults(userIfExists: any, goalId: any) {
     try {
-      const goal = await MilestoneGoalsTable.findOne({ _id: goalId }).lean();
+      const result = await DailyChallengeTable.findOne(
+        { "dailyGoalStatus._id": goalId },
+        { "dailyGoalStatus.$": 1 }
+      );
+      const key = result?.dailyGoalStatus[0]?.key;
+      const goal = await MilestoneGoalsTable.findOne({ key }).lean();
       const resultObj = {
         userId: userIfExists._id,
         milestoneId: goal.milestoneId,
@@ -731,23 +736,21 @@ class MilestoneDBService {
         DailyChallengeTable.findOne({ userId }),
       ]);
 
-      let currentGoalId = null;
+      let currentGoalKey = null;
       const dailyGoalStatus = currentGoals?.dailyGoalStatus || [];
       if (dailyGoalStatus?.length > 0) {
-        currentGoalId = new ObjectId(
-          dailyGoalStatus[dailyGoalStatus.length - 1]._id
-        );
+        currentGoalKey = dailyGoalStatus[dailyGoalStatus.length - 1].key;
       } else {
-        currentGoalId = lastGoalCompleted?.goalId;
+        currentGoalKey = lastGoalCompleted?.key;
       }
-      if (!currentGoalId && currentMilestoneId) {
+      if (!currentGoalKey && currentMilestoneId) {
         dailyGoal = await MilestoneGoalsTable.findOne({
           milestoneId: currentMilestoneId,
           day: 1,
         });
       } else {
         dailyGoal = await MilestoneGoalsTable.findOne({
-          _id: currentGoalId,
+          key: currentGoalKey,
         });
       }
 
