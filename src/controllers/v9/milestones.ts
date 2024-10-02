@@ -1,10 +1,5 @@
 import { Auth } from "@app/middleware";
-import {
-  BusinessProfileTable,
-  DailyChallengeTable,
-  UserTable,
-  MilestoneTable,
-} from "@app/model";
+import { BusinessProfileTable, UserTable, MilestoneTable } from "@app/model";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import BaseController from "../base";
@@ -105,7 +100,7 @@ class MilestoneController extends BaseController {
       MilestoneDBService.getCurrentMilestoneGoals(userExists, businessProfile),
       MilestoneDBService.getMilestoneProgress(businessProfile),
     ]);
-    goals.tasks.unshift({
+    goals?.tasks?.unshift({
       title: "Current Milestone",
       data: [milestoneProgress],
     });
@@ -128,7 +123,7 @@ class MilestoneController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const goals = await MilestoneDBService.getActionDetails(key);
+    const goals = await MilestoneDBService.getActionDetails([key]);
     return this.Ok(ctx, { data: goals });
   }
 }

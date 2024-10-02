@@ -49,7 +49,8 @@ class BusinessProfileService {
     businessProfile: any
   ) {
     try {
-      let obj = {};
+      let obj = {},
+        key = data?.key;
       let businessHistoryObj = [];
       // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
       if (data.savedBusinessIdeas) {
@@ -74,61 +75,70 @@ class BusinessProfileService {
         }
         obj["idea"] = latestSelection.idea;
         obj["description"] = latestSelection.description;
+        key = "ideaValidation";
         AnalyticsService.sendEvent(
           ANALYTICS_EVENTS.BUSINESS_IDEA_SELECTED,
           { "Item Name": latestSelection.idea },
           { user_id: userIfExists._id }
         );
-      } else if (data.key == "description" || data.key == "ideaValidation") {
+      } else if (key == "description" || key == "ideaValidation") {
         obj["idea"] = data.value;
         obj["description"] = data.description;
       } else {
         if (businessProfile) {
-          const hasGoalInProfile = hasGoalKey(businessProfile, data.key);
+          const hasGoalInProfile = hasGoalKey(businessProfile, key);
           const hasGoalInCompletedActions = mapHasGoalKey(
             businessProfile.completedActions,
-            data.key
+            key
           );
           if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
             obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
-            if (data.key == "companyName") {
+            if (key == "companyName") {
               obj["completedActions.companyLogo"] = DEFAULT_BUSINESS_LOGO;
             }
           }
         }
-        obj[data.key] = { title: data.value, description: data.description };
+        obj[key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
         obj["aiGeneratedSuggestions"] = null;
-        obj[`completedActions.${data.key}`] = {
+        obj[`completedActions.${key}`] = {
           title: data.value,
           description: data.description,
         };
         businessHistoryObj = [
           {
-            key: data.key,
+            key: key,
             value: { title: data.value, description: data.description },
             timestamp: Date.now(),
           },
         ];
         AnalyticsService.sendEvent(
-          ANALYTICS_EVENTS[AI_TOOLS_ANALYTICS[data.key]],
+          ANALYTICS_EVENTS[AI_TOOLS_ANALYTICS[key]],
           { "Item Name": data.value },
           { user_id: userIfExists._id }
         );
       }
-      if (data.goalId) {
-        MilestoneDBService.saveMilestoneGoalResults(userIfExists, data.goalId);
-      }
-      await BusinessProfileTable.findOneAndUpdate(
-        {
-          userId: userIfExists._id,
-        },
-        {
-          $set: obj,
-          $push: { businessHistory: businessHistoryObj },
-        },
-        { upsert: true }
-      );
+      await Promise.all([
+        data?.goalId
+          ? MilestoneDBService.saveMilestoneGoalResults(
+              userIfExists,
+              data.goalId
+            )
+          : Promise.resolve(),
+        data?.goalId || key == "ideaValidation"
+          ? MilestoneDBService.removeCompletedAction(userIfExists, key)
+          : Promise.resolve(),
+        BusinessProfileTable.findOneAndUpdate(
+          {
+            userId: userIfExists._id,
+          },
+          {
+            $set: obj,
+            $push: { businessHistory: businessHistoryObj },
+          },
+          { upsert: true }
+        ),
+      ]);
       return [
         {
           ...obj,
@@ -138,7 +148,6 @@ class BusinessProfileService {
         },
       ];
     } catch (error) {
-      console.log("Error : ", error);
       throw new NetworkError("Something went wrong", 400);
     }
   }

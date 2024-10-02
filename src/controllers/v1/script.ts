@@ -2442,6 +2442,21 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is to assign default logo to existing users who have not yet created a logo
+   * @param ctx
+   */
+  @Route({ path: "/remove-completed-actions", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async removeCompletedActions(ctx: any) {
+    try {
+      const res = await ScriptService.removeCompletedActions();
+      return this.Ok(ctx, { message: "Success", data: res });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();
