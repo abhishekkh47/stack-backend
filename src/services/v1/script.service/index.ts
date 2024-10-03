@@ -2640,8 +2640,11 @@ class ScriptService {
         location = row["Location"]?.trimEnd();
         if (name) {
           // Remove all special characters from name and location for googlePlaceId
-        const sanitizedGooglePlaceId = `${name.replace(/[^a-zA-Z0-9]/g, '')}${location.replace(/[^a-zA-Z0-9]/g, '')}`;
-        
+          const sanitizedGooglePlaceId = `${name.replace(
+            /[^a-zA-Z0-9]/g,
+            ""
+          )}${location.replace(/[^a-zA-Z0-9]/g, "")}`;
+
           communities.push({
             name: name,
             location: location,
@@ -2703,16 +2706,12 @@ class ScriptService {
   }
 
   /**
-   * @description This function assign default logo to the users who have already completed the company name action but do not have any logo
+   * @description This function remove the actions completed by the users from the daily-challenges collection
    * @returns {*}
    */
   public async removeCompletedActions() {
     try {
-      // const profilesToUpdate = await DailyChallengeTable.find({}).lean();
       const profilesToUpdate = await DailyChallengeTable.aggregate([
-        {
-          $match: { userId: new ObjectId("66e3eaa2a882fd03b5a56b9e") },
-        },
         {
           $lookup: {
             from: "business-profiles",

@@ -2444,7 +2444,7 @@ class ScriptController extends BaseController {
   }
 
   /**
-   * @description This method is to assign default logo to existing users who have not yet created a logo
+   * @description This method is to remove completed actions of a user from the daily_challenges collection
    * @param ctx
    */
   @Route({ path: "/remove-completed-actions", method: HttpMethod.POST })

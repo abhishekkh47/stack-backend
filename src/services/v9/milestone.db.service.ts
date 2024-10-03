@@ -615,8 +615,10 @@ class MilestoneDBService {
           })
             .sort({ day: -1 })
             .lean();
-          const daysInCurrentMilestone = currentMilestone.day;
-          isMilestoneHit = lastMilestoneCompleted.day == daysInCurrentMilestone;
+          isMilestoneHit = await this.checkIfMilestoneHit(
+            lastMilestoneCompleted,
+            currentMilestoneId
+          );
           response.isMilestoneHit = isMilestoneHit;
           if (isMilestoneHit) {
             response.tasks.shift();
