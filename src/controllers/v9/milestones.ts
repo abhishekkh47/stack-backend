@@ -129,13 +129,13 @@ class MilestoneController extends BaseController {
    * @returns {*}
    */
   @Route({
-    path: "/get-milestone-summary",
+    path: "/get-milestone-summary/:milestoneId",
     method: HttpMethod.GET,
   })
   @Auth()
   public async getMilestoneSummary(ctx: any) {
-    const { user, body } = ctx.request;
-    const { milestoneId } = body;
+    const { user, params } = ctx.request;
+    const { milestoneId } = params;
     const [userExists, businessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
       BusinessProfileTable.findOne({ userId: user._id }).lean(),

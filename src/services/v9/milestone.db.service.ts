@@ -867,6 +867,7 @@ class MilestoneDBService {
         (100 / totalDays / totalCurrentDayGoals) *
           currentGoalCompletedChallenges;
       return {
+        _id: currentMilestoneId,
         title: currentMilestone.milestone,
         iconImage: currentMilestone.icon,
         iconBackgroundColor: currentMilestone.iconBackgroundColor,
@@ -960,6 +961,13 @@ class MilestoneDBService {
   public async getUserMilestoneGoals(userExists, businessProfile) {
     try {
       const currentMilestone = businessProfile.currentMilestone.milestoneId;
+      const {
+        CURRENT_MILESTONE,
+        COMPLETED_MILESTONES,
+        GOALS_OF_THE_DAY,
+        SHOW_PRO_BANNER,
+      } = MILESTONE_HOMEPAGE;
+      let updatedCompletedMilestones = null;
       const [goals, milestoneProgress, completedMilestones] = await Promise.all(
         [
           this.getCurrentMilestoneGoals(userExists, businessProfile),
@@ -968,44 +976,41 @@ class MilestoneDBService {
         ]
       );
       goals?.tasks?.unshift({
-        title: MILESTONE_HOMEPAGE.CURRENT_MILESTONE,
+        title: CURRENT_MILESTONE,
         data: [milestoneProgress],
       });
-      if (completedMilestones?.length > 0) {
-        let updatedCompletedMilestones = completedMilestones;
-        if (!goals.isMilestoneHit) {
-          updatedCompletedMilestones = completedMilestones.filter(
-            (obj) => currentMilestone.toString() != obj._id.toString()
-          );
-        }
+      if (!goals.isMilestoneHit) {
+        updatedCompletedMilestones = completedMilestones.filter(
+          (obj) => currentMilestone.toString() != obj._id.toString()
+        );
+      }
+      if (updatedCompletedMilestones?.length > 0) {
         goals?.tasks?.push({
-          title: MILESTONE_HOMEPAGE.COMPLETED_MILESTONES,
+          title: COMPLETED_MILESTONES,
           data: updatedCompletedMilestones,
         });
       }
       const todaysGoalIdx = goals.tasks.findIndex(
-        (obj) => obj.title == MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY
+        (obj) => obj.title == GOALS_OF_THE_DAY
       );
       const curentMilestoneIdx = goals.tasks.findIndex(
-        (obj) => obj.title == MILESTONE_HOMEPAGE.CURRENT_MILESTONE
+        (obj) => obj.title == CURRENT_MILESTONE
       );
       const completedMilestoneIdx = goals.tasks.findIndex(
-        (obj) => obj.title == MILESTONE_HOMEPAGE.COMPLETED_MILESTONES
+        (obj) => obj.title == COMPLETED_MILESTONES
       );
       if (goals.isMilestoneHit) {
         goals.tasks = [goals.tasks[completedMilestoneIdx]];
         return goals;
       }
       if (todaysGoalIdx > -1) {
-        goals.tasks[todaysGoalIdx][MILESTONE_HOMEPAGE.SHOW_PRO_BANNER] = true;
+        goals.tasks[todaysGoalIdx][SHOW_PRO_BANNER] = true;
         if (goals.tasks[todaysGoalIdx].data.length < 1) {
-          goals.tasks[curentMilestoneIdx][MILESTONE_HOMEPAGE.SHOW_PRO_BANNER] =
-            true;
+          goals.tasks[curentMilestoneIdx][SHOW_PRO_BANNER] = true;
           goals.tasks.splice(todaysGoalIdx, 1);
         }
       } else if (curentMilestoneIdx > -1) {
-        goals.tasks[curentMilestoneIdx][MILESTONE_HOMEPAGE.SHOW_PRO_BANNER] =
-          true;
+        goals.tasks[curentMilestoneIdx][SHOW_PRO_BANNER] = true;
       }
       return goals;
     } catch (error) {
@@ -1040,14 +1045,14 @@ class MilestoneDBService {
         actionValue = completedActions[goal.key];
         if (goal.key == "ideaValidation" && idea && description) {
           actionValue = {
-            idea,
+            title: idea,
             description,
           };
         }
         if (actionValue) {
           const goalObj = {
             title: goal.title,
-            description: actionValue,
+            data: actionValue,
           };
           if (summaryObj[goal.dayTitle]) {
             summaryObj[goal.dayTitle].push(goalObj);
