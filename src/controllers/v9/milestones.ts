@@ -1,7 +1,7 @@
 import { Auth } from "@app/middleware";
 import { BusinessProfileTable, UserTable, MilestoneTable } from "@app/model";
 import { HttpMethod } from "@app/types";
-import { Route } from "@app/utility";
+import { Route, MILESTONE_HOMEPAGE } from "@app/utility";
 import BaseController from "../base";
 import { MilestoneDBService } from "@app/services/v9";
 class MilestoneController extends BaseController {
@@ -87,7 +87,7 @@ class MilestoneController extends BaseController {
    */
   @Route({ path: "/get-daily-milestone", method: HttpMethod.GET })
   @Auth()
-  public async getUserMilestoneGoals(ctx: any) {
+  public async getDailyMilestone(ctx: any) {
     const { user } = ctx.request;
     const [userExists, businessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
@@ -96,39 +96,30 @@ class MilestoneController extends BaseController {
     if (!userExists) {
       return this.UnAuthorized(ctx, "User Not Found");
     }
-    const [goals, milestoneProgress, completedMilestones] = await Promise.all([
-      MilestoneDBService.getCurrentMilestoneGoals(userExists, businessProfile),
-      MilestoneDBService.getMilestoneProgress(businessProfile),
-      MilestoneDBService.getCompletedMilestones(userExists, businessProfile),
-    ]);
-    goals?.tasks?.unshift({
-      title: "Current Milestone",
-      data: [milestoneProgress],
-    });
-    goals?.tasks?.push({
-      title: "Completed Milestones",
-      data: completedMilestones,
-    });
+    const response = await MilestoneDBService.getUserMilestoneGoals(
+      userExists,
+      businessProfile
+    );
     return this.Ok(ctx, {
-      data: { ...goals, userId: user._id },
+      data: { ...response, userId: user._id },
     });
   }
 
   /**
-   * @description This is to select and update the current milestones
+   * @description This is to get suggestion screen copy data for array of keys
    * @param ctx
    * @returns {*}
    */
   @Route({ path: "/get-action-details/:key", method: HttpMethod.GET })
   @Auth()
   public async actionDetails(ctx: any) {
-    const { user, params } = ctx.request;
-    const key = params.key;
+    const { user, body } = ctx.request;
+    const { key, milestoneId } = body;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const goals = await MilestoneDBService.getActionDetails([key]);
+    const goals = await MilestoneDBService.getActionDetails([key], milestoneId);
     return this.Ok(ctx, { data: goals });
   }
 }
