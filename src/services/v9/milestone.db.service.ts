@@ -896,5 +896,56 @@ class MilestoneDBService {
     const isMilestoneHit = lastMilestoneCompleted.day == daysInCurrentMilestone;
     return isMilestoneHit;
   }
+
+  /**
+   * @description get completed milestones list
+   * @param userExists
+   * @param businessProfile
+   * @returns {*}
+   */
+  public async getCompletedMilestones(userExists, businessProfile) {
+    try {
+      const currentMilestone = businessProfile.currentMilestone.milestoneId;
+      const [milestoneList, milestoneGoalsCount] = await Promise.all([
+        this.getMilestones(userExists),
+        MilestoneGoalsTable.aggregate([
+          {
+            $group: {
+              _id: "$milestoneId",
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $sort: { count: -1 },
+          },
+        ]),
+      ]);
+      const completedMilestone = milestoneList.filter(
+        (obj) =>
+          obj.isCompleted == true &&
+          currentMilestone.toString() != obj._id.toString()
+      );
+      const milestoneGoalsCountMap = new Map(
+        milestoneGoalsCount.map((obj) => [obj._id.toString(), obj])
+      );
+
+      completedMilestone.map((obj) => {
+        const ifCompleted = milestoneGoalsCountMap.get(obj._id.toString());
+        if (ifCompleted) {
+          obj["time"] = `${ifCompleted.count} Goals Completed`;
+          obj["key"] = `completedMilestone`;
+          obj["progress"] = 100;
+          return obj;
+        }
+      });
+
+      return completedMilestone;
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
 }
 export default new MilestoneDBService();

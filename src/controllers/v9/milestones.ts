@@ -96,13 +96,18 @@ class MilestoneController extends BaseController {
     if (!userExists) {
       return this.UnAuthorized(ctx, "User Not Found");
     }
-    const [goals, milestoneProgress] = await Promise.all([
+    const [goals, milestoneProgress, completedMilestones] = await Promise.all([
       MilestoneDBService.getCurrentMilestoneGoals(userExists, businessProfile),
       MilestoneDBService.getMilestoneProgress(businessProfile),
+      MilestoneDBService.getCompletedMilestones(userExists, businessProfile),
     ]);
     goals?.tasks?.unshift({
       title: "Current Milestone",
       data: [milestoneProgress],
+    });
+    goals?.tasks?.push({
+      title: "Completed Milestones",
+      data: completedMilestones,
     });
     return this.Ok(ctx, {
       data: { ...goals, userId: user._id },
