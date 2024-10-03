@@ -1021,5 +1021,60 @@ class MilestoneDBService {
     }
   }
 
+  /**
+   * @description get milestone summary
+   * @param businessProfile
+   * @param milestoneId milestonId to get summary for
+   * @returns {*}
+   */
+  public async getMilestoneSummary(businessProfile: any, milestoneId: any) {
+    try {
+      const summaryData = [],
+        summaryObj = {};
+      let actionValue = null;
+      const {
+        completedActions,
+        idea = null,
+        description = null,
+      } = businessProfile;
+      const milestoneGoals = await MilestoneGoalsTable.find(
+        { milestoneId },
+        { day: 1, dayTitle: 1, title: 1, order: 1, key: 1 }
+      ).sort({ day: 1, order: 1 });
+      milestoneGoals.map((goal) => {
+        actionValue = completedActions[goal.key];
+        if (goal.key == "ideaValidation" && idea && description) {
+          actionValue = {
+            idea,
+            description,
+          };
+        }
+        if (actionValue) {
+          const goalObj = {
+            title: goal.title,
+            description: actionValue,
+          };
+          if (summaryObj[goal.dayTitle]) {
+            summaryObj[goal.dayTitle].push(goalObj);
+          } else {
+            summaryObj[goal.dayTitle] = [goalObj];
+          }
+        }
+      });
+      for (const [key, value] of Object.entries(summaryObj)) {
+        summaryData.push({
+          title: key,
+          description: value,
+        });
+      }
+
+      return summaryData;
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
 }
 export default new MilestoneDBService();

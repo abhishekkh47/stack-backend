@@ -122,6 +122,33 @@ class MilestoneController extends BaseController {
     const goals = await MilestoneDBService.getActionDetails([key], milestoneId);
     return this.Ok(ctx, { data: goals });
   }
+
+  /**
+   * @description This is to milestone summary based on milestonId
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/get-milestone-summary",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getMilestoneSummary(ctx: any) {
+    const { user, body } = ctx.request;
+    const { milestoneId } = body;
+    const [userExists, businessProfile] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }).lean(),
+    ]);
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const milestoneSummary = await MilestoneDBService.getMilestoneSummary(
+      businessProfile,
+      milestoneId
+    );
+    return this.Ok(ctx, { data: milestoneSummary });
+  }
 }
 
 export default new MilestoneController();
