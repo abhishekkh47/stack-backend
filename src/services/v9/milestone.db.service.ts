@@ -9,6 +9,7 @@ import {
   QuizLevelTable,
   QuizTable,
   QuizResult,
+  UserTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -1017,7 +1018,9 @@ class MilestoneDBService {
       } else if (curentMilestoneIdx > -1) {
         goals.tasks[curentMilestoneIdx][SHOW_PRO_BANNER] = true;
       }
-      return goals;
+
+      const currentDayGoals = this.getGoalOfTheDay(userExists);
+      return { ...goals, ...currentDayGoals };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
@@ -1079,6 +1082,79 @@ class MilestoneDBService {
         "Error occurred while retrieving new Milestone",
         400
       );
+    }
+  }
+
+  /**
+   * @description Update rewards collected today
+   * @param userIfExists
+   * @param coins tokens collected on completed a challenge or quiz
+   * @returns {*}
+   */
+  public async updateTodaysRewards(userIfExists: any, coins: number = 0) {
+    try {
+      const rewardsUpdatedOn = userIfExists?.currentDayRewards?.updatedAt;
+      const days = getDaysNum(userIfExists, rewardsUpdatedOn) || 0;
+      let updateObj = {};
+      if (days < 1) {
+        updateObj = {
+          $inc: {
+            "currentDayRewards.quizCoins": coins,
+            "currentDayRewards.goals": 1,
+          },
+          $set: {
+            "currentDayRewards.streak": 1,
+          },
+        };
+      } else {
+        updateObj = {
+          $set: {
+            "currentDayRewards.streak": 1,
+            "currentDayRewards.quizCoins": coins,
+            "currentDayRewards.goals": 1,
+            "currentDayRewards.updatedAt": new Date(),
+          },
+        };
+      }
+      await UserTable.updateOne(
+        {
+          _id: userIfExists._id,
+        },
+        updateObj,
+        { upsert: true }
+      );
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description Update rewards collected today
+   * @param userIfExists
+   * @returns {*}
+   */
+  private getGoalOfTheDay(userIfExists: any) {
+    try {
+      const currentDayRewards = userIfExists?.currentDayRewards;
+      if (currentDayRewards) {
+        const { streak, quizCoins, goals, updatedAt } = currentDayRewards;
+        const days = getDaysNum(userIfExists, updatedAt);
+        if (days < 1) {
+          return {
+            streakProgress: streak || 0,
+            fuelProgress: quizCoins || 0,
+            goalProgress: goals || 0,
+          };
+        }
+      }
+      return {
+        streakProgress: 0,
+        fuelProgress: 0,
+        goalProgress: 0,
+      };
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }

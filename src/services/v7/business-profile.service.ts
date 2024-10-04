@@ -138,6 +138,9 @@ class BusinessProfileService {
           },
           { upsert: true }
         ),
+        data?.goalId
+          ? MilestoneDBService.updateTodaysRewards(userIfExists, 0)
+          : Promise.resolve(),
       ]);
       return [
         {
