@@ -494,13 +494,8 @@ class MilestoneDBService {
    * @param goalId
    * @returns {*}
    */
-  public async saveMilestoneGoalResults(userIfExists: any, goalId: any) {
+  public async saveMilestoneGoalResults(userIfExists: any, key: string) {
     try {
-      const result = await DailyChallengeTable.findOne(
-        { "dailyGoalStatus._id": goalId },
-        { "dailyGoalStatus.$": 1 }
-      );
-      const key = result?.dailyGoalStatus[0]?.key;
       const goal = await MilestoneGoalsTable.findOne({ key }).lean();
       const resultObj = {
         userId: userIfExists._id,

@@ -120,10 +120,7 @@ class BusinessProfileService {
       }
       await Promise.all([
         data?.goalId
-          ? MilestoneDBService.saveMilestoneGoalResults(
-              userIfExists,
-              data.goalId
-            )
+          ? MilestoneDBService.saveMilestoneGoalResults(userIfExists, key)
           : Promise.resolve(),
         data?.goalId || key == "ideaValidation"
           ? MilestoneDBService.removeCompletedAction(userIfExists, key)
