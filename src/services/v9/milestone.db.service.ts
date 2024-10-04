@@ -518,12 +518,12 @@ class MilestoneDBService {
    */
   public async suggestionScreenInfo(initialGoals: any) {
     try {
-      const suggestionScreenCopy =
-        await SuggestionScreenCopyTable.find().lean();
+      const keys = initialGoals.map((obj) => obj.key);
+      const suggestionScreenCopy = await this.keyBasedSuggestionScreenInfo(
+        keys
+      );
       const updatedGoals = initialGoals.map((goal) => {
-        const copyData = suggestionScreenCopy.find(
-          (obj) => obj.key == goal.key
-        );
+        const copyData = suggestionScreenCopy[goal.key];
         goal["name"] = copyData.name;
         if (goal.inputTemplate) {
           goal.inputTemplate["suggestionScreenInfo"] = copyData;
