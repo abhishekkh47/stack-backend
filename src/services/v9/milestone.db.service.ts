@@ -19,6 +19,7 @@ import {
   ACTIVE_MILESTONE,
   MILESTONE_HOMEPAGE,
 } from "@app/utility";
+import moment from "moment";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -148,7 +149,11 @@ class MilestoneDBService {
           lastMilestoneCompleted,
           true
         ),
-        this.getActionDetails(completedActions, currentMilestoneId),
+        this.getActionDetails(
+          userIfExists,
+          completedActions,
+          currentMilestoneId
+        ),
       ]);
       const tasks = existingResponseWithPendingActions?.tasks;
       if (existingResponse) {
@@ -702,20 +707,42 @@ class MilestoneDBService {
 
   /**
    * @description get AI action details and related screen copy
+   * @param userIfExists
    * @param keys array of action identifiers
    * @param currentMilestoneId current milestone id
    * @returns {*}
    */
-  public async getActionDetails(keys: string[], currentMilestoneId: any) {
+  public async getActionDetails(
+    userIfExists: any,
+    keys: string[],
+    currentMilestoneId: any
+  ) {
     try {
-      const [goalDetails, inputTemplate] = await Promise.all([
-        MilestoneGoalsTable.find(
-          { key: { $in: keys }, milestoneId: currentMilestoneId },
-          { id: 0, dependency: 0, categoryId: 0, createdAt: 0, updatedAt: 0 }
-        ).lean(),
-        this.keyBasedSuggestionScreenInfo(keys),
-      ]);
-      goalDetails.forEach((goal) => {
+      const startOfDay = moment().startOf("day").toDate(); // 12:00 AM today
+      const endOfDay = moment().endOf("day").toDate(); // 11:59:59 PM today
+
+      const [goalDetails, inputTemplate, recordsUpdatedToday] =
+        await Promise.all([
+          MilestoneGoalsTable.find(
+            { key: { $in: keys }, milestoneId: currentMilestoneId },
+            { id: 0, dependency: 0, categoryId: 0, createdAt: 0, updatedAt: 0 }
+          ).lean(),
+          this.keyBasedSuggestionScreenInfo(keys),
+          // get goals completed today only
+          MilestoneResultTable.find({
+            userId: userIfExists._id,
+            milestoneId: currentMilestoneId,
+            updatedAt: {
+              $gte: startOfDay,
+              $lt: endOfDay,
+            },
+          }),
+        ]);
+      const currentDayCompletedKeys = recordsUpdatedToday.map((obj) => obj.key);
+      const filteredGoals = goalDetails.filter((goal) =>
+        currentDayCompletedKeys.includes(goal.key)
+      );
+      filteredGoals.forEach((goal) => {
         goal["inputTemplate"]["suggestionScreenInfo"] = inputTemplate[goal.key];
         goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
         goal["isLocked"] = false;
