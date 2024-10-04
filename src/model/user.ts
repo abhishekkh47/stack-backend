@@ -273,6 +273,24 @@ const schema = new mongoose.Schema<IUserSchema>(
       ref: "quiztopics",
       default: null,
     },
+    currentDayRewards: {
+      updatedAt: {
+        type: mongoose.Schema.Types.Date,
+        default: new Date(),
+      },
+      streak: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      quizCoins: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      goals: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+    },
   },
   { timestamps: true }
 );

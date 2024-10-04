@@ -7,7 +7,7 @@ import {
   QuizDBService as QuizDBServiceV4,
   UserDBService,
 } from "@app/services/v4";
-import { QuizDBService } from "@app/services/v9";
+import { MilestoneDBService, QuizDBService } from "@app/services/v9";
 import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import { validation } from "@app/validations/v1/apiValidation";
@@ -71,6 +71,7 @@ class QuizController extends BaseController {
               updatedXPPoints
             ),
             UserDBService.addStreaks(updatedUser),
+            MilestoneDBService.updateTodaysRewards(userIfExists, totalFuel),
           ]);
 
           (async () => {
