@@ -55,21 +55,6 @@ class BusinessProfileController extends BaseController {
         businessProfile
       );
 
-      // in case, if user complete day-1 goals from ai-tool box and not from homescreen, we need atleast one entry in result collection
-      if (!milestoneResult) {
-        const goal = await MilestoneGoalsTable.findOne({
-          key: "ideaValidation",
-        }).lean();
-        const resultObj = {
-          userId: userIfExists._id,
-          milestoneId: goal.milestoneId,
-          day: goal.day,
-          order: goal.order,
-          goalId: goal._id,
-          key: goal.key,
-        };
-        await MilestoneResultTable.create(resultObj);
-      }
       (async () => {
         zohoCrmService.addAccounts(
           ctx.request.zohoAccessToken,

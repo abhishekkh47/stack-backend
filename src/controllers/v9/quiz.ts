@@ -64,6 +64,8 @@ class QuizController extends BaseController {
           const [
             { previousLeague, currentLeague, nextLeague, isNewLeagueUnlocked },
             streaksDetails,
+            updateTodayRewards,
+            updateCompletedGoalCount,
           ] = await Promise.all([
             LeagueService.getUpdatedLeagueDetailsOfUser(
               userIfExists,
@@ -72,6 +74,7 @@ class QuizController extends BaseController {
             ),
             UserDBService.addStreaks(updatedUser),
             MilestoneDBService.updateTodaysRewards(userIfExists, totalFuel),
+            QuizDBService.updateGoalCount(userIfExists),
           ]);
 
           (async () => {

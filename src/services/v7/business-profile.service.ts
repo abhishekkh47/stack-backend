@@ -116,7 +116,7 @@ class BusinessProfileService {
         );
       }
       await Promise.all([
-        data?.goalId
+        data?.goalId || key == "ideaValidation"
           ? MilestoneDBService.saveMilestoneGoalResults(userIfExists, key)
           : Promise.resolve(),
         data?.goalId || key == "ideaValidation"
@@ -132,7 +132,7 @@ class BusinessProfileService {
           },
           { upsert: true }
         ),
-        data?.goalId
+        data?.goalId || key == "ideaValidation"
           ? MilestoneDBService.updateTodaysRewards(userIfExists, 0)
           : Promise.resolve(),
       ]);
@@ -948,7 +948,7 @@ class BusinessProfileService {
       });
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: SYSTEM,

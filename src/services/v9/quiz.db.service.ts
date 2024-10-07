@@ -7,6 +7,7 @@ import {
   UserCommunityTable,
   UserTable,
   ChecklistResultTable,
+  BusinessProfileTable,
 } from "@app/model";
 import { AnalyticsService } from "@app/services/v4";
 import { everyCorrectAnswerPoints } from "@app/types";
@@ -178,6 +179,22 @@ class QuizDBService {
       isGiftedStreakFreeze,
       updatedUser: updatedXP,
     };
+  }
+
+  /**
+   * @description update goal count on completing a learning
+   * @param userIfExists
+   */
+  public async updateGoalCount(userIfExists: any) {
+    const updateObj = {
+      $inc: {
+        completedGoal: 1,
+      },
+    };
+    await BusinessProfileTable.findOneAndUpdate(
+      { userId: userIfExists._id },
+      updateObj
+    );
   }
 }
 

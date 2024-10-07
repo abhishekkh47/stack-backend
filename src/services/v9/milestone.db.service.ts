@@ -1194,6 +1194,7 @@ class MilestoneDBService {
             "currentDayRewards.goals": 1,
             "currentDayRewards.updatedAt": new Date(),
           },
+          upsert: true,
         };
       }
       await UserTable.updateOne(
