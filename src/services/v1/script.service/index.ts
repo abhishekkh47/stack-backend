@@ -2640,8 +2640,11 @@ class ScriptService {
         location = row["Location"]?.trimEnd();
         if (name) {
           // Remove all special characters from name and location for googlePlaceId
-        const sanitizedGooglePlaceId = `${name.replace(/[^a-zA-Z0-9]/g, '')}${location.replace(/[^a-zA-Z0-9]/g, '')}`;
-        
+          const sanitizedGooglePlaceId = `${name.replace(
+            /[^a-zA-Z0-9]/g,
+            ""
+          )}${location.replace(/[^a-zA-Z0-9]/g, "")}`;
+
           communities.push({
             name: name,
             location: location,
@@ -2697,6 +2700,57 @@ class ScriptService {
       });
       await CommunityTable.bulkWrite(communities);
       return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function remove the actions completed by the users from the daily-challenges collection
+   * @returns {*}
+   */
+  public async removeCompletedActions() {
+    try {
+      const profilesToUpdate = await DailyChallengeTable.aggregate([
+        {
+          $lookup: {
+            from: "business-profiles",
+            localField: "userId",
+            foreignField: "userId",
+            as: "businessProfiles",
+          },
+        },
+        {
+          $project: {
+            userId: 1,
+            dailyGoalStatus: 1,
+            completedActions: {
+              $arrayElemAt: ["$businessProfiles.completedActions", 0],
+            },
+          },
+        },
+      ]).exec();
+      const IDEA = "ideaValidation";
+      const bulkOperations = profilesToUpdate?.map((profile) => {
+        const completedActions = [
+          IDEA,
+          ...Object.keys(profile.completedActions),
+        ];
+        return {
+          updateOne: {
+            filter: { userId: profile.userId },
+            update: {
+              $pull: {
+                dailyGoalStatus: { key: { $in: completedActions } },
+              },
+            },
+          },
+        };
+      });
+      if (bulkOperations.length > 0) {
+        await DailyChallengeTable.bulkWrite(bulkOperations);
+      }
+      return profilesToUpdate;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
