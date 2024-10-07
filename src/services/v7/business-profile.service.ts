@@ -93,9 +93,6 @@ class BusinessProfileService {
           );
           if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
             obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
-            if (key == "companyName") {
-              obj["completedActions.companyLogo"] = DEFAULT_BUSINESS_LOGO;
-            }
           }
         }
         obj[key] = { title: data.value, description: data.description };

@@ -143,13 +143,6 @@ class BusinessProfileController extends BaseController {
       companyLogo: imageName,
       "completedActions.companyLogo": imageName,
     };
-    if (
-      !businessProfileExists?.companyLogo &&
-      !businessProfileExists?.completedActions?.companyLogo
-    ) {
-      businessProfileObj["completedGoal"] =
-        businessProfileExists?.completedGoal + 1 || 1;
-    }
     if (businessProfileExists?.completedActions?.companyLogo) {
       removeImage(
         userExists._id,
