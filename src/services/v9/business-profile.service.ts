@@ -58,6 +58,15 @@ class BusinessProfileService {
           404
         );
       }
+      const availableTokens = userExists.preLoadedCoins + userExists.quizCoins;
+      const isPremiumUser = userExists.isPremiumUser;
+      if (
+        !isPremiumUser &&
+        isRetry == IS_RETRY.TRUE &&
+        availableTokens < DEDUCT_RETRY_FUEL
+      ) {
+        throw new NetworkError("Not enough tokens available", 404);
+      }
       let aiToolUsageObj = {};
       aiToolUsageObj[key] = true;
       aiToolUsageObj = { [`usedAITools.${key}`]: true };
@@ -91,7 +100,7 @@ class BusinessProfileService {
           { upsert: true }
         );
       }
-      if (response && !userExists.isPremiumUser && isRetry == IS_RETRY.TRUE) {
+      if (response && !isPremiumUser && isRetry == IS_RETRY.TRUE) {
         await this.updateAIToolsRetryStatus(userExists);
       }
       return {
