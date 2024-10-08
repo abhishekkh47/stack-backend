@@ -129,7 +129,9 @@ class MilestoneDBService {
             .lean(),
           DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
         ]);
-      let completedActions = Object.keys(businessProfile?.completedActions);
+      let completedActions = Object.keys(
+        businessProfile?.completedActions || []
+      );
       if (businessProfile.description) {
         completedActions = ["ideaValidation", ...completedActions];
       }
