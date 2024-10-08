@@ -160,7 +160,7 @@ class MilestoneDBService {
       const tasks = existingResponseWithPendingActions?.tasks;
       if (existingResponse) {
         response = existingResponse;
-      } else if (tasks?.length == 2 && tasks[0]?.data?.length > 0) {
+      } else if (tasks && tasks[0]?.data?.length > 0) {
         await DailyChallengeTable.findOneAndUpdate(
           {
             userId: userIfExists._id,
@@ -1051,6 +1051,8 @@ class MilestoneDBService {
         updatedCompletedMilestones = completedMilestones.filter(
           (obj) => currentMilestone.toString() != obj._id.toString()
         );
+      } else {
+        updatedCompletedMilestones = completedMilestones;
       }
       if (updatedCompletedMilestones?.length > 0) {
         goals?.tasks?.push({
