@@ -2724,29 +2724,36 @@ class ScriptService {
           $project: {
             userId: 1,
             dailyGoalStatus: 1,
+            idea: 1,
             completedActions: {
               $arrayElemAt: ["$businessProfiles.completedActions", 0],
             },
           },
         },
       ]).exec();
-      const IDEA = "ideaValidation";
-      const bulkOperations = profilesToUpdate?.map((profile) => {
-        const completedActions = [
-          IDEA,
-          ...Object.keys(profile.completedActions),
-        ];
-        return {
-          updateOne: {
-            filter: { userId: profile.userId },
-            update: {
-              $pull: {
-                dailyGoalStatus: { key: { $in: completedActions } },
+      const bulkOperations = profilesToUpdate
+        ?.filter((profile) => profile?.completedActions)
+        .map((profile) => {
+          let completedActions = [...Object.keys(profile.completedActions)];
+          if (profile.idea || profile.description) {
+            completedActions = [
+              "ideaValidation",
+              ...Object.keys(profile.completedActions),
+            ];
+          }
+          return {
+            updateOne: {
+              filter: { userId: profile.userId },
+              update: {
+                $pull: {
+                  dailyGoalStatus: { key: { $in: completedActions } },
+                },
+                $setOnInsert: { updatedAt: profile.updatedAt || new Date() },
               },
+              upsert: false,
             },
-          },
-        };
-      });
+          };
+        });
       if (bulkOperations.length > 0) {
         await DailyChallengeTable.bulkWrite(bulkOperations);
       }
