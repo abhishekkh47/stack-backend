@@ -7,6 +7,7 @@ import {
   QuizTable,
   DailyChallengeTable,
   BusinessProfileTable,
+  UserTable,
 } from "@app/model";
 import {
   QUIZ_TYPE,
@@ -18,14 +19,11 @@ import {
   START_FROM_SCRATCH,
   DAILY_GOALS,
   CHECKLIST_QUESTION_LENGTH,
-  convertDateToTimeZone,
-  getDaysBetweenDates,
-  DEFAULT_TIMEZONE,
   getDaysNum,
 } from "@app/utility";
 import { IUser } from "@app/types";
 import { ObjectId } from "mongodb";
-import { UserService, MilestoneDBService } from "@services/v9";
+import { UserService } from "@services/v9";
 class ChecklistDBService {
   /**
    * @description get all Topics and current level in each topic

@@ -16,6 +16,7 @@ import {
   STREAK_FREEZE_FUEL,
   COMMUNITY_CHALLENGE_CLAIM_STATUS,
   RALLY_COMMUNITY_REWARD,
+  getDaysNum,
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
 import { QuizDBService, CommunityDBService } from "../v6";
@@ -387,6 +388,39 @@ class UserDBService {
       createdDripshop,
       updatedUser: isClaimed ? userExists : updatedUser,
     };
+  }
+
+  /**
+   * @description This service is used to update the fuels of user
+   * @param userExists
+   */
+  public async resetCurrentDayRewards(userExists: any) {
+    try {
+      const rewardsUpdatedOn = userExists?.currentDayRewards?.updatedAt;
+      const days = getDaysNum(userExists, rewardsUpdatedOn) || 0;
+      let updateObj = {};
+      if (rewardsUpdatedOn && days >= 1) {
+        updateObj = {
+          $set: {
+            "currentDayRewards.streak": 0,
+            "currentDayRewards.quizCoins": 0,
+            "currentDayRewards.goals": 0,
+            "currentDayRewards.updatedAt": new Date(),
+          },
+          upsert: true,
+        };
+      }
+      await UserTable.updateOne(
+        {
+          _id: userExists._id,
+        },
+        updateObj,
+        { upsert: true }
+      );
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 

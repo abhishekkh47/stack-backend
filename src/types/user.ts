@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { number } from "yup";
 
 export interface IUser extends IAccount {
   email: string;
@@ -28,6 +29,7 @@ export interface IUser extends IAccount {
   requestId: string;
   isPremiumUser: boolean;
   focusAreaTopic: mongoose.Schema.Types.ObjectId;
+  currentDayRewards: ICurrentDayRewards;
 }
 
 export interface IAccount {
@@ -175,4 +177,11 @@ export interface IStreak {
 export enum EPHONEVERIFIEDSTATUS {
   TRUE = 1,
   FALSE = 0,
+}
+
+interface ICurrentDayRewards {
+  updatedAt: mongoose.Schema.Types.Date;
+  streak: number;
+  quizCoins: number;
+  goals: number;
 }

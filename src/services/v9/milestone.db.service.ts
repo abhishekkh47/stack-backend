@@ -9,6 +9,7 @@ import {
   QuizLevelTable,
   QuizTable,
   QuizResult,
+  UserTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -16,8 +17,9 @@ import {
   hasGoalKey,
   LEARNING_CONTENT,
   ACTIVE_MILESTONE,
+  MILESTONE_HOMEPAGE,
 } from "@app/utility";
-import { ObjectId } from "mongodb";
+import moment from "moment";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -74,7 +76,9 @@ class MilestoneDBService {
   public async getMilestoneGoals(milestoneId: any) {
     const [milestoneData, milestoneGoals] = await Promise.all([
       MilestoneTable.findOne({ _id: milestoneId }),
-      MilestoneGoalsTable.find({ milestoneId }).lean(),
+      MilestoneGoalsTable.find({ milestoneId })
+        .sort({ day: 1, order: 1 })
+        .lean(),
     ]);
     const aggregatedGoals = milestoneGoals.reduce((acc, current) => {
       let dayGroup = acc.find((group) => group.day === current.day);
@@ -147,12 +151,16 @@ class MilestoneDBService {
           lastMilestoneCompleted,
           true
         ),
-        this.getActionDetails(completedActions),
+        this.getActionDetails(
+          userIfExists,
+          completedActions,
+          currentMilestoneId
+        ),
       ]);
       const tasks = existingResponseWithPendingActions?.tasks;
       if (existingResponse) {
         response = existingResponse;
-      } else if (tasks?.length == 2 && tasks[0]?.data?.length > 0) {
+      } else if (tasks && tasks[0]?.data?.length > 0) {
         await DailyChallengeTable.findOneAndUpdate(
           {
             userId: userIfExists._id,
@@ -181,7 +189,7 @@ class MilestoneDBService {
       }
       if (completedActionsResponse?.length) {
         response.tasks.push({
-          title: "Completed",
+          title: MILESTONE_HOMEPAGE.COMPLETED_GOALS,
           data: completedActionsResponse,
         });
       } else if (
@@ -200,7 +208,7 @@ class MilestoneDBService {
       let currentGoal = {};
       if (
         response?.tasks[0]?.data[0] &&
-        response.tasks[0].title == "Today's Goals"
+        response.tasks[0].title == MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY
       ) {
         currentGoal = response?.tasks[0]?.data[0];
       } else {
@@ -208,8 +216,9 @@ class MilestoneDBService {
       }
 
       if (
-        (currentMilestoneId && response.tasks[0].title != "Today's Goals") ||
-        (response.tasks[0].title == "Today's Goals" &&
+        (currentMilestoneId &&
+          response.tasks[0].title != MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY) ||
+        (response.tasks[0].title == MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY &&
           response.tasks[0].data.length == 0)
       ) {
         response.isMilestoneHit = await this.checkIfMilestoneHit(
@@ -221,16 +230,26 @@ class MilestoneDBService {
       }
       // order -> quiz, story, simulation
       const order = { 1: 0, 3: 1, 2: 2 };
-      const learningContent = (await this.getLearningContent(currentGoal)).sort(
+      const learningContent = await this.getLearningContent(
+        userIfExists,
+        currentGoal
+      );
+      const allLearningContent = learningContent?.all?.sort(
         (a, b) => order[b?.type] - order[a?.type]
       );
-      if (learningContent && response.tasks[0].title != "Today's Goals") {
+      const currentDayIds = learningContent?.currentDayGoal?.map((obj) =>
+        obj.quizId.toString()
+      );
+      if (
+        allLearningContent &&
+        response.tasks[0].title != MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY
+      ) {
         response?.tasks?.unshift({
-          title: "Today's Goals",
+          title: MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY,
           data: [],
         });
       }
-      const quizIds = learningContent?.map((obj) => obj.quizId);
+      const quizIds = allLearningContent?.map((obj) => obj.quizId);
       const completedQuizzes = await QuizResult.find(
         {
           userId: userIfExists._id,
@@ -238,12 +257,23 @@ class MilestoneDBService {
         },
         { quizId: 1 }
       );
-      learningContent?.forEach(async (obj) => {
+      allLearningContent?.forEach(async (obj) => {
+        const currentQuizId = obj.quizId.toString();
         const isQuizCompleted = completedQuizzes.some(
-          (quiz) => quiz.quizId.toString() == obj.quizId.toString()
+          (quiz) => quiz.quizId.toString() == currentQuizId
         );
-        if (!isQuizCompleted) {
-          response.tasks[0].data.unshift(obj);
+        if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
+          response?.tasks[0]?.data?.unshift(obj);
+        } else if (learningContent?.completedQuizIds.includes(currentQuizId)) {
+          obj[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
+          if (response?.tasks[1]) {
+            response?.tasks[1].data.unshift(obj);
+          } else {
+            response?.tasks?.push({
+              title: MILESTONE_HOMEPAGE.COMPLETED_GOALS,
+              data: [obj],
+            });
+          }
         }
       });
       return response;
@@ -270,8 +300,8 @@ class MilestoneDBService {
       let response = {
         isMilestoneHit,
         tasks: [
-          { title: "Today's Goals", data: [] },
-          { title: "Completed", data: [] },
+          { title: MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY, data: [] },
+          { title: MILESTONE_HOMEPAGE.COMPLETED_GOALS, data: [] },
         ],
       };
       milestones.forEach((milestone) => {
@@ -280,10 +310,10 @@ class MilestoneDBService {
           milestone.key == "description"
         ) {
           if (businessProfile?.description) {
-            milestone["isCompleted"] = true;
+            milestone[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
             response.tasks[1].data.push(milestone);
           } else {
-            milestone["isCompleted"] = false;
+            milestone[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
             response.tasks[0].data.push(milestone);
           }
         } else if (businessProfile) {
@@ -293,14 +323,14 @@ class MilestoneDBService {
             milestone.key
           );
           if (hasGoalInProfile || hasGoalInCompletedActions) {
-            milestone["isCompleted"] = true;
+            milestone[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
             response.tasks[1].data.push(milestone);
           } else {
-            milestone["isCompleted"] = false;
+            milestone[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
             response.tasks[0].data.push(milestone);
           }
         } else {
-          milestone["isCompleted"] = false;
+          milestone[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
           response.tasks[0].data.push(milestone);
         }
       });
@@ -576,7 +606,7 @@ class MilestoneDBService {
         );
         let response = {
           isMilestoneHit: false,
-          tasks: [{ title: "Today's Goals", data: [] }],
+          tasks: [{ title: MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY, data: [] }],
         };
 
         updatedGoals.forEach((goal) => {
@@ -589,7 +619,7 @@ class MilestoneDBService {
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
             if (!businessProfile?.description) {
-              goal["isCompleted"] = false;
+              goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
               response.tasks[0].data.push(goal);
             }
           } else if (businessProfile) {
@@ -599,17 +629,12 @@ class MilestoneDBService {
               goal.key
             );
             if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
-              goal["isCompleted"] = false;
+              goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
               response.tasks[0].data.push(goal);
             }
           }
         });
         if (!response?.tasks[0]?.data?.length) {
-          const currentMilestone = await MilestoneGoalsTable.findOne({
-            milestoneId: currentMilestoneId,
-          })
-            .sort({ day: -1 })
-            .lean();
           isMilestoneHit = await this.checkIfMilestoneHit(
             lastMilestoneCompleted,
             currentMilestoneId
@@ -629,23 +654,53 @@ class MilestoneDBService {
 
   /**
    * @description this method will fetch the required learning content
+   * @param userIfExists
    * @param actionObj Ai action details of current active milestone
    * @returns {*}
    */
-  private async getLearningContent(actionObj: any) {
+  private async getLearningContent(userIfExists: any, actionObj: any) {
     try {
-      let learningActions = null;
+      const startOfDay = moment().startOf("day").toDate(); // 12:00 AM today
+      const endOfDay = moment().endOf("day").toDate(); // 11:59:59 PM today
+      let learningActions = null,
+        quizCompletedToday = null,
+        completedQuizIds = null;
+      const allLearnings = { all: [], currentDayGoal: [] };
       if (actionObj?.milestoneId) {
-        learningActions = await QuizLevelTable.findOne({
-          milestoneId: actionObj?.milestoneId,
-          day: actionObj?.day,
-        }).lean();
+        [learningActions, quizCompletedToday] = await Promise.all([
+          QuizLevelTable.find(
+            {
+              milestoneId: actionObj?.milestoneId,
+              day: { $lte: actionObj?.day },
+            },
+            { actions: 1, day: 1 }
+          ).lean(),
+          QuizResult.find({
+            userId: userIfExists._id,
+            updatedAt: {
+              $gte: startOfDay,
+              $lt: endOfDay,
+            },
+          }),
+        ]);
+
+        completedQuizIds = quizCompletedToday?.map((obj) =>
+          obj.quizId.toString()
+        );
+        learningActions.forEach((obj) => {
+          allLearnings.all.push(...obj.actions);
+          if (obj.day == actionObj?.day) {
+            allLearnings.currentDayGoal.push(...obj.actions);
+          }
+        });
       }
       if (!learningActions) return null;
-      const challengeDetails = await this.getQuizDetails(
-        learningActions?.actions
-      );
-      return challengeDetails;
+      const challengeDetails = await this.getQuizDetails(allLearnings.all);
+      return {
+        all: challengeDetails,
+        currentDayGoal: allLearnings.currentDayGoal,
+        completedQuizIds,
+      };
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -687,24 +742,47 @@ class MilestoneDBService {
 
   /**
    * @description get AI action details and related screen copy
+   * @param userIfExists
    * @param keys array of action identifiers
+   * @param currentMilestoneId current milestone id
    * @returns {*}
    */
-  public async getActionDetails(keys: string[]) {
+  public async getActionDetails(
+    userIfExists: any,
+    keys: string[],
+    currentMilestoneId: any
+  ) {
     try {
-      const [goalDetails, inputTemplate] = await Promise.all([
-        MilestoneGoalsTable.find(
-          { key: { $in: keys } },
-          { id: 0, dependency: 0, categoryId: 0, createdAt: 0, updatedAt: 0 }
-        ).lean(),
-        this.keyBasedSuggestionScreenInfo(keys),
-      ]);
-      goalDetails.forEach((goal) => {
+      const startOfDay = moment().startOf("day").toDate(); // 12:00 AM today
+      const endOfDay = moment().endOf("day").toDate(); // 11:59:59 PM today
+
+      const [goalDetails, inputTemplate, recordsUpdatedToday] =
+        await Promise.all([
+          MilestoneGoalsTable.find(
+            { key: { $in: keys }, milestoneId: currentMilestoneId },
+            { id: 0, dependency: 0, categoryId: 0, createdAt: 0, updatedAt: 0 }
+          ).lean(),
+          this.keyBasedSuggestionScreenInfo(keys),
+          // get goals completed today only
+          MilestoneResultTable.find({
+            userId: userIfExists._id,
+            milestoneId: currentMilestoneId,
+            updatedAt: {
+              $gte: startOfDay,
+              $lt: endOfDay,
+            },
+          }),
+        ]);
+      const currentDayCompletedKeys = recordsUpdatedToday.map((obj) => obj.key);
+      const filteredGoals = goalDetails.filter((goal) =>
+        currentDayCompletedKeys.includes(goal.key)
+      );
+      filteredGoals.forEach((goal) => {
         goal["inputTemplate"]["suggestionScreenInfo"] = inputTemplate[goal.key];
-        goal["isCompleted"] = true;
+        goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
         goal["isLocked"] = false;
       });
-      return goalDetails;
+      return filteredGoals;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
@@ -857,6 +935,7 @@ class MilestoneDBService {
         (100 / totalDays / totalCurrentDayGoals) *
           currentGoalCompletedChallenges;
       return {
+        _id: currentMilestoneId,
         title: currentMilestone.milestone,
         iconImage: currentMilestone.icon,
         iconBackgroundColor: currentMilestone.iconBackgroundColor,
@@ -890,6 +969,277 @@ class MilestoneDBService {
     const daysInCurrentMilestone = currentMilestone.day;
     const isMilestoneHit = lastMilestoneCompleted.day == daysInCurrentMilestone;
     return isMilestoneHit;
+  }
+
+  /**
+   * @description get completed milestones list
+   * @param userExists
+   * @param businessProfile
+   * @returns {*}
+   */
+  public async getCompletedMilestones(userExists, businessProfile) {
+    try {
+      const [milestoneList, milestoneGoalsCount] = await Promise.all([
+        this.getMilestones(userExists),
+        MilestoneGoalsTable.aggregate([
+          {
+            $group: {
+              _id: "$milestoneId",
+              count: { $sum: 1 },
+            },
+          },
+          {
+            $sort: { count: -1 },
+          },
+        ]),
+      ]);
+      const completedMilestone = milestoneList?.filter(
+        (obj) => obj.isCompleted == true
+      );
+      const milestoneGoalsCountMap = new Map(
+        milestoneGoalsCount.map((obj) => [obj._id.toString(), obj])
+      );
+
+      completedMilestone?.map((obj) => {
+        const ifCompleted = milestoneGoalsCountMap.get(obj._id.toString());
+        if (ifCompleted) {
+          obj["time"] = `${ifCompleted.count} Goals Completed`;
+          obj["key"] = MILESTONE_HOMEPAGE.COMPLETED_MILESTONE;
+          obj["progress"] = 100;
+          obj[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
+          return obj;
+        }
+      });
+
+      return completedMilestone;
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description get milestone homepage content
+   * @param userExists
+   * @param businessProfile
+   * @returns {*}
+   */
+  public async getUserMilestoneGoals(userExists, businessProfile) {
+    try {
+      const currentMilestone = businessProfile.currentMilestone.milestoneId;
+      const {
+        CURRENT_MILESTONE,
+        COMPLETED_MILESTONES,
+        GOALS_OF_THE_DAY,
+        SHOW_PRO_BANNER,
+      } = MILESTONE_HOMEPAGE;
+      let updatedCompletedMilestones = null;
+      const [goals, milestoneProgress, completedMilestones] = await Promise.all(
+        [
+          this.getCurrentMilestoneGoals(userExists, businessProfile),
+          this.getMilestoneProgress(businessProfile),
+          this.getCompletedMilestones(userExists, businessProfile),
+        ]
+      );
+      goals?.tasks?.unshift({
+        title: CURRENT_MILESTONE,
+        data: [milestoneProgress],
+      });
+      if (!goals.isMilestoneHit) {
+        updatedCompletedMilestones = completedMilestones.filter(
+          (obj) => currentMilestone.toString() != obj._id.toString()
+        );
+      } else {
+        updatedCompletedMilestones = completedMilestones;
+      }
+      if (updatedCompletedMilestones?.length > 0) {
+        goals?.tasks?.push({
+          title: COMPLETED_MILESTONES,
+          data: updatedCompletedMilestones,
+        });
+      }
+      const todaysGoalIdx = goals.tasks.findIndex(
+        (obj) => obj.title == GOALS_OF_THE_DAY
+      );
+      const curentMilestoneIdx = goals.tasks.findIndex(
+        (obj) => obj.title == CURRENT_MILESTONE
+      );
+      const completedMilestoneIdx = goals.tasks.findIndex(
+        (obj) => obj.title == COMPLETED_MILESTONES
+      );
+      if (goals.isMilestoneHit) {
+        goals.tasks = [goals.tasks[completedMilestoneIdx]];
+        return goals;
+      }
+      if (todaysGoalIdx > -1) {
+        goals.tasks[todaysGoalIdx][SHOW_PRO_BANNER] = true;
+        if (goals.tasks[todaysGoalIdx].data.length < 1) {
+          goals.tasks[curentMilestoneIdx][SHOW_PRO_BANNER] = true;
+          goals.tasks.splice(todaysGoalIdx, 1);
+        }
+      } else if (curentMilestoneIdx > -1) {
+        goals.tasks[curentMilestoneIdx][SHOW_PRO_BANNER] = true;
+      }
+
+      const currentDayGoals = this.getGoalOfTheDay(userExists);
+      return { ...goals, ...currentDayGoals };
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description get milestone summary
+   * @param businessProfile
+   * @param milestoneId milestonId to get summary for
+   * @returns {*}
+   */
+  public async getMilestoneSummary(businessProfile: any, milestoneId: any) {
+    try {
+      const summaryData = [],
+        summaryObj = {};
+      let actionValue = null;
+      const {
+        completedActions,
+        idea = null,
+        description = null,
+      } = businessProfile;
+      const milestoneGoals = await MilestoneGoalsTable.find(
+        { milestoneId },
+        {
+          day: 1,
+          dayTitle: 1,
+          title: 1,
+          order: 1,
+          key: 1,
+          template: 1,
+          inputTemplate: 1,
+        }
+      ).sort({ day: 1, order: 1 });
+
+      const requiredKeys = milestoneGoals.map((obj) => obj.key);
+      const suggestionsScreenCopy = await this.keyBasedSuggestionScreenInfo(
+        requiredKeys
+      );
+      milestoneGoals.map((goal) => {
+        actionValue = completedActions[goal.key];
+        if (goal.key == "ideaValidation" && idea && description) {
+          actionValue = {
+            title: idea,
+            description,
+          };
+        }
+        if (actionValue) {
+          const goalObj = {
+            title: goal.title,
+            data: actionValue,
+            actionKey: goal.key,
+            template: goal.template,
+            inputTemplate: {
+              ["suggestionScreenInfo"]: suggestionsScreenCopy[goal.key] || {},
+            },
+          };
+          if (summaryObj[goal.dayTitle]) {
+            summaryObj[goal.dayTitle].push(goalObj);
+          } else {
+            summaryObj[goal.dayTitle] = [goalObj];
+          }
+        }
+      });
+      for (const [key, value] of Object.entries(summaryObj)) {
+        summaryData.push({
+          title: key,
+          data: value,
+        });
+      }
+
+      return summaryData;
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description Update rewards collected today
+   * @param userIfExists
+   * @param coins tokens collected on completed a challenge or quiz
+   * @returns {*}
+   */
+  public async updateTodaysRewards(userIfExists: any, coins: number = 0) {
+    try {
+      const rewardsUpdatedOn = userIfExists?.currentDayRewards?.updatedAt;
+      const days = getDaysNum(userIfExists, rewardsUpdatedOn) || 0;
+      let updateObj = {};
+      if (days < 1) {
+        updateObj = {
+          $inc: {
+            "currentDayRewards.quizCoins": coins,
+            "currentDayRewards.goals": 1,
+          },
+          $set: {
+            "currentDayRewards.streak": 1,
+            "currentDayRewards.updatedAt": new Date(),
+          },
+        };
+      } else {
+        updateObj = {
+          $set: {
+            "currentDayRewards.streak": 1,
+            "currentDayRewards.quizCoins": coins,
+            "currentDayRewards.goals": 1,
+            "currentDayRewards.updatedAt": new Date(),
+          },
+          upsert: true,
+        };
+      }
+      await UserTable.updateOne(
+        {
+          _id: userIfExists._id,
+        },
+        updateObj,
+        { upsert: true }
+      );
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description Update rewards collected today
+   * @param userIfExists
+   * @returns {*}
+   */
+  private getGoalOfTheDay(userIfExists: any) {
+    try {
+      const currentDayRewards = userIfExists?.currentDayRewards;
+      if (currentDayRewards) {
+        const { streak, quizCoins, goals, updatedAt } = currentDayRewards;
+        const days = getDaysNum(userIfExists, updatedAt);
+        if (days < 1) {
+          return {
+            streakProgress: streak || 0,
+            fuelProgress: quizCoins || 0,
+            goalProgress: goals || 0,
+          };
+        }
+      }
+      return {
+        streakProgress: 0,
+        fuelProgress: 0,
+        goalProgress: 0,
+      };
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 export default new MilestoneDBService();
