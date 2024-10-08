@@ -760,11 +760,14 @@ class BusinessProfileService {
    */
   async updateAIToolsRetryStatus(userExists: any) {
     try {
-      await UserTable.findOneAndUpdate(
-        { _id: userExists._id },
-        { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
-        { upsert: true, new: true }
-      );
+      const availableTokens = userExists.preLoadedCoins + userExists.quizCoins;
+      if (availableTokens >= DEDUCT_RETRY_FUEL) {
+        await UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
+          { upsert: true, new: true }
+        );
+      }
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
