@@ -1184,6 +1184,7 @@ class MilestoneDBService {
           },
           $set: {
             "currentDayRewards.streak": 1,
+            "currentDayRewards.updatedAt": new Date(),
           },
         };
       } else {
