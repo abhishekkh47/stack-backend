@@ -53,10 +53,11 @@ class UserController extends BaseController {
       });
       initialMessage = businessProfile.businessCoachInfo.initialMessage;
     }
-    const topicDetails = await ChecklistDBService.getQuizTopics(userExists);
-    const userAIToolStatus = await UserService.userAIToolUsageStatus(
-      userExists
-    );
+    const [topicDetails, userAIToolStatus, _] = await Promise.all([
+      ChecklistDBService.getQuizTopics(userExists),
+      UserService.userAIToolUsageStatus(userExists),
+      UserDBService.resetCurrentDayRewards(userExists),
+    ]);
     let currentLeague = leagues.find(
       (x) =>
         x.minPoint <= userExists.xpPoints && x.maxPoint >= userExists.xpPoints

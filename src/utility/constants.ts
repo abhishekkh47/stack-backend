@@ -1038,3 +1038,13 @@ export const MILESTONE_LEARNING_FUEL = {
 };
 
 export const ACTIVE_MILESTONE = "activeMilestone";
+
+export const MILESTONE_HOMEPAGE = {
+  GOALS_OF_THE_DAY: "Goals of the Day",
+  COMPLETED_GOALS: "Completed Goals",
+  COMPLETED_MILESTONES: "Completed Milestones",
+  CURRENT_MILESTONE: "Current Milestone",
+  SHOW_PRO_BANNER: "showProBanneFooter",
+  COMPLETED_MILESTONE: "completedMilestone",
+  IS_COMPLETED: "isCompleted",
+};

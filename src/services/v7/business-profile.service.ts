@@ -32,7 +32,10 @@ import {
   mapHasGoalKey,
   hasGoalKey,
 } from "@app/utility";
-import { AnalyticsService } from "@app/services/v4";
+import {
+  AnalyticsService,
+  UserDBService as UserDBServiceV4,
+} from "@app/services/v4";
 import { MilestoneDBService } from "@app/services/v9";
 import moment from "moment";
 
@@ -93,9 +96,6 @@ class BusinessProfileService {
           );
           if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
             obj["completedGoal"] = businessProfile?.completedGoal + 1 || 1;
-            if (key == "companyName") {
-              obj["completedActions.companyLogo"] = DEFAULT_BUSINESS_LOGO;
-            }
           }
         }
         obj[key] = { title: data.value, description: data.description };
@@ -118,11 +118,12 @@ class BusinessProfileService {
           { user_id: userIfExists._id }
         );
       }
+      const ifBusinessIdea = key == "ideaValidation" && !businessProfile?.idea;
       await Promise.all([
-        data?.goalId
+        data?.goalId || ifBusinessIdea
           ? MilestoneDBService.saveMilestoneGoalResults(userIfExists, key)
           : Promise.resolve(),
-        data?.goalId || key == "ideaValidation"
+        data?.goalId || ifBusinessIdea
           ? MilestoneDBService.removeCompletedAction(userIfExists, key)
           : Promise.resolve(),
         BusinessProfileTable.findOneAndUpdate(
@@ -135,6 +136,12 @@ class BusinessProfileService {
           },
           { upsert: true }
         ),
+        data?.goalId || ifBusinessIdea
+          ? MilestoneDBService.updateTodaysRewards(userIfExists, 0)
+          : Promise.resolve(),
+        data?.goalId || ifBusinessIdea
+          ? UserDBServiceV4.addStreaks(userIfExists)
+          : Promise.resolve(),
       ]);
       return [
         {
