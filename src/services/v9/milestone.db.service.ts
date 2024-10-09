@@ -1142,7 +1142,10 @@ class MilestoneDBService {
           goals.tasks[curentMilestoneIdx][SHOW_PRO_BANNER] = true;
         }
         goals.tasks[todaysGoalIdx].title = `Today: ${goals.getCurrentDayTitle}`;
-        if (!userExists.isPremiumUser) {
+        if (
+          !userExists.isPremiumUser &&
+          goals?.tasks[todaysGoalIdx]?.data?.length < 0
+        ) {
           goals.tasks.splice(todaysGoalIdx, 1);
         }
       } else if (curentMilestoneIdx > -1) {
