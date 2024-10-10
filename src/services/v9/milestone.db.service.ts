@@ -294,7 +294,7 @@ class MilestoneDBService {
       );
       if (
         response?.tasks[0]?.data &&
-        response?.tasks[0]?.data[0].key == "ideaValidation"
+        response?.tasks[0]?.data[0]?.key == "ideaValidation"
       ) {
         businessIdeaGoal = [response?.tasks[0]?.data[0]];
       }
