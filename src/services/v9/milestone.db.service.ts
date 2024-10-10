@@ -665,6 +665,8 @@ class MilestoneDBService {
             (obj) => obj.key == goal.key
           );
           goal.inputTemplate.suggestionScreenInfo = copyData;
+          goal["iconImage"] = copyData.iconImage;
+          goal["iconBackgroundColor"] = copyData.iconBackgroundColor;
         });
 
         updatedGoals.forEach((goal) => {
