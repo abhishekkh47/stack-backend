@@ -88,7 +88,8 @@ class MilestoneController extends BaseController {
   @Route({ path: "/get-daily-milestone", method: HttpMethod.GET })
   @Auth()
   public async getDailyMilestone(ctx: any) {
-    const { user } = ctx.request;
+    const { user, query } = ctx.request;
+    let advanceNextDay = false;
     const [userExists, businessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
       BusinessProfileTable.findOne({ userId: user._id }).lean(),
@@ -96,9 +97,13 @@ class MilestoneController extends BaseController {
     if (!userExists) {
       return this.UnAuthorized(ctx, "User Not Found");
     }
+    if (query?.advanceNextDay) {
+      advanceNextDay = true;
+    }
     const response = await MilestoneDBService.getUserMilestoneGoals(
       userExists,
-      businessProfile
+      businessProfile,
+      advanceNextDay
     );
     return this.Ok(ctx, {
       data: { ...response, userId: user._id },
