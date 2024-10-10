@@ -918,14 +918,21 @@ class MilestoneDBService {
   /**
    * @description get current milestone progress
    * @param businessProfile
+   * @param milestoneId
    * @returns {*}
    */
-  public async getMilestoneProgress(businessProfile) {
+  public async getMilestoneProgress(
+    businessProfile: any,
+    milestoneId: any = null
+  ) {
     try {
       const userId = businessProfile.userId;
       let dailyGoal = null,
         progress = 0;
       let currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
+      if (milestoneId) {
+        currentMilestoneId = milestoneId;
+      }
       if (!currentMilestoneId) {
         currentMilestoneId = await MilestoneTable.findOne({ order: 1 });
       }
@@ -1178,18 +1185,21 @@ class MilestoneDBService {
         idea = null,
         description = null,
       } = businessProfile;
-      const milestoneGoals = await MilestoneGoalsTable.find(
-        { milestoneId },
-        {
-          day: 1,
-          dayTitle: 1,
-          title: 1,
-          order: 1,
-          key: 1,
-          template: 1,
-          inputTemplate: 1,
-        }
-      ).sort({ day: 1, order: 1 });
+      const [milestoneGoals, milestoneProgress] = await Promise.all([
+        MilestoneGoalsTable.find(
+          { milestoneId },
+          {
+            day: 1,
+            dayTitle: 1,
+            title: 1,
+            order: 1,
+            key: 1,
+            template: 1,
+            inputTemplate: 1,
+          }
+        ).sort({ day: 1, order: 1 }),
+        this.getMilestoneProgress(businessProfile, milestoneId),
+      ]);
 
       const requiredKeys = milestoneGoals.map((obj) => obj.key);
       const suggestionsScreenCopy = await this.keyBasedSuggestionScreenInfo(
@@ -1227,7 +1237,7 @@ class MilestoneDBService {
         });
       }
 
-      return summaryData;
+      return { ...milestoneProgress, summaryData };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
