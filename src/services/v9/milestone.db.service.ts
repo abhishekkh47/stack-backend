@@ -122,6 +122,7 @@ class MilestoneDBService {
         tasks: [],
       };
       let isAdvanceNextDay = false;
+      let businessIdeaGoal = null;
       const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS } =
         MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
@@ -291,13 +292,23 @@ class MilestoneDBService {
         },
         { quizId: 1 }
       );
+      if (
+        response?.tasks[0]?.data &&
+        response?.tasks[0]?.data[0].key == "ideaValidation"
+      ) {
+        businessIdeaGoal = [response?.tasks[0]?.data[0]];
+      }
       allLearningContent?.forEach(async (obj) => {
         const currentQuizId = obj.quizId.toString();
         const isQuizCompleted = completedQuizzes.some(
           (quiz) => quiz.quizId.toString() == currentQuizId
         );
         if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          response?.tasks[0]?.data?.unshift(obj);
+          if (businessIdeaGoal) {
+            response?.tasks[0]?.data?.splice(1, 0, obj);
+          } else {
+            response?.tasks[0]?.data?.unshift(obj);
+          }
         } else if (learningContent?.completedQuizIds.includes(currentQuizId)) {
           obj[IS_COMPLETED] = true;
           if (response?.tasks[1]) {
