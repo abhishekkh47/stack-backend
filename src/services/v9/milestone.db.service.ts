@@ -122,6 +122,7 @@ class MilestoneDBService {
         tasks: [],
       };
       let isAdvanceNextDay = false;
+      let businessIdeaGoal = null;
       const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS } =
         MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
@@ -263,10 +264,10 @@ class MilestoneDBService {
       }
       // order -> quiz, story, simulation
       const order = { 1: 0, 3: 1, 2: 2 };
-      const [getCurrentDayTitle, learningContent] = await Promise.all([
-        this.getDayTitle(currentGoal),
-        this.getLearningContent(userIfExists, currentGoal),
-      ]);
+      const learningContent = await this.getLearningContent(
+        userIfExists,
+        currentGoal
+      );
       const allLearningContent = learningContent?.all?.sort(
         (a, b) => order[b?.type] - order[a?.type]
       );
@@ -291,13 +292,23 @@ class MilestoneDBService {
         },
         { quizId: 1 }
       );
+      if (
+        response?.tasks[0]?.data &&
+        response?.tasks[0]?.data[0].key == "ideaValidation"
+      ) {
+        businessIdeaGoal = [response?.tasks[0]?.data[0]];
+      }
       allLearningContent?.forEach(async (obj) => {
         const currentQuizId = obj.quizId.toString();
         const isQuizCompleted = completedQuizzes.some(
           (quiz) => quiz.quizId.toString() == currentQuizId
         );
         if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          response?.tasks[0]?.data?.unshift(obj);
+          if (businessIdeaGoal) {
+            response?.tasks[0]?.data?.splice(1, 0, obj);
+          } else {
+            response?.tasks[0]?.data?.unshift(obj);
+          }
         } else if (learningContent?.completedQuizIds.includes(currentQuizId)) {
           obj[IS_COMPLETED] = true;
           if (response?.tasks[1]) {
@@ -311,7 +322,7 @@ class MilestoneDBService {
           }
         }
       });
-      return { ...response, getCurrentDayTitle };
+      return response;
     } catch (error) {
       throw new NetworkError("Error occurred while retrieving milestones", 400);
     }
@@ -1141,7 +1152,6 @@ class MilestoneDBService {
         } else {
           goals.tasks[curentMilestoneIdx][SHOW_PRO_BANNER] = true;
         }
-        goals.tasks[todaysGoalIdx].title = `Today: ${goals.getCurrentDayTitle}`;
         if (
           !userExists.isPremiumUser &&
           goals?.tasks[todaysGoalIdx]?.data?.length < 0
@@ -1306,30 +1316,6 @@ class MilestoneDBService {
         fuelProgress: 0,
         goalProgress: 0,
       };
-    } catch (error) {
-      throw new NetworkError(error.message, 400);
-    }
-  }
-
-  /**
-   * @description this method will fetch the current day's goal title
-   * @param currentGoal Current goals for which the day title is required
-   * @returns {*}
-   */
-  private async getDayTitle(currentGoal: any) {
-    try {
-      let currentDayTitle = MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY.title;
-      if (currentGoal?.milestoneId) {
-        const learningActions = await MilestoneGoalsTable.findOne(
-          {
-            milestoneId: currentGoal?.milestoneId,
-            day: currentGoal?.day,
-          },
-          { dayTitle: 1, day: 1 }
-        ).lean();
-        currentDayTitle = learningActions.dayTitle;
-      }
-      return currentDayTitle;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
