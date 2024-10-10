@@ -207,7 +207,7 @@ class MilestoneDBService {
         response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
         response?.tasks[0]?.data.length == 0;
       if (
-        (isCurrentDaysGoalsAvailable || !response.tasks.length) &&
+        (isCurrentDaysGoalsAvailable || !response?.tasks?.length) &&
         isAdvanceNextDay &&
         !response.isMilestoneHit &&
         getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
@@ -221,7 +221,7 @@ class MilestoneDBService {
         );
       }
       if (completedActionsResponse?.length) {
-        response.tasks.push({
+        response?.tasks?.push({
           title: COMPLETED_GOALS.title,
           data: completedActionsResponse,
           sectionKey: COMPLETED_GOALS.key,
@@ -251,9 +251,9 @@ class MilestoneDBService {
 
       if (
         (currentMilestoneId &&
-          response.tasks[0].title != GOALS_OF_THE_DAY.title) ||
-        (response.tasks[0].title == GOALS_OF_THE_DAY.title &&
-          response.tasks[0].data.length == 0)
+          response?.tasks[0]?.title != GOALS_OF_THE_DAY.title) ||
+        (response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
+          response?.tasks[0]?.data?.length == 0)
       ) {
         response.isMilestoneHit = await this.checkIfMilestoneHit(
           lastMilestoneCompleted,
@@ -276,7 +276,7 @@ class MilestoneDBService {
       );
       if (
         allLearningContent &&
-        response.tasks[0].title != GOALS_OF_THE_DAY.title
+        response?.tasks[0]?.title != GOALS_OF_THE_DAY.title
       ) {
         response?.tasks?.unshift({
           title: GOALS_OF_THE_DAY.title,
@@ -294,7 +294,7 @@ class MilestoneDBService {
       );
       if (
         response?.tasks[0]?.data &&
-        response?.tasks[0]?.data[0].key == "ideaValidation"
+        response?.tasks[0]?.data[0]?.key == "ideaValidation"
       ) {
         businessIdeaGoal = [response?.tasks[0]?.data[0]];
       }
