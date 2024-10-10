@@ -846,6 +846,13 @@ class MilestoneDBService {
         goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
         goal["isLocked"] = false;
       });
+      filteredGoals.sort((a, b) => {
+        if (a.day == b.day) {
+          return a.order - b.order;
+        } else {
+          return a.day - b.day;
+        }
+      });
       return filteredGoals;
     } catch (error) {
       throw new NetworkError(error.message, 400);
