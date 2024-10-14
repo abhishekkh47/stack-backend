@@ -30,6 +30,7 @@ export interface IUser extends IAccount {
   isPremiumUser: boolean;
   focusAreaTopic: mongoose.Schema.Types.ObjectId;
   currentDayRewards: ICurrentDayRewards;
+  businessScore: IBusinessScore;
 }
 
 export interface IAccount {
@@ -184,4 +185,12 @@ interface ICurrentDayRewards {
   streak: number;
   quizCoins: number;
   goals: number;
+}
+
+export interface IBusinessScore {
+  current: number;
+  longest: number;
+  last7days: any[];
+  updatedDate: IMDY;
+  isBusinessScoreInactive7Days: boolean;
 }

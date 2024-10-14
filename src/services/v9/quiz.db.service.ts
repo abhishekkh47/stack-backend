@@ -10,7 +10,6 @@ import {
   BusinessProfileTable,
 } from "@app/model";
 import { AnalyticsService } from "@app/services/v4";
-import { everyCorrectAnswerPoints } from "@app/types";
 import {
   ANALYTICS_EVENTS,
   MAX_STREAK_FREEZE,
@@ -18,7 +17,6 @@ import {
   XP_POINTS,
   executeWeeklyChallengeStepFunction,
   CORRECT_ANSWER_FUEL_POINTS,
-  CHECKLIST_QUESTION_LENGTH,
 } from "@app/utility";
 import { CommunityDBService } from "@app/services/v6";
 
@@ -176,7 +174,7 @@ class QuizDBService {
       totalXPPoints,
       updatedXPPoints: updatedXP.xpPoints,
       totalFuel: pointsEarnedFromQuiz,
-      isGiftedStreakFreeze,
+      isGiftedStreakFreeze: false,
       updatedUser: updatedXP,
     };
   }

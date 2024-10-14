@@ -12,7 +12,6 @@ import {
   STREAK_LEVELS,
   REFILL_INTERVAL,
   MAX_STREAK_FREEZE,
-  STREAK_FREEZE_FUEL,
   REFILL_LIFE_FUEL,
 } from "@app/utility/index";
 import { NetworkError } from "@app/middleware/error.middleware";
@@ -25,11 +24,10 @@ import {
   StreakGoalTable,
 } from "@app/model";
 import fs from "fs";
-import moment from "moment";
 import path from "path";
 import { EUSERSTATUS, EUserType, IMDY, IStreak } from "@app/types";
 import { AuthService } from "@app/services/v1";
-import { AnalyticsService, LeagueService } from "@app/services/v4";
+import { AnalyticsService } from "@app/services/v4";
 
 class UserDBService {
   /**
@@ -634,7 +632,7 @@ class UserDBService {
           last5DaysWeek: dayRange,
           currentStreak: updatedStreaksDetails.streak.current,
           previousStreak: userDetails.streak.current,
-          isStreakInActiveSinceLast5Days,
+          isStreakInActiveSinceLast5Days: false,
         };
       } else {
         const updatedStreaksDetails = await UserTable.findOne({
@@ -649,7 +647,7 @@ class UserDBService {
           last5DaysWeek: dayRange,
           currentStreak: updatedStreaksDetails.streak.current,
           previousStreak: userDetails.streak.current,
-          isStreakInActiveSinceLast5Days,
+          isStreakInActiveSinceLast5Days: false,
         };
       }
     } catch (error) {

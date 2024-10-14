@@ -7,7 +7,11 @@ import {
   MongooseModel,
   EPHONEVERIFIEDSTATUS,
 } from "@app/types";
-import { ALL_NULL_5_DAYS, MAX_STREAK_FREEZE } from "@app/utility";
+import {
+  ALL_NULL_5_DAYS,
+  MAX_STREAK_FREEZE,
+  ALL_NULL_7_DAYS,
+} from "@app/utility";
 
 export type IUserSchema = MongooseModel<any> & mongoose.Document;
 
@@ -293,6 +297,40 @@ const schema = new mongoose.Schema<IUserSchema>(
         type: mongoose.Schema.Types.Number,
         required: true,
         default: 0,
+      },
+    },
+    businessScore: {
+      longest: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      current: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      isBusinessScoreInactive7Days: {
+        type: mongoose.Schema.Types.Boolean,
+        default: false,
+      },
+      last7days: {
+        type: [mongoose.Schema.Types.Mixed],
+        default: function () {
+          return Array.from(ALL_NULL_7_DAYS);
+        },
+      },
+      updatedDate: {
+        day: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        month: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
+        year: {
+          type: mongoose.Schema.Types.Number,
+          default: 0,
+        },
       },
     },
   },

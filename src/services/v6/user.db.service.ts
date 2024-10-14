@@ -20,6 +20,7 @@ import {
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
 import { QuizDBService, CommunityDBService } from "../v6";
+import { UserService } from "../v9";
 
 class UserDBService {
   /**
@@ -138,6 +139,8 @@ class UserDBService {
             focusAreaTopic: 1,
             milestoneId:
               "$businessProfile.currentMilestone.milestoneId" || null,
+            businessScore: 1,
+            description: "$businessProfile.description",
           },
         },
       ]).exec()
@@ -145,12 +148,20 @@ class UserDBService {
     if (!data) {
       throw Error("Invalid user ID entered.");
     }
+    const currentDate = convertDateToTimeZone(
+      new Date(),
+      data?.timezone || DEFAULT_TIMEZONE
+    );
+    const businessScoreDiffDays = getDaysBetweenDates(
+      data?.businessScore?.updatedDate || currentDate,
+      currentDate
+    );
+    if (data.description && businessScoreDiffDays >= 1) {
+      const updatedInfo = await UserService.addBusinessScore(data);
+      data = { ...data, businessScoreInfo: updatedInfo };
+    }
     if (data.streak) {
       const { freezeCount } = data.streak;
-      const currentDate = convertDateToTimeZone(
-        new Date(),
-        data?.timezone || DEFAULT_TIMEZONE
-      );
       const { day } = data.streak?.updatedDate;
       const isFirstStreak = day === 0;
       const diffDays = getDaysBetweenDates(

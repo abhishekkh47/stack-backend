@@ -31,12 +31,13 @@ import {
   DEFAULT_BUSINESS_LOGO,
   mapHasGoalKey,
   hasGoalKey,
+  DEFAULT_BUSINESS_SCORE,
 } from "@app/utility";
 import {
   AnalyticsService,
   UserDBService as UserDBServiceV4,
 } from "@app/services/v4";
-import { MilestoneDBService } from "@app/services/v9";
+import { MilestoneDBService, UserService } from "@app/services/v9";
 import moment from "moment";
 
 class BusinessProfileService {
@@ -54,7 +55,8 @@ class BusinessProfileService {
     try {
       let obj = {},
         key = data?.key;
-      let businessHistoryObj = [];
+      let businessHistoryObj = [],
+        userBusinessScore = null;
       // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
       if (data.savedBusinessIdeas) {
         let latestSelection = data.savedBusinessIdeas[0];
@@ -69,6 +71,8 @@ class BusinessProfileService {
             value: data.savedBusinessIdeas[i],
             timestamp: Date.now(),
           });
+          userBusinessScore =
+            data?.savedBusinessIdeas[i]?.rating || DEFAULT_BUSINESS_SCORE;
         }
         if (
           !businessProfile ||
@@ -141,6 +145,9 @@ class BusinessProfileService {
           : Promise.resolve(),
         data?.goalId || ifBusinessIdea
           ? UserDBServiceV4.addStreaks(userIfExists)
+          : Promise.resolve(),
+        data?.goalId && ifBusinessIdea
+          ? UserService.addBusinessScore(userIfExists, userBusinessScore)
           : Promise.resolve(),
       ]);
       return [

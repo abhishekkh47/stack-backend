@@ -115,11 +115,11 @@ class MilestoneController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/get-action-details/:key", method: HttpMethod.GET })
+  @Route({ path: "/get-action-details", method: HttpMethod.GET })
   @Auth()
   public async actionDetails(ctx: any) {
-    const { user, body } = ctx.request;
-    const { key, milestoneId } = body;
+    const { user, query } = ctx.request;
+    const { key, milestoneId } = query;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");

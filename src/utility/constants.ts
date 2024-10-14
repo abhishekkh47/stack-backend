@@ -1051,3 +1051,21 @@ export const MILESTONE_HOMEPAGE = {
   },
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
 };
+
+export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
+export const SEVEN_DAYS_TO_RESET = [1, null, null, null, null, null, null];
+export const DEFAULT_BUSINESS_SCORE = 90;
+
+export const BUSINESS_SCORE_MESSAGE = {
+  day_1: "Start building a daily Habit. Can you earn 7 points in a row?",
+  day_2: "Keep showing up—it’s all about consistency, and I’m with you!",
+  day_3: "You’ve made it to Day 3! Let’s keep building this habit together",
+  day_4: "We’re making progress! You’re doing great by showing up today",
+  day_5: "Look at you go! I’m proud of how far you’ve come",
+  day_6: "You’re creating something powerful! Almost there!",
+  day_7:
+    "Congrats earning 7 points! You’re in the top 10% of Jetson super users!",
+  day_8: "Keep going, you've got this!",
+  day_missed:
+    "Missed a day? No worries! Get back on track and keep moving forward!",
+};
