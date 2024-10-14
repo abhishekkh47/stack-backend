@@ -1159,7 +1159,10 @@ class MilestoneDBService {
         (obj) => obj.title == COMPLETED_MILESTONES.title
       );
       if (goals.isMilestoneHit) {
-        goals.tasks = [goals.tasks[completedMilestoneIdx]];
+        goals.tasks = [
+          goals.tasks[todaysGoalIdx],
+          goals.tasks[completedMilestoneIdx],
+        ];
         return goals;
       }
       if (todaysGoalIdx > -1) {
