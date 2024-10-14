@@ -156,7 +156,10 @@ class UserDBService {
       data?.businessScore?.updatedDate || currentDate,
       currentDate
     );
-    if (data.description && businessScoreDiffDays >= 1) {
+    if (
+      (data.description && businessScoreDiffDays >= 1) ||
+      !data?.businessScore
+    ) {
       const updatedInfo = await UserService.addBusinessScore(data);
       data = { ...data, businessScoreInfo: updatedInfo };
     }

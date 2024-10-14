@@ -41,12 +41,6 @@ class UserService {
     try {
       let isBusinessScoreToBeUpdated = false,
         message = "";
-      /**
-       * Check if business score is inactive since last 7 days
-       */
-      const isScoreInActiveSinceLast7Days =
-        userDetails?.businessScore?.last7days?.every((value) => value === 0) ||
-        false;
       let businessScore = {};
       const currentDate = convertDateToTimeZone(
         new Date(),
@@ -86,7 +80,7 @@ class UserService {
           currentDate
         );
         let currentBusinessScoreValue =
-          userDetails?.businessScore?.current - businessScoreDiffDays + 1;
+          userDetails?.businessScore?.current - businessScoreDiffDays + 2;
         let longestBusinessScoreValue = userDetails.businessScore?.longest || 0;
         const { last7days, isBusinessScoreInactive7Days } =
           this.modifyLast7DaysBusinessScore(
@@ -126,9 +120,9 @@ class UserService {
           last7DaysWeek: dayRange,
           currentBusinessScore:
             updatedBusinessScoreDetails.businessScore.current,
-          previousBusinessScore: userDetails.businessScore?.current || 0,
-          isScoreInActiveSinceLast7Days,
+          previousBusinessScore: userDetails.businessScore?.current || 90,
           message,
+          buttonText: "LET'S GO!",
         };
       } else {
         const updatedBusinessScoreDetails = await UserTable.findOne({
@@ -146,9 +140,9 @@ class UserService {
           last7DaysWeek: dayRange,
           currentBusinessScore:
             updatedBusinessScoreDetails.businessScore.current,
-          previousBusinessScore: userDetails?.businessScore?.current || 0,
-          isScoreInActiveSinceLast7Days,
+          previousBusinessScore: userDetails?.businessScore?.current || 90,
           message,
+          buttonText: "LET'S GO!",
         };
       }
     } catch (error) {
@@ -322,11 +316,11 @@ class UserService {
   public getBusinessScoreMessage(last7Days: any) {
     try {
       let streak = 0;
-      last7Days.forEach((day) => {
-        if (day == 1) {
+      for (let i = 6; i >= 0; i--) {
+        if (last7Days[i] == 1) {
           streak += 1;
-        }
-      });
+        } else if (streak > 0) break;
+      }
 
       if (streak < 7) {
         return BUSINESS_SCORE_MESSAGE[`day_${streak + 1}`];
