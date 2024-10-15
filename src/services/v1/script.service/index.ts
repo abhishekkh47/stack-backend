@@ -2748,9 +2748,9 @@ class ScriptService {
                 $pull: {
                   dailyGoalStatus: { key: { $in: completedActions } },
                 },
-                $setOnInsert: { updatedAt: profile.updatedAt || new Date() },
               },
               upsert: false,
+              timestamps: false,
             },
           };
         });
