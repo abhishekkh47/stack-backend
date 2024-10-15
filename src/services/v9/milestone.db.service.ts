@@ -938,14 +938,21 @@ class MilestoneDBService {
   /**
    * @description get current milestone progress
    * @param businessProfile
+   * @param milestoneId
    * @returns {*}
    */
-  public async getMilestoneProgress(businessProfile) {
+  public async getMilestoneProgress(
+    businessProfile: any,
+    milestoneId: any = null
+  ) {
     try {
       const userId = businessProfile.userId;
       let dailyGoal = null,
         progress = 0;
       let currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
+      if (milestoneId) {
+        currentMilestoneId = milestoneId;
+      }
       if (!currentMilestoneId) {
         currentMilestoneId = await MilestoneTable.findOne({ order: 1 });
       }
@@ -989,18 +996,20 @@ class MilestoneDBService {
       const totalGoals = milestoneGoals?.length;
       const totalDays = milestoneGoals[totalGoals - 1]?.day || 1;
       const currentDay = lastGoalCompleted?.day || 1;
-      const [totalCurrentDayGoals, currentGoalCompletedChallenges] =
-        await Promise.all([
-          MilestoneGoalsTable.countDocuments({
-            milestoneId: currentMilestoneId,
-            day: currentDay,
-          }),
-          MilestoneResultTable.countDocuments({
-            userId,
-            milestoneId: currentMilestoneId,
-            day: currentDay,
-          }),
-        ]);
+      const currentDayMilestoneGoals = await MilestoneGoalsTable.find({
+        milestoneId: currentMilestoneId,
+        day: currentDay,
+      });
+      const totalCurrentDayGoals = currentDayMilestoneGoals?.length;
+      let currentGoalCompletedChallenges = 0;
+      currentDayMilestoneGoals.map((obj) => {
+        if (
+          (obj.key == "ideaValidation" && businessProfile.description) ||
+          businessProfile.completedActions[obj.key]
+        ) {
+          currentGoalCompletedChallenges += 1;
+        }
+      });
       progress =
         (100 / totalDays) * (currentDay - 1) +
         (100 / totalDays / totalCurrentDayGoals) *
@@ -1152,7 +1161,10 @@ class MilestoneDBService {
         (obj) => obj.title == COMPLETED_MILESTONES.title
       );
       if (goals.isMilestoneHit) {
-        goals.tasks = [goals.tasks[completedMilestoneIdx]];
+        goals.tasks = [
+          goals.tasks[todaysGoalIdx],
+          goals.tasks[completedMilestoneIdx],
+        ];
         return goals;
       }
       if (todaysGoalIdx > -1) {
@@ -1197,18 +1209,21 @@ class MilestoneDBService {
         idea = null,
         description = null,
       } = businessProfile;
-      const milestoneGoals = await MilestoneGoalsTable.find(
-        { milestoneId },
-        {
-          day: 1,
-          dayTitle: 1,
-          title: 1,
-          order: 1,
-          key: 1,
-          template: 1,
-          inputTemplate: 1,
-        }
-      ).sort({ day: 1, order: 1 });
+      const [milestoneGoals, milestoneProgress] = await Promise.all([
+        MilestoneGoalsTable.find(
+          { milestoneId },
+          {
+            day: 1,
+            dayTitle: 1,
+            title: 1,
+            order: 1,
+            key: 1,
+            template: 1,
+            inputTemplate: 1,
+          }
+        ).sort({ day: 1, order: 1 }),
+        this.getMilestoneProgress(businessProfile, milestoneId),
+      ]);
 
       const requiredKeys = milestoneGoals.map((obj) => obj.key);
       const suggestionsScreenCopy = await this.keyBasedSuggestionScreenInfo(
@@ -1246,7 +1261,7 @@ class MilestoneDBService {
         });
       }
 
-      return summaryData;
+      return { ...milestoneProgress, summaryData };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
