@@ -996,18 +996,20 @@ class MilestoneDBService {
       const totalGoals = milestoneGoals?.length;
       const totalDays = milestoneGoals[totalGoals - 1]?.day || 1;
       const currentDay = lastGoalCompleted?.day || 1;
-      const [totalCurrentDayGoals, currentGoalCompletedChallenges] =
-        await Promise.all([
-          MilestoneGoalsTable.countDocuments({
-            milestoneId: currentMilestoneId,
-            day: currentDay,
-          }),
-          MilestoneResultTable.countDocuments({
-            userId,
-            milestoneId: currentMilestoneId,
-            day: currentDay,
-          }),
-        ]);
+      const currentDayMilestoneGoals = await MilestoneGoalsTable.find({
+        milestoneId: currentMilestoneId,
+        day: currentDay,
+      });
+      const totalCurrentDayGoals = currentDayMilestoneGoals?.length;
+      let currentGoalCompletedChallenges = 0;
+      currentDayMilestoneGoals.map((obj) => {
+        if (
+          (obj.key == "ideaValidation" && businessProfile.description) ||
+          businessProfile.completedActions[obj.key]
+        ) {
+          currentGoalCompletedChallenges += 1;
+        }
+      });
       progress =
         (100 / totalDays) * (currentDay - 1) +
         (100 / totalDays / totalCurrentDayGoals) *
