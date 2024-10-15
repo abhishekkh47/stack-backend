@@ -1068,4 +1068,6 @@ export const BUSINESS_SCORE_MESSAGE = {
   day_8: "Keep going, you've got this!",
   day_missed:
     "Missed a day? No worries! Get back on track and keep moving forward!",
+  LETS_GO: `LET'S GO`,
+  GOT_IT: `GOT IT`,
 };

@@ -41,7 +41,8 @@ class UserService {
     try {
       let isBusinessScoreToBeUpdated = false,
         message = "";
-      let businessScore = {};
+      let businessScore = {},
+        buttonText = BUSINESS_SCORE_MESSAGE.LETS_GO;
       const currentDate = convertDateToTimeZone(
         new Date(),
         userDetails.timezone
@@ -74,6 +75,7 @@ class UserService {
         };
         isBusinessScoreToBeUpdated = true;
       } else if (diffDays > 1) {
+        buttonText = BUSINESS_SCORE_MESSAGE.GOT_IT;
         message = BUSINESS_SCORE_MESSAGE.day_missed;
         const businessScoreDiffDays = getDaysBetweenDates(
           userDetails?.businessScore?.updatedDate || currentDate,
@@ -122,7 +124,7 @@ class UserService {
             updatedBusinessScoreDetails.businessScore.current,
           previousBusinessScore: userDetails.businessScore?.current || 90,
           message,
-          buttonText: "LET'S GO!",
+          buttonText,
         };
       } else {
         const updatedBusinessScoreDetails = await UserTable.findOne({
@@ -142,7 +144,7 @@ class UserService {
             updatedBusinessScoreDetails.businessScore.current,
           previousBusinessScore: userDetails?.businessScore?.current || 90,
           message,
-          buttonText: "LET'S GO!",
+          buttonText,
         };
       }
     } catch (error) {

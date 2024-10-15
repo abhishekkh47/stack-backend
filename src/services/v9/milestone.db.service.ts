@@ -245,6 +245,29 @@ class MilestoneDBService {
         response.tasks[0].title == GOALS_OF_THE_DAY.title
       ) {
         currentGoal = response?.tasks[0]?.data[0];
+        const currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
+        const [currentMilestoneGoals, ifOtherMilestoneCompleted] =
+          await Promise.all([
+            MilestoneGoalsTable.find({
+              milestoneId: currentMilestoneId,
+            })
+              .sort({ day: -1 })
+              .lean(),
+            MilestoneResultTable.findOne({
+              userId: userIfExists._id,
+              milestoneId: { $ne: currentMilestoneId },
+            }),
+          ]);
+        if (
+          response?.tasks[0]?.data.length == 1 &&
+          response?.tasks[0]?.data[0].day == currentMilestoneGoals[0].day &&
+          !ifOtherMilestoneCompleted
+        ) {
+          response.tasks[0].data[0] = {
+            ...response?.tasks[0]?.data[0],
+            showNotificationScreen: true,
+          };
+        }
       } else {
         currentGoal = lastMilestoneCompleted;
       }
