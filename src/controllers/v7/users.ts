@@ -71,6 +71,7 @@ class UserController extends BaseController {
    * @param ctx
    */
   @Route({ path: "/update-subscription-details", method: HttpMethod.POST })
+  @PrimeTrustJWT(true)
   @RevenueCatAuth()
   public async checkProStatus(ctx: any) {
     try {
