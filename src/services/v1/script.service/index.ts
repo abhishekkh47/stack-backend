@@ -2724,7 +2724,8 @@ class ScriptService {
           $project: {
             userId: 1,
             dailyGoalStatus: 1,
-            idea: 1,
+            idea: "$businessProfiles.idea",
+            description: "$businessProfiles.description",
             completedActions: {
               $arrayElemAt: ["$businessProfiles.completedActions", 0],
             },
