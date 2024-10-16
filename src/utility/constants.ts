@@ -749,6 +749,7 @@ export const TUTORIAL_LOOKUP = {
   aiToolVisited: { aiToolVisited: true },
   mentorshipVisited: { mentorshipVisited: true },
   saveIdea: { saveIdea: true },
+  validateIdea: { validateIdea: true },
 };
 
 export const DAILY_GOALS = [
