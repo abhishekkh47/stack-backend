@@ -56,6 +56,11 @@ const schema = new mongoose.Schema<ITutorialStatus>(
       required: true,
       default: false,
     },
+    validateIdea: {
+      type: mongoose.Schema.Types.Boolean,
+      required: true,
+      default: false,
+    },
   },
   { timestamps: true }
 );
