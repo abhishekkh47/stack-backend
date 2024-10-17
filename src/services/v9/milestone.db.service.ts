@@ -1456,6 +1456,7 @@ class MilestoneDBService {
       });
       if (milestoneId.toString() == firstMilestone[0].milestoneId.toString()) {
         roadMap = this.formatRoadmap(firstMilestone[0]);
+        roadMap[0].data[0]["progress"] = 0;
       } else {
         const firstDayGoals = firstMilestone[0].milestoneGoals.map(
           (obj) => obj.title
@@ -1463,6 +1464,7 @@ class MilestoneDBService {
         roadMap = this.formatRoadmap(selectedMilestone[0]);
         roadMap[0].data.unshift({
           title: firstMilestone[0].milestone,
+          progress: 0,
           icon: firstMilestone[0].milestoneGoals[0].icon,
           data: firstDayGoals,
         });
