@@ -2037,6 +2037,7 @@ class ScriptService {
       let dayTitle = null;
       let roadmapIcon = null;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
+      const defaultTopic = "6638c5f713b74c3154c67624";
 
       const milestonesArray = rows.reduce((acc, row) => {
         const topic = row.topic?.trimEnd();
@@ -2045,8 +2046,7 @@ class ScriptService {
           acc.push({
             milestone: milestone,
             topicId:
-              quizTopics.find((obj) => obj?.topic == topic)?._id ||
-              quizTopics[0]?.topic,
+              quizTopics.find((obj) => obj.topic == topic)._id || defaultTopic,
             description: "7 Days - 15 min/day",
             order: ++milestoneOrder,
             locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
@@ -2147,7 +2147,7 @@ class ScriptService {
             inputTemplate: inputTemplate,
             isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
             dayTitle,
-            roadmapIcon
+            roadmapIcon,
           });
         }
         if (row["optionTitle"]) {
