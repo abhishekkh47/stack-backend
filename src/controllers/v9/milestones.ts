@@ -158,6 +158,29 @@ class MilestoneController extends BaseController {
     );
     return this.Ok(ctx, { data: milestoneSummary });
   }
+
+  /**
+   * @description This is to milestone roadmap based on milestonId
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/get-milestone-roadmap/:milestoneId",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getMilestoneRoadmap(ctx: any) {
+    const { user, params } = ctx.request;
+    const { milestoneId } = params;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const milestoneRoadmap = await MilestoneDBService.getMilestoneRoadmap(
+      milestoneId
+    );
+    return this.Ok(ctx, { data: milestoneRoadmap });
+  }
 }
 
 export default new MilestoneController();

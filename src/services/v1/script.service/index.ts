@@ -2035,6 +2035,7 @@ class ScriptService {
       let learningContent = [];
       let learningContentIdx = -1;
       let dayTitle = null;
+      let roadmapIcon = null;
       const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2043,7 +2044,9 @@ class ScriptService {
         if (milestone?.length > 1) {
           acc.push({
             milestone: milestone,
-            topicId: quizTopics.find((obj) => obj.topic == topic)._id,
+            topicId:
+              quizTopics.find((obj) => obj?.topic == topic)?._id ||
+              quizTopics[0]?.topic,
             description: "7 Days - 15 min/day",
             order: ++milestoneOrder,
             locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
@@ -2092,6 +2095,7 @@ class ScriptService {
         if (row["day"] && row["day"] != currentDay) {
           currentDay = Number(row["day"]);
           dayTitle = row["title"]?.trimEnd() || null;
+          roadmapIcon = row["roadmapIcon"]?.trimEnd() || null;
           order = 0;
           learningContent.push({
             milestoneId: currentMilestoneId || null,
@@ -2143,6 +2147,7 @@ class ScriptService {
             inputTemplate: inputTemplate,
             isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
             dayTitle,
+            roadmapIcon
           });
         }
         if (row["optionTitle"]) {
@@ -2174,8 +2179,7 @@ class ScriptService {
           updateOne: {
             filter: {
               milestoneId: obj.milestoneId,
-              title: obj.title,
-              day: obj.day,
+              key: obj.key,
             },
             update: {
               $set: {
@@ -2192,6 +2196,7 @@ class ScriptService {
                 inputTemplate: obj.inputTemplate,
                 isAiToolbox: obj.isAiToolbox,
                 dayTitle: obj.dayTitle,
+                roadmapIcon: obj.roadmapIcon,
               },
             },
             upsert: true,
