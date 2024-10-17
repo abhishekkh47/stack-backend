@@ -115,6 +115,11 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       required: true,
       default: null,
     },
+    roadmapIcon: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

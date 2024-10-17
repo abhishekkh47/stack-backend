@@ -1401,6 +1401,7 @@ class MilestoneDBService {
                     title: "$$goal.title",
                     day: "$$goal.day",
                     dayTitle: "$$goal.dayTitle",
+                    icon: "$$goal.roadmapIcon",
                   },
                 },
               },
@@ -1430,6 +1431,7 @@ class MilestoneDBService {
                     title: "$$goal.title",
                     day: "$$goal.day",
                     dayTitle: "$$goal.dayTitle",
+                    icon: "$$goal.roadmapIcon",
                   },
                 },
               },
@@ -1447,6 +1449,7 @@ class MilestoneDBService {
         roadMap = this.formatRoadmap(selectedMilestone[0]);
         roadMap[0].data.unshift({
           title: firstMilestone[0].milestone,
+          icon: firstMilestone[0].milestoneGoals[0].icon,
           data: firstDayGoals,
         });
       }
@@ -1456,7 +1459,6 @@ class MilestoneDBService {
       });
       return roadMap;
     } catch (error) {
-      console.log("Error : ", error);
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
         400
@@ -1479,6 +1481,7 @@ class MilestoneDBService {
         } else {
           dailyGoals[`Day ${obj.day}`] = {};
           dailyGoals[`Day ${obj.day}`]["title"] = obj.dayTitle;
+          dailyGoals[`Day ${obj.day}`]["icon"] = obj.icon;
           dailyGoals[`Day ${obj.day}`]["data"] = [obj.title];
         }
       });
