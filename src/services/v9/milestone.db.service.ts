@@ -1400,6 +1400,7 @@ class MilestoneDBService {
                   in: {
                     title: "$$goal.title",
                     day: "$$goal.day",
+                    order: "$$goal.order",
                     dayTitle: "$$goal.dayTitle",
                     icon: "$$goal.roadmapIcon",
                   },
@@ -1430,6 +1431,7 @@ class MilestoneDBService {
                   in: {
                     title: "$$goal.title",
                     day: "$$goal.day",
+                    order: "$$goal.order",
                     dayTitle: "$$goal.dayTitle",
                     icon: "$$goal.roadmapIcon",
                   },
@@ -1440,6 +1442,18 @@ class MilestoneDBService {
         ]),
       ]);
 
+      firstMilestone[0].milestoneGoals.sort((a, b) => {
+        if (a.day !== b.day) {
+          return a.day - b.day;
+        }
+        return a.order - b.order;
+      });
+      selectedMilestone[0].milestoneGoals.sort((a, b) => {
+        if (a.day !== b.day) {
+          return a.day - b.day;
+        }
+        return a.order - b.order;
+      });
       if (milestoneId.toString() == firstMilestone[0].milestoneId.toString()) {
         roadMap = this.formatRoadmap(firstMilestone[0]);
       } else {
