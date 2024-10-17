@@ -71,9 +71,9 @@ class BusinessProfileService {
             value: data.savedBusinessIdeas[i],
             timestamp: Date.now(),
           });
-          userBusinessScore =
-            data?.savedBusinessIdeas[i]?.rating || DEFAULT_BUSINESS_SCORE;
         }
+        userBusinessScore =
+          Number(latestSelection.rating) || DEFAULT_BUSINESS_SCORE;
         if (
           !businessProfile ||
           (businessProfile && !businessProfile?.description)
@@ -146,7 +146,7 @@ class BusinessProfileService {
         data?.goalId || ifBusinessIdea
           ? UserDBServiceV4.addStreaks(userIfExists)
           : Promise.resolve(),
-        data?.goalId && ifBusinessIdea
+        ifBusinessIdea
           ? UserService.addBusinessScore(userIfExists, userBusinessScore)
           : Promise.resolve(),
       ]);
