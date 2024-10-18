@@ -53,7 +53,8 @@ class UserService {
         userDetails?.businessScore?.updatedDate || currentDate,
         currentDate
       );
-      const currentScore = userDetails?.businessScore?.current;
+      const currentScore =
+        userDetails?.businessScore?.current || DEFAULT_BUSINESS_SCORE;
       if (day === 0 || diffDays === 1) {
         if (userBusinessScore == 0) {
           currentBusinessScore =
