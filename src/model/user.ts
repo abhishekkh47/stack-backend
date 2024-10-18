@@ -312,6 +312,10 @@ const schema = new mongoose.Schema<IUserSchema>(
         type: mongoose.Schema.Types.Boolean,
         default: false,
       },
+      dayContinued: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
       last7days: {
         type: [mongoose.Schema.Types.Mixed],
         default: function () {
