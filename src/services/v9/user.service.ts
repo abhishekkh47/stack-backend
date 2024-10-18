@@ -36,11 +36,12 @@ class UserService {
    */
   public async addBusinessScore(
     userDetails: any,
-    userBusinessScore: number = DEFAULT_BUSINESS_SCORE
+    userBusinessScore: number = 0
   ) {
     try {
       let isBusinessScoreToBeUpdated = false,
-        message = "";
+        message = "",
+        currentBusinessScore = 0;
       let businessScore = {},
         buttonText = BUSINESS_SCORE_MESSAGE.LETS_GO;
       const currentDate = convertDateToTimeZone(
@@ -52,7 +53,15 @@ class UserService {
         userDetails?.businessScore?.updatedDate || currentDate,
         currentDate
       );
-      if (!userDetails || day === 0 || diffDays === 1) {
+      const currentScore =
+        userDetails?.businessScore?.current || DEFAULT_BUSINESS_SCORE;
+      if (day === 0 || diffDays === 1) {
+        if (userBusinessScore == 0) {
+          currentBusinessScore =
+            currentScore == 0 ? DEFAULT_BUSINESS_SCORE : currentScore + 1;
+        } else {
+          currentBusinessScore = userBusinessScore;
+        }
         let last7days: any = userDetails?.businessScore?.last7days || [];
         message =
           this.getBusinessScoreMessage(last7days) ||
@@ -64,9 +73,9 @@ class UserService {
           last7days = SEVEN_DAYS_TO_RESET;
         }
         businessScore = {
-          current: userDetails?.businessScore?.current + 1 || userBusinessScore,
+          current: currentBusinessScore,
           longest: Math.max(
-            (userDetails?.businessScore?.current || 0) + 1,
+            (currentScore || 0) + 1,
             userDetails?.businessScore?.longest || 0
           ),
           isBusinessScoreInactive7Days: false,
@@ -82,7 +91,7 @@ class UserService {
           currentDate
         );
         let currentBusinessScoreValue =
-          userDetails?.businessScore?.current - businessScoreDiffDays + 2;
+          currentScore - businessScoreDiffDays + 2;
         let longestBusinessScoreValue = userDetails.businessScore?.longest || 0;
         const { last7days, isBusinessScoreInactive7Days } =
           this.modifyLast7DaysBusinessScore(
@@ -142,7 +151,7 @@ class UserService {
           last7DaysWeek: dayRange,
           currentBusinessScore:
             updatedBusinessScoreDetails.businessScore.current,
-          previousBusinessScore: userDetails?.businessScore?.current || 90,
+          previousBusinessScore: currentScore || 90,
           message,
           buttonText,
         };
