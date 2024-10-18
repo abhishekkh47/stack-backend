@@ -123,6 +123,15 @@ class BusinessProfileService {
         );
       }
       const ifBusinessIdea = key == "ideaValidation" && !businessProfile?.idea;
+      AnalyticsService.sendEvent(
+        ANALYTICS_EVENTS.AI_TOOL_USED,
+        {
+          "Tool name": key,
+        },
+        {
+          user_id: userIfExists._id,
+        }
+      );
       await Promise.all([
         data?.goalId || ifBusinessIdea
           ? MilestoneDBService.saveMilestoneGoalResults(userIfExists, key)
