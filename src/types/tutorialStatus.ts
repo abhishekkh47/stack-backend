@@ -11,4 +11,5 @@ export interface ITutorialStatus {
   mentorshipVisited: boolean;
   saveIdea: boolean;
   validateIdea: boolean;
+  aiGenerationOption: boolean;
 }

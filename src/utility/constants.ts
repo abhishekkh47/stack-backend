@@ -750,6 +750,7 @@ export const TUTORIAL_LOOKUP = {
   mentorshipVisited: { mentorshipVisited: true },
   saveIdea: { saveIdea: true },
   validateIdea: { validateIdea: true },
+  aiGenerationOption: { validateIdea: true },
 };
 
 export const DAILY_GOALS = [
