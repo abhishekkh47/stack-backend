@@ -43,7 +43,19 @@ class UserService {
         message = "",
         currentBusinessScore = 0;
       let businessScore = {},
-        buttonText = BUSINESS_SCORE_MESSAGE.LETS_GO;
+        buttonText = BUSINESS_SCORE_MESSAGE.LETS_GO,
+        dayContinued = userDetails?.businessScore?.dayContinued || 0;
+
+      if (dayContinued == 0) {
+        const last7daysArr: any = userDetails?.businessScore?.last7days || [];
+        let streak = 0;
+        for (let i = 6; i >= 0; i--) {
+          if (last7daysArr[i] == 1) {
+            streak += 1;
+          } else if (streak > 0) break;
+        }
+        dayContinued = streak;
+      }
       const currentDate = convertDateToTimeZone(
         new Date(),
         userDetails.timezone
@@ -56,6 +68,7 @@ class UserService {
       const currentScore =
         userDetails?.businessScore?.current || DEFAULT_BUSINESS_SCORE;
       if (day === 0 || diffDays === 1) {
+        dayContinued += 1;
         if (userBusinessScore == 0) {
           currentBusinessScore =
             currentScore == 0 ? DEFAULT_BUSINESS_SCORE : currentScore + 1;
@@ -64,7 +77,7 @@ class UserService {
         }
         let last7days: any = userDetails?.businessScore?.last7days || [];
         message =
-          this.getBusinessScoreMessage(last7days) ||
+          this.getBusinessScoreMessage(last7days, dayContinued) ||
           BUSINESS_SCORE_MESSAGE.day_1;
         const earliestNullIndex = last7days.indexOf(null);
         if (earliestNullIndex !== -1) {
@@ -81,6 +94,7 @@ class UserService {
           isBusinessScoreInactive7Days: false,
           updatedDate: currentDate,
           last7days,
+          dayContinued,
         };
         isBusinessScoreToBeUpdated = true;
       } else if (diffDays > 1) {
@@ -106,6 +120,7 @@ class UserService {
           isBusinessScoreInactive7Days,
           updatedDate: currentDate as IMDY,
           last7days,
+          dayContinued,
         };
         isBusinessScoreToBeUpdated = true;
       }
@@ -321,10 +336,11 @@ class UserService {
 
   /**
    * @description This method is used to modify the last 7 days array based on certain conditions
-   * @param data
+   * @param last7Days array of last 7 days
+   * @param dayContinued numberof days user has continuously logged in to the app
    * @return {*}
    */
-  public getBusinessScoreMessage(last7Days: any) {
+  public getBusinessScoreMessage(last7Days: any, dayContinued: number) {
     try {
       let streak = 0;
       for (let i = 6; i >= 0; i--) {
@@ -333,7 +349,7 @@ class UserService {
         } else if (streak > 0) break;
       }
 
-      if (streak < 7) {
+      if (streak < 7 && dayContinued <= 7) {
         return BUSINESS_SCORE_MESSAGE[`day_${streak + 1}`];
       }
       return BUSINESS_SCORE_MESSAGE[`day_8`];

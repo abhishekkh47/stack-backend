@@ -193,4 +193,8 @@ export interface IBusinessScore {
   last7days: any[];
   updatedDate: IMDY;
   isBusinessScoreInactive7Days: boolean;
+  /* 
+  to track number of days, user has logged in continuously
+  */
+  dayContinued: number;
 }
