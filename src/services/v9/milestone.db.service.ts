@@ -171,7 +171,8 @@ class MilestoneDBService {
         this.getActionDetails(
           userIfExists,
           completedActions,
-          currentMilestoneId
+          currentMilestoneId,
+          true
         ),
       ]);
       const tasks = existingResponseWithPendingActions?.tasks;
@@ -675,9 +676,15 @@ class MilestoneDBService {
       const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
         {}
       ).lean();
-      let isMilestoneHit = false;
+      let isMilestoneHit = false,
+        isIdeaValidationGoalAvailable = false;
       const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
       const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
+      let ideaValidationGoal = await this.getActionDetails(
+        userIfExists,
+        ["ideaValidation"],
+        currentMilestoneId
+      );
       if (
         goalsLength &&
         (getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 ||
@@ -713,6 +720,7 @@ class MilestoneDBService {
 
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
+            isIdeaValidationGoalAvailable = true;
             if (!businessProfile?.description) {
               goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
               response.tasks[0].data.push(goal);
@@ -727,6 +735,14 @@ class MilestoneDBService {
               goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = false;
               response.tasks[0].data.push(goal);
             }
+          }
+          if (
+            !isIdeaValidationGoalAvailable &&
+            goal.key == "companyName" &&
+            !businessProfile?.description
+          ) {
+            ideaValidationGoal[0]["isCompleted"] = false;
+            response?.tasks[0]?.data.unshift(ideaValidationGoal[0]);
           }
         });
         if (!response?.tasks[0]?.data?.length) {
@@ -845,9 +861,11 @@ class MilestoneDBService {
   public async getActionDetails(
     userIfExists: any,
     keys: string[],
-    currentMilestoneId: any
+    currentMilestoneId: any,
+    filterCurrentDay: boolean = false
   ) {
     try {
+      let filteredGoals = null;
       const startOfDay = moment().startOf("day").toDate(); // 12:00 AM today
       const endOfDay = moment().endOf("day").toDate(); // 11:59:59 PM today
 
@@ -869,9 +887,13 @@ class MilestoneDBService {
           }),
         ]);
       const currentDayCompletedKeys = recordsUpdatedToday.map((obj) => obj.key);
-      const filteredGoals = goalDetails.filter((goal) =>
-        currentDayCompletedKeys.includes(goal.key)
-      );
+      if (filterCurrentDay) {
+        filteredGoals = goalDetails.filter((goal) =>
+          currentDayCompletedKeys.includes(goal.key)
+        );
+      } else {
+        filteredGoals = goalDetails;
+      }
       filteredGoals.forEach((goal) => {
         goal["inputTemplate"]["suggestionScreenInfo"] = inputTemplate[goal.key];
         goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
