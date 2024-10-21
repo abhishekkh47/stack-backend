@@ -241,6 +241,7 @@ export const ANALYTICS_EVENTS = {
   BUSINESS_GOAL_SUBMITTED: "Business Goal Submitted",
   TECHNICAL_EXPERIENCE_SUBMITTED: "Technical Experience Submitted",
   MONEY_INVEST_SUBMITTED: "Money Invest Submitted",
+  MILESTONE_COMPLETED: "Milestone Completed",
 };
 
 export const XP_POINTS = {

@@ -260,13 +260,20 @@ class MilestoneDBService {
           ]);
         if (
           response?.tasks[0]?.data.length == 1 &&
-          response?.tasks[0]?.data[0].day == currentMilestoneGoals[0].day &&
-          !ifOtherMilestoneCompleted
+          response?.tasks[0]?.data[0].day == currentMilestoneGoals[0].day
         ) {
-          response.tasks[0].data[0] = {
-            ...response?.tasks[0]?.data[0],
-            showNotificationScreen: true,
-          };
+          if (!ifOtherMilestoneCompleted) {
+            response.tasks[0].data[0] = {
+              ...response?.tasks[0]?.data[0],
+              showNotificationScreen: true,
+              lastGoalOfMilestone: true,
+            };
+          } else {
+            response.tasks[0].data[0] = {
+              ...response?.tasks[0]?.data[0],
+              lastGoalOfMilestone: true,
+            };
+          }
         }
       } else {
         currentGoal = lastMilestoneCompleted;
