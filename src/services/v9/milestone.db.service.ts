@@ -20,6 +20,7 @@ import {
   MILESTONE_HOMEPAGE,
 } from "@app/utility";
 import moment from "moment";
+import { ObjectId } from "mongodb";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -1363,6 +1364,150 @@ class MilestoneDBService {
         fuelProgress: 0,
         goalProgress: 0,
       };
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get milestone roadmap
+   * @param milestoneId milestonId to get summary for
+   * @returns {*}
+   */
+  public async getMilestoneRoadmap(milestoneId: any) {
+    try {
+      let roadMap = [];
+      const [firstMilestone, selectedMilestone] = await Promise.all([
+        MilestoneTable.aggregate([
+          { $match: { order: 1 } },
+          {
+            $lookup: {
+              from: "milestone_goals",
+              localField: "_id",
+              foreignField: "milestoneId",
+              as: "milestoneGoals",
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              milestoneId: "$_id",
+              milestone: 1,
+              milestoneGoals: {
+                $map: {
+                  input: "$milestoneGoals",
+                  as: "goal",
+                  in: {
+                    title: "$$goal.title",
+                    day: "$$goal.day",
+                    order: "$$goal.order",
+                    dayTitle: "$$goal.dayTitle",
+                    icon: "$$goal.roadmapIcon",
+                  },
+                },
+              },
+            },
+          },
+        ]),
+        MilestoneTable.aggregate([
+          { $match: { _id: new ObjectId(milestoneId) } },
+          {
+            $lookup: {
+              from: "milestone_goals",
+              localField: "_id",
+              foreignField: "milestoneId",
+              as: "milestoneGoals",
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              milestoneId: "$_id",
+              milestone: 1,
+              milestoneGoals: {
+                $map: {
+                  input: "$milestoneGoals",
+                  as: "goal",
+                  in: {
+                    title: "$$goal.title",
+                    day: "$$goal.day",
+                    order: "$$goal.order",
+                    dayTitle: "$$goal.dayTitle",
+                    icon: "$$goal.roadmapIcon",
+                  },
+                },
+              },
+            },
+          },
+        ]),
+      ]);
+
+      firstMilestone[0].milestoneGoals.sort((a, b) => {
+        if (a.day !== b.day) {
+          return a.day - b.day;
+        }
+        return a.order - b.order;
+      });
+      selectedMilestone[0].milestoneGoals.sort((a, b) => {
+        if (a.day !== b.day) {
+          return a.day - b.day;
+        }
+        return a.order - b.order;
+      });
+      if (milestoneId.toString() == firstMilestone[0].milestoneId.toString()) {
+        roadMap = this.formatRoadmap(firstMilestone[0]);
+        roadMap[0].data[0]["progress"] = 0;
+      } else {
+        const firstDayGoals = firstMilestone[0].milestoneGoals.map(
+          (obj) => obj.title
+        );
+        roadMap = this.formatRoadmap(selectedMilestone[0]);
+        roadMap[0].data.unshift({
+          title: firstMilestone[0].milestone,
+          progress: 0,
+          icon: firstMilestone[0].milestoneGoals[0].icon,
+          data: firstDayGoals,
+        });
+      }
+      roadMap[roadMap.length - 1].data.push({
+        title: "Completed Milestone",
+        icon: "trophy.webp",
+      });
+      return roadMap;
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while retrieving new Milestone",
+        400
+      );
+    }
+  }
+
+  /**
+   * @description format milestone goals day-wise
+   * @param milestone
+   * @returns {*}
+   */
+  private formatRoadmap(milestone: any) {
+    try {
+      const dailyGoals = {};
+      const roadMap = [];
+      milestone.milestoneGoals.map((obj) => {
+        if (dailyGoals[`Day ${obj.day}`]) {
+          dailyGoals[`Day ${obj.day}`].data.push(obj.title);
+        } else {
+          dailyGoals[`Day ${obj.day}`] = {};
+          dailyGoals[`Day ${obj.day}`]["title"] = obj.dayTitle;
+          dailyGoals[`Day ${obj.day}`]["icon"] = obj.icon;
+          dailyGoals[`Day ${obj.day}`]["data"] = [obj.title];
+        }
+      });
+      Object.keys(dailyGoals).map((day) => {
+        roadMap.push({
+          title: day,
+          data: [dailyGoals[day]],
+        });
+      });
+      return roadMap;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
