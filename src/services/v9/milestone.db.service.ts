@@ -346,13 +346,19 @@ class MilestoneDBService {
           return null;
         })
         .filter(Boolean);
-      if (response?.tasks[1]) {
-        response.tasks[1].data = [
-          ...completedLearnings,
-          ...response.tasks[1].data,
-        ];
-      } else {
-        response.tasks[1].push(completedLearnings);
+      if (completedLearnings.length) {
+        if (response?.tasks[1]) {
+          response.tasks[1].data = [
+            ...completedLearnings,
+            ...response.tasks[1].data,
+          ];
+        } else {
+          response.tasks.push({
+            title: COMPLETED_GOALS.title,
+            data: completedLearnings,
+            sectionKey: COMPLETED_GOALS.key,
+          });
+        }
       }
       return response;
     } catch (error) {
