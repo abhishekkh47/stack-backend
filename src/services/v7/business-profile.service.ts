@@ -54,7 +54,9 @@ class BusinessProfileService {
   ) {
     try {
       let obj = {},
-        key = data?.key;
+        key = data?.key,
+        milestoneName = data?.milestoneName || null,
+        ifLastGoalOfMilestone = data?.lastGoalOfMilestone || false;
       let businessHistoryObj = [],
         userBusinessScore = null;
       // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
@@ -123,6 +125,26 @@ class BusinessProfileService {
         );
       }
       const ifBusinessIdea = key == "ideaValidation" && !businessProfile?.idea;
+      AnalyticsService.sendEvent(
+        ANALYTICS_EVENTS.AI_TOOL_USED,
+        {
+          "Tool name": key,
+        },
+        {
+          user_id: userIfExists._id,
+        }
+      );
+      if (ifLastGoalOfMilestone) {
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS.MILESTONE_COMPLETED,
+          {
+            "Milestone Name": milestoneName,
+          },
+          {
+            user_id: userIfExists._id,
+          }
+        );
+      }
       await Promise.all([
         data?.goalId || ifBusinessIdea
           ? MilestoneDBService.saveMilestoneGoalResults(userIfExists, key)
