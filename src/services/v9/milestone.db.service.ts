@@ -341,19 +341,33 @@ class MilestoneDBService {
           } else {
             response?.tasks[0]?.data?.unshift(obj);
           }
-        } else if (learningContent?.completedQuizIds.includes(currentQuizId)) {
-          obj[IS_COMPLETED] = true;
-          if (response?.tasks[1]) {
-            response?.tasks[1].data.unshift(obj);
-          } else {
-            response?.tasks?.push({
-              title: COMPLETED_GOALS.title,
-              data: [obj],
-              sectionKey: COMPLETED_GOALS.key,
-            });
-          }
         }
       });
+      const completedLearnings = learningContent?.completedQuizIds
+        ?.map((id) => {
+          const learning = allLearningContent?.find(
+            (obj) => obj.quizId.toString() == id.toString()
+          );
+          if (learning) {
+            return { ...learning, [IS_COMPLETED]: true };
+          }
+          return null;
+        })
+        .filter(Boolean);
+      if (completedLearnings.length) {
+        if (response?.tasks[1]) {
+          response.tasks[1].data = [
+            ...completedLearnings,
+            ...response.tasks[1].data,
+          ];
+        } else {
+          response.tasks.push({
+            title: COMPLETED_GOALS.title,
+            data: completedLearnings,
+            sectionKey: COMPLETED_GOALS.key,
+          });
+        }
+      }
       return response;
     } catch (error) {
       throw new NetworkError("Error occurred while retrieving milestones", 400);
@@ -792,7 +806,7 @@ class MilestoneDBService {
               $gte: startOfDay,
               $lt: endOfDay,
             },
-          }),
+          }).sort({ createdAt: 1 }),
         ]);
 
         completedQuizIds = quizCompletedToday?.map((obj) =>
@@ -1107,10 +1121,9 @@ class MilestoneDBService {
   /**
    * @description get completed milestones list
    * @param userExists
-   * @param businessProfile
    * @returns {*}
    */
-  public async getCompletedMilestones(userExists, businessProfile) {
+  public async getCompletedMilestones(userExists) {
     try {
       const [milestoneList, milestoneGoalsCount] = await Promise.all([
         this.getMilestones(userExists),
@@ -1182,7 +1195,7 @@ class MilestoneDBService {
             advanceNextDay
           ),
           this.getMilestoneProgress(businessProfile),
-          this.getCompletedMilestones(userExists, businessProfile),
+          this.getCompletedMilestones(userExists),
         ]
       );
       goals?.tasks?.unshift({
