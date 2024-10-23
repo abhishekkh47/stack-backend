@@ -912,6 +912,8 @@ class MilestoneDBService {
         goal["inputTemplate"]["suggestionScreenInfo"] = inputTemplate[goal.key];
         goal[MILESTONE_HOMEPAGE.IS_COMPLETED] = true;
         goal["isLocked"] = false;
+        goal.iconImage = inputTemplate[goal.key].iconImage;
+        goal.iconBackgroundColor = inputTemplate[goal.key].iconBackgroundColor;
       });
       filteredGoals.sort((a, b) => {
         if (a.day == b.day) {
