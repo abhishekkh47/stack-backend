@@ -350,7 +350,6 @@ class BusinessProfileService {
     userExists: any
   ) {
     try {
-      const businessType = 2; // Only tech product
       const systemInputDataset = await AIToolDataSetTable.find({
         key: {
           $in: [
@@ -374,106 +373,79 @@ class BusinessProfileService {
 
       const problemPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
-          ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
-          idea.businessDescription
+          softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_RATING],
+          idea.business_description
         )
       );
 
-      const ratingPromises = ideaResults.map((idea) =>
+      const productPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
           softwareTechnology[IDEA_GENERATOR_INFO.PRODUCT_RATING],
-          idea.businessDescription
+          idea.business_description
         )
       );
 
       const marketPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_MARKET_SELECTOR],
-          idea.businessDescription
+          softwareTechnology[IDEA_GENERATOR_INFO.MARKET_RATING],
+          idea.business_description
         )
       );
 
       // Fetch problem, rating, and market suggestions in parallel
-      const [problemResults, ratingResults, marketResults] = await Promise.all([
-        Promise.all(problemPromises),
-        Promise.all(ratingPromises),
-        Promise.all(marketPromises),
-      ]);
-
-      const marketSegments = marketResults.map((market) =>
-        market.market.replace(/\.$/, "")
+      const [problemRatings, productRatings, marketRatings] = await Promise.all(
+        [
+          Promise.all(problemPromises),
+          Promise.all(productPromises),
+          Promise.all(marketPromises),
+        ]
       );
-      const [
-        marketAnalysisData,
-        productizationData,
-        distributionData,
-        dominateNicheData,
-      ] = await Promise.all([
-        MarketScoreTable.find({
-          marketSegment: {
-            $in: marketSegments,
-          },
-          type: businessType,
-        }).lean(),
-        this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.name],
-          marketResults[0].market
-        ),
-        this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.name],
-          marketResults[1].market
-        ),
-        this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.name],
-          marketResults[2].market
-        ),
-      ]);
 
       let order = 0;
       const ideasData = [
         {
-          data: productizationData,
-          problem: problemResults[0],
+          data: ideaResults[0],
+          problemData: problemRatings[0],
           label: softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.label],
           imageKey: IDEA_GENERATOR_INFO.PRODUCTIZATION.image,
-          ratingData: ratingResults[0],
-          marketData: marketResults[0],
+          productData: productRatings[0],
+          marketData: marketRatings[0],
         },
         {
-          data: distributionData,
-          problem: problemResults[1],
+          data: ideaResults[1],
+          problemData: problemRatings[1],
           label: softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.label],
           imageKey: IDEA_GENERATOR_INFO.DISTRIBUTION.image,
-          ratingData: ratingResults[1],
-          marketData: marketResults[1],
+          productData: productRatings[1],
+          marketData: marketRatings[1],
         },
         {
-          data: dominateNicheData,
-          problem: problemResults[2],
+          data: ideaResults[2],
+          problemData: problemRatings[2],
           label: softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.label],
           imageKey: IDEA_GENERATOR_INFO.DOMINATE_NICHE.image,
-          ratingData: ratingResults[2],
-          marketData: marketResults[2],
+          productData: productRatings[2],
+          marketData: marketRatings[2],
         },
       ];
       const BUSINESS_IDEA_IMAGES_BY_TYPE = BUSINESS_IDEA_IMAGES.TECH_PRODUCT;
       const ideas = ideasData.map(
-        ({ data, problem, label, imageKey, ratingData, marketData }) => {
+        ({ data, problemData, label, imageKey, productData, marketData }) => {
           data.ideaLabel = label;
           data.image = BUSINESS_IDEA_IMAGES_BY_TYPE[imageKey];
           data._id = `idea${++order}`;
 
-          const market = marketAnalysisData.find(
-            (obj) => obj.marketSegment === marketData.market.replace(/\.$/, "")
-          );
-
           data.rating = Math.floor(
-            (Number(problem.average) +
-              market.overallRating +
-              ratingData["Overall Score"]) /
+            (Number(problemData.average) +
+              marketData.average +
+              productData.average) /
               3
           );
-          data.ideaAnalysis = this.ideaAnalysis(problem, ratingData, market);
+          data.ideaAnalysis = this.ideaAnalysis(
+            problemData,
+            productData,
+            marketData
+          );
 
           return data;
         }
