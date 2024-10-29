@@ -698,7 +698,7 @@ class BusinessProfileService {
           analysis: [
             {
               name: IDEA_ANALYSIS.PRODUCT.niche.name,
-              rating: product["customer rating"],
+              rating: product["customer_rating"],
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PRODUCT.niche.description,
                 placeholders.product
@@ -706,7 +706,7 @@ class BusinessProfileService {
             },
             {
               name: IDEA_ANALYSIS.PRODUCT.feature.name,
-              rating: product["core feature rating"],
+              rating: product["core_feature_rating"],
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PRODUCT.feature.description,
                 placeholders.product
@@ -714,7 +714,7 @@ class BusinessProfileService {
             },
             {
               name: IDEA_ANALYSIS.PRODUCT.differentiator.name,
-              rating: product["product rating"],
+              rating: product["product_rating"],
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PRODUCT.differentiator.description,
                 placeholders.product
