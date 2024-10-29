@@ -8242,110 +8242,176 @@ export const TARGET_AUDIENCE_REQUIRED = [
   "businessModel",
 ];
 
-export const COST_STRUCTURE_TYPE = {
-  1: "buildMyself",
-  2: "hireSomeone",
-};
+export const NEW_IDEA_GEN = {
+  idea_validate: `Step 1: The assistant will make minor language modifications to the user input without losing any content or context. It will ensure the business idea sounds professional and well-articulated. It will never add new components to the business idea and use similar language to that used in the user input. The description will always be 140 characters or less.
 
-export const YOUR_HOOK_TYPE = {
-  1: "literalDescription",
-  2: "sellOutcome",
-  3: "xForYFramework",
-};
+Step 2: The assistant will describe the core concept and key differentiating feature in 140 characters or less, using clear and concise language. It will also provide the market segment chosen from the list in a separate line below the idea. It will never add core differentiating features or new concepts that are not included in the user input.
 
-export const SHOWCASE_PROBLEM_TYPE = {
-  1: "viralResearch",
-  2: "customerFrustration",
-  3: "keyDataPoint",
-};
+Step 3: Then, the assistant will generate a simplified description of business idea in 6 words or less. The description should concisely convey the core concept by highlighting its unique value proposition. This will precede the business idea description on its own line.
 
-export const GOTO_MARKET_STRATEGY_TYPE = {
-  1: "marketing",
-  2: "productDevelopment",
-  3: "salesDev",
-  4: "teamBuilding",
-};
+Illustrative Examples
+Input: workout app for millennial professionals focused on 5 minute workouts that fit into your daily life. 
+Output: 
+{
+    "business_idea": "5-Minute Workouts Mobile App",
+    "business_desscription": "An app offering 5-10 minute micro-workouts tailored to your daily routine and schedule built specifically for millennial professionals." 
+}
 
-export const PROGRESS_METRICS_TYPE = {
-  1: "customerDiscovery",
-  2: "productWaitlist",
-  3: "users",
-  4: "revenue",
-};
+Input: a live voting app where football fans get to influence real game decisions and nominate players of the game. 
+Output: 
+{
+    "business_idea": "Real-Time Fan Voting App",
+    "business_desscription": "An app that conducts real-time polls during football games, allowing football fans to vote on player of the match, game strategies, and more." 
+}
 
-export const MARKET_SIZE_TYPE = {
-  1: "traditionalMethod",
-  2: "bottomsUpMethod",
-};
+Input: an app that send pictures of moments and memories to a group chat of friends for birthdays, event anniversaries, etc. 
+Output: 
+{
+    "business_idea": "Celebrations & Memories for Group SMS",
+    "business_desscription": "An app that automatically creates and shares photo memories with friends and family via group texts on special occasions and anniversaries." 
+}
 
-export const WHY_NOW_STORY_TYPE = {
-  1: "soceitalShift",
-  2: "nascentTechnology",
-  3: "regulatoryTailwinds",
-  4: "economicClimate",
-};
+Input: an app that helps songwriters create and get feedback on their work using AI 
+Output: 
+{
+    "business_idea": "AI Producer & Director for Songwriting",
+    "business_desscription": "An app that provides songwriting creation tools, and feedback, helping artists develop their songwriting abilities and create original music. " 
+}
 
-export const THE_ASK_TYPE = {
-  1: "raiseMoney",
-  2: "highCalibreIntros",
-  3: "strategicAdvice",
-  4: "betaTester",
-};
+Input: platform that allows parents to upload a sample of their voice and picture that AI turns into a child youtube video, so it feels like they are the star of the video and teaching their own children. 
+Output: 
+{
+    "business_idea": "AI-powered Kids' Music Videos Featuring Parents",
+    "business_desscription": "An AI platform that allows parents to upload a voice recording and picture to create educational music videos featuring them as the performer."
+}
+`,
+  score: {
+    problem: `You are an expert academic researcher on startup/entrepreneurial ideas. The user input will always be a business idea. You will perform the following using real facts, industry reports, publicly available information and public data:
+Step 1: Write a 3-7 word search phrase that encompasses the problem directly and deeply. This is a phrase that someone who is currently experiencing the problem would be likely to search. Index on it being specific and direct to the business idea in the user input. Aim to go deep and be tactical while also being concise. Don't use superfluous or exaggerated language . Someone with the business idea that sees this phrase should deeply resonate with it and it should feel like the phrase you wrote comes from significant expertise in the respective industry and product space.
+Output: 3-7 word search phrase
+Step 2: Rate how common you believe the problem is on a scale of 75 to 100. 75 represents a problem that is extremely uncommon and experienced by a very small group of people. 100 represents a problem that is shared by a very large group of people. Never use a rating that ends in zero so that it feels specific.
+Output: rating between 75 and 100, not ending in zero
+Step 3: identify the 3 most well-known products that most directly solve the problem right now. Make sure to select products that are well-known while also being as direct as possible to the problem. Provide the names of the companies that own these products, indexing on their most commonly known name. (For example use "Nike" not "Nike Corporation")
+Output: three company names
+Step 4: identify the current annual pricing per customer of the three products identified in Step 3. There will likely be various pricing plans for the same product. Make reasonable assumptions to come up with an average price per year for one customer. If the product is a one-time purchase, provide that price. Once you have a price for all three products, create a range that represents the pricing across all three products. do your best to choose products that have similar pricing.
+Output: pricing range
+Step 5: Rate the pricing range in Step 4 on a scale of 75 to 100. 75 represents all free products. 100 represents products that average greater than $200 per customer per year. Most ratings will fall in between and try your best to be exact. Never use a rating that ends in zero so that it feels specific.
+Output: rating between 75 and 100, not ending in zero
+Step 6: identify the amount of paying customers for each of the products in Step 3. The best way to do this is by looking for public information or data shared by the company directly. If you have to estimate, use reasonable assumptions backed by real facts. Once you have the amount of paying customers for each product, total the amount together. If the number is in the thousands express the number in thousands with the letter "k" after. If the number is in the millions, express the number in millions with the word "million" and round to the nearest tenth decimal.
+Output: number representing total estimate of paying customers for all three products.
+Step 7: Rate the pricing range in Step 6 on a scale of 75 to 100. 75 represents total paying customers 10K or below. 100 represents total paying customers above 20 million. Most ratings will fall in between and try your best to be exact. Make sure not to apply a simply weighted average here as very few companies will have numbers in the 8-figures. Instead apply a scale that allows smaller numbers to have higher ratings than an average distribution. Never use a rating that ends in zero so that it feels specific.
+Output: rating between 75 and 100, not ending in zero
+Step 8: You will average the three scores from step 2, 5 and 7. Always make this a whole number.
+Output: A whole number that represents the average ratings.
 
-export const NETWORKING_STRATEGY_TYPE = {
-  1: "investors",
-  2: "entrepreneurs",
-  3: "teamMembers",
-};
+Example Input 1:
+A photo editing app that uses artificial intelligence to recognize photo enhancements and create one touch photo edits that can be selected by the user.
+Example Output 1:
+{
+    "title": "best photo editing app for beginners",
+    "problemScore": 92,
+    "products": "Adobe, Pixelmator and Affinity",
+    "price": "$30-$90",
+    "priceRating": 88,
+    "customer": "11.5 million",
+    "customerRating": 98,
+    "average": 93
+}
 
-export const OUTLINE_DEMAND_TEST_TYPE = {
-  1: "surveyInvite",
-  2: "socialMediaPoll",
-  3: "ambientPost",
-};
+Example Input 2:
+A mobile app that crowdsources real-time fishing hotspots, creates community for anglers and gamifies catch competition.
+Example Output 2:
+{
+    "title":"fishing hot spots near me",
+    "problemScore":"95",
+    "products":"Fishidy, FishTrack and Navionics",
+    "price":"$150-$250",
+    "priceRating":"99",
+    "customer":"560k",
+    "customerRating":"79",
+    "average":"91"
+}`,
+    product: `You are an expert academic researcher on startup/entrepreneurial ideas. The user input will always be a business idea. You will perform the following using real facts, industry reports, publicly available information and public data:
+Step 1: Write a 2-4 word phrase that describes a specific beachhead customer for the provided business. This is a focused and specific target customer group who would be most likely to early adopt the product. Customers should be specified by their habits or needs and may also include demographic information but only if it makes sense. Someone with the business idea that sees this phrase should deeply resonate with it and it should feel like the phrase you wrote comes from significant expertise in the respective industry and product space.
+Output: 2-4 word phrase that describes the specific beachhead customer
+Step 2: Rate how much you believe the specified beachhead customer needs the product on a scale of 75 to 100. 75 represents a customer group that are hobbyist of the product and might find it compelling but may also have hesitations about it. 100 represents a customer that is desperate for the product and would pay immense amount of money to buy it. Never use a rating that ends in zero so that it feels specific.
+Output: rating between 75 and 100, not ending in zero
+Step 3: identify and describe in 3-5 words the core feature described or inferred in the business description provided. Be as specific as possible about this feature without over-assuming based on things that are not in the user input. The description should be concise and yet descriptive. The user of the business idea should read this description of the core feature and think that its exactly what they were imaging based on the provided business description.
+Output: a 3-5 word description of one core product feature
+Step 4: Rate the core feature described in step 3 of the product based on how focused and specific it is. This rating will always be on a scale of 75 to 100. 75 represents very ambiguous or generally described products without describing anything about what they do, how they work or what makes them unique. 100 represents products that very specifically described and detailed. Most ratings will fall between 85 and 95 and try your best to be exact. Never use a rating that ends in zero.
+Output: a rating between 75 and 100, not ending in zero
+Step 5: list 2 or 3 existing products that most closely resemble the product described in the user input based on functionality, industry, business model, customer group, etc. These products should be well known for their respective space but also be the most direct products that would directly compete with the product in the business description. You will provide each product's name along with its brand or company unless it is well-known without that context (for example "the Duolingo app" or "Amplitude's analytics software"). Try to always use between one and three words to describe each product. You will decide whether two or three product is appropriate to provide based on how many direct, well-known products would be appropriate.
+Output: 2 or 3 product descriptions
+Step 6: Rate how different and unique the product described in the business description is from the existing products it may directly compete with in step 5 on a scale of 75 to 100. 75 represents products that are basically the exact same product as the products listed in step 5 with no new or novel features. 100 represents extremely novel and new products that have multiple aspects of them that the existing products do not offer and are largely missing from the market. The rating should be specific and exact, never ending in zero or five.
+Output: rating between 75 and 100, not ending in zero or five.
+Step 8: You will average the three scores from step 2, 4 and 6. Always make this a whole number.
+Output: A whole number that represents the average ratings.
 
-export const HEADLINE_TYPE = {
-  1: "literalDescription",
-  2: "sellOutcome",
-  3: "nailPainPoint",
-  4: "sparkCuriosity",
-};
+Example Input 1:
+A photo editing app that uses artificial intelligence to recognize photo enhancements and create one touch photo edits that can be selected by the user.
+Example Output 1:
+{
+  "customer_description": "Amateur photo enthusiasts",
+  "customer_rating": 92,
+  "core_feature": "AI one-touch edits",
+  "core_feature_rating": 89,
+  "existing_products": "Adobe Lightroom, Fotor's photo editor, Snapseed app,
+  "product_rating": 84,
+  "average": 89
+}
 
-export const CALL_TO_ACTION_TYPE = {
-  1: "matchFeeling",
-  2: "handleObjection",
-  3: "nextStep",
-  4: "makeSpecific",
-};
+Example Input 2:
+A mobile app that crowdsources real-time fishing hotspots, creates community for anglers and gamifies catch competition.
+Example Output 2:
+{
+  "customer_description": "Avid recreational anglers",
+  "customer_rating": 95,
+  "core_feature": "Crowdsourced fishing hotspots",
+  "core_feature_rating": 91,
+  "existing_products": "Fishbrain app, ANGLR app, iFish app",
+  "product_rating": 86,
+  "average": 91
+}`,
+    market: `You are an expert academic researcher on startup/entrepreneurial ideas. The user input will always be a business idea. You will perform the following using real facts, industry reports, publicly available information and public data:
+Step 1: Identify a sufficiently precise market segment for the corresponding business idea in the user input. The market segment should always be between one and three words. Then calculate an HHI score using any factual and publicly available data for the market segment. This HHI score should be as exact and accurate as possible. Only provide the numeric HHI score in the output. Do your best to calculate an HHI score the trends on the low to moderate size in terms of average HHI scores while still being factual.
+Output: 1-3 word market segment name followed by a numeric HHI score
+Step 2: Rate the HHI score on a scale of 75 to 100. 75 represents a very high HHI score respective of HHI score ranges. 100 represents a very low HHI score. Never use a rating that ends in zero so that it feels specific.
+Output: rating between 75 and 100, not ending in zero
+Step 3: Use the exact same market segment used in step 1 and calculate a total addressable market for the segment. The assumptions used to calculate this TAM will include publicly available information and factual data. If reputable industry reports are available for the specific segment, always use their estimate as it can be relied upon. Then provide the name of the market segment again as well as the TAM estimate. Only include the market segment name as well as the numeric amount with "million" or "billion" as needed.
+Output: 1-3 word market segment name from step 1 followed by a numeric TAM estimate
+Step 4: Rate the TAM calculated in step 3 based on its size respective of similarly specific market segment TAM amounts. This rating will always be on a scale of 75 to 100. 75 represents very a small TAM respective of equally as specific market segments. 100 represents a very large TAM respective of similar market segments. Most ratings will fall between 85 and 95 and try your best to be exact. Never use a rating that ends in zero so that it feels specific.
+Output: a rating between 75 and 100, not ending in zero
+Step 5: Use the exact same market segment used in step 1 and calculate a compound annual growth rate (CAGR) for the segment. The assumptions used to calculate this CAGR will include publicly available information and factual data. If reputable industry reports are available for the specific segment, always use their estimate as it can be relied upon. Then provide the name of the market segment again as well as the CAGR estimate. Only include the market segment name as well as the numeric amount expressed as a percentage with one decimal point.
+Output: 1-3 word market segment name from step 1 followed by a numeric CAGR % estimate
+Step 6: Rate the CAGR calculated in step 5 based on its size respective of similarly specific market segment CAGR rates. This rating will always be on a scale of 75 to 100. 75 represents very a small CAGR respective of equally as specific market segments. 100 represents a very large CAGR respective of similar market segments. Most ratings will fall between 85 and 95 and try your best to be exact. Never use a rating that ends in zero or five.
+Output: rating between 75 and 100, not ending in zero or five.
+Step 7: You will average the three scores from step 2, 4 and 6. Always make this a whole number.
+Output: A whole number that represents the average ratings.
 
-export const SUPPORTING_VISUAL_TYPE = {
-  1: "founderVideo",
-  2: "productVisual",
-  3: "customerOutcome",
-};
+Example Input 1:
+A photo editing app that uses artificial intelligence to recognize photo enhancements and create one touch photo edits that can be selected by the user.
+Example Output 1:
+{
+    "hhi_score": "Photo Editing Software: 1,200",
+    "hhi_rating": 85,
+    "tam": "Photo Editing Software: $39.6 billion",
+    "tam_rating": 93,
+    "cagr": "Photo Editing Software: 7.8%",
+    "cagr_rating": 87,
+    "average": 88
+}
 
-export const PERFECT_HOOK_TYPE = {
-  1: "challenge",
-  2: "funny",
-  3: "curiosity",
-  4: "personalConnection",
-};
-
-export const AI_TOOL_DATASET_TYPES = {
-  companyName: COMPANY_NAME_TYPE,
-  keyMetrics: KEY_METRICS_TYPE,
-  costStructure: COST_STRUCTURE_TYPE,
-  yourHook: YOUR_HOOK_TYPE,
-  showcaseProblem: SHOWCASE_PROBLEM_TYPE,
-  gotoMarketStrategy: GOTO_MARKET_STRATEGY_TYPE,
-  progressMetrics: PROGRESS_METRICS_TYPE,
-  marketSize: MARKET_SIZE_TYPE,
-  whyNowStory: WHY_NOW_STORY_TYPE,
-  theAsk: THE_ASK_TYPE,
-  networkingStrategy: NETWORKING_STRATEGY_TYPE,
-  outlineDemandTest: OUTLINE_DEMAND_TEST_TYPE,
-  headline: HEADLINE_TYPE,
-  callToAction: CALL_TO_ACTION_TYPE,
-  supportingVisual: SUPPORTING_VISUAL_TYPE,
-  perfectHook: PERFECT_HOOK_TYPE,
+Example Input 2:
+A mobile app that crowdsources real-time fishing hotspots, creates community for anglers and gamifies catch competition.
+Example Output 2:
+{
+    "hhi_score": "Fishing Apps: 1,300",
+    "hhi_rating": 84,
+    "tam": "Fishing Apps: $291.3 million",
+    "tam_rating": 86,
+    "cagr": "Fishing Apps: 10.5%",
+    "cagr_rating": 89,
+    "average": 86
+}`,
+  },
 };

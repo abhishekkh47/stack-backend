@@ -976,8 +976,13 @@ export const IDEA_GENERATOR_INFO = {
   IDEA_VALIDATION: "ideaValidation",
   PROBLEM_GENERATOR: "problemGenerator",
   PRODUCT_RATING: "PRODUCT_RATING",
+  PROBLEM_RATING: "PROBLEM_RATING",
+  MARKET_RATING: "MARKET_RATING",
   PROBLEM_MARKET_SELECTOR: "PROBLEM_MARKET_SELECTOR",
   TECH_PRODUCT: "TECH_PRODUCT",
+  IDEA_VALIDATOR_GENERATOR: "IDEA_GENERATOR",
+  IDEA_VALIDATION_LABEL: "IDEA_VALIDATION_LABEL",
+  SELF_IDEA: "selfIdea",
   PRODUCTIZATION: {
     name: "PRODUCTIZATION",
     label: "PRODUCTIZATION_LABEL",
@@ -1015,18 +1020,34 @@ export const IDEA_ANALYSIS = {
   PRODUCT: {
     _id: "product",
     name: "Product",
-    niche: "Niche Score",
-    feature: "Key Feature Score",
-    differentiator: "Differentiation Score",
+    niche: {
+      name: "Niche Score",
+      description: `How it works:\nNiche score evaluates how focused your product is on serving a specific beachhead customer group and is scored using a 10-tier ranking system.\n\nBeachhead Customer:\n{productCustomerDescription}\n\nExplanation:\nThis indicates a strong focus on a specific beachhead customer before aiming for too broad of an audience.`,
+    },
+    feature: {
+      name: "Key Feature Score",
+      description: `How it works:\nKey feature score evaluates how focused your product is on one core feature and is scored using a 10-tier ranking system.\n\nKey Feature:\n{productCustomerDescription}\n\nExplanation:\nThis indicates a strong focus on developing and iterating on a specific key feature before adding additional features.`,
+    },
+    differentiator: {
+      name: "Differentiation Score",
+      description: `How it works:\nDifferentiation score evaluates how unique your product description is from existing product offerings and is scored using a 10-tier ranking system.\n\nExisting Products:\n{problemExistingProducts}\n\nExplanation:\nThis indicates high differentiation from existing product offerings based on their current features and technology.`,
+    },
   },
   MARKET: {
     _id: "market",
     name: "Market",
-    hhi: "HHI Score",
-    satisfaction: "Dissatisfaction Score",
-    industryAge: "Industry Age Score",
-    marketSize: "Market Size Score",
-    marketGrowth: "Market Growth Score",
+    hhi: {
+      name: "HHI Score",
+      description: `How it works:\nThe Herfindahl-Hirschman Index (HHI) is a measure of market concentration, calculated by summing the squares of each firm’s market share within a segment, with higher values indicating greater concentration and potentially less competition.\n\nEstimated HHI Score:\n{hhiExplanation}\n\nExplanation:\nThis HHI score is low/moderate respective of average HHI scores, indicating higher fragmentation and lower competition (ideal conditions for new products).`,
+    },
+    marketSize: {
+      name: "Market Size Score",
+      description: `How it works:\nTotal Addressable Market (TAM) is the total revenue opportunity available for a product or service if it achieved 100% market share, providing a broad estimate of a market segment's size and the potential sales a business could theoretically achieve within that segment.\n\nEstimated TAM:\n{tamExplanation}\n\nExplanation:\nThis TAM is high respective of market segment averages, indicating a relatively large market with significant potential for multiple winners.`,
+    },
+    marketGrowth: {
+      name: "Market Growth Score",
+      description: `How it works:\nCompound Annual Growth Rate (CAGR) represents the average annual growth rate of a market segment over a specified period, and helps businesses gauge the segment’s long-term growth potential.\n\nEstimated CAGR:\n{cagrExplanation}\n\nExplanation:\nThis CAGR estimate indicates a rapid and healthy growth rate with expectations of significant market expansion in the short term (ideal conditions for nascent technology and innovation).`,
+    },
   },
 };
 export const LEARNING_CONTENT = {

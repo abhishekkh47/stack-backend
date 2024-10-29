@@ -27,6 +27,7 @@ import {
   IDEA_GENERATOR_INFO,
   IDEA_ANALYSIS,
   replacePlaceholders,
+  NEW_IDEA_GEN,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -499,61 +500,45 @@ class BusinessProfileService {
     userExists: any
   ) {
     try {
-      const systemInputDataset = await AIToolDataSetTable.find({
-        key: {
-          $in: [
-            IDEA_GENERATOR_INFO.IDEA_VALIDATION,
-            IDEA_GENERATOR_INFO.IDEA_GENERATOR,
-          ],
-        },
+      const ideaValidationDataset = await AIToolDataSetTable.findOne({
+        key: IDEA_GENERATOR_INFO.IDEA_GENERATOR,
       }).lean();
 
-      const ideaGenerator = systemInputDataset.find(
-        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_GENERATOR
-      )?.data;
-      const ideaValidationDataset = systemInputDataset.find(
-        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_VALIDATION
-      )?.data;
-
       let validatedIdea = await this.getFormattedSuggestions(
-        ideaValidationDataset[IDEA_GENERATOR_INFO.TECH_PRODUCT],
+        ideaValidationDataset[IDEA_GENERATOR_INFO.IDEA_VALIDATOR_GENERATOR],
         prompt
       );
 
-      const updatedPrompt = `${validatedIdea.problem}\n ${validatedIdea.market}`;
+      const updatedPrompt = validatedIdea.business_description;
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
           this.getFormattedSuggestions(
-            ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
-            validatedIdea.description
+            ideaValidationDataset[IDEA_GENERATOR_INFO.PROBLEM_RATING],
+            updatedPrompt
           ),
-          MarketScoreTable.find({
-            marketSegment: validatedIdea.market,
-            type: PRODUCT_TYPE.Software,
-          }),
+          this.getFormattedSuggestions(
+            ideaValidationDataset[IDEA_GENERATOR_INFO.MARKET_RATING],
+            updatedPrompt
+          ),
           this.getFormattedSuggestions(
             ideaValidationDataset[IDEA_GENERATOR_INFO.PRODUCT_RATING],
             updatedPrompt
           ),
         ]);
 
-      const market = marketAnalysisData.find(
-        (obj) => obj.marketSegment == validatedIdea.market
-      );
-
-      validatedIdea["_id"] = "selfIdea";
+      validatedIdea["_id"] = IDEA_GENERATOR_INFO.SELF_IDEA;
       validatedIdea["ideaLabel"] =
-        ideaValidationDataset["IDEA_VALIDATION_LABEL"];
+        ideaValidationDataset[IDEA_GENERATOR_INFO.IDEA_VALIDATION_LABEL];
       validatedIdea["rating"] = Math.floor(
         (Number(problemAnalysisData.average) +
-          market.overallRating +
-          productAnalysisData["Overall Score"]) /
+          marketAnalysisData.average +
+          productAnalysisData.average) /
           3
       );
       validatedIdea["ideaAnalysis"] = this.ideaAnalysis(
         problemAnalysisData,
         productAnalysisData,
-        market
+        marketAnalysisData
       );
       validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
 
@@ -653,11 +638,23 @@ class BusinessProfileService {
    * @returns {*}
    */
   private ideaAnalysis(problem: any, product: any, market: any) {
-    const problemPlaceHolders = {
-      problemTitle: problem.title,
-      problemProducts: problem.products,
-      problemPrice: problem.price,
-      problemCustomer: problem.customer,
+    const placeholders = {
+      problem: {
+        problemTitle: problem.title,
+        problemProducts: problem.products,
+        problemPrice: problem.price,
+        problemCustomer: problem.customer,
+      },
+      product: {
+        productCustomerDescription: product.customer_description,
+        problemCoreFeature: product.core_feature,
+        problemExistingProducts: product.existing_products,
+      },
+      market: {
+        hhiExplanation: market.hhi_score,
+        tamExplanation: market.tam,
+        cagrExplanation: market.cagr,
+      },
     };
     try {
       return [
@@ -671,7 +668,7 @@ class BusinessProfileService {
               rating: problem.problemScore,
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PROBLEM.trending.description,
-                problemPlaceHolders
+                placeholders.problem
               ),
             },
             {
@@ -679,7 +676,7 @@ class BusinessProfileService {
               rating: problem.priceRating,
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PROBLEM.wallet.description,
-                problemPlaceHolders
+                placeholders.problem
               ),
             },
             {
@@ -687,7 +684,7 @@ class BusinessProfileService {
               rating: problem.customerRating,
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PROBLEM.audience.description,
-                problemPlaceHolders
+                placeholders.problem
               ),
             },
           ],
@@ -695,22 +692,31 @@ class BusinessProfileService {
         {
           _id: IDEA_ANALYSIS.PRODUCT._id,
           name: IDEA_ANALYSIS.PRODUCT.name,
-          rating: Math.floor(Number(product["Overall Score"])),
+          rating: product.average,
           analysis: [
             {
-              name: IDEA_ANALYSIS.PRODUCT.niche,
-              rating: product["Audience Focus Score"],
-              description: product.audienceFocusScoreDescription,
+              name: IDEA_ANALYSIS.PRODUCT.niche.name,
+              rating: product["customer rating"],
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PRODUCT.niche.description,
+                placeholders.product
+              ),
             },
             {
-              name: IDEA_ANALYSIS.PRODUCT.feature,
-              rating: product["Sophistication Score"],
-              description: product.sophisticationDescription,
+              name: IDEA_ANALYSIS.PRODUCT.feature.name,
+              rating: product["core feature rating"],
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PRODUCT.feature.description,
+                placeholders.product
+              ),
             },
             {
-              name: IDEA_ANALYSIS.PRODUCT.differentiator,
-              rating: product["Unique Score"],
-              description: product.uniqueScoreDescription,
+              name: IDEA_ANALYSIS.PRODUCT.differentiator.name,
+              rating: product["product rating"],
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PRODUCT.differentiator.description,
+                placeholders.product
+              ),
             },
           ],
         },
@@ -718,32 +724,31 @@ class BusinessProfileService {
         {
           _id: IDEA_ANALYSIS.MARKET._id,
           name: IDEA_ANALYSIS.MARKET.name,
-          rating: market.overallRating,
+          rating: market.average,
           analysis: [
             {
-              name: IDEA_ANALYSIS.MARKET.hhi,
-              rating: market.hhiRating,
-              description: market.hhiExplanation,
+              name: IDEA_ANALYSIS.MARKET.hhi.name,
+              rating: market.hhi_rating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.MARKET.hhi.description,
+                placeholders.market
+              ),
             },
             {
-              name: IDEA_ANALYSIS.MARKET.satisfaction,
-              rating: market.customerSatisfactionRating,
-              description: market.customerSatisfactionExplanation,
+              name: IDEA_ANALYSIS.MARKET.marketSize.name,
+              rating: market.tam_rating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.MARKET.marketSize.description,
+                placeholders.market
+              ),
             },
             {
-              name: IDEA_ANALYSIS.MARKET.industryAge,
-              rating: market.ageIndexRating,
-              description: market.ageIndexExplanation,
-            },
-            {
-              name: IDEA_ANALYSIS.MARKET.marketSize,
-              rating: market.tamRating,
-              description: market.tamExplanation,
-            },
-            {
-              name: IDEA_ANALYSIS.MARKET.marketGrowth,
-              rating: market.cagrRating,
-              description: market.cagrExplanation,
+              name: IDEA_ANALYSIS.MARKET.marketGrowth.name,
+              rating: market.cagr_rating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.MARKET.marketGrowth.description,
+                placeholders.market
+              ),
             },
           ],
         },
