@@ -500,9 +500,11 @@ class BusinessProfileService {
     userExists: any
   ) {
     try {
-      const ideaValidationDataset = await AIToolDataSetTable.findOne({
-        key: IDEA_GENERATOR_INFO.IDEA_GENERATOR,
-      }).lean();
+      const ideaValidationDataset = (
+        await AIToolDataSetTable.findOne({
+          key: IDEA_GENERATOR_INFO.IDEA_VALIDATION,
+        }).lean()
+      ).data;
 
       let validatedIdea = await this.getFormattedSuggestions(
         ideaValidationDataset[IDEA_GENERATOR_INFO.IDEA_VALIDATOR_GENERATOR],
