@@ -374,21 +374,21 @@ class BusinessProfileService {
       const problemPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
           softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_RATING],
-          idea.business_description
+          idea.description
         )
       );
 
       const productPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
           softwareTechnology[IDEA_GENERATOR_INFO.PRODUCT_RATING],
-          idea.business_description
+          idea.description
         )
       );
 
       const marketPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
           softwareTechnology[IDEA_GENERATOR_INFO.MARKET_RATING],
-          idea.business_description
+          idea.description
         )
       );
 
@@ -483,7 +483,7 @@ class BusinessProfileService {
         prompt
       );
 
-      const updatedPrompt = validatedIdea.business_description;
+      const updatedPrompt = validatedIdea.description;
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
           this.getFormattedSuggestions(
