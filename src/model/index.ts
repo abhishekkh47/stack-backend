@@ -60,3 +60,4 @@ export * from "@app/model/milestoneResult";
 export * from "@app/model/milestoneGoals";
 export * from "@app/model/suggestionScreenCopy";
 export * from "@app/model/aiToolsDatasetTypes";
+export * from "@app/model/milestoneEvents";

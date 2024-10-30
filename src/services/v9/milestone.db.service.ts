@@ -123,8 +123,7 @@ class MilestoneDBService {
         tasks: [],
       };
       let isAdvanceNextDay = false;
-      let businessIdeaGoal = null;
-      const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS } =
+      const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS, EARN } =
         MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
         isAdvanceNextDay = true;
@@ -295,7 +294,8 @@ class MilestoneDBService {
         response.isMilestoneHit = false;
       }
       // order -> quiz, story, simulation
-      const order = { 1: 0, 3: 1, 2: 2 };
+      const order = { 1: 0, 3: 1 };
+      const questOrder = { 3: 0, 4: 1 };
       const learningContent = await this.getLearningContent(
         userIfExists,
         currentGoal
@@ -315,6 +315,22 @@ class MilestoneDBService {
           data: [],
           sectionKey: GOALS_OF_THE_DAY.key,
         });
+      } else {
+        const title = await this.getDayTitle(response?.tasks[0]?.data[0].key);
+        response.tasks[0].data = [
+          {
+            title: title,
+            data: [...response?.tasks[0]?.data],
+            passCopy1:
+              "You send your business strategy to the Universe Ventures team...",
+            passImage1: "",
+            passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
+            passImage2: "",
+            tokens: 5,
+            rating: 1,
+            key: "aiActions",
+          },
+        ];
       }
       const quizIds = allLearningContent?.map((obj) => obj.quizId);
       const completedQuizzes = await QuizResult.find(
@@ -324,22 +340,35 @@ class MilestoneDBService {
         },
         { quizId: 1 }
       );
-      if (
-        response?.tasks[0]?.data &&
-        response?.tasks[0]?.data[0]?.key == "ideaValidation"
-      ) {
-        businessIdeaGoal = [response?.tasks[0]?.data[0]];
-      }
+      // if (
+      //   response?.tasks[0]?.data &&
+      //   response?.tasks[0]?.data[0]?.key == "ideaValidation"
+      // ) {
+      //   businessIdeaGoal = [response?.tasks[0]?.data[0]];
+      // }
       allLearningContent?.forEach(async (obj) => {
         const currentQuizId = obj.quizId.toString();
         const isQuizCompleted = completedQuizzes.some(
           (quiz) => quiz.quizId.toString() == currentQuizId
         );
         if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          if (businessIdeaGoal) {
-            response?.tasks[0]?.data?.splice(1, 0, obj);
-          } else {
-            response?.tasks[0]?.data?.unshift(obj);
+          // if (businessIdeaGoal) {
+          //   response?.tasks[0]?.data?.splice(1, 0, obj);
+          // } else {
+          //   response?.tasks[0]?.data?.unshift(obj);
+          // }
+          if (obj.type == 1 || obj.type == 3) {
+            response?.tasks[0]?.data.push(obj);
+          } else if (obj.type == 2 || obj.type == 4) {
+            if (response?.tasks.length > 1) {
+              response?.tasks.splice(1, 0, {
+                title: EARN.title,
+                data: [obj],
+                sectionKey: EARN.key,
+              });
+            } else {
+              response?.tasks[1].data.push(obj);
+            }
           }
         }
       });
@@ -355,10 +384,10 @@ class MilestoneDBService {
         })
         .filter(Boolean);
       if (completedLearnings.length) {
-        if (response?.tasks[1]) {
-          response.tasks[1].data = [
+        if (response?.tasks[2]) {
+          response.tasks[2].data = [
             ...completedLearnings,
-            ...response.tasks[1].data,
+            ...response.tasks[2].data,
           ];
         } else {
           response.tasks.push({
@@ -1552,6 +1581,20 @@ class MilestoneDBService {
         });
       });
       return roadMap;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description format milestone goals day-wise
+   * @param key
+   * @returns {*}
+   */
+  private async getDayTitle(key: any) {
+    try {
+      const actionDetails = await MilestoneGoalsTable.findOne({ key });
+      return actionDetails.dayTitle;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
