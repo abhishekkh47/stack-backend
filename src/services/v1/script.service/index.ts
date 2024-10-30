@@ -29,6 +29,7 @@ import {
   AIToolDataSetTypesTable,
   AIToolsUsageStatusTable,
   CommunityTable,
+  StageTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2036,7 +2037,10 @@ class ScriptService {
       let learningContentIdx = -1;
       let dayTitle = null;
       let roadmapIcon = null;
-      const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
+      const [quizTopics, stages] = await Promise.all([
+        QuizTopicTable.find({ type: 4 }).lean(),
+        StageTable.find().lean(),
+      ]);
       const defaultTopic = "6638c5f713b74c3154c67624";
 
       const milestonesArray = rows.reduce((acc, row) => {
@@ -2048,11 +2052,12 @@ class ScriptService {
             topicId:
               quizTopics.find((obj) => obj.topic == topic)._id || defaultTopic,
             description: "7 Days - 15 min/day",
-            order: ++milestoneOrder,
+            order: Number(row["order"]?.trimEnd()),
             locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
             icon: row["milestoneIcon"]?.trimEnd() || null,
             iconBackgroundColor:
               row["milestoneIconBGColor"]?.trimEnd() || "#ffffff19",
+            stageId: stages.find((obj) => obj.title == row["Stage"]?.trimEnd()),
           });
         }
         return acc;
@@ -2764,6 +2769,51 @@ class ScriptService {
         await DailyChallengeTable.bulkWrite(bulkOperations);
       }
       return profilesToUpdate;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function import the unexpected events content to DB
+   * @returns {*}
+   */
+  public async importUnexpectedEvents(rows) {
+    try {
+      const events = [];
+      let eventId = null,
+        scenario = null,
+        scenarioImage = null,
+        options = [];
+      for (const row of rows) {
+        if (row["EventID"]?.trimEnd() && eventId != row["EventID"]?.trimEnd()) {
+          if (options.length) {
+            events.push({
+              eventId,
+              scenario,
+              scenarioImage,
+              options,
+            });
+          }
+          eventId = row["EventID"]?.trimEnd();
+          scenario = row["Scenario"]?.trimEnd();
+          scenarioImage = row["Scenario"]?.trimEnd() || null;
+          options = [];
+        }
+        if (eventId) {
+          options.push({
+            choice: row["Choice"]?.trimEnd(),
+            action: row["Action"]?.trimEnd() || null,
+            response: row["Response"]?.trimEnd(),
+            responseImage: row["ResponseImage"]?.trimEnd() || null,
+            fans: Number(row["Fans"]?.trimEnd()) || 0,
+            cash: Number(row["Cash"]?.trimEnd()) || 0,
+            businessScore: Number(row["Business Score"]?.trimEnd()) || 0,
+            token: Number(row["Tokens"]?.trimEnd()) || 0,
+          });
+        }
+      }
+      return events;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
