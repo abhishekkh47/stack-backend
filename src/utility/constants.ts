@@ -1004,49 +1004,61 @@ export const IDEA_ANALYSIS = {
   PROBLEM: {
     _id: "problem",
     name: "Problem",
+    slug: "Ops",
     trending: {
       name: "Trending Score",
       description: `How it works:\nTrend Score is an evaluation of how often this problem appears in search engines or on social media platforms. We currently use data from Google, TikTok, Instagram and Reddit\n\nTop Search Phrase:\n{problemTitle}\n\nExplanation:\nThis phrase had strong search engine indicators as well as strong virality on social media. This indicates significant social proof and widespread attention, suggesting a rapidly growing awareness and interest in the problem`,
+      slug: "Trend",
     },
     wallet: {
       name: "Wallet Score",
       description: `How it works:\nWallet Score is an evaluation of the willingness to pay for a solution to this problem. To do so, we examine pricing of the top products that most directly solve this problem.\n\nTop Brands:\n{problemProducts}\n\nAverage Annual Price:\n{problemPrice}\n\nExplanation:\nThis indicates that customers currently pay a premium price for solutions.`,
+      slug: "Wallet",
     },
     audience: {
       name: "Audience Score",
       description: `How it works:\nAudience Score is an evaluation of how many customers may be willing to pay for a solution to this problem. To do so, we examine existing demand for the 5 products that most directly solve this problem.\n\nTop Brands:\n{problemProducts}\n\nPaying Customers:\n{problemCustomer}\n\nExplanation:\nThis indicates high demand and a strong market need for solutions.`,
+      slug: "Audience",
     },
   },
   PRODUCT: {
     _id: "product",
     name: "Product",
+    slug: "Product",
     niche: {
       name: "Niche Score",
       description: `How it works:\nNiche score evaluates how focused your product is on serving a specific beachhead customer group and is scored using a 10-tier ranking system.\n\nBeachhead Customer:\n{productCustomerDescription}\n\nExplanation:\nThis indicates a strong focus on a specific beachhead customer before aiming for too broad of an audience.`,
+      slug: "Niche",
     },
     feature: {
       name: "Key Feature Score",
       description: `How it works:\nKey feature score evaluates how focused your product is on one core feature and is scored using a 10-tier ranking system.\n\nKey Feature:\n{productCustomerDescription}\n\nExplanation:\nThis indicates a strong focus on developing and iterating on a specific key feature before adding additional features.`,
+      slug: "KF",
     },
     differentiator: {
       name: "Differentiation Score",
       description: `How it works:\nDifferentiation score evaluates how unique your product description is from existing product offerings and is scored using a 10-tier ranking system.\n\nExisting Products:\n{problemExistingProducts}\n\nExplanation:\nThis indicates high differentiation from existing product offerings based on their current features and technology.`,
+      slug: "Diff",
     },
   },
   MARKET: {
     _id: "market",
     name: "Market",
+    slug: "Growth",
     hhi: {
       name: "HHI Score",
       description: `How it works:\nThe Herfindahl-Hirschman Index (HHI) is a measure of market concentration, calculated by summing the squares of each firm’s market share within a segment, with higher values indicating greater concentration and potentially less competition.\n\nEstimated HHI Score:\n{hhiExplanation}\n\nExplanation:\nThis HHI score is low/moderate respective of average HHI scores, indicating higher fragmentation and lower competition (ideal conditions for new products).`,
+      slug: "HHI",
     },
     marketSize: {
       name: "Market Size Score",
       description: `How it works:\nTotal Addressable Market (TAM) is the total revenue opportunity available for a product or service if it achieved 100% market share, providing a broad estimate of a market segment's size and the potential sales a business could theoretically achieve within that segment.\n\nEstimated TAM:\n{tamExplanation}\n\nExplanation:\nThis TAM is high respective of market segment averages, indicating a relatively large market with significant potential for multiple winners.`,
+      slug: "Size",
     },
     marketGrowth: {
       name: "Market Growth Score",
       description: `How it works:\nCompound Annual Growth Rate (CAGR) represents the average annual growth rate of a market segment over a specified period, and helps businesses gauge the segment’s long-term growth potential.\n\nEstimated CAGR:\n{cagrExplanation}\n\nExplanation:\nThis CAGR estimate indicates a rapid and healthy growth rate with expectations of significant market expansion in the short term (ideal conditions for nascent technology and innovation).`,
+      slug: "Growth",
     },
   },
 };

@@ -644,6 +644,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.PROBLEM.trending.description,
                 placeholders.problem
               ),
+              slug: IDEA_ANALYSIS.PROBLEM.trending.slug,
             },
             {
               name: IDEA_ANALYSIS.PROBLEM.wallet.name,
@@ -652,6 +653,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.PROBLEM.wallet.description,
                 placeholders.problem
               ),
+              slug: IDEA_ANALYSIS.PROBLEM.wallet.slug,
             },
             {
               name: IDEA_ANALYSIS.PROBLEM.audience.name,
@@ -660,6 +662,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.PROBLEM.audience.description,
                 placeholders.problem
               ),
+              slug: IDEA_ANALYSIS.PROBLEM.audience.slug,
             },
           ],
         },
@@ -675,6 +678,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.PRODUCT.niche.description,
                 placeholders.product
               ),
+              slug: IDEA_ANALYSIS.PRODUCT.niche.slug,
             },
             {
               name: IDEA_ANALYSIS.PRODUCT.feature.name,
@@ -683,6 +687,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.PRODUCT.feature.description,
                 placeholders.product
               ),
+              slug: IDEA_ANALYSIS.PRODUCT.feature.slug,
             },
             {
               name: IDEA_ANALYSIS.PRODUCT.differentiator.name,
@@ -691,6 +696,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.PRODUCT.differentiator.description,
                 placeholders.product
               ),
+              slug: IDEA_ANALYSIS.PRODUCT.differentiator.slug,
             },
           ],
         },
@@ -707,6 +713,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.MARKET.hhi.description,
                 placeholders.market
               ),
+              slug: IDEA_ANALYSIS.MARKET.hhi.slug,
             },
             {
               name: IDEA_ANALYSIS.MARKET.marketSize.name,
@@ -715,6 +722,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.MARKET.marketSize.description,
                 placeholders.market
               ),
+              slug: IDEA_ANALYSIS.MARKET.marketSize.slug,
             },
             {
               name: IDEA_ANALYSIS.MARKET.marketGrowth.name,
@@ -723,6 +731,7 @@ class BusinessProfileService {
                 IDEA_ANALYSIS.MARKET.marketGrowth.description,
                 placeholders.market
               ),
+              slug: IDEA_ANALYSIS.MARKET.marketGrowth.slug,
             },
           ],
         },
