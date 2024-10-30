@@ -636,6 +636,7 @@ class BusinessProfileService {
           _id: IDEA_ANALYSIS.PROBLEM._id,
           name: IDEA_ANALYSIS.PROBLEM.name,
           rating: problem.average,
+          slug: IDEA_ANALYSIS.PROBLEM.slug,
           analysis: [
             {
               name: IDEA_ANALYSIS.PROBLEM.trending.name,
@@ -670,6 +671,7 @@ class BusinessProfileService {
           _id: IDEA_ANALYSIS.PRODUCT._id,
           name: IDEA_ANALYSIS.PRODUCT.name,
           rating: product.average,
+          slug: IDEA_ANALYSIS.PRODUCT.slug,
           analysis: [
             {
               name: IDEA_ANALYSIS.PRODUCT.niche.name,
@@ -705,6 +707,7 @@ class BusinessProfileService {
           _id: IDEA_ANALYSIS.MARKET._id,
           name: IDEA_ANALYSIS.MARKET.name,
           rating: market.average,
+          slug: IDEA_ANALYSIS.MARKET.slug,
           analysis: [
             {
               name: IDEA_ANALYSIS.MARKET.hhi.name,
