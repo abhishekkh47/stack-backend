@@ -328,6 +328,7 @@ class MilestoneDBService {
             passImage2: "",
             tokens: 5,
             rating: 1,
+            key: "aiActions",
           },
         ];
       }
