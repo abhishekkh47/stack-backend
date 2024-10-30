@@ -329,6 +329,10 @@ class MilestoneDBService {
             tokens: 5,
             rating: 1,
             key: "aiActions",
+            iconImage: "cal.webp",
+            iconBackgroundColor: "#4885FF29",
+            time: "AI-Assisted - 2 min",
+            milestoneId: response?.tasks[0]?.data[0]?.milestoneId,
           },
         ];
       }
@@ -340,23 +344,12 @@ class MilestoneDBService {
         },
         { quizId: 1 }
       );
-      // if (
-      //   response?.tasks[0]?.data &&
-      //   response?.tasks[0]?.data[0]?.key == "ideaValidation"
-      // ) {
-      //   businessIdeaGoal = [response?.tasks[0]?.data[0]];
-      // }
       allLearningContent?.forEach(async (obj) => {
         const currentQuizId = obj.quizId.toString();
         const isQuizCompleted = completedQuizzes.some(
           (quiz) => quiz.quizId.toString() == currentQuizId
         );
         if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          // if (businessIdeaGoal) {
-          //   response?.tasks[0]?.data?.splice(1, 0, obj);
-          // } else {
-          //   response?.tasks[0]?.data?.unshift(obj);
-          // }
           if (obj.type == 1 || obj.type == 3) {
             response?.tasks[0]?.data.push(obj);
           } else if (obj.type == 2 || obj.type == 4) {
@@ -716,9 +709,6 @@ class MilestoneDBService {
     override: boolean = false
   ) {
     try {
-      const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
-        {}
-      ).lean();
       let isMilestoneHit = false,
         isIdeaValidationGoalAvailable = false;
       const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
@@ -737,10 +727,7 @@ class MilestoneDBService {
             goalsLength - 1
           ].milestoneId.toString()
       ) {
-        const updatedGoals = this.setLockedGoals(
-          availableDailyChallenges.dailyGoalStatus,
-          businessProfile
-        );
+        const updatedGoals = availableDailyChallenges.dailyGoalStatus;
         let response = {
           isMilestoneHit: false,
           tasks: [
@@ -753,12 +740,7 @@ class MilestoneDBService {
         };
 
         updatedGoals.forEach((goal) => {
-          const copyData = suggestionScreenCopy.find(
-            (obj) => obj.key == goal.key
-          );
-          goal.inputTemplate.suggestionScreenInfo = copyData;
-          goal["iconImage"] = copyData.iconImage;
-          goal["iconBackgroundColor"] = copyData.iconBackgroundColor;
+          goal.inputTemplate = null;
         });
 
         updatedGoals.forEach((goal) => {
