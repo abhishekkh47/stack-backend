@@ -1079,13 +1079,14 @@ export const MILESTONE_HOMEPAGE = {
   SHOW_PRO_BANNER: "showProBanneFooter",
   COMPLETED_MILESTONE: "completedMilestone",
   IS_COMPLETED: "isCompleted",
-  GOALS_OF_THE_DAY: { title: "Goals of the Day", key: "goalsOfTheDay" },
+  GOALS_OF_THE_DAY: { title: "Daily Quest", key: "goalsOfTheDay" },
   COMPLETED_GOALS: { title: "Completed Goals", key: "completedGoals" },
   COMPLETED_MILESTONES: {
     title: "Completed Milestones",
     key: "completedMilestones",
   },
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
+  EARN: { title: "Earn", key: "earn" },
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];

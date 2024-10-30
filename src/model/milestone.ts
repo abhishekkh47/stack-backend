@@ -41,6 +41,11 @@ const schema = new mongoose.Schema<IMilestoneSchema>(
       required: true,
       default: null,
     },
+    stageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -8,6 +8,7 @@ export interface IMilestone {
   locked: boolean;
   icon: string;
   iconBackgroundColor: string;
+  stageId: mongoose.Schema.Types.ObjectId;
 }
 
 export interface IMilestoneGoals {
