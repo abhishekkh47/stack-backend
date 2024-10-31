@@ -30,6 +30,7 @@ import {
   AIToolsUsageStatusTable,
   CommunityTable,
   StageTable,
+  MilestoneEventsTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2778,7 +2779,7 @@ class ScriptService {
    * @description This function import the unexpected events content to DB
    * @returns {*}
    */
-  public async importUnexpectedEvents(rows) {
+  public async convertEventsDataToJSON(rows) {
     try {
       const events = [];
       let eventId = null,
@@ -2797,7 +2798,7 @@ class ScriptService {
           }
           eventId = row["EventID"]?.trimEnd();
           scenario = row["Scenario"]?.trimEnd();
-          scenarioImage = row["Scenario"]?.trimEnd() || null;
+          scenarioImage = row["ScenarioImage"]?.trimEnd() || null;
           options = [];
         }
         if (eventId) {
@@ -2814,6 +2815,40 @@ class ScriptService {
         }
       }
       return events;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function add Unexpected Events to DB
+   * @param data
+   * @returns {*}
+   */
+  public async addUnexpectedEventsToDB(data: any) {
+    let events = [];
+    try {
+      data.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              eventId: obj.eventId,
+            },
+            update: {
+              $set: {
+                eventId: obj.eventId,
+                scenario: obj.scenario,
+                scenarioImage: obj.scenarioImage,
+                options: obj.options,
+              },
+            },
+            upsert: true,
+          },
+        };
+        events.push(bulkWriteObject);
+      });
+      await MilestoneEventsTable.bulkWrite(events);
+      return;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

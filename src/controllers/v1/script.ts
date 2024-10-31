@@ -2473,7 +2473,8 @@ class ScriptController extends BaseController {
       if (rows.length === 0) {
         return this.BadRequest(ctx, "Dataset Not Found");
       }
-      const res = await ScriptService.importUnexpectedEvents(rows);
+      const data = await ScriptService.convertEventsDataToJSON(rows);
+      const res = await ScriptService.addUnexpectedEventsToDB(data);
       return this.Ok(ctx, { message: "Success", data: res });
     } catch (error) {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);

@@ -10,6 +10,7 @@ import {
   QuizTable,
   QuizResult,
   UserTable,
+  MilestoneEventsTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -18,6 +19,8 @@ import {
   LEARNING_CONTENT,
   ACTIVE_MILESTONE,
   MILESTONE_HOMEPAGE,
+  SIMULATION_RESULT_COPY,
+  MILESTONE_RESULT_COPY,
 } from "@app/utility";
 import moment from "moment";
 import { ObjectId } from "mongodb";
@@ -122,7 +125,8 @@ class MilestoneDBService {
         isMilestoneHit: false,
         tasks: [],
       };
-      let isAdvanceNextDay = false;
+      let isAdvanceNextDay = false,
+        learningActions = [];
       const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS, EARN } =
         MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
@@ -294,8 +298,7 @@ class MilestoneDBService {
         response.isMilestoneHit = false;
       }
       // order -> quiz, story, simulation
-      const order = { 1: 0, 3: 1 };
-      const questOrder = { 3: 0, 4: 1 };
+      const order = { 1: 0, 3: 1, 2: 2, 4: 3 };
       const learningContent = await this.getLearningContent(
         userIfExists,
         currentGoal
@@ -315,26 +318,6 @@ class MilestoneDBService {
           data: [],
           sectionKey: GOALS_OF_THE_DAY.key,
         });
-      } else {
-        const title = await this.getDayTitle(response?.tasks[0]?.data[0].key);
-        response.tasks[0].data = [
-          {
-            title: title,
-            data: [...response?.tasks[0]?.data],
-            passCopy1:
-              "You send your business strategy to the Universe Ventures team...",
-            passImage1: "",
-            passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
-            passImage2: "",
-            tokens: 5,
-            rating: 1,
-            key: "aiActions",
-            iconImage: "cal.webp",
-            iconBackgroundColor: "#4885FF29",
-            time: "AI-Assisted - 2 min",
-            milestoneId: response?.tasks[0]?.data[0]?.milestoneId,
-          },
-        ];
       }
       const quizIds = allLearningContent?.map((obj) => obj.quizId);
       const completedQuizzes = await QuizResult.find(
@@ -353,18 +336,23 @@ class MilestoneDBService {
           if (obj.type == 1 || obj.type == 3) {
             response?.tasks[0]?.data.push(obj);
           } else if (obj.type == 2 || obj.type == 4) {
-            if (response?.tasks.length > 1) {
-              response?.tasks.splice(1, 0, {
-                title: EARN.title,
-                data: [obj],
-                sectionKey: EARN.key,
-              });
-            } else {
-              response?.tasks[1].data.push(obj);
-            }
+            learningActions.push(obj);
           }
         }
       });
+      if (response?.tasks.length > 1) {
+        response?.tasks.splice(1, 0, {
+          title: EARN.title,
+          data: learningActions,
+          sectionKey: EARN.key,
+        });
+      } else {
+        response?.tasks?.push({
+          title: EARN.title,
+          data: learningActions,
+          sectionKey: EARN.key,
+        });
+      }
       const completedLearnings = learningContent?.completedQuizIds
         ?.map((id) => {
           const learning = allLearningContent?.find(
@@ -849,14 +837,30 @@ class MilestoneDBService {
    */
   private async getQuizDetails(actions: any) {
     try {
+      let quizDetails = null,
+        time = null,
+        resultSummary = null;
       const updatedActions = await Promise.all(
         actions.map(async (action) => {
-          const quizDetails = await QuizTable.findOne({ _id: action?.quizId });
-          const time =
-            action.type == 1
-              ? `Earn ${action?.reward} tokens - 1 min`
-              : `Earn ${action?.reward} tokens - 3 min`;
-          if (quizDetails) {
+          const actionType = action.type;
+          if (actionType == 4) {
+            quizDetails = await this.getEventDetails(action);
+          } else {
+            quizDetails = await QuizTable.findOne({ _id: action?.quizId });
+          }
+          if (actionType == 1) {
+            time = `Earn ${action?.reward} tokens - 1 min`;
+            resultSummary = null;
+          } else if (actionType == 3) {
+            time = `Earn ${action?.reward} tokens - 3 min`;
+            resultSummary = null;
+          } else {
+            time = `AI-Assisted - 2 min`;
+            resultSummary = SIMULATION_RESULT_COPY;
+          }
+          if (quizDetails && actionType == 4) {
+            return quizDetails;
+          } else if (quizDetails) {
             return {
               ...action,
               title: quizDetails?.quizName,
@@ -866,6 +870,7 @@ class MilestoneDBService {
               characterImage: quizDetails?.characterImage,
               time,
               key: "challenges",
+              resultSummary,
             };
           }
         })
@@ -1577,6 +1582,34 @@ class MilestoneDBService {
     try {
       const actionDetails = await MilestoneGoalsTable.findOne({ key });
       return actionDetails.dayTitle;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get event information
+   * @param action eventId
+   * @returns {*}
+   */
+  private async getEventDetails(action: any) {
+    try {
+      const eventDetails = await MilestoneEventsTable.findOne({
+        eventId: action.quizNum,
+      }).lean();
+      if (eventDetails) {
+        return {
+          ...action,
+          ...eventDetails,
+          title: "ALERT!",
+          iconBackgroundColor: "#4885FF29",
+          iconImage: "cal.webp",
+          time: "AI-Assisted - 2 min",
+          key: "event",
+        };
+      }
+
+      return eventDetails;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
