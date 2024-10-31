@@ -1108,3 +1108,38 @@ export const BUSINESS_SCORE_MESSAGE = {
   LETS_GO: `LET'S GO`,
   GOT_IT: `GOT IT`,
 };
+
+export const SIMULATION_RESULT_COPY = {
+  pass: {
+    passCopy1: "All of your hard work pays off! You won the competition!!!",
+    passImage1: "passImage1.webp",
+    passCopy2:
+      "Email from Mr. Beast: “Really high on this business - keep going”",
+    passImage2: "passImage2.webp",
+    resultSummary: [
+      { title: "+25 Token", icon: "coin.webp" },
+      { title: "+$50K", icon: "coin.webp" },
+      { title: "+2 Rating", icon: "coin.webp" },
+    ],
+  },
+  fail: {
+    failCopy1: "You didn’t win the competition this time...",
+    failImage1: "failImage1.webp",
+    failCopy2: "But Jetson reminds you “resilience is everything in this game”",
+    failImage2: "failImage2.webp",
+    resultSummary: [
+      { title: "+$0K", icon: "coin.webp" },
+      { title: "+0 Rating", icon: "coin.webp" },
+    ],
+  },
+};
+export const MILESTONE_RESULT_COPY = {
+  passCopy1: "You send your business strategy to the Universe Ventures team...",
+  passImage1: "passImage1.webp",
+  passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
+  passImage2: "passImage2.webp",
+  resultSummary: [
+    { title: "+5 Tokens", icon: "coin.webp" },
+    { title: "+1 Rating", icon: "coin.webp" },
+  ],
+};

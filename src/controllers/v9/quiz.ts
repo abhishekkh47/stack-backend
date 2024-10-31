@@ -108,6 +108,29 @@ class QuizController extends BaseController {
       }
     );
   }
+
+  /**
+   * @description This is to get unexpected event details
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/get-event-details/:eventId",
+    method: HttpMethod.GET,
+  })
+  @Auth()
+  public async getMilestoneRoadmap(ctx: any) {
+    const { user, params } = ctx.request;
+    const { milestoneId } = params;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const milestoneRoadmap = await MilestoneDBService.getMilestoneRoadmap(
+      milestoneId
+    );
+    return this.Ok(ctx, { data: milestoneRoadmap });
+  }
 }
 
 export default new QuizController();
