@@ -337,6 +337,16 @@ const schema = new mongoose.Schema<IUserSchema>(
         },
       },
     },
+    cash: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 0,
+    },
+    stage: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );
