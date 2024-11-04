@@ -296,6 +296,7 @@ export const QUIZ_TYPE = {
   NORMAL: 1,
   SIMULATION: 2,
   STORY: 3,
+  EVENT: 4,
 };
 export const STORY_QUESTION_TYPE = {
   DESCRIPTION: 1,
@@ -1111,25 +1112,39 @@ export const BUSINESS_SCORE_MESSAGE = {
 
 export const SIMULATION_RESULT_COPY = {
   pass: {
-    passCopy1: "All of your hard work pays off! You won the competition!!!",
-    passImage1: "passImage1.webp",
-    passCopy2:
-      "Email from Mr. Beast: “Really high on this business - keep going”",
-    passImage2: "passImage2.webp",
+    images: [
+      {
+        image: "passImage1.webp",
+        description:
+          "All of your hard work pays off! You won the competition!!!",
+      },
+      {
+        image: "passImage2.webp",
+        description:
+          "Email from Mr. Beast: “Really high on this business - keep going”",
+      },
+    ],
     resultSummary: [
-      { title: "+25 Token", icon: "coin.webp" },
-      { title: "+$50K", icon: "coin.webp" },
-      { title: "+2 Rating", icon: "coin.webp" },
+      { title: 25, icon: "goldCoin.webp" },
+      { title: 50, icon: "dollar_banknote.webp" },
+      { title: 2, icon: "military_medal.webp" },
     ],
   },
   fail: {
-    failCopy1: "You didn’t win the competition this time...",
-    failImage1: "failImage1.webp",
-    failCopy2: "But Jetson reminds you “resilience is everything in this game”",
-    failImage2: "failImage2.webp",
+    images: [
+      {
+        image: "failImage1.webp",
+        description: "You didn’t win the competition this time...",
+      },
+      {
+        image: "failImage2.webp",
+        description:
+          "But Jetson reminds you “resilience is everything in this game”",
+      },
+    ],
     resultSummary: [
-      { title: "+$0K", icon: "coin.webp" },
-      { title: "+0 Rating", icon: "coin.webp" },
+      { title: 0, icon: "dollar_banknote.webp" },
+      { title: 0, icon: "military_medal.webp" },
     ],
   },
 };
@@ -1139,7 +1154,7 @@ export const MILESTONE_RESULT_COPY = {
   passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
   passImage2: "passImage2.webp",
   resultSummary: [
-    { title: "+5 Tokens", icon: "coin.webp" },
-    { title: "+1 Rating", icon: "coin.webp" },
+    { title: 5, icon: "goldCoin.webp" },
+    { title: 1, icon: "military_medal.webp" },
   ],
 };

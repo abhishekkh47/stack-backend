@@ -17,6 +17,7 @@ import {
   XP_POINTS,
   executeWeeklyChallengeStepFunction,
   CORRECT_ANSWER_FUEL_POINTS,
+  SIMULATION_RESULT_COPY,
 } from "@app/utility";
 import { CommunityDBService } from "@app/services/v6";
 
@@ -31,7 +32,8 @@ class QuizDBService {
     quizExists: any
   ) {
     const { solvedQuestions } = reqParam;
-    let totalXPPoints = 0;
+    let totalXPPoints = 0,
+      resultScreenInfo = null;
     /**
      * Check question actually exists in that quiz
      */
@@ -68,13 +70,22 @@ class QuizDBService {
         ? CORRECT_ANSWER_FUEL_POINTS.STORY * reqParam.solvedQuestions.length
         : CORRECT_ANSWER_FUEL_POINTS.QUIZ * reqParam.solvedQuestions.length;
 
+    const numOfIncorrectAnswers = reqParam.numOfIncorrectAnswers || 0;
+    if (
+      numOfIncorrectAnswers > 2 &&
+      quizExists.quizType === QUIZ_TYPE.SIMULATION
+    ) {
+      resultScreenInfo = SIMULATION_RESULT_COPY.pass;
+    } else {
+      resultScreenInfo = SIMULATION_RESULT_COPY.fail;
+    }
     QuizResult.create({
       topicId: reqParam?.topicId,
       quizId: quizExists._id,
       userId: userIfExists._id,
       isOnBoardingQuiz: false,
       pointsEarned: pointsEarnedFromQuiz,
-      numOfIncorrectAnswers: reqParam.numOfIncorrectAnswers || 0,
+      numOfIncorrectAnswers,
     });
     if (reqParam?.levelId && reqParam?.categoryId) {
       ChecklistResultTable.create({
@@ -176,6 +187,7 @@ class QuizDBService {
       totalFuel: pointsEarnedFromQuiz,
       isGiftedStreakFreeze: false,
       updatedUser: updatedXP,
+      resultScreenInfo,
     };
   }
 

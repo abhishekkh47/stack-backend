@@ -1614,5 +1614,43 @@ class MilestoneDBService {
       throw new NetworkError(error.message, 400);
     }
   }
+
+  /**
+   * @description get event information
+   * @param userExists
+   * @param data event user response
+   * @returns {*}
+   */
+  public async saveEventResult(userExists, data: any) {
+    try {
+      const updatedCoins = userExists.quizCoins + data.tokens;
+      const currentCash = userExists.cash || 100;
+      const updatedCash = currentCash + currentCash * data.cash;
+      const updatedBusinessScore =
+        userExists.businessScore.current || 90 + data.businessScore;
+      const updateObj = {
+        $set: {
+          quizCoins: updatedCoins,
+          cash: updatedCash,
+          "businessScore.current": updatedBusinessScore,
+        },
+      };
+      await Promise.all([
+        UserTable.findOneAndUpdate({ _id: userExists.id }, updateObj),
+        QuizResult.create({
+          topicId: null,
+          quizId: data.quizId,
+          userId: userExists._id,
+          isOnBoardingQuiz: false,
+          pointsEarned: data.tokens,
+          numOfIncorrectAnswers: 0,
+        }),
+      ]);
+
+      return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
 }
 export default new MilestoneDBService();
