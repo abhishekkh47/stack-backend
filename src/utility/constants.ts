@@ -311,7 +311,7 @@ export interface IPromptData {
   isNameOverride?: boolean;
 }
 
-export const SIMULATION_QUIZ_FUEL = 150;
+export const SIMULATION_QUIZ_FUEL = 10;
 export const REFILL_LIFE_FUEL = 300;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 
@@ -1157,4 +1157,12 @@ export const MILESTONE_RESULT_COPY = {
     { title: 5, icon: "goldCoin.webp" },
     { title: 1, icon: "military_medal.webp" },
   ],
+};
+
+export const MILESTONE_STAGE_REWARDS = {
+  "IDEA STAGE": 50,
+  "MVP STAGE": 100,
+  "ANGEL STAGE": 160,
+  "BRAND STAGE": 220,
+  "PMF STAGE": 300,
 };

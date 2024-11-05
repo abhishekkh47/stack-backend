@@ -61,6 +61,7 @@ import {
   DEFAULT_BUSINESS_LOGO,
   CHALLENGE_TYPE,
   SIMULATION_RESULT_COPY,
+  MILESTONE_STAGE_REWARDS,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2027,7 +2028,8 @@ class ScriptService {
   public async convertMilestoneDatasetSheetToJSON(rows: any) {
     try {
       const result = [];
-      let milestoneContent = [];
+      let milestoneContent = [],
+        stageContent = [];
       let currentMilestone = null;
       let currentDay = 0;
       let order = 0;
@@ -2040,12 +2042,38 @@ class ScriptService {
       let dayTitle = null;
       let roadmapIcon = null;
       let resultCopyInfo = null;
+      const defaultTopic = "6638c5f713b74c3154c67624";
+      const stageArray = rows.reduce((acc, row) => {
+        const milestone = row.milestone?.trimEnd();
+        if (milestone?.length > 1) {
+          acc.push({
+            title: row["Stage"],
+          });
+        }
+        return acc;
+      }, []);
+      stageArray.forEach((stage) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              title: stage.title,
+            },
+            update: {
+              $set: {
+                title: stage.title,
+                reward: MILESTONE_STAGE_REWARDS[stage.title],
+              },
+            },
+            upsert: true,
+          },
+        };
+        stageContent.push(bulkWriteObject);
+      });
+      await StageTable.bulkWrite(stageContent);
       const [quizTopics, stages] = await Promise.all([
         QuizTopicTable.find({ type: 4 }).lean(),
-        StageTable.find().lean(),
+        StageTable.find({}, { title: 1 }).lean(),
       ]);
-      const defaultTopic = "6638c5f713b74c3154c67624";
-
       const milestonesArray = rows.reduce((acc, row) => {
         const topic = row.topic?.trimEnd();
         const milestone = row.milestone?.trimEnd();
@@ -2070,7 +2098,6 @@ class ScriptService {
           updateOne: {
             filter: {
               milestone: goal.milestone,
-              topicId: goal.topicId,
             },
             update: {
               $set: {
@@ -2081,6 +2108,7 @@ class ScriptService {
                 locked: goal.locked,
                 icon: goal.icon,
                 iconBackgroundColor: goal.iconBackgroundColor,
+                stageId: goal.stageId,
               },
             },
             upsert: true,
@@ -2177,7 +2205,6 @@ class ScriptService {
       }
       return { result, learningContent };
     } catch (error) {
-      console.log(error);
       throw new NetworkError(error.message, 400);
     }
   }

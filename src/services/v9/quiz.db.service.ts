@@ -8,6 +8,7 @@ import {
   UserTable,
   ChecklistResultTable,
   BusinessProfileTable,
+  QuizLevelTable,
 } from "@app/model";
 import { AnalyticsService } from "@app/services/v4";
 import {
@@ -18,6 +19,7 @@ import {
   executeWeeklyChallengeStepFunction,
   CORRECT_ANSWER_FUEL_POINTS,
   SIMULATION_RESULT_COPY,
+  SIMULATION_QUIZ_FUEL,
 } from "@app/utility";
 import { CommunityDBService } from "@app/services/v6";
 
@@ -31,15 +33,17 @@ class QuizDBService {
     reqParam: any,
     quizExists: any
   ) {
-    const { solvedQuestions } = reqParam;
+    const { solvedQuestions, quizLevelId } = reqParam;
     let totalXPPoints = 0,
-      resultScreenInfo = null;
+      resultScreenInfo = null,
+      pointsEarnedFromQuiz = 0;
+    const milestoneLevel = await QuizLevelTable.findOne({ _id: quizLevelId });
+    const quizType = quizExists.quizType;
     /**
      * Check question actually exists in that quiz
      */
     if (
-      (quizExists.quizType === QUIZ_TYPE.NORMAL ||
-        quizExists.quizType === QUIZ_TYPE.STORY) &&
+      (quizType === QUIZ_TYPE.NORMAL || quizType === QUIZ_TYPE.STORY) &&
       solvedQuestions.length > 0
     ) {
       const questionsIfExist = await QuizQuestionTable.find({
@@ -64,20 +68,24 @@ class QuizDBService {
       QuizQuestionResult.insertMany(quizQuestions);
     }
 
-    const pointsEarnedFromQuiz =
-      quizExists.quizType === QUIZ_TYPE.SIMULATION ||
-      quizExists.quizType === QUIZ_TYPE.STORY
-        ? CORRECT_ANSWER_FUEL_POINTS.STORY * reqParam.solvedQuestions.length
-        : CORRECT_ANSWER_FUEL_POINTS.QUIZ * reqParam.solvedQuestions.length;
-
     const numOfIncorrectAnswers = reqParam.numOfIncorrectAnswers || 0;
+    pointsEarnedFromQuiz =
+      quizType === QUIZ_TYPE.STORY
+        ? CORRECT_ANSWER_FUEL_POINTS.STORY * solvedQuestions.length
+        : CORRECT_ANSWER_FUEL_POINTS.QUIZ * solvedQuestions.length;
+
     if (
       numOfIncorrectAnswers > 2 &&
       quizExists.quizType === QUIZ_TYPE.SIMULATION
     ) {
-      resultScreenInfo = SIMULATION_RESULT_COPY.fail;
+      resultScreenInfo =
+        milestoneLevel?.actions[2].resultCopyInfo.fail ||
+        SIMULATION_RESULT_COPY.fail;
     } else {
-      resultScreenInfo = SIMULATION_RESULT_COPY.pass;
+      resultScreenInfo =
+        milestoneLevel?.actions[2].resultCopyInfo.pass ||
+        SIMULATION_RESULT_COPY.pass;
+      pointsEarnedFromQuiz = SIMULATION_QUIZ_FUEL;
     }
     QuizResult.create({
       topicId: reqParam?.topicId,

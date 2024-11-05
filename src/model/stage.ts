@@ -7,17 +7,43 @@ export type IStageSchema = MongooseModel<IStage> & mongoose.Document;
 const schema = new mongoose.Schema<IStageSchema>(
   {
     title: { type: mongoose.Schema.Types.String, required: true },
-    subTitle: { type: mongoose.Schema.Types.String, required: true },
+    subTitle: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "quizTopic",
       required: true,
     },
-    description: { type: mongoose.Schema.Types.String, required: true },
-    guidebookColor: { type: mongoose.Schema.Types.String, required: true },
-    backgroundColor: { type: mongoose.Schema.Types.String, required: true },
-    guidebook: { type: [mongoose.Schema.Types.String], required: true },
-    order: { type: mongoose.Schema.Types.Number, required: true },
+    description: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    guidebookColor: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    backgroundColor: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    guidebook: {
+      type: [mongoose.Schema.Types.String],
+      required: true,
+      default: null,
+    },
+    order: { type: mongoose.Schema.Types.Number, required: true, default: 0 },
+    /* 
+    type = 0 => old stages
+    type = 1 => milestone stages
+    */
+    type: { type: mongoose.Schema.Types.Number, required: true, default: 0 },
+    reward: { type: mongoose.Schema.Types.Number, required: true, default: 0 },
   },
   { timestamps: true }
 );
