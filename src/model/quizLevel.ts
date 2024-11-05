@@ -53,6 +53,68 @@ const schema = new mongoose.Schema<IQuizLevelSchema>(
           required: true,
           default: null,
         },
+        resultCopyInfo: {
+          pass: {
+            images: [
+              {
+                image: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
+                description: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
+              },
+            ],
+            resultSummary: [
+              {
+                title: {
+                  type: mongoose.Schema.Types.Number,
+                  required: true,
+                  default: 0,
+                },
+                description: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
+              },
+            ],
+          },
+          fail: {
+            images: [
+              {
+                image: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
+                description: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
+              },
+            ],
+            resultSummary: [
+              {
+                title: {
+                  type: mongoose.Schema.Types.Number,
+                  required: true,
+                  default: 0,
+                },
+                description: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
+              },
+            ],
+          },
+        },
       },
     ],
     milestoneId: {

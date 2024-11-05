@@ -128,4 +128,25 @@ export interface IQuizDetail {
   quizNum: number;
   type: number;
   reward: number;
+  resultCopyInfo: IResultCopyInfo;
+}
+
+interface IResultCopyInfo {
+  pass: IResultCopyInfoObject;
+  fail: IResultCopyInfoObject;
+}
+
+interface IResultCopyInfoObject {
+  images: IResultImages[];
+  resultSummary: IResultSummary[];
+}
+
+interface IResultImages {
+  image: string;
+  description: string;
+}
+
+interface IResultSummary {
+  title: string;
+  icon: string;
 }

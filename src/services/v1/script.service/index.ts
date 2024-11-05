@@ -60,6 +60,7 @@ import {
   mapHasGoalKey,
   DEFAULT_BUSINESS_LOGO,
   CHALLENGE_TYPE,
+  SIMULATION_RESULT_COPY,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2038,6 +2039,7 @@ class ScriptService {
       let learningContentIdx = -1;
       let dayTitle = null;
       let roadmapIcon = null;
+      let resultCopyInfo = null;
       const [quizTopics, stages] = await Promise.all([
         QuizTopicTable.find({ type: 4 }).lean(),
         StageTable.find().lean(),
@@ -2051,7 +2053,7 @@ class ScriptService {
           acc.push({
             milestone: milestone,
             topicId:
-              quizTopics.find((obj) => obj.topic == topic)._id || defaultTopic,
+              quizTopics.find((obj) => obj.topic == topic)?._id || defaultTopic,
             description: "7 Days - 15 min/day",
             order: Number(row["order"]?.trimEnd()),
             locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
@@ -2115,11 +2117,46 @@ class ScriptService {
         const learningType = row["learningType"]?.trimEnd() || null;
         if (learningId) {
           const quizData = await this.getQuizMetaData(learningId, learningType);
+          if (quizData.quizType != 4 && row["PassImage1.webp"]) {
+            resultCopyInfo = {
+              pass: {
+                images: [
+                  {
+                    image: row["PassImage1.webp"]?.trimEnd(),
+                    description: row["PassCopy1"]?.trimEnd(),
+                  },
+                  {
+                    image: row["PassImage2.webp"]?.trimEnd(),
+                    description: row["PassCopy2"]?.trimEnd(),
+                  },
+                ],
+                resultSummary: SIMULATION_RESULT_COPY.pass.resultSummary,
+              },
+            };
+          }
+          if (quizData.quizType == 3 && resultCopyInfo != null) {
+            resultCopyInfo["fail"] = {
+              images: [
+                {
+                  image: row["FailImage1.webp"]?.trimEnd(),
+                  description: row["FailCopy1"]?.trimEnd(),
+                },
+                {
+                  image: row["FailImage2.webp"]?.trimEnd(),
+                  description: row["FailCopy2"]?.trimEnd(),
+                },
+              ],
+              resultSummary: SIMULATION_RESULT_COPY.fail.resultSummary,
+            };
+          } else if (quizData.quizType != 4) {
+            resultCopyInfo = null;
+          }
           const action = {
             type: quizData.quizType,
             quizNum: learningId,
             quizId: quizData.quizId || null,
             reward: quizData.reward,
+            resultCopyInfo,
           };
           learningContent[learningContentIdx].actions.push(action);
         }
@@ -2139,22 +2176,26 @@ class ScriptService {
             questionScreenInfo: inputQuestion ? { title: inputQuestion } : null,
           };
           currentIndex++;
-          result.push({
-            milestoneId: currentMilestoneId,
-            day: currentDay,
-            title: row["goalTitle"]?.trimEnd(),
-            key: row["identifier"]?.trimEnd(),
-            order: ++order,
-            time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
-            iconImage: row["icon"]?.trimEnd() || null,
-            iconBackgroundColor: row["iconBackgroundColor"]?.trimEnd() || null,
-            dependency: row["dependency"]?.trimEnd().split(","),
-            template: Number(row["template"]?.trimEnd()),
-            inputTemplate: inputTemplate,
-            isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
-            dayTitle,
-            roadmapIcon,
-          });
+          if (row["template"]) {
+            result.push({
+              milestoneId: currentMilestoneId,
+              day: currentDay,
+              title: row["goalTitle"]?.trimEnd(),
+              key: row["identifier"]?.trimEnd(),
+              order: ++order,
+              time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
+              iconImage: row["icon"]?.trimEnd() || null,
+              iconBackgroundColor:
+                row["iconBackgroundColor"]?.trimEnd() || null,
+              dependency: row["dependency"]?.trimEnd().split(","),
+              template: Number(row["template"]?.trimEnd()),
+              inputTemplate: inputTemplate,
+              isAiToolbox:
+                row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
+              dayTitle,
+              roadmapIcon,
+            });
+          }
         }
         if (row["optionTitle"]) {
           result[currentIndex].inputTemplate.optionsScreenInfo.options.push({
@@ -2167,6 +2208,7 @@ class ScriptService {
       }
       return { result, learningContent };
     } catch (error) {
+      console.log(error);
       throw new NetworkError(error.message, 400);
     }
   }
@@ -2230,10 +2272,11 @@ class ScriptService {
         };
         learningContentData.push(learningBulkWriteObject);
       });
-      await Promise.all([
-        MilestoneGoalsTable.bulkWrite(milestoneContent),
-        QuizLevelTable.bulkWrite(learningContentData),
-      ]);
+      console.log(JSON.stringify(learningContentData));
+      // await Promise.all([
+      //   MilestoneGoalsTable.bulkWrite(milestoneContent),
+      //   QuizLevelTable.bulkWrite(learningContentData),
+      // ]);
       return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -2608,7 +2651,8 @@ class ScriptService {
 
   private async getQuizMetaData(quizNum: number, type: string) {
     let quizType = 0,
-      reward = 0;
+      reward = 0,
+      quizInfo = null;
     if (type == "simulation") {
       quizType = 2;
       reward =
@@ -2618,14 +2662,21 @@ class ScriptService {
       quizType = 3;
       reward =
         CHECKLIST_QUESTION_LENGTH.STORY * CORRECT_ANSWER_FUEL_POINTS.STORY;
-    } else {
+    } else if (type == "quiz") {
       quizType = 1;
       reward = CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
+    } else if (type == "event") {
+      quizType = 4;
+      reward = 0;
     }
-    const quizInfo = await QuizTable.findOne({
-      quizNum,
-      quizType,
-    }).select("_id");
+    if (quizType == 4) {
+      quizInfo = await MilestoneEventsTable.findOne({ eventId: quizNum });
+    } else {
+      quizInfo = await QuizTable.findOne({
+        quizNum,
+        quizType,
+      }).select("_id");
+    }
     const quizId = quizInfo?._id || null;
     return {
       quizType,

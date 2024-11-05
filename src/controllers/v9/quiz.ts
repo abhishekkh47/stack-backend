@@ -56,6 +56,7 @@ class QuizController extends BaseController {
             totalFuel,
             isGiftedStreakFreeze,
             updatedUser,
+            resultScreenInfo,
           } = await QuizDBService.storeQuizInformation(
             userIfExists,
             reqParam,
@@ -103,6 +104,7 @@ class QuizController extends BaseController {
             isNewLeagueUnlocked,
             streaksDetails,
             isGiftedStreakFreeze,
+            resultScreenInfo,
           });
         }
       }
