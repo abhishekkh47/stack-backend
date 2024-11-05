@@ -1092,7 +1092,7 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 25, icon: "goldCoin.webp" },
+      { title: 10, icon: "goldCoin.webp" },
       { title: 50, icon: "dollar_banknote.webp" },
       { title: 2, icon: "military_medal.webp" },
     ],

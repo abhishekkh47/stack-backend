@@ -2117,39 +2117,8 @@ class ScriptService {
         const learningType = row["learningType"]?.trimEnd() || null;
         if (learningId) {
           const quizData = await this.getQuizMetaData(learningId, learningType);
-          if (quizData.quizType != 4 && row["PassImage1.webp"]) {
-            resultCopyInfo = {
-              pass: {
-                images: [
-                  {
-                    image: row["PassImage1.webp"]?.trimEnd(),
-                    description: row["PassCopy1"]?.trimEnd(),
-                  },
-                  {
-                    image: row["PassImage2.webp"]?.trimEnd(),
-                    description: row["PassCopy2"]?.trimEnd(),
-                  },
-                ],
-                resultSummary: SIMULATION_RESULT_COPY.pass.resultSummary,
-              },
-            };
-          }
-          if (quizData.quizType == 3 && resultCopyInfo != null) {
-            resultCopyInfo["fail"] = {
-              images: [
-                {
-                  image: row["FailImage1.webp"]?.trimEnd(),
-                  description: row["FailCopy1"]?.trimEnd(),
-                },
-                {
-                  image: row["FailImage2.webp"]?.trimEnd(),
-                  description: row["FailCopy2"]?.trimEnd(),
-                },
-              ],
-              resultSummary: SIMULATION_RESULT_COPY.fail.resultSummary,
-            };
-          } else if (quizData.quizType != 4) {
-            resultCopyInfo = null;
+          if (quizData.quizType !== 3) {
+            resultCopyInfo = this.getResultCopyInfo(quizData, row);
           }
           const action = {
             type: quizData.quizType,
@@ -2272,11 +2241,10 @@ class ScriptService {
         };
         learningContentData.push(learningBulkWriteObject);
       });
-      console.log(JSON.stringify(learningContentData));
-      // await Promise.all([
-      //   MilestoneGoalsTable.bulkWrite(milestoneContent),
-      //   QuizLevelTable.bulkWrite(learningContentData),
-      // ]);
+      await Promise.all([
+        MilestoneGoalsTable.bulkWrite(milestoneContent),
+        QuizLevelTable.bulkWrite(learningContentData),
+      ]);
       return "Dataset Updated";
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -2669,13 +2637,10 @@ class ScriptService {
       quizType = 4;
       reward = 0;
     }
-    if (quizType == 4) {
+    if (quizType === 4) {
       quizInfo = await MilestoneEventsTable.findOne({ eventId: quizNum });
     } else {
-      quizInfo = await QuizTable.findOne({
-        quizNum,
-        quizType,
-      }).select("_id");
+      quizInfo = await QuizTable.findOne({ quizNum, quizType });
     }
     const quizId = quizInfo?._id || null;
     return {
@@ -2900,6 +2865,59 @@ class ScriptService {
       });
       await MilestoneEventsTable.bulkWrite(events);
       return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function add Unexpected Events to DB
+   * @param quizData
+   * @param row
+   * @returns {*}
+   */
+  public getResultCopyInfo(quizData: any, row: any) {
+    try {
+      let resultCopyInfo = {};
+      if (quizData.quizType != 4 && row["PassImage1"]) {
+        resultCopyInfo = {
+          pass: {
+            images: [
+              {
+                image: row["PassImage1"]?.trimEnd(),
+                description: row["PassCopy1"]?.trimEnd(),
+              },
+              {
+                image: row["PassImage2"]?.trimEnd(),
+                description: row["PassCopy2"]?.trimEnd(),
+              },
+            ],
+            resultSummary: SIMULATION_RESULT_COPY.pass.resultSummary,
+          },
+        };
+      }
+      if (
+        quizData.quizType == 2 &&
+        resultCopyInfo != null &&
+        row["FailImage1"]
+      ) {
+        resultCopyInfo["fail"] = {
+          images: [
+            {
+              image: row["FailImage1"]?.trimEnd(),
+              description: row["FailCopy1"]?.trimEnd(),
+            },
+            {
+              image: row["FailImage2"]?.trimEnd(),
+              description: row["FailCopy2"]?.trimEnd(),
+            },
+          ],
+          resultSummary: SIMULATION_RESULT_COPY.fail.resultSummary,
+        };
+      } else if (quizData.quizType == 4) {
+        resultCopyInfo = null;
+      }
+      return resultCopyInfo;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
