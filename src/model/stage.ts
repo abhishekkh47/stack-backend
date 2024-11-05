@@ -43,6 +43,7 @@ const schema = new mongoose.Schema<IStageSchema>(
     type = 1 => milestone stages
     */
     type: { type: mongoose.Schema.Types.Number, required: true, default: 0 },
+    reward: { type: mongoose.Schema.Types.Number, required: true, default: 0 },
   },
   { timestamps: true }
 );

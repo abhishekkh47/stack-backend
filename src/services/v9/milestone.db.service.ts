@@ -303,6 +303,7 @@ class MilestoneDBService {
         userIfExists,
         currentGoal
       );
+      const quizLevelId = learningContent?.quizLevelId || null;
       const allLearningContent = learningContent?.all?.sort(
         (a, b) => order[b?.type] - order[a?.type]
       );
@@ -334,9 +335,9 @@ class MilestoneDBService {
         );
         if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
           if (obj.type == 1 || obj.type == 3) {
-            response?.tasks[0]?.data.push(obj);
+            response?.tasks[0]?.data.push({ ...obj, quizLevelId });
           } else if (obj.type == 2 || obj.type == 4) {
-            learningActions.push(obj);
+            learningActions.push({ ...obj, quizLevelId });
           }
         }
       });
@@ -786,6 +787,7 @@ class MilestoneDBService {
     try {
       const startOfDay = moment().startOf("day").toDate(); // 12:00 AM today
       const endOfDay = moment().endOf("day").toDate(); // 11:59:59 PM today
+      let quizLevelId = null;
       let learningActions = null,
         quizCompletedToday = null,
         completedQuizIds = null;
@@ -814,6 +816,7 @@ class MilestoneDBService {
         learningActions.forEach((obj) => {
           allLearnings.all.push(...obj.actions);
           if (obj.day == actionObj?.day) {
+            quizLevelId = obj._id;
             allLearnings.currentDayGoal.push(...obj.actions);
           }
         });
@@ -824,6 +827,7 @@ class MilestoneDBService {
         all: challengeDetails,
         currentDayGoal: allLearnings.currentDayGoal,
         completedQuizIds,
+        quizLevelId,
       };
     } catch (error) {
       throw new NetworkError(error.message, 400);

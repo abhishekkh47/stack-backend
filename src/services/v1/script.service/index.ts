@@ -61,6 +61,7 @@ import {
   DEFAULT_BUSINESS_LOGO,
   CHALLENGE_TYPE,
   SIMULATION_RESULT_COPY,
+  MILESTONE_STAGE_REWARDS,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2060,6 +2061,7 @@ class ScriptService {
             update: {
               $set: {
                 title: stage.title,
+                reward: MILESTONE_STAGE_REWARDS[stage.title],
               },
             },
             upsert: true,
