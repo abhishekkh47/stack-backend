@@ -75,9 +75,9 @@ class QuizDBService {
       numOfIncorrectAnswers > 2 &&
       quizExists.quizType === QUIZ_TYPE.SIMULATION
     ) {
-      resultScreenInfo = SIMULATION_RESULT_COPY.pass;
-    } else {
       resultScreenInfo = SIMULATION_RESULT_COPY.fail;
+    } else {
+      resultScreenInfo = SIMULATION_RESULT_COPY.pass;
     }
     QuizResult.create({
       topicId: reqParam?.topicId,
