@@ -1031,8 +1031,8 @@ export const IDEA_ANALYSIS = {
   },
 };
 export const LEARNING_CONTENT = {
-  icon: "goldCoin.webp",
-  iconBGColor: "#B0A34E38",
+  learn: { icon: "goldCoin.webp", iconBGColor: "#B0A34E38" },
+  quest: { icon: "cal.webp", iconBGColor: "#4885FF29" },
 };
 
 export const MILESTONE_LEARNING_FUEL = {

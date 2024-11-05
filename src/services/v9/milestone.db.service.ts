@@ -843,7 +843,8 @@ class MilestoneDBService {
     try {
       let quizDetails = null,
         time = null,
-        resultSummary = null;
+        iconImage = LEARNING_CONTENT.learn.icon,
+        iconBackgroundColor = LEARNING_CONTENT.learn.iconBGColor;
       const updatedActions = await Promise.all(
         actions.map(async (action) => {
           const actionType = action.type;
@@ -854,13 +855,12 @@ class MilestoneDBService {
           }
           if (actionType == 1) {
             time = `Earn ${action?.reward} tokens - 1 min`;
-            resultSummary = null;
           } else if (actionType == 3) {
             time = `Earn ${action?.reward} tokens - 3 min`;
-            resultSummary = null;
           } else {
             time = `AI-Assisted - 2 min`;
-            resultSummary = SIMULATION_RESULT_COPY;
+            iconImage = LEARNING_CONTENT.quest.icon;
+            iconBackgroundColor = LEARNING_CONTENT.quest.icon;
           }
           if (quizDetails && actionType == 4) {
             return quizDetails;
@@ -868,13 +868,12 @@ class MilestoneDBService {
             return {
               ...action,
               title: quizDetails?.quizName,
-              iconBackgroundColor: LEARNING_CONTENT.iconBGColor,
-              iconImage: LEARNING_CONTENT.icon,
+              iconBackgroundColor: iconBackgroundColor,
+              iconImage: iconImage,
               characterName: quizDetails?.characterName,
               characterImage: quizDetails?.characterImage,
               time,
               key: "challenges",
-              resultSummary,
             };
           }
         })
