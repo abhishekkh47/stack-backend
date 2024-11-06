@@ -181,6 +181,29 @@ class MilestoneController extends BaseController {
     );
     return this.Ok(ctx, { data: milestoneRoadmap });
   }
+
+  /**
+   * @description This is to milestone roadmap based on milestonId
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({
+    path: "/submit-event-result",
+    method: HttpMethod.POST,
+  })
+  @Auth()
+  public async submitEvent(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    const eventResult = await MilestoneDBService.saveEventResult(
+      userExists,
+      body
+    );
+    return this.Ok(ctx, { data: eventResult });
+  }
 }
 
 export default new MilestoneController();

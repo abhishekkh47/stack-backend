@@ -296,6 +296,7 @@ export const QUIZ_TYPE = {
   NORMAL: 1,
   SIMULATION: 2,
   STORY: 3,
+  EVENT: 4,
 };
 export const STORY_QUESTION_TYPE = {
   DESCRIPTION: 1,
@@ -310,7 +311,7 @@ export interface IPromptData {
   isNameOverride?: boolean;
 }
 
-export const SIMULATION_QUIZ_FUEL = 150;
+export const SIMULATION_QUIZ_FUEL = 10;
 export const REFILL_LIFE_FUEL = 300;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 
@@ -1063,8 +1064,8 @@ export const IDEA_ANALYSIS = {
   },
 };
 export const LEARNING_CONTENT = {
-  icon: "goldCoin.webp",
-  iconBGColor: "#B0A34E38",
+  learn: { icon: "goldCoin.webp", iconBGColor: "#B0A34E38" },
+  quest: { icon: "cal.webp", iconBGColor: "#4885FF29" },
 };
 
 export const MILESTONE_LEARNING_FUEL = {
@@ -1079,13 +1080,14 @@ export const MILESTONE_HOMEPAGE = {
   SHOW_PRO_BANNER: "showProBanneFooter",
   COMPLETED_MILESTONE: "completedMilestone",
   IS_COMPLETED: "isCompleted",
-  GOALS_OF_THE_DAY: { title: "Goals of the Day", key: "goalsOfTheDay" },
+  GOALS_OF_THE_DAY: { title: "Daily Quest", key: "goalsOfTheDay" },
   COMPLETED_GOALS: { title: "Completed Goals", key: "completedGoals" },
   COMPLETED_MILESTONES: {
     title: "Completed Milestones",
     key: "completedMilestones",
   },
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
+  EARN: { title: "Earn", key: "earn" },
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
@@ -1106,4 +1108,61 @@ export const BUSINESS_SCORE_MESSAGE = {
     "Missed a day? No worries! Get back on track and keep moving forward!",
   LETS_GO: `LET'S GO`,
   GOT_IT: `GOT IT`,
+};
+
+export const SIMULATION_RESULT_COPY = {
+  pass: {
+    images: [
+      {
+        image: "passImage1.webp",
+        description:
+          "All of your hard work pays off! You won the competition!!!",
+      },
+      {
+        image: "passImage2.webp",
+        description:
+          "Email from Mr. Beast: “Really high on this business - keep going”",
+      },
+    ],
+    resultSummary: [
+      { title: 10, type: " Token", icon: "goldCoin.webp" },
+      { title: 50, type: "K", icon: "dollar_banknote.webp" },
+      { title: 2, type: " Rating", icon: "military_medal.webp" },
+    ],
+  },
+  fail: {
+    images: [
+      {
+        image: "failImage1.webp",
+        description: "You didn’t win the competition this time...",
+      },
+      {
+        image: "failImage2.webp",
+        description:
+          "But Jetson reminds you “resilience is everything in this game”",
+      },
+    ],
+    resultSummary: [
+      { title: 0, type: "K", icon: "dollar_banknote.webp" },
+      { title: 0, type: " Rating", icon: "military_medal.webp" },
+    ],
+  },
+};
+export const MILESTONE_RESULT_COPY = {
+  passCopy1: "You send your business strategy to the Universe Ventures team...",
+  passImage1: "passImage1.webp",
+  passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
+  passImage2: "passImage2.webp",
+  resultSummary: [
+    { title: 5, icon: "goldCoin.webp" },
+    { title: 1, icon: "military_medal.webp" },
+  ],
+};
+
+export const MILESTONE_STAGE_REWARDS = {
+  "IDEA STAGE": 50,
+  "MVP STAGE": 100,
+  "ANGEL STAGE": 160,
+  "BRAND STAGE": 220,
+  "PMF STAGE": 300,
 };

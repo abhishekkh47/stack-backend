@@ -29,6 +29,8 @@ import {
   AIToolDataSetTypesTable,
   AIToolsUsageStatusTable,
   CommunityTable,
+  StageTable,
+  MilestoneEventsTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -58,6 +60,8 @@ import {
   mapHasGoalKey,
   DEFAULT_BUSINESS_LOGO,
   CHALLENGE_TYPE,
+  SIMULATION_RESULT_COPY,
+  MILESTONE_STAGE_REWARDS,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2024,7 +2028,8 @@ class ScriptService {
   public async convertMilestoneDatasetSheetToJSON(rows: any) {
     try {
       const result = [];
-      let milestoneContent = [];
+      let milestoneContent = [],
+        stageContent = [];
       let currentMilestone = null;
       let currentDay = 0;
       let order = 0;
@@ -2036,9 +2041,39 @@ class ScriptService {
       let learningContentIdx = -1;
       let dayTitle = null;
       let roadmapIcon = null;
-      const quizTopics = await QuizTopicTable.find({ type: 4 }).lean();
+      let resultCopyInfo = null;
       const defaultTopic = "6638c5f713b74c3154c67624";
-
+      const stageArray = rows.reduce((acc, row) => {
+        const milestone = row.milestone?.trimEnd();
+        if (milestone?.length > 1) {
+          acc.push({
+            title: row["Stage"],
+          });
+        }
+        return acc;
+      }, []);
+      stageArray.forEach((stage) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              title: stage.title,
+            },
+            update: {
+              $set: {
+                title: stage.title,
+                reward: MILESTONE_STAGE_REWARDS[stage.title],
+              },
+            },
+            upsert: true,
+          },
+        };
+        stageContent.push(bulkWriteObject);
+      });
+      await StageTable.bulkWrite(stageContent);
+      const [quizTopics, stages] = await Promise.all([
+        QuizTopicTable.find({ type: 4 }).lean(),
+        StageTable.find({}, { title: 1 }).lean(),
+      ]);
       const milestonesArray = rows.reduce((acc, row) => {
         const topic = row.topic?.trimEnd();
         const milestone = row.milestone?.trimEnd();
@@ -2046,13 +2081,14 @@ class ScriptService {
           acc.push({
             milestone: milestone,
             topicId:
-              quizTopics.find((obj) => obj.topic == topic)._id || defaultTopic,
+              quizTopics.find((obj) => obj.topic == topic)?._id || defaultTopic,
             description: "7 Days - 15 min/day",
-            order: ++milestoneOrder,
+            order: Number(row["order"]?.trimEnd()),
             locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
             icon: row["milestoneIcon"]?.trimEnd() || null,
             iconBackgroundColor:
               row["milestoneIconBGColor"]?.trimEnd() || "#ffffff19",
+            stageId: stages.find((obj) => obj.title == row["Stage"]?.trimEnd()),
           });
         }
         return acc;
@@ -2062,7 +2098,6 @@ class ScriptService {
           updateOne: {
             filter: {
               milestone: goal.milestone,
-              topicId: goal.topicId,
             },
             update: {
               $set: {
@@ -2073,6 +2108,7 @@ class ScriptService {
                 locked: goal.locked,
                 icon: goal.icon,
                 iconBackgroundColor: goal.iconBackgroundColor,
+                stageId: goal.stageId,
               },
             },
             upsert: true,
@@ -2109,11 +2145,15 @@ class ScriptService {
         const learningType = row["learningType"]?.trimEnd() || null;
         if (learningId) {
           const quizData = await this.getQuizMetaData(learningId, learningType);
+          if (quizData.quizType !== 3) {
+            resultCopyInfo = this.getResultCopyInfo(quizData, row);
+          }
           const action = {
             type: quizData.quizType,
             quizNum: learningId,
             quizId: quizData.quizId || null,
             reward: quizData.reward,
+            resultCopyInfo,
           };
           learningContent[learningContentIdx].actions.push(action);
         }
@@ -2133,22 +2173,26 @@ class ScriptService {
             questionScreenInfo: inputQuestion ? { title: inputQuestion } : null,
           };
           currentIndex++;
-          result.push({
-            milestoneId: currentMilestoneId,
-            day: currentDay,
-            title: row["goalTitle"]?.trimEnd(),
-            key: row["identifier"]?.trimEnd(),
-            order: ++order,
-            time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
-            iconImage: row["icon"]?.trimEnd() || null,
-            iconBackgroundColor: row["iconBackgroundColor"]?.trimEnd() || null,
-            dependency: row["dependency"]?.trimEnd().split(","),
-            template: Number(row["template"]?.trimEnd()),
-            inputTemplate: inputTemplate,
-            isAiToolbox: row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
-            dayTitle,
-            roadmapIcon,
-          });
+          if (row["template"]) {
+            result.push({
+              milestoneId: currentMilestoneId,
+              day: currentDay,
+              title: row["goalTitle"]?.trimEnd(),
+              key: row["identifier"]?.trimEnd(),
+              order: ++order,
+              time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
+              iconImage: row["icon"]?.trimEnd() || null,
+              iconBackgroundColor:
+                row["iconBackgroundColor"]?.trimEnd() || null,
+              dependency: row["dependency"]?.trimEnd().split(","),
+              template: Number(row["template"]?.trimEnd()),
+              inputTemplate: inputTemplate,
+              isAiToolbox:
+                row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
+              dayTitle,
+              roadmapIcon,
+            });
+          }
         }
         if (row["optionTitle"]) {
           result[currentIndex].inputTemplate.optionsScreenInfo.options.push({
@@ -2602,7 +2646,8 @@ class ScriptService {
 
   private async getQuizMetaData(quizNum: number, type: string) {
     let quizType = 0,
-      reward = 0;
+      reward = 0,
+      quizInfo = null;
     if (type == "simulation") {
       quizType = 2;
       reward =
@@ -2612,14 +2657,18 @@ class ScriptService {
       quizType = 3;
       reward =
         CHECKLIST_QUESTION_LENGTH.STORY * CORRECT_ANSWER_FUEL_POINTS.STORY;
-    } else {
+    } else if (type == "quiz") {
       quizType = 1;
       reward = CHECKLIST_QUESTION_LENGTH.QUIZ * CORRECT_ANSWER_FUEL_POINTS.QUIZ;
+    } else if (type == "event") {
+      quizType = 4;
+      reward = 0;
     }
-    const quizInfo = await QuizTable.findOne({
-      quizNum,
-      quizType,
-    }).select("_id");
+    if (quizType === 4) {
+      quizInfo = await MilestoneEventsTable.findOne({ eventId: quizNum });
+    } else {
+      quizInfo = await QuizTable.findOne({ quizNum, quizType });
+    }
     const quizId = quizInfo?._id || null;
     return {
       quizType,
@@ -2764,6 +2813,147 @@ class ScriptService {
         await DailyChallengeTable.bulkWrite(bulkOperations);
       }
       return profilesToUpdate;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function import the unexpected events content to DB
+   * @returns {*}
+   */
+  public async convertEventsDataToJSON(rows) {
+    try {
+      const events = [];
+      let eventId = null,
+        scenario = null,
+        scenarioImage = null,
+        options = [],
+        resultCopyInfo = [];
+      for (const row of rows) {
+        if (row["EventID"]?.trimEnd() && eventId != row["EventID"]?.trimEnd()) {
+          if (options.length) {
+            events.push({
+              eventId,
+              scenario,
+              scenarioImage,
+              options,
+            });
+          }
+          eventId = row["EventID"]?.trimEnd();
+          scenario = row["Scenario"]?.trimEnd();
+          scenarioImage = row["ScenarioImage"]?.trimEnd() || null;
+          options = [];
+        }
+        resultCopyInfo.push({
+          image: row["Response1"]?.trimEnd() || null,
+          description: row["ResponseImage1"]?.trimEnd() || null,
+        });
+        resultCopyInfo.push({
+          image: row["Response2"]?.trimEnd() || null,
+          description: row["ResponseImage2"]?.trimEnd() || null,
+        });
+        if (eventId) {
+          options.push({
+            choice: row["Choice"]?.trimEnd(),
+            action: row["Action"]?.trimEnd() || null,
+            resultCopyInfo,
+            fans: Number(row["Fans"]?.trimEnd()) || 0,
+            cash: Number(row["Cash"]?.trimEnd()) || 0,
+            businessScore: Number(row["Business Score"]?.trimEnd()) || 0,
+            token: Number(row["Tokens"]?.trimEnd()) || 0,
+          });
+          resultCopyInfo = [];
+        }
+      }
+      return events;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function add Unexpected Events to DB
+   * @param data
+   * @returns {*}
+   */
+  public async addUnexpectedEventsToDB(data: any) {
+    let events = [];
+    try {
+      data.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              eventId: obj.eventId,
+            },
+            update: {
+              $set: {
+                eventId: obj.eventId,
+                scenario: obj.scenario,
+                scenarioImage: obj.scenarioImage,
+                options: obj.options,
+              },
+            },
+            upsert: true,
+          },
+        };
+        events.push(bulkWriteObject);
+      });
+      await MilestoneEventsTable.bulkWrite(events);
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function add Unexpected Events to DB
+   * @param quizData
+   * @param row
+   * @returns {*}
+   */
+  public getResultCopyInfo(quizData: any, row: any) {
+    try {
+      let resultCopyInfo = {};
+      if (quizData.quizType != 4 && row["PassImage1"]) {
+        resultCopyInfo = {
+          pass: {
+            images: [
+              {
+                image: row["PassImage1"]?.trimEnd(),
+                description: row["PassCopy1"]?.trimEnd(),
+              },
+              {
+                image: row["PassImage2"]?.trimEnd(),
+                description: row["PassCopy2"]?.trimEnd(),
+              },
+            ],
+            resultSummary: SIMULATION_RESULT_COPY.pass.resultSummary,
+          },
+        };
+      }
+      if (
+        quizData.quizType == 2 &&
+        resultCopyInfo != null &&
+        row["FailImage1"]
+      ) {
+        resultCopyInfo["fail"] = {
+          images: [
+            {
+              image: row["FailImage1"]?.trimEnd(),
+              description: row["FailCopy1"]?.trimEnd(),
+            },
+            {
+              image: row["FailImage2"]?.trimEnd(),
+              description: row["FailCopy2"]?.trimEnd(),
+            },
+          ],
+          resultSummary: SIMULATION_RESULT_COPY.fail.resultSummary,
+        };
+      } else if (quizData.quizType == 4) {
+        resultCopyInfo = null;
+      }
+      return resultCopyInfo;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

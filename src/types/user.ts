@@ -31,6 +31,8 @@ export interface IUser extends IAccount {
   focusAreaTopic: mongoose.Schema.Types.ObjectId;
   currentDayRewards: ICurrentDayRewards;
   businessScore: IBusinessScore;
+  cash: number;
+  stage: string;
 }
 
 export interface IAccount {

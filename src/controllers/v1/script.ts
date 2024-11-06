@@ -2457,6 +2457,29 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is to remove completed actions of a user from the daily_challenges collection
+   * @param ctx
+   */
+  @Route({ path: "/import-unexpected-events", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importUnexpectedEvents(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.UNEXPECTED_EVENTS_SHEET_GID,
+        envData.SHEET_ID
+      );
+      if (rows.length === 0) {
+        return this.BadRequest(ctx, "Dataset Not Found");
+      }
+      const data = await ScriptService.convertEventsDataToJSON(rows);
+      const res = await ScriptService.addUnexpectedEventsToDB(data);
+      return this.Ok(ctx, { message: "Success", data: res });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();

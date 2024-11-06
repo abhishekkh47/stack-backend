@@ -260,4 +260,7 @@ export default {
   get COMMUNITIES_SHEET_GID() {
     return process.env.COMMUNITIES_SHEET_GID;
   },
+  get UNEXPECTED_EVENTS_SHEET_GID() {
+    return process.env.UNEXPECTED_EVENTS_SHEET_GID;
+  },
 };

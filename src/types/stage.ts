@@ -9,4 +9,6 @@ export interface IStage {
   backgroundColor: string;
   guidebookColor: string;
   order: number;
+  type: number;
+  reward: number;
 }

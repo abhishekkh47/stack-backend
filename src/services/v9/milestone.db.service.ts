@@ -10,6 +10,7 @@ import {
   QuizTable,
   QuizResult,
   UserTable,
+  MilestoneEventsTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -18,6 +19,8 @@ import {
   LEARNING_CONTENT,
   ACTIVE_MILESTONE,
   MILESTONE_HOMEPAGE,
+  SIMULATION_RESULT_COPY,
+  MILESTONE_RESULT_COPY,
 } from "@app/utility";
 import moment from "moment";
 import { ObjectId } from "mongodb";
@@ -122,9 +125,9 @@ class MilestoneDBService {
         isMilestoneHit: false,
         tasks: [],
       };
-      let isAdvanceNextDay = false;
-      let businessIdeaGoal = null;
-      const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS } =
+      let isAdvanceNextDay = false,
+        learningActions = [];
+      const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS, EARN } =
         MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
         isAdvanceNextDay = true;
@@ -295,11 +298,12 @@ class MilestoneDBService {
         response.isMilestoneHit = false;
       }
       // order -> quiz, story, simulation
-      const order = { 1: 0, 3: 1, 2: 2 };
+      const order = { 1: 0, 3: 1, 2: 2, 4: 3 };
       const learningContent = await this.getLearningContent(
         userIfExists,
         currentGoal
       );
+      const quizLevelId = learningContent?.quizLevelId || null;
       const allLearningContent = learningContent?.all?.sort(
         (a, b) => order[b?.type] - order[a?.type]
       );
@@ -324,25 +328,32 @@ class MilestoneDBService {
         },
         { quizId: 1 }
       );
-      if (
-        response?.tasks[0]?.data &&
-        response?.tasks[0]?.data[0]?.key == "ideaValidation"
-      ) {
-        businessIdeaGoal = [response?.tasks[0]?.data[0]];
-      }
       allLearningContent?.forEach(async (obj) => {
         const currentQuizId = obj.quizId.toString();
         const isQuizCompleted = completedQuizzes.some(
           (quiz) => quiz.quizId.toString() == currentQuizId
         );
         if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          if (businessIdeaGoal) {
-            response?.tasks[0]?.data?.splice(1, 0, obj);
-          } else {
-            response?.tasks[0]?.data?.unshift(obj);
+          if (obj.type == 2 || obj.type == 4) {
+            response?.tasks[0]?.data.push({ ...obj, quizLevelId });
+          } else if (obj.type == 1 || obj.type == 3) {
+            learningActions.push({ ...obj, quizLevelId });
           }
         }
       });
+      if (response?.tasks.length > 1) {
+        response?.tasks.splice(1, 0, {
+          title: EARN.title,
+          data: learningActions,
+          sectionKey: EARN.key,
+        });
+      } else {
+        response?.tasks?.push({
+          title: EARN.title,
+          data: learningActions,
+          sectionKey: EARN.key,
+        });
+      }
       const completedLearnings = learningContent?.completedQuizIds
         ?.map((id) => {
           const learning = allLearningContent?.find(
@@ -355,10 +366,10 @@ class MilestoneDBService {
         })
         .filter(Boolean);
       if (completedLearnings.length) {
-        if (response?.tasks[1]) {
-          response.tasks[1].data = [
+        if (response?.tasks[2]) {
+          response.tasks[2].data = [
             ...completedLearnings,
-            ...response.tasks[1].data,
+            ...response.tasks[2].data,
           ];
         } else {
           response.tasks.push({
@@ -686,10 +697,10 @@ class MilestoneDBService {
     lastMilestoneCompleted: any,
     override: boolean = false
   ) {
+    const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
+      {}
+    ).lean();
     try {
-      const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
-        {}
-      ).lean();
       let isMilestoneHit = false,
         isIdeaValidationGoalAvailable = false;
       const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
@@ -787,6 +798,7 @@ class MilestoneDBService {
     try {
       const startOfDay = moment().startOf("day").toDate(); // 12:00 AM today
       const endOfDay = moment().endOf("day").toDate(); // 11:59:59 PM today
+      let quizLevelId = null;
       let learningActions = null,
         quizCompletedToday = null,
         completedQuizIds = null;
@@ -815,6 +827,7 @@ class MilestoneDBService {
         learningActions.forEach((obj) => {
           allLearnings.all.push(...obj.actions);
           if (obj.day == actionObj?.day) {
+            quizLevelId = obj._id;
             allLearnings.currentDayGoal.push(...obj.actions);
           }
         });
@@ -825,6 +838,7 @@ class MilestoneDBService {
         all: challengeDetails,
         currentDayGoal: allLearnings.currentDayGoal,
         completedQuizIds,
+        quizLevelId,
       };
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -838,19 +852,35 @@ class MilestoneDBService {
    */
   private async getQuizDetails(actions: any) {
     try {
+      let quizDetails = null,
+        time = null;
       const updatedActions = await Promise.all(
         actions.map(async (action) => {
-          const quizDetails = await QuizTable.findOne({ _id: action?.quizId });
-          const time =
-            action.type == 1
-              ? `Earn ${action?.reward} tokens - 1 min`
-              : `Earn ${action?.reward} tokens - 3 min`;
-          if (quizDetails) {
+          let iconImage = LEARNING_CONTENT.learn.icon,
+            iconBackgroundColor = LEARNING_CONTENT.learn.iconBGColor;
+          const actionType = action.type;
+          if (actionType == 4) {
+            quizDetails = await this.getEventDetails(action);
+          } else {
+            quizDetails = await QuizTable.findOne({ _id: action?.quizId });
+          }
+          if (actionType == 1) {
+            time = `Earn ${action?.reward} tokens - 1 min`;
+          } else if (actionType == 3) {
+            time = `Earn ${action?.reward} tokens - 3 min`;
+          } else {
+            time = `AI-Assisted - 2 min`;
+            iconImage = LEARNING_CONTENT.quest.icon;
+            iconBackgroundColor = LEARNING_CONTENT.quest.iconBGColor;
+          }
+          if (quizDetails && actionType == 4) {
+            return quizDetails;
+          } else if (quizDetails) {
             return {
               ...action,
               title: quizDetails?.quizName,
-              iconBackgroundColor: LEARNING_CONTENT.iconBGColor,
-              iconImage: LEARNING_CONTENT.icon,
+              iconBackgroundColor: iconBackgroundColor,
+              iconImage: iconImage,
               characterName: quizDetails?.characterName,
               characterImage: quizDetails?.characterImage,
               time,
@@ -1206,8 +1236,8 @@ class MilestoneDBService {
         sectionKey: CURRENT_MILESTONE.key,
       });
       if (!goals.isMilestoneHit) {
-        updatedCompletedMilestones = completedMilestones.filter(
-          (obj) => currentMilestone.toString() != obj._id.toString()
+        updatedCompletedMilestones = completedMilestones?.filter(
+          (obj) => currentMilestone?.toString() != obj?._id?.toString()
         );
       } else {
         updatedCompletedMilestones = completedMilestones;
@@ -1552,6 +1582,87 @@ class MilestoneDBService {
         });
       });
       return roadMap;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description format milestone goals day-wise
+   * @param key
+   * @returns {*}
+   */
+  private async getDayTitle(key: any) {
+    try {
+      const actionDetails = await MilestoneGoalsTable.findOne({ key });
+      return actionDetails.dayTitle;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get event information
+   * @param action eventId
+   * @returns {*}
+   */
+  private async getEventDetails(action: any) {
+    try {
+      const eventDetails = await MilestoneEventsTable.findOne({
+        eventId: action.quizNum,
+      }).lean();
+      if (eventDetails) {
+        return {
+          ...action,
+          resultCopyInfo: null,
+          ...eventDetails,
+          title: "ALERT!",
+          iconBackgroundColor: "#4885FF29",
+          iconImage: "cal.webp",
+          time: "AI-Assisted - 2 min",
+          key: "event",
+        };
+      }
+
+      return eventDetails;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get event information
+   * @param userExists
+   * @param data event user response
+   * @returns {*}
+   */
+  public async saveEventResult(userExists, data: any) {
+    try {
+      const updatedCoins = userExists.quizCoins + data.tokens;
+      const currentCash = userExists?.cash || 50;
+      const updatedCash = currentCash + currentCash * data.cash;
+      const updatedBusinessScore =
+        userExists.businessScore.current || 90 + data.businessScore;
+      const updateObj = {
+        $set: {
+          quizCoins: updatedCoins,
+          cash: updatedCash,
+          "businessScore.current": updatedBusinessScore,
+        },
+      };
+      await Promise.all([
+        UserTable.findOneAndUpdate({ _id: userExists.id }, updateObj),
+        QuizResult.create({
+          topicId: null,
+          quizId: data.quizId,
+          userId: userExists._id,
+          isOnBoardingQuiz: false,
+          pointsEarned: data.tokens,
+          numOfIncorrectAnswers: 0,
+        }),
+      ]);
+
+      return true;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
