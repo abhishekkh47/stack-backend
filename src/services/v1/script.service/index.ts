@@ -2828,7 +2828,8 @@ class ScriptService {
       let eventId = null,
         scenario = null,
         scenarioImage = null,
-        options = [];
+        options = [],
+        resultCopyInfo = [];
       for (const row of rows) {
         if (row["EventID"]?.trimEnd() && eventId != row["EventID"]?.trimEnd()) {
           if (options.length) {
@@ -2844,17 +2845,25 @@ class ScriptService {
           scenarioImage = row["ScenarioImage"]?.trimEnd() || null;
           options = [];
         }
+        resultCopyInfo.push({
+          image: row["Response1"]?.trimEnd() || null,
+          description: row["ResponseImage1"]?.trimEnd() || null,
+        });
+        resultCopyInfo.push({
+          image: row["Response2"]?.trimEnd() || null,
+          description: row["ResponseImage2"]?.trimEnd() || null,
+        });
         if (eventId) {
           options.push({
             choice: row["Choice"]?.trimEnd(),
             action: row["Action"]?.trimEnd() || null,
-            response: row["Response"]?.trimEnd(),
-            responseImage: row["ResponseImage"]?.trimEnd() || null,
+            resultCopyInfo,
             fans: Number(row["Fans"]?.trimEnd()) || 0,
             cash: Number(row["Cash"]?.trimEnd()) || 0,
             businessScore: Number(row["Business Score"]?.trimEnd()) || 0,
             token: Number(row["Tokens"]?.trimEnd()) || 0,
           });
+          resultCopyInfo = [];
         }
       }
       return events;

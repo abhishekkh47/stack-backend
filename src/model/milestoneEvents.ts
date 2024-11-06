@@ -34,16 +34,20 @@ const schema = new mongoose.Schema<IMilestoneEventsSchema>(
           required: true,
           default: null,
         },
-        response: {
-          type: mongoose.Schema.Types.String,
-          required: true,
-          default: null,
-        },
-        responseImage: {
-          type: mongoose.Schema.Types.String,
-          required: true,
-          default: null,
-        },
+        resultCopyInfo: [
+          {
+            image: {
+              type: mongoose.Schema.Types.String,
+              required: true,
+              default: null,
+            },
+            description: {
+              type: mongoose.Schema.Types.String,
+              required: true,
+              default: null,
+            },
+          },
+        ],
         fans: {
           type: mongoose.Schema.Types.Number,
           required: true,
