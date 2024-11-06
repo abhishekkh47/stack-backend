@@ -8,10 +8,14 @@ export interface IMilestoneEvents {
 interface IMilestoneEventsResponse {
   choice: string;
   action: string;
-  response: string;
-  responseImage: string;
+  resultCopyInfo: IResultCopyInfo[];
   fans: number;
   cash: number;
   businessScore: number;
   token: number;
+}
+
+interface IResultCopyInfo {
+  image: string;
+  description: string;
 }
