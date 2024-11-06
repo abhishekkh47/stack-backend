@@ -1092,9 +1092,9 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 10, icon: "goldCoin.webp" },
-      { title: 50, icon: "dollar_banknote.webp" },
-      { title: 2, icon: "military_medal.webp" },
+      { title: 10, type: " Token", icon: "goldCoin.webp" },
+      { title: 50, type: "K", icon: "dollar_banknote.webp" },
+      { title: 2, type: " Rating", icon: "military_medal.webp" },
     ],
   },
   fail: {
@@ -1110,8 +1110,8 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 0, icon: "dollar_banknote.webp" },
-      { title: 0, icon: "military_medal.webp" },
+      { title: 0, type: "K", icon: "dollar_banknote.webp" },
+      { title: 0, type: " Rating", icon: "military_medal.webp" },
     ],
   },
 };

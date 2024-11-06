@@ -1236,8 +1236,8 @@ class MilestoneDBService {
         sectionKey: CURRENT_MILESTONE.key,
       });
       if (!goals.isMilestoneHit) {
-        updatedCompletedMilestones = completedMilestones.filter(
-          (obj) => currentMilestone.toString() != obj._id.toString()
+        updatedCompletedMilestones = completedMilestones?.filter(
+          (obj) => currentMilestone?.toString() != obj?._id?.toString()
         );
       } else {
         updatedCompletedMilestones = completedMilestones;
