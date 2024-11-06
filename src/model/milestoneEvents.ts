@@ -56,7 +56,7 @@ const schema = new mongoose.Schema<IMilestoneEventsSchema>(
         cash: {
           type: mongoose.Schema.Types.Number,
           required: true,
-          default: 0,
+          default: 50,
         },
         businessScore: {
           type: mongoose.Schema.Types.Number,
