@@ -27,6 +27,7 @@ import {
   IDEA_GENERATOR_INFO,
   IDEA_ANALYSIS,
   replacePlaceholders,
+  NEW_IDEA_GEN,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -349,7 +350,6 @@ class BusinessProfileService {
     userExists: any
   ) {
     try {
-      const businessType = 2; // Only tech product
       const systemInputDataset = await AIToolDataSetTable.find({
         key: {
           $in: [
@@ -373,106 +373,79 @@ class BusinessProfileService {
 
       const problemPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
-          ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
-          idea.businessDescription
+          softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_RATING],
+          idea.description
         )
       );
 
-      const ratingPromises = ideaResults.map((idea) =>
+      const productPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
           softwareTechnology[IDEA_GENERATOR_INFO.PRODUCT_RATING],
-          idea.businessDescription
+          idea.description
         )
       );
 
       const marketPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_MARKET_SELECTOR],
-          idea.businessDescription
+          softwareTechnology[IDEA_GENERATOR_INFO.MARKET_RATING],
+          idea.description
         )
       );
 
       // Fetch problem, rating, and market suggestions in parallel
-      const [problemResults, ratingResults, marketResults] = await Promise.all([
-        Promise.all(problemPromises),
-        Promise.all(ratingPromises),
-        Promise.all(marketPromises),
-      ]);
-
-      const marketSegments = marketResults.map((market) =>
-        market.market.replace(/\.$/, "")
+      const [problemRatings, productRatings, marketRatings] = await Promise.all(
+        [
+          Promise.all(problemPromises),
+          Promise.all(productPromises),
+          Promise.all(marketPromises),
+        ]
       );
-      const [
-        marketAnalysisData,
-        productizationData,
-        distributionData,
-        dominateNicheData,
-      ] = await Promise.all([
-        MarketScoreTable.find({
-          marketSegment: {
-            $in: marketSegments,
-          },
-          type: businessType,
-        }).lean(),
-        this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.name],
-          marketResults[0].market
-        ),
-        this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.name],
-          marketResults[1].market
-        ),
-        this.getFormattedSuggestions(
-          softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.name],
-          marketResults[2].market
-        ),
-      ]);
 
       let order = 0;
       const ideasData = [
         {
-          data: productizationData,
-          problem: problemResults[0],
+          data: ideaResults[0],
+          problemData: problemRatings[0],
           label: softwareTechnology[IDEA_GENERATOR_INFO.PRODUCTIZATION.label],
           imageKey: IDEA_GENERATOR_INFO.PRODUCTIZATION.image,
-          ratingData: ratingResults[0],
-          marketData: marketResults[0],
+          productData: productRatings[0],
+          marketData: marketRatings[0],
         },
         {
-          data: distributionData,
-          problem: problemResults[1],
+          data: ideaResults[1],
+          problemData: problemRatings[1],
           label: softwareTechnology[IDEA_GENERATOR_INFO.DISTRIBUTION.label],
           imageKey: IDEA_GENERATOR_INFO.DISTRIBUTION.image,
-          ratingData: ratingResults[1],
-          marketData: marketResults[1],
+          productData: productRatings[1],
+          marketData: marketRatings[1],
         },
         {
-          data: dominateNicheData,
-          problem: problemResults[2],
+          data: ideaResults[2],
+          problemData: problemRatings[2],
           label: softwareTechnology[IDEA_GENERATOR_INFO.DOMINATE_NICHE.label],
           imageKey: IDEA_GENERATOR_INFO.DOMINATE_NICHE.image,
-          ratingData: ratingResults[2],
-          marketData: marketResults[2],
+          productData: productRatings[2],
+          marketData: marketRatings[2],
         },
       ];
       const BUSINESS_IDEA_IMAGES_BY_TYPE = BUSINESS_IDEA_IMAGES.TECH_PRODUCT;
       const ideas = ideasData.map(
-        ({ data, problem, label, imageKey, ratingData, marketData }) => {
+        ({ data, problemData, label, imageKey, productData, marketData }) => {
           data.ideaLabel = label;
           data.image = BUSINESS_IDEA_IMAGES_BY_TYPE[imageKey];
           data._id = `idea${++order}`;
 
-          const market = marketAnalysisData.find(
-            (obj) => obj.marketSegment === marketData.market.replace(/\.$/, "")
-          );
-
           data.rating = Math.floor(
-            (Number(problem.average) +
-              market.overallRating +
-              ratingData["Overall Score"]) /
+            (Number(problemData.average) +
+              marketData.average +
+              productData.average) /
               3
           );
-          data.ideaAnalysis = this.ideaAnalysis(problem, ratingData, market);
+          data.ideaAnalysis = this.ideaAnalysis(
+            problemData,
+            productData,
+            marketData
+          );
 
           return data;
         }
@@ -499,61 +472,47 @@ class BusinessProfileService {
     userExists: any
   ) {
     try {
-      const systemInputDataset = await AIToolDataSetTable.find({
-        key: {
-          $in: [
-            IDEA_GENERATOR_INFO.IDEA_VALIDATION,
-            IDEA_GENERATOR_INFO.IDEA_GENERATOR,
-          ],
-        },
-      }).lean();
-
-      const ideaGenerator = systemInputDataset.find(
-        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_GENERATOR
-      )?.data;
-      const ideaValidationDataset = systemInputDataset.find(
-        (obj) => obj.key == IDEA_GENERATOR_INFO.IDEA_VALIDATION
-      )?.data;
+      const ideaValidationDataset = (
+        await AIToolDataSetTable.findOne({
+          key: IDEA_GENERATOR_INFO.IDEA_VALIDATION,
+        }).lean()
+      ).data;
 
       let validatedIdea = await this.getFormattedSuggestions(
-        ideaValidationDataset[IDEA_GENERATOR_INFO.TECH_PRODUCT],
+        ideaValidationDataset[IDEA_GENERATOR_INFO.IDEA_VALIDATOR_GENERATOR],
         prompt
       );
 
-      const updatedPrompt = `${validatedIdea.problem}\n ${validatedIdea.market}`;
+      const updatedPrompt = validatedIdea.description;
       const [problemAnalysisData, marketAnalysisData, productAnalysisData] =
         await Promise.all([
           this.getFormattedSuggestions(
-            ideaGenerator[IDEA_GENERATOR_INFO.PROBLEM_GENERATOR],
-            validatedIdea.description
+            ideaValidationDataset[IDEA_GENERATOR_INFO.PROBLEM_RATING],
+            updatedPrompt
           ),
-          MarketScoreTable.find({
-            marketSegment: validatedIdea.market,
-            type: PRODUCT_TYPE.Software,
-          }),
+          this.getFormattedSuggestions(
+            ideaValidationDataset[IDEA_GENERATOR_INFO.MARKET_RATING],
+            updatedPrompt
+          ),
           this.getFormattedSuggestions(
             ideaValidationDataset[IDEA_GENERATOR_INFO.PRODUCT_RATING],
             updatedPrompt
           ),
         ]);
 
-      const market = marketAnalysisData.find(
-        (obj) => obj.marketSegment == validatedIdea.market
-      );
-
-      validatedIdea["_id"] = "selfIdea";
+      validatedIdea["_id"] = IDEA_GENERATOR_INFO.SELF_IDEA;
       validatedIdea["ideaLabel"] =
-        ideaValidationDataset["IDEA_VALIDATION_LABEL"];
+        ideaValidationDataset[IDEA_GENERATOR_INFO.IDEA_VALIDATION_LABEL];
       validatedIdea["rating"] = Math.floor(
         (Number(problemAnalysisData.average) +
-          market.overallRating +
-          productAnalysisData["Overall Score"]) /
+          marketAnalysisData.average +
+          productAnalysisData.average) /
           3
       );
       validatedIdea["ideaAnalysis"] = this.ideaAnalysis(
         problemAnalysisData,
         productAnalysisData,
-        market
+        marketAnalysisData
       );
       validatedIdea["image"] = BUSINESS_IDEA_IMAGES.TECH_PRODUCT.user;
 
@@ -653,11 +612,23 @@ class BusinessProfileService {
    * @returns {*}
    */
   private ideaAnalysis(problem: any, product: any, market: any) {
-    const problemPlaceHolders = {
-      problemTitle: problem.title,
-      problemProducts: problem.products,
-      problemPrice: problem.price,
-      problemCustomer: problem.customer,
+    const placeholders = {
+      problem: {
+        problemTitle: problem.title,
+        problemProducts: problem.products,
+        problemPrice: problem.price,
+        problemCustomer: problem.customer,
+      },
+      product: {
+        productCustomerDescription: product.customer_description,
+        problemCoreFeature: product.core_feature,
+        problemExistingProducts: product.existing_products,
+      },
+      market: {
+        hhiExplanation: market.hhi_score,
+        tamExplanation: market.tam,
+        cagrExplanation: market.cagr,
+      },
     };
     try {
       return [
@@ -665,52 +636,69 @@ class BusinessProfileService {
           _id: IDEA_ANALYSIS.PROBLEM._id,
           name: IDEA_ANALYSIS.PROBLEM.name,
           rating: problem.average,
+          slug: IDEA_ANALYSIS.PROBLEM.slug,
           analysis: [
             {
               name: IDEA_ANALYSIS.PROBLEM.trending.name,
               rating: problem.problemScore,
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PROBLEM.trending.description,
-                problemPlaceHolders
+                placeholders.problem
               ),
+              slug: IDEA_ANALYSIS.PROBLEM.trending.slug,
             },
             {
               name: IDEA_ANALYSIS.PROBLEM.wallet.name,
               rating: problem.priceRating,
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PROBLEM.wallet.description,
-                problemPlaceHolders
+                placeholders.problem
               ),
+              slug: IDEA_ANALYSIS.PROBLEM.wallet.slug,
             },
             {
               name: IDEA_ANALYSIS.PROBLEM.audience.name,
               rating: problem.customerRating,
               description: replacePlaceholders(
                 IDEA_ANALYSIS.PROBLEM.audience.description,
-                problemPlaceHolders
+                placeholders.problem
               ),
+              slug: IDEA_ANALYSIS.PROBLEM.audience.slug,
             },
           ],
         },
         {
           _id: IDEA_ANALYSIS.PRODUCT._id,
           name: IDEA_ANALYSIS.PRODUCT.name,
-          rating: Math.floor(Number(product["Overall Score"])),
+          rating: product.average,
+          slug: IDEA_ANALYSIS.PRODUCT.slug,
           analysis: [
             {
-              name: IDEA_ANALYSIS.PRODUCT.niche,
-              rating: product["Audience Focus Score"],
-              description: product.audienceFocusScoreDescription,
+              name: IDEA_ANALYSIS.PRODUCT.niche.name,
+              rating: product["customer_rating"],
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PRODUCT.niche.description,
+                placeholders.product
+              ),
+              slug: IDEA_ANALYSIS.PRODUCT.niche.slug,
             },
             {
-              name: IDEA_ANALYSIS.PRODUCT.feature,
-              rating: product["Sophistication Score"],
-              description: product.sophisticationDescription,
+              name: IDEA_ANALYSIS.PRODUCT.feature.name,
+              rating: product["core_feature_rating"],
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PRODUCT.feature.description,
+                placeholders.product
+              ),
+              slug: IDEA_ANALYSIS.PRODUCT.feature.slug,
             },
             {
-              name: IDEA_ANALYSIS.PRODUCT.differentiator,
-              rating: product["Unique Score"],
-              description: product.uniqueScoreDescription,
+              name: IDEA_ANALYSIS.PRODUCT.differentiator.name,
+              rating: product["product_rating"],
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.PRODUCT.differentiator.description,
+                placeholders.product
+              ),
+              slug: IDEA_ANALYSIS.PRODUCT.differentiator.slug,
             },
           ],
         },
@@ -718,32 +706,35 @@ class BusinessProfileService {
         {
           _id: IDEA_ANALYSIS.MARKET._id,
           name: IDEA_ANALYSIS.MARKET.name,
-          rating: market.overallRating,
+          rating: market.average,
+          slug: IDEA_ANALYSIS.MARKET.slug,
           analysis: [
             {
-              name: IDEA_ANALYSIS.MARKET.hhi,
-              rating: market.hhiRating,
-              description: market.hhiExplanation,
+              name: IDEA_ANALYSIS.MARKET.hhi.name,
+              rating: market.hhi_rating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.MARKET.hhi.description,
+                placeholders.market
+              ),
+              slug: IDEA_ANALYSIS.MARKET.hhi.slug,
             },
             {
-              name: IDEA_ANALYSIS.MARKET.satisfaction,
-              rating: market.customerSatisfactionRating,
-              description: market.customerSatisfactionExplanation,
+              name: IDEA_ANALYSIS.MARKET.marketSize.name,
+              rating: market.tam_rating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.MARKET.marketSize.description,
+                placeholders.market
+              ),
+              slug: IDEA_ANALYSIS.MARKET.marketSize.slug,
             },
             {
-              name: IDEA_ANALYSIS.MARKET.industryAge,
-              rating: market.ageIndexRating,
-              description: market.ageIndexExplanation,
-            },
-            {
-              name: IDEA_ANALYSIS.MARKET.marketSize,
-              rating: market.tamRating,
-              description: market.tamExplanation,
-            },
-            {
-              name: IDEA_ANALYSIS.MARKET.marketGrowth,
-              rating: market.cagrRating,
-              description: market.cagrExplanation,
+              name: IDEA_ANALYSIS.MARKET.marketGrowth.name,
+              rating: market.cagr_rating,
+              description: replacePlaceholders(
+                IDEA_ANALYSIS.MARKET.marketGrowth.description,
+                placeholders.market
+              ),
+              slug: IDEA_ANALYSIS.MARKET.marketGrowth.slug,
             },
           ],
         },
