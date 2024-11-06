@@ -1639,7 +1639,7 @@ class MilestoneDBService {
   public async saveEventResult(userExists, data: any) {
     try {
       const updatedCoins = userExists.quizCoins + data.tokens;
-      const currentCash = userExists.cash || 100;
+      const currentCash = userExists?.cash || 50;
       const updatedCash = currentCash + currentCash * data.cash;
       const updatedBusinessScore =
         userExists.businessScore.current || 90 + data.businessScore;
