@@ -334,9 +334,9 @@ class MilestoneDBService {
           (quiz) => quiz.quizId.toString() == currentQuizId
         );
         if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          if (obj.type == 1 || obj.type == 3) {
+          if (obj.type == 2 || obj.type == 4) {
             response?.tasks[0]?.data.push({ ...obj, quizLevelId });
-          } else if (obj.type == 2 || obj.type == 4) {
+          } else if (obj.type == 1 || obj.type == 3) {
             learningActions.push({ ...obj, quizLevelId });
           }
         }
@@ -853,11 +853,11 @@ class MilestoneDBService {
   private async getQuizDetails(actions: any) {
     try {
       let quizDetails = null,
-        time = null,
-        iconImage = LEARNING_CONTENT.learn.icon,
-        iconBackgroundColor = LEARNING_CONTENT.learn.iconBGColor;
+        time = null;
       const updatedActions = await Promise.all(
         actions.map(async (action) => {
+          let iconImage = LEARNING_CONTENT.learn.icon,
+            iconBackgroundColor = LEARNING_CONTENT.learn.iconBGColor;
           const actionType = action.type;
           if (actionType == 4) {
             quizDetails = await this.getEventDetails(action);
@@ -1614,6 +1614,7 @@ class MilestoneDBService {
       if (eventDetails) {
         return {
           ...action,
+          resultCopyInfo: null,
           ...eventDetails,
           title: "ALERT!",
           iconBackgroundColor: "#4885FF29",
