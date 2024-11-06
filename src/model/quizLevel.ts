@@ -86,6 +86,11 @@ const schema = new mongoose.Schema<IQuizLevelSchema>(
                   required: true,
                   default: null,
                 },
+                type: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
               },
             ],
           },
@@ -117,6 +122,11 @@ const schema = new mongoose.Schema<IQuizLevelSchema>(
                   default: null,
                 },
                 icon: {
+                  type: mongoose.Schema.Types.String,
+                  required: true,
+                  default: null,
+                },
+                type: {
                   type: mongoose.Schema.Types.String,
                   required: true,
                   default: null,
