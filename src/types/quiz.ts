@@ -149,4 +149,5 @@ interface IResultImages {
 interface IResultSummary {
   title: string;
   icon: string;
+  type: string;
 }
