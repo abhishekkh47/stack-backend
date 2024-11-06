@@ -697,6 +697,9 @@ class MilestoneDBService {
     lastMilestoneCompleted: any,
     override: boolean = false
   ) {
+    const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
+      {}
+    ).lean();
     try {
       let isMilestoneHit = false,
         isIdeaValidationGoalAvailable = false;
@@ -716,7 +719,10 @@ class MilestoneDBService {
             goalsLength - 1
           ].milestoneId.toString()
       ) {
-        const updatedGoals = availableDailyChallenges.dailyGoalStatus;
+        const updatedGoals = this.setLockedGoals(
+          availableDailyChallenges.dailyGoalStatus,
+          businessProfile
+        );
         let response = {
           isMilestoneHit: false,
           tasks: [
@@ -729,7 +735,12 @@ class MilestoneDBService {
         };
 
         updatedGoals.forEach((goal) => {
-          goal.inputTemplate = null;
+          const copyData = suggestionScreenCopy.find(
+            (obj) => obj.key == goal.key
+          );
+          goal.inputTemplate.suggestionScreenInfo = copyData;
+          goal["iconImage"] = copyData.iconImage;
+          goal["iconBackgroundColor"] = copyData.iconBackgroundColor;
         });
 
         updatedGoals.forEach((goal) => {
@@ -860,7 +871,7 @@ class MilestoneDBService {
           } else {
             time = `AI-Assisted - 2 min`;
             iconImage = LEARNING_CONTENT.quest.icon;
-            iconBackgroundColor = LEARNING_CONTENT.quest.icon;
+            iconBackgroundColor = LEARNING_CONTENT.quest.iconBGColor;
           }
           if (quizDetails && actionType == 4) {
             return quizDetails;
