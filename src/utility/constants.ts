@@ -1125,7 +1125,7 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 10, type: " Token", icon: "goldCoin.webp" },
+      { title: 10, type: " Tokens", icon: "goldCoin.webp" },
       { title: 50, type: "K", icon: "dollar_banknote.webp" },
       { title: 2, type: " Rating", icon: "military_medal.webp" },
     ],
@@ -1154,8 +1154,8 @@ export const MILESTONE_RESULT_COPY = {
   passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
   passImage2: "passImage2.webp",
   resultSummary: [
-    { title: 5, icon: "goldCoin.webp" },
-    { title: 1, icon: "military_medal.webp" },
+    { title: 5, type: " Tokens", icon: "goldCoin.webp" },
+    { title: 1, type: " Rating", icon: "military_medal.webp" },
   ],
 };
 

@@ -2864,7 +2864,7 @@ class ScriptService {
             fans: Number(row["Fans"]?.trimEnd()) || 0,
             cash: Number(row["Cash"]?.trimEnd()) || 0,
             businessScore: Number(row["Business Score"]?.trimEnd()) || 0,
-            token: Number(row["Tokens"]?.trimEnd()) || 0,
+            tokens: Number(row["Token"]?.trimEnd()) || 0,
           });
           resultCopyInfo = [];
         }
