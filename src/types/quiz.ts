@@ -128,7 +128,7 @@ export interface IQuizDetail {
   quizNum: number;
   type: number;
   reward: number;
-  resultCopyInfo: IResultCopyInfo;
+  resultCopyInfo: IResultCopyInfo | null;
 }
 
 interface IResultCopyInfo {

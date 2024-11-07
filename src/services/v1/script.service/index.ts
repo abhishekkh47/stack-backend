@@ -62,6 +62,7 @@ import {
   CHALLENGE_TYPE,
   SIMULATION_RESULT_COPY,
   MILESTONE_STAGE_REWARDS,
+  MILESTONE_RESULT_COPY,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2061,8 +2062,8 @@ class ScriptService {
             update: {
               $set: {
                 title: stage.title,
-                reward: MILESTONE_STAGE_REWARDS[stage.title].token,
-                order: MILESTONE_STAGE_REWARDS[stage.title].order,
+                reward: MILESTONE_STAGE_REWARDS[stage.title]?.token || 0,
+                order: MILESTONE_STAGE_REWARDS[stage.title]?.order || 0,
                 type: 1,
               },
             },
@@ -2930,7 +2931,10 @@ class ScriptService {
                 description: row["PassCopy2"]?.trimEnd(),
               },
             ],
-            resultSummary: SIMULATION_RESULT_COPY.pass.resultSummary,
+            resultSummary:
+              quizData.quizType == 2
+                ? SIMULATION_RESULT_COPY.pass.resultSummary
+                : MILESTONE_RESULT_COPY.resultSummary,
           },
         };
       }
