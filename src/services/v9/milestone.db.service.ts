@@ -251,33 +251,45 @@ class MilestoneDBService {
       ) {
         currentGoal = response?.tasks[0]?.data[0];
         const currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
-        const [currentMilestoneGoals, ifOtherMilestoneCompleted] =
-          await Promise.all([
-            MilestoneGoalsTable.find({
-              milestoneId: currentMilestoneId,
-            })
-              .sort({ day: -1 })
-              .lean(),
-            MilestoneResultTable.findOne({
-              userId: userIfExists._id,
-              milestoneId: { $ne: currentMilestoneId },
-            }),
-          ]);
-        if (
-          response?.tasks[0]?.data.length == 1 &&
-          response?.tasks[0]?.data[0].day == currentMilestoneGoals[0].day
-        ) {
-          if (!ifOtherMilestoneCompleted) {
+        const [
+          currentMilestoneGoals,
+          ifOtherMilestoneCompleted,
+          quizLevelData,
+        ] = await Promise.all([
+          MilestoneGoalsTable.find({
+            milestoneId: currentMilestoneId,
+          })
+            .sort({ day: -1 })
+            .lean(),
+          MilestoneResultTable.findOne({
+            userId: userIfExists._id,
+            milestoneId: { $ne: currentMilestoneId },
+          }),
+          QuizLevelTable.findOne({
+            milestoneId: currentMilestoneId,
+            day: response?.tasks[0]?.data[0].day,
+          }),
+        ]);
+        if (response?.tasks[0]?.data.length == 1) {
+          if (quizLevelData) {
             response.tasks[0].data[0] = {
-              ...response?.tasks[0]?.data[0],
-              showNotificationScreen: true,
-              lastGoalOfMilestone: true,
+              ...response.tasks[0].data[0],
+              resultCopyInfo: quizLevelData?.actions[0]?.resultCopyInfo?.pass,
             };
-          } else {
-            response.tasks[0].data[0] = {
-              ...response?.tasks[0]?.data[0],
-              lastGoalOfMilestone: true,
-            };
+          }
+          if (response?.tasks[0]?.data[0].day == currentMilestoneGoals[0].day) {
+            if (!ifOtherMilestoneCompleted) {
+              response.tasks[0].data[0] = {
+                ...response?.tasks[0]?.data[0],
+                showNotificationScreen: true,
+                lastGoalOfMilestone: true,
+              };
+            } else {
+              response.tasks[0].data[0] = {
+                ...response?.tasks[0]?.data[0],
+                lastGoalOfMilestone: true,
+              };
+            }
           }
         }
       } else {
@@ -337,7 +349,7 @@ class MilestoneDBService {
           if (obj.type == 2 || obj.type == 4) {
             response?.tasks[0]?.data.push({ ...obj, quizLevelId });
           } else if (obj.type == 1 || obj.type == 3) {
-            learningActions.push({ ...obj, quizLevelId });
+            learningActions.push({ ...obj, resultCopyInfo: null, quizLevelId });
           }
         }
       });
