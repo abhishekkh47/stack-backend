@@ -1,5 +1,10 @@
-import { AIToolsUsageStatusTable } from "@app/model";
-import { UserTable } from "@app/model";
+import {
+  AIToolsUsageStatusTable,
+  BusinessProfileTable,
+  MilestoneTable,
+  UserTable,
+  StageTable,
+} from "@app/model";
 import {
   SEVEN_DAYS_TO_RESET,
   ALL_NULL_7_DAYS,
@@ -353,6 +358,32 @@ class UserService {
         return BUSINESS_SCORE_MESSAGE[`day_${streak + 1}`];
       }
       return BUSINESS_SCORE_MESSAGE[`day_8`];
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This method is used get the current stage of the user
+   * @param userExists
+   * @return {*}
+   */
+  public async getCurrentStage(userExists: any) {
+    try {
+      const [businessProfle, stages] = await Promise.all([
+        BusinessProfileTable.findOne({ userId: userExists._id }),
+        StageTable.find({ type: 1 }),
+      ]);
+      if (businessProfle?.currentMilestone?.milestoneId) {
+        const currentMilestone = await MilestoneTable.findOne({
+          _id: businessProfle?.currentMilestone?.milestoneId,
+        });
+        const currentStageId = currentMilestone.stageId;
+        const stage = stages.find(
+          (obj) => obj._id.toString() == currentStageId.toString()
+        );
+        return stage;
+      }
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

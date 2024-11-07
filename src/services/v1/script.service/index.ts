@@ -2061,7 +2061,9 @@ class ScriptService {
             update: {
               $set: {
                 title: stage.title,
-                reward: MILESTONE_STAGE_REWARDS[stage.title],
+                reward: MILESTONE_STAGE_REWARDS[stage.title].token,
+                order: MILESTONE_STAGE_REWARDS[stage.title].order,
+                type: 1,
               },
             },
             upsert: true,

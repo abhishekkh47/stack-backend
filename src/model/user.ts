@@ -345,6 +345,7 @@ const schema = new mongoose.Schema<IUserSchema>(
     stage: {
       type: mongoose.Schema.Types.String,
       required: false,
+      ref: "stages",
       default: null,
     },
   },

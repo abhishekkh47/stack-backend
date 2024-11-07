@@ -1160,9 +1160,9 @@ export const MILESTONE_RESULT_COPY = {
 };
 
 export const MILESTONE_STAGE_REWARDS = {
-  "IDEA STAGE": 50,
-  "MVP STAGE": 100,
-  "ANGEL STAGE": 160,
-  "BRAND STAGE": 220,
-  "PMF STAGE": 300,
+  "IDEA STAGE": { token: 50, order: 1 },
+  "MVP STAGE": { token: 100, order: 2 },
+  "ANGEL STAGE": { token: 160, order: 3 },
+  "BRAND STAGE": { token: 220, order: 4 },
+  "PMF STAGE": { token: 300, order: 5 },
 };
