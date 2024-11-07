@@ -1384,17 +1384,23 @@ class MilestoneDBService {
    * @description Update rewards collected today
    * @param userIfExists
    * @param coins tokens collected on completed a challenge or quiz
+   * @param ifLastGoalOfDay whether its the last ai action completed for the day
    * @returns {*}
    */
-  public async updateTodaysRewards(userIfExists: any, coins: number = 0) {
+  public async updateTodaysRewards(
+    userIfExists: any,
+    coins: number = 0,
+    ifLastGoalOfDay: boolean = false
+  ) {
     try {
       const rewardsUpdatedOn = userIfExists?.currentDayRewards?.updatedAt;
       const days = getDaysNum(userIfExists, rewardsUpdatedOn) || 0;
+      const totalCoins = coins + (ifLastGoalOfDay ? 5 : 0);
       let updateObj = {};
       if (days < 1) {
         updateObj = {
           $inc: {
-            "currentDayRewards.quizCoins": coins,
+            "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": 1,
           },
           $set: {
@@ -1406,7 +1412,7 @@ class MilestoneDBService {
         updateObj = {
           $set: {
             "currentDayRewards.streak": 1,
-            "currentDayRewards.quizCoins": coins,
+            "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": 1,
             "currentDayRewards.updatedAt": new Date(),
           },

@@ -56,7 +56,23 @@ class BusinessProfileService {
       let obj = {},
         key = data?.key,
         milestoneName = data?.milestoneName || null,
-        ifLastGoalOfMilestone = data?.lastGoalOfMilestone || false;
+        ifLastGoalOfMilestone = data?.lastGoalOfMilestone || false,
+        ifLastGoalOfDay = data?.lastGoalOfDay || false;
+
+      if (ifLastGoalOfDay) {
+        await UserTable.updateOne(
+          {
+            _id: userIfExists._id,
+          },
+          {
+            $inc: {
+              "currentDayRewards.quizCoins": 5,
+              "businessScore.current": 1,
+            },
+          },
+          { upsert: true }
+        );
+      }
       let businessHistoryObj = [],
         userBusinessScore = null;
       // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
@@ -163,7 +179,11 @@ class BusinessProfileService {
           { upsert: true }
         ),
         data?.goalId || ifBusinessIdea
-          ? MilestoneDBService.updateTodaysRewards(userIfExists, 0)
+          ? MilestoneDBService.updateTodaysRewards(
+              userIfExists,
+              0,
+              ifLastGoalOfDay
+            )
           : Promise.resolve(),
         data?.goalId || ifBusinessIdea
           ? UserDBServiceV4.addStreaks(userIfExists)
