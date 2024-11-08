@@ -69,6 +69,7 @@ export interface IBusinessProfile {
   completedActions: {
     [key: string]: string | IBusinessInfo;
   };
+  stage: mongoose.Schema.Types.ObjectId;
 }
 
 export interface ILogoGenerationInfo {

@@ -438,6 +438,12 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       of: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    stage: {
+      type: mongoose.Schema.Types.String,
+      required: false,
+      ref: "stages",
+      default: null,
+    },
   },
   { timestamps: true }
 );

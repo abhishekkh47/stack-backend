@@ -57,7 +57,7 @@ class BusinessProfileService {
         key = data?.key,
         milestoneName = data?.milestoneName || null,
         ifLastGoalOfMilestone = data?.lastGoalOfMilestone || false,
-        ifLastGoalOfDay = data?.lastGoalOfDay || false;
+        ifLastGoalOfDay = data?.iflastGoalOfDay || false;
 
       if (ifLastGoalOfDay) {
         await UserTable.updateOne(
@@ -66,7 +66,7 @@ class BusinessProfileService {
           },
           {
             $inc: {
-              "currentDayRewards.quizCoins": 5,
+              quizCoins: 5,
               "businessScore.current": 1,
             },
           },

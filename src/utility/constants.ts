@@ -1166,3 +1166,66 @@ export const MILESTONE_STAGE_REWARDS = {
   "BRAND STAGE": { token: 220, order: 4 },
   "PMF STAGE": { token: 300, order: 5 },
 };
+
+export const STAGE_COMPLETE = {
+  "MVP STAGE": {
+    images: [
+      {
+        title: "WOOHOO!",
+        image: "idea_stage.webp",
+        description:
+          "Your business strategy is ready. Now, can you turn it into a minimum viable product (MVP)?",
+      },
+    ],
+    resultSummary: [
+      { title: 50, type: " Tokens", icon: "goldCoin.webp" },
+      { title: 100, type: "K", icon: "dollar_banknote.webp" },
+      { title: 5, type: " Rating", icon: "military_medal.webp" },
+    ],
+    stageInfo: {
+      name: "MVP STAGE", // upcoming stage
+      stageColorInfo: {
+        outer: {
+          colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
+          locations: [0, 0.25, 0.75, 1],
+          angle: 75,
+        },
+        inner: {
+          colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
+          locations: [0, 0.25, 0.75, 1],
+          angle: 90,
+        },
+      },
+    },
+  },
+  "ANGEL STAGE": {
+    images: [
+      {
+        title: "WOOHOO!",
+        image: "angel_stage.webp",
+        description:
+          "Your MVP has captured early excitement... now it’s time to rally angel investors around the vision!",
+      },
+    ],
+    resultSummary: [
+      { title: 100, type: " Tokens", icon: "goldCoin.webp" },
+      { title: 200, type: "K", icon: "dollar_banknote.webp" },
+      { title: 10, type: " Rating", icon: "military_medal.webp" },
+    ],
+    stageInfo: {
+      name: "ANGEL STAGE", // upcoming stage
+      stageColorInfo: {
+        outer: {
+          colors: ["#17ACFF", "#78FAFF"],
+          locations: [0, 0.5],
+          angle: 0,
+        },
+        inner: {
+          colors: ["#17ACFF", "#78FAFF"],
+          locations: [0, 0.75],
+          angle: 180,
+        },
+      },
+    },
+  },
+};

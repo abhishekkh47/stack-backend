@@ -2849,12 +2849,12 @@ class ScriptService {
           options = [];
         }
         resultCopyInfo.push({
-          image: row["Response1"]?.trimEnd() || null,
-          description: row["ResponseImage1"]?.trimEnd() || null,
+          description: row["Response1"]?.trimEnd() || null,
+          image: row["ResponseImage1"]?.trimEnd() || null,
         });
         resultCopyInfo.push({
-          image: row["Response2"]?.trimEnd() || null,
-          description: row["ResponseImage2"]?.trimEnd() || null,
+          description: row["Response2"]?.trimEnd() || null,
+          image: row["ResponseImage2"]?.trimEnd() || null,
         });
         if (eventId) {
           options.push({
