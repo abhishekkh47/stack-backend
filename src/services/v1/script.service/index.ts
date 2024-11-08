@@ -756,9 +756,9 @@ class ScriptService {
           if (data["Simulation Title"] != "") {
             const titleData = data["Simulation Title"].trimEnd().split("NEW: ");
             if (titleData?.length > 1 && titleData[0] == "") {
-              simulationTitle = `Simulation: ${titleData[1]}`;
+              simulationTitle = titleData[1];
             } else {
-              simulationTitle = `Simulation: ${titleData[0]}`;
+              simulationTitle = titleData[0];
             }
           }
           if (data["Simulation Image"] != "") {
