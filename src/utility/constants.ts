@@ -1166,3 +1166,33 @@ export const MILESTONE_STAGE_REWARDS = {
   "BRAND STAGE": { token: 220, order: 4 },
   "PMF STAGE": { token: 300, order: 5 },
 };
+
+export const STAGE_COMPLETE = {
+  images: [
+    {
+      title: "WOOHOO!",
+      image: "idea_stage.webp",
+      description:
+        "Your business strategy is ready. Now, can you turn it into a minimum viable product (MVP)?",
+    },
+  ],
+  resultSummary: [
+    { title: 50, type: " Tokens", icon: "goldCoin.webp" },
+    { title: 100, type: "K", icon: "dollar_banknote.webp" },
+  ],
+  stageInfo: {
+    name: "MVP STAGE",
+    stageColorInfo: {
+      outer: {
+        colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
+        locations: [0, 0.25, 0.75, 1],
+        angle: 75,
+      },
+      inner: {
+        colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
+        locations: [0, 0.25, 0.75, 1],
+        angle: 90,
+      },
+    },
+  },
+};
