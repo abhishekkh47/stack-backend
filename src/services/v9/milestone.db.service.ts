@@ -441,13 +441,22 @@ class MilestoneDBService {
         response?.tasks[0]?.data.length == 1 &&
         isLastDayOfMilestone
       ) {
-        const currentStage = stageData.find(
+        const newStage = stageData.find(
           (obj) =>
             obj._id.toString() == nextMilestoneDetails?.stageId?.toString()
         );
+        const newStageTitle = newStage.title;
+        const newStageDetails =
+          STAGE_COMPLETE[newStageTitle] || STAGE_COMPLETE["ANGEL STAGE"];
         response.tasks[0].data[0] = {
           ...response.tasks[0].data[0],
-          stageUnlockedInfo: { ...STAGE_COMPLETE, stage: currentStage.title },
+          stageUnlockedInfo: {
+            ...newStageDetails,
+            stageInfo: {
+              ...newStageDetails.stageInfo,
+              name: newStageTitle,
+            },
+          },
         };
       }
       if (
@@ -1719,12 +1728,13 @@ class MilestoneDBService {
    */
   public async saveEventResult(userExists: any, data: any) {
     try {
-      const isLastDayOfMilestone = data.isLastDayOfMilestone;
+      const isLastDayOfMilestone = data?.isLastDayOfMilestone;
+      const isStageUnlocked = data?.isStageUnlocked;
       const updatedCoins = userExists.quizCoins + data.tokens;
       const currentCash = userExists?.cash || 50;
       const updatedCash = currentCash + currentCash * data.cash;
       const updatedBusinessScore =
-        userExists.businessScore.current || 90 + data.businessScore;
+        userExists.businessScore?.current || 90 + data.businessScore;
       const userUpdateObj = {
         $set: {
           quizCoins: updatedCoins,
