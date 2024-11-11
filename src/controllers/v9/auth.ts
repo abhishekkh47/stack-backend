@@ -149,7 +149,7 @@ class AuthController extends BaseController {
                 if (currentStage) {
                   await UserTable.findOneAndUpdate(
                     { _id: userExists._id },
-                    { $set: { stage: currentStage?.title } }
+                    { $set: { stage: currentStage?._id } }
                   );
                 }
               }

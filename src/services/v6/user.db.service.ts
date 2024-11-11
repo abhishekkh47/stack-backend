@@ -4,6 +4,8 @@ import {
   UserCommunityTable,
   UserTable,
   DripshopItemTable,
+  BusinessProfileTable,
+  StageTable,
 } from "@app/model";
 import { ObjectId } from "mongodb";
 import {
@@ -17,6 +19,7 @@ import {
   COMMUNITY_CHALLENGE_CLAIM_STATUS,
   RALLY_COMMUNITY_REWARD,
   getDaysNum,
+  STAGE_COMPLETE,
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
 import { QuizDBService, CommunityDBService } from "../v6";
@@ -141,6 +144,7 @@ class UserDBService {
               "$businessProfile.currentMilestone.milestoneId" || null,
             businessScore: 1,
             description: "$businessProfile.description",
+            stage: 1,
           },
         },
       ]).exec()
@@ -148,6 +152,10 @@ class UserDBService {
     if (!data) {
       throw Error("Invalid user ID entered.");
     }
+    if (data?.businessScore && !data?.businessScore?.operationsScore) {
+      data = await this.updateBusinessSubScores(userId, data);
+    }
+    data = await this.getStageColorInfo(data);
     const currentDate = convertDateToTimeZone(
       new Date(),
       data?.timezone || DEFAULT_TIMEZONE
@@ -432,6 +440,65 @@ class UserDBService {
         { upsert: true }
       );
       return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This service is used to business category score of existing users
+   * @param userId
+   * @param data user profile data
+   */
+  public async updateBusinessSubScores(userId: any, data: any) {
+    try {
+      let updateObj = {};
+      const businessProfile = await BusinessProfileTable.findOne({
+        userId,
+      });
+      const ideaReport = businessProfile?.businessHistory[0]?.value || null;
+      const overallScore = data?.businessScore?.current || 90;
+      const ideaAnalysis = ideaReport["ideaAnalysis"];
+      const opsScore = ideaAnalysis[0]?.rating || overallScore;
+      const productScore = ideaAnalysis[1]?.rating || overallScore;
+      const growthScore = ideaAnalysis[2]?.rating || overallScore;
+      updateObj = {
+        operationsScore: opsScore,
+        productScore,
+        growthScore,
+      };
+      data.businessScore = { ...data.businessScore, ...updateObj };
+      await UserTable.updateOne(
+        {
+          _id: userId,
+        },
+        updateObj,
+        { upsert: true }
+      );
+      return data;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This service is used get the gradient color details of current stage
+   * @param data user profile data
+   */
+  public async getStageColorInfo(data: any) {
+    try {
+      const stageDetails = await StageTable.find({ _id: data.stage });
+      const stageData = STAGE_COMPLETE["MVP STAGE"];
+      const colorInfo = {
+        stage: {
+          ...stageData.stageInfo.colorInfo,
+        },
+        score: {
+          outer: stageData.stageInfo.colorInfo.outer,
+        },
+      };
+      data["colorInfo"] = { ...colorInfo };
+      return data;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
