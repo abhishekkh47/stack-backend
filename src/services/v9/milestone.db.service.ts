@@ -381,8 +381,8 @@ class MilestoneDBService {
               lockedAction = false;
               isSimulationAvailable = true;
             }
-            if (!lockedQuest && obj.type == 4 && !isSimulationAvailable) {
-              lockedAction = false;
+            if (!lockedQuest && obj.type == 4 && isSimulationAvailable) {
+              lockedAction = true;
             }
             simsAndEvent.push({
               ...obj,
@@ -1770,22 +1770,34 @@ class MilestoneDBService {
       const isLastDayOfMilestone = data?.isLastDayOfMilestone;
       const stageUnlockedInfo = data?.stageUnlockedInfo;
       let updatedCoins = userExists.quizCoins + data.tokens;
-      const currentCash = userExists?.cash || 50;
+      const currentCash = userExists?.cash > 0 ? userExists?.cash : 50;
       const changeInCash = Math.floor((currentCash / 100) * data.cash);
       updatedCash = currentCash + changeInCash;
       let updatedBusinessScore =
         (userExists.businessScore?.current || 90) + data.businessScore;
+      let updatedOperationsScore =
+        (userExists.businessScore?.OperationsScore || 90) + data.businessScore;
+      let updatedProductScore =
+        (userExists.businessScore?.ProductScore || 90) + data.businessScore;
+      let updatedGrowthScore =
+        (userExists.businessScore?.GrowthScore || 90) + data.businessScore;
       if (stageUnlockedInfo) {
         const resultSummary = stageUnlockedInfo?.resultSummary;
         updatedCoins += resultSummary[0].title;
         updatedCash += resultSummary[1].title;
         updatedBusinessScore += resultSummary[2].title;
+        updatedOperationsScore += resultSummary[2].title;
+        updatedProductScore += resultSummary[2].title;
+        updatedGrowthScore += resultSummary[2].title;
       }
       const userUpdateObj = {
         $set: {
           quizCoins: updatedCoins,
           cash: updatedCash,
           "businessScore.current": updatedBusinessScore,
+          "businessScore.operationsScore": updatedOperationsScore,
+          "businessScore.productScore": updatedProductScore,
+          "businessScore.growthScore": updatedGrowthScore,
         },
       };
       let businessProfileObj = {};

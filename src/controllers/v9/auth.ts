@@ -153,6 +153,12 @@ class AuthController extends BaseController {
                   );
                 }
               }
+              if (!userExists.cash || userExists.cash == 0) {
+                await UserTable.findOneAndUpdate(
+                  { _id: userExists._id },
+                  { $set: { cash: 50 } }
+                );
+              }
               let dataSentInCrm: any = {
                 Email: reqParam.email,
                 User_ID: userExists._id,
