@@ -20,6 +20,7 @@ import {
   CORRECT_ANSWER_FUEL_POINTS,
   SIMULATION_RESULT_COPY,
   SIMULATION_QUIZ_FUEL,
+  SIMULATION_REWARDS,
 } from "@app/utility";
 import { CommunityDBService } from "@app/services/v6";
 
@@ -36,7 +37,9 @@ class QuizDBService {
     const { solvedQuestions, quizLevelId } = reqParam;
     let totalXPPoints = 0,
       resultScreenInfo = null,
-      pointsEarnedFromQuiz = 0;
+      pointsEarnedFromQuiz = 0,
+      cashEarnedFromQuiz = 0,
+      ratingEarnedFromQuiz = 0;
     const milestoneLevel = await QuizLevelTable.findOne({ _id: quizLevelId });
     const quizType = quizExists.quizType;
     /**
@@ -85,7 +88,13 @@ class QuizDBService {
       resultScreenInfo =
         milestoneLevel?.actions[2].resultCopyInfo.pass ||
         SIMULATION_RESULT_COPY.pass;
-      pointsEarnedFromQuiz = SIMULATION_QUIZ_FUEL;
+      pointsEarnedFromQuiz = SIMULATION_REWARDS.quizCoins;
+      if (userIfExists.cash && userIfExists.cash > 0) {
+        cashEarnedFromQuiz = SIMULATION_REWARDS.cash;
+      } else {
+        cashEarnedFromQuiz = SIMULATION_REWARDS.cash + 50; // add default cash for existing users
+      }
+      ratingEarnedFromQuiz = SIMULATION_REWARDS.businessScore;
     }
     QuizResult.create({
       topicId: reqParam?.topicId,
@@ -107,6 +116,11 @@ class QuizDBService {
     }
     let incrementObj: any = {
       quizCoins: pointsEarnedFromQuiz,
+      cash: cashEarnedFromQuiz,
+      "businessScore.current": ratingEarnedFromQuiz,
+      "businessScore.operationsScore": ratingEarnedFromQuiz,
+      "businessScore.productScore": ratingEarnedFromQuiz,
+      "businessScore.growthScore": ratingEarnedFromQuiz,
     };
     let query: any = {
       $inc: incrementObj,

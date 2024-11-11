@@ -32,7 +32,7 @@ export interface IUser extends IAccount {
   currentDayRewards: ICurrentDayRewards;
   businessScore: IBusinessScore;
   cash: number;
-  stage: string;
+  stage: mongoose.Schema.Types.ObjectId;
 }
 
 export interface IAccount {
@@ -199,4 +199,7 @@ export interface IBusinessScore {
   to track number of days, user has logged in continuously
   */
   dayContinued: number;
+  operationsScore: number;
+  productScore: number;
+  growthScore: number;
 }

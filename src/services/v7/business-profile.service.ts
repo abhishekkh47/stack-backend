@@ -56,9 +56,26 @@ class BusinessProfileService {
       let obj = {},
         key = data?.key,
         milestoneName = data?.milestoneName || null,
-        ifLastGoalOfMilestone = data?.lastGoalOfMilestone || false;
+        ifLastGoalOfMilestone = data?.lastGoalOfMilestone,
+        ifLastGoalOfDay = data?.ifLastGoalOfDay;
+
+      if (ifLastGoalOfDay) {
+        await UserTable.updateOne(
+          {
+            _id: userIfExists._id,
+          },
+          {
+            $inc: {
+              quizCoins: 5,
+              "businessScore.current": 1,
+            },
+          },
+          { upsert: true }
+        );
+      }
       let businessHistoryObj = [],
-        userBusinessScore = null;
+        userBusinessScore = null,
+        businessSubScoreObj = {};
       // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
       if (data.savedBusinessIdeas) {
         let latestSelection = data.savedBusinessIdeas[0];
@@ -76,6 +93,12 @@ class BusinessProfileService {
         }
         userBusinessScore =
           Number(latestSelection.rating) || DEFAULT_BUSINESS_SCORE;
+        const ideaAnalysis = latestSelection?.ideaAnalysis;
+        businessSubScoreObj = {
+          operationsScore: ideaAnalysis[0]?.rating || userBusinessScore,
+          productScore: ideaAnalysis[1]?.rating || userBusinessScore,
+          growthScore: ideaAnalysis[2]?.rating || userBusinessScore,
+        };
         if (
           !businessProfile ||
           (businessProfile && !businessProfile?.description)
@@ -163,7 +186,11 @@ class BusinessProfileService {
           { upsert: true }
         ),
         data?.goalId || ifBusinessIdea
-          ? MilestoneDBService.updateTodaysRewards(userIfExists, 0)
+          ? MilestoneDBService.updateTodaysRewards(
+              userIfExists,
+              0,
+              ifLastGoalOfDay
+            )
           : Promise.resolve(),
         data?.goalId || ifBusinessIdea
           ? UserDBServiceV4.addStreaks(userIfExists)

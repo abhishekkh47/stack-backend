@@ -336,6 +336,18 @@ const schema = new mongoose.Schema<IUserSchema>(
           default: 0,
         },
       },
+      operationsScore: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      productScore: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
+      growthScore: {
+        type: mongoose.Schema.Types.Number,
+        default: 0,
+      },
     },
     cash: {
       type: mongoose.Schema.Types.Number,
@@ -343,8 +355,9 @@ const schema = new mongoose.Schema<IUserSchema>(
       default: 0,
     },
     stage: {
-      type: mongoose.Schema.Types.String,
+      type: mongoose.Schema.Types.ObjectId,
       required: false,
+      ref: "stages",
       default: null,
     },
   },

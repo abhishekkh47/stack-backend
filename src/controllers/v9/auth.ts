@@ -5,6 +5,7 @@ import {
   CoachProfileTable,
   LeagueTable,
   BusinessProfileTable,
+  StageTable,
 } from "@app/model";
 import {
   TokenService,
@@ -27,6 +28,7 @@ import {
   BusinessProfileService as BusinessProfileServiceV9,
   UserService as UserServiceV9,
   MilestoneDBService,
+  UserService,
 } from "@app/services/v9";
 import { ChecklistDBService } from "@app/services/v9";
 
@@ -49,25 +51,30 @@ class AuthController extends BaseController {
             let coachProfile = null;
             let initialMessage = null;
             let thingsToTalkAbout = null;
-            let [userExists, adminDetails, leagues] = await Promise.all([
-              UserTable.findOne({ email }),
-              AdminTable.findOne({}),
-              LeagueTable.find(
-                {},
-                {
-                  _id: 0,
-                  name: 1,
-                  image: 1,
-                  colorCode: 1,
-                  minPoint: 1,
-                  maxPoint: 1,
-                }
-              ),
-            ]);
+            let [userExists, adminDetails, leagues, milestoneStages] =
+              await Promise.all([
+                UserTable.findOne({ email }),
+                AdminTable.findOne({}),
+                LeagueTable.find(
+                  {},
+                  {
+                    _id: 0,
+                    name: 1,
+                    image: 1,
+                    colorCode: 1,
+                    minPoint: 1,
+                    maxPoint: 1,
+                  }
+                ),
+                StageTable.find({ type: 1 }),
+              ]);
             await SocialService.verifySocial(reqParam);
 
             if (!userExists) {
               const uniqueReferralCode = await makeUniqueReferalCode();
+              const initialStage = milestoneStages.find(
+                (obj) => obj.order == 1
+              );
               const createQuery: any = {
                 email: reqParam.email,
                 firstName: reqParam.firstName ? reqParam.firstName : null,
@@ -76,6 +83,7 @@ class AuthController extends BaseController {
                 type: reqParam.type,
                 referralCode: uniqueReferralCode,
                 preLoadedCoins: adminDetails.stackCoins,
+                stage: initialStage?._id,
               };
               userExists = await UserTable.create(createQuery);
               // To handle inaccurate streak counts for users who signup again after deleting their accounts
@@ -134,6 +142,23 @@ class AuthController extends BaseController {
                 dataSentInCrm
               );
             } else {
+              if (!userExists.stage) {
+                const currentStage = await UserService.getCurrentStage(
+                  userExists
+                );
+                if (currentStage) {
+                  await UserTable.findOneAndUpdate(
+                    { _id: userExists._id },
+                    { $set: { stage: currentStage?._id } }
+                  );
+                }
+              }
+              if (!userExists.cash || userExists.cash == 0) {
+                await UserTable.findOneAndUpdate(
+                  { _id: userExists._id },
+                  { $set: { cash: 50 } }
+                );
+              }
               let dataSentInCrm: any = {
                 Email: reqParam.email,
                 User_ID: userExists._id,

@@ -62,6 +62,7 @@ import {
   CHALLENGE_TYPE,
   SIMULATION_RESULT_COPY,
   MILESTONE_STAGE_REWARDS,
+  MILESTONE_RESULT_COPY,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2061,7 +2062,9 @@ class ScriptService {
             update: {
               $set: {
                 title: stage.title,
-                reward: MILESTONE_STAGE_REWARDS[stage.title],
+                reward: MILESTONE_STAGE_REWARDS[stage.title]?.token || 0,
+                order: MILESTONE_STAGE_REWARDS[stage.title]?.order || 0,
+                type: 1,
               },
             },
             upsert: true,
@@ -2846,12 +2849,12 @@ class ScriptService {
           options = [];
         }
         resultCopyInfo.push({
-          image: row["Response1"]?.trimEnd() || null,
-          description: row["ResponseImage1"]?.trimEnd() || null,
+          description: row["Response1"]?.trimEnd() || null,
+          image: row["ResponseImage1"]?.trimEnd() || null,
         });
         resultCopyInfo.push({
-          image: row["Response2"]?.trimEnd() || null,
-          description: row["ResponseImage2"]?.trimEnd() || null,
+          description: row["Response2"]?.trimEnd() || null,
+          image: row["ResponseImage2"]?.trimEnd() || null,
         });
         if (eventId) {
           options.push({
@@ -2861,7 +2864,7 @@ class ScriptService {
             fans: Number(row["Fans"]?.trimEnd()) || 0,
             cash: Number(row["Cash"]?.trimEnd()) || 0,
             businessScore: Number(row["Business Score"]?.trimEnd()) || 0,
-            token: Number(row["Tokens"]?.trimEnd()) || 0,
+            tokens: Number(row["Token"]?.trimEnd()) || 0,
           });
           resultCopyInfo = [];
         }
@@ -2928,7 +2931,10 @@ class ScriptService {
                 description: row["PassCopy2"]?.trimEnd(),
               },
             ],
-            resultSummary: SIMULATION_RESULT_COPY.pass.resultSummary,
+            resultSummary:
+              quizData.quizType == 2
+                ? SIMULATION_RESULT_COPY.pass.resultSummary
+                : MILESTONE_RESULT_COPY.resultSummary,
           },
         };
       }

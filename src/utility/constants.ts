@@ -1125,7 +1125,7 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 10, type: " Token", icon: "goldCoin.webp" },
+      { title: 10, type: " Tokens", icon: "goldCoin.webp" },
       { title: 50, type: "K", icon: "dollar_banknote.webp" },
       { title: 2, type: " Rating", icon: "military_medal.webp" },
     ],
@@ -1154,15 +1154,84 @@ export const MILESTONE_RESULT_COPY = {
   passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
   passImage2: "passImage2.webp",
   resultSummary: [
-    { title: 5, icon: "goldCoin.webp" },
-    { title: 1, icon: "military_medal.webp" },
+    { title: 5, type: " Tokens", icon: "goldCoin.webp" },
+    { title: 1, type: " Rating", icon: "military_medal.webp" },
   ],
 };
 
 export const MILESTONE_STAGE_REWARDS = {
-  "IDEA STAGE": 50,
-  "MVP STAGE": 100,
-  "ANGEL STAGE": 160,
-  "BRAND STAGE": 220,
-  "PMF STAGE": 300,
+  "IDEA STAGE": { token: 50, order: 1 },
+  "MVP STAGE": { token: 100, order: 2 },
+  "ANGEL STAGE": { token: 160, order: 3 },
+  "BRAND STAGE": { token: 220, order: 4 },
+  "PMF STAGE": { token: 300, order: 5 },
+};
+
+export const STAGE_COMPLETE = {
+  "MVP STAGE": {
+    images: [
+      {
+        title: "WOOHOO!",
+        image: "idea_stage.webp",
+        description:
+          "Your business strategy is ready. Now, can you turn it into a minimum viable product (MVP)?",
+      },
+    ],
+    resultSummary: [
+      { title: 50, type: " Tokens", icon: "goldCoin.webp" },
+      { title: 100, type: "K", icon: "dollar_banknote.webp" },
+      { title: 5, type: " Rating", icon: "military_medal.webp" },
+    ],
+    stageInfo: {
+      name: "MVP STAGE", // upcoming stage
+      colorInfo: {
+        outer: {
+          colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
+          locations: [0, 0.25, 0.75, 1],
+          angle: 75,
+        },
+        inner: {
+          colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
+          locations: [0, 0.25, 0.75, 1],
+          angle: 90,
+        },
+      },
+    },
+  },
+  "ANGEL STAGE": {
+    images: [
+      {
+        title: "WOOHOO!",
+        image: "angel_stage.webp",
+        description:
+          "Your MVP has captured early excitement... now it’s time to rally angel investors around the vision!",
+      },
+    ],
+    resultSummary: [
+      { title: 100, type: " Tokens", icon: "goldCoin.webp" },
+      { title: 200, type: "K", icon: "dollar_banknote.webp" },
+      { title: 10, type: " Rating", icon: "military_medal.webp" },
+    ],
+    stageInfo: {
+      name: "ANGEL STAGE", // upcoming stage
+      colorInfo: {
+        outer: {
+          colors: ["#17ACFF", "#78FAFF"],
+          locations: [0, 0.5],
+          angle: 0,
+        },
+        inner: {
+          colors: ["#17ACFF", "#78FAFF"],
+          locations: [0, 0.75],
+          angle: 180,
+        },
+      },
+    },
+  },
+};
+
+export const SIMULATION_REWARDS = {
+  quizCoins: 25,
+  cash: 50,
+  businessScore: 2,
 };
