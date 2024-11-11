@@ -74,7 +74,8 @@ class BusinessProfileService {
         );
       }
       let businessHistoryObj = [],
-        userBusinessScore = null;
+        userBusinessScore = null,
+        businessSubScoreObj = {};
       // when user is onboarded, 'savedBusinessIdeas' key will be sent to store business-idea, description and ratings
       if (data.savedBusinessIdeas) {
         let latestSelection = data.savedBusinessIdeas[0];
@@ -92,6 +93,12 @@ class BusinessProfileService {
         }
         userBusinessScore =
           Number(latestSelection.rating) || DEFAULT_BUSINESS_SCORE;
+        const ideaAnalysis = latestSelection?.ideaAnalysis;
+        businessSubScoreObj = {
+          operationsScore: ideaAnalysis[0]?.rating || userBusinessScore,
+          productScore: ideaAnalysis[1]?.rating || userBusinessScore,
+          growthScore: ideaAnalysis[2]?.rating || userBusinessScore,
+        };
         if (
           !businessProfile ||
           (businessProfile && !businessProfile?.description)

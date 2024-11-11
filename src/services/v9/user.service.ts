@@ -41,7 +41,8 @@ class UserService {
    */
   public async addBusinessScore(
     userDetails: any,
-    userBusinessScore: number = 0
+    userBusinessScore: number = 0,
+    businessSubScoreObj: any = null
   ) {
     try {
       let isBusinessScoreToBeUpdated = false,
@@ -100,6 +101,7 @@ class UserService {
           updatedDate: currentDate,
           last7days,
           dayContinued,
+          ...businessSubScoreObj,
         };
         isBusinessScoreToBeUpdated = true;
       } else if (diffDays > 1) {
