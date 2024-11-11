@@ -56,8 +56,8 @@ class BusinessProfileService {
       let obj = {},
         key = data?.key,
         milestoneName = data?.milestoneName || null,
-        ifLastGoalOfMilestone = data?.lastGoalOfMilestone || false,
-        ifLastGoalOfDay = data?.iflastGoalOfDay || false;
+        ifLastGoalOfMilestone = data?.lastGoalOfMilestone,
+        ifLastGoalOfDay = data?.ifLastGoalOfDay;
 
       if (ifLastGoalOfDay) {
         await UserTable.updateOne(

@@ -1184,7 +1184,7 @@ export const STAGE_COMPLETE = {
     ],
     stageInfo: {
       name: "MVP STAGE", // upcoming stage
-      stageColorInfo: {
+      colorInfo: {
         outer: {
           colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
           locations: [0, 0.25, 0.75, 1],
@@ -1214,7 +1214,7 @@ export const STAGE_COMPLETE = {
     ],
     stageInfo: {
       name: "ANGEL STAGE", // upcoming stage
-      stageColorInfo: {
+      colorInfo: {
         outer: {
           colors: ["#17ACFF", "#78FAFF"],
           locations: [0, 0.5],
@@ -1228,4 +1228,10 @@ export const STAGE_COMPLETE = {
       },
     },
   },
+};
+
+export const SIMULATION_REWARDS = {
+  quizCoins: 25,
+  cash: 50,
+  businessScore: 2,
 };
