@@ -145,6 +145,7 @@ class UserDBService {
             businessScore: 1,
             description: "$businessProfile.description",
             stage: 1,
+            cash: 1
           },
         },
       ]).exec()
@@ -152,7 +153,12 @@ class UserDBService {
     if (!data) {
       throw Error("Invalid user ID entered.");
     }
-    if (data?.businessScore && !data?.businessScore?.operationsScore) {
+    if (
+      data?.businessScore &&
+      data?.businessScore.current > 0 &&
+      (!data?.businessScore?.operationsScore ||
+        data?.businessScore?.operationsScore == 0)
+    ) {
       data = await this.updateBusinessSubScores(userId, data);
     }
     data = await this.getStageColorInfo(data);
@@ -458,7 +464,7 @@ class UserDBService {
       });
       const ideaReport = businessProfile?.businessHistory[0]?.value || null;
       const overallScore = data?.businessScore?.current || 90;
-      const ideaAnalysis = ideaReport["ideaAnalysis"];
+      const ideaAnalysis = ideaReport["ideaAnalysis"] || null;
       const opsScore = ideaAnalysis[0]?.rating || overallScore;
       const productScore = ideaAnalysis[1]?.rating || overallScore;
       const growthScore = ideaAnalysis[2]?.rating || overallScore;

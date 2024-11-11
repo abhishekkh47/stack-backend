@@ -89,7 +89,11 @@ class QuizDBService {
         milestoneLevel?.actions[2].resultCopyInfo.pass ||
         SIMULATION_RESULT_COPY.pass;
       pointsEarnedFromQuiz = SIMULATION_REWARDS.quizCoins;
-      cashEarnedFromQuiz = SIMULATION_REWARDS.cash;
+      if (userIfExists.cash && userIfExists.cash > 0) {
+        cashEarnedFromQuiz = SIMULATION_REWARDS.cash;
+      } else {
+        cashEarnedFromQuiz = SIMULATION_REWARDS.cash + 50; // add default cash for existing users
+      }
       ratingEarnedFromQuiz = SIMULATION_REWARDS.businessScore;
     }
     QuizResult.create({
@@ -114,6 +118,9 @@ class QuizDBService {
       quizCoins: pointsEarnedFromQuiz,
       cash: cashEarnedFromQuiz,
       "businessScore.current": ratingEarnedFromQuiz,
+      "businessScore.operationsScore": ratingEarnedFromQuiz,
+      "businessScore.productScore": ratingEarnedFromQuiz,
+      "businessScore.growthScore": ratingEarnedFromQuiz,
     };
     let query: any = {
       $inc: incrementObj,
