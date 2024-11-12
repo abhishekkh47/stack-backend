@@ -1168,11 +1168,41 @@ export const MILESTONE_STAGE_REWARDS = {
 };
 
 export const STAGE_COMPLETE = {
-  "MVP STAGE": {
+  "IDEA STAGE": {
     images: [
       {
         title: "WOOHOO!",
         image: "idea_stage.webp",
+        description:
+          "Your business strategy is ready. Now, can you turn it into a minimum viable product (MVP)?",
+      },
+    ],
+    resultSummary: [
+      { title: 50, type: " Tokens", icon: "goldCoin.webp" },
+      { title: 100, type: "K", icon: "dollar_banknote.webp" },
+      { title: 5, type: " Rating", icon: "military_medal.webp" },
+    ],
+    stageInfo: {
+      name: "IDEA STAGE",
+      colorInfo: {
+        outer: {
+          colors: ["#FFF8C1", "#C2E8FD", "#909090", "#DDDDDD", "#FFFFFF"],
+          locations: [0, 0, 0.31, 0.76, 1],
+          angle: 75,
+        },
+        inner: {
+          colors: ["#FFF8C1", "#C2E8FD", "#909090", "#DDDDDD", "#FFFFFF"],
+          locations: [0, 0, 0.31, 0.76, 1],
+          angle: 90,
+        },
+      },
+    },
+  },
+  "MVP STAGE": {
+    images: [
+      {
+        title: "WOOHOO!",
+        image: "mvp_stage.webp",
         description:
           "Your business strategy is ready. Now, can you turn it into a minimum viable product (MVP)?",
       },
