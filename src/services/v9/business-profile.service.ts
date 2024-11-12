@@ -27,7 +27,6 @@ import {
   IDEA_GENERATOR_INFO,
   IDEA_ANALYSIS,
   replacePlaceholders,
-  NEW_IDEA_GEN,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";

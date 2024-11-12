@@ -105,6 +105,20 @@ class UserDBService {
           },
         },
         {
+          $lookup: {
+            from: "stages",
+            localField: "stage",
+            foreignField: "_id",
+            as: "stageDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$stageDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $project: {
             _id: 1,
             email: 1,
@@ -145,7 +159,8 @@ class UserDBService {
             businessScore: 1,
             description: "$businessProfile.description",
             stage: 1,
-            cash: 1
+            cash: 1,
+            stageName: "$stageDetails.title",
           },
         },
       ]).exec()
@@ -433,6 +448,7 @@ class UserDBService {
             "currentDayRewards.streak": 0,
             "currentDayRewards.quizCoins": 0,
             "currentDayRewards.goals": 0,
+            "currentDayRewards.cash": 0,
             "currentDayRewards.updatedAt": new Date(),
           },
           upsert: true,

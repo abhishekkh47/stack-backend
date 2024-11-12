@@ -1033,7 +1033,7 @@ export const IDEA_ANALYSIS = {
     },
     feature: {
       name: "Key Feature Score",
-      description: `How it works:\nKey feature score evaluates how focused your product is on one core feature and is scored using a 10-tier ranking system.\n\nKey Feature:\n{productCustomerDescription}\n\nExplanation:\nThis indicates a strong focus on developing and iterating on a specific key feature before adding additional features.`,
+      description: `How it works:\nKey feature score evaluates how focused your product is on one core feature and is scored using a 10-tier ranking system.\n\nKey Feature:\n{problemCoreFeature}\n\nExplanation:\nThis indicates a strong focus on developing and iterating on a specific key feature before adding additional features.`,
       slug: "KF",
     },
     differentiator: {
@@ -1125,7 +1125,7 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 10, type: " Tokens", icon: "goldCoin.webp" },
+      { title: 25, type: " Tokens", icon: "goldCoin.webp" },
       { title: 50, type: "K", icon: "dollar_banknote.webp" },
       { title: 2, type: " Rating", icon: "military_medal.webp" },
     ],
@@ -1166,6 +1166,8 @@ export const MILESTONE_STAGE_REWARDS = {
   "BRAND STAGE": { token: 220, order: 4 },
   "PMF STAGE": { token: 300, order: 5 },
 };
+
+export const INITIAL_CASH = 50;
 
 export const STAGE_COMPLETE = {
   "IDEA STAGE": {

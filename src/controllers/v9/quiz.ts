@@ -56,6 +56,7 @@ class QuizController extends BaseController {
             totalFuel,
             isGiftedStreakFreeze,
             updatedUser,
+            totalCash,
             resultScreenInfo,
           } = await QuizDBService.storeQuizInformation(
             userIfExists,
@@ -74,7 +75,11 @@ class QuizController extends BaseController {
               updatedXPPoints
             ),
             UserDBService.addStreaks(updatedUser),
-            MilestoneDBService.updateTodaysRewards(userIfExists, totalFuel),
+            MilestoneDBService.updateTodaysRewards(
+              userIfExists,
+              totalFuel,
+              totalCash
+            ),
             QuizDBService.updateGoalCount(userIfExists),
           ]);
 

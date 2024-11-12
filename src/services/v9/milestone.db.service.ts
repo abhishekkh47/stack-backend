@@ -256,6 +256,9 @@ class MilestoneDBService {
         response.tasks[1].data = completedActionsResponse;
       }
       currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
+      if (!currentMilestoneId) {
+        currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
+      }
       const currentMilestoneGoals = await MilestoneGoalsTable.find({
         milestoneId: currentMilestoneId,
       })
@@ -347,7 +350,7 @@ class MilestoneDBService {
         (a, b) => order[a?.type] - order[b?.type]
       );
       const currentDayIds = learningContent?.currentDayGoal?.map((obj) =>
-        obj.quizId.toString()
+        obj?.quizId?.toString()
       );
       if (
         allLearningContent &&
@@ -359,7 +362,7 @@ class MilestoneDBService {
           sectionKey: GOALS_OF_THE_DAY.key,
         });
       }
-      const quizIds = allLearningContent?.map((obj) => obj.quizId);
+      const quizIds = allLearningContent?.map((obj) => obj?.quizId);
       const completedQuizzes = await QuizResult.find(
         {
           userId: userIfExists._id,
@@ -368,32 +371,38 @@ class MilestoneDBService {
         { quizId: 1 }
       );
       allLearningContent?.forEach(async (obj) => {
-        const currentQuizId = obj.quizId.toString();
-        const isQuizCompleted = completedQuizzes.some(
-          (quiz) => quiz.quizId.toString() == currentQuizId
-        );
-        if (response?.tasks[0]?.data.length > 0) {
-          lockedQuest = true;
-        }
-        if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          if (obj.type == 2 || obj.type == 4) {
-            if (!lockedQuest && obj.type == 2) {
-              lockedAction = false;
-              isSimulationAvailable = true;
+        if (obj) {
+          const currentQuizId = obj?.quizId?.toString();
+          const isQuizCompleted = completedQuizzes.some(
+            (quiz) => quiz?.quizId?.toString() == currentQuizId
+          );
+          if (response?.tasks[0]?.data.length > 0) {
+            lockedQuest = true;
+          }
+          if (!isQuizCompleted && currentDayIds?.includes(currentQuizId)) {
+            if (obj.type == 2 || obj.type == 4) {
+              if (!lockedQuest && obj.type == 2) {
+                lockedAction = false;
+                isSimulationAvailable = true;
+              }
+              if (!lockedQuest && obj.type == 4 && !isSimulationAvailable) {
+                lockedAction = false; // Unlock event
+              } else if (obj.type == 4 && isSimulationAvailable) {
+                lockedAction = true; // Keep the event locked if simulation is available
+              }
+              simsAndEvent.push({
+                ...obj,
+                quizLevelId,
+                isLocked: lockedAction,
+                isLastDayOfMilestone,
+              });
+            } else if (obj.type == 1 || obj.type == 3) {
+              learningActions.push({
+                ...obj,
+                resultCopyInfo: null,
+                quizLevelId,
+              });
             }
-            if (!lockedQuest && obj.type == 4 && !isSimulationAvailable) {
-              lockedAction = false; // Unlock event
-            } else if (obj.type == 4 && isSimulationAvailable) {
-              lockedAction = true; // Keep the event locked if simulation is available
-            }
-            simsAndEvent.push({
-              ...obj,
-              quizLevelId,
-              isLocked: lockedAction,
-              isLastDayOfMilestone,
-            });
-          } else if (obj.type == 1 || obj.type == 3) {
-            learningActions.push({ ...obj, resultCopyInfo: null, quizLevelId });
           }
         }
       });
@@ -444,10 +453,10 @@ class MilestoneDBService {
         })
         .filter(Boolean);
       if (completedLearnings.length) {
-        if (response?.tasks[2]) {
-          response.tasks[2].data = [
+        if (response?.tasks[1]) {
+          response.tasks[1].data = [
             ...completedLearnings,
-            ...response.tasks[2].data,
+            ...response.tasks[1].data,
           ];
         } else {
           response.tasks.push({
@@ -475,7 +484,7 @@ class MilestoneDBService {
           (obj) =>
             obj._id.toString() == nextMilestoneDetails?.stageId?.toString()
         );
-        const newStageTitle = newStage.title;
+        const newStageTitle = newStage?.title;
         const newStageDetails =
           STAGE_COMPLETE[newStageTitle] || STAGE_COMPLETE["ANGEL STAGE"];
         response.tasks[0].data[0] = {
@@ -488,12 +497,6 @@ class MilestoneDBService {
             },
           },
         };
-      }
-      if (
-        response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
-        response?.tasks[0].data.length == 0
-      ) {
-        response?.tasks.splice(0, 1);
       }
       if (
         response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
@@ -1496,12 +1499,14 @@ class MilestoneDBService {
    * @description Update rewards collected today
    * @param userIfExists
    * @param coins tokens collected on completed a challenge or quiz
+   * @param cash cash collected on completed a challenge or quiz
    * @param ifLastGoalOfDay whether its the last ai action completed for the day
    * @returns {*}
    */
   public async updateTodaysRewards(
     userIfExists: any,
     coins: number = 0,
+    cash: number = 0,
     ifLastGoalOfDay: boolean = false
   ) {
     try {
@@ -1514,6 +1519,7 @@ class MilestoneDBService {
           $inc: {
             "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": 1,
+            "currentDayRewards.cash": cash,
           },
           $set: {
             "currentDayRewards.streak": 1,
@@ -1526,6 +1532,7 @@ class MilestoneDBService {
             "currentDayRewards.streak": 1,
             "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": 1,
+            "currentDayRewards.cash": cash,
             "currentDayRewards.updatedAt": new Date(),
           },
           upsert: true,
@@ -1553,13 +1560,14 @@ class MilestoneDBService {
     try {
       const currentDayRewards = userIfExists?.currentDayRewards;
       if (currentDayRewards) {
-        const { streak, quizCoins, goals, updatedAt } = currentDayRewards;
+        const { streak, quizCoins, goals, cash, updatedAt } = currentDayRewards;
         const days = getDaysNum(userIfExists, updatedAt);
         if (days < 1) {
           return {
             streakProgress: streak || 0,
             fuelProgress: quizCoins || 0,
             goalProgress: goals || 0,
+            cashProgress: cash || 0,
           };
         }
       }
@@ -1567,6 +1575,7 @@ class MilestoneDBService {
         streakProgress: 0,
         fuelProgress: 0,
         goalProgress: 0,
+        cashProgress: 0,
       };
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -1746,7 +1755,7 @@ class MilestoneDBService {
           ...action,
           resultCopyInfo: null,
           ...eventDetails,
-          title: "New Event",
+          title: "ALERT",
           iconBackgroundColor: "#4885FF29",
           iconImage: "cal.webp",
           time: "AI-Assisted - 2 min",
@@ -1768,7 +1777,8 @@ class MilestoneDBService {
    */
   public async saveEventResult(userExists: any, data: any) {
     try {
-      let updatedCash = 0;
+      let updatedCash = 0,
+        userUpdateObj = {};
       const isLastDayOfMilestone = data?.isLastDayOfMilestone;
       const stageUnlockedInfo = data?.stageUnlockedInfo;
       let updatedCoins = userExists.quizCoins + data.tokens;
@@ -1778,12 +1788,14 @@ class MilestoneDBService {
       let updatedBusinessScore =
         (userExists.businessScore?.current || 90) + data.businessScore;
       let updatedOperationsScore =
-        (userExists.businessScore?.OperationsScore || 90) + data.businessScore;
+        (userExists.businessScore?.operationsScore || 90) + data.businessScore;
       let updatedProductScore =
-        (userExists.businessScore?.ProductScore || 90) + data.businessScore;
+        (userExists.businessScore?.productScore || 90) + data.businessScore;
       let updatedGrowthScore =
-        (userExists.businessScore?.GrowthScore || 90) + data.businessScore;
+        (userExists.businessScore?.growthScore || 90) + data.businessScore;
       if (stageUnlockedInfo) {
+        const newStage = stageUnlockedInfo?.stageInfo?.name;
+        const newStageDetails = await StageTable.findOne({ title: newStage });
         const resultSummary = stageUnlockedInfo?.resultSummary;
         updatedCoins += resultSummary[0].title;
         updatedCash += resultSummary[1].title;
@@ -1791,9 +1803,11 @@ class MilestoneDBService {
         updatedOperationsScore += resultSummary[2].title;
         updatedProductScore += resultSummary[2].title;
         updatedGrowthScore += resultSummary[2].title;
+        userUpdateObj = { stage: newStageDetails._id };
       }
-      const userUpdateObj = {
+      userUpdateObj = {
         $set: {
+          ...userUpdateObj,
           quizCoins: updatedCoins,
           cash: updatedCash,
           "businessScore.current": updatedBusinessScore,
