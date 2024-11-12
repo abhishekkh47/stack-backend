@@ -1125,7 +1125,7 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 10, type: " Tokens", icon: "goldCoin.webp" },
+      { title: 25, type: " Tokens", icon: "goldCoin.webp" },
       { title: 50, type: "K", icon: "dollar_banknote.webp" },
       { title: 2, type: " Rating", icon: "military_medal.webp" },
     ],
@@ -1166,6 +1166,8 @@ export const MILESTONE_STAGE_REWARDS = {
   "BRAND STAGE": { token: 220, order: 4 },
   "PMF STAGE": { token: 300, order: 5 },
 };
+
+export const INITIAL_CASH = 50;
 
 export const STAGE_COMPLETE = {
   "IDEA STAGE": {

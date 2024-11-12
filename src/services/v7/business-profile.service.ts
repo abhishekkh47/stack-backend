@@ -68,6 +68,9 @@ class BusinessProfileService {
             $inc: {
               quizCoins: 5,
               "businessScore.current": 1,
+              "businessScore.operationsScore": 1,
+              "businessScore.productScore": 1,
+              "businessScore.growthScore": 1,
             },
           },
           { upsert: true }
@@ -197,7 +200,11 @@ class BusinessProfileService {
           ? UserDBServiceV4.addStreaks(userIfExists)
           : Promise.resolve(),
         ifBusinessIdea
-          ? UserService.addBusinessScore(userIfExists, userBusinessScore)
+          ? UserService.addBusinessScore(
+              userIfExists,
+              userBusinessScore,
+              businessSubScoreObj
+            )
           : Promise.resolve(),
       ]);
       return [

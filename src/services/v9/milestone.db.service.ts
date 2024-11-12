@@ -447,10 +447,10 @@ class MilestoneDBService {
         })
         .filter(Boolean);
       if (completedLearnings.length) {
-        if (response?.tasks[2]) {
-          response.tasks[2].data = [
+        if (response?.tasks[1]) {
+          response.tasks[1].data = [
             ...completedLearnings,
-            ...response.tasks[2].data,
+            ...response.tasks[1].data,
           ];
         } else {
           response.tasks.push({
@@ -491,12 +491,6 @@ class MilestoneDBService {
             },
           },
         };
-      }
-      if (
-        response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
-        response?.tasks[0].data.length == 0
-      ) {
-        response?.tasks.splice(0, 1);
       }
       if (
         response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
@@ -1519,7 +1513,7 @@ class MilestoneDBService {
           $inc: {
             "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": 1,
-            "currentDayRewards.cash": 1,
+            "currentDayRewards.cash": cash,
           },
           $set: {
             "currentDayRewards.streak": 1,
@@ -1787,11 +1781,11 @@ class MilestoneDBService {
       let updatedBusinessScore =
         (userExists.businessScore?.current || 90) + data.businessScore;
       let updatedOperationsScore =
-        (userExists.businessScore?.OperationsScore || 90) + data.businessScore;
+        (userExists.businessScore?.operationsScore || 90) + data.businessScore;
       let updatedProductScore =
-        (userExists.businessScore?.ProductScore || 90) + data.businessScore;
+        (userExists.businessScore?.productScore || 90) + data.businessScore;
       let updatedGrowthScore =
-        (userExists.businessScore?.GrowthScore || 90) + data.businessScore;
+        (userExists.businessScore?.growthScore || 90) + data.businessScore;
       if (stageUnlockedInfo) {
         const resultSummary = stageUnlockedInfo?.resultSummary;
         updatedCoins += resultSummary[0].title;

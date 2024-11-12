@@ -19,6 +19,7 @@ import {
   Route,
   makeUniqueReferalCode,
   TIMEZONE_TO_COUNTRY,
+  INITIAL_CASH,
 } from "@app/utility";
 import { ANALYTICS_EVENTS, THINGS_TO_TALK_ABOUT } from "@app/utility/constants";
 import BaseController from "@app/controllers/base";
@@ -84,6 +85,7 @@ class AuthController extends BaseController {
                 referralCode: uniqueReferralCode,
                 preLoadedCoins: adminDetails.stackCoins,
                 stage: initialStage?._id,
+                cash: INITIAL_CASH,
               };
               userExists = await UserTable.create(createQuery);
               // To handle inaccurate streak counts for users who signup again after deleting their accounts
@@ -156,7 +158,7 @@ class AuthController extends BaseController {
               if (!userExists.cash || userExists.cash == 0) {
                 await UserTable.findOneAndUpdate(
                   { _id: userExists._id },
-                  { $set: { cash: 50 } }
+                  { $set: { cash: INITIAL_CASH } }
                 );
               }
               let dataSentInCrm: any = {
