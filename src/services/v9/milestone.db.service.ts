@@ -1771,7 +1771,8 @@ class MilestoneDBService {
    */
   public async saveEventResult(userExists: any, data: any) {
     try {
-      let updatedCash = 0;
+      let updatedCash = 0,
+        userUpdateObj = {};
       const isLastDayOfMilestone = data?.isLastDayOfMilestone;
       const stageUnlockedInfo = data?.stageUnlockedInfo;
       let updatedCoins = userExists.quizCoins + data.tokens;
@@ -1787,6 +1788,8 @@ class MilestoneDBService {
       let updatedGrowthScore =
         (userExists.businessScore?.growthScore || 90) + data.businessScore;
       if (stageUnlockedInfo) {
+        const newStage = stageUnlockedInfo?.stageInfo?.name;
+        const newStageDetails = await StageTable.findOne({ title: newStage });
         const resultSummary = stageUnlockedInfo?.resultSummary;
         updatedCoins += resultSummary[0].title;
         updatedCash += resultSummary[1].title;
@@ -1794,9 +1797,11 @@ class MilestoneDBService {
         updatedOperationsScore += resultSummary[2].title;
         updatedProductScore += resultSummary[2].title;
         updatedGrowthScore += resultSummary[2].title;
+        userUpdateObj = { stage: newStageDetails._id };
       }
-      const userUpdateObj = {
+      userUpdateObj = {
         $set: {
+          ...userUpdateObj,
           quizCoins: updatedCoins,
           cash: updatedCash,
           "businessScore.current": updatedBusinessScore,
