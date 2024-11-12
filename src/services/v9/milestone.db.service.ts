@@ -350,7 +350,7 @@ class MilestoneDBService {
         (a, b) => order[a?.type] - order[b?.type]
       );
       const currentDayIds = learningContent?.currentDayGoal?.map((obj) =>
-        obj.quizId.toString()
+        obj?.quizId?.toString()
       );
       if (
         allLearningContent &&
@@ -362,7 +362,7 @@ class MilestoneDBService {
           sectionKey: GOALS_OF_THE_DAY.key,
         });
       }
-      const quizIds = allLearningContent?.map((obj) => obj.quizId);
+      const quizIds = allLearningContent?.map((obj) => obj?.quizId);
       const completedQuizzes = await QuizResult.find(
         {
           userId: userIfExists._id,
@@ -371,32 +371,38 @@ class MilestoneDBService {
         { quizId: 1 }
       );
       allLearningContent?.forEach(async (obj) => {
-        const currentQuizId = obj.quizId.toString();
-        const isQuizCompleted = completedQuizzes.some(
-          (quiz) => quiz.quizId.toString() == currentQuizId
-        );
-        if (response?.tasks[0]?.data.length > 0) {
-          lockedQuest = true;
-        }
-        if (!isQuizCompleted && currentDayIds.includes(currentQuizId)) {
-          if (obj.type == 2 || obj.type == 4) {
-            if (!lockedQuest && obj.type == 2) {
-              lockedAction = false;
-              isSimulationAvailable = true;
+        if (obj) {
+          const currentQuizId = obj?.quizId?.toString();
+          const isQuizCompleted = completedQuizzes.some(
+            (quiz) => quiz?.quizId?.toString() == currentQuizId
+          );
+          if (response?.tasks[0]?.data.length > 0) {
+            lockedQuest = true;
+          }
+          if (!isQuizCompleted && currentDayIds?.includes(currentQuizId)) {
+            if (obj.type == 2 || obj.type == 4) {
+              if (!lockedQuest && obj.type == 2) {
+                lockedAction = false;
+                isSimulationAvailable = true;
+              }
+              if (!lockedQuest && obj.type == 4 && !isSimulationAvailable) {
+                lockedAction = false; // Unlock event
+              } else if (obj.type == 4 && isSimulationAvailable) {
+                lockedAction = true; // Keep the event locked if simulation is available
+              }
+              simsAndEvent.push({
+                ...obj,
+                quizLevelId,
+                isLocked: lockedAction,
+                isLastDayOfMilestone,
+              });
+            } else if (obj.type == 1 || obj.type == 3) {
+              learningActions.push({
+                ...obj,
+                resultCopyInfo: null,
+                quizLevelId,
+              });
             }
-            if (!lockedQuest && obj.type == 4 && !isSimulationAvailable) {
-              lockedAction = false; // Unlock event
-            } else if (obj.type == 4 && isSimulationAvailable) {
-              lockedAction = true; // Keep the event locked if simulation is available
-            }
-            simsAndEvent.push({
-              ...obj,
-              quizLevelId,
-              isLocked: lockedAction,
-              isLastDayOfMilestone,
-            });
-          } else if (obj.type == 1 || obj.type == 3) {
-            learningActions.push({ ...obj, resultCopyInfo: null, quizLevelId });
           }
         }
       });
