@@ -57,6 +57,7 @@ class QuizController extends BaseController {
             isGiftedStreakFreeze,
             updatedUser,
             resultScreenInfo,
+            totalCash,
           } = await QuizDBService.storeQuizInformation(
             userIfExists,
             reqParam,

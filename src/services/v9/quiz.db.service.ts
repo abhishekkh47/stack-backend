@@ -209,6 +209,7 @@ class QuizDBService {
       totalFuel: pointsEarnedFromQuiz,
       isGiftedStreakFreeze: false,
       updatedUser: updatedXP,
+      totalCash: cashEarnedFromQuiz,
       resultScreenInfo,
     };
   }

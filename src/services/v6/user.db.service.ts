@@ -448,6 +448,7 @@ class UserDBService {
             "currentDayRewards.streak": 0,
             "currentDayRewards.quizCoins": 0,
             "currentDayRewards.goals": 0,
+            "currentDayRewards.cash": 0,
             "currentDayRewards.updatedAt": new Date(),
           },
           upsert: true,

@@ -189,6 +189,7 @@ class BusinessProfileService {
           ? MilestoneDBService.updateTodaysRewards(
               userIfExists,
               0,
+              0,
               ifLastGoalOfDay
             )
           : Promise.resolve(),

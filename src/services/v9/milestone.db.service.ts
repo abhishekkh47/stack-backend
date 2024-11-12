@@ -1499,12 +1499,14 @@ class MilestoneDBService {
    * @description Update rewards collected today
    * @param userIfExists
    * @param coins tokens collected on completed a challenge or quiz
+   * @param cash cash collected on completed a challenge or quiz
    * @param ifLastGoalOfDay whether its the last ai action completed for the day
    * @returns {*}
    */
   public async updateTodaysRewards(
     userIfExists: any,
     coins: number = 0,
+    cash: number = 0,
     ifLastGoalOfDay: boolean = false
   ) {
     try {
@@ -1517,6 +1519,7 @@ class MilestoneDBService {
           $inc: {
             "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": 1,
+            "currentDayRewards.cash": 1,
           },
           $set: {
             "currentDayRewards.streak": 1,
@@ -1529,6 +1532,7 @@ class MilestoneDBService {
             "currentDayRewards.streak": 1,
             "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": 1,
+            "currentDayRewards.cash": cash,
             "currentDayRewards.updatedAt": new Date(),
           },
           upsert: true,
@@ -1556,13 +1560,14 @@ class MilestoneDBService {
     try {
       const currentDayRewards = userIfExists?.currentDayRewards;
       if (currentDayRewards) {
-        const { streak, quizCoins, goals, updatedAt } = currentDayRewards;
+        const { streak, quizCoins, goals, cash, updatedAt } = currentDayRewards;
         const days = getDaysNum(userIfExists, updatedAt);
         if (days < 1) {
           return {
             streakProgress: streak || 0,
             fuelProgress: quizCoins || 0,
             goalProgress: goals || 0,
+            cashProgress: cash || 0,
           };
         }
       }
@@ -1570,6 +1575,7 @@ class MilestoneDBService {
         streakProgress: 0,
         fuelProgress: 0,
         goalProgress: 0,
+        cashProgress: 0,
       };
     } catch (error) {
       throw new NetworkError(error.message, 400);

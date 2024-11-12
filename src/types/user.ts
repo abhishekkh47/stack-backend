@@ -187,6 +187,7 @@ interface ICurrentDayRewards {
   streak: number;
   quizCoins: number;
   goals: number;
+  cash: number;
 }
 
 export interface IBusinessScore {
