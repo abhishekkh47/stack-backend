@@ -1755,7 +1755,7 @@ class MilestoneDBService {
           ...action,
           resultCopyInfo: null,
           ...eventDetails,
-          title: "New Event",
+          title: "ALERT",
           iconBackgroundColor: "#4885FF29",
           iconImage: "cal.webp",
           time: "AI-Assisted - 2 min",
