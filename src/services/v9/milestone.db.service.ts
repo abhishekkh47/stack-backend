@@ -256,6 +256,9 @@ class MilestoneDBService {
         response.tasks[1].data = completedActionsResponse;
       }
       currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
+      if (!currentMilestoneId) {
+        currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
+      }
       const currentMilestoneGoals = await MilestoneGoalsTable.find({
         milestoneId: currentMilestoneId,
       })
@@ -475,7 +478,7 @@ class MilestoneDBService {
           (obj) =>
             obj._id.toString() == nextMilestoneDetails?.stageId?.toString()
         );
-        const newStageTitle = newStage.title;
+        const newStageTitle = newStage?.title;
         const newStageDetails =
           STAGE_COMPLETE[newStageTitle] || STAGE_COMPLETE["ANGEL STAGE"];
         response.tasks[0].data[0] = {
