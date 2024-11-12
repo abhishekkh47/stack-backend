@@ -381,8 +381,10 @@ class MilestoneDBService {
               lockedAction = false;
               isSimulationAvailable = true;
             }
-            if (!lockedQuest && obj.type == 4 && isSimulationAvailable) {
-              lockedAction = true;
+            if (!lockedQuest && obj.type == 4 && !isSimulationAvailable) {
+              lockedAction = false; // Unlock event
+            } else if (obj.type == 4 && isSimulationAvailable) {
+              lockedAction = true; // Keep the event locked if simulation is available
             }
             simsAndEvent.push({
               ...obj,
