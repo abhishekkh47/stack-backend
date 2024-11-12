@@ -298,6 +298,11 @@ const schema = new mongoose.Schema<IUserSchema>(
         required: true,
         default: 0,
       },
+      cash: {
+        type: mongoose.Schema.Types.Number,
+        required: true,
+        default: 0,
+      },
     },
     businessScore: {
       longest: {
