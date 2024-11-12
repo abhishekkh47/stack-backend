@@ -509,8 +509,11 @@ class UserDBService {
    */
   public async getStageColorInfo(data: any) {
     try {
-      const stageDetails = await StageTable.find({ _id: data.stage });
-      const stageData = STAGE_COMPLETE["IDEA STAGE"];
+      console.log("data");
+      console.log(data);
+      console.log(data.stage);
+      //const stageData = await StageTable.find({ _id: data.stage });
+      const stageData = STAGE_COMPLETE[data?.stageName];
       const colorInfo = {
         stage: {
           ...stageData.stageInfo.colorInfo,
