@@ -1033,7 +1033,7 @@ export const IDEA_ANALYSIS = {
     },
     feature: {
       name: "Key Feature Score",
-      description: `How it works:\nKey feature score evaluates how focused your product is on one core feature and is scored using a 10-tier ranking system.\n\nKey Feature:\n{productCustomerDescription}\n\nExplanation:\nThis indicates a strong focus on developing and iterating on a specific key feature before adding additional features.`,
+      description: `How it works:\nKey feature score evaluates how focused your product is on one core feature and is scored using a 10-tier ranking system.\n\nKey Feature:\n{problemCoreFeature}\n\nExplanation:\nThis indicates a strong focus on developing and iterating on a specific key feature before adding additional features.`,
       slug: "KF",
     },
     differentiator: {
