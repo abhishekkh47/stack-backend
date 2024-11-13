@@ -61,3 +61,6 @@ export * from "@app/model/milestoneGoals";
 export * from "@app/model/suggestionScreenCopy";
 export * from "@app/model/aiToolsDatasetTypes";
 export * from "@app/model/milestoneEvents";
+export * from "@app/model/employees";
+export * from "@app/model/employeeLevels";
+export * from "@app/model/employeeProjects";

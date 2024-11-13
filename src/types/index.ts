@@ -44,3 +44,5 @@ export * from "@app/types/aiToolsUsageStatus";
 export * from "@app/types/suggestionScreenCopy";
 export * from "@app/types/unsavedLogo";
 export * from "@app/types/milestoneEvents";
+export * from "@app/types/employees";
+export * from "@app/types/userEmployees";

@@ -4,3 +4,4 @@ export { default as ChecklistDBService } from "@app/services/v9/checklist-journe
 export { default as QuizDBService } from "@app/services/v9/quiz.db.service";
 export { default as UserService } from "@app/services/v9/user.service";
 export { default as MilestoneDBService } from "@app/services/v9/milestone.db.service";
+export { default as EmployeeDBService } from "@app/services/v9/employee.db.service";

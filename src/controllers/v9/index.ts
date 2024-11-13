@@ -5,6 +5,7 @@ import QuizController from "@controllers/v9/quiz";
 import UserController from "@controllers/v9/users";
 import AuthController from "@controllers/v9/auth";
 import MilestoneController from "@controllers/v9/milestones";
+import EmployeeController from "@controllers/v9/employees";
 import { getRouteDict } from "@app/utility";
 const routeDict = getRouteDict("9.0.0", [
   BusinessProfileController,
@@ -14,6 +15,7 @@ const routeDict = getRouteDict("9.0.0", [
   UserController,
   AuthController,
   MilestoneController,
+  EmployeeController,
 ]);
 
 export default routeDict;

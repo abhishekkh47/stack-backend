@@ -31,6 +31,9 @@ import {
   CommunityTable,
   StageTable,
   MilestoneEventsTable,
+  EmployeeTable,
+  EmployeeLevelsTable,
+  EmployeeProjectsTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2960,6 +2963,201 @@ class ScriptService {
         resultCopyInfo = null;
       }
       return resultCopyInfo;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function import format the employee details in JSON format
+   * @returns {*}
+   */
+  public async convertEmployeeDataToJSON(rows) {
+    try {
+      const employees = [],
+        employeeLevels = [],
+        employeeProjects = {};
+      let order = 0,
+        projectOrder = 0,
+        empTitle = null,
+        empProjectObj = {},
+        projectTitle = null;
+      for (const row of rows) {
+        const currentOrder = Number(row["Order"]?.trimEnd());
+        if (currentOrder && order != currentOrder) {
+          order = currentOrder;
+          projectOrder = 0;
+          empTitle = row["Title 1"]?.trimEnd();
+          const obj = {
+            order: currentOrder,
+            name: row["Employee"]?.trimEnd(),
+            icon: row["Icon"]?.trimEnd() || null,
+            title: empTitle,
+            image: row["Image"]?.trimEnd(),
+            price: row["Token Price"]?.trimEnd(),
+            workTime: row["Work Time"]?.trimEnd(),
+            bio: row["Bio"]?.trimEnd(),
+            unlockTrigger: row["Bio"]?.trimEnd(),
+            userType: row["User Type"]?.trimEnd() == "Pro Only" ? 1 : 0,
+            ratings: [
+              row["Rating 1 Name"]?.trimEnd(),
+              row["Rating 2 Name"]?.trimEnd(),
+              row["Rating 3 Name"]?.trimEnd(),
+            ],
+          };
+          employees.push(obj);
+
+          employeeLevels.push({
+            order: currentOrder,
+            level: 1,
+            title: empTitle,
+            ratingValues: [
+              {
+                name: row["Rating 1 Name"].trimEnd(),
+                value: Number(row["Rating 1"].trimEnd()),
+              },
+              {
+                name: row["Rating 2 Name"].trimEnd(),
+                value: Number(row["Rating 2"].trimEnd()),
+              },
+              {
+                name: row["Rating 3 Name"].trimEnd(),
+                value: Number(row["Rating 3"].trimEnd()),
+              },
+            ],
+            promotionTrigger: row["Trigger to Unlock"].trimEnd(),
+            promotionCost: 0,
+          });
+        }
+        if (
+          row["Project Title"].trimEnd() &&
+          projectTitle != row["Project Title"].trimEnd()
+        ) {
+          projectTitle = row["Project Title"].trimEnd();
+          empProjectObj = {
+            employeeTitle: empTitle,
+            employeeLevelId: null,
+            title: projectTitle,
+            description: row["Project Description"].trimEnd(),
+            order: ++projectOrder,
+            rewards: [
+              {
+                probability: row["Probability of Outcome"].trimEnd(),
+                image: row["Outcome Image"].trimEnd(),
+                description: row["Outcome Copy"].trimEnd(),
+                rating: row["Rating Reward"].trimEnd(),
+                cash: row["Cash Reward"].trimEnd(),
+              },
+            ],
+          };
+          if (!employeeProjects[order]) {
+            employeeProjects[order] = [empProjectObj];
+          } else {
+            employeeProjects[order].push(empProjectObj);
+          }
+        }
+      }
+      return { employees, employeeLevels, employeeProjects };
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function add employee details to DB
+   * @param data
+   * @returns {*}
+   */
+  public async addEmployeeDetailsToDB(data: any) {
+    const { employees, employeeLevels, employeeProjects } = data;
+    let employeesData = [],
+      employeeLevelsData = [],
+      employeeProjectsData = [];
+    try {
+      employees.forEach((obj) => {
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              name: obj.eventId,
+            },
+            update: {
+              $set: {
+                order: obj.order,
+                name: obj.name,
+                icon: obj.icon,
+                title: obj.title,
+                image: obj.image,
+                price: obj.price,
+                workTime: obj.workTime,
+                bio: obj.bio,
+                unlockTrigger: obj.unlockTrigger,
+                userType: obj.userType,
+                ratings: obj.ratings,
+              },
+            },
+            upsert: true,
+          },
+        };
+        employeesData.push(bulkWriteObject);
+      });
+      await EmployeeTable.bulkWrite(employeesData);
+
+      const employeesDetails = await EmployeeTable.find().lean();
+      employeeLevels.forEach((obj) => {
+        const emp = employeesDetails.find(
+          (empObj) => empObj.order == obj.order
+        );
+        let bulkWriteObject = {
+          updateOne: {
+            filter: {
+              employeeId: emp._id,
+            },
+            update: {
+              $set: {
+                employeeId: emp._id,
+                level: obj.level,
+                title: obj.title,
+                ratingValues: obj.ratingValues,
+                promotionTrigger: obj.promotionTrigger,
+                promotionCost: obj.promotionCost,
+              },
+            },
+            upsert: true,
+          },
+        };
+        employeeLevelsData.push(bulkWriteObject);
+      });
+      await EmployeeLevelsTable.bulkWrite(employeeLevelsData);
+
+      const employeeLevelDetails = await EmployeeLevelsTable.find().lean();
+      Object.keys(employeeProjects).forEach((key) => {
+        employeeProjects[key].forEach((obj, idx) => {
+          const emp = employeeLevelDetails.find(
+            (empObj) => empObj.title == obj.employeeTitle
+          );
+          let bulkWriteObject = {
+            updateOne: {
+              filter: {
+                employeeLevelId: emp._id,
+                order: obj.order,
+              },
+              update: {
+                $set: {
+                  employeeLevelId: emp._id,
+                  title: obj.title,
+                  description: obj.description,
+                  order: obj.order,
+                  rewards: obj.Rewards,
+                },
+              },
+              upsert: true,
+            },
+          };
+          employeeProjectsData.push(bulkWriteObject);
+        });
+      });
+      await EmployeeProjectsTable.bulkWrite(employeeProjectsData);
+      return;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
