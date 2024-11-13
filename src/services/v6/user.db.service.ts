@@ -482,12 +482,12 @@ class UserDBService {
       const businessProfile = await BusinessProfileTable.findOne({
         userId,
       });
-      const ideaReport = businessProfile?.businessHistory[0]?.value || null;
+      const ideaReport = businessProfile?.businessHistory?.[0]?.value || null;
       const overallScore = data?.businessScore?.current || 90;
-      const ideaAnalysis = ideaReport["ideaAnalysis"] || null;
-      const opsScore = ideaAnalysis[0]?.rating || overallScore;
-      const productScore = ideaAnalysis[1]?.rating || overallScore;
-      const growthScore = ideaAnalysis[2]?.rating || overallScore;
+      const ideaAnalysis = ideaReport ? ideaReport["ideaAnalysis"] : null;
+      const opsScore = ideaAnalysis?.[0]?.rating || overallScore;
+      const productScore = ideaAnalysis?.[1]?.rating || overallScore;
+      const growthScore = ideaAnalysis?.[2]?.rating || overallScore;
       updateObj = {
         operationsScore: opsScore,
         productScore,
