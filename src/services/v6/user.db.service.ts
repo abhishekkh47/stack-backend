@@ -176,6 +176,10 @@ class UserDBService {
     ) {
       data = await this.updateBusinessSubScores(userId, data);
     }
+    if (!data.stageName) {
+      let stageName = await UserService.getCurrentStage(data);
+      if (!stageName) data["stageName"] = "IDEA STAGE";
+    }
     data = await this.getStageColorInfo(data);
     const currentDate = convertDateToTimeZone(
       new Date(),
