@@ -5,10 +5,8 @@ export interface IUserEmployees {
   employeeId: mongoose.Schema.Types.ObjectId;
   currentLevel: number;
   unlockedLevel: number;
-  currentRating1: number;
-  currentRating2: number;
-  currentRating3: number;
-  hiredAt: string;
+  currentRatings: IRatings[];
+  hiredAt: mongoose.Schema.Types.Date;
   status: IStatus;
 }
 
@@ -17,4 +15,9 @@ enum IStatus {
   HIRED = 1,
   WORKING = 2,
   COMPLETED = 3,
+}
+
+interface IRatings {
+  name: string;
+  value: number;
 }

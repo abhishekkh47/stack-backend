@@ -3078,7 +3078,7 @@ class ScriptService {
         let bulkWriteObject = {
           updateOne: {
             filter: {
-              name: obj.eventId,
+              name: obj.name,
             },
             update: {
               $set: {

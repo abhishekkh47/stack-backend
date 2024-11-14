@@ -64,3 +64,4 @@ export * from "@app/model/milestoneEvents";
 export * from "@app/model/employees";
 export * from "@app/model/employeeLevels";
 export * from "@app/model/employeeProjects";
+export * from "@app/model/userEmployees";

@@ -1,29 +1,33 @@
 import mongoose from "mongoose";
 
-import type { IEmployeeLevels, MongooseModel } from "@app/types";
+import type { IUserEmployees, MongooseModel } from "@app/types";
 
-export type IEmployeeLevelsSchema = MongooseModel<IEmployeeLevels> &
+export type IUserEmployeesSchema = MongooseModel<IUserEmployees> &
   mongoose.Document;
 
-const schema = new mongoose.Schema<IEmployeeLevelsSchema>(
+const schema = new mongoose.Schema<IUserEmployeesSchema>(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      required: true,
+    },
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      unique: true,
       ref: "employees",
+      required: true,
     },
-    level: {
+    currentLevel: {
       type: mongoose.Schema.Types.Number,
-      default: 0,
+      default: 1,
       required: true,
     },
-    title: {
-      type: mongoose.Schema.Types.String,
-      default: null,
+    unlockedLevel: {
+      type: mongoose.Schema.Types.Number,
+      default: 1,
       required: true,
     },
-    ratingValues: [
+    currentRatings: [
       {
         name: {
           type: mongoose.Schema.Types.String,
@@ -37,12 +41,12 @@ const schema = new mongoose.Schema<IEmployeeLevelsSchema>(
         },
       },
     ],
-    promotionTrigger: {
-      type: mongoose.Schema.Types.String,
+    hiredAt: {
+      type: mongoose.Schema.Types.Date,
       default: null,
       required: true,
     },
-    promotionCost: {
+    status: {
       type: mongoose.Schema.Types.Number,
       default: 0,
       required: true,
@@ -51,7 +55,7 @@ const schema = new mongoose.Schema<IEmployeeLevelsSchema>(
   { timestamps: true }
 );
 
-export const EmployeeLevelsTable = mongoose.model<IEmployeeLevelsSchema>(
-  "employee_level",
+export const UserEmployeesTable = mongoose.model<IUserEmployeesSchema>(
+  "user_employee",
   schema
 );

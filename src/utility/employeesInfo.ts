@@ -114,12 +114,6 @@ export const EMPLOYEE_PROJECTS = [
   },
 ];
 
-export const EMP_STATUS = {
-  HIRED: 1,
-  WORKING: 2,
-  COMPLETED: 3,
-};
-
 export const USER_EMPLOYEES = [
   {
     _id: 1,
@@ -131,6 +125,6 @@ export const USER_EMPLOYEES = [
     rating2: 0,
     rating3: 0,
     hired_At: new Date(),
-    status: EMP_STATUS.HIRED,
+    status: 1,
   },
 ];

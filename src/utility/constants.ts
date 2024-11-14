@@ -1267,3 +1267,10 @@ export const SIMULATION_REWARDS = {
   cash: 50,
   businessScore: 2,
 };
+
+export const EMP_STATUS = {
+  UNLOCKED : 0,
+  HIRED : 1,
+  WORKING : 2,
+  COMPLETED : 3,
+};

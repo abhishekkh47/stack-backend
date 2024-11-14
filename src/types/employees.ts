@@ -25,7 +25,7 @@ export interface IEmployeeLevels {
 
 interface IRatings {
   name: string;
-  value: string;
+  value: number;
 }
 export interface IEmployeeProjects {
   employeeLevelId: mongoose.Schema.Types.ObjectId;
