@@ -170,11 +170,15 @@ class UserDBService {
     }
     if (
       data?.businessScore &&
-      data?.businessScore.current > 0 &&
+      data?.businessScore.current &&
       (!data?.businessScore?.operationsScore ||
         data?.businessScore?.operationsScore == 0)
     ) {
       data = await this.updateBusinessSubScores(userId, data);
+    }
+    if (!data.stageName) {
+      let stageName = await UserService.getCurrentStage(data);
+      if (!stageName) data["stageName"] = "IDEA STAGE";
     }
     data = await this.getStageColorInfo(data);
     const currentDate = convertDateToTimeZone(
@@ -478,14 +482,15 @@ class UserDBService {
       const businessProfile = await BusinessProfileTable.findOne({
         userId,
       });
-      const ideaReport = businessProfile?.businessHistory[0]?.value || null;
-      const overallScore = data?.businessScore?.current || 90;
-      const ideaAnalysis = ideaReport["ideaAnalysis"] || null;
-      const opsScore = ideaAnalysis[0]?.rating || overallScore;
-      const productScore = ideaAnalysis[1]?.rating || overallScore;
-      const growthScore = ideaAnalysis[2]?.rating || overallScore;
+      const ideaReport = businessProfile?.businessHistory?.[0]?.value || null;
+      const overallScore = (data?.businessScore?.current >= 80) ? data.businessScore.current : 90;
+      const ideaAnalysis = ideaReport ? ideaReport["ideaAnalysis"] : null;
+      const operationsScore = ideaAnalysis?.[0]?.rating || overallScore;
+      const productScore = ideaAnalysis?.[1]?.rating || overallScore;
+      const growthScore = ideaAnalysis?.[2]?.rating || overallScore;
       updateObj = {
-        operationsScore: opsScore,
+        current: overallScore,
+        operationsScore,
         productScore,
         growthScore,
       };
