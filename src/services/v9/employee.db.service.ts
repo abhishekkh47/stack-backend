@@ -309,7 +309,7 @@ class EmployeeDBService {
       if (userProjects.length && hiredEmployees.length) {
         hiredEmployees.forEach((emp) => {
           const userProject = userProjects.find(
-            (usr) => emp.employeeId.toString() == usr.employeeId.toString()
+            (usr) => emp?.employeeId.toString() == usr?.employeeId.toString()
           );
           if (userProject && userProject?.status != EMP_STATUS.HIRED) {
             emp.status = userProject.status;
@@ -382,13 +382,6 @@ class EmployeeDBService {
         UserTable.findOneAndUpdate(
           { _id: userIfExists._id },
           { $inc: { cash: -5 } }
-        ),
-        UserEmployeesTable.findOneAndUpdate(
-          {
-            userId: userIfExists._id,
-            employeeId,
-          },
-          { $set: { status: EMP_STATUS.WORKING } }
         ),
       ]);
       return true;
