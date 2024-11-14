@@ -5,6 +5,8 @@ import {
   EmployeeTable,
   EmployeeLevelsTable,
   UserEmployeesTable,
+  UserProjectsTable,
+  EmployeeProjectsTable,
 } from "@app/model";
 import { EMP_STATUS, MILESTONE_HOMEPAGE } from "@app/utility";
 class EmployeeDBService {
@@ -221,7 +223,7 @@ class EmployeeDBService {
             employeeId: 1,
             employeeLevelId: "$emp_projects.employeeLevelId",
             order: "$emp_projects.order",
-            description: "$emp_projects.employeeLevelId",
+            description: "$emp_projects.description",
             title: "$emp_projects.title",
           },
         },
@@ -239,73 +241,159 @@ class EmployeeDBService {
    */
   public async listHiredEmployees(userIfExists: any) {
     try {
-      const hiredEmployees = await UserEmployeesTable.aggregate([
-        {
-          $match: {
-            userId: userIfExists._id,
-            status: EMP_STATUS.HIRED,
-          },
-        },
-        {
-          $lookup: {
-            from: "employees",
-            localField: "employeeId",
-            foreignField: "_id",
-            as: "employeeInfo",
-          },
-        },
-        {
-          $unwind: {
-            path: "$employeeInfo",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "employee_levels",
-            let: {
-              empId: "$employeeId",
-              currentLevel: "$currentLevel",
+      const [hiredEmployees, userProjects, projectDetails] = await Promise.all([
+        UserEmployeesTable.aggregate([
+          {
+            $match: {
+              userId: userIfExists._id,
+              status: EMP_STATUS.HIRED,
             },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$employeeId", "$$empId"] },
-                      { $eq: ["$level", "$$currentLevel"] },
-                    ],
+          },
+          {
+            $lookup: {
+              from: "employees",
+              localField: "employeeId",
+              foreignField: "_id",
+              as: "employeeInfo",
+            },
+          },
+          {
+            $unwind: {
+              path: "$employeeInfo",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $lookup: {
+              from: "employee_levels",
+              let: {
+                empId: "$employeeId",
+                currentLevel: "$currentLevel",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ["$employeeId", "$$empId"] },
+                        { $eq: ["$level", "$$currentLevel"] },
+                      ],
+                    },
                   },
                 },
-              },
-            ],
-            as: "levelInfo",
+              ],
+              as: "levelInfo",
+            },
           },
-        },
-        {
-          $unwind: {
-            path: "$levelInfo",
-            preserveNullAndEmptyArrays: true,
+          {
+            $unwind: {
+              path: "$levelInfo",
+              preserveNullAndEmptyArrays: true,
+            },
           },
-        },
-        {
-          $project: {
-            employeeId: 1,
-            employeeName: "$employeeInfo.name",
-            currentLevel: 1,
-            title: "$levelInfo.title",
-            status: 1,
-            iconImage: "$employeeInfo.image",
-            key: MILESTONE_HOMEPAGE.EMPLOYEE,
+          {
+            $project: {
+              employeeId: 1,
+              employeeName: "$employeeInfo.name",
+              currentLevel: 1,
+              title: "$levelInfo.title",
+              status: 1,
+              iconImage: "$employeeInfo.image",
+              key: MILESTONE_HOMEPAGE.EMPLOYEE,
+            },
           },
-        },
+        ]).exec(),
+        UserProjectsTable.find({ userId: userIfExists._id }),
+        EmployeeProjectsTable.find({}),
       ]);
+      if (userProjects.length && hiredEmployees.length) {
+        hiredEmployees.forEach((emp) => {
+          const userProject = userProjects.find(
+            (usr) => emp.employeeId.toString() == usr.employeeId.toString()
+          );
+          if (userProject && userProject?.status != EMP_STATUS.HIRED) {
+            emp.status = userProject.status;
+            emp["startTime"] = userProject.startedAt;
+            if (userProject?.status == EMP_STATUS.COMPLETED) {
+              const project = projectDetails.find(
+                (proj) =>
+                  proj._id.toString() == userProject.projectId.toString()
+              );
+              const rewards = project.rewards[0];
+              emp["resultCopyInfo"] = {
+                image: [
+                  {
+                    image: rewards.image,
+                    description: rewards.description,
+                  },
+                ],
+                resultSummary: [
+                  {
+                    title: rewards.cash,
+                    type: "K",
+                    icon: "dollar_banknote.webp",
+                  },
+                  {
+                    title: rewards.rating,
+                    type: " Rating",
+                    icon: "military_medal.webp",
+                  },
+                ],
+              };
+            }
+          }
+        });
+      }
       return hiredEmployees;
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while unlocking the employee",
+        "Error occurred while listing hired employees",
         400
       );
+    }
+  }
+
+  /**
+   * @description start a project for an employee
+   * @param userIfExists
+   * @param data
+   * @returns {*}
+   */
+  public async startEmployeeProject(userIfExists: any, data: any) {
+    try {
+      const { employeeId, projectId } = data;
+      const projectObj = {
+        userId: userIfExists._id,
+        employeeId,
+        projectId,
+        status: EMP_STATUS.WORKING,
+        startedAt: new Date(),
+        completedAt: null,
+      };
+      await Promise.all([
+        UserProjectsTable.findOneAndUpdate(
+          {
+            userId: userIfExists._id,
+            employeeId,
+          },
+          projectObj,
+          { upsert: true }
+        ),
+        UserTable.findOneAndUpdate(
+          { _id: userIfExists._id },
+          { $inc: { cash: -5 } }
+        ),
+        UserEmployeesTable.findOneAndUpdate(
+          {
+            userId: userIfExists._id,
+            employeeId,
+          },
+          { $set: { status: EMP_STATUS.WORKING } }
+        ),
+      ]);
+      return true;
+    } catch (error) {
+      throw new NetworkError("Error occurred starting the project", 400);
     }
   }
 }

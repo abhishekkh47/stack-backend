@@ -3040,16 +3040,18 @@ class ScriptService {
             title: projectTitle,
             description: row["Project Description"].trimEnd(),
             order: ++projectOrder,
-            rewards: [
-              {
-                probability: row["Probability of Outcome"].trimEnd(),
-                image: row["Outcome Image"].trimEnd(),
-                description: row["Outcome Copy"].trimEnd(),
-                rating: row["Rating Reward"].trimEnd(),
-                cash: row["Cash Reward"].trimEnd(),
-              },
-            ],
           };
+        }
+        if (row["Outcome Image"].trimEnd()) {
+          empProjectObj["rewards"] = [
+            {
+              probability: row["Probability of Outcome"].trimEnd(),
+              image: row["Outcome Image"].trimEnd(),
+              description: row["Outcome Copy"].trimEnd(),
+              rating: Number(row["Rating Reward"].trimEnd()),
+              cash: Number(row["Cash Reward"].trimEnd()) / 1000,
+            },
+          ];
           if (!employeeProjects[order]) {
             employeeProjects[order] = [empProjectObj];
           } else {
@@ -3147,7 +3149,7 @@ class ScriptService {
                   title: obj.title,
                   description: obj.description,
                   order: obj.order,
-                  rewards: obj.Rewards,
+                  rewards: obj.rewards,
                 },
               },
               upsert: true,

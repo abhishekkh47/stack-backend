@@ -113,12 +113,31 @@ class EmployeeController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const employees = await EmployeeDBService.getEmployeeProjects(
+    const projects = await EmployeeDBService.getEmployeeProjects(
       userExists,
       id
     );
     return this.Ok(ctx, {
-      data: employees,
+      data: projects,
+    });
+  }
+
+  /**
+   * @description This is to start a project for an employee
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/start-project", method: HttpMethod.POST })
+  @Auth()
+  public async startProject(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    await EmployeeDBService.startEmployeeProject(userExists, body);
+    return this.Ok(ctx, {
+      message: "success",
     });
   }
 }

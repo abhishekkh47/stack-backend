@@ -27,23 +27,28 @@ const schema = new mongoose.Schema<IEmployeeProjectsSchema>(
     rewards: [
       {
         probability: {
-          type: mongoose.Schema.Types.Decimal128,
+          type: mongoose.Schema.Types.String,
+          default: null,
           required: true,
         },
         image: {
           type: mongoose.Schema.Types.String,
+          default: null,
           required: true,
         },
         description: {
           type: mongoose.Schema.Types.String,
+          default: null,
           required: true,
         },
         rating: {
           type: mongoose.Schema.Types.Number,
+          default: 0,
           required: true,
         },
         cash: {
           type: mongoose.Schema.Types.Number,
+          default: 0,
           required: true,
         },
       },

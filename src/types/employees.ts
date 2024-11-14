@@ -36,7 +36,7 @@ export interface IEmployeeProjects {
 }
 
 interface IProjectRewards {
-  probability: mongoose.Types.Decimal128;
+  probability: string;
   image: string;
   description: string;
   rating: number;
