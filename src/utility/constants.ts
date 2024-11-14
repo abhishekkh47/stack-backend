@@ -1088,6 +1088,9 @@ export const MILESTONE_HOMEPAGE = {
   },
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
   EARN: { title: "Earn", key: "earn" },
+  CHALLENGES: "challenges",
+  NEW_EVENT: "New Event",
+  EMPLOYEE: "employee"
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];

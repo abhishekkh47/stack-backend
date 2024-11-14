@@ -22,4 +22,3 @@ export * from "@app/utility/contentAutomationDataset";
 export * from "@app/utility/timezones";
 export * from "@app/utility/businessLogo";
 export * from "@app/utility/milestoneService";
-export * from "@app/utility/employeesInfo";

@@ -6,7 +6,7 @@ import {
   EmployeeLevelsTable,
   UserEmployeesTable,
 } from "@app/model";
-import { EMP_STATUS } from "@app/utility";
+import { EMP_STATUS, MILESTONE_HOMEPAGE } from "@app/utility";
 class EmployeeDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -15,7 +15,8 @@ class EmployeeDBService {
    */
   public async getEmployeeList(userIfExists: any, businessProfile: any) {
     try {
-      let isLocked = true;
+      let isLocked = true,
+        status = EMP_STATUS.UNLOCKED;
       let [employees, userEmployees] = await Promise.all([
         EmployeeTable.find({ order: 1 }).sort({ order: 1 }).lean(),
         UserEmployeesTable.find({ userId: userIfExists._id }),
@@ -32,11 +33,17 @@ class EmployeeDBService {
       }
       const updatedEmployees = employees.map((emp) => {
         if (userEmployees?.length) {
-          isLocked = !userEmployees?.some(
+          const userEmp = userEmployees.find(
             (obj) => obj.employeeId.toString() == emp._id.toString()
           );
+          if (userEmp) {
+            isLocked = false;
+          } else {
+            isLocked = true;
+          }
+          status = userEmp.status;
         }
-        return { ...emp, isLocked };
+        return { ...emp, isLocked, status };
       });
       return updatedEmployees;
     } catch (error) {
@@ -52,27 +59,29 @@ class EmployeeDBService {
    */
   public async getEmployeeDetails(userIfExists: any, employeeId: any) {
     try {
+      const empId = new ObjectId(employeeId);
       let employeeDetails = {},
         promotionAvailable = false;
       const [employeeLevels, userEmployees] = await Promise.all([
-        EmployeeLevelsTable.find({ employeeId }).lean(),
+        EmployeeLevelsTable.find({ employeeId: empId }).lean(),
         UserEmployeesTable.findOne({
           userId: userIfExists._id,
-          employeeId,
+          employeeId: empId,
         }).lean(),
       ]);
       if (userEmployees) {
         employeeDetails = employeeLevels.find(
           (emp) =>
             emp.level == userEmployees.currentLevel &&
-            emp.employeeId == employeeId
+            emp.employeeId.toString() == empId.toString()
         );
         if (userEmployees.currentLevel < userEmployees.unlockedLevel) {
           promotionAvailable = true;
         }
       } else {
         employeeDetails = employeeLevels.find(
-          (emp) => emp.level == 1 && emp.employeeId == employeeId
+          (emp) =>
+            emp.level == 1 && emp.employeeId.toString() == empId.toString()
         );
       }
       return employeeDetails;
@@ -92,12 +101,13 @@ class EmployeeDBService {
    */
   public async hireEmployee(userIfExists: any, employeeId: any) {
     try {
+      const empId = new ObjectId(employeeId);
       const [userEmployee, employeeDetails] = await Promise.all([
         UserEmployeesTable.findOne({
           userId: userIfExists._id,
-          employeeId,
+          employeeId: empId,
         }).lean(),
-        EmployeeTable.findOne({ _id: employeeId }).lean(),
+        EmployeeTable.findOne({ _id: empId }).lean(),
       ]);
       if (!userEmployee) {
         throw new NetworkError("Please unlock the employee to hire it", 400);
@@ -108,7 +118,7 @@ class EmployeeDBService {
       if (userEmployee.status == EMP_STATUS.UNLOCKED) {
         await Promise.all([
           UserEmployeesTable.findOneAndUpdate(
-            { userId: userIfExists._id, employeeId },
+            { userId: userIfExists._id, employeeId: empId },
             { $set: { status: EMP_STATUS.HIRED } },
             { upsert: true, new: true }
           ),
@@ -132,13 +142,14 @@ class EmployeeDBService {
    */
   public async unlockEmployee(userIfExists: any, employeeId: any) {
     try {
+      const empId = new ObjectId(employeeId);
       const [userEmployee, employee, employeeInitialLevel] = await Promise.all([
         UserEmployeesTable.findOne({
           userId: userIfExists._id,
-          employeeId,
+          employeeId: empId,
         }),
-        EmployeeTable.findOne({ _id: employeeId }),
-        EmployeeLevelsTable.findOne({ employeeId }),
+        EmployeeTable.findOne({ _id: empId }),
+        EmployeeLevelsTable.findOne({ employeeId: empId }),
       ]);
       if (userEmployee) {
         throw new NetworkError("This employee have been unlocked already", 400);
@@ -148,7 +159,7 @@ class EmployeeDBService {
       }
 
       await UserEmployeesTable.findOneAndUpdate(
-        { userId: userIfExists._id, employeeId },
+        { userId: userIfExists._id, employeeId: empId },
         {
           $set: {
             userId: userIfExists._id,
@@ -179,9 +190,17 @@ class EmployeeDBService {
    */
   public async getEmployeeProjects(userIfExists: any, employeeId: any) {
     try {
+      const empId = new ObjectId(employeeId);
+      const userEmployee = await UserEmployeesTable.findOne({
+        userId: userIfExists._id,
+        employeeId: empId,
+      }).lean();
       const employeeProjects = await EmployeeLevelsTable.aggregate([
         {
-          $match: { employeeId: new ObjectId(employeeId) },
+          $match: {
+            employeeId: empId,
+            level: userEmployee.currentLevel,
+          },
         },
         {
           $lookup: {
@@ -210,6 +229,83 @@ class EmployeeDBService {
       return employeeProjects;
     } catch (error) {
       throw new NetworkError("Error occurred while listing projects", 400);
+    }
+  }
+
+  /**
+   * @description get list of hired employees
+   * @param userIfExists
+   * @returns {*}
+   */
+  public async listHiredEmployees(userIfExists: any) {
+    try {
+      const hiredEmployees = await UserEmployeesTable.aggregate([
+        {
+          $match: {
+            userId: userIfExists._id,
+            status: EMP_STATUS.HIRED,
+          },
+        },
+        {
+          $lookup: {
+            from: "employees",
+            localField: "employeeId",
+            foreignField: "_id",
+            as: "employeeInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$employeeInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "employee_levels",
+            let: {
+              empId: "$employeeId",
+              currentLevel: "$currentLevel",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$employeeId", "$$empId"] },
+                      { $eq: ["$level", "$$currentLevel"] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "levelInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$levelInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            employeeId: 1,
+            employeeName: "$employeeInfo.name",
+            currentLevel: 1,
+            title: "$levelInfo.title",
+            status: 1,
+            iconImage: "$employeeInfo.image",
+            key: MILESTONE_HOMEPAGE.EMPLOYEE,
+          },
+        },
+      ]);
+      return hiredEmployees;
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while unlocking the employee",
+        400
+      );
     }
   }
 }

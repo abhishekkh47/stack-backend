@@ -21,10 +21,10 @@ import {
   ACTIVE_MILESTONE,
   MILESTONE_HOMEPAGE,
   STAGE_COMPLETE,
-  MILESTONE_RESULT_COPY,
 } from "@app/utility";
 import moment from "moment";
 import { ObjectId } from "mongodb";
+import { EmployeeDBService } from "@services/v9";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -152,15 +152,19 @@ class MilestoneDBService {
           })
         )._id;
       }
-      const [lastMilestoneCompleted, availableDailyChallenges] =
-        await Promise.all([
-          MilestoneResultTable.findOne({
-            userId: userIfExists._id,
-          })
-            .sort({ createdAt: -1 })
-            .lean(),
-          DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
-        ]);
+      const [
+        lastMilestoneCompleted,
+        availableDailyChallenges,
+        userHiredEmployees,
+      ] = await Promise.all([
+        MilestoneResultTable.findOne({
+          userId: userIfExists._id,
+        })
+          .sort({ createdAt: -1 })
+          .lean(),
+        DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
+        EmployeeDBService.listHiredEmployees(userIfExists),
+      ]);
       let completedActions = Object.keys(
         businessProfile?.completedActions || []
       );
@@ -426,17 +430,24 @@ class MilestoneDBService {
           });
         }
       }
-      if (learningActions.length) {
+      if (learningActions.length || userHiredEmployees.length) {
+        let dataArr = [];
+        if (learningActions.length) {
+          dataArr = [...dataArr, ...learningActions];
+        }
+        if (userHiredEmployees.length) {
+          dataArr = [...dataArr, ...userHiredEmployees];
+        }
         if (response?.tasks.length > 1) {
           response?.tasks.splice(1, 0, {
             title: EARN.title,
-            data: learningActions,
+            data: dataArr,
             sectionKey: EARN.key,
           });
         } else {
           response?.tasks?.push({
             title: EARN.title,
-            data: learningActions,
+            data: dataArr,
             sectionKey: EARN.key,
           });
         }
@@ -1010,7 +1021,7 @@ class MilestoneDBService {
               characterName: quizDetails?.characterName,
               characterImage: quizDetails?.characterImage,
               time,
-              key: "challenges",
+              key: MILESTONE_HOMEPAGE.CHALLENGES,
             };
           }
         })
