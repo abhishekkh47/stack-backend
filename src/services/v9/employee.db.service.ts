@@ -389,6 +389,47 @@ class EmployeeDBService {
       throw new NetworkError("Error occurred starting the project", 400);
     }
   }
+
+  /**
+   * @description start a project for an employee
+   * @param userIfExists
+   * @param data
+   * @returns {*}
+   */
+  public async completeProjectAndClaimReward(userIfExists: any, data: any) {
+    try {
+      let updatedObj = {};
+      const { employeeId, resultCopyInfo } = data;
+      const rewards = resultCopyInfo?.resultSummary;
+      if (rewards) {
+        updatedObj = {
+          cash: rewards[0].title,
+          "businessScore.current": rewards[1].title,
+          "businessScore.operationsScore": rewards[1].title,
+          "businessScore.growthScore": rewards[1].title,
+          "businessScore.productScore": rewards[1].title,
+        };
+      }
+      await Promise.all([
+        UserProjectsTable.findOneAndUpdate(
+          {
+            userId: userIfExists._id,
+            employeeId,
+          },
+          { $set: { status: EMP_STATUS.COMPLETED } }
+        ),
+        UserTable.findOneAndUpdate(
+          { _id: userIfExists._id },
+          {
+            $inc: updatedObj,
+          }
+        ),
+      ]);
+      return true;
+    } catch (error) {
+      throw new NetworkError("Error occurred starting the project", 400);
+    }
+  }
 }
 
 export default new EmployeeDBService();

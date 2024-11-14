@@ -140,6 +140,25 @@ class EmployeeController extends BaseController {
       message: "success",
     });
   }
+
+  /**
+   * @description This is to complete the project and claim reward
+   * @param ctx
+   * @returns {*}
+   */
+  @Route({ path: "/complete-project", method: HttpMethod.POST })
+  @Auth()
+  public async completeProject(ctx: any) {
+    const { user, body } = ctx.request;
+    const userExists = await UserTable.findOne({ _id: user._id });
+    if (!userExists) {
+      return this.BadRequest(ctx, "User Not Found");
+    }
+    await EmployeeDBService.completeProjectAndClaimReward(userExists, body);
+    return this.Ok(ctx, {
+      message: "success",
+    });
+  }
 }
 
 export default new EmployeeController();
