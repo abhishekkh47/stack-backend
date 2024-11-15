@@ -12,6 +12,7 @@ import {
   UserTable,
   MilestoneEventsTable,
   StageTable,
+  EmployeeTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -21,6 +22,7 @@ import {
   ACTIVE_MILESTONE,
   MILESTONE_HOMEPAGE,
   STAGE_COMPLETE,
+  DEFAULT_EMPLOYEE,
 } from "@app/utility";
 import moment from "moment";
 import { ObjectId } from "mongodb";
@@ -285,16 +287,7 @@ class MilestoneDBService {
       ) {
         currentGoal = response?.tasks[0]?.data[0];
         const currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
-        const [
-          currentMilestoneGoals,
-          ifOtherMilestoneCompleted,
-          quizLevelData,
-        ] = await Promise.all([
-          MilestoneGoalsTable.find({
-            milestoneId: currentMilestoneId,
-          })
-            .sort({ day: -1 })
-            .lean(),
+        const [ifOtherMilestoneCompleted, quizLevelData] = await Promise.all([
           MilestoneResultTable.findOne({
             userId: userIfExists._id,
             milestoneId: { $ne: currentMilestoneId },
@@ -1762,6 +1755,16 @@ class MilestoneDBService {
         eventId: action.quizNum,
       }).lean();
       if (eventDetails) {
+        // add employee reward to first event results for time being
+        if (eventDetails.eventId == 10001) {
+          // get default employee details on completion of first day goals
+          const employeeDetails = await EmployeeTable.findOne({ order: 1 });
+          if (employeeDetails) {
+            eventDetails.options.forEach((opt) => {
+              opt.resultCopyInfo.push(DEFAULT_EMPLOYEE);
+            });
+          }
+        }
         return {
           ...action,
           resultCopyInfo: null,

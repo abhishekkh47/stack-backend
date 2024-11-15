@@ -18,7 +18,7 @@ class EmployeeDBService {
   public async getEmployeeList(userIfExists: any, businessProfile: any) {
     try {
       let isLocked = true,
-        status = EMP_STATUS.UNLOCKED;
+        status = EMP_STATUS.LOCKED;
       let [employees, userEmployees] = await Promise.all([
         EmployeeTable.find(
           { available: true },
@@ -38,7 +38,7 @@ class EmployeeDBService {
       ]);
       // unlock the first employee for existing users if they have already completed the trigger task
       if (
-        businessProfile?.completedActions?.competitors &&
+        businessProfile?.completedActions?.valueProposition &&
         userEmployees?.length == 0
       ) {
         await this.unlockEmployee(userIfExists, employees[0]._id);
@@ -56,6 +56,7 @@ class EmployeeDBService {
             status = userEmp?.status;
           } else {
             isLocked = true;
+            status = EMP_STATUS.LOCKED;
           }
         }
         return { ...emp, isLocked, status };
@@ -153,9 +154,14 @@ class EmployeeDBService {
    * @description unlock an employee
    * @param userIfExists
    * @param employeeId
+   * @param level
    * @returns {*}
    */
-  public async unlockEmployee(userIfExists: any, employeeId: any) {
+  public async unlockEmployee(
+    userIfExists: any,
+    employeeId: any,
+    level: number = 1
+  ) {
     try {
       const empId = new ObjectId(employeeId);
       const [userEmployee, employee, employeeInitialLevel] = await Promise.all([
@@ -164,7 +170,7 @@ class EmployeeDBService {
           employeeId: empId,
         }),
         EmployeeTable.findOne({ _id: empId }),
-        EmployeeLevelsTable.findOne({ employeeId: empId }),
+        EmployeeLevelsTable.findOne({ employeeId: empId, level }),
       ]);
       if (userEmployee) {
         throw new NetworkError("This employee have been unlocked already", 400);
