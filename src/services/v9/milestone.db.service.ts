@@ -432,11 +432,11 @@ class MilestoneDBService {
       }
       if (learningActions.length || userHiredEmployees.length) {
         let dataArr = [];
-        if (learningActions.length) {
-          dataArr = [...dataArr, ...learningActions];
-        }
         if (userHiredEmployees.length) {
           dataArr = [...dataArr, ...userHiredEmployees];
+        }
+        if (learningActions.length) {
+          dataArr = [...dataArr, ...learningActions];
         }
         if (response?.tasks.length > 1) {
           response?.tasks.splice(1, 0, {
