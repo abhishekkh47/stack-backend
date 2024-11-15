@@ -8,7 +8,7 @@ import {
   UserProjectsTable,
   EmployeeProjectsTable,
 } from "@app/model";
-import { EMP_STATUS, MILESTONE_HOMEPAGE } from "@app/utility";
+import { EMP_STATUS, MILESTONE_HOMEPAGE, getDaysNum } from "@app/utility";
 class EmployeeDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -225,6 +225,7 @@ class EmployeeDBService {
             order: "$emp_projects.order",
             description: "$emp_projects.description",
             title: "$emp_projects.title",
+            projectId: "$emp_projects._id",
           },
         },
       ]).exec();
@@ -307,39 +308,44 @@ class EmployeeDBService {
         EmployeeProjectsTable.find({}),
       ]);
       if (userProjects.length && hiredEmployees.length) {
-        hiredEmployees.forEach((emp) => {
+        hiredEmployees.forEach(async (emp) => {
           const userProject = userProjects.find(
             (usr) => emp?.employeeId.toString() == usr?.employeeId.toString()
           );
-          if (userProject && userProject?.status != EMP_STATUS.HIRED) {
+          if (userProject && userProject?.status == EMP_STATUS.WORKING) {
             emp.status = userProject.status;
             emp["startTime"] = userProject.startedAt;
-            if (userProject?.status == EMP_STATUS.COMPLETED) {
-              const project = projectDetails.find(
-                (proj) =>
-                  proj._id.toString() == userProject.projectId.toString()
-              );
-              const rewards = project.rewards[0];
-              emp["resultCopyInfo"] = {
-                image: [
-                  {
-                    image: rewards.image,
-                    description: rewards.description,
-                  },
-                ],
-                resultSummary: [
-                  {
-                    title: rewards.cash,
-                    type: "K",
-                    icon: "dollar_banknote.webp",
-                  },
-                  {
-                    title: rewards.rating,
-                    type: " Rating",
-                    icon: "military_medal.webp",
-                  },
-                ],
-              };
+            const project = projectDetails?.find(
+              (proj) =>
+                proj?._id?.toString() == userProject?.projectId?.toString()
+            );
+            const rewards = project?.rewards[0];
+            emp["resultCopyInfo"] = {
+              images: [
+                {
+                  image: rewards.image,
+                  description: rewards.description,
+                },
+              ],
+              resultSummary: [
+                {
+                  title: rewards.rating,
+                  type: " Rating",
+                  icon: "military_medal.webp",
+                },
+                {
+                  title: rewards.cash,
+                  type: "K",
+                  icon: "dollar_banknote.webp",
+                },
+              ],
+            };
+            const days = await getDaysNum(
+              userIfExists,
+              userProject.startedAt.toString()
+            );
+            if (days >= 1 && emp.status != EMP_STATUS.COMPLETED) {
+              emp.status = EMP_STATUS.COMPLETED;
             }
           }
         });
@@ -403,11 +409,11 @@ class EmployeeDBService {
       const rewards = resultCopyInfo?.resultSummary;
       if (rewards) {
         updatedObj = {
-          cash: rewards[0].title,
-          "businessScore.current": rewards[1].title,
-          "businessScore.operationsScore": rewards[1].title,
-          "businessScore.growthScore": rewards[1].title,
-          "businessScore.productScore": rewards[1].title,
+          cash: rewards[1].title,
+          "businessScore.current": rewards[0].title,
+          "businessScore.operationsScore": rewards[0].title,
+          "businessScore.growthScore": rewards[0].title,
+          "businessScore.productScore": rewards[0].title,
         };
       }
       await Promise.all([
