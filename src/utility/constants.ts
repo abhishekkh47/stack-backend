@@ -1088,6 +1088,9 @@ export const MILESTONE_HOMEPAGE = {
   },
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
   EARN: { title: "Earn", key: "earn" },
+  CHALLENGES: "challenges",
+  NEW_EVENT: "New Event",
+  EMPLOYEE: "employee"
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
@@ -1266,4 +1269,11 @@ export const SIMULATION_REWARDS = {
   quizCoins: 25,
   cash: 50,
   businessScore: 2,
+};
+
+export const EMP_STATUS = {
+  UNLOCKED : 0,
+  HIRED : 1,
+  WORKING : 2,
+  COMPLETED : 3,
 };

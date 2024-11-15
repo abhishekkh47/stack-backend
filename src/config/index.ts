@@ -263,4 +263,7 @@ export default {
   get UNEXPECTED_EVENTS_SHEET_GID() {
     return process.env.UNEXPECTED_EVENTS_SHEET_GID;
   },
+  get EMPLOYEE_SHEET_GID() {
+    return process.env.EMPLOYEE_SHEET_GID;
+  },
 };
