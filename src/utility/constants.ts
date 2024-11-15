@@ -1089,7 +1089,7 @@ export const MILESTONE_HOMEPAGE = {
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
   EARN: { title: "Earn", key: "earn" },
   CHALLENGES: "challenges",
-  NEW_EVENT: "New Event",
+  EVENT: { title: "New Event", key: "event" },
   EMPLOYEE: "employee",
 };
 
@@ -1280,8 +1280,9 @@ export const EMP_STATUS = {
 };
 
 export const DEFAULT_EMPLOYEE = {
-  image: "default_employee.webp",
-  description: "New Employee",
-  _id: "employee",
-  key: "employee",
+  title: "",
+  type: "New Employee",
+  icon: "default_employee.webp",
+  employeeId: "6735960bd90aef50745598fe", // employee Id of default employee from employees collection
+  level: 1,
 };

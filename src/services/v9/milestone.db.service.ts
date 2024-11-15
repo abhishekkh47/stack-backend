@@ -1751,6 +1751,7 @@ class MilestoneDBService {
    */
   private async getEventDetails(action: any) {
     try {
+      let employee = null;
       const eventDetails = await MilestoneEventsTable.findOne({
         eventId: action.quizNum,
       }).lean();
@@ -1758,22 +1759,23 @@ class MilestoneDBService {
         // add employee reward to first event results for time being
         if (eventDetails.eventId == 10001) {
           // get default employee details on completion of first day goals
-          const employeeDetails = await EmployeeTable.findOne({ order: 1 });
+          const employeeDetails = await EmployeeTable.findOne({
+            order: 1,
+          }).lean();
           if (employeeDetails) {
-            eventDetails.options.forEach((opt) => {
-              opt.resultCopyInfo.push(DEFAULT_EMPLOYEE);
-            });
+            employee = { ...DEFAULT_EMPLOYEE, employeeId: employeeDetails._id };
           }
         }
         return {
           ...action,
           resultCopyInfo: null,
           ...eventDetails,
-          title: "New Event",
+          title: MILESTONE_HOMEPAGE.EVENT.title,
           iconBackgroundColor: "#4885FF29",
           iconImage: "cal.webp",
           time: "1 min",
-          key: "event",
+          key: MILESTONE_HOMEPAGE.EVENT.key,
+          employee,
         };
       }
 
