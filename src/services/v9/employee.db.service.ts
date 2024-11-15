@@ -20,7 +20,20 @@ class EmployeeDBService {
       let isLocked = true,
         status = EMP_STATUS.UNLOCKED;
       let [employees, userEmployees] = await Promise.all([
-        EmployeeTable.find({ order: 1 }).sort({ order: 1 }).lean(),
+        EmployeeTable.find(
+          { available: true },
+          {
+            name: 1,
+            bio: 1,
+            icon: 1,
+            image: 1,
+            userType: 1,
+            price: 1,
+            title: 1,
+          }
+        )
+          .sort({ order: 1 })
+          .lean(),
         UserEmployeesTable.find({ userId: userIfExists._id }),
       ]);
       // unlock the first employee for existing users if they have already completed the trigger task
@@ -40,10 +53,10 @@ class EmployeeDBService {
           );
           if (userEmp) {
             isLocked = false;
+            status = userEmp?.status;
           } else {
             isLocked = true;
           }
-          status = userEmp.status;
         }
         return { ...emp, isLocked, status };
       });
@@ -319,7 +332,7 @@ class EmployeeDBService {
               (proj) =>
                 proj?._id?.toString() == userProject?.projectId?.toString()
             );
-            const rewards = project?.rewards[0];
+            const rewards = project?.rewards[1];
             emp["resultCopyInfo"] = {
               images: [
                 {

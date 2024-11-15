@@ -2981,7 +2981,9 @@ class ScriptService {
         projectOrder = 0,
         empTitle = null,
         empProjectObj = {},
-        projectTitle = null;
+        projectTitle = null,
+        projectRewards = [],
+        projectRewardTitle = null;
       for (const row of rows) {
         const currentOrder = Number(row["Order"]?.trimEnd());
         if (currentOrder && order != currentOrder) {
@@ -2990,14 +2992,15 @@ class ScriptService {
           empTitle = row["Title 1"]?.trimEnd();
           const obj = {
             order: currentOrder,
+            available: row["Available"]?.trimEnd() == "TRUE" ? true : false,
             name: row["Employee"]?.trimEnd(),
             icon: row["Icon"]?.trimEnd() || null,
             title: empTitle,
             image: row["Image"]?.trimEnd(),
             price: row["Token Price"]?.trimEnd(),
-            workTime: row["Work Time"]?.trimEnd(),
+            workTime: Number(row["Work Time"]?.trimEnd()),
             bio: row["Bio"]?.trimEnd(),
-            unlockTrigger: row["Bio"]?.trimEnd(),
+            unlockTrigger: row["Trigger to Unlock"]?.trimEnd(),
             userType: row["User Type"]?.trimEnd() == "Pro Only" ? 1 : 0,
             ratings: [
               row["Rating 1 Name"]?.trimEnd(),
@@ -3040,24 +3043,26 @@ class ScriptService {
             title: projectTitle,
             description: row["Project Description"].trimEnd(),
             order: ++projectOrder,
+            rewards: [],
           };
+          projectRewards = [];
         }
-        if (row["Outcome Image"].trimEnd()) {
-          empProjectObj["rewards"] = [
-            {
-              probability: row["Probability of Outcome"].trimEnd(),
-              image: row["Outcome Image"].trimEnd(),
-              description: row["Outcome Copy"].trimEnd(),
-              rating: Number(row["Rating Reward"].trimEnd()),
-              cash: Number(row["Cash Reward"].trimEnd()) / 1000,
-            },
-          ];
+        if (projectRewardTitle != projectTitle) {
+          projectRewardTitle = projectTitle;
+          empProjectObj["rewards"] = projectRewards;
           if (!employeeProjects[order]) {
             employeeProjects[order] = [empProjectObj];
           } else {
             employeeProjects[order].push(empProjectObj);
           }
         }
+        projectRewards.push({
+          probability: row["Probability of Outcome"]?.trimEnd() || null,
+          image: row["Outcome Image"]?.trimEnd() || null,
+          description: row["Outcome Copy"]?.trimEnd() || null,
+          rating: Number(row["Rating Reward"]?.trimEnd()) || 0,
+          cash: Number(row["Cash Reward"]?.trimEnd()) / 1000 || 0,
+        });
       }
       return { employees, employeeLevels, employeeProjects };
     } catch (error) {
@@ -3095,6 +3100,7 @@ class ScriptService {
                 unlockTrigger: obj.unlockTrigger,
                 userType: obj.userType,
                 ratings: obj.ratings,
+                available: obj.available,
               },
             },
             upsert: true,

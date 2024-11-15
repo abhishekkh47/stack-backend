@@ -56,6 +56,11 @@ const schema = new mongoose.Schema<IEmployeesSchema>(
         required: true,
       },
     ],
+    available: {
+      type: mongoose.Schema.Types.Boolean,
+      default: true,
+      required: true,
+    },
   },
   { timestamps: true }
 );
