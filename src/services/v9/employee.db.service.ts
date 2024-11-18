@@ -496,9 +496,9 @@ class EmployeeDBService {
         empDetails.forEach((emp) => {
           employees.push({
             ...DEFAULT_EMPLOYEE,
+            title: emp.employeeDetails?.name,
             employeeId: emp.employeeId,
             level: emp.level,
-            name: emp.employeeDetails?.name,
           });
         });
       }

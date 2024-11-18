@@ -70,8 +70,7 @@ class EmployeeController extends BaseController {
     const employeesDetails = await EmployeeDBService.unlockEmployee(
       userExists,
       employeeId,
-      1,
-      employees
+      1
     );
     return this.Ok(ctx, {
       data: employeesDetails,
