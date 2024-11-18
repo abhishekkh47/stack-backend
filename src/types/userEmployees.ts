@@ -8,6 +8,7 @@ export interface IUserEmployees {
   currentRatings: IRatings[];
   hiredAt: mongoose.Schema.Types.Date;
   status: IStatus;
+  isProEmployee: IIsProEmployee;
 }
 
 enum IStatus {
@@ -20,4 +21,9 @@ enum IStatus {
 interface IRatings {
   name: string;
   value: number;
+}
+
+enum IIsProEmployee {
+  NON_PRO = 0,
+  PRO = 1,
 }

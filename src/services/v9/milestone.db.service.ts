@@ -1804,6 +1804,7 @@ class MilestoneDBService {
       let updatedCoins = userExists.quizCoins + data.tokens;
       const currentCash = userExists?.cash > 0 ? userExists?.cash : 50;
       const changeInCash = Math.floor((currentCash / 100) * data.cash);
+      const unlockedEmployees = data?.employees || [];
       updatedCash = currentCash + changeInCash;
       let updatedBusinessScore =
         (userExists.businessScore?.current || 90) + data.businessScore;
@@ -1873,6 +1874,9 @@ class MilestoneDBService {
           { $set: businessProfileObj },
           { upsert: true }
         ),
+        unlockedEmployees.length
+          ? EmployeeDBService.unlockEmployee(userExists, unlockedEmployees)
+          : Promise.resolve(),
       ]);
       return true;
     } catch (error) {

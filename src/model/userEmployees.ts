@@ -51,6 +51,11 @@ const schema = new mongoose.Schema<IUserEmployeesSchema>(
       default: 0,
       required: true,
     },
+    isProEmployee: {
+      type: mongoose.Schema.Types.Number,
+      default: 0,
+      required: true,
+    },
   },
   { timestamps: true }
 );
