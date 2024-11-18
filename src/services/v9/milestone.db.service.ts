@@ -12,6 +12,7 @@ import {
   UserTable,
   MilestoneEventsTable,
   StageTable,
+  EmployeeTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -21,6 +22,7 @@ import {
   ACTIVE_MILESTONE,
   MILESTONE_HOMEPAGE,
   STAGE_COMPLETE,
+  DEFAULT_EMPLOYEE,
 } from "@app/utility";
 import moment from "moment";
 import { ObjectId } from "mongodb";
@@ -285,16 +287,7 @@ class MilestoneDBService {
       ) {
         currentGoal = response?.tasks[0]?.data[0];
         const currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
-        const [
-          currentMilestoneGoals,
-          ifOtherMilestoneCompleted,
-          quizLevelData,
-        ] = await Promise.all([
-          MilestoneGoalsTable.find({
-            milestoneId: currentMilestoneId,
-          })
-            .sort({ day: -1 })
-            .lean(),
+        const [ifOtherMilestoneCompleted, quizLevelData] = await Promise.all([
           MilestoneResultTable.findOne({
             userId: userIfExists._id,
             milestoneId: { $ne: currentMilestoneId },
@@ -432,11 +425,11 @@ class MilestoneDBService {
       }
       if (learningActions.length || userHiredEmployees.length) {
         let dataArr = [];
-        if (learningActions.length) {
-          dataArr = [...dataArr, ...learningActions];
-        }
         if (userHiredEmployees.length) {
           dataArr = [...dataArr, ...userHiredEmployees];
+        }
+        if (learningActions.length) {
+          dataArr = [...dataArr, ...learningActions];
         }
         if (response?.tasks.length > 1) {
           response?.tasks.splice(1, 0, {
@@ -1758,19 +1751,31 @@ class MilestoneDBService {
    */
   private async getEventDetails(action: any) {
     try {
+      let employee = null;
       const eventDetails = await MilestoneEventsTable.findOne({
         eventId: action.quizNum,
       }).lean();
       if (eventDetails) {
+        // add employee reward to first event results for time being
+        if (eventDetails.eventId == 10001) {
+          // get default employee details on completion of first day goals
+          const employeeDetails = await EmployeeTable.findOne({
+            order: 1,
+          }).lean();
+          if (employeeDetails) {
+            employee = { ...DEFAULT_EMPLOYEE, employeeId: employeeDetails._id };
+          }
+        }
         return {
           ...action,
           resultCopyInfo: null,
           ...eventDetails,
-          title: "New Event",
+          title: MILESTONE_HOMEPAGE.EVENT.title,
           iconBackgroundColor: "#4885FF29",
           iconImage: "cal.webp",
           time: "1 min",
-          key: "event",
+          key: MILESTONE_HOMEPAGE.EVENT.key,
+          employee,
         };
       }
 

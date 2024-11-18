@@ -1089,8 +1089,8 @@ export const MILESTONE_HOMEPAGE = {
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
   EARN: { title: "Earn", key: "earn" },
   CHALLENGES: "challenges",
-  NEW_EVENT: "New Event",
-  EMPLOYEE: "employee"
+  EVENT: { title: "New Event", key: "event" },
+  EMPLOYEE: "employee",
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
@@ -1272,8 +1272,17 @@ export const SIMULATION_REWARDS = {
 };
 
 export const EMP_STATUS = {
-  UNLOCKED : 0,
-  HIRED : 1,
-  WORKING : 2,
-  COMPLETED : 3,
+  LOCKED: 0,
+  UNLOCKED: 1,
+  HIRED: 2,
+  WORKING: 3,
+  COMPLETED: 4,
+};
+
+export const DEFAULT_EMPLOYEE = {
+  title: "",
+  type: "New Employee",
+  icon: "default_employee.webp",
+  employeeId: "6735960bd90aef50745598fe", // employee Id of default employee from employees collection
+  level: 1,
 };

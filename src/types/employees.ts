@@ -12,6 +12,7 @@ export interface IEmployees {
   userType: number;
   ratings: string[];
   order: number;
+  available: boolean;
 }
 
 export interface IEmployeeLevels {
