@@ -66,6 +66,7 @@ import {
   SIMULATION_RESULT_COPY,
   MILESTONE_STAGE_REWARDS,
   MILESTONE_RESULT_COPY,
+  TRIGGER_TYPE,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2974,7 +2975,10 @@ class ScriptService {
    */
   public async convertEmployeeDataToJSON(rows) {
     try {
-      const events = await MilestoneEventsTable.find().lean();
+      const [events, stages] = await Promise.all([
+        MilestoneEventsTable.find().lean(),
+        StageTable.find().lean(),
+      ]);
       const employees = [],
         employeeLevels = [],
         employeeProjects = {};
@@ -2985,7 +2989,8 @@ class ScriptService {
         projectTitle = null,
         projectRewards = [],
         projectRewardTitle = null,
-        currentEvent = null;
+        currentTriggerId = null,
+        unlockTriggerType = TRIGGER_TYPE.EVENT;
       for (const row of rows) {
         const currentOrder = Number(row["Order"]?.trimEnd());
         if (currentOrder && order != currentOrder) {
@@ -3011,9 +3016,19 @@ class ScriptService {
           };
           employees.push(obj);
 
-          currentEvent = events.find(
-            (obj) => obj.eventId == Number(row["TriggerId"]?.trimEnd())
-          );
+          unlockTriggerType =
+            row["TriggerType"]?.trimEnd() == "EVENT"
+              ? TRIGGER_TYPE.EVENT
+              : TRIGGER_TYPE.STAGE;
+          if (unlockTriggerType == TRIGGER_TYPE.EVENT) {
+            currentTriggerId = events.find(
+              (obj) => obj.eventId == Number(row["TriggerId"]?.trimEnd())
+            );
+          } else {
+            currentTriggerId = stages.find(
+              (obj) => obj.title == row["TriggerId"]?.trimEnd()
+            );
+          }
           employeeLevels.push({
             order: currentOrder,
             level: 1,
@@ -3034,7 +3049,8 @@ class ScriptService {
             ],
             promotionCost: 0,
             unlockTrigger: row["Trigger to Unlock"]?.trimEnd(),
-            unlockTriggerId: currentEvent?._id || null,
+            unlockTriggerId: currentTriggerId?._id || null,
+            unlockTriggerType,
           });
         }
         if (
@@ -3133,6 +3149,7 @@ class ScriptService {
                 promotionCost: obj.promotionCost,
                 unlockTrigger: obj.unlockTrigger,
                 unlockTriggerId: obj.unlockTriggerId,
+                unlockTriggerType: obj.unlockTriggerType,
               },
             },
             upsert: true,

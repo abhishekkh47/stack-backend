@@ -51,6 +51,15 @@ const schema = new mongoose.Schema<IEmployeeLevelsSchema>(
       required: true,
       ref: "milestone_events",
     },
+    /**
+     * Type 1 = unlock on event completion
+     * Type 2 = unlock on stage completion
+     */
+    unlockTriggerType: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 2,
+    },
   },
   { timestamps: true }
 );

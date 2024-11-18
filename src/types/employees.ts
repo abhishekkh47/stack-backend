@@ -22,6 +22,7 @@ export interface IEmployeeLevels {
   promotionCost: number;
   unlockTrigger: string;
   unlockTriggerId: mongoose.Schema.Types.ObjectId;
+  unlockTriggerType: number;
 }
 
 interface IRatings {

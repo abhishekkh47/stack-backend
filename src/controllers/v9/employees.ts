@@ -62,17 +62,19 @@ class EmployeeController extends BaseController {
   @Auth()
   public async unlockEmployee(ctx: any) {
     const { user, body } = ctx.request;
-    const { employeeId } = body;
+    const { employeeId, employees } = body;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const employees = await EmployeeDBService.unlockEmployee(
+    const employeesDetails = await EmployeeDBService.unlockEmployee(
       userExists,
-      employeeId
+      employeeId,
+      1,
+      employees
     );
     return this.Ok(ctx, {
-      data: employees,
+      data: employeesDetails,
     });
   }
 

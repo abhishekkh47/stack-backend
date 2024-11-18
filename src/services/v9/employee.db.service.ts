@@ -8,7 +8,12 @@ import {
   UserProjectsTable,
   EmployeeProjectsTable,
 } from "@app/model";
-import { EMP_STATUS, MILESTONE_HOMEPAGE, getDaysNum } from "@app/utility";
+import {
+  EMP_STATUS,
+  MILESTONE_HOMEPAGE,
+  getDaysNum,
+  DEFAULT_EMPLOYEE,
+} from "@app/utility";
 class EmployeeDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -453,6 +458,53 @@ class EmployeeDBService {
       return true;
     } catch (error) {
       throw new NetworkError("Error occurred starting the project", 400);
+    }
+  }
+
+  /**
+   * @description format get employee list unlocked on event or stage completion
+   * @param triggerId stageId or the eventId
+   * @param triggerType stage or event
+   * @returns {*}
+   */
+  public async getUnlockedEmployeeDetails(triggerId: any, triggerType: number) {
+    try {
+      let employees = [];
+      const empDetails = await EmployeeLevelsTable.aggregate([
+        {
+          $match: {
+            unlockTriggerId: new ObjectId(triggerId),
+            unlockTriggerType: triggerType,
+          },
+        },
+        {
+          $lookup: {
+            from: "employees",
+            localField: "employeeId",
+            foreignField: "_id",
+            as: "employeeDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$employeeDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+      ]).exec();
+      if (empDetails.length) {
+        empDetails.forEach((emp) => {
+          employees.push({
+            ...DEFAULT_EMPLOYEE,
+            employeeId: emp.employeeId,
+            level: emp.level,
+            name: emp.employeeDetails?.name,
+          });
+        });
+      }
+      return employees;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }
