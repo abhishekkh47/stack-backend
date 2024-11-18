@@ -37,15 +37,19 @@ const schema = new mongoose.Schema<IEmployeeLevelsSchema>(
         },
       },
     ],
-    promotionTrigger: {
-      type: mongoose.Schema.Types.String,
-      default: null,
-      required: true,
-    },
     promotionCost: {
       type: mongoose.Schema.Types.Number,
       default: 0,
       required: true,
+    },
+    unlockTrigger: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+    },
+    unlockTriggerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "milestone_events",
     },
   },
   { timestamps: true }

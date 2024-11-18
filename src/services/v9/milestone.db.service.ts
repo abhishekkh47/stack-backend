@@ -1751,7 +1751,7 @@ class MilestoneDBService {
    */
   private async getEventDetails(action: any) {
     try {
-      let employee = null;
+      let employees = null;
       const eventDetails = await MilestoneEventsTable.findOne({
         eventId: action.quizNum,
       }).lean();
@@ -1763,7 +1763,13 @@ class MilestoneDBService {
             order: 1,
           }).lean();
           if (employeeDetails) {
-            employee = { ...DEFAULT_EMPLOYEE, employeeId: employeeDetails._id };
+            employees = [
+              {
+                ...DEFAULT_EMPLOYEE,
+                title: "New Employee",
+                employeeId: employeeDetails._id,
+              },
+            ];
           }
         }
         return {
@@ -1775,7 +1781,7 @@ class MilestoneDBService {
           iconImage: "cal.webp",
           time: "1 min",
           key: MILESTONE_HOMEPAGE.EVENT.key,
-          employee,
+          employees,
         };
       }
 

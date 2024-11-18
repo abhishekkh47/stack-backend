@@ -2974,6 +2974,7 @@ class ScriptService {
    */
   public async convertEmployeeDataToJSON(rows) {
     try {
+      const events = await MilestoneEventsTable.find().lean();
       const employees = [],
         employeeLevels = [],
         employeeProjects = {};
@@ -2983,7 +2984,8 @@ class ScriptService {
         empProjectObj = {},
         projectTitle = null,
         projectRewards = [],
-        projectRewardTitle = null;
+        projectRewardTitle = null,
+        currentEvent = null;
       for (const row of rows) {
         const currentOrder = Number(row["Order"]?.trimEnd());
         if (currentOrder && order != currentOrder) {
@@ -3000,7 +3002,6 @@ class ScriptService {
             price: row["Token Price"]?.trimEnd(),
             workTime: Number(row["Work Time"]?.trimEnd()),
             bio: row["Bio"]?.trimEnd(),
-            unlockTrigger: row["Trigger to Unlock"]?.trimEnd(),
             userType: row["User Type"]?.trimEnd() == "Pro Only" ? 1 : 0,
             ratings: [
               row["Rating 1 Name"]?.trimEnd(),
@@ -3010,6 +3011,9 @@ class ScriptService {
           };
           employees.push(obj);
 
+          currentEvent = events.find(
+            (obj) => obj.eventId == Number(row["TriggerId"]?.trimEnd())
+          );
           employeeLevels.push({
             order: currentOrder,
             level: 1,
@@ -3028,8 +3032,9 @@ class ScriptService {
                 value: Number(row["Rating 3"].trimEnd()),
               },
             ],
-            promotionTrigger: row["Trigger to Unlock"].trimEnd(),
             promotionCost: 0,
+            unlockTrigger: row["Trigger to Unlock"]?.trimEnd(),
+            unlockTriggerId: currentEvent?._id || null,
           });
         }
         if (
@@ -3097,7 +3102,6 @@ class ScriptService {
                 price: obj.price,
                 workTime: obj.workTime,
                 bio: obj.bio,
-                unlockTrigger: obj.unlockTrigger,
                 userType: obj.userType,
                 ratings: obj.ratings,
                 available: obj.available,
@@ -3126,8 +3130,9 @@ class ScriptService {
                 level: obj.level,
                 title: obj.title,
                 ratingValues: obj.ratingValues,
-                promotionTrigger: obj.promotionTrigger,
                 promotionCost: obj.promotionCost,
+                unlockTrigger: obj.unlockTrigger,
+                unlockTriggerId: obj.unlockTriggerId,
               },
             },
             upsert: true,
