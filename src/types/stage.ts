@@ -11,4 +11,19 @@ export interface IStage {
   order: number;
   type: number;
   reward: number;
+  cash: number;
+  rating: number;
+  image: string;
+  colorInfo: IColorBook;
+}
+
+interface IColorBook {
+  outer: IColorDetails;
+  inner: IColorDetails;
+}
+
+interface IColorDetails {
+  colors: string[];
+  location: mongoose.Schema.Types.Decimal128[];
+  angle: number;
 }

@@ -2503,6 +2503,28 @@ class ScriptController extends BaseController {
       return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
     }
   }
+
+  /**
+   * @description This method is to import employee information to DB
+   * @param ctx
+   */
+  @Route({ path: "/import-stage-details", method: HttpMethod.POST })
+  @InternalUserAuth()
+  public async importStageDetails(ctx: any) {
+    try {
+      const rows = await ScriptService.readSpreadSheet(
+        envData.STAGE_SHEET_GID,
+        envData.SHEET_ID
+      );
+      if (rows.length === 0) {
+        return this.BadRequest(ctx, "Dataset Not Found");
+      }
+      const data = await ScriptService.addStageDetailstoDB(rows);
+      return this.Ok(ctx, { message: "Success", data });
+    } catch (error) {
+      return this.BadRequest(ctx, `Something Went Wrong : ${error.message}`);
+    }
+  }
 }
 
 export default new ScriptController();
