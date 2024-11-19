@@ -44,6 +44,65 @@ const schema = new mongoose.Schema<IStageSchema>(
     */
     type: { type: mongoose.Schema.Types.Number, required: true, default: 0 },
     reward: { type: mongoose.Schema.Types.Number, required: true, default: 0 },
+    cash: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 0,
+    },
+    rating: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 0,
+    },
+    image: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
+    colorInfo: {
+      outer: {
+        colors: [
+          {
+            type: mongoose.Schema.Types.String,
+            required: true,
+            default: null,
+          },
+        ],
+        location: [
+          {
+            type: mongoose.Schema.Types.Decimal128,
+            required: true,
+            default: 0,
+          },
+        ],
+        angle: {
+          type: mongoose.Schema.Types.Number,
+          required: true,
+          default: 0,
+        },
+      },
+      inner: {
+        colors: [
+          {
+            type: mongoose.Schema.Types.String,
+            required: true,
+            default: null,
+          },
+        ],
+        location: [
+          {
+            type: mongoose.Schema.Types.Decimal128,
+            required: true,
+            default: 0,
+          },
+        ],
+        angle: {
+          type: mongoose.Schema.Types.Number,
+          required: true,
+          default: 0,
+        },
+      },
+    },
   },
   { timestamps: true }
 );

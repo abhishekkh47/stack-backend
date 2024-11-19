@@ -2057,26 +2057,6 @@ class ScriptService {
         }
         return acc;
       }, []);
-      stageArray.forEach((stage) => {
-        let bulkWriteObject = {
-          updateOne: {
-            filter: {
-              title: stage.title,
-            },
-            update: {
-              $set: {
-                title: stage.title,
-                reward: MILESTONE_STAGE_REWARDS[stage.title]?.token || 0,
-                order: MILESTONE_STAGE_REWARDS[stage.title]?.order || 0,
-                type: 1,
-              },
-            },
-            upsert: true,
-          },
-        };
-        stageContent.push(bulkWriteObject);
-      });
-      await StageTable.bulkWrite(stageContent);
       const [quizTopics, stages] = await Promise.all([
         QuizTopicTable.find({ type: 4 }).lean(),
         StageTable.find({}, { title: 1 }).lean(),
@@ -3188,6 +3168,56 @@ class ScriptService {
       });
       await EmployeeProjectsTable.bulkWrite(employeeProjectsData);
       return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON by filtering with key referring the action to be performed
+   * @param rows
+   * @returns {*}
+   */
+  public async addStageDetailstoDB(rows: any) {
+    try {
+      const stage = [];
+      for (const row of rows) {
+        if (row["Order"]?.trimEnd()) {
+          stage.push({
+            order: row["Order"]?.trimEnd(),
+            title: row["Stage Name"]?.trimEnd(),
+            stageId: row["Stage Id"]?.trimEnd(),
+            image: row["Image"]?.trimEnd(),
+            description: row["Description"]?.trimEnd(),
+            reward: row["Token"]?.trimEnd(),
+            cash: row["Cash"]?.trimEnd(),
+            rating: row["Rating"]?.trimEnd(),
+            colorInfo: {
+              outer: {
+                colors: row["OuterColors"]?.trimEnd().split(","),
+                location: row["OuterLocation"]?.trimEnd().split(","),
+                angle: Number(row["OuterAngle"]?.trimEnd()) || 0,
+              },
+              inner: {
+                colors: row["InnerColors"]?.trimEnd().split(","),
+                location: row["InnerLocation"]?.trimEnd().split(","),
+                angle: Number(row["InnerAngle"]?.trimEnd()) || 0,
+              },
+            },
+          });
+        }
+      }
+
+      const bulkWriteOperations = stage.map((data) => ({
+        updateOne: {
+          filter: { title: data.title },
+          update: { $set: data },
+          upsert: true,
+        },
+      }));
+
+      await StageTable.bulkWrite(bulkWriteOperations);
+      return stage;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
