@@ -537,13 +537,13 @@ class UserDBService {
    */
   public async getStageColorInfo(data: any) {
     try {
-      const stageData = STAGE_COMPLETE[data?.stageName];
+      const stageDetails = await StageTable.findOne({ title: data?.stageName });
       const colorInfo = {
         stage: {
-          ...stageData.stageInfo.colorInfo,
+          ...stageDetails.colorInfo,
         },
         score: {
-          outer: stageData.stageInfo.colorInfo.outer,
+          outer: stageDetails.colorInfo.outer,
         },
       };
       data["colorInfo"] = { ...colorInfo };
