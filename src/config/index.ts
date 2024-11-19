@@ -266,4 +266,7 @@ export default {
   get EMPLOYEE_SHEET_GID() {
     return process.env.EMPLOYEE_SHEET_GID;
   },
+  get STAGE_SHEET_GID() {
+    return process.env.STAGE_SHEET_GID;
+  },
 };

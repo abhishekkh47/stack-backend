@@ -91,6 +91,19 @@ class UserService {
         } else {
           last7days = SEVEN_DAYS_TO_RESET;
         }
+        if (!businessSubScoreObj) {
+          businessSubScoreObj = {
+            growthScore:
+              userDetails?.businessScore?.growthScore + 1 ||
+              currentBusinessScore,
+            operationsScore:
+              userDetails?.businessScore?.operationsScore + 1 ||
+              currentBusinessScore,
+            productScore:
+              userDetails?.businessScore?.productScore + 1 ||
+              currentBusinessScore,
+          };
+        }
         businessScore = {
           current: currentBusinessScore,
           longest: Math.max(
@@ -111,6 +124,22 @@ class UserService {
           userDetails?.businessScore?.updatedDate || currentDate,
           currentDate
         );
+        if (!businessSubScoreObj) {
+          businessSubScoreObj = {
+            growthScore:
+              userDetails?.businessScore?.growthScore -
+                businessScoreDiffDays +
+                2 || currentBusinessScore,
+            operationsScore:
+              userDetails?.businessScore?.operationsScore -
+                businessScoreDiffDays +
+                2 || currentBusinessScore,
+            productScore:
+              userDetails?.businessScore?.productScore -
+                businessScoreDiffDays +
+                2 || currentBusinessScore,
+          };
+        }
         let currentBusinessScoreValue =
           currentScore - businessScoreDiffDays + 2;
         let longestBusinessScoreValue = userDetails.businessScore?.longest || 0;
@@ -128,6 +157,7 @@ class UserService {
           updatedDate: currentDate as IMDY,
           last7days,
           dayContinued,
+          ...businessSubScoreObj,
         };
         isBusinessScoreToBeUpdated = true;
       }
@@ -156,6 +186,10 @@ class UserService {
           previousBusinessScore: userDetails.businessScore?.current || 90,
           message,
           buttonText,
+          growthScore: updatedBusinessScoreDetails.businessScore?.growthScore,
+          operationsScore:
+            updatedBusinessScoreDetails.businessScore?.operationsScore,
+          productScore: updatedBusinessScoreDetails.businessScore.productScore,
         };
       } else {
         const updatedBusinessScoreDetails = await UserTable.findOne({
@@ -176,6 +210,10 @@ class UserService {
           previousBusinessScore: currentScore || 90,
           message,
           buttonText,
+          growthScore: updatedBusinessScoreDetails.businessScore?.growthScore,
+          operationsScore:
+            updatedBusinessScoreDetails.businessScore?.operationsScore,
+          productScore: updatedBusinessScoreDetails.businessScore.productScore,
         };
       }
     } catch (error) {

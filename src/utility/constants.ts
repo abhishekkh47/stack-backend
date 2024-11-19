@@ -1291,3 +1291,5 @@ export const TRIGGER_TYPE = {
   EVENT: 1,
   STAGE: 2,
 };
+
+export const EMP_START_PROJECT_COST = -5;
