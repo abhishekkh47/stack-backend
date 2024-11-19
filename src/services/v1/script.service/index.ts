@@ -66,6 +66,7 @@ import {
   SIMULATION_RESULT_COPY,
   MILESTONE_STAGE_REWARDS,
   MILESTONE_RESULT_COPY,
+  TRIGGER_TYPE,
 } from "@app/utility";
 import OpenAI from "openai";
 
@@ -2056,26 +2057,6 @@ class ScriptService {
         }
         return acc;
       }, []);
-      stageArray.forEach((stage) => {
-        let bulkWriteObject = {
-          updateOne: {
-            filter: {
-              title: stage.title,
-            },
-            update: {
-              $set: {
-                title: stage.title,
-                reward: MILESTONE_STAGE_REWARDS[stage.title]?.token || 0,
-                order: MILESTONE_STAGE_REWARDS[stage.title]?.order || 0,
-                type: 1,
-              },
-            },
-            upsert: true,
-          },
-        };
-        stageContent.push(bulkWriteObject);
-      });
-      await StageTable.bulkWrite(stageContent);
       const [quizTopics, stages] = await Promise.all([
         QuizTopicTable.find({ type: 4 }).lean(),
         StageTable.find({}, { title: 1 }).lean(),
@@ -2974,6 +2955,10 @@ class ScriptService {
    */
   public async convertEmployeeDataToJSON(rows) {
     try {
+      const [events, stages] = await Promise.all([
+        MilestoneEventsTable.find().lean(),
+        StageTable.find().lean(),
+      ]);
       const employees = [],
         employeeLevels = [],
         employeeProjects = {};
@@ -2983,7 +2968,9 @@ class ScriptService {
         empProjectObj = {},
         projectTitle = null,
         projectRewards = [],
-        projectRewardTitle = null;
+        projectRewardTitle = null,
+        currentTriggerId = null,
+        unlockTriggerType = TRIGGER_TYPE.EVENT;
       for (const row of rows) {
         const currentOrder = Number(row["Order"]?.trimEnd());
         if (currentOrder && order != currentOrder) {
@@ -3000,7 +2987,6 @@ class ScriptService {
             price: row["Token Price"]?.trimEnd(),
             workTime: Number(row["Work Time"]?.trimEnd()),
             bio: row["Bio"]?.trimEnd(),
-            unlockTrigger: row["Trigger to Unlock"]?.trimEnd(),
             userType: row["User Type"]?.trimEnd() == "Pro Only" ? 1 : 0,
             ratings: [
               row["Rating 1 Name"]?.trimEnd(),
@@ -3010,6 +2996,19 @@ class ScriptService {
           };
           employees.push(obj);
 
+          unlockTriggerType =
+            row["TriggerType"]?.trimEnd() == "EVENT"
+              ? TRIGGER_TYPE.EVENT
+              : TRIGGER_TYPE.STAGE;
+          if (unlockTriggerType == TRIGGER_TYPE.EVENT) {
+            currentTriggerId = events.find(
+              (obj) => obj.eventId == Number(row["TriggerId"]?.trimEnd())
+            );
+          } else {
+            currentTriggerId = stages.find(
+              (obj) => obj.title == row["TriggerId"]?.trimEnd()
+            );
+          }
           employeeLevels.push({
             order: currentOrder,
             level: 1,
@@ -3028,8 +3027,10 @@ class ScriptService {
                 value: Number(row["Rating 3"].trimEnd()),
               },
             ],
-            promotionTrigger: row["Trigger to Unlock"].trimEnd(),
             promotionCost: 0,
+            unlockTrigger: row["Trigger to Unlock"]?.trimEnd(),
+            unlockTriggerId: currentTriggerId?._id || null,
+            unlockTriggerType,
           });
         }
         if (
@@ -3097,7 +3098,6 @@ class ScriptService {
                 price: obj.price,
                 workTime: obj.workTime,
                 bio: obj.bio,
-                unlockTrigger: obj.unlockTrigger,
                 userType: obj.userType,
                 ratings: obj.ratings,
                 available: obj.available,
@@ -3126,8 +3126,10 @@ class ScriptService {
                 level: obj.level,
                 title: obj.title,
                 ratingValues: obj.ratingValues,
-                promotionTrigger: obj.promotionTrigger,
                 promotionCost: obj.promotionCost,
+                unlockTrigger: obj.unlockTrigger,
+                unlockTriggerId: obj.unlockTriggerId,
+                unlockTriggerType: obj.unlockTriggerType,
               },
             },
             upsert: true,
@@ -3166,6 +3168,56 @@ class ScriptService {
       });
       await EmployeeProjectsTable.bulkWrite(employeeProjectsData);
       return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON by filtering with key referring the action to be performed
+   * @param rows
+   * @returns {*}
+   */
+  public async addStageDetailstoDB(rows: any) {
+    try {
+      const stage = [];
+      for (const row of rows) {
+        if (row["Order"]?.trimEnd()) {
+          stage.push({
+            order: row["Order"]?.trimEnd(),
+            title: row["Stage Name"]?.trimEnd(),
+            stageId: row["Stage Id"]?.trimEnd(),
+            image: row["Image"]?.trimEnd(),
+            description: row["Description"]?.trimEnd(),
+            reward: row["Token"]?.trimEnd(),
+            cash: row["Cash"]?.trimEnd(),
+            rating: row["Rating"]?.trimEnd(),
+            colorInfo: {
+              outer: {
+                colors: row["OuterColors"]?.trimEnd().split(","),
+                location: row["OuterLocation"]?.trimEnd().split(","),
+                angle: Number(row["OuterAngle"]?.trimEnd()) || 0,
+              },
+              inner: {
+                colors: row["InnerColors"]?.trimEnd().split(","),
+                location: row["InnerLocation"]?.trimEnd().split(","),
+                angle: Number(row["InnerAngle"]?.trimEnd()) || 0,
+              },
+            },
+          });
+        }
+      }
+
+      const bulkWriteOperations = stage.map((data) => ({
+        updateOne: {
+          filter: { title: data.title },
+          update: { $set: data },
+          upsert: true,
+        },
+      }));
+
+      await StageTable.bulkWrite(bulkWriteOperations);
+      return stage;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

@@ -172,7 +172,9 @@ class UserDBService {
       data?.businessScore &&
       data?.businessScore.current &&
       (!data?.businessScore?.operationsScore ||
-        data?.businessScore?.operationsScore == 0)
+        data?.businessScore?.operationsScore == 0 ||
+        (data?.businessScore?.current > 70 &&
+          data?.businessScore?.operationsScore < 30))
     ) {
       data = await this.updateBusinessSubScores(userId, data);
     }
@@ -194,7 +196,17 @@ class UserDBService {
       !data?.businessScore
     ) {
       const updatedInfo = await UserService.addBusinessScore(data);
-      data = { ...data, businessScoreInfo: updatedInfo };
+      data = {
+        ...data,
+        businessScoreInfo: updatedInfo,
+        businessScore: {
+          ...data.businessScore,
+          current: updatedInfo.currentBusinessScore,
+          growthScore: updatedInfo.growthScore,
+          operationsScore: updatedInfo.operationsScore,
+          productScore: updatedInfo.productScore,
+        },
+      };
     }
     if (data.streak) {
       const { freezeCount } = data.streak;
@@ -478,12 +490,14 @@ class UserDBService {
    */
   public async updateBusinessSubScores(userId: any, data: any) {
     try {
-      let updateObj = {};
+      let updateObj = {},
+        dbUpdateObj = {};
       const businessProfile = await BusinessProfileTable.findOne({
         userId,
       });
       const ideaReport = businessProfile?.businessHistory?.[0]?.value || null;
-      const overallScore = (data?.businessScore?.current >= 80) ? data.businessScore.current : 90;
+      const overallScore =
+        data?.businessScore?.current >= 80 ? data.businessScore.current : 90;
       const ideaAnalysis = ideaReport ? ideaReport["ideaAnalysis"] : null;
       const operationsScore = ideaAnalysis?.[0]?.rating || overallScore;
       const productScore = ideaAnalysis?.[1]?.rating || overallScore;
@@ -494,12 +508,21 @@ class UserDBService {
         productScore,
         growthScore,
       };
+      dbUpdateObj = {
+        $set: {
+          "businessScore.current": overallScore,
+          "businessScore.operationsScore": operationsScore,
+          "businessScore.productScore": productScore,
+          "businessScore.growthScore": growthScore,
+        },
+        upsert: true,
+      };
       data.businessScore = { ...data.businessScore, ...updateObj };
       await UserTable.updateOne(
         {
           _id: userId,
         },
-        updateObj,
+        dbUpdateObj,
         { upsert: true }
       );
       return data;
@@ -514,13 +537,13 @@ class UserDBService {
    */
   public async getStageColorInfo(data: any) {
     try {
-      const stageData = STAGE_COMPLETE[data?.stageName];
+      const stageDetails = await StageTable.findOne({ title: data?.stageName });
       const colorInfo = {
         stage: {
-          ...stageData.stageInfo.colorInfo,
+          ...stageDetails.colorInfo,
         },
         score: {
-          outer: stageData.stageInfo.colorInfo.outer,
+          outer: stageDetails.colorInfo.outer,
         },
       };
       data["colorInfo"] = { ...colorInfo };

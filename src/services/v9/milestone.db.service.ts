@@ -13,6 +13,7 @@ import {
   MilestoneEventsTable,
   StageTable,
   EmployeeTable,
+  EmployeeLevelsTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -23,6 +24,7 @@ import {
   MILESTONE_HOMEPAGE,
   STAGE_COMPLETE,
   DEFAULT_EMPLOYEE,
+  TRIGGER_TYPE,
 } from "@app/utility";
 import moment from "moment";
 import { ObjectId } from "mongodb";
@@ -457,10 +459,13 @@ class MilestoneDBService {
         })
         .filter(Boolean);
       if (completedLearnings.length) {
-        if (response?.tasks[1]) {
-          response.tasks[1].data = [
+        const completedGoalsIdx = response.tasks.findIndex(
+          (obj) => obj?.title == COMPLETED_GOALS.title
+        );
+        if (completedGoalsIdx > -1) {
+          response.tasks[completedGoalsIdx].data = [
             ...completedLearnings,
-            ...response.tasks[1].data,
+            ...response?.tasks[completedGoalsIdx]?.data,
           ];
         } else {
           response.tasks.push({
@@ -484,6 +489,10 @@ class MilestoneDBService {
         response?.tasks[0]?.data.length == 1 &&
         isLastDayOfMilestone
       ) {
+        const employees = await EmployeeDBService.getUnlockedEmployeeDetails(
+          currentMilestoneDetails?.stageId,
+          TRIGGER_TYPE.STAGE
+        );
         const newStage = stageData.find(
           (obj) =>
             obj._id.toString() == nextMilestoneDetails?.stageId?.toString()
@@ -500,6 +509,7 @@ class MilestoneDBService {
               name: newStageTitle,
             },
           },
+          employees,
         };
       }
       if (
@@ -1751,21 +1761,15 @@ class MilestoneDBService {
    */
   private async getEventDetails(action: any) {
     try {
-      let employee = null;
+      let employees = null;
       const eventDetails = await MilestoneEventsTable.findOne({
         eventId: action.quizNum,
       }).lean();
       if (eventDetails) {
-        // add employee reward to first event results for time being
-        if (eventDetails.eventId == 10001) {
-          // get default employee details on completion of first day goals
-          const employeeDetails = await EmployeeTable.findOne({
-            order: 1,
-          }).lean();
-          if (employeeDetails) {
-            employee = { ...DEFAULT_EMPLOYEE, employeeId: employeeDetails._id };
-          }
-        }
+        employees = await EmployeeDBService.getUnlockedEmployeeDetails(
+          eventDetails._id,
+          TRIGGER_TYPE.EVENT
+        );
         return {
           ...action,
           resultCopyInfo: null,
@@ -1775,7 +1779,7 @@ class MilestoneDBService {
           iconImage: "cal.webp",
           time: "1 min",
           key: MILESTONE_HOMEPAGE.EVENT.key,
-          employee,
+          employees: employees.length ? employees : null,
         };
       }
 
@@ -1800,6 +1804,7 @@ class MilestoneDBService {
       let updatedCoins = userExists.quizCoins + data.tokens;
       const currentCash = userExists?.cash > 0 ? userExists?.cash : 50;
       const changeInCash = Math.floor((currentCash / 100) * data.cash);
+      const unlockedEmployees = data?.employees || [];
       updatedCash = currentCash + changeInCash;
       let updatedBusinessScore =
         (userExists.businessScore?.current || 90) + data.businessScore;
@@ -1869,6 +1874,9 @@ class MilestoneDBService {
           { $set: businessProfileObj },
           { upsert: true }
         ),
+        unlockedEmployees.length
+          ? EmployeeDBService.unlockEmployee(userExists, unlockedEmployees)
+          : Promise.resolve(),
       ]);
       return true;
     } catch (error) {

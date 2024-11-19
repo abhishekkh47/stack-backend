@@ -8,7 +8,14 @@ import {
   UserProjectsTable,
   EmployeeProjectsTable,
 } from "@app/model";
-import { EMP_STATUS, MILESTONE_HOMEPAGE, getDaysNum } from "@app/utility";
+import {
+  EMP_STATUS,
+  MILESTONE_HOMEPAGE,
+  getDaysNum,
+  DEFAULT_EMPLOYEE,
+  EMP_START_PROJECT_COST,
+} from "@app/utility";
+import { MilestoneDBService } from "@services/v9";
 class EmployeeDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -41,7 +48,13 @@ class EmployeeDBService {
         businessProfile?.completedActions?.valueProposition &&
         userEmployees?.length == 0
       ) {
-        await this.unlockEmployee(userIfExists, employees[0]._id);
+        const initialEmployees = await EmployeeTable.find({
+          order: { $in: [1, 2, 3] },
+        });
+        const initialEmpArray = initialEmployees.map((emp) => {
+          return { employeeId: emp._id, level: 1 };
+        });
+        await this.unlockEmployee(userIfExists, initialEmpArray);
         userEmployees = await UserEmployeesTable.find({
           userId: userIfExists._id,
         });
@@ -63,7 +76,10 @@ class EmployeeDBService {
       });
       return updatedEmployees;
     } catch (error) {
-      throw new NetworkError("Error occurred while employee list", 400);
+      throw new NetworkError(
+        "Error occurred while retrieving employee list",
+        400
+      );
     }
   }
 
@@ -153,47 +169,68 @@ class EmployeeDBService {
   /**
    * @description unlock an employee
    * @param userIfExists
-   * @param employeeId
-   * @param level
+   * @param unlockedEmployees list of employees unlocked by user
    * @returns {*}
    */
-  public async unlockEmployee(
-    userIfExists: any,
-    employeeId: any,
-    level: number = 1
-  ) {
+  public async unlockEmployee(userIfExists: any, unlockedEmployees: any = []) {
     try {
-      const empId = new ObjectId(employeeId);
-      const [userEmployee, employee, employeeInitialLevel] = await Promise.all([
-        UserEmployeesTable.findOne({
-          userId: userIfExists._id,
-          employeeId: empId,
-        }),
-        EmployeeTable.findOne({ _id: empId }),
-        EmployeeLevelsTable.findOne({ employeeId: empId, level }),
-      ]);
-      if (userEmployee) {
+      let bulkWriteObj = [];
+      const unlockedEmployeeIds = unlockedEmployees?.map(
+        (emp) => emp.employeeId
+      );
+      if (!unlockedEmployeeIds.length) {
+        return true;
+      }
+      const [userEmployee, unlockedEmployeesList, employeeInitialLevel] =
+        await Promise.all([
+          UserEmployeesTable.find({
+            userId: userIfExists._id,
+            employeeId: { $in: unlockedEmployeeIds },
+          }),
+          EmployeeTable.find({ _id: { $in: unlockedEmployeeIds }, level: 1 }),
+          EmployeeLevelsTable.find({
+            employeeId: { $in: unlockedEmployeeIds },
+          }),
+        ]);
+      if (userEmployee.length == unlockedEmployeeIds.length) {
         throw new NetworkError("This employee have been unlocked already", 400);
       }
-      if (!employee) {
+      if (!unlockedEmployeesList.length) {
         throw new NetworkError("This employee do not exists", 400);
       }
 
-      await UserEmployeesTable.findOneAndUpdate(
-        { userId: userIfExists._id, employeeId: empId },
-        {
-          $set: {
-            userId: userIfExists._id,
-            employeeId,
-            currentLevel: 1,
-            unlockedLevel: 1,
-            currentRatings: employeeInitialLevel.ratingValues,
-            hiredAt: new Date(),
-            status: EMP_STATUS.UNLOCKED,
+      unlockedEmployees.forEach((emp) => {
+        const initialLevel = employeeInitialLevel.find(
+          (obj) => obj.employeeId.toString() == emp.employeeId.toString()
+        );
+        const isProEmployee = unlockedEmployeesList.find(
+          (obj) => obj._id.toString() == emp.employeeId.toString()
+        );
+        bulkWriteObj.push({
+          updateOne: {
+            filter: {
+              userId: userIfExists._id,
+              employeeId: emp.employeeId,
+            },
+            update: {
+              $set: {
+                userId: userIfExists._id,
+                employeeId: emp.employeeId,
+                currentLevel: 1,
+                unlockedLevel: emp.level,
+                currentRatings: initialLevel.ratingValues,
+                hiredAt: null,
+                status: EMP_STATUS.UNLOCKED,
+                isProEmployee: isProEmployee.userType || 0,
+              },
+            },
+            upsert: true,
           },
-        },
-        { upsert: true, new: true }
-      );
+        });
+      });
+      if (bulkWriteObj.length) {
+        await UserEmployeesTable.bulkWrite(bulkWriteObj);
+      }
       return true;
     } catch (error) {
       throw new NetworkError(
@@ -406,7 +443,12 @@ class EmployeeDBService {
         ),
         UserTable.findOneAndUpdate(
           { _id: userIfExists._id },
-          { $inc: { cash: -5 } }
+          {
+            $inc: {
+              cash: EMP_START_PROJECT_COST,
+              "currentDayRewards.cash": EMP_START_PROJECT_COST,
+            },
+          }
         ),
       ]);
       return true;
@@ -453,6 +495,53 @@ class EmployeeDBService {
       return true;
     } catch (error) {
       throw new NetworkError("Error occurred starting the project", 400);
+    }
+  }
+
+  /**
+   * @description format get employee list unlocked on event or stage completion
+   * @param triggerId stageId or the eventId
+   * @param triggerType stage or event
+   * @returns {*}
+   */
+  public async getUnlockedEmployeeDetails(triggerId: any, triggerType: number) {
+    try {
+      let employees = [];
+      const empDetails = await EmployeeLevelsTable.aggregate([
+        {
+          $match: {
+            unlockTriggerId: new ObjectId(triggerId),
+            unlockTriggerType: triggerType,
+          },
+        },
+        {
+          $lookup: {
+            from: "employees",
+            localField: "employeeId",
+            foreignField: "_id",
+            as: "employeeDetails",
+          },
+        },
+        {
+          $unwind: {
+            path: "$employeeDetails",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+      ]).exec();
+      if (empDetails.length) {
+        empDetails.forEach((emp) => {
+          employees.push({
+            ...DEFAULT_EMPLOYEE,
+            title: emp.employeeDetails?.name,
+            employeeId: emp.employeeId,
+            level: emp.level,
+          });
+        });
+      }
+      return employees;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }

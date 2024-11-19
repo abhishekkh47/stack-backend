@@ -34,10 +34,6 @@ const schema = new mongoose.Schema<IEmployeesSchema>(
       type: mongoose.Schema.Types.String,
       required: true,
     },
-    unlockTrigger: {
-      type: mongoose.Schema.Types.String,
-      required: true,
-    },
     /**
      * 0 = ALL
      * 1 = PRO

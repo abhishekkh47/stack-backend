@@ -8,7 +8,6 @@ export interface IEmployees {
   price: number;
   workTime: number;
   bio: string;
-  unlockTrigger: string;
   userType: number;
   ratings: string[];
   order: number;
@@ -20,8 +19,10 @@ export interface IEmployeeLevels {
   level: number;
   title: string;
   ratingValues: IRatings[];
-  promotionTrigger: string;
   promotionCost: number;
+  unlockTrigger: string;
+  unlockTriggerId: mongoose.Schema.Types.ObjectId;
+  unlockTriggerType: number;
 }
 
 interface IRatings {

@@ -1280,9 +1280,16 @@ export const EMP_STATUS = {
 };
 
 export const DEFAULT_EMPLOYEE = {
-  title: "",
-  type: "New Employee",
+  title: "New Employee",
+  type: "employee",
   icon: "default_employee.webp",
   employeeId: "6735960bd90aef50745598fe", // employee Id of default employee from employees collection
   level: 1,
 };
+
+export const TRIGGER_TYPE = {
+  EVENT: 1,
+  STAGE: 2,
+};
+
+export const EMP_START_PROJECT_COST = -5;

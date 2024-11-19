@@ -15,6 +15,8 @@ import {
   ChecklistResultTable,
   AIToolsUsageStatusTable,
   TutorialStatusTable,
+  UserEmployeesTable,
+  UserProjectsTable,
 } from "@app/model";
 import {
   MAX_STREAK_FREEZE,
@@ -173,6 +175,8 @@ class UserService {
         ChecklistResultTable.deleteMany(otherRecordsQuery),
         AIToolsUsageStatusTable.deleteMany(otherRecordsQuery),
         TutorialStatusTable.deleteMany(otherRecordsQuery),
+        UserEmployeesTable.deleteMany(otherRecordsQuery),
+        UserProjectsTable.deleteMany(otherRecordsQuery),
       ]);
       /**
        * Store Deleted Users in a separate document
