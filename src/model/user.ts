@@ -343,14 +343,17 @@ const schema = new mongoose.Schema<IUserSchema>(
       },
       operationsScore: {
         type: mongoose.Schema.Types.Number,
+        required: true,
         default: 0,
       },
       productScore: {
         type: mongoose.Schema.Types.Number,
+        required: true,
         default: 0,
       },
       growthScore: {
         type: mongoose.Schema.Types.Number,
+        required: true,
         default: 0,
       },
     },
