@@ -13,7 +13,9 @@ import {
   MILESTONE_HOMEPAGE,
   getDaysNum,
   DEFAULT_EMPLOYEE,
+  EMP_START_PROJECT_COST,
 } from "@app/utility";
+import { MilestoneDBService } from "@services/v9";
 class EmployeeDBService {
   /**
    * @description get all Topics and current level in each topic
@@ -441,7 +443,12 @@ class EmployeeDBService {
         ),
         UserTable.findOneAndUpdate(
           { _id: userIfExists._id },
-          { $inc: { cash: -5 } }
+          {
+            $inc: {
+              cash: EMP_START_PROJECT_COST,
+              "currentDayRewards.cash": EMP_START_PROJECT_COST,
+            },
+          }
         ),
       ]);
       return true;
