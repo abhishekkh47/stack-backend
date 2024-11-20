@@ -528,14 +528,29 @@ class EmployeeDBService {
             preserveNullAndEmptyArrays: true,
           },
         },
+        {
+          $project: {
+            level: 1,
+            promotionCode: 1,
+            ratingValues: 1,
+            title: 1,
+            employeeDetails: 1,
+          },
+        },
       ]).exec();
       if (empDetails.length) {
         empDetails.forEach((emp) => {
+          let tokens = emp.employeeDetails?.price;
+          if (emp.level > 1) tokens = emp.promotionCost;
           employees.push({
-            ...DEFAULT_EMPLOYEE,
+            type: MILESTONE_HOMEPAGE.EMPLOYEE,
+            employeeId: emp.employeeDetails._id,
+            icon: emp.employeeDetails?.image,
             title: emp.employeeDetails?.name,
-            employeeId: emp.employeeId,
             level: emp.level,
+            designation: emp?.title,
+            employeeIcon: emp.employeeDetails?.icon,
+            tokens,
           });
         });
       }

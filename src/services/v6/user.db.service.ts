@@ -19,7 +19,7 @@ import {
   COMMUNITY_CHALLENGE_CLAIM_STATUS,
   RALLY_COMMUNITY_REWARD,
   getDaysNum,
-  STAGE_COMPLETE,
+  convertDecimalsToNumbers,
 } from "@app/utility";
 import { UserDBService as UserDBServiceV4, AnalyticsService } from "../v4";
 import { QuizDBService, CommunityDBService } from "../v6";
@@ -537,16 +537,15 @@ class UserDBService {
    */
   public async getStageColorInfo(data: any) {
     try {
-      const stageDetails = await StageTable.findOne({ title: data?.stageName });
+      const stageDetails = await StageTable.findOne({
+        title: data?.stageName,
+      }).lean();
       const colorInfo = {
-        stage: {
-          ...stageDetails.colorInfo,
-        },
-        score: {
-          outer: stageDetails.colorInfo.outer,
-        },
+        stage: stageDetails.colorInfo,
+        score: stageDetails.scoreColorInfo,
       };
-      data["colorInfo"] = { ...colorInfo };
+      const updatedColoInfo = convertDecimalsToNumbers(colorInfo);
+      data["colorInfo"] = { ...updatedColoInfo };
       return data;
     } catch (error) {
       throw new NetworkError(error.message, 400);

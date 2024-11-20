@@ -252,3 +252,38 @@ export const getDaysNum = (userIfExists, dateToCompare: string) => {
 export const replacePlaceholders = (template, values) => {
   return template.replace(/{(\w+)}/g, (_, key) => values[key] || "");
 };
+
+export const convertDecimalsToNumbers = (doc) => {
+  const transformed = JSON.parse(JSON.stringify(doc));
+
+  if (transformed) {
+    // Transform stage.outer location
+    if (transformed.stage?.outer?.location) {
+      transformed.stage.outer.location = transformed.stage.outer.location.map(
+        (loc) =>
+          typeof loc === "object" && loc.$numberDecimal
+            ? parseFloat(loc.$numberDecimal)
+            : loc
+      );
+    }
+    // Transform stage.inner location
+    if (transformed.stage?.inner?.location) {
+      transformed.stage.inner.location = transformed.stage.inner.location.map(
+        (loc) =>
+          typeof loc === "object" && loc.$numberDecimal
+            ? parseFloat(loc.$numberDecimal)
+            : loc
+      );
+    }
+    // Transform score.outer location
+    if (transformed.score?.outer?.location) {
+      transformed.score.outer.location = transformed.score.outer.location.map(
+        (loc) =>
+          typeof loc === "object" && loc.$numberDecimal
+            ? parseFloat(loc.$numberDecimal)
+            : loc
+      );
+    }
+  }
+  return transformed;
+};
