@@ -3192,6 +3192,7 @@ class ScriptService {
             reward: row["Token"]?.trimEnd(),
             cash: row["Cash"]?.trimEnd(),
             rating: row["Rating"]?.trimEnd(),
+            type: 1,
             colorInfo: {
               outer: {
                 colors: row["OuterColors"]?.trimEnd().split(","),
@@ -3204,13 +3205,25 @@ class ScriptService {
                 angle: Number(row["InnerAngle"]?.trimEnd()) || 0,
               },
             },
+            scoreColorInfo: {
+              outer: {
+                colors: row["ScoreOuterColors"]?.trimEnd()?.split(","),
+                location: row["ScoreOuterLocation"]?.trimEnd()?.split(","),
+                angle: Number(row["ScoreOuterAngle"]?.trimEnd()) || 0,
+              },
+              inner: {
+                colors: row["ScoreInnerColors"]?.trimEnd()?.split(","),
+                location: row["ScoreInnerLocation"]?.trimEnd()?.split(","),
+                angle: Number(row["ScoreInnerAngle"]?.trimEnd()) || 0,
+              },
+            },
           });
         }
       }
 
       const bulkWriteOperations = stage.map((data) => ({
         updateOne: {
-          filter: { title: data.title },
+          filter: { title: data.title, type: 1 },
           update: { $set: data },
           upsert: true,
         },

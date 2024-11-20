@@ -59,7 +59,52 @@ const schema = new mongoose.Schema<IStageSchema>(
       required: true,
       default: null,
     },
+    // stage color info
     colorInfo: {
+      outer: {
+        colors: [
+          {
+            type: mongoose.Schema.Types.String,
+            required: true,
+            default: null,
+          },
+        ],
+        location: [
+          {
+            type: mongoose.Schema.Types.Decimal128,
+            required: true,
+            default: 0,
+          },
+        ],
+        angle: {
+          type: mongoose.Schema.Types.Number,
+          required: true,
+          default: 0,
+        },
+      },
+      inner: {
+        colors: [
+          {
+            type: mongoose.Schema.Types.String,
+            required: true,
+            default: null,
+          },
+        ],
+        location: [
+          {
+            type: mongoose.Schema.Types.Decimal128,
+            required: true,
+            default: 0,
+          },
+        ],
+        angle: {
+          type: mongoose.Schema.Types.Number,
+          required: true,
+          default: 0,
+        },
+      },
+    },
+    scoreColorInfo: {
       outer: {
         colors: [
           {

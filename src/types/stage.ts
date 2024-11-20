@@ -14,7 +14,8 @@ export interface IStage {
   cash: number;
   rating: number;
   image: string;
-  colorInfo: IColorBook;
+  colorInfo: IColorBook; // stage color info
+  scoreColorInfo: IColorBook;
 }
 
 interface IColorBook {
