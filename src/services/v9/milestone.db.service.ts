@@ -1521,7 +1521,8 @@ class MilestoneDBService {
     userIfExists: any,
     coins: number = 0,
     cash: number = 0,
-    ifLastGoalOfDay: boolean = false
+    ifLastGoalOfDay: boolean = false,
+    isEvent: boolean = false
   ) {
     try {
       const rewardsUpdatedOn = userIfExists?.currentDayRewards?.updatedAt;
@@ -1532,7 +1533,7 @@ class MilestoneDBService {
         updateObj = {
           $inc: {
             "currentDayRewards.quizCoins": totalCoins,
-            "currentDayRewards.goals": 1,
+            "currentDayRewards.goals": isEvent ? 0 : 1,
             "currentDayRewards.cash": cash,
           },
           $set: {
@@ -1545,7 +1546,7 @@ class MilestoneDBService {
           $set: {
             "currentDayRewards.streak": 1,
             "currentDayRewards.quizCoins": totalCoins,
-            "currentDayRewards.goals": 1,
+            "currentDayRewards.goals": isEvent ? 0 : 1,
             "currentDayRewards.cash": cash,
             "currentDayRewards.updatedAt": new Date(),
           },
@@ -1806,6 +1807,8 @@ class MilestoneDBService {
       const changeInCash = Math.floor((currentCash / 100) * data.cash);
       const unlockedEmployees = data?.employees || [];
       updatedCash = currentCash + changeInCash;
+      let todayCash = changeInCash,
+        todayToken = data.tokens;
       let updatedBusinessScore =
         (userExists.businessScore?.current || 90) + data.businessScore;
       let updatedOperationsScore =
@@ -1825,6 +1828,8 @@ class MilestoneDBService {
         updatedProductScore += resultSummary[2].title;
         updatedGrowthScore += resultSummary[2].title;
         userUpdateObj = { stage: newStageDetails._id };
+        todayCash += resultSummary[1].title;
+        todayToken += resultSummary[0].title;
       }
       userUpdateObj = {
         $set: {
@@ -1878,6 +1883,13 @@ class MilestoneDBService {
           ? EmployeeDBService.unlockEmployee(userExists, unlockedEmployees)
           : Promise.resolve(),
       ]);
+      await this.updateTodaysRewards(
+        userExists,
+        todayToken,
+        todayCash,
+        false,
+        true
+      );
       return true;
     } catch (error) {
       throw new NetworkError(error.message, 400);
