@@ -7,7 +7,12 @@ import {
   RALLY_COMMUNITY_CHALLENGE_GOAL,
   COMMUNITY_CHALLENGE_CLAIM_STATUS,
 } from "@app/utility/constants";
-import { executeWeeklyChallengeStepFunction } from "@app/utility";
+import {
+  executeWeeklyChallengeStepFunction,
+  convertDecimalsToNumbers,
+  DEFAULT_BUSINESS_LOGO,
+  DEFAULT_BUSINESS_NAME,
+} from "@app/utility";
 class CommunityDBService {
   /**
    * @description create new community
@@ -136,6 +141,34 @@ class CommunityDBService {
         },
       },
       {
+        $lookup: {
+          from: "business-profiles",
+          localField: "userId",
+          foreignField: "userId",
+          as: "profileData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$profileData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "stages",
+          localField: "userData.stage",
+          foreignField: "_id",
+          as: "stageData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$stageData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $setWindowFields: {
           sortBy: {
             xpPoints: -1,
@@ -189,6 +222,11 @@ class CommunityDBService {
           quizCoins: "$userData.quizCoins",
           preLoadedCoins: "$userData.preLoadedCoins",
           activeStreak: "$userData.streak.current",
+          businessScore: "$userData.businessScore.current",
+          companyName: "$profileData.companyName.title",
+          companyLogo: "$profileData.companyLogo",
+          "stage.name": "$stageData.title",
+          "stage.colorInfo": "$stageData.colorInfo",
         },
       },
     ];
@@ -204,10 +242,28 @@ class CommunityDBService {
       },
       { $skip: offset }
     );
-    const userDetails = await UserCommunityTable.aggregate(userQuery).exec();
-    const leaderBoardData = await UserCommunityTable.aggregate(
-      aggregateQuery
-    ).exec();
+    const [userDetails, leaderBoardData] = await Promise.all([
+      UserCommunityTable.aggregate(userQuery).exec(),
+      UserCommunityTable.aggregate(aggregateQuery).exec(),
+    ]);
+    leaderBoardData.forEach((data) => {
+      data.stage.name = data.stage.name.replace(" STAGE", "");
+      if (!data.companyName) {
+        data.companyName = DEFAULT_BUSINESS_NAME;
+      }
+      if (!data.companyLogo) {
+        data.companyLogo = DEFAULT_BUSINESS_LOGO;
+      }
+    });
+    userDetails.forEach((data) => {
+      data.stage.name = data.stage.name.replace(" STAGE", "");
+      if (!data.companyName) {
+        data.companyName = DEFAULT_BUSINESS_NAME;
+      }
+      if (!data.companyLogo) {
+        data.companyLogo = DEFAULT_BUSINESS_LOGO;
+      }
+    });
 
     /**
      * Weekly challenge Date Logic
