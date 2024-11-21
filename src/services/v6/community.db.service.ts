@@ -13,6 +13,7 @@ import {
   DEFAULT_BUSINESS_LOGO,
   DEFAULT_BUSINESS_NAME,
 } from "@app/utility";
+import { UserService } from "@app/services/v9";
 class CommunityDBService {
   /**
    * @description create new community
@@ -246,32 +247,8 @@ class CommunityDBService {
       UserCommunityTable.aggregate(userQuery).exec(),
       UserCommunityTable.aggregate(aggregateQuery).exec(),
     ]);
-    leaderBoardData.forEach((data) => {
-      data.stage.name = data.stage.name.replace(" STAGE", "");
-      if (!data.companyName) {
-        data.companyName = DEFAULT_BUSINESS_NAME;
-      }
-      if (!data.companyLogo) {
-        data.companyLogo = DEFAULT_BUSINESS_LOGO;
-      }
-      if (data.stage.colorInfo) {
-        const updatedColorInfo = convertDecimalsToNumbers(data.stage.colorInfo);
-        data.stage.colorInfo = updatedColorInfo;
-      }
-    });
-    userDetails.forEach((data) => {
-      data.stage.name = data.stage.name.replace(" STAGE", "");
-      if (!data.companyName) {
-        data.companyName = DEFAULT_BUSINESS_NAME;
-      }
-      if (!data.companyLogo) {
-        data.companyLogo = DEFAULT_BUSINESS_LOGO;
-      }
-      if (data.stage.colorInfo) {
-        const updatedColorInfo = convertDecimalsToNumbers(data.stage.colorInfo);
-        data.stage.colorInfo = updatedColorInfo;
-      }
-    });
+    this.processStageData(leaderBoardData);
+    this.processStageData(userDetails);
 
     /**
      * Weekly challenge Date Logic
@@ -596,6 +573,32 @@ class CommunityDBService {
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
     }
+  }
+
+  private async processStageData(dataArray: any) {
+    dataArray.forEach(async (data) => {
+      if (!data.companyName) {
+        data.companyName = DEFAULT_BUSINESS_NAME;
+      }
+      if (!data.companyLogo) {
+        data.companyLogo = DEFAULT_BUSINESS_LOGO;
+      }
+      if (data.stage) {
+        data.stage.name = data.stage.name.replace(" STAGE", "");
+        if (data.stage.colorInfo) {
+          data.stage.colorInfo = convertDecimalsToNumbers(data.stage.colorInfo);
+        }
+      } else {
+        const currentStage = await UserService.getCurrentStage(dataArray);
+        if (currentStage) {
+          data.stage.name = currentStage.title.replace(" STAGE", "");
+          data.stage.colorInfo = currentStage.leaderBoardColorInfo;
+        }
+      }
+      if (!data.businessScore) {
+        data["businessScore"] = 90;
+      }
+    });
   }
 }
 export default new CommunityDBService();
