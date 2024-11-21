@@ -226,7 +226,7 @@ class CommunityDBService {
           companyName: "$profileData.companyName.title",
           companyLogo: "$profileData.companyLogo",
           "stage.name": "$stageData.title",
-          "stage.colorInfo": "$stageData.colorInfo",
+          "stage.colorInfo": "$stageData.leaderBoardColorInfo",
         },
       },
     ];
@@ -254,6 +254,10 @@ class CommunityDBService {
       if (!data.companyLogo) {
         data.companyLogo = DEFAULT_BUSINESS_LOGO;
       }
+      if (data.stage.colorInfo) {
+        const updatedColorInfo = convertDecimalsToNumbers(data.stage.colorInfo);
+        data.stage.colorInfo = updatedColorInfo;
+      }
     });
     userDetails.forEach((data) => {
       data.stage.name = data.stage.name.replace(" STAGE", "");
@@ -262,6 +266,10 @@ class CommunityDBService {
       }
       if (!data.companyLogo) {
         data.companyLogo = DEFAULT_BUSINESS_LOGO;
+      }
+      if (data.stage.colorInfo) {
+        const updatedColorInfo = convertDecimalsToNumbers(data.stage.colorInfo);
+        data.stage.colorInfo = updatedColorInfo;
       }
     });
 

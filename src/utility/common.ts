@@ -284,6 +284,14 @@ export const convertDecimalsToNumbers = (doc) => {
             : loc
       );
     }
+    // Transform leaderboard color location
+    if (transformed?.location) {
+      transformed.location = transformed.location.map((loc) =>
+        typeof loc === "object" && loc.$numberDecimal
+          ? parseFloat(loc.$numberDecimal)
+          : loc
+      );
+    }
   }
   return transformed;
 };
