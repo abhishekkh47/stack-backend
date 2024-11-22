@@ -37,6 +37,7 @@ class EmployeeDBService {
             userType: 1,
             price: 1,
             title: 1,
+            workTime: 1,
           }
         )
           .sort({ order: 1 })
