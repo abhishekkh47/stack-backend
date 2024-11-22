@@ -198,7 +198,7 @@ class MilestoneDBService {
         this.getActionDetails(
           userIfExists,
           completedActions,
-          currentMilestoneId,
+          currentMilestoneId || initialMilestone._id,
           true
         ),
         MilestoneTable.find(),
@@ -1351,7 +1351,14 @@ class MilestoneDBService {
     advanceNextDay: boolean = false
   ) {
     try {
-      const currentMilestone = businessProfile.currentMilestone.milestoneId;
+      let currentMilestone = businessProfile.currentMilestone.milestoneId;
+      if (!currentMilestone) {
+        currentMilestone = (
+          await MilestoneTable.findOne({
+            order: 1,
+          })
+        )._id;
+      }
       const {
         CURRENT_MILESTONE,
         COMPLETED_MILESTONES,
