@@ -410,6 +410,7 @@ class UserService {
    */
   public async getCurrentStage(userExists: any) {
     try {
+      let response = null;
       const [businessProfle, stages] = await Promise.all([
         BusinessProfileTable.findOne({ userId: userExists._id }),
         StageTable.find({ type: 1 }).sort({ order: 1 }).lean(),
@@ -422,10 +423,15 @@ class UserService {
         const stage = stages.find(
           (obj) => obj._id.toString() == currentStageId.toString()
         );
-        return stage;
+        response = stage;
       } else {
-        return stages[0];
+        response = stages[0];
       }
+      UserTable.findOneAndUpdate(
+        { _id: userExists._id },
+        { $set: { stage: stages[0]?._id } }
+      );
+      return response;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

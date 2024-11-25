@@ -136,6 +136,8 @@ class EmployeeDBService {
   public async hireEmployee(userIfExists: any, employeeId: any) {
     try {
       const empId = new ObjectId(employeeId);
+      const availableTokens =
+        userIfExists.preLoadedCoins + userIfExists.quizCoins;
       const [userEmployee, employeeDetails] = await Promise.all([
         UserEmployeesTable.findOne({
           userId: userIfExists._id,
@@ -148,6 +150,9 @@ class EmployeeDBService {
       }
       if (userEmployee.status == EMP_STATUS.HIRED) {
         throw new NetworkError("This employee have been already hired", 400);
+      }
+      if (availableTokens < employeeDetails.price) {
+        throw new NetworkError("Enough tokens not available", 400);
       }
       if (userEmployee.status == EMP_STATUS.UNLOCKED) {
         await Promise.all([
@@ -444,6 +449,9 @@ class EmployeeDBService {
         completedAt: null,
         endAt: new Date(new Date().getTime() + addTime),
       };
+      if (userIfExists.cash < EMP_START_PROJECT_COST) {
+        throw new NetworkError("You need more cash to start the project", 400);
+      }
       await Promise.all([
         UserProjectsTable.findOneAndUpdate(
           {

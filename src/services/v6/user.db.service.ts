@@ -537,9 +537,12 @@ class UserDBService {
    */
   public async getStageColorInfo(data: any) {
     try {
-      const stageDetails = await StageTable.findOne({
+      let stageDetails = await StageTable.findOne({
         title: data?.stageName,
       }).lean();
+      if (stageDetails) {
+        stageDetails = await UserService.getCurrentStage(data);
+      }
       const colorInfo = {
         stage: stageDetails.colorInfo,
         score: { outer: stageDetails.scoreColorInfo.outer },
