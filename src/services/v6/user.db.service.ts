@@ -542,7 +542,7 @@ class UserDBService {
       }).lean();
       const colorInfo = {
         stage: stageDetails.colorInfo,
-        score: stageDetails.scoreColorInfo,
+        score: { outer: stageDetails.scoreColorInfo.outer },
       };
       const updatedColoInfo = convertDecimalsToNumbers(colorInfo);
       data["colorInfo"] = { ...updatedColoInfo };

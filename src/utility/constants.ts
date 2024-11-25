@@ -1294,3 +1294,7 @@ export const TRIGGER_TYPE = {
 
 export const EMP_START_PROJECT_COST = -5;
 export const DEFAULT_BUSINESS_NAME = "Jetson";
+export const PURCHASE_TYPE = {
+  TOKEN: 0,
+  CASH: 1,
+};

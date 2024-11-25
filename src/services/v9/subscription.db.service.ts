@@ -1,5 +1,6 @@
 import { NetworkError } from "@app/middleware";
 import { UserTable } from "@app/model";
+import { PURCHASE_TYPE } from "@app/utility";
 
 class SubscriptionDBService {
   /**
@@ -8,23 +9,29 @@ class SubscriptionDBService {
    * @param data
    */
   public async addPurchases(userIfExists: any, data: any) {
-    // type =>  0- tokens 1 -cash
-    const [type, amount] = data;
-    let updateObj = {};
-    if (type == 0) {
-      updateObj = {
-        $inc: {
-          quizCoins: amount,
-        },
-      };
-    } else {
-      updateObj = {
-        $inc: {
-          cash: amount,
-        },
-      };
+    try {
+      const { type, amount } = data;
+      let updateObj = {};
+      if (type == PURCHASE_TYPE.TOKEN) {
+        updateObj = {
+          $inc: {
+            quizCoins: amount,
+          },
+        };
+      } else {
+        updateObj = {
+          $inc: {
+            cash: amount,
+          },
+        };
+      }
+      await UserTable.findOneAndUpdate({ _id: userIfExists._id }, updateObj);
+    } catch (error) {
+      throw new NetworkError(
+        "Error occurred while completing your purchase request",
+        400
+      );
     }
-    await UserTable.findOneAndUpdate({ userId: userIfExists._id }, updateObj);
   }
 }
 
