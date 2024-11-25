@@ -7,7 +7,13 @@ import {
   RALLY_COMMUNITY_CHALLENGE_GOAL,
   COMMUNITY_CHALLENGE_CLAIM_STATUS,
 } from "@app/utility/constants";
-import { executeWeeklyChallengeStepFunction } from "@app/utility";
+import {
+  executeWeeklyChallengeStepFunction,
+  convertDecimalsToNumbers,
+  DEFAULT_BUSINESS_LOGO,
+  DEFAULT_BUSINESS_NAME,
+} from "@app/utility";
+import { UserService } from "@app/services/v9";
 class CommunityDBService {
   /**
    * @description create new community
@@ -136,6 +142,34 @@ class CommunityDBService {
         },
       },
       {
+        $lookup: {
+          from: "business-profiles",
+          localField: "userId",
+          foreignField: "userId",
+          as: "profileData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$profileData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "stages",
+          localField: "userData.stage",
+          foreignField: "_id",
+          as: "stageData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$stageData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $setWindowFields: {
           sortBy: {
             xpPoints: -1,
@@ -189,6 +223,11 @@ class CommunityDBService {
           quizCoins: "$userData.quizCoins",
           preLoadedCoins: "$userData.preLoadedCoins",
           activeStreak: "$userData.streak.current",
+          businessScore: "$userData.businessScore.current",
+          companyName: "$profileData.companyName.title",
+          companyLogo: "$profileData.companyLogo",
+          "stage.name": "$stageData.title",
+          "stage.colorInfo": "$stageData.leaderBoardColorInfo",
         },
       },
     ];
@@ -204,10 +243,12 @@ class CommunityDBService {
       },
       { $skip: offset }
     );
-    const userDetails = await UserCommunityTable.aggregate(userQuery).exec();
-    const leaderBoardData = await UserCommunityTable.aggregate(
-      aggregateQuery
-    ).exec();
+    const [userDetails, leaderBoardData] = await Promise.all([
+      UserCommunityTable.aggregate(userQuery).exec(),
+      UserCommunityTable.aggregate(aggregateQuery).exec(),
+    ]);
+    this.processStageData(leaderBoardData);
+    this.processStageData(userDetails);
 
     /**
      * Weekly challenge Date Logic
@@ -532,6 +573,32 @@ class CommunityDBService {
     } catch (error) {
       throw new NetworkError("Something went wrong", 400);
     }
+  }
+
+  private async processStageData(dataArray: any) {
+    dataArray.forEach(async (data) => {
+      if (!data.companyName) {
+        data.companyName = DEFAULT_BUSINESS_NAME;
+      }
+      if (!data.companyLogo) {
+        data.companyLogo = DEFAULT_BUSINESS_LOGO;
+      }
+      if (data.stage) {
+        data.stage.name = data.stage.name.replace(" STAGE", "");
+        if (data.stage.colorInfo) {
+          data.stage.colorInfo = convertDecimalsToNumbers(data.stage.colorInfo);
+        }
+      } else {
+        const currentStage = await UserService.getCurrentStage(dataArray);
+        if (currentStage) {
+          data.stage.name = currentStage.title.replace(" STAGE", "");
+          data.stage.colorInfo = currentStage.leaderBoardColorInfo;
+        }
+      }
+      if (!data.businessScore) {
+        data["businessScore"] = 90;
+      }
+    });
   }
 }
 export default new CommunityDBService();

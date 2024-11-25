@@ -412,7 +412,7 @@ class UserService {
     try {
       const [businessProfle, stages] = await Promise.all([
         BusinessProfileTable.findOne({ userId: userExists._id }),
-        StageTable.find({ type: 1 }),
+        StageTable.find({ type: 1 }).sort({ order: 1 }).lean(),
       ]);
       if (businessProfle?.currentMilestone?.milestoneId) {
         const currentMilestone = await MilestoneTable.findOne({
@@ -423,6 +423,8 @@ class UserService {
           (obj) => obj._id.toString() == currentStageId.toString()
         );
         return stage;
+      } else {
+        return stages[0];
       }
     } catch (error) {
       throw new NetworkError(error.message, 400);

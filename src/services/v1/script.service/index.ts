@@ -3217,6 +3217,11 @@ class ScriptService {
                 angle: Number(row["ScoreInnerAngle"]?.trimEnd()) || 0,
               },
             },
+            leaderBoardColorInfo: {
+              colors: row["LeaderBoardColors"]?.trimEnd()?.split(","),
+              location: row["LeaderBoardLocation"]?.trimEnd()?.split(","),
+              angle: Number(row["LeaderBoardAngle"]?.trimEnd()) || 0,
+            }
           });
         }
       }
