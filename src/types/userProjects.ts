@@ -7,4 +7,5 @@ export interface IUserProjects {
   status: number;
   startedAt: mongoose.Schema.Types.Date;
   completedAt: mongoose.Schema.Types.Date;
+  endAt: mongoose.Schema.Types.Date;
 }

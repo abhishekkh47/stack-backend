@@ -35,6 +35,10 @@ const schema = new mongoose.Schema<IUserProjectsSchema>(
       type: mongoose.Schema.Types.Date,
       default: null,
     },
+    endAt: {
+      type: mongoose.Schema.Types.Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
