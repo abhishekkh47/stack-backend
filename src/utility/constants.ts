@@ -1294,4 +1294,4 @@ export const TRIGGER_TYPE = {
 
 export const EMP_START_PROJECT_COST = -5;
 export const DEFAULT_BUSINESS_NAME = "Jetson";
-export const HOUR_TO_MS = 2 * 60 * 1000;
+export const HOUR_TO_MS = 60 * 60 * 1000;
