@@ -14,6 +14,7 @@ import {
   getDaysNum,
   DEFAULT_EMPLOYEE,
   EMP_START_PROJECT_COST,
+  HOUR_TO_MS,
 } from "@app/utility";
 import { MilestoneDBService } from "@services/v9";
 class EmployeeDBService {
@@ -135,6 +136,8 @@ class EmployeeDBService {
   public async hireEmployee(userIfExists: any, employeeId: any) {
     try {
       const empId = new ObjectId(employeeId);
+      const availableTokens =
+        userIfExists.preLoadedCoins + userIfExists.quizCoins;
       const [userEmployee, employeeDetails] = await Promise.all([
         UserEmployeesTable.findOne({
           userId: userIfExists._id,
@@ -147,6 +150,9 @@ class EmployeeDBService {
       }
       if (userEmployee.status == EMP_STATUS.HIRED) {
         throw new NetworkError("This employee have been already hired", 400);
+      }
+      if (availableTokens < employeeDetails.price) {
+        throw new NetworkError("Enough tokens not available", 400);
       }
       if (userEmployee.status == EMP_STATUS.UNLOCKED) {
         await Promise.all([
@@ -372,6 +378,16 @@ class EmployeeDBService {
           if (userProject && userProject?.status == EMP_STATUS.WORKING) {
             emp.status = userProject.status;
             emp["startTime"] = userProject.startedAt;
+            const startTime = new Date(userProject.startedAt as any);
+            let endTime = userProject?.endAt
+              ? new Date(userProject?.endAt as any)
+              : startTime;
+            if (startTime == endTime) {
+              endTime = new Date(
+                startTime.getTime() + (emp.workTime || 1) * HOUR_TO_MS
+              );
+            }
+            emp["endTime"] = endTime;
             const project = projectDetails?.find(
               (proj) =>
                 proj?._id?.toString() == userProject?.projectId?.toString()
@@ -397,11 +413,9 @@ class EmployeeDBService {
                 },
               ],
             };
-            const days = await getDaysNum(
-              userIfExists,
-              userProject.startedAt.toString()
-            );
-            if (days >= 1 && emp.status != EMP_STATUS.COMPLETED) {
+            var remainingTime = endTime.valueOf() - new Date().valueOf();
+            const isCompleted = remainingTime < 0 ? true : false;
+            if (isCompleted && emp.status != EMP_STATUS.COMPLETED) {
               emp.status = EMP_STATUS.COMPLETED;
             }
           }
@@ -424,7 +438,8 @@ class EmployeeDBService {
    */
   public async startEmployeeProject(userIfExists: any, data: any) {
     try {
-      const { employeeId, projectId } = data;
+      const { employeeId, projectId, workTime = 1 } = data;
+      const addTime = workTime * HOUR_TO_MS;
       const projectObj = {
         userId: userIfExists._id,
         employeeId,
@@ -432,7 +447,11 @@ class EmployeeDBService {
         status: EMP_STATUS.WORKING,
         startedAt: new Date(),
         completedAt: null,
+        endAt: new Date(new Date().getTime() + addTime),
       };
+      if (userIfExists.cash < EMP_START_PROJECT_COST) {
+        throw new NetworkError("You need more cash to start the project", 400);
+      }
       await Promise.all([
         UserProjectsTable.findOneAndUpdate(
           {
@@ -532,7 +551,7 @@ class EmployeeDBService {
         {
           $project: {
             level: 1,
-            promotionCode: 1,
+            promotionCost: 1,
             ratingValues: 1,
             title: 1,
             employeeDetails: 1,

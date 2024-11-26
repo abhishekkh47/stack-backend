@@ -1192,12 +1192,12 @@ export const STAGE_COMPLETE = {
       colorInfo: {
         outer: {
           colors: ["#FFF8C1", "#C2E8FD", "#909090", "#DDDDDD", "#FFFFFF"],
-          locations: [0, 0, 0.31, 0.76, 1],
+          location: [0, 0, 0.31, 0.76, 1],
           angle: 75,
         },
         inner: {
           colors: ["#FFF8C1", "#C2E8FD", "#909090", "#DDDDDD", "#FFFFFF"],
-          locations: [0, 0, 0.31, 0.76, 1],
+          location: [0, 0, 0.31, 0.76, 1],
           angle: 90,
         },
       },
@@ -1222,12 +1222,12 @@ export const STAGE_COMPLETE = {
       colorInfo: {
         outer: {
           colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
-          locations: [0, 0.25, 0.75, 1],
+          location: [0, 0.25, 0.75, 1],
           angle: 75,
         },
         inner: {
           colors: ["#FFFCA8", "#FFFCA8", "#FDC966", "#F1DC83"],
-          locations: [0, 0.25, 0.75, 1],
+          location: [0, 0.25, 0.75, 1],
           angle: 90,
         },
       },
@@ -1252,12 +1252,12 @@ export const STAGE_COMPLETE = {
       colorInfo: {
         outer: {
           colors: ["#17ACFF", "#78FAFF"],
-          locations: [0, 0.5],
+          location: [0, 0.5],
           angle: 0,
         },
         inner: {
           colors: ["#17ACFF", "#78FAFF"],
-          locations: [0, 0.75],
+          location: [0, 0.75],
           angle: 180,
         },
       },
@@ -1294,3 +1294,8 @@ export const TRIGGER_TYPE = {
 
 export const EMP_START_PROJECT_COST = -5;
 export const DEFAULT_BUSINESS_NAME = "Jetson";
+export const HOUR_TO_MS = 60 * 60 * 1000;
+export const PURCHASE_TYPE = {
+  TOKEN: 0,
+  CASH: 1,
+};
