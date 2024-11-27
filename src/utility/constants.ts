@@ -140,9 +140,9 @@ export const NOTIFICATION = {
     "Redeemed ${amount} Bitcoin Gift Card from {sender}",
   REFERR_TITLE: "Congrats 🎉",
   REFERRAL_SENDER_MESSAGE:
-    "You have received 20XP from referring your friend {friendName}! Be sure to say thanks.",
+    "You have received 20 coins from referring your friend {friendName}! Be sure to say thanks.",
   REFERRAL_RECEIVER_MESSAGE:
-    "You have received 20XP from your friend {friendName}! Be sure to say thanks.",
+    "You have received 20 coins from your friend {friendName}! Be sure to say thanks.",
   DRIP_SHOP_MESSAGE:
     "Reedemed ${cryptoAmount} of ${cryptoName} in exchange of {fuelAmount} fuel",
 };

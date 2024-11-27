@@ -409,7 +409,7 @@ class UserService {
         },
         {
           $inc: {
-            xpPoints: XP_POINTS.REFERRAL,
+            quizCoins: XP_POINTS.REFERRAL,
           },
         },
         { new: true }
