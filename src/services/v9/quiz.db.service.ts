@@ -77,24 +77,23 @@ class QuizDBService {
         ? CORRECT_ANSWER_FUEL_POINTS.STORY * solvedQuestions.length
         : CORRECT_ANSWER_FUEL_POINTS.QUIZ * solvedQuestions.length;
 
-    if (
-      numOfIncorrectAnswers > 2 &&
-      quizExists.quizType === QUIZ_TYPE.SIMULATION
-    ) {
-      resultScreenInfo =
-        milestoneLevel?.actions[2].resultCopyInfo.fail ||
-        SIMULATION_RESULT_COPY.fail;
-    } else {
-      resultScreenInfo =
-        milestoneLevel?.actions[2].resultCopyInfo.pass ||
-        SIMULATION_RESULT_COPY.pass;
-      pointsEarnedFromQuiz = SIMULATION_REWARDS.quizCoins;
-      if (userIfExists.cash && userIfExists.cash > 0) {
-        cashEarnedFromQuiz = SIMULATION_REWARDS.cash;
+    if (quizExists.quizType === QUIZ_TYPE.SIMULATION) {
+      if (numOfIncorrectAnswers > 2) {
+        resultScreenInfo =
+          milestoneLevel?.actions[2].resultCopyInfo.fail ||
+          SIMULATION_RESULT_COPY.fail;
       } else {
-        cashEarnedFromQuiz = SIMULATION_REWARDS.cash + 50; // add default cash for existing users
+        resultScreenInfo =
+          milestoneLevel?.actions[2].resultCopyInfo.pass ||
+          SIMULATION_RESULT_COPY.pass;
+        pointsEarnedFromQuiz = SIMULATION_REWARDS.quizCoins;
+        if (userIfExists.cash && userIfExists.cash > 0) {
+          cashEarnedFromQuiz = SIMULATION_REWARDS.cash;
+        } else {
+          cashEarnedFromQuiz = SIMULATION_REWARDS.cash + 50; // add default cash for existing users
+        }
+        ratingEarnedFromQuiz = SIMULATION_REWARDS.businessScore;
       }
-      ratingEarnedFromQuiz = SIMULATION_REWARDS.businessScore;
     }
     QuizResult.create({
       topicId: reqParam?.topicId,
