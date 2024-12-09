@@ -2,7 +2,8 @@ import BaseController from "@app/controllers/base";
 import { Auth } from "@app/middleware";
 import { UserTable } from "@app/model";
 import { CommunityTable, UserCommunityTable } from "@app/model";
-import { CommunityDBService as CommunityDBServiceV9 } from "@app/services/v10";
+import { CommunityDBService } from "@app/services/v6";
+import { CommunityDBService as CommunityDBServiceV10 } from "@app/services/v10";
 import { HttpMethod } from "@app/types";
 import { Route, searchSchools } from "@app/utility";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
@@ -34,9 +35,9 @@ class CommunityController extends BaseController {
       async (validate) => {
         if (validate) {
           if (!communityIfExists && !userIfExistsInCommunity) {
-            await CommunityDBServiceV9.createCommunity(body, userIfExists);
+            await CommunityDBServiceV10.createCommunity(body, userIfExists);
           } else {
-            await CommunityDBServiceV9.joinCommunity(
+            await CommunityDBServiceV10.joinCommunity(
               userIfExists._id,
               communityIfExists
             );
@@ -71,10 +72,10 @@ class CommunityController extends BaseController {
       if (!communityIfExists)
         return this.BadRequest(ctx, "This community does not exist");
       communityIfExists =
-        await CommunityDBServiceV9.updateCommunityToLatestChallenge(
+        await CommunityDBService.updateCommunityToLatestChallenge(
           communityIfExists
         );
-      const data = await CommunityDBServiceV9.getCommunityLeaderboard(
+      const data = await CommunityDBServiceV10.getCommunityLeaderboard(
         communityIfExists,
         query,
         userIfExists._id

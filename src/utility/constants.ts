@@ -1091,6 +1091,8 @@ export const MILESTONE_HOMEPAGE = {
   CHALLENGES: "challenges",
   EVENT: { title: "New Event", key: "event" },
   EMPLOYEE: "employee",
+  THEME: { DARK: "dark", LIGHT: "light" },
+  LEVEL: { NOT_STARTED: 0, COMPLETED: 7 },
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
@@ -1344,13 +1346,3 @@ export const COMMUNITY_LEVELS = [
     icon: "opal_community.png",
   },
 ];
-
-export const LEVEL_DETAILS = {
-  _id: "1",
-  title: "LEVEL TITLE",
-  description: "LEVEL NAME",
-  image: "LEVEL IMAGE",
-  level: 1,
-  currentActionNumber: 0,
-  currentActionInfo: {},
-}
