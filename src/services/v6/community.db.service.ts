@@ -575,7 +575,7 @@ class CommunityDBService {
     }
   }
 
-  private async processStageData(dataArray: any) {
+  public async processStageData(dataArray: any) {
     dataArray.forEach(async (data) => {
       if (!data.companyName) {
         data.companyName = DEFAULT_BUSINESS_NAME;

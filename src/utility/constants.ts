@@ -312,7 +312,7 @@ export interface IPromptData {
 }
 
 export const SIMULATION_QUIZ_FUEL = 10;
-export const REFILL_LIFE_FUEL = 300;
+export const REFILL_LIFE_FUEL = 25;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 
 export const QUIZ_CATEGORIES_COLORS = [
@@ -1299,3 +1299,58 @@ export const PURCHASE_TYPE = {
   TOKEN: 0,
   CASH: 1,
 };
+
+export const COMMUNITY_LEVELS = [
+  {
+    title: "Bronze",
+    min_members: 0,
+    max_members: 10,
+    icon: "bronze_community.png",
+  },
+  {
+    title: "Silver",
+    min_members: 11,
+    max_members: 50,
+    icon: "silver_community.png",
+  },
+  {
+    title: "Gold",
+    min_members: 51,
+    max_members: 100,
+    icon: "gold_community.png",
+  },
+  {
+    title: "Emerald",
+    min_members: 101,
+    max_members: 200,
+    icon: "emerald_community.png",
+  },
+  {
+    title: "Ruby",
+    min_members: 201,
+    max_members: 500,
+    icon: "ruby_community.png",
+  },
+  {
+    title: "Diamond",
+    min_members: 501,
+    max_members: 1000,
+    icon: "diamond_community.png",
+  },
+  {
+    title: "Opal",
+    min_members: 1001,
+    max_members: 2000,
+    icon: "opal_community.png",
+  },
+];
+
+export const LEVEL_DETAILS = {
+  _id: "1",
+  title: "LEVEL TITLE",
+  description: "LEVEL NAME",
+  image: "LEVEL IMAGE",
+  level: 1,
+  currentActionNumber: 0,
+  currentActionInfo: {},
+}

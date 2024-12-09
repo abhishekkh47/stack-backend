@@ -17,6 +17,7 @@ export interface IStage {
   colorInfo: IColorBook; // stage color info
   scoreColorInfo: IColorBook;
   leaderBoardColorInfo: IColorDetails;
+  homepageColorInfo: IColorDetails;
 }
 
 interface IColorBook {

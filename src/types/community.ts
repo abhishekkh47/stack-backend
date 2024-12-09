@@ -19,4 +19,5 @@ export interface IUserCommunity {
   userId: mongoose.Schema.Types.ObjectId;
   reward: number;
   isClaimed: boolean;
+  subscriptionOfferExpiresIn: Date;
 }

@@ -2,13 +2,9 @@ import BaseController from "@app/controllers/base";
 import { Auth } from "@app/middleware";
 import { UserTable } from "@app/model";
 import { CommunityTable, UserCommunityTable } from "@app/model";
-import { CommunityDBService } from "@app/services/v6";
+import { CommunityDBService as CommunityDBServiceV9 } from "@app/services/v10";
 import { HttpMethod } from "@app/types";
 import { Route, searchSchools } from "@app/utility";
-import {
-  CHALLENGE_TYPE,
-  RALLY_COMMUNITY_CHALLENGE_GOAL,
-} from "@app/utility/constants";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
 
 class CommunityController extends BaseController {
@@ -38,9 +34,9 @@ class CommunityController extends BaseController {
       async (validate) => {
         if (validate) {
           if (!communityIfExists && !userIfExistsInCommunity) {
-            await CommunityDBService.createCommunity(body, userIfExists);
+            await CommunityDBServiceV9.createCommunity(body, userIfExists);
           } else {
-            await CommunityDBService.joinCommunity(
+            await CommunityDBServiceV9.joinCommunity(
               userIfExists._id,
               communityIfExists
             );
@@ -75,16 +71,10 @@ class CommunityController extends BaseController {
       if (!communityIfExists)
         return this.BadRequest(ctx, "This community does not exist");
       communityIfExists =
-        await CommunityDBService.updateCommunityToLatestChallenge(
+        await CommunityDBServiceV9.updateCommunityToLatestChallenge(
           communityIfExists
         );
-      const {
-        leaderBoardData,
-        totalRecords,
-        userObject,
-        totalXPPoints,
-        weeklyChallengeDate,
-      } = await CommunityDBService.getCommunityLeaderboard(
+      const data = await CommunityDBServiceV9.getCommunityLeaderboard(
         communityIfExists,
         query,
         userIfExists._id
@@ -92,14 +82,7 @@ class CommunityController extends BaseController {
 
       return this.Ok(ctx, {
         message: "Success",
-        data: {
-          leaderBoardData,
-          totalRecords,
-          userObject,
-          totalXPPoints,
-          weeklyChallengeDate,
-          communityDetails: communityIfExists,
-        },
+        data,
       });
     } catch (error) {
       return this.BadRequest(ctx, "Something went wrong");

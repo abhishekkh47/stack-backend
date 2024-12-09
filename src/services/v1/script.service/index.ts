@@ -2041,7 +2041,7 @@ class ScriptService {
       let currentMilestoneId = null;
       let currentIndex = -1;
       let currentIdentifier = null;
-      let milestoneOrder = 0;
+      let currentLevel = 0;
       let learningContent = [];
       let learningContentIdx = -1;
       let dayTitle = null;
@@ -2117,6 +2117,7 @@ class ScriptService {
 
         if (row["day"] && row["day"] != currentDay) {
           currentDay = Number(row["day"]);
+          currentLevel = Number(row["level"].trimEnd())
           dayTitle = row["title"]?.trimEnd() || null;
           roadmapIcon = row["roadmapIcon"]?.trimEnd() || null;
           order = 0;
@@ -2178,6 +2179,8 @@ class ScriptService {
                 row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
               dayTitle,
               roadmapIcon,
+              level: currentLevel,
+              levelImage: `journey-${currentLevel}.webp`
             });
           }
         }
@@ -2228,6 +2231,8 @@ class ScriptService {
                 isAiToolbox: obj.isAiToolbox,
                 dayTitle: obj.dayTitle,
                 roadmapIcon: obj.roadmapIcon,
+                level: obj.level,
+                levelImage: obj.levelImage
               },
             },
             upsert: true,
@@ -3221,6 +3226,11 @@ class ScriptService {
               colors: row["LeaderBoardColors"]?.trimEnd()?.split(","),
               location: row["LeaderBoardLocation"]?.trimEnd()?.split(","),
               angle: Number(row["LeaderBoardAngle"]?.trimEnd()) || 0,
+            },
+            homepageColorInfo: {
+              colors: row["HPLevelColors"]?.trimEnd()?.split(","),
+              location: row["HPLevelLocation"]?.trimEnd()?.split(","),
+              angle: Number(row["HPLevelAngle"]?.trimEnd()) || 0,
             }
           });
         }

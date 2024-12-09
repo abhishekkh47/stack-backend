@@ -28,6 +28,11 @@ const schema = new mongoose.Schema<IUserCommunity>(
       default: COMMUNITY_CHALLENGE_CLAIM_STATUS.PENDING,
       required: true,
     },
+    subscriptionOfferExpiresIn: {
+      type: mongoose.Schema.Types.Date,
+      default: new Date(),
+      required: true,
+    },
   },
   { timestamps: true }
 );
