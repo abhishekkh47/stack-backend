@@ -40,13 +40,13 @@ class MilestoneController extends BaseController {
   @Auth()
   public async claimLevelReward(ctx: any) {
     const { user } = ctx.request;
-    const [userExists] = await UserTable.findOne({ _id: user._id });
+    const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.UnAuthorized(ctx, "User Not Found");
     }
     await UserTable.findOneAndUpdate(
       { _id: user._id },
-      { $inc: { quizCoins: 50 } },
+      { $set: { levelRewardClaimed: true }, $inc: { quizCoins: 50 } },
       { upsert: true }
     );
 

@@ -368,6 +368,11 @@ const schema = new mongoose.Schema<IUserSchema>(
       ref: "stages",
       default: null,
     },
+    levelRewardClaimed: {
+      type: mongoose.Schema.Types.Boolean,
+      required: true,
+      default: false,
+    },
   },
   { timestamps: true }
 );

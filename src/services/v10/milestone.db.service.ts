@@ -1,5 +1,6 @@
 import { NetworkError } from "@app/middleware";
 import {
+  UserTable,
   MilestoneTable,
   MilestoneResultTable,
   MilestoneGoalsTable,
@@ -74,8 +75,18 @@ class MilestoneDBService {
         ifCurrentGoalObject = false,
         ifLevelCompleted = true;
       const { GOALS_OF_THE_DAY, AI_ACTIONS } = MILESTONE_HOMEPAGE;
-      if (advanceNextDay && userIfExists.isPremiumUser) {
+      if (
+        (advanceNextDay && userIfExists.isPremiumUser) ||
+        userIfExists?.levelRewardClaimed
+      ) {
         isAdvanceNextDay = true;
+        if (userIfExists?.levelRewardClaimed) {
+          UserTable.findOneAndUpdate(
+            { _id: userIfExists._id },
+            { $set: { levelRewardClaimed: false } },
+            { upsert: true }
+          );
+        }
       } else if (advanceNextDay && !userIfExists.isPremiumUser) {
         throw new NetworkError(
           "Become a pro user to get unlimited access",
@@ -431,7 +442,7 @@ class MilestoneDBService {
               ? 7
               : 0,
             currentActionInfo: ifCurrentGoalObject
-              ? aiActions[0]
+              ? aiActions[0] || defaultCurrentActionInfo
               : defaultCurrentActionInfo,
           });
         });
@@ -530,6 +541,16 @@ class MilestoneDBService {
                   level: "$$goal.level",
                   levelImage: "$$goal.levelImage",
                 },
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            milestoneGoals: {
+              $sortArray: {
+                input: "$milestoneGoals",
+                sortBy: { day: 1 },
               },
             },
           },

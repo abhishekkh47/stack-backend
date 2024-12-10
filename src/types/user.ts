@@ -33,6 +33,7 @@ export interface IUser extends IAccount {
   businessScore: IBusinessScore;
   cash: number;
   stage: mongoose.Schema.Types.ObjectId;
+  levelRewardClaimed: mongoose.Schema.Types.Boolean;
 }
 
 export interface IAccount {
