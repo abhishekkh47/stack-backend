@@ -1091,6 +1091,7 @@ export const MILESTONE_HOMEPAGE = {
   CHALLENGES: "challenges",
   EVENT: { title: "New Event", key: "event" },
   EMPLOYEE: "employee",
+  AI_ACTIONS: "aiActions",
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];

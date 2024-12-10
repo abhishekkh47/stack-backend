@@ -73,7 +73,7 @@ class MilestoneDBService {
         currentDay = 1,
         ifCurrentGoalObject = false,
         ifLevelCompleted = true;
-      const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
+      const { GOALS_OF_THE_DAY, AI_ACTIONS } = MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
         isAdvanceNextDay = true;
       } else if (advanceNextDay && !userIfExists.isPremiumUser) {
@@ -272,7 +272,8 @@ class MilestoneDBService {
         response?.tasks?.unshift({
           title: GOALS_OF_THE_DAY.title,
           data: [],
-          key: GOALS_OF_THE_DAY.key,
+          sectionKey: GOALS_OF_THE_DAY.key,
+          key: AI_ACTIONS,
         });
       }
       const quizIds = allLearningContent?.map((obj) => obj?.quizId);
@@ -390,6 +391,12 @@ class MilestoneDBService {
         response?.tasks[0]?.data.length > 0
       ) {
         response.isMilestoneHit = false;
+      }
+      if (
+        response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
+        response?.tasks[0]?.data.length == 0
+      ) {
+        response?.tasks.shift();
       }
       const aiActions = response.tasks;
       let currentActionNumber =

@@ -135,8 +135,13 @@ class MilestoneDBService {
         isSimulationAvailable = false,
         initialMilestone = null,
         simsAndEvent = [];
-      const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS, EARN } =
-        MILESTONE_HOMEPAGE;
+      const {
+        GOALS_OF_THE_DAY,
+        IS_COMPLETED,
+        COMPLETED_GOALS,
+        EARN,
+        AI_ACTIONS,
+      } = MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
         isAdvanceNextDay = true;
       } else if (advanceNextDay && !userIfExists.isPremiumUser) {
@@ -356,6 +361,7 @@ class MilestoneDBService {
           title: GOALS_OF_THE_DAY.title,
           data: [],
           sectionKey: GOALS_OF_THE_DAY.key,
+          key: AI_ACTIONS,
         });
       }
       const quizIds = allLearningContent?.map((obj) => obj?.quizId);
@@ -419,6 +425,7 @@ class MilestoneDBService {
             title: GOALS_OF_THE_DAY.title,
             data: updatedSimsAndEvent,
             sectionKey: GOALS_OF_THE_DAY.key,
+            key: AI_ACTIONS,
           });
         }
       }
@@ -536,7 +543,7 @@ class MilestoneDBService {
     daysInCurrentMilestone: number = 0
   ) {
     try {
-      const { IS_COMPLETED, GOALS_OF_THE_DAY, COMPLETED_GOALS } =
+      const { IS_COMPLETED, GOALS_OF_THE_DAY, COMPLETED_GOALS, AI_ACTIONS } =
         MILESTONE_HOMEPAGE;
       let response = {
         isMilestoneHit,
@@ -545,6 +552,7 @@ class MilestoneDBService {
             title: GOALS_OF_THE_DAY.title,
             data: [],
             sectionKey: GOALS_OF_THE_DAY.key,
+            key: AI_ACTIONS,
           },
           {
             title: COMPLETED_GOALS.title,
@@ -867,6 +875,7 @@ class MilestoneDBService {
               title: MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY.title,
               data: [],
               sectionKey: MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY.key,
+              key: MILESTONE_HOMEPAGE.AI_ACTIONS,
             },
           ],
         };
