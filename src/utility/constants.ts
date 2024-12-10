@@ -312,7 +312,7 @@ export interface IPromptData {
 }
 
 export const SIMULATION_QUIZ_FUEL = 10;
-export const REFILL_LIFE_FUEL = 300;
+export const REFILL_LIFE_FUEL = 25;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 
 export const QUIZ_CATEGORIES_COLORS = [
@@ -1298,4 +1298,14 @@ export const HOUR_TO_MS = 60 * 60 * 1000;
 export const PURCHASE_TYPE = {
   TOKEN: 0,
   CASH: 1,
+};
+
+export const LEVEL_DETAILS = {
+  _id: "1",
+  title: "LEVEL TITLE",
+  description: "LEVEL NAME",
+  image: "LEVEL IMAGE",
+  level: 1,
+  currentActionNumber: 0,
+  currentActionInfo: {},
 };

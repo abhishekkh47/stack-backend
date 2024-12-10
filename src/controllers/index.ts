@@ -12,6 +12,7 @@ import routerDictV6 from "./v6";
 import routerDictV7 from "./v7";
 import routerDictV8 from "./v8";
 import routerDictV9 from "./v9";
+import routerDictV10 from "./v10";
 import { HttpMethod } from "@app/types";
 
 const router = new Router();
@@ -51,7 +52,9 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
       {}
     );
     const firstRouteForKey =
-      routesForKey.filter((x) => x.version === "9.0.0").length > 0
+      routesForKey.filter((x) => x.version === "10.0.0").length > 0
+        ? routesForKey.filter((x) => x.version === "10.0.0")[0]
+        : routesForKey.filter((x) => x.version === "9.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "9.0.0")[0]
         : routesForKey.filter((x) => x.version === "8.0.0").length > 0
         ? routesForKey.filter((x) => x.version === "8.0.0")[0]
@@ -79,7 +82,8 @@ const setRoutes = (router: Router, routeDicts: IRouteDict[]) => {
     );
 
     const { middleware } = firstRouteForKey;
-    const path = "/:version(v\\d)?" + firstRouteForKey.path;
+    // added '{1,2}' to capture 1 or 2 digits as the API version
+    const path = "/:version(v\\d{1,2})?" + firstRouteForKey.path;
     const versionedRoutes = KoaRouterVersion.version(mergedRoutesForKey, {
       fallbackLatest: true,
     });
@@ -106,6 +110,7 @@ setRoutes(router, [
   routerDictV7,
   routerDictV8,
   routerDictV9,
+  routerDictV10,
 ]);
 
 export default Compose([router.routes(), router.allowedMethods()]);
