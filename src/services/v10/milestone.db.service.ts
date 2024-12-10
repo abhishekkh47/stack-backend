@@ -73,7 +73,8 @@ class MilestoneDBService {
         actionDetails = {},
         currentDay = 1,
         ifCurrentGoalObject = false,
-        ifLevelCompleted = true;
+        ifLevelCompleted = true,
+        levelRewards = {};
       const { GOALS_OF_THE_DAY, AI_ACTIONS } = MILESTONE_HOMEPAGE;
       if (
         (advanceNextDay && userIfExists.isPremiumUser) ||
@@ -81,7 +82,7 @@ class MilestoneDBService {
       ) {
         isAdvanceNextDay = true;
         if (userIfExists?.levelRewardClaimed) {
-          UserTable.findOneAndUpdate(
+          await UserTable.findOneAndUpdate(
             { _id: userIfExists._id },
             { $set: { levelRewardClaimed: false } },
             { upsert: true }
@@ -385,8 +386,7 @@ class MilestoneDBService {
         const newStageTitle = newStage?.title;
         const newStageDetails =
           STAGE_COMPLETE[newStageTitle] || STAGE_COMPLETE["ANGEL STAGE"];
-        response.tasks[0].data[0] = {
-          ...response.tasks[0].data[0],
+        levelRewards = {
           stageUnlockedInfo: {
             ...newStageDetails,
             stageInfo: {
@@ -422,6 +422,7 @@ class MilestoneDBService {
         type: 6,
         title: "Reward: You’ve earned +50 Tokens!",
         key: "reward",
+        levelRewards,
       };
       currentMilestoneLevels.milestones.forEach((milestone) => {
         milestone.milestoneGoals.forEach((level) => {
