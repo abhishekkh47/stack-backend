@@ -64,19 +64,13 @@ class MilestoneDBService {
         tasks: [],
       };
       let isAdvanceNextDay = false,
-        learningActions = [],
         isLastDayOfMilestone = true,
-        lockedQuest = false,
-        lockedAction = true,
-        isSimulationAvailable = false,
         initialMilestone = null,
-        simsAndEvent = [],
-        actionDetails = {},
         currentDay = 1,
         ifCurrentGoalObject = false,
         ifLevelCompleted = true,
         levelRewards = {};
-      const { GOALS_OF_THE_DAY, AI_ACTIONS } = MILESTONE_HOMEPAGE;
+      const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
       if (
         (advanceNextDay && userIfExists.isPremiumUser) ||
         userIfExists?.levelRewardClaimed
@@ -223,26 +217,24 @@ class MilestoneDBService {
             day: response?.tasks[0]?.data[0].day,
           }),
         ]);
-        if (response?.tasks[0]?.data.length == 1) {
-          if (quizLevelData) {
+        if (quizLevelData) {
+          response.tasks[0] = {
+            ...response.tasks[0],
+            resultCopyInfo: quizLevelData?.actions[0]?.resultCopyInfo?.pass,
+          };
+        }
+        if (response?.tasks[0]?.data.length == 1 && isLastDayOfMilestone) {
+          if (!ifOtherMilestoneCompleted) {
             response.tasks[0].data[0] = {
-              ...response.tasks[0].data[0],
-              resultCopyInfo: quizLevelData?.actions[0]?.resultCopyInfo?.pass,
+              ...response?.tasks[0]?.data[0],
+              showNotificationScreen: true,
+              lastGoalOfMilestone: true,
             };
-          }
-          if (isLastDayOfMilestone) {
-            if (!ifOtherMilestoneCompleted) {
-              response.tasks[0].data[0] = {
-                ...response?.tasks[0]?.data[0],
-                showNotificationScreen: true,
-                lastGoalOfMilestone: true,
-              };
-            } else {
-              response.tasks[0].data[0] = {
-                ...response?.tasks[0]?.data[0],
-                lastGoalOfMilestone: true,
-              };
-            }
+          } else {
+            response.tasks[0].data[0] = {
+              ...response?.tasks[0]?.data[0],
+              lastGoalOfMilestone: true,
+            };
           }
         }
       } else {
@@ -264,102 +256,13 @@ class MilestoneDBService {
       } else {
         response.isMilestoneHit = false;
       }
-      // order -> quiz, story, simulation
-      const order = { 1: 0, 3: 1, 2: 2, 4: 3 };
-      const learningContent = await MilestoneDBServiceV9.getLearningContent(
+
+      response = await this.populateMilestoneTasks(
         userIfExists,
+        response,
         currentGoal
       );
-      const quizLevelId = learningContent?.quizLevelId || null;
-      const milestoneId = learningContent?.milestoneId || null;
-      const allLearningContent = learningContent?.all?.sort(
-        (a, b) => order[a?.type] - order[b?.type]
-      );
-      const currentDayIds = learningContent?.currentDayGoal?.map((obj) =>
-        obj?.quizId?.toString()
-      );
-      if (
-        allLearningContent &&
-        response?.tasks[0]?.title != GOALS_OF_THE_DAY.title
-      ) {
-        response?.tasks?.unshift({
-          title: GOALS_OF_THE_DAY.title,
-          data: [],
-          sectionKey: GOALS_OF_THE_DAY.key,
-          key: AI_ACTIONS,
-        });
-      }
-      const quizIds = allLearningContent?.map((obj) => obj?.quizId);
-      const completedQuizzes = await QuizResult.find(
-        {
-          userId: userIfExists._id,
-          quizId: { $in: quizIds },
-        },
-        { quizId: 1 }
-      );
-      allLearningContent?.forEach(async (obj) => {
-        if (obj) {
-          const currentQuizId = obj?.quizId?.toString();
-          const isQuizCompleted = completedQuizzes.some(
-            (quiz) => quiz?.quizId?.toString() == currentQuizId
-          );
-          if (response?.tasks[0]?.data.length > 0) {
-            lockedQuest = true;
-          }
-          if (!isQuizCompleted && currentDayIds?.includes(currentQuizId)) {
-            if (obj.type == 2 || obj.type == 4) {
-              actionDetails = {
-                actions: obj.type == 2 ? "5 Questions" : "1 Decision",
-                time: obj.type == 2 ? "3 min" : "1 min",
-              };
-              if (!lockedQuest && obj.type == 2) {
-                lockedAction = false;
-                isSimulationAvailable = true;
-              }
-              if (!lockedQuest && obj.type == 4 && !isSimulationAvailable) {
-                lockedAction = false; // Unlock event
-              } else if (obj.type == 4 && isSimulationAvailable) {
-                lockedAction = true; // Keep the event locked if simulation is available
-              }
-              simsAndEvent.push({
-                ...obj,
-                title: obj.type == 2 ? `SMS: ${obj.title}` : obj.title,
-                quizLevelId,
-                milestoneId,
-                isLocked: lockedAction,
-                ...actionDetails,
-              });
-            } else if (obj.type == 1 || obj.type == 3) {
-              actionDetails = {
-                actions: obj.type == 1 ? "12 Terms" : "28 Slides",
-                time: obj.type == 1 ? "1 min" : "3 min",
-                rating: obj.type == 1 ? 4.9 : 4.8,
-                totalRatings: obj.type == 1 ? "4.6K" : "4.2K",
-              };
-              learningActions.push({
-                ...obj,
-                resultCopyInfo: null,
-                quizLevelId,
-                milestoneId,
-                ...actionDetails,
-              });
-            }
-          }
-        }
-      });
-      if (simsAndEvent.length > 0) {
-        const updatedSimsAndEvent = simsAndEvent.sort(
-          (a, b) => order[a?.type] - order[b?.type]
-        );
-        response?.tasks.push(...updatedSimsAndEvent);
-      }
-      if (learningActions.length) {
-        if (response?.tasks.length > 1) {
-          response?.tasks.unshift(...learningActions);
-        } else {
-          response?.tasks?.push(...learningActions);
-        }
-      }
+
       const currentMilestoneDetails = milestoneData.find(
         (obj) =>
           obj._id.toString() ==
@@ -373,7 +276,6 @@ class MilestoneDBService {
       if (
         currentMilestoneDetails?.stageId?.toString() !=
           nextMilestoneDetails?.stageId?.toString() &&
-        // response?.tasks[0]?.data.length == 1 &&
         isLastDayOfMilestone
       ) {
         const employees = await EmployeeDBService.getUnlockedEmployeeDetails(
@@ -663,6 +565,142 @@ class MilestoneDBService {
       return true;
     } catch (error) {
       throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get all ai actions for all milestones under the current stage
+   * @param userIfExists
+   * @param response current response object
+   * @param currentGoal current or last goal played
+   */
+  private async populateMilestoneTasks(
+    userIfExists: any,
+    response: any,
+    currentGoal: any
+  ) {
+    try {
+      const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
+      // order -> quiz, story, simulation
+      const order = { 1: 0, 3: 1, 2: 2, 4: 3 };
+      const learningContent = await MilestoneDBServiceV9.getLearningContent(
+        userIfExists,
+        currentGoal
+      );
+      const quizLevelId = learningContent?.quizLevelId || null;
+      const milestoneId = learningContent?.milestoneId || null;
+      const allLearningContent = learningContent?.all?.sort(
+        (a, b) => order[a?.type] - order[b?.type]
+      );
+      const currentDayIds = learningContent?.currentDayGoal?.map((obj) =>
+        obj?.quizId?.toString()
+      );
+      if (
+        allLearningContent &&
+        response?.tasks[0]?.title != GOALS_OF_THE_DAY.title
+      ) {
+        response?.tasks?.unshift({
+          title: GOALS_OF_THE_DAY.title,
+          data: [],
+          key: GOALS_OF_THE_DAY.key,
+        });
+      }
+      const quizIds = allLearningContent?.map((obj) => obj?.quizId);
+      const completedQuizzes = await QuizResult.find(
+        {
+          userId: userIfExists._id,
+          quizId: { $in: quizIds },
+        },
+        { quizId: 1 }
+      );
+      const { simsAndEvent, learningActions } = this.processIndividualAction(
+        allLearningContent,
+        completedQuizzes,
+        currentDayIds,
+        quizLevelId,
+        milestoneId
+      );
+      if (simsAndEvent.length > 0) {
+        const updatedSimsAndEvent = simsAndEvent.sort(
+          (a, b) => order[a?.type] - order[b?.type]
+        );
+        response?.tasks.push(...updatedSimsAndEvent);
+      }
+      if (learningActions.length) {
+        if (response?.tasks.length > 1) {
+          response?.tasks.unshift(...learningActions);
+        } else {
+          response?.tasks?.push(...learningActions);
+        }
+      }
+      return response;
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * Process individual action details
+   * @param allLearningContent all
+   * @param completedQuizzes array of completed quizzes available in quiz_results collection
+   * @param currentDayIds
+   * @param quizLevelId reference id from quiz_levels collection
+   * @param milestoneId current milestone id
+   */
+  private processIndividualAction(
+    allLearningContent: any,
+    completedQuizzes: any,
+    currentDayIds: any,
+    quizLevelId: any,
+    milestoneId: any
+  ) {
+    try {
+      let actionDetails = {},
+        simsAndEvent = [],
+        learningActions = [];
+      allLearningContent?.forEach((learning) => {
+        if (learning) {
+          const currentQuizId = learning?.quizId?.toString();
+          const isQuizCompleted = completedQuizzes.some(
+            (quiz) => quiz?.quizId?.toString() == currentQuizId
+          );
+          if (!isQuizCompleted && currentDayIds?.includes(currentQuizId)) {
+            if (learning.type == 2 || learning.type == 4) {
+              actionDetails = {
+                actions: learning.type == 2 ? "5 Questions" : "1 Decision",
+                time: learning.type == 2 ? "3 min" : "1 min",
+              };
+              simsAndEvent.push({
+                ...learning,
+                title:
+                  learning.type == 2
+                    ? `SMS: ${learning.title}`
+                    : learning.title,
+                quizLevelId,
+                milestoneId,
+                ...actionDetails,
+              });
+            } else if (learning.type == 1 || learning.type == 3) {
+              actionDetails = {
+                actions: learning.type == 1 ? "12 Terms" : "28 Slides",
+                time: learning.type == 1 ? "1 min" : "3 min",
+                rating: learning.type == 1 ? 4.9 : 4.8,
+                totalRatings: learning.type == 1 ? "4.6K" : "4.2K",
+              };
+              learningActions.push({
+                ...learning,
+                resultCopyInfo: null,
+                quizLevelId,
+                milestoneId,
+                ...actionDetails,
+              });
+            }
+          }
+        }
+      });
+      return { simsAndEvent, learningActions };
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
     }
   }
 }
