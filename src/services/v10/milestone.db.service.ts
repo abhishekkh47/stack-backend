@@ -550,7 +550,7 @@ class MilestoneDBService {
       const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
       const { NORMAL, SIMULATION, STORY, EVENT } = QUIZ_TYPE;
       // order -> quiz, story, simulation
-      const order = { NORMAL: 0, STORY: 1, SIMULATION: 2, EVENT: 3 };
+      const order = { [NORMAL]: 0, [STORY]: 1, [SIMULATION]: 2, [EVENT]: 3 };
       const learningContent = await MilestoneDBServiceV9.getLearningContent(
         userIfExists,
         currentGoal
