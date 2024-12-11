@@ -297,6 +297,7 @@ export const QUIZ_TYPE = {
   SIMULATION: 2,
   STORY: 3,
   EVENT: 4,
+  REWARD: 6,
 };
 export const STORY_QUESTION_TYPE = {
   DESCRIPTION: 1,
@@ -312,7 +313,7 @@ export interface IPromptData {
 }
 
 export const SIMULATION_QUIZ_FUEL = 10;
-export const REFILL_LIFE_FUEL = 300;
+export const REFILL_LIFE_FUEL = 25;
 export const REFILL_HEARTS_ITEM_NAME = "Refill Hearts";
 
 export const QUIZ_CATEGORIES_COLORS = [
@@ -1089,8 +1090,10 @@ export const MILESTONE_HOMEPAGE = {
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
   EARN: { title: "Earn", key: "earn" },
   CHALLENGES: "challenges",
-  EVENT: { title: "New Event", key: "event" },
+  EVENT: { title: "New: Mystery Event", key: "event" },
   EMPLOYEE: "employee",
+  AI_ACTIONS: "aiActions",
+  LEVEL_REWARD: { title: "Reward: You’ve earned +50 Tokens!", key: "reward" },
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
@@ -1298,4 +1301,14 @@ export const HOUR_TO_MS = 60 * 60 * 1000;
 export const PURCHASE_TYPE = {
   TOKEN: 0,
   CASH: 1,
+};
+
+export const LEVEL_DETAILS = {
+  _id: "1",
+  title: "LEVEL TITLE",
+  description: "LEVEL NAME",
+  image: "LEVEL IMAGE",
+  level: 1,
+  currentActionNumber: 0,
+  currentActionInfo: {},
 };

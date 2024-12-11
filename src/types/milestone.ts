@@ -26,6 +26,8 @@ export interface IMilestoneGoals {
   isAiToolbox: boolean;
   dayTitle: string;
   roadmapIcon: string;
+  level: number;
+  levelImage: string;
 }
 
 export enum EInputTemplate {

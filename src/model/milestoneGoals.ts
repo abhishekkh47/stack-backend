@@ -120,6 +120,16 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       required: true,
       default: null,
     },
+    level: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 0,
+    },
+    levelImage: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

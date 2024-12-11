@@ -12,8 +12,6 @@ import {
   UserTable,
   MilestoneEventsTable,
   StageTable,
-  EmployeeTable,
-  EmployeeLevelsTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -23,7 +21,6 @@ import {
   ACTIVE_MILESTONE,
   MILESTONE_HOMEPAGE,
   STAGE_COMPLETE,
-  DEFAULT_EMPLOYEE,
   TRIGGER_TYPE,
 } from "@app/utility";
 import moment from "moment";
@@ -138,8 +135,13 @@ class MilestoneDBService {
         isSimulationAvailable = false,
         initialMilestone = null,
         simsAndEvent = [];
-      const { GOALS_OF_THE_DAY, IS_COMPLETED, COMPLETED_GOALS, EARN } =
-        MILESTONE_HOMEPAGE;
+      const {
+        GOALS_OF_THE_DAY,
+        IS_COMPLETED,
+        COMPLETED_GOALS,
+        EARN,
+        AI_ACTIONS,
+      } = MILESTONE_HOMEPAGE;
       if (advanceNextDay && userIfExists.isPremiumUser) {
         isAdvanceNextDay = true;
       } else if (advanceNextDay && !userIfExists.isPremiumUser) {
@@ -359,6 +361,7 @@ class MilestoneDBService {
           title: GOALS_OF_THE_DAY.title,
           data: [],
           sectionKey: GOALS_OF_THE_DAY.key,
+          key: AI_ACTIONS,
         });
       }
       const quizIds = allLearningContent?.map((obj) => obj?.quizId);
@@ -422,6 +425,7 @@ class MilestoneDBService {
             title: GOALS_OF_THE_DAY.title,
             data: updatedSimsAndEvent,
             sectionKey: GOALS_OF_THE_DAY.key,
+            key: AI_ACTIONS,
           });
         }
       }
@@ -539,7 +543,7 @@ class MilestoneDBService {
     daysInCurrentMilestone: number = 0
   ) {
     try {
-      const { IS_COMPLETED, GOALS_OF_THE_DAY, COMPLETED_GOALS } =
+      const { IS_COMPLETED, GOALS_OF_THE_DAY, COMPLETED_GOALS, AI_ACTIONS } =
         MILESTONE_HOMEPAGE;
       let response = {
         isMilestoneHit,
@@ -548,6 +552,7 @@ class MilestoneDBService {
             title: GOALS_OF_THE_DAY.title,
             data: [],
             sectionKey: GOALS_OF_THE_DAY.key,
+            key: AI_ACTIONS,
           },
           {
             title: COMPLETED_GOALS.title,
@@ -663,7 +668,7 @@ class MilestoneDBService {
    * @param businessProfile
    * @returns {*}
    */
-  private async getNextDayMilestoneGoals(
+  public async getNextDayMilestoneGoals(
     userIfExists: any,
     businessProfile: any,
     lastMilestoneCompleted: any,
@@ -830,7 +835,7 @@ class MilestoneDBService {
    * @param availableDailyChallenges current daily challenges in db
    * @returns {*}
    */
-  private async handleAvailableDailyChallenges(
+  public async handleAvailableDailyChallenges(
     userIfExists: any,
     businessProfile: any,
     availableDailyChallenges: any,
@@ -870,6 +875,7 @@ class MilestoneDBService {
               title: MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY.title,
               data: [],
               sectionKey: MILESTONE_HOMEPAGE.GOALS_OF_THE_DAY.key,
+              key: MILESTONE_HOMEPAGE.AI_ACTIONS,
             },
           ],
         };
@@ -934,11 +940,12 @@ class MilestoneDBService {
    * @param actionObj Ai action details of current active milestone
    * @returns {*}
    */
-  private async getLearningContent(userIfExists: any, actionObj: any) {
+  public async getLearningContent(userIfExists: any, actionObj: any) {
     try {
       const startOfDay = moment().startOf("day").toDate(); // 12:00 AM today
       const endOfDay = moment().endOf("day").toDate(); // 11:59:59 PM today
-      let quizLevelId = null;
+      let quizLevelId = null,
+        milestoneId = null;
       let learningActions = null,
         quizCompletedToday = null,
         completedQuizIds = null;
@@ -950,7 +957,7 @@ class MilestoneDBService {
               milestoneId: actionObj?.milestoneId,
               day: { $lte: actionObj?.day },
             },
-            { actions: 1, day: 1 }
+            { actions: 1, day: 1, milestoneId: 1 }
           ).lean(),
           QuizResult.find({
             userId: userIfExists._id,
@@ -968,6 +975,7 @@ class MilestoneDBService {
           allLearnings.all.push(...obj.actions);
           if (obj.day == actionObj?.day) {
             quizLevelId = obj._id;
+            milestoneId = obj.milestoneId;
             allLearnings.currentDayGoal.push(...obj.actions);
           }
         });
@@ -979,6 +987,7 @@ class MilestoneDBService {
         currentDayGoal: allLearnings.currentDayGoal,
         completedQuizIds,
         quizLevelId,
+        milestoneId,
       };
     } catch (error) {
       throw new NetworkError(error.message, 400);
@@ -1276,7 +1285,7 @@ class MilestoneDBService {
    * @param currentMilestoneId
    * @returns {*}
    */
-  private async checkIfMilestoneHit(
+  public async checkIfMilestoneHit(
     lastMilestoneCompleted: any,
     currentMilestoneId: any
   ) {
@@ -1578,7 +1587,7 @@ class MilestoneDBService {
    * @param userIfExists
    * @returns {*}
    */
-  private getGoalOfTheDay(userIfExists: any) {
+  public getGoalOfTheDay(userIfExists: any) {
     try {
       const currentDayRewards = userIfExists?.currentDayRewards;
       if (currentDayRewards) {
@@ -1851,25 +1860,7 @@ class MilestoneDBService {
       };
       let businessProfileObj = {};
       if (isLastDayOfMilestone) {
-        const [milestones, businessProfile] = await Promise.all([
-          MilestoneTable.find(),
-          BusinessProfileTable.findOne({ userId: userExists._id }),
-        ]);
-        const curentMilestone = milestones.find(
-          (milestone) =>
-            businessProfile.currentMilestone.milestoneId.toString() ==
-            milestone._id.toString()
-        );
-        const currentMilestoneOrder = curentMilestone.order;
-        const nextMilestone = milestones.find(
-          (milestone) => milestone.order == currentMilestoneOrder + 1
-        );
-        businessProfileObj = {
-          currentMilestone: {
-            milestoneId: nextMilestone._id,
-            milestoneUpdatedAt: new Date().toISOString(),
-          },
-        };
+        businessProfileObj = this.moveToNextMilestone(userExists);
       }
       await Promise.all([
         UserTable.findOneAndUpdate({ _id: userExists.id }, userUpdateObj),
@@ -1898,6 +1889,40 @@ class MilestoneDBService {
         true
       );
       return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get event information
+   * @param userExists
+   * @returns {*}
+   */
+  public async moveToNextMilestone(userExists: any) {
+    try {
+      let businessProfileObj = {};
+      const [milestones, businessProfile] = await Promise.all([
+        MilestoneTable.find().lean(),
+        BusinessProfileTable.findOne({ userId: userExists._id }).lean(),
+      ]);
+      const curentMilestone = milestones.find(
+        (milestone) =>
+          businessProfile.currentMilestone.milestoneId.toString() ==
+          milestone._id.toString()
+      );
+      const currentMilestoneOrder = curentMilestone.order;
+      const nextMilestone = milestones.find(
+        (milestone) => milestone.order == currentMilestoneOrder + 1
+      );
+      businessProfileObj = {
+        currentMilestone: {
+          milestoneId: nextMilestone._id,
+          milestoneUpdatedAt: new Date().toISOString(),
+        },
+      };
+
+      return businessProfileObj;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
