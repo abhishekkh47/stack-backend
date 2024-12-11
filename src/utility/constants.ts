@@ -1089,7 +1089,7 @@ export const MILESTONE_HOMEPAGE = {
   CURRENT_MILESTONE: { title: "Current Milestone", key: "currentMilestone" },
   EARN: { title: "Earn", key: "earn" },
   CHALLENGES: "challenges",
-  EVENT: { title: "New Event", key: "event" },
+  EVENT: { title: "New: Mystery Event", key: "event" },
   EMPLOYEE: "employee",
   AI_ACTIONS: "aiActions",
 };

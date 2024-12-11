@@ -1903,8 +1903,8 @@ class MilestoneDBService {
     try {
       let businessProfileObj = {};
       const [milestones, businessProfile] = await Promise.all([
-        MilestoneTable.find(),
-        BusinessProfileTable.findOne({ userId: userExists._id }),
+        MilestoneTable.find().lean(),
+        BusinessProfileTable.findOne({ userId: userExists._id }).lean(),
       ]);
       const curentMilestone = milestones.find(
         (milestone) =>

@@ -323,6 +323,7 @@ class MilestoneDBService {
               }
               simsAndEvent.push({
                 ...obj,
+                title: obj.type == 2 ? `SMS: ${obj.title}` : obj.title,
                 quizLevelId,
                 milestoneId,
                 isLocked: lockedAction,
@@ -435,6 +436,12 @@ class MilestoneDBService {
             currentActionNumber == 6
               ? { ...defaultCurrentActionInfo, ...levelRewards }
               : aiActions[0];
+          if (currentActionInfo?.title == GOALS_OF_THE_DAY.title) {
+            const totalAIActions = currentActionInfo?.data?.length;
+            currentActionInfo.title = `Action: ${level.dayTitle}`;
+            currentActionInfo["actions"] = `${totalAIActions} Decisions`;
+            currentActionInfo["time"] = "2 min";
+          }
           levelsData.push({
             _id: currentLevel,
             title: `${stageName} - Level ${currentLevel}`,
