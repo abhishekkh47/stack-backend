@@ -297,6 +297,7 @@ export const QUIZ_TYPE = {
   SIMULATION: 2,
   STORY: 3,
   EVENT: 4,
+  REWARD: 6,
 };
 export const STORY_QUESTION_TYPE = {
   DESCRIPTION: 1,
@@ -1092,6 +1093,7 @@ export const MILESTONE_HOMEPAGE = {
   EVENT: { title: "New: Mystery Event", key: "event" },
   EMPLOYEE: "employee",
   AI_ACTIONS: "aiActions",
+  LEVEL_REWARD: { title: "Reward: You’ve earned +50 Tokens!", key: "reward" },
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];

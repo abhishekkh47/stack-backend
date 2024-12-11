@@ -16,6 +16,7 @@ import {
   STAGE_COMPLETE,
   TRIGGER_TYPE,
   convertDecimalsToNumbers,
+  QUIZ_TYPE,
 } from "@app/utility";
 import {
   EmployeeDBService,
@@ -67,8 +68,6 @@ class MilestoneDBService {
         isLastDayOfMilestone = true,
         initialMilestone = null,
         currentDay = 1,
-        ifCurrentGoalObject = false,
-        ifLevelCompleted = true,
         levelRewards = {};
       const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
       if (
@@ -304,63 +303,26 @@ class MilestoneDBService {
         response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
         response?.tasks[0]?.data.length > 0
       ) {
-        response.isMilestoneHit = false;
-      }
-      if (
-        response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
-        response?.tasks[0]?.data.length == 0
-      ) {
-        response?.tasks.shift();
+        if (response?.tasks[0]?.data.length > 0) {
+          response.isMilestoneHit = false;
+        } else if (response?.tasks[0]?.data.length == 0) {
+          response?.tasks.shift();
+        }
       }
       const aiActions = response.tasks;
       let currentActionNumber =
         aiActions.length >= 1 && aiActions.length <= 5
           ? 6 - aiActions?.length
           : 6;
-      const levelsData = [];
-      const stageName = currentMilestoneLevels.stageName;
-      let currentLevel = 0;
-      const defaultCurrentActionInfo = {
-        reward: 50,
-        type: 6,
-        title: "Reward: You’ve earned +50 Tokens!",
-        key: "reward",
+      const levelsData = this.processLevels(
+        currentMilestoneLevels,
+        currentActionNumber,
+        currentDay,
+        currentMilestoneId,
         isLastDayOfMilestone,
-      };
-      currentMilestoneLevels.milestones.forEach((milestone) => {
-        milestone.milestoneGoals.forEach((level) => {
-          ifCurrentGoalObject =
-            milestone?.milestoneId?.toString() ==
-              currentMilestoneId?.toString() && level?.day == currentDay;
-          ifLevelCompleted = ifCurrentGoalObject ? false : ifLevelCompleted;
-          ++currentLevel;
-          let currentActionInfo =
-            currentActionNumber == 6
-              ? { ...defaultCurrentActionInfo, ...levelRewards }
-              : aiActions[0];
-          if (currentActionInfo?.title == GOALS_OF_THE_DAY.title) {
-            const totalAIActions = currentActionInfo?.data?.length;
-            currentActionInfo.title = `Action: ${level.dayTitle}`;
-            currentActionInfo["actions"] = `${totalAIActions} Decisions`;
-            currentActionInfo["time"] = "2 min";
-          }
-          levelsData.push({
-            _id: currentLevel,
-            title: `${stageName} - Level ${currentLevel}`,
-            description: level.dayTitle,
-            image: level?.levelImage,
-            level: currentLevel,
-            currentActionNumber: ifCurrentGoalObject
-              ? currentActionNumber
-              : ifLevelCompleted
-              ? 7
-              : 0,
-            currentActionInfo: ifCurrentGoalObject
-              ? currentActionInfo || defaultCurrentActionInfo
-              : defaultCurrentActionInfo,
-          });
-        });
-      });
+        levelRewards,
+        aiActions
+      );
       response.tasks = levelsData;
       response["theme"] = "dark";
       response["colorInfo"] = currentMilestoneLevels.colorInfo;
@@ -370,6 +332,11 @@ class MilestoneDBService {
     }
   }
 
+  /**
+   * @description get all levels in current active stage
+   * @param userExists
+   * @returns {*}
+   */
   public async getLevelsInCurrentStage(userIfExists: any) {
     try {
       let stageId = userIfExists.stage;
@@ -505,7 +472,7 @@ class MilestoneDBService {
   /**
    * @description get event information
    * @param userExists
-   * @param data
+   * @param data user request body
    * @returns {*}
    */
   public async claimLevelReward(userExists: any, data: any) {
@@ -581,8 +548,9 @@ class MilestoneDBService {
   ) {
     try {
       const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
+      const { NORMAL, SIMULATION, STORY, EVENT } = QUIZ_TYPE;
       // order -> quiz, story, simulation
-      const order = { 1: 0, 3: 1, 2: 2, 4: 3 };
+      const order = { NORMAL: 0, STORY: 1, SIMULATION: 2, EVENT: 3 };
       const learningContent = await MilestoneDBServiceV9.getLearningContent(
         userIfExists,
         currentGoal
@@ -640,10 +608,10 @@ class MilestoneDBService {
   }
 
   /**
-   * Process individual action details
-   * @param allLearningContent all
+   * @description Process individual action details
+   * @param allLearningContent all learning content details
    * @param completedQuizzes array of completed quizzes available in quiz_results collection
-   * @param currentDayIds
+   * @param currentDayIds quizzes available for current day
    * @param quizLevelId reference id from quiz_levels collection
    * @param milestoneId current milestone id
    */
@@ -658,6 +626,7 @@ class MilestoneDBService {
       let actionDetails = {},
         simsAndEvent = [],
         learningActions = [];
+      const { NORMAL, SIMULATION, STORY, EVENT } = QUIZ_TYPE;
       allLearningContent?.forEach((learning) => {
         if (learning) {
           const currentQuizId = learning?.quizId?.toString();
@@ -665,27 +634,28 @@ class MilestoneDBService {
             (quiz) => quiz?.quizId?.toString() == currentQuizId
           );
           if (!isQuizCompleted && currentDayIds?.includes(currentQuizId)) {
-            if (learning.type == 2 || learning.type == 4) {
+            if (learning.type == SIMULATION || learning.type == EVENT) {
               actionDetails = {
-                actions: learning.type == 2 ? "5 Questions" : "1 Decision",
-                time: learning.type == 2 ? "3 min" : "1 min",
+                actions:
+                  learning.type == SIMULATION ? "5 Questions" : "1 Decision",
+                time: learning.type == SIMULATION ? "3 min" : "1 min",
               };
               simsAndEvent.push({
                 ...learning,
                 title:
-                  learning.type == 2
+                  learning.type == SIMULATION
                     ? `SMS: ${learning.title}`
                     : learning.title,
                 quizLevelId,
                 milestoneId,
                 ...actionDetails,
               });
-            } else if (learning.type == 1 || learning.type == 3) {
+            } else if (learning.type == NORMAL || learning.type == STORY) {
               actionDetails = {
-                actions: learning.type == 1 ? "12 Terms" : "28 Slides",
-                time: learning.type == 1 ? "1 min" : "3 min",
-                rating: learning.type == 1 ? 4.9 : 4.8,
-                totalRatings: learning.type == 1 ? "4.6K" : "4.2K",
+                actions: learning.type == NORMAL ? "12 Terms" : "28 Slides",
+                time: learning.type == NORMAL ? "1 min" : "3 min",
+                rating: learning.type == NORMAL ? 4.9 : 4.8,
+                totalRatings: learning.type == NORMAL ? "4.6K" : "4.2K",
               };
               learningActions.push({
                 ...learning,
@@ -699,6 +669,79 @@ class MilestoneDBService {
         }
       });
       return { simsAndEvent, learningActions };
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * @description Process each level in current stage
+   * @param currentMilestoneLevels current milestone levels
+   * @param currentActionNumber current action number to be attempted
+   * @param currentDay current day of milestone
+   * @param currentMilestoneId current milestone ID
+   * @param isLastDayOfMilestone whether current day is the last day of milestone
+   * @param levelRewards rewards on completion of the level
+   * @param aiActions all ai actions and learning content in current milestone
+   */
+  private processLevels(
+    currentMilestoneLevels: any,
+    currentActionNumber: number,
+    currentDay: number,
+    currentMilestoneId: any,
+    isLastDayOfMilestone: boolean,
+    levelRewards: any,
+    aiActions: any
+  ) {
+    try {
+      let ifLevelCompleted = true,
+        currentLevel = 0,
+        ifCurrentGoalObject = false;
+      const { GOALS_OF_THE_DAY, LEVEL_REWARD } = MILESTONE_HOMEPAGE;
+      const levelsData = [];
+      const defaultCurrentActionInfo = {
+        reward: 50,
+        type: 6,
+        title: LEVEL_REWARD.title,
+        key: LEVEL_REWARD.key,
+        isLastDayOfMilestone,
+      };
+      const stageName = currentMilestoneLevels.stageName;
+      currentMilestoneLevels.milestones.forEach((milestone) => {
+        milestone.milestoneGoals.forEach((level) => {
+          ifCurrentGoalObject =
+            milestone?.milestoneId?.toString() ==
+              currentMilestoneId?.toString() && level?.day == currentDay;
+          ifLevelCompleted = ifCurrentGoalObject ? false : ifLevelCompleted;
+          ++currentLevel;
+          let currentActionInfo =
+            currentActionNumber == 6
+              ? { ...defaultCurrentActionInfo, ...levelRewards }
+              : aiActions[0];
+          if (currentActionInfo?.title == GOALS_OF_THE_DAY.title) {
+            const totalAIActions = currentActionInfo?.data?.length;
+            currentActionInfo.title = `Action: ${level.dayTitle}`;
+            currentActionInfo["actions"] = `${totalAIActions} Decisions`;
+            currentActionInfo["time"] = "2 min";
+          }
+          levelsData.push({
+            _id: currentLevel,
+            title: `${stageName} - Level ${currentLevel}`,
+            description: level.dayTitle,
+            image: level?.levelImage,
+            level: currentLevel,
+            currentActionNumber: ifCurrentGoalObject
+              ? currentActionNumber
+              : ifLevelCompleted
+              ? 7
+              : 0,
+            currentActionInfo: ifCurrentGoalObject
+              ? currentActionInfo || defaultCurrentActionInfo
+              : defaultCurrentActionInfo,
+          });
+        });
+      });
+      return levelsData;
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
