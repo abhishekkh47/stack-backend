@@ -39,17 +39,12 @@ class MilestoneController extends BaseController {
   @Route({ path: "/claim-level-reward", method: HttpMethod.POST })
   @Auth()
   public async claimLevelReward(ctx: any) {
-    const { user } = ctx.request;
+    const { user, body } = ctx.request;
     const userExists = await UserTable.findOne({ _id: user._id });
     if (!userExists) {
       return this.UnAuthorized(ctx, "User Not Found");
     }
-    await UserTable.findOneAndUpdate(
-      { _id: user._id },
-      { $set: { levelRewardClaimed: true }, $inc: { quizCoins: 50 } },
-      { upsert: true }
-    );
-
+    await MilestoneDBService.claimLevelReward(userExists, body);
     return this.Ok(ctx, { message: "success" });
   }
 }

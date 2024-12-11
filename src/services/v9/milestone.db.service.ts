@@ -1860,25 +1860,7 @@ class MilestoneDBService {
       };
       let businessProfileObj = {};
       if (isLastDayOfMilestone) {
-        const [milestones, businessProfile] = await Promise.all([
-          MilestoneTable.find(),
-          BusinessProfileTable.findOne({ userId: userExists._id }),
-        ]);
-        const curentMilestone = milestones.find(
-          (milestone) =>
-            businessProfile.currentMilestone.milestoneId.toString() ==
-            milestone._id.toString()
-        );
-        const currentMilestoneOrder = curentMilestone.order;
-        const nextMilestone = milestones.find(
-          (milestone) => milestone.order == currentMilestoneOrder + 1
-        );
-        businessProfileObj = {
-          currentMilestone: {
-            milestoneId: nextMilestone._id,
-            milestoneUpdatedAt: new Date().toISOString(),
-          },
-        };
+        businessProfileObj = this.moveToNextMilestone(userExists);
       }
       await Promise.all([
         UserTable.findOneAndUpdate({ _id: userExists.id }, userUpdateObj),
@@ -1907,6 +1889,40 @@ class MilestoneDBService {
         true
       );
       return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description get event information
+   * @param userExists
+   * @returns {*}
+   */
+  public async moveToNextMilestone(userExists: any) {
+    try {
+      let businessProfileObj = {};
+      const [milestones, businessProfile] = await Promise.all([
+        MilestoneTable.find(),
+        BusinessProfileTable.findOne({ userId: userExists._id }),
+      ]);
+      const curentMilestone = milestones.find(
+        (milestone) =>
+          businessProfile.currentMilestone.milestoneId.toString() ==
+          milestone._id.toString()
+      );
+      const currentMilestoneOrder = curentMilestone.order;
+      const nextMilestone = milestones.find(
+        (milestone) => milestone.order == currentMilestoneOrder + 1
+      );
+      businessProfileObj = {
+        currentMilestone: {
+          milestoneId: nextMilestone._id,
+          milestoneUpdatedAt: new Date().toISOString(),
+        },
+      };
+
+      return businessProfileObj;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

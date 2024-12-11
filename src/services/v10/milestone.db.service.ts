@@ -8,6 +8,7 @@ import {
   QuizLevelTable,
   QuizResult,
   StageTable,
+  BusinessProfileTable,
 } from "@app/model";
 import {
   getDaysNum,
@@ -325,7 +326,6 @@ class MilestoneDBService {
                 quizLevelId,
                 milestoneId,
                 isLocked: lockedAction,
-                isLastDayOfMilestone,
                 ...actionDetails,
               });
             } else if (obj.type == 1 || obj.type == 3) {
@@ -422,7 +422,7 @@ class MilestoneDBService {
         type: 6,
         title: "Reward: You’ve earned +50 Tokens!",
         key: "reward",
-        levelRewards,
+        isLastDayOfMilestone,
       };
       currentMilestoneLevels.milestones.forEach((milestone) => {
         milestone.milestoneGoals.forEach((level) => {
@@ -431,6 +431,10 @@ class MilestoneDBService {
               currentMilestoneId?.toString() && level?.day == currentDay;
           ifLevelCompleted = ifCurrentGoalObject ? false : ifLevelCompleted;
           ++currentLevel;
+          let currentActionInfo =
+            currentActionNumber == 6
+              ? { ...defaultCurrentActionInfo, ...levelRewards }
+              : aiActions[0];
           levelsData.push({
             _id: currentLevel,
             title: `${stageName} - Level ${currentLevel}`,
@@ -443,7 +447,7 @@ class MilestoneDBService {
               ? 7
               : 0,
             currentActionInfo: ifCurrentGoalObject
-              ? aiActions[0] || defaultCurrentActionInfo
+              ? currentActionInfo || defaultCurrentActionInfo
               : defaultCurrentActionInfo,
           });
         });
@@ -586,6 +590,72 @@ class MilestoneDBService {
       return milestoneLevels[0];
     } catch (error) {
       throw new NetworkError("Error occurred while fetching levels", 400);
+    }
+  }
+
+  /**
+   * @description get event information
+   * @param userExists
+   * @param data
+   * @returns {*}
+   */
+  public async claimLevelReward(userExists: any, data: any) {
+    try {
+      let businessProfileObj = {},
+        userUpdateObj = {},
+        userSetObj: any = { levelRewardClaimed: true },
+        todayCash = 0,
+        todayToken = 0,
+        updatedQuizCoins = 50;
+      const { isLastDayOfMilestone, stageUnlockedInfo } = data;
+      if (isLastDayOfMilestone) {
+        businessProfileObj = await MilestoneDBServiceV9.moveToNextMilestone(
+          userExists
+        );
+      }
+      if (stageUnlockedInfo) {
+        const newStage = stageUnlockedInfo?.stageInfo?.name;
+        const newStageDetails = await StageTable.findOne({ title: newStage });
+        const resultSummary = stageUnlockedInfo?.resultSummary;
+        updatedQuizCoins += resultSummary[0].title;
+        userUpdateObj = {
+          quizCoins: updatedQuizCoins,
+          cash: resultSummary[1].title,
+          "businessScore.current": resultSummary[2].title,
+          "businessScore.operationsScore": resultSummary[2].title,
+          "businessScore.productScore": resultSummary[2].title,
+          "businessScore.growthScore": resultSummary[2].title,
+        };
+        userSetObj = { ...userSetObj, stage: newStageDetails._id };
+        todayCash += resultSummary[1].title;
+        todayToken += resultSummary[0].title;
+      }
+      await Promise.all([
+        UserTable.findOneAndUpdate(
+          { _id: userExists._id },
+          {
+            $set: userSetObj,
+            $inc: { ...userUpdateObj, quizCoins: updatedQuizCoins },
+          },
+          { upsert: true }
+        ),
+        BusinessProfileTable.findOneAndUpdate(
+          { userId: userExists._id },
+          { $set: businessProfileObj },
+          { upsert: true }
+        ),
+        MilestoneDBServiceV9.updateTodaysRewards(
+          userExists,
+          todayToken,
+          todayCash,
+          false,
+          true
+        ),
+      ]);
+
+      return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
   }
 }
