@@ -1596,7 +1596,8 @@ class MilestoneDBService {
     try {
       const currentDayRewards = userIfExists?.currentDayRewards;
       if (currentDayRewards) {
-        const { streak, quizCoins, goals, cash, updatedAt } = currentDayRewards;
+        const { streak, quizCoins, goals, cash, scoreProgress, updatedAt } =
+          currentDayRewards;
         const days = getDaysNum(userIfExists, updatedAt);
         if (days < 1) {
           return {
@@ -1604,6 +1605,7 @@ class MilestoneDBService {
             fuelProgress: quizCoins || 0,
             goalProgress: goals || 0,
             cashProgress: cash || 0,
+            scoreProgress: scoreProgress || 0,
           };
         }
       }
@@ -1612,6 +1614,7 @@ class MilestoneDBService {
         fuelProgress: 0,
         goalProgress: 0,
         cashProgress: 0,
+        scoreProgress: 0,
       };
     } catch (error) {
       throw new NetworkError(error.message, 400);
