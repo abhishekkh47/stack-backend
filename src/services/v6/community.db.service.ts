@@ -12,8 +12,10 @@ import {
   convertDecimalsToNumbers,
   DEFAULT_BUSINESS_LOGO,
   DEFAULT_BUSINESS_NAME,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import { UserService } from "@app/services/v9";
+import { AnalyticsService } from "@app/services/v4";
 class CommunityDBService {
   /**
    * @description create new community
@@ -88,6 +90,11 @@ class CommunityDBService {
         );
       }
     }
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.JOINED_COMMUNITY,
+      { "Community Name": community.name },
+      { user_id: userId }
+    );
 
     return response;
   }
