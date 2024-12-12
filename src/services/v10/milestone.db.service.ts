@@ -302,10 +302,7 @@ class MilestoneDBService {
           employees,
         };
       }
-      if (
-        response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
-        response?.tasks[0]?.data.length > 0
-      ) {
+      if (response?.tasks[0]?.title == GOALS_OF_THE_DAY.title) {
         if (response?.tasks[0]?.data.length > 0) {
           response.isMilestoneHit = false;
         } else if (response?.tasks[0]?.data.length == 0) {
