@@ -1312,3 +1312,5 @@ export const LEVEL_DETAILS = {
   currentActionNumber: 0,
   currentActionInfo: {},
 };
+
+export const LEVEL_COMPLETE_REWARD = 50;

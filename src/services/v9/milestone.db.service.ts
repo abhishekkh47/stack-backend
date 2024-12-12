@@ -22,10 +22,13 @@ import {
   MILESTONE_HOMEPAGE,
   STAGE_COMPLETE,
   TRIGGER_TYPE,
+  DEFAULT_BUSINESS_SCORE,
+  INITIAL_CASH,
 } from "@app/utility";
 import moment from "moment";
 import { ObjectId } from "mongodb";
 import { EmployeeDBService } from "@services/v9";
+import { IUpdateRewards } from "@app/types";
 class MilestoneDBService {
   /**
    * @description get milestones
@@ -1528,19 +1531,19 @@ class MilestoneDBService {
   /**
    * @description Update rewards collected today
    * @param userIfExists
-   * @param coins tokens collected on completed a challenge or quiz
-   * @param cash cash collected on completed a challenge or quiz
+   * @param data contains data to be updated
    * @param ifLastGoalOfDay whether its the last ai action completed for the day
+   * @param isEvent If event is completed
    * @returns {*}
    */
   public async updateTodaysRewards(
     userIfExists: any,
-    coins: number = 0,
-    cash: number = 0,
+    data: Partial<IUpdateRewards>,
     ifLastGoalOfDay: boolean = false,
     isEvent: boolean = false
   ) {
     try {
+      const { coins = 0, cash = 0, rating = 0 } = data;
       const rewardsUpdatedOn = userIfExists?.currentDayRewards?.updatedAt;
       const days = getDaysNum(userIfExists, rewardsUpdatedOn) || 0;
       const totalCoins = coins + (ifLastGoalOfDay ? 5 : 0);
@@ -1551,6 +1554,7 @@ class MilestoneDBService {
             "currentDayRewards.quizCoins": totalCoins,
             "currentDayRewards.goals": isEvent ? 0 : 1,
             "currentDayRewards.cash": cash,
+            "currentDayRewards.scoreProgress": rating,
           },
           $set: {
             "currentDayRewards.streak": 1,
@@ -1565,6 +1569,7 @@ class MilestoneDBService {
             "currentDayRewards.goals": isEvent ? 0 : 1,
             "currentDayRewards.cash": cash,
             "currentDayRewards.updatedAt": new Date(),
+            "currentDayRewards.scoreProgress": rating,
           },
           upsert: true,
         };
@@ -1815,34 +1820,41 @@ class MilestoneDBService {
   public async saveEventResult(userExists: any, data: any) {
     try {
       let updatedCash = 0,
-        userUpdateObj = {};
+        userUpdateObj = {},
+        businessScoreReward = 0;
       const isLastDayOfMilestone = data?.isLastDayOfMilestone;
       const stageUnlockedInfo = data?.stageUnlockedInfo;
       let updatedCoins = userExists.quizCoins + data.tokens;
-      const currentCash = userExists?.cash > 0 ? userExists?.cash : 50;
+      const currentCash =
+        userExists?.cash > 0 ? userExists?.cash : INITIAL_CASH;
       const changeInCash = Math.floor((currentCash / 100) * data.cash);
       const unlockedEmployees = data?.employees || [];
       updatedCash = currentCash + changeInCash;
       let todayCash = changeInCash,
         todayToken = data.tokens;
       let updatedBusinessScore =
-        (userExists.businessScore?.current || 90) + data.businessScore;
+        (userExists.businessScore?.current || DEFAULT_BUSINESS_SCORE) +
+        data.businessScore;
       let updatedOperationsScore =
-        (userExists.businessScore?.operationsScore || 90) + data.businessScore;
+        (userExists.businessScore?.operationsScore || DEFAULT_BUSINESS_SCORE) +
+        data.businessScore;
       let updatedProductScore =
-        (userExists.businessScore?.productScore || 90) + data.businessScore;
+        (userExists.businessScore?.productScore || DEFAULT_BUSINESS_SCORE) +
+        data.businessScore;
       let updatedGrowthScore =
-        (userExists.businessScore?.growthScore || 90) + data.businessScore;
+        (userExists.businessScore?.growthScore || DEFAULT_BUSINESS_SCORE) +
+        data.businessScore;
       if (stageUnlockedInfo) {
         const newStage = stageUnlockedInfo?.stageInfo?.name;
         const newStageDetails = await StageTable.findOne({ title: newStage });
         const resultSummary = stageUnlockedInfo?.resultSummary;
+        businessScoreReward = resultSummary[2].title;
         updatedCoins += resultSummary[0].title;
         updatedCash += resultSummary[1].title;
-        updatedBusinessScore += resultSummary[2].title;
-        updatedOperationsScore += resultSummary[2].title;
-        updatedProductScore += resultSummary[2].title;
-        updatedGrowthScore += resultSummary[2].title;
+        updatedBusinessScore += businessScoreReward;
+        updatedOperationsScore += businessScoreReward;
+        updatedProductScore += businessScoreReward;
+        updatedGrowthScore += businessScoreReward;
         userUpdateObj = { stage: newStageDetails._id };
         todayCash += resultSummary[1].title;
         todayToken += resultSummary[0].title;
@@ -1883,8 +1895,7 @@ class MilestoneDBService {
       ]);
       await this.updateTodaysRewards(
         userExists,
-        todayToken,
-        todayCash,
+        { coins: todayToken, cash: todayCash, rating: businessScoreReward },
         false,
         true
       );

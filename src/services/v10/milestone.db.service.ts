@@ -17,6 +17,7 @@ import {
   TRIGGER_TYPE,
   convertDecimalsToNumbers,
   QUIZ_TYPE,
+  LEVEL_COMPLETE_REWARD,
 } from "@app/utility";
 import {
   EmployeeDBService,
@@ -33,10 +34,10 @@ class MilestoneDBService {
    */
   public async getUserMilestoneGoals(userExists: any, businessProfile: any) {
     try {
-      const [goals] = await Promise.all([
-        this.getCurrentMilestoneGoals(userExists, businessProfile),
-      ]);
-
+      const goals = await this.getCurrentMilestoneGoals(
+        userExists,
+        businessProfile
+      );
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
       return { ...goals, ...currentDayGoals };
     } catch (error) {
@@ -180,13 +181,15 @@ class MilestoneDBService {
       if (!currentMilestoneId) {
         currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
       }
-      const currentMilestoneGoals = await MilestoneGoalsTable.find({
-        milestoneId: currentMilestoneId,
-      })
-        .sort({ day: -1 })
-        .lean();
-      const currentMilestoneLevels = await this.getLevelsInCurrentStage(
-        userIfExists
+      const [currentMilestoneGoals, currentMilestoneLevels] = await Promise.all(
+        [
+          MilestoneGoalsTable.find({
+            milestoneId: currentMilestoneId,
+          })
+            .sort({ day: -1 })
+            .lean(),
+          this.getLevelsInCurrentStage(userIfExists),
+        ]
       );
       let currentGoal = {};
       if (
@@ -334,7 +337,7 @@ class MilestoneDBService {
 
   /**
    * @description get all levels in current active stage
-   * @param userExists
+   * @param userIfExists
    * @returns {*}
    */
   public async getLevelsInCurrentStage(userIfExists: any) {
@@ -482,7 +485,8 @@ class MilestoneDBService {
         userSetObj: any = { levelRewardClaimed: true },
         todayCash = 0,
         todayToken = 0,
-        updatedQuizCoins = 50;
+        updatedQuizCoins = LEVEL_COMPLETE_REWARD,
+        businessScoreReward = 0;
       const { isLastDayOfMilestone, stageUnlockedInfo } = data;
       if (isLastDayOfMilestone) {
         businessProfileObj = await MilestoneDBServiceV9.moveToNextMilestone(
@@ -494,13 +498,14 @@ class MilestoneDBService {
         const newStageDetails = await StageTable.findOne({ title: newStage });
         const resultSummary = stageUnlockedInfo?.resultSummary;
         updatedQuizCoins += resultSummary[0].title;
+        businessScoreReward += resultSummary[2].title;
         userUpdateObj = {
           quizCoins: updatedQuizCoins,
           cash: resultSummary[1].title,
-          "businessScore.current": resultSummary[2].title,
-          "businessScore.operationsScore": resultSummary[2].title,
-          "businessScore.productScore": resultSummary[2].title,
-          "businessScore.growthScore": resultSummary[2].title,
+          "businessScore.current": businessScoreReward,
+          "businessScore.operationsScore": businessScoreReward,
+          "businessScore.productScore": businessScoreReward,
+          "businessScore.growthScore": businessScoreReward,
         };
         userSetObj = { ...userSetObj, stage: newStageDetails._id };
         todayCash += resultSummary[1].title;
@@ -522,8 +527,7 @@ class MilestoneDBService {
         ),
         MilestoneDBServiceV9.updateTodaysRewards(
           userExists,
-          todayToken,
-          todayCash,
+          { coins: todayToken, cash: todayCash, rating: businessScoreReward },
           false,
           true
         ),

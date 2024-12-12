@@ -189,6 +189,7 @@ interface ICurrentDayRewards {
   quizCoins: number;
   goals: number;
   cash: number;
+  scoreProgress: number;
 }
 
 export interface IBusinessScore {
@@ -204,4 +205,10 @@ export interface IBusinessScore {
   operationsScore: number;
   productScore: number;
   growthScore: number;
+}
+
+export interface IUpdateRewards {
+  coins: number;
+  cash: number;
+  rating: number;
 }
