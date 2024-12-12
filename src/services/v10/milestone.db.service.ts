@@ -70,7 +70,7 @@ class MilestoneDBService {
         initialMilestone = null,
         currentDay = 1,
         levelRewards = {};
-      const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
+      const { GOALS_OF_THE_DAY, THEMES, TOTAL_LEVELS } = MILESTONE_HOMEPAGE;
       if (
         (advanceNextDay && userIfExists.isPremiumUser) ||
         userIfExists?.levelRewardClaimed
@@ -317,7 +317,7 @@ class MilestoneDBService {
         aiActions.length >= 1 && aiActions.length <= 5
           ? 6 - aiActions?.length
           : 6;
-      const levelsData = this.processLevels(
+      const { levelsData, maxLevel } = this.processLevels(
         currentMilestoneLevels,
         currentActionNumber,
         currentDay,
@@ -326,9 +326,16 @@ class MilestoneDBService {
         levelRewards,
         aiActions
       );
-      response.tasks = levelsData;
-      response["theme"] = "dark";
-      response["colorInfo"] = currentMilestoneLevels.colorInfo;
+      response = {
+        ...response,
+        tasks: levelsData,
+        theme: maxLevel * 6 > 60 ? THEMES.LIGHT : THEMES.DARK,
+        colorInfo: currentMilestoneLevels.colorInfo,
+        remainingLevelInfo: {
+          _id: "1",
+          description: `${TOTAL_LEVELS - maxLevel} Level to IPO`,
+        },
+      };
       return response;
     } catch (error) {
       throw new NetworkError("Error occurred while retrieving milestones", 400);
@@ -700,11 +707,12 @@ class MilestoneDBService {
     try {
       let ifLevelCompleted = true,
         currentLevel = 0,
-        ifCurrentGoalObject = false;
+        ifCurrentGoalObject = false,
+        maxLevel = 0;
       const { GOALS_OF_THE_DAY, LEVEL_REWARD } = MILESTONE_HOMEPAGE;
       const levelsData = [];
       const defaultCurrentActionInfo = {
-        reward: 50,
+        reward: LEVEL_REWARD.coins,
         type: 6,
         title: LEVEL_REWARD.title,
         key: LEVEL_REWARD.key,
@@ -728,6 +736,7 @@ class MilestoneDBService {
             currentActionInfo["actions"] = `${totalAIActions} Decisions`;
             currentActionInfo["time"] = "2 min";
           }
+          maxLevel = level.level;
           levelsData.push({
             _id: currentLevel,
             title: `${stageName} - Level ${currentLevel}`,
@@ -745,7 +754,7 @@ class MilestoneDBService {
           });
         });
       });
-      return levelsData;
+      return { levelsData, maxLevel };
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }

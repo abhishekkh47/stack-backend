@@ -2033,8 +2033,7 @@ class ScriptService {
   public async convertMilestoneDatasetSheetToJSON(rows: any) {
     try {
       const result = [];
-      let milestoneContent = [],
-        stageContent = [];
+      let milestoneContent = [];
       let currentMilestone = null;
       let currentDay = 0;
       let order = 0;
@@ -2048,15 +2047,6 @@ class ScriptService {
       let roadmapIcon = null;
       let resultCopyInfo = null;
       const defaultTopic = "6638c5f713b74c3154c67624";
-      const stageArray = rows.reduce((acc, row) => {
-        const milestone = row.milestone?.trimEnd();
-        if (milestone?.length > 1) {
-          acc.push({
-            title: row["Stage"],
-          });
-        }
-        return acc;
-      }, []);
       const [quizTopics, stages] = await Promise.all([
         QuizTopicTable.find({ type: 4 }).lean(),
         StageTable.find({}, { title: 1 }).lean(),
@@ -2117,7 +2107,7 @@ class ScriptService {
 
         if (row["day"] && row["day"] != currentDay) {
           currentDay = Number(row["day"]);
-          currentLevel = Number(row["level"].trimEnd())
+          currentLevel = Number(row["level"].trimEnd());
           dayTitle = row["title"]?.trimEnd() || null;
           roadmapIcon = row["roadmapIcon"]?.trimEnd() || null;
           order = 0;
@@ -2180,7 +2170,7 @@ class ScriptService {
               dayTitle,
               roadmapIcon,
               level: currentLevel,
-              levelImage: `journey-${currentLevel}.webp`
+              levelImage: `journey-${currentLevel}.webp`,
             });
           }
         }
@@ -2232,7 +2222,7 @@ class ScriptService {
                 dayTitle: obj.dayTitle,
                 roadmapIcon: obj.roadmapIcon,
                 level: obj.level,
-                levelImage: obj.levelImage
+                levelImage: obj.levelImage,
               },
             },
             upsert: true,
@@ -3231,7 +3221,7 @@ class ScriptService {
               colors: row["HPLevelColors"]?.trimEnd()?.split(","),
               location: row["HPLevelLocation"]?.trimEnd()?.split(","),
               angle: Number(row["HPLevelAngle"]?.trimEnd()) || 0,
-            }
+            },
           });
         }
       }

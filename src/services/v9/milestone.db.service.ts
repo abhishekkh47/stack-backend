@@ -845,19 +845,19 @@ class MilestoneDBService {
     lastMilestoneCompleted: any,
     override: boolean = false
   ) {
-    const suggestionScreenCopy = await SuggestionScreenCopyTable.find(
-      {}
-    ).lean();
     try {
       let isMilestoneHit = false,
         isIdeaValidationGoalAvailable = false;
       const currentMilestoneId = businessProfile.currentMilestone?.milestoneId;
       const goalsLength = availableDailyChallenges?.dailyGoalStatus?.length;
-      let ideaValidationGoal = await this.getActionDetails(
-        userIfExists,
-        ["ideaValidation"],
-        currentMilestoneId
-      );
+      let [ideaValidationGoal, suggestionScreenCopy] = await Promise.all([
+        this.getActionDetails(
+          userIfExists,
+          ["ideaValidation"],
+          currentMilestoneId
+        ),
+        SuggestionScreenCopyTable.find({}).lean(),
+      ]);
       if (
         goalsLength &&
         (getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 ||
