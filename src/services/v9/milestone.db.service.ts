@@ -1595,6 +1595,7 @@ class MilestoneDBService {
   public getGoalOfTheDay(userIfExists: any) {
     try {
       const currentDayRewards = userIfExists?.currentDayRewards;
+      const businessScore = userIfExists?.businessScore;
       if (currentDayRewards) {
         const { streak, quizCoins, goals, cash, scoreProgress, updatedAt } =
           currentDayRewards;
@@ -1606,6 +1607,7 @@ class MilestoneDBService {
             goalProgress: goals || 0,
             cashProgress: cash || 0,
             scoreProgress: scoreProgress || 0,
+            currentScore: businessScore?.current || 90,
           };
         }
       }
@@ -1615,6 +1617,7 @@ class MilestoneDBService {
         goalProgress: 0,
         cashProgress: 0,
         scoreProgress: 0,
+        currentScore: 0,
       };
     } catch (error) {
       throw new NetworkError(error.message, 400);

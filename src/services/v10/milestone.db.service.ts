@@ -333,7 +333,7 @@ class MilestoneDBService {
         colorInfo: currentMilestoneLevels.colorInfo,
         remainingLevelInfo: {
           _id: "1",
-          description: `${TOTAL_LEVELS - maxLevel} Level to IPO`,
+          description: `${TOTAL_LEVELS - maxLevel} Levels to IPO`,
         },
       };
       return response;
