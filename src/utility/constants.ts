@@ -242,6 +242,7 @@ export const ANALYTICS_EVENTS = {
   TECHNICAL_EXPERIENCE_SUBMITTED: "Technical Experience Submitted",
   MONEY_INVEST_SUBMITTED: "Money Invest Submitted",
   MILESTONE_COMPLETED: "Milestone Completed",
+  JOINED_COMMUNITY: "Joined Community",
 };
 
 export const XP_POINTS = {
