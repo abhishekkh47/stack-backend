@@ -191,8 +191,7 @@ class BusinessProfileService {
         data?.goalId || ifBusinessIdea
           ? MilestoneDBService.updateTodaysRewards(
               userIfExists,
-              0,
-              0,
+              { coins: 0, cash: 0 },
               ifLastGoalOfDay
             )
           : Promise.resolve(),

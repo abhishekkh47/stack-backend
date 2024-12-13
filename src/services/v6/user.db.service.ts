@@ -540,7 +540,7 @@ class UserDBService {
       let stageDetails = await StageTable.findOne({
         title: data?.stageName,
       }).lean();
-      if (stageDetails) {
+      if (!stageDetails) {
         stageDetails = await UserService.getCurrentStage(data);
       }
       const colorInfo = {

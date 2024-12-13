@@ -75,11 +75,10 @@ class QuizController extends BaseController {
               updatedXPPoints
             ),
             UserDBService.addStreaks(updatedUser),
-            MilestoneDBService.updateTodaysRewards(
-              userIfExists,
-              totalFuel,
-              totalCash
-            ),
+            MilestoneDBService.updateTodaysRewards(userIfExists, {
+              coins: totalFuel,
+              cash: totalCash,
+            }),
             QuizDBService.updateGoalCount(userIfExists),
           ]);
 

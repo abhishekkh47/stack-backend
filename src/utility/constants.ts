@@ -1094,7 +1094,13 @@ export const MILESTONE_HOMEPAGE = {
   EVENT: { title: "New: Mystery Event", key: "event" },
   EMPLOYEE: "employee",
   AI_ACTIONS: "aiActions",
-  LEVEL_REWARD: { title: "Reward: You’ve earned +50 Tokens!", key: "reward" },
+  LEVEL_REWARD: {
+    title: "Reward: You’ve earned +50 Tokens!",
+    key: "reward",
+    coins: 50,
+  },
+  THEMES: { DARK: "dark", LIGHT: "light" },
+  TOTAL_LEVELS: 150,
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
@@ -1161,7 +1167,7 @@ export const MILESTONE_RESULT_COPY = {
   passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
   passImage2: "passImage2.webp",
   resultSummary: [
-    { title: 5, type: " Tokens", icon: "goldCoin.webp" },
+    { title: 15, type: " Tokens", icon: "goldCoin.webp" },
     { title: 1, type: " Rating", icon: "military_medal.webp" },
   ],
 };
@@ -1313,3 +1319,5 @@ export const LEVEL_DETAILS = {
   currentActionNumber: 0,
   currentActionInfo: {},
 };
+
+export const LEVEL_COMPLETE_REWARD = 50;
