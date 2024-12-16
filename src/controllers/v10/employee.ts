@@ -1,7 +1,7 @@
 import { Auth } from "@app/middleware";
 import { BusinessProfileTable, UserTable } from "@app/model";
 import { HttpMethod } from "@app/types";
-import { Route } from "@app/utility";
+import { Route, DEFAULT_BUSINESS_SCORE } from "@app/utility";
 import BaseController from "../base";
 import { EmployeeDBService } from "@app/services/v10";
 import { UserDBService as UserDBServiceV6 } from "@app/services/v6";
@@ -32,6 +32,8 @@ class EmployeeController extends BaseController {
         employees,
         colorInfo: stageColorInfo?.colorInfo?.homepage?.outer,
         stageName: stageDetails?.title,
+        currentScore:
+          userExists?.businessScore?.currentScore || DEFAULT_BUSINESS_SCORE,
       },
     });
   }

@@ -314,7 +314,7 @@ class MilestoneDBService {
         aiActions.length >= 1 && aiActions.length <= 5
           ? 6 - aiActions?.length
           : 6;
-      const { levelsData, maxLevel } = this.processLevels(
+      const { levelsData, maxLevel, currentActiveLevel } = this.processLevels(
         currentMilestoneLevels,
         currentActionNumber,
         currentDay,
@@ -332,6 +332,7 @@ class MilestoneDBService {
           _id: "1",
           description: `${TOTAL_LEVELS - maxLevel} Levels to IPO`,
         },
+        currentActiveLevel,
       };
       return response;
     } catch (error) {
@@ -705,7 +706,8 @@ class MilestoneDBService {
       let ifLevelCompleted = true,
         currentLevel = 0,
         ifCurrentGoalObject = false,
-        maxLevel = 0;
+        maxLevel = 0,
+        currentActiveLevel = 1;
       const { GOALS_OF_THE_DAY, LEVEL_REWARD } = MILESTONE_HOMEPAGE;
       const levelsData = [];
       const defaultCurrentActionInfo = {
@@ -733,6 +735,9 @@ class MilestoneDBService {
             currentActionInfo["actions"] = `${totalAIActions} Decisions`;
             currentActionInfo["time"] = "2 min";
           }
+          currentActiveLevel = ifCurrentGoalObject
+            ? currentLevel
+            : currentActiveLevel;
           maxLevel = level.level;
           levelsData.push({
             _id: currentLevel,
@@ -751,7 +756,7 @@ class MilestoneDBService {
           });
         });
       });
-      return { levelsData, maxLevel };
+      return { levelsData, maxLevel, currentActiveLevel };
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
