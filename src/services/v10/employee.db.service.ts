@@ -1,6 +1,6 @@
 import { NetworkError } from "@app/middleware";
-import { UserTable, UserEmployeesTable, UserProjectsTable } from "@app/model";
-import { EMP_STATUS, EMP_START_PROJECT_COST, HOUR_TO_MS } from "@app/utility";
+import { UserEmployeesTable } from "@app/model";
+import { EMP_STATUS } from "@app/utility";
 import { EmployeeDBService as EmployeeDBServiceV9 } from "@app/services/v9";
 class EmployeeDBService {
   /**

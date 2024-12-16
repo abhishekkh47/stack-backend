@@ -4,6 +4,7 @@ import { HttpMethod } from "@app/types";
 import { Route } from "@app/utility";
 import BaseController from "../base";
 import { EmployeeDBService } from "@app/services/v10";
+import { UserDBService as UserDBServiceV6 } from "@app/services/v6";
 class EmployeeController extends BaseController {
   /**
    * @description This is to fetch employee list
@@ -21,11 +22,18 @@ class EmployeeController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const employees = await EmployeeDBService.getEmployeeList(
-      userExists,
-      businessProfile
-    );
-    return this.Ok(ctx, { data: employees });
+    const [employees, stageColorInfo, stageDetails] = await Promise.all([
+      EmployeeDBService.getEmployeeList(userExists, businessProfile),
+      UserDBServiceV6.getStageColorInfo(userExists),
+      UserDBServiceV6.getStageInfoUsingStageId(userExists),
+    ]);
+    return this.Ok(ctx, {
+      data: {
+        employees,
+        colorInfo: stageColorInfo?.colorInfo?.homepage?.outer,
+        stageName: stageDetails?.title,
+      },
+    });
   }
 }
 

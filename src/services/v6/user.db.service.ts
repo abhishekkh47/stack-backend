@@ -546,10 +546,30 @@ class UserDBService {
       const colorInfo = {
         stage: stageDetails.colorInfo,
         score: { outer: stageDetails.scoreColorInfo.outer },
+        leaderboard: { outer: stageDetails.leaderBoardColorInfo },
+        homepage: { outer: stageDetails.homepageColorInfo },
       };
       const updatedColoInfo = convertDecimalsToNumbers(colorInfo);
       data["colorInfo"] = { ...updatedColoInfo };
       return data;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This service is used get the current stage details
+   * @param userIfExists user data
+   */
+  public async getStageInfoUsingStageId(userIfExists: any) {
+    try {
+      let stageDetails = await StageTable.findOne({
+        _id: userIfExists?.stage,
+      }).lean();
+      if (!stageDetails) {
+        stageDetails = await UserService.getCurrentStage(userIfExists);
+      }
+      return stageDetails;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

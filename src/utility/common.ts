@@ -255,43 +255,48 @@ export const replacePlaceholders = (template, values) => {
 
 export const convertDecimalsToNumbers = (doc) => {
   const transformed = JSON.parse(JSON.stringify(doc));
+  if (!transformed) return transformed;
 
-  if (transformed) {
-    // Transform stage.outer location
-    if (transformed.stage?.outer?.location) {
-      transformed.stage.outer.location = transformed.stage.outer.location.map(
-        (loc) =>
-          typeof loc === "object" && loc.$numberDecimal
-            ? parseFloat(loc.$numberDecimal)
-            : loc
-      );
-    }
-    // Transform stage.inner location
-    if (transformed.stage?.inner?.location) {
-      transformed.stage.inner.location = transformed.stage.inner.location.map(
-        (loc) =>
-          typeof loc === "object" && loc.$numberDecimal
-            ? parseFloat(loc.$numberDecimal)
-            : loc
-      );
-    }
-    // Transform score.outer location
-    if (transformed.score?.outer?.location) {
-      transformed.score.outer.location = transformed.score.outer.location.map(
-        (loc) =>
-          typeof loc === "object" && loc.$numberDecimal
-            ? parseFloat(loc.$numberDecimal)
-            : loc
-      );
-    }
-    // Transform leaderboard color location
-    if (transformed?.location) {
-      transformed.location = transformed.location.map((loc) =>
+  // Helper function to transform locations
+  const transformLocation = (location) => {
+    if (Array.isArray(location)) {
+      return location.map((loc) =>
         typeof loc === "object" && loc.$numberDecimal
           ? parseFloat(loc.$numberDecimal)
           : loc
       );
     }
-  }
+    return location;
+  };
+
+  // Define paths to transform
+  const paths = [
+    "stage.outer.location",
+    "stage.inner.location",
+    "score.outer.location",
+    "location",
+    "leaderboard.outer.location",
+    "homepage.outer.location",
+  ];
+
+  // Apply transformation to each path
+  paths.forEach((path) => {
+    const keys = path.split(".");
+    let current = transformed;
+
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (current[keys[i]]) {
+        current = current[keys[i]];
+      } else {
+        return;
+      }
+    }
+
+    const lastKey = keys[keys.length - 1];
+    if (current[lastKey]) {
+      current[lastKey] = transformLocation(current[lastKey]);
+    }
+  });
+
   return transformed;
 };
