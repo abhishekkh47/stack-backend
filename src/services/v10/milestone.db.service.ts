@@ -24,6 +24,8 @@ import {
   MilestoneDBService as MilestoneDBServiceV9,
   UserService,
 } from "@services/v9";
+import { UserDBService as UserDBServiceV6 } from "@app/services/v6";
+import { EmployeeDBService as EmployeeDBServiceV10 } from "@app/services/v10";
 import { ObjectId } from "mongodb";
 class MilestoneDBService {
   /**
@@ -34,12 +36,21 @@ class MilestoneDBService {
    */
   public async getUserMilestoneGoals(userExists: any, businessProfile: any) {
     try {
-      const goals = await this.getCurrentMilestoneGoals(
-        userExists,
-        businessProfile
-      );
+      const [goals, stageDetails, showEmpNotification] = await Promise.all([
+        this.getCurrentMilestoneGoals(userExists, businessProfile),
+        UserDBServiceV6.getStageInfoUsingStageId(userExists),
+        EmployeeDBServiceV10.ifEmployeeNotificationAvailable(
+          userExists,
+          businessProfile
+        ),
+      ]);
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
-      return { ...goals, ...currentDayGoals };
+      return {
+        ...goals,
+        ...currentDayGoals,
+        stageName: stageDetails?.title,
+        showEmpNotification,
+      };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",

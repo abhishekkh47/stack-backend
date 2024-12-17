@@ -64,6 +64,33 @@ class EmployeeDBService {
       );
     }
   }
+
+  /**
+   * @description This is to check if any employee is available to work or if the project is completed
+   * @description based on which we can show the notification dot on the tab icon
+   * @param userExists
+   * @param businessProfile
+   */
+  public async ifEmployeeNotificationAvailable(
+    userExists: any,
+    businessProfile: any
+  ) {
+    try {
+      let showEmpNotification = false;
+      const employees = await this.getEmployeeList(userExists, businessProfile);
+      employees?.forEach((emp) => {
+        if (
+          emp?.status !== EMP_STATUS.WORKING &&
+          emp?.status !== EMP_STATUS.LOCKED
+        )
+          showEmpNotification = true;
+        return;
+      });
+      return showEmpNotification;
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
 }
 
 export default new EmployeeDBService();
