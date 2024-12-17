@@ -11,13 +11,32 @@ import {
 import {
   EMP_STATUS,
   MILESTONE_HOMEPAGE,
-  getDaysNum,
-  DEFAULT_EMPLOYEE,
   EMP_START_PROJECT_COST,
   HOUR_TO_MS,
 } from "@app/utility";
-import { MilestoneDBService } from "@services/v9";
 class EmployeeDBService {
+  /**
+   * @description get all employees
+   * @returns {*}
+   */
+  public async getAllEmployees() {
+    return await EmployeeTable.find(
+      { available: true },
+      {
+        name: 1,
+        bio: 1,
+        icon: 1,
+        image: 1,
+        userType: 1,
+        price: 1,
+        title: 1,
+        workTime: 1,
+      }
+    )
+      .sort({ order: 1 })
+      .lean();
+  }
+
   /**
    * @description get all Topics and current level in each topic
    * @param userIfExists
@@ -28,21 +47,7 @@ class EmployeeDBService {
       let isLocked = true,
         status = EMP_STATUS.LOCKED;
       let [employees, userEmployees] = await Promise.all([
-        EmployeeTable.find(
-          { available: true },
-          {
-            name: 1,
-            bio: 1,
-            icon: 1,
-            image: 1,
-            userType: 1,
-            price: 1,
-            title: 1,
-            workTime: 1,
-          }
-        )
-          .sort({ order: 1 })
-          .lean(),
+        this.getAllEmployees(),
         UserEmployeesTable.find({ userId: userIfExists._id }),
       ]);
       // unlock the first employee for existing users if they have already completed the trigger task
@@ -50,16 +55,9 @@ class EmployeeDBService {
         businessProfile?.completedActions?.valueProposition &&
         userEmployees?.length == 0
       ) {
-        const initialEmployees = await EmployeeTable.find({
-          order: { $in: [1, 2, 3] },
-        });
-        const initialEmpArray = initialEmployees.map((emp) => {
-          return { employeeId: emp._id, level: 1 };
-        });
-        await this.unlockEmployee(userIfExists, initialEmpArray);
-        userEmployees = await UserEmployeesTable.find({
-          userId: userIfExists._id,
-        });
+        userEmployees = await this.unlockDefaultEmployeesForExistingUsers(
+          userIfExists
+        );
       }
       const updatedEmployees = employees.map((emp) => {
         if (userEmployees?.length) {
@@ -578,6 +576,24 @@ class EmployeeDBService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description unlock default employees for existing users if applicable
+   * @param userIfExists
+   * @returns {*}
+   */
+  public async unlockDefaultEmployeesForExistingUsers(userIfExists) {
+    const initialEmployees = await EmployeeTable.find({
+      order: { $in: [1, 2, 3] },
+    });
+    const initialEmpArray = initialEmployees.map((emp) => {
+      return { employeeId: emp._id, level: 1 };
+    });
+    await this.unlockEmployee(userIfExists, initialEmpArray);
+    return await UserEmployeesTable.find({
+      userId: userIfExists._id,
+    });
   }
 }
 
