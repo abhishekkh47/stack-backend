@@ -1364,6 +1364,7 @@ class MilestoneDBService {
   ) {
     try {
       let currentMilestone = businessProfile.currentMilestone.milestoneId;
+      let retryRequired = false;
       if (!currentMilestone) {
         currentMilestone = (
           await MilestoneTable.findOne({
@@ -1423,7 +1424,29 @@ class MilestoneDBService {
           (todaysGoalIdx >= 0 && goals.tasks[todaysGoalIdx]?.data?.length == 0))
       ) {
         goals.tasks = [goals.tasks[completedMilestoneIdx]];
-        return goals;
+        if (
+          goals?.tasks.length == 1 &&
+          goals?.tasks[0]?.sectionKey ==
+            MILESTONE_HOMEPAGE.COMPLETED_MILESTONES.key
+        ) {
+          const udpatedMilestone: any = await this.moveToNextMilestone(
+            userExists
+          );
+          if (udpatedMilestone?.currentMilestone) {
+            await BusinessProfileTable.findOneAndUpdate(
+              { userId: userExists._id },
+              { $set: udpatedMilestone },
+              { upsert: true }
+            );
+            /**
+             * if the next milestone is available now, then set the below flag to true
+             * if this is true, FE can re-call the homepage API to get the new content
+             * otherwise, the user will see the updated content once the app is kill and reopened or the homepage is refreshed
+             */
+            retryRequired = true;
+          }
+        }
+        return { ...goals, retryRequired };
       }
       if (todaysGoalIdx > -1) {
         if (goals?.tasks[todaysGoalIdx]?.data?.length > 0) {
@@ -1442,7 +1465,7 @@ class MilestoneDBService {
       }
 
       const currentDayGoals = this.getGoalOfTheDay(userExists);
-      return { ...goals, ...currentDayGoals };
+      return { ...goals, ...currentDayGoals, retryRequired };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
@@ -1878,7 +1901,7 @@ class MilestoneDBService {
       };
       let businessProfileObj = {};
       if (isLastDayOfMilestone) {
-        businessProfileObj = this.moveToNextMilestone(userExists);
+        businessProfileObj = await this.moveToNextMilestone(userExists);
       }
       await Promise.all([
         UserTable.findOneAndUpdate({ _id: userExists.id }, userUpdateObj),
@@ -1932,12 +1955,14 @@ class MilestoneDBService {
       const nextMilestone = milestones.find(
         (milestone) => milestone.order == currentMilestoneOrder + 1
       );
-      businessProfileObj = {
-        currentMilestone: {
-          milestoneId: nextMilestone._id,
-          milestoneUpdatedAt: new Date().toISOString(),
-        },
-      };
+      if (!nextMilestone.locked) {
+        businessProfileObj = {
+          currentMilestone: {
+            milestoneId: nextMilestone._id,
+            milestoneUpdatedAt: new Date().toISOString(),
+          },
+        };
+      }
 
       return businessProfileObj;
     } catch (error) {
