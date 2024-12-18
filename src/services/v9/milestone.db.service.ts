@@ -1962,6 +1962,12 @@ class MilestoneDBService {
             milestoneUpdatedAt: new Date().toISOString(),
           },
         };
+        if (nextMilestone?.stageId.toString() != userExists?.stage.toString()) {
+          await UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            { $set: { stage: nextMilestone?.stageId } }
+          );
+        }
       }
 
       return businessProfileObj;
