@@ -1429,22 +1429,7 @@ class MilestoneDBService {
           goals?.tasks[0]?.sectionKey ==
             MILESTONE_HOMEPAGE.COMPLETED_MILESTONES.key
         ) {
-          const udpatedMilestone: any = await this.moveToNextMilestone(
-            userExists
-          );
-          if (udpatedMilestone?.currentMilestone) {
-            await BusinessProfileTable.findOneAndUpdate(
-              { userId: userExists._id },
-              { $set: udpatedMilestone },
-              { upsert: true }
-            );
-            /**
-             * if the next milestone is available now, then set the below flag to true
-             * if this is true, FE can re-call the homepage API to get the new content
-             * otherwise, the user will see the updated content once the app is kill and reopened or the homepage is refreshed
-             */
-            retryRequired = true;
-          }
+          retryRequired = await this.updateUserMilestone(userExists);
         }
         return { ...goals, retryRequired };
       }
@@ -1974,6 +1959,29 @@ class MilestoneDBService {
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
+  }
+
+  /**
+   * @description internally check if new milestone is available and move user to next milestone
+   * @param userExists
+   * @returns {*}
+   */
+  public async updateUserMilestone(userExists: any) {
+    const udpatedMilestone: any = await this.moveToNextMilestone(userExists);
+    if (udpatedMilestone?.currentMilestone) {
+      await BusinessProfileTable.findOneAndUpdate(
+        { userId: userExists._id },
+        { $set: udpatedMilestone },
+        { upsert: true }
+      );
+      /**
+       * if the next milestone is available now, then set the below flag to true
+       * if this is true, FE can re-call the homepage API to get the new content
+       * otherwise, the user will see the updated content once the app is kill and reopened or the homepage is refreshed
+       */
+      return true;
+    }
+    return false;
   }
 }
 export default new MilestoneDBService();

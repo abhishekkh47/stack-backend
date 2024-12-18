@@ -34,12 +34,19 @@ class MilestoneDBService {
    */
   public async getUserMilestoneGoals(userExists: any, businessProfile: any) {
     try {
+      let retryRequired = false;
       const goals = await this.getCurrentMilestoneGoals(
         userExists,
         businessProfile
       );
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
-      return { ...goals, ...currentDayGoals };
+      const tasks = goals?.tasks;
+      if (tasks && tasks[tasks?.length - 1]?.currentActionNumber == 7) {
+        retryRequired = await MilestoneDBServiceV9.updateUserMilestone(
+          userExists
+        );
+      }
+      return { ...goals, ...currentDayGoals, retryRequired };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",
@@ -76,13 +83,6 @@ class MilestoneDBService {
         userIfExists?.levelRewardClaimed
       ) {
         isAdvanceNextDay = true;
-        if (userIfExists?.levelRewardClaimed) {
-          await UserTable.findOneAndUpdate(
-            { _id: userIfExists._id },
-            { $set: { levelRewardClaimed: false } },
-            { upsert: true }
-          );
-        }
       } else if (advanceNextDay && !userIfExists.isPremiumUser) {
         throw new NetworkError(
           "Become a pro user to get unlimited access",
@@ -314,6 +314,16 @@ class MilestoneDBService {
         aiActions.length >= 1 && aiActions.length <= 5
           ? 6 - aiActions?.length
           : 6;
+      if (
+        ![0, 6, 7].includes(currentActionNumber) &&
+        userIfExists?.levelRewardClaimed
+      ) {
+        await UserTable.findOneAndUpdate(
+          { _id: userIfExists._id },
+          { $set: { levelRewardClaimed: false } },
+          { upsert: true }
+        );
+      }
       const { levelsData, maxLevel, currentActiveLevel } = this.processLevels(
         currentMilestoneLevels,
         currentActionNumber,
