@@ -378,6 +378,18 @@ const schema = new mongoose.Schema<IUserSchema>(
       required: true,
       default: false,
     },
+    employeePageVisited: {
+      visitedAt: {
+        type: mongoose.Schema.Types.Date,
+        required: true,
+        default: null,
+      },
+      status: {
+        type: mongoose.Schema.Types.Boolean,
+        required: true,
+        default: false,
+      },
+    },
   },
   { timestamps: true }
 );

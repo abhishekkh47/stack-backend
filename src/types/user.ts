@@ -34,6 +34,7 @@ export interface IUser extends IAccount {
   cash: number;
   stage: mongoose.Schema.Types.ObjectId;
   levelRewardClaimed: mongoose.Schema.Types.Boolean;
+  employeePageVisited: IEmpPageVisited;
 }
 
 export interface IAccount {
@@ -211,4 +212,9 @@ export interface IUpdateRewards {
   coins: number;
   cash: number;
   rating: number;
+}
+
+interface IEmpPageVisited {
+  visitedAt: mongoose.Schema.Types.Date;
+  status: mongoose.Schema.Types.Boolean;
 }
