@@ -382,7 +382,7 @@ const schema = new mongoose.Schema<IUserSchema>(
       visitedAt: {
         type: mongoose.Schema.Types.Date,
         required: true,
-        default: null,
+        default: new Date(),
       },
       status: {
         type: mongoose.Schema.Types.Boolean,
