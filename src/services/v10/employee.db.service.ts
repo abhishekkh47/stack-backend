@@ -78,7 +78,7 @@ class EmployeeDBService {
     try {
       const employeePageVisited = userExists?.employeePageVisited;
       const dayDiff =
-        getDaysNum(userExists, employeePageVisited?.visitedAt) >= 1 ?? true;
+        getDaysNum(userExists, employeePageVisited?.visitedAt) >= 1;
       let showEmpNotification = false;
       if (dayDiff) {
         const [employees, _] = await Promise.all([

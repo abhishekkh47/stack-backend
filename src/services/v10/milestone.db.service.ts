@@ -25,7 +25,6 @@ import {
   UserService,
 } from "@services/v9";
 import { UserDBService as UserDBServiceV6 } from "@app/services/v6";
-import { EmployeeDBService as EmployeeDBServiceV10 } from "@app/services/v10";
 import { ObjectId } from "mongodb";
 class MilestoneDBService {
   /**
@@ -37,13 +36,9 @@ class MilestoneDBService {
   public async getUserMilestoneGoals(userExists: any, businessProfile: any) {
     try {
       let retryRequired = false;
-      const [goals, stageDetails, showEmpNotification] = await Promise.all([
+      const [goals, stageDetails] = await Promise.all([
         this.getCurrentMilestoneGoals(userExists, businessProfile),
         UserDBServiceV6.getStageInfoUsingStageId(userExists),
-        EmployeeDBServiceV10.ifEmployeeNotificationAvailable(
-          userExists,
-          businessProfile
-        ),
       ]);
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
       const tasks = goals?.tasks;
@@ -56,7 +51,6 @@ class MilestoneDBService {
         ...goals,
         ...currentDayGoals,
         stageName: stageDetails?.title,
-        showEmpNotification,
         retryRequired,
       };
     } catch (error) {

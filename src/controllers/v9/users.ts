@@ -8,7 +8,6 @@ import {
   INITIAL_TUTORIAL_STATUS,
   TUTORIAL_LOOKUP,
 } from "@app/utility";
-import { BusinessProfileService } from "@app/services/v7";
 import { BusinessProfileService as BusinessProfileServiceV9 } from "@app/services/v9";
 import {
   CoachProfileTable,
@@ -18,6 +17,7 @@ import {
 } from "@app/model";
 import { ChecklistDBService } from "@app/services/v9";
 import { UserService } from "@app/services/v9";
+import { EmployeeDBService as EmployeeDBServiceV10 } from "@app/services/v10";
 
 class UserController extends BaseController {
   /**
@@ -57,6 +57,10 @@ class UserController extends BaseController {
       ChecklistDBService.getQuizTopics(userExists),
       UserService.userAIToolUsageStatus(userExists),
       UserDBService.resetCurrentDayRewards(userExists),
+      EmployeeDBServiceV10.ifEmployeeNotificationAvailable(
+        userExists,
+        businessProfile
+      ),
     ]);
     let currentLeague = leagues.find(
       (x) =>
