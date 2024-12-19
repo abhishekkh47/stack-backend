@@ -381,8 +381,8 @@ const schema = new mongoose.Schema<IUserSchema>(
     employeePageVisited: {
       visitedAt: {
         type: mongoose.Schema.Types.Date,
-        required: true,
-        default: new Date(),
+        required: false,
+        default: null,
       },
       status: {
         type: mongoose.Schema.Types.Boolean,

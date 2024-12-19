@@ -53,15 +53,16 @@ class UserController extends BaseController {
       });
       initialMessage = businessProfile.businessCoachInfo.initialMessage;
     }
-    const [topicDetails, userAIToolStatus, _] = await Promise.all([
-      ChecklistDBService.getQuizTopics(userExists),
-      UserService.userAIToolUsageStatus(userExists),
-      UserDBService.resetCurrentDayRewards(userExists),
-      EmployeeDBServiceV10.ifEmployeeNotificationAvailable(
-        userExists,
-        businessProfile
-      ),
-    ]);
+    const [topicDetails, userAIToolStatus, _, showEmpNotification] =
+      await Promise.all([
+        ChecklistDBService.getQuizTopics(userExists),
+        UserService.userAIToolUsageStatus(userExists),
+        UserDBService.resetCurrentDayRewards(userExists),
+        EmployeeDBServiceV10.ifEmployeeNotificationAvailable(
+          userExists,
+          businessProfile
+        ),
+      ]);
     let currentLeague = leagues.find(
       (x) =>
         x.minPoint <= userExists.xpPoints && x.maxPoint >= userExists.xpPoints
@@ -80,6 +81,7 @@ class UserController extends BaseController {
         : null,
       topicDetails,
       userAIToolStatus: userAIToolStatus || {},
+      showEmpNotification,
     };
 
     return this.Ok(ctx, data, true);
