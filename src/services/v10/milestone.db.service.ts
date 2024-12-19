@@ -751,7 +751,10 @@ class MilestoneDBService {
             currentActionNumber == 6
               ? { ...defaultCurrentActionInfo, ...levelRewards }
               : aiActions[0];
-          if (currentActionInfo?.title == GOALS_OF_THE_DAY.title) {
+          if (
+            currentActionInfo?.title == GOALS_OF_THE_DAY.title &&
+            ifCurrentGoalObject
+          ) {
             const totalAIActions = currentActionInfo?.data?.length;
             currentActionInfo.title = `Action: ${level.dayTitle}`;
             currentActionInfo["actions"] = `${totalAIActions} Decisions`;
