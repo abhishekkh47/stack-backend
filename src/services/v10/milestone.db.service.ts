@@ -24,6 +24,7 @@ import {
   MilestoneDBService as MilestoneDBServiceV9,
   UserService,
 } from "@services/v9";
+import { UserDBService as UserDBServiceV6 } from "@app/services/v6";
 import { ObjectId } from "mongodb";
 class MilestoneDBService {
   /**
@@ -35,10 +36,10 @@ class MilestoneDBService {
   public async getUserMilestoneGoals(userExists: any, businessProfile: any) {
     try {
       let retryRequired = false;
-      const goals = await this.getCurrentMilestoneGoals(
-        userExists,
-        businessProfile
-      );
+      const [goals, stageDetails] = await Promise.all([
+        this.getCurrentMilestoneGoals(userExists, businessProfile),
+        UserDBServiceV6.getStageInfoUsingStageId(userExists),
+      ]);
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
       const tasks = goals?.tasks;
       if (tasks && tasks[tasks?.length - 1]?.currentActionNumber == 7) {
@@ -46,7 +47,12 @@ class MilestoneDBService {
           userExists
         );
       }
-      return { ...goals, ...currentDayGoals, retryRequired };
+      return {
+        ...goals,
+        ...currentDayGoals,
+        stageName: stageDetails?.title,
+        retryRequired,
+      };
     } catch (error) {
       throw new NetworkError(
         "Error occurred while retrieving new Milestone",

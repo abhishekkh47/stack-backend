@@ -22,10 +22,11 @@ class EmployeeController extends BaseController {
     if (!userExists) {
       return this.BadRequest(ctx, "User Not Found");
     }
-    const [employees, stageColorInfo, stageDetails] = await Promise.all([
+    const [employees, stageColorInfo, stageDetails, _] = await Promise.all([
       EmployeeDBService.getEmployeeList(userExists, businessProfile),
       UserDBServiceV6.getStageColorInfo(userExists),
       UserDBServiceV6.getStageInfoUsingStageId(userExists),
+      EmployeeDBService.updateEmpVisitedStatus(userExists),
     ]);
     return this.Ok(ctx, {
       data: {

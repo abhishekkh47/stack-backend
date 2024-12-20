@@ -1,6 +1,6 @@
 import { NetworkError } from "@app/middleware";
-import { UserEmployeesTable } from "@app/model";
-import { EMP_STATUS } from "@app/utility";
+import { UserEmployeesTable, UserTable } from "@app/model";
+import { EMP_STATUS, getDaysNum } from "@app/utility";
 import { EmployeeDBService as EmployeeDBServiceV9 } from "@app/services/v9";
 class EmployeeDBService {
   /**
@@ -62,6 +62,74 @@ class EmployeeDBService {
         "Error occurred while retrieving employee list",
         400
       );
+    }
+  }
+
+  /**
+   * @description This is to check if any employee is available to work or if the project is completed
+   * @description based on which we can show the notification dot on the tab icon
+   * @param userExists
+   * @param businessProfile
+   */
+  public async ifEmployeeNotificationAvailable(
+    userExists: any,
+    businessProfile: any
+  ) {
+    try {
+      const employeePageVisited = userExists?.employeePageVisited;
+      const dayDiff =
+        getDaysNum(userExists, employeePageVisited?.visitedAt) >= 1;
+      let showEmpNotification = false;
+      if (dayDiff) {
+        const [employees, _] = await Promise.all([
+          this.getEmployeeList(userExists, businessProfile),
+          UserTable.findOneAndUpdate(
+            { _id: userExists._id },
+            {
+              $set: { "employeePageVisited.status": false },
+            },
+            { upsert: true }
+          ),
+        ]);
+        employees?.forEach((emp) => {
+          if (
+            emp?.status !== EMP_STATUS.WORKING &&
+            emp?.status !== EMP_STATUS.LOCKED
+          )
+            showEmpNotification = true;
+          return;
+        });
+      }
+      return showEmpNotification;
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * @description This is to update the DB if the user has visited employee page atleast once on current day
+   * @param userIfExists
+   */
+  public async updateEmpVisitedStatus(userIfExists: any) {
+    try {
+      const employeePageVisited = userIfExists?.employeePageVisited;
+      const lastVisitedAt = employeePageVisited?.visitedAt;
+      const shouldUpdate =
+        !lastVisitedAt || getDaysNum(userIfExists, lastVisitedAt) >= 1;
+
+      if (shouldUpdate) {
+        await UserTable.findOneAndUpdate(
+          { _id: userIfExists._id },
+          {
+            $set: {
+              employeePageVisited: { visitedAt: new Date(), status: true },
+            },
+          },
+          { upsert: true }
+        );
+      }
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
     }
   }
 }
