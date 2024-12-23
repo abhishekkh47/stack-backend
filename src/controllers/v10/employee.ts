@@ -34,7 +34,7 @@ class EmployeeController extends BaseController {
         colorInfo: stageColorInfo?.colorInfo?.homepage?.outer,
         stageName: stageDetails?.title,
         currentScore:
-          userExists?.businessScore?.currentScore || DEFAULT_BUSINESS_SCORE,
+          userExists?.businessScore?.current || DEFAULT_BUSINESS_SCORE,
       },
     });
   }
