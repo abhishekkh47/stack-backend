@@ -2,8 +2,6 @@ import {
   BusinessProfileTable,
   UserTable,
   AIToolsUsageStatusTable,
-  ProblemScoreTable,
-  MarketScoreTable,
   UnsavedLogoTable,
   AIToolDataSetTable,
   SuggestionScreenCopyTable,
@@ -18,7 +16,6 @@ import {
   BACKUP_LOGOS,
   awsLogger,
   BUSINESS_IDEA_IMAGES,
-  PRODUCT_TYPE,
   DEDUCT_RETRY_FUEL,
   TARGET_AUDIENCE_REQUIRED,
   COLORS_AND_AESTHETIC,
@@ -67,21 +64,45 @@ class BusinessProfileService {
       ) {
         throw new NetworkError("Not enough tokens available", 404);
       }
-      let aiToolUsageObj = {};
-      aiToolUsageObj[key] = true;
-      aiToolUsageObj = { [`usedAITools.${key}`]: true };
       const [systemDataset, goalDetails, suggestionsScreenCopy, datasetTypes] =
         await Promise.all([
           AIToolDataSetTable.findOne({ key }).lean(),
-          MilestoneGoalsTable.findOne({ key }).lean(),
+          MilestoneGoalsTable.aggregate([
+            {
+              $match: {
+                key: key,
+              },
+            },
+            {
+              $lookup: {
+                from: "action_scoring_criterias",
+                localField: "key",
+                foreignField: "key",
+                as: "scoringCriteria",
+              },
+            },
+            {
+              $unwind: {
+                path: "$scoringCriteria",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                dependency: 1,
+                key: 1,
+                scoringCriteria: "$scoringCriteria.scoringCriteria",
+              },
+            },
+          ]).exec(),
           SuggestionScreenCopyTable.find().lean(),
           AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
       const prompt = this.getUserPrompt(
         userBusinessProfile,
         idea,
-        goalDetails?.dependency,
         suggestionsScreenCopy,
+        goalDetails[0]?.dependency,
         answerOfTheQuestion
       );
       let systemInput: any = systemDataset.data;
@@ -93,13 +114,13 @@ class BusinessProfileService {
         prompt,
         key
       );
-      if (response) {
-        await AIToolsUsageStatusTable.findOneAndUpdate(
-          { userId: userExists._id },
-          { $set: aiToolUsageObj },
-          { upsert: true }
-        );
-      }
+      const scoringCriteria = goalDetails[0]?.scoringCriteria;
+      response.forEach((obj) => {
+        obj.scores.forEach((score, idx) => {
+          score.icon = scoringCriteria[idx]?.icon;
+          score.explanation = scoringCriteria[idx]?.description || "";
+        });
+      });
       if (response && !isPremiumUser && isRetry == IS_RETRY.TRUE) {
         await this.updateAIToolsRetryStatus(userExists);
       }
@@ -775,24 +796,24 @@ class BusinessProfileService {
   getUserPrompt(
     businessProfile: any,
     idea: string,
-    dependency: string[] = [],
     screenCopy: any,
+    dependency: string[] = [],
     userAnswer: string = null
   ) {
     try {
       let prompt = ``;
-      for (let i = 0; i < dependency.length; i++) {
-        if (dependency[i] == "description") {
+      for (const dep of dependency) {
+        if (dep == "description") {
           prompt = `${prompt}\nBusiness Description: ${idea}`;
         } else {
-          const depDetails = screenCopy.find((obj) => obj.key == dependency[i]);
+          const depDetails = screenCopy.find((obj) => obj.key == dep);
           const hasGoalInCompletedActions = mapHasGoalKey(
             businessProfile?.completedActions,
-            dependency[i]
+            dep
           );
           if (depDetails?.name && hasGoalInCompletedActions) {
             prompt = `${prompt}\n${depDetails.name}: ${JSON.stringify(
-              businessProfile.completedActions[dependency[i]]
+              businessProfile.completedActions[dep]
             )}`;
           }
         }

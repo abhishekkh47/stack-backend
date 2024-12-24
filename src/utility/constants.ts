@@ -1321,3 +1321,5 @@ export const LEVEL_DETAILS = {
 };
 
 export const LEVEL_COMPLETE_REWARD = 50;
+
+export const OPENAI_MAX_TOKENS = 15000;

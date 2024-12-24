@@ -32,6 +32,7 @@ import {
   mapHasGoalKey,
   hasGoalKey,
   DEFAULT_BUSINESS_SCORE,
+  OPENAI_MAX_TOKENS,
 } from "@app/utility";
 import {
   AnalyticsService,
@@ -1030,7 +1031,7 @@ class BusinessProfileService {
           },
         ],
         temperature: 1,
-        max_tokens: 1024,
+        max_tokens: OPENAI_MAX_TOKENS,
         top_p: 1,
         frequency_penalty: 0,
         presence_penalty: 0,
