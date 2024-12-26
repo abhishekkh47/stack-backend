@@ -35,6 +35,7 @@ import {
   EmployeeLevelsTable,
   EmployeeProjectsTable,
   ActionScoringCriteriaTable,
+  MilestoneLevelsTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2116,6 +2117,7 @@ class ScriptService {
         acc[obj.key] = obj._id;
         return acc;
       }, {});
+      await this.addMilestoneLevelsToDB(rows, milestoneIdMap);
       for (const row of rows) {
         if (row["milestone"] && row["milestone"] != currentMilestone) {
           currentMilestone = row["milestone"]?.trimEnd();
@@ -3289,6 +3291,61 @@ class ScriptService {
 
       await ActionScoringCriteriaTable.bulkWrite(bulkWriteOperations);
       return scoringData;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON for milestone levels
+   * @param rows
+   * @returns {*}
+   */
+  public async addMilestoneLevelsToDB(rows: any[], milestoneIdMap: any) {
+    try {
+      let currentMilestone = null,
+        currentMilestoneId = null,
+        currentDay = 0,
+        currentLevel = 0,
+        dayTitle = null,
+        roadmapIcon = null;
+      const milestoneLevelsData = rows.reduce((acc, row) => {
+        if (row["milestone"] && row["milestone"] != currentMilestone) {
+          currentMilestone = row["milestone"]?.trimEnd();
+          currentMilestoneId = milestoneIdMap[currentMilestone];
+        }
+
+        if (row["day"] && Number(row["day"]) != currentDay) {
+          currentDay = Number(row["day"]);
+          currentLevel = Number(row["level"]?.trimEnd());
+          dayTitle = row["title"]?.trimEnd() || null;
+          roadmapIcon = row["roadmapIcon"]?.trimEnd() || null;
+        }
+
+        if (dayTitle) {
+          acc.push({
+            milestoneId: currentMilestoneId,
+            day: currentDay,
+            dayTitle,
+            time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
+            roadmapIcon,
+            level: currentLevel,
+            levelImage: `journey-${currentLevel}.webp`,
+          });
+        }
+        return acc;
+      }, []);
+
+      const bulkWriteOperations = milestoneLevelsData.map((data) => ({
+        updateOne: {
+          filter: { milestoneId: data.milestoneId, day: data.day },
+          update: { $set: data },
+          upsert: true,
+        },
+      }));
+
+      await MilestoneLevelsTable.bulkWrite(bulkWriteOperations);
+      return milestoneLevelsData;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

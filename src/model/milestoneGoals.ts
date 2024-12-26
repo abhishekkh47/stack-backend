@@ -136,6 +136,12 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       default: null,
       ref: "action_scoring_criteria",
     },
+    milestoneLevelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      default: null,
+      ref: "milestone_levels",
+    },
   },
   { timestamps: true }
 );

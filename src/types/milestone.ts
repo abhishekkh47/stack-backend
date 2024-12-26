@@ -29,6 +29,7 @@ export interface IMilestoneGoals {
   level: number;
   levelImage: string;
   scoringCriteriaId: mongoose.Schema.Types.ObjectId;
+  milestoneLevelId: mongoose.Schema.Types.ObjectId;
 }
 
 export enum EInputTemplate {
@@ -52,4 +53,14 @@ interface IGoalOptions {
   description: string;
   type: number;
   image: string;
+}
+
+export interface IMilestoneLevels {
+  milestoneId: mongoose.Schema.Types.ObjectId;
+  day: number;
+  dayTitle: string;
+  level: number;
+  levelImage: string;
+  time: string;
+  roadmapIcon: string;
 }
