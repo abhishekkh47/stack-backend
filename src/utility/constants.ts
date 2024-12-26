@@ -1078,6 +1078,22 @@ export const MILESTONE_LEARNING_FUEL = {
 
 export const ACTIVE_MILESTONE = "activeMilestone";
 
+const LEVEL_REWARD_DETAILS = {
+  BASE_OBJ: {
+    title: "You've Unlocked",
+    key: "reward",
+  },
+  LEVEL_ONE: { reward: 15, icon: "open_pro_coin_crate.webp", type: "coins" },
+  NON_PRO_USER: {
+    COINS: { reward: 3, icon: "open_normal_coin_create.webp", type: "coins" },
+    CASH: { reward: 25, icon: "open_normal_cash_crate.webp", type: "cash" },
+  },
+  PRO_USER: {
+    COINS: { reward: 50, icon: "open_pro_coin_crate.webp", type: "coins" },
+    CASH: { reward: 125, icon: "open_pro_cash_crate.webp", type: "cash" },
+  },
+};
+
 export const MILESTONE_HOMEPAGE = {
   SHOW_PRO_BANNER: "showProBanneFooter",
   COMPLETED_MILESTONE: "completedMilestone",
@@ -1095,12 +1111,33 @@ export const MILESTONE_HOMEPAGE = {
   EMPLOYEE: "employee",
   AI_ACTIONS: "aiActions",
   LEVEL_REWARD: {
-    title: "Reward: You’ve earned +50 Tokens!",
-    key: "reward",
-    coins: 50,
+    LEVEL_ONE: [
+      { ...LEVEL_REWARD_DETAILS.BASE_OBJ, ...LEVEL_REWARD_DETAILS.LEVEL_ONE },
+    ],
+    NON_PRO_USER: [
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.NON_PRO_USER.COINS,
+      },
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.NON_PRO_USER.CASH,
+      },
+    ],
+    PRO_USER: [
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.PRO_USER.COINS,
+      },
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.PRO_USER.CASH,
+      },
+    ],
   },
   THEMES: { DARK: "dark", LIGHT: "light" },
   TOTAL_LEVELS: 150,
+  LEVEL_STATUS: { INACTIVE: 0, REWARD_PENDING: 6, REWARD_CLAIMED: 7 },
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];

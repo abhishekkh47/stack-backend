@@ -26,6 +26,14 @@ import {
 } from "@services/v9";
 import { UserDBService as UserDBServiceV6 } from "@app/services/v6";
 import { ObjectId } from "mongodb";
+const {
+  GOALS_OF_THE_DAY,
+  THEMES,
+  TOTAL_LEVELS,
+  LEVEL_REWARD,
+  LEVEL_STATUS: { INACTIVE, REWARD_PENDING, REWARD_CLAIMED },
+} = MILESTONE_HOMEPAGE;
+
 class MilestoneDBService {
   /**
    * @description get milestone homepage content
@@ -82,8 +90,8 @@ class MilestoneDBService {
         isLastDayOfMilestone = true,
         initialMilestone = null,
         currentDay = 1,
-        levelRewards = {};
-      const { GOALS_OF_THE_DAY, THEMES, TOTAL_LEVELS } = MILESTONE_HOMEPAGE;
+        levelRewards = {},
+        currentIsFirstMilestone = false;
       if (
         (advanceNextDay && userIfExists.isPremiumUser) ||
         userIfExists?.levelRewardClaimed
@@ -96,22 +104,23 @@ class MilestoneDBService {
         );
       }
       let currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
-      if (!currentMilestoneId) {
-        initialMilestone = (
-          await MilestoneTable.findOne({
-            order: 1,
-          })
-        )._id;
-      }
-      const [lastMilestoneCompleted, availableDailyChallenges] =
+      const [lastMilestoneCompleted, availableDailyChallenges, firstMilestone] =
         await Promise.all([
-          MilestoneResultTable.findOne({
-            userId: userIfExists._id,
-          })
+          MilestoneResultTable.findOne({ userId: userIfExists._id })
             .sort({ createdAt: -1 })
             .lean(),
           DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
+          MilestoneTable.findOne({ order: 1 }),
         ]);
+      if (!currentMilestoneId) {
+        initialMilestone = firstMilestone._id;
+        currentIsFirstMilestone = true;
+      } else if (
+        currentMilestoneId?.milestoneId?.toString() ==
+        firstMilestone?._id.toString()
+      ) {
+        currentIsFirstMilestone = true;
+      }
       const [
         existingResponse,
         existingResponseWithPendingActions,
@@ -155,8 +164,8 @@ class MilestoneDBService {
         );
       } else if (
         getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) >= 1 ||
-        currentMilestoneId.toString() !=
-          lastMilestoneCompleted.milestoneId.toString()
+        currentMilestoneId?.toString() !=
+          lastMilestoneCompleted?.milestoneId?.toString()
       ) {
         response = await MilestoneDBServiceV9.getNextDayMilestoneGoals(
           userIfExists,
@@ -186,6 +195,12 @@ class MilestoneDBService {
       currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
       if (!currentMilestoneId) {
         currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
+      }
+      if (
+        currentMilestoneId?.milestoneId?.toString() ==
+        firstMilestone?._id.toString()
+      ) {
+        currentIsFirstMilestone = true;
       }
       const [currentMilestoneGoals, currentMilestoneLevels] = await Promise.all(
         [
@@ -320,8 +335,11 @@ class MilestoneDBService {
         aiActions.length >= 1 && aiActions.length <= 5
           ? 6 - aiActions?.length
           : 6;
+      // if reward claim flag is true in DB and current action number is not 0, 6 or 7, reset the flag
       if (
-        ![0, 6, 7].includes(currentActionNumber) &&
+        ![INACTIVE, REWARD_CLAIMED, REWARD_PENDING].includes(
+          currentActionNumber
+        ) &&
         userIfExists?.levelRewardClaimed
       ) {
         await UserTable.findOneAndUpdate(
@@ -337,7 +355,9 @@ class MilestoneDBService {
         currentMilestoneId,
         isLastDayOfMilestone,
         levelRewards,
-        aiActions
+        aiActions,
+        currentIsFirstMilestone,
+        userIfExists.isPremiumUser
       );
       response = {
         ...response,
@@ -572,7 +592,6 @@ class MilestoneDBService {
     currentGoal: any
   ) {
     try {
-      const { GOALS_OF_THE_DAY } = MILESTONE_HOMEPAGE;
       const { NORMAL, SIMULATION, STORY, EVENT } = QUIZ_TYPE;
       // order -> quiz, story, simulation
       const order = { [NORMAL]: 0, [STORY]: 1, [SIMULATION]: 2, [EVENT]: 3 };
@@ -582,14 +601,12 @@ class MilestoneDBService {
       );
       const quizLevelId = learningContent?.quizLevelId || null;
       const milestoneId = learningContent?.milestoneId || null;
-      const allLearningContent = learningContent?.all?.sort(
-        (a, b) => order[a?.type] - order[b?.type]
-      );
+      learningContent?.all?.sort((a, b) => order[a?.type] - order[b?.type]);
       const currentDayIds = learningContent?.currentDayGoal?.map((obj) =>
         obj?.quizId?.toString()
       );
       if (
-        allLearningContent &&
+        learningContent?.all &&
         response?.tasks[0]?.title != GOALS_OF_THE_DAY.title
       ) {
         response?.tasks?.unshift({
@@ -598,7 +615,7 @@ class MilestoneDBService {
           key: GOALS_OF_THE_DAY.key,
         });
       }
-      const quizIds = allLearningContent?.map((obj) => obj?.quizId);
+      const quizIds = learningContent?.all?.map((obj) => obj?.quizId);
       const completedQuizzes = await QuizResult.find(
         {
           userId: userIfExists._id,
@@ -607,17 +624,15 @@ class MilestoneDBService {
         { quizId: 1 }
       );
       const { simsAndEvent, learningActions } = this.processIndividualAction(
-        allLearningContent,
+        learningContent?.all,
         completedQuizzes,
         currentDayIds,
         quizLevelId,
         milestoneId
       );
       if (simsAndEvent.length > 0) {
-        const updatedSimsAndEvent = simsAndEvent.sort(
-          (a, b) => order[a?.type] - order[b?.type]
-        );
-        response?.tasks.push(...updatedSimsAndEvent);
+        simsAndEvent.sort((a, b) => order[a?.type] - order[b?.type]);
+        response?.tasks.push(...simsAndEvent);
       }
       if (learningActions.length) {
         if (response?.tasks.length > 1) {
@@ -639,6 +654,7 @@ class MilestoneDBService {
    * @param currentDayIds quizzes available for current day
    * @param quizLevelId reference id from quiz_levels collection
    * @param milestoneId current milestone id
+   * @returns {*} learning content of current level
    */
   private processIndividualAction(
     allLearningContent: any,
@@ -708,6 +724,9 @@ class MilestoneDBService {
    * @param isLastDayOfMilestone whether current day is the last day of milestone
    * @param levelRewards rewards on completion of the level
    * @param aiActions all ai actions and learning content in current milestone
+   * @param currentIsFirstMilestone whether current milestone is the first milestone
+   * @param isPremiumUser whether the user is pro or not
+   * @returns {*} current active level details
    */
   private processLevels(
     currentMilestoneLevels: any,
@@ -716,7 +735,9 @@ class MilestoneDBService {
     currentMilestoneId: any,
     isLastDayOfMilestone: boolean,
     levelRewards: any,
-    aiActions: any
+    aiActions: any,
+    currentIsFirstMilestone: boolean,
+    isPremiumUser: boolean
   ) {
     try {
       let ifLevelCompleted = true,
@@ -724,25 +745,33 @@ class MilestoneDBService {
         ifCurrentGoalObject = false,
         maxLevel = 0,
         currentActiveLevel = 1;
-      const { GOALS_OF_THE_DAY, LEVEL_REWARD } = MILESTONE_HOMEPAGE;
       const levelsData = [];
       const defaultCurrentActionInfo = {
-        reward: LEVEL_REWARD.coins,
+        rewards: isPremiumUser
+          ? [...LEVEL_REWARD.PRO_USER]
+          : [...LEVEL_REWARD.NON_PRO_USER],
         type: 6,
-        title: LEVEL_REWARD.title,
-        key: LEVEL_REWARD.key,
         isLastDayOfMilestone,
       };
       const stageName = currentMilestoneLevels.stageName;
       currentMilestoneLevels.milestones.forEach((milestone) => {
         milestone.milestoneGoals.forEach((level) => {
+          const {
+            day = 0,
+            dayTitle = null,
+            levelImage = null,
+            level: levelNumber,
+          } = level;
           ifCurrentGoalObject =
             milestone?.milestoneId?.toString() ==
-              currentMilestoneId?.toString() && level?.day == currentDay;
+              currentMilestoneId?.toString() && day == currentDay;
           ifLevelCompleted = ifCurrentGoalObject ? false : ifLevelCompleted;
           ++currentLevel;
+          if (currentLevel == REWARD_PENDING && currentIsFirstMilestone) {
+            defaultCurrentActionInfo.rewards = LEVEL_REWARD.LEVEL_ONE;
+          }
           let currentActionInfo =
-            currentActionNumber == 6
+            currentActionNumber == REWARD_PENDING
               ? { ...defaultCurrentActionInfo, ...levelRewards }
               : aiActions[0];
           if (
@@ -750,28 +779,33 @@ class MilestoneDBService {
             ifCurrentGoalObject
           ) {
             const totalAIActions = currentActionInfo?.data?.length;
-            currentActionInfo.title = `Action: ${level.dayTitle}`;
+            currentActionInfo.title = `Action: ${dayTitle}`;
             currentActionInfo["actions"] = `${totalAIActions} Decisions`;
             currentActionInfo["time"] = "2 min";
           }
           currentActiveLevel = ifCurrentGoalObject
             ? currentLevel
             : currentActiveLevel;
-          maxLevel = level.level;
+          maxLevel = levelNumber;
+          const levelActionNumber = ifCurrentGoalObject
+            ? currentActionNumber
+            : ifLevelCompleted
+            ? REWARD_CLAIMED
+            : INACTIVE;
           levelsData.push({
             _id: currentLevel,
             title: `${stageName} - Level ${currentLevel}`,
-            description: level.dayTitle,
-            image: level?.levelImage,
+            description: dayTitle,
+            image: levelImage,
             level: currentLevel,
-            currentActionNumber: ifCurrentGoalObject
-              ? currentActionNumber
-              : ifLevelCompleted
-              ? 7
-              : 0,
-            currentActionInfo: ifCurrentGoalObject
-              ? currentActionInfo || defaultCurrentActionInfo
-              : defaultCurrentActionInfo,
+            currentActionNumber: levelActionNumber,
+            currentActionInfo: ![INACTIVE, REWARD_CLAIMED].includes(
+              levelActionNumber
+            )
+              ? ifCurrentGoalObject
+                ? currentActionInfo || defaultCurrentActionInfo
+                : defaultCurrentActionInfo
+              : null,
           });
         });
       });
