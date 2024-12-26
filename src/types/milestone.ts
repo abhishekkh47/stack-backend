@@ -29,6 +29,7 @@ export interface IMilestoneGoals {
   level: number;
   levelImage: string;
   scoringCriteriaId: mongoose.Schema.Types.ObjectId;
+  levelScoreTitle: string;
 }
 
 export enum EInputTemplate {

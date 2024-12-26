@@ -101,6 +101,7 @@ interface IBusinessInfo {
   _id: string;
   title: string;
   description: string;
+  score: number;
 }
 
 interface ITargetAudience {

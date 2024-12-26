@@ -1204,8 +1204,9 @@ export const MILESTONE_RESULT_COPY = {
   passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
   passImage2: "passImage2.webp",
   resultSummary: [
-    { title: 15, type: " Tokens", icon: "goldCoin.webp" },
-    { title: 1, type: " Rating", icon: "military_medal.webp" },
+    { title: 100000, type: " Cash", icon: "dollar_banknote.webp" },
+    { title: 10, type: " Tokens", icon: "goldCoin.webp" },
+    { title: 5, type: " Rating", icon: "military_medal.webp" },
   ],
 };
 
@@ -1360,3 +1361,5 @@ export const LEVEL_DETAILS = {
 export const LEVEL_COMPLETE_REWARD = 50;
 
 export const OPENAI_MAX_TOKENS = 15000;
+
+export const DEFAULT_AI_ACTION_SCORE = 70;

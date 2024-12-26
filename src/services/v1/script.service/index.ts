@@ -2096,15 +2096,15 @@ class ScriptService {
         };
         milestoneContent.push(bulkWriteObject);
       });
-      await MilestoneTable.bulkWrite(milestoneContent);
 
       /**
        * create milestone goals (milestone_goals collection)
        * learning content data (quiz_levels collection)
        * action scoring criteria (action_scoring_criteria collection)
        */
-      await this.addActionScoringCriteriaToDB(rows);
-      const [milestoneDetails, scoringData] = await Promise.all([
+      const [_, __, milestoneDetails, scoringData] = await Promise.all([
+        MilestoneTable.bulkWrite(milestoneContent),
+        this.addActionScoringCriteriaToDB(rows),
         MilestoneTable.find(),
         ActionScoringCriteriaTable.find(),
       ]);
@@ -2186,6 +2186,7 @@ class ScriptService {
               level: currentLevel,
               levelImage: `journey-${currentLevel}.webp`,
               scoringCriteriaId: ScoringCriteriaMap[key],
+              levelScoreTitle: row["levelScoreTitle"]?.trimEnd(),
             });
           }
         }
@@ -2239,6 +2240,7 @@ class ScriptService {
                 level: obj.level,
                 levelImage: obj.levelImage,
                 scoringCriteriaId: obj.scoringCriteriaId,
+                levelScoreTitle: obj.levelScoreTitle,
               },
             },
             upsert: true,

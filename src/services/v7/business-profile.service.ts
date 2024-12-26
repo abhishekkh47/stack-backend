@@ -33,6 +33,7 @@ import {
   hasGoalKey,
   DEFAULT_BUSINESS_SCORE,
   OPENAI_MAX_TOKENS,
+  DEFAULT_AI_ACTION_SCORE,
 } from "@app/utility";
 import {
   AnalyticsService,
@@ -137,6 +138,7 @@ class BusinessProfileService {
         obj[`completedActions.${key}`] = {
           title: data.value,
           description: data.description,
+          score: data.score || DEFAULT_AI_ACTION_SCORE,
         };
         businessHistoryObj = [
           {
