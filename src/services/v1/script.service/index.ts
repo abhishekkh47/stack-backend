@@ -2047,6 +2047,7 @@ class ScriptService {
       let dayTitle = null;
       let roadmapIcon = null;
       let resultCopyInfo = null;
+      let deliverableName = "";
       const defaultTopic = "6638c5f713b74c3154c67624";
       const [quizTopics, stages] = await Promise.all([
         QuizTopicTable.find({ type: 4 }).lean(),
@@ -2123,6 +2124,7 @@ class ScriptService {
         }
 
         if (row["day"] && row["day"] != currentDay) {
+          deliverableName = row["deliverableName"]?.trimEnd();
           currentDay = Number(row["day"]);
           currentLevel = Number(row["level"]?.trimEnd());
           dayTitle = row["title"]?.trimEnd() || null;
@@ -2186,7 +2188,7 @@ class ScriptService {
               level: currentLevel,
               levelImage: `journey-${currentLevel}.webp`,
               scoringCriteriaId: ScoringCriteriaMap[key],
-              levelScoreTitle: row["levelScoreTitle"]?.trimEnd(),
+              deliverableName,
             });
           }
         }
@@ -2240,7 +2242,7 @@ class ScriptService {
                 level: obj.level,
                 levelImage: obj.levelImage,
                 scoringCriteriaId: obj.scoringCriteriaId,
-                levelScoreTitle: obj.levelScoreTitle,
+                deliverableName: obj.deliverableName,
               },
             },
             upsert: true,

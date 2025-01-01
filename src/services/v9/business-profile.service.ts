@@ -49,6 +49,7 @@ class BusinessProfileService {
     isRetry: string = IS_RETRY.FALSE
   ) {
     try {
+      let response = null;
       if (!idea) {
         throw new NetworkError(
           "Please provide a valid business description",
@@ -64,14 +65,22 @@ class BusinessProfileService {
       ) {
         throw new NetworkError("Not enough tokens available", 404);
       }
-      const [systemDataset, goalDetails, suggestionsScreenCopy, datasetTypes] =
-        await Promise.all([
+      if (
+        isRetry == IS_RETRY.FALSE &&
+        userBusinessProfile?.aiGeneratedSuggestions?.[key] != null
+      ) {
+        response = userBusinessProfile?.aiGeneratedSuggestions?.[key];
+      } else {
+        const [
+          systemDataset,
+          goalDetails,
+          suggestionsScreenCopy,
+          datasetTypes,
+        ] = await Promise.all([
           AIToolDataSetTable.findOne({ key }).lean(),
           MilestoneGoalsTable.aggregate([
             {
-              $match: {
-                key: key,
-              },
+              $match: { key },
             },
             {
               $lookup: {
@@ -98,31 +107,39 @@ class BusinessProfileService {
           SuggestionScreenCopyTable.find().lean(),
           AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
-      const prompt = this.getUserPrompt(
-        userBusinessProfile,
-        idea,
-        suggestionsScreenCopy,
-        goalDetails[0]?.dependency,
-        answerOfTheQuestion
-      );
-      let systemInput: any = systemDataset.data;
-      if (type && typeof systemInput == "object") {
-        systemInput = systemInput[datasetTypes.types[type]];
-      }
-      const response = await this.getFormattedSuggestions(
-        systemInput,
-        prompt,
-        key
-      );
-      const scoringCriteria = goalDetails[0]?.scoringCriteria;
-      response.forEach((obj) => {
-        obj.scores.forEach((score, idx) => {
-          score.icon = scoringCriteria[idx]?.icon;
-          score.explanation = scoringCriteria[idx]?.description || "";
+        const prompt = this.getUserPrompt(
+          userBusinessProfile,
+          idea,
+          suggestionsScreenCopy,
+          goalDetails[0]?.dependency,
+          answerOfTheQuestion
+        );
+        let systemInput: any = systemDataset.data;
+        if (type && typeof systemInput == "object") {
+          systemInput = systemInput[datasetTypes.types[type]];
+        }
+        response = await this.getFormattedSuggestions(systemInput, prompt, key);
+        const scoringCriteria = goalDetails[0]?.scoringCriteria;
+        response.forEach((obj) => {
+          let strengths = { title: "Strengths", data: [] };
+          let weaknesses = { title: "Weaknesses", data: [] };
+          obj.scores.forEach((score, idx) => {
+            score.icon = scoringCriteria[idx]?.icon;
+            score.explanation = scoringCriteria[idx]?.description || "";
+            score.score < 50
+              ? weaknesses.data.push(score)
+              : strengths.data.push(score);
+          });
+          obj.scores = [strengths, weaknesses];
+          obj.scores[0]?.data.sort((a, b) => a.score - b.score);
+          obj.scores[1]?.data.sort((a, b) => a.score - b.score);
         });
-      });
-      if (response && !isPremiumUser && isRetry == IS_RETRY.TRUE) {
-        await this.updateAIToolsRetryStatus(userExists);
+        if (response) {
+          this.saveAIActionResponse(userExists, key, response);
+          if (!isPremiumUser && isRetry == IS_RETRY.TRUE) {
+            await this.updateAIToolsRetryStatus(userExists);
+          }
+        }
       }
       return {
         suggestions: response,
@@ -971,6 +988,37 @@ class BusinessProfileService {
     response.splice(1, 0, ideaValidationTool);
 
     return response;
+  }
+
+  /**
+   * @description this method will store Ai suggestions generated in DB, to reuse if the user kill the app after generating suggestions and come again next time
+   * @param userExists
+   * @param key
+   * @param suggestions
+   */
+  async saveAIActionResponse(userExists: any, key: string, suggestions: any) {
+    try {
+      await BusinessProfileTable.findOneAndUpdate(
+        { userId: userExists._id },
+        [
+          {
+            $set: {
+              aiGeneratedSuggestions: {
+                $ifNull: ["$aiGeneratedSuggestions", {}], // Initialize if null
+              },
+            },
+          },
+          {
+            $set: {
+              [`aiGeneratedSuggestions.${key}`]: suggestions, // Add nested field
+            },
+          },
+        ],
+        { upsert: true, new: true }
+      );
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 export default new BusinessProfileService();
