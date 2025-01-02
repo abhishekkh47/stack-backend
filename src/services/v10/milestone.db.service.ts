@@ -47,10 +47,11 @@ class MilestoneDBService {
   public async getUserMilestoneGoals(userExists: any, businessProfile: any) {
     try {
       let retryRequired = false;
-      const [goals, stageDetails] = await Promise.all([
-        this.getCurrentMilestoneGoals(userExists, businessProfile),
-        UserDBServiceV6.getStageInfoUsingStageId(userExists),
-      ]);
+      const [{ response: goals, isFirstMilestone }, stageDetails] =
+        await Promise.all([
+          this.getCurrentMilestoneGoals(userExists, businessProfile),
+          UserDBServiceV6.getStageInfoUsingStageId(userExists),
+        ]);
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
       const tasks = goals?.tasks;
       if (tasks && tasks[tasks?.length - 1]?.currentActionNumber == 7) {
@@ -63,6 +64,7 @@ class MilestoneDBService {
         ...currentDayGoals,
         stageName: stageDetails?.title,
         retryRequired,
+        isFirstMilestone,
       };
     } catch (error) {
       throw new NetworkError(
@@ -119,8 +121,7 @@ class MilestoneDBService {
         initialMilestone = firstMilestone._id;
         currentIsFirstMilestone = true;
       } else if (
-        currentMilestoneId?.milestoneId?.toString() ==
-        firstMilestone?._id.toString()
+        currentMilestoneId?.toString() == firstMilestone?._id.toString()
       ) {
         currentIsFirstMilestone = true;
       }
@@ -199,10 +200,7 @@ class MilestoneDBService {
       if (!currentMilestoneId) {
         currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
       }
-      if (
-        currentMilestoneId?.milestoneId?.toString() ==
-        firstMilestone?._id.toString()
-      ) {
+      if (currentMilestoneId?.toString() == firstMilestone?._id.toString()) {
         currentIsFirstMilestone = true;
       }
       const [currentMilestoneGoals, currentMilestoneLevels] = await Promise.all(
@@ -380,7 +378,7 @@ class MilestoneDBService {
         },
         currentActiveLevel,
       };
-      return response;
+      return { response, isFirstMilestone: currentIsFirstMilestone };
     } catch (error) {
       throw new NetworkError("Error occurred while retrieving milestones", 400);
     }
