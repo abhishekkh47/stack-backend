@@ -754,13 +754,7 @@ class MilestoneDBService {
         maxLevel = 0,
         currentActiveLevel = 1;
       const levelsData = [];
-      const defaultCurrentActionInfo = {
-        rewards: isPremiumUser
-          ? [...LEVEL_REWARD.PRO_USER]
-          : [...LEVEL_REWARD.NON_PRO_USER],
-        type: 6,
-        isLastDayOfMilestone,
-      };
+      let defaultCurrentActionInfo;
       const stageName = currentMilestoneLevels.stageName;
       currentMilestoneLevels.milestones.forEach((milestone) => {
         milestone.milestoneGoals.forEach((level) => {
@@ -775,6 +769,15 @@ class MilestoneDBService {
               currentMilestoneId?.toString() && day == currentDay;
           ifLevelCompleted = ifCurrentGoalObject ? false : ifLevelCompleted;
           ++currentLevel;
+          defaultCurrentActionInfo = {
+            title: `Level ${currentLevel} Complete: Claim Your Rewards!`,
+            rewards: isPremiumUser
+              ? [...LEVEL_REWARD.PRO_USER]
+              : [...LEVEL_REWARD.NON_PRO_USER],
+            type: 6,
+            isLastDayOfMilestone,
+            key: "reward",
+          };
           if (currentLevel == REWARD_PENDING && currentIsFirstMilestone) {
             defaultCurrentActionInfo.rewards = LEVEL_REWARD.LEVEL_ONE;
           }
