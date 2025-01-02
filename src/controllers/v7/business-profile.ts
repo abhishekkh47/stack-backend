@@ -59,7 +59,10 @@ class BusinessProfileController extends BaseController {
           true
         );
       })();
-      return this.Ok(ctx, { message: "Success" });
+      return this.Ok(ctx, {
+        message: "Success",
+        data: updatedUser[0]?.summaryDetails,
+      });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

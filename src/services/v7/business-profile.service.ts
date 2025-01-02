@@ -40,6 +40,7 @@ import {
   UserDBService as UserDBServiceV4,
 } from "@app/services/v4";
 import { MilestoneDBService, UserService } from "@app/services/v9";
+import { MilestoneDBService as MilestoneDBServiceV10 } from "@app/services/v10";
 import moment from "moment";
 
 class BusinessProfileService {
@@ -209,12 +210,16 @@ class BusinessProfileService {
             )
           : Promise.resolve(),
       ]);
+      const summaryDetails = ifLastGoalOfDay
+        ? await MilestoneDBServiceV10.getResultSummaryDetails(userIfExists, key)
+        : null;
       return [
         {
           ...obj,
           Business_Idea: obj["description"],
           Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
           Email: userIfExists.email,
+          summaryDetails,
         },
       ];
     } catch (error) {

@@ -18,6 +18,7 @@ import {
   convertDecimalsToNumbers,
   QUIZ_TYPE,
   LEVEL_COMPLETE_REWARD,
+  DEFAULT_AI_ACTION_SCORE,
 } from "@app/utility";
 import {
   EmployeeDBService,
@@ -817,6 +818,114 @@ class MilestoneDBService {
         });
       });
       return { levelsData, maxLevel, currentActiveLevel };
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * @description Process each level in current stage
+   * @param userIfExists
+   * @param key ai action key
+   * @returns {*} current active level details
+   */
+  public async getResultSummaryDetails(userIfExists: any, key: string) {
+    try {
+      const result = await MilestoneGoalsTable.aggregate([
+        // Step 1: Match the document with the given key to get `day` and `milestoneId`
+        { $match: { key } },
+        // Step 2: Use a $lookup to find all documents with the same `day` and `milestoneId`
+        {
+          $lookup: {
+            from: "milestone_goals",
+            let: { day: "$day", milestoneId: "$milestoneId" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$day", "$$day"] },
+                      { $eq: ["$milestoneId", "$$milestoneId"] },
+                      { $ne: ["$key", "ideaValidation"] },
+                    ],
+                  },
+                },
+              },
+              { $sort: { order: 1 } },
+            ],
+            as: "matchingGoals",
+          },
+        },
+        { $unwind: "$matchingGoals" }, // Flatten matching goals
+        { $replaceRoot: { newRoot: "$matchingGoals" } }, // Replace root with the matched goals
+        // Step 3: Lookup `name` for each `key` from the `suggestions_screen_copies` collection
+        {
+          $lookup: {
+            from: "suggestions_screen_copies",
+            localField: "key",
+            foreignField: "key",
+            as: "suggestionDetails",
+          },
+        },
+        { $unwind: "$suggestionDetails" }, // Flatten suggestion details
+        // Step 4: Lookup score for each `key` from the `business_profiles` collection
+        {
+          $lookup: {
+            from: "business-profiles",
+            let: { key: "$key" },
+            pipeline: [
+              {
+                $match: {
+                  userId: userIfExists._id,
+                },
+              },
+              {
+                $addFields: {
+                  completedActionsArray: {
+                    $objectToArray: "$completedActions",
+                  }, // Convert completedActions to an array
+                },
+              },
+              {
+                $unwind: {
+                  path: "$completedActionsArray",
+                  preserveNullAndEmptyArrays: true,
+                },
+              }, // Flatten the array
+              {
+                $match: {
+                  $expr: { $eq: ["$completedActionsArray.k", "$$key"] }, // Match the key
+                },
+              },
+              {
+                $project: {
+                  score: "$completedActionsArray.v.score", // Project the score
+                },
+              },
+            ],
+            as: "scores",
+          },
+        },
+        { $unwind: { path: "$scores", preserveNullAndEmptyArrays: true } }, // Include documents even if no score exists
+        // Step 5: Combine the data into a simplified structure
+        {
+          $project: {
+            key: 1,
+            day: 1,
+            milestoneId: 1,
+            title: "$suggestionDetails.name",
+            score: "$scores.score", // Extract score value
+          },
+        },
+      ]);
+
+      result.forEach(
+        (obj) => (obj["score"] = obj?.score ?? DEFAULT_AI_ACTION_SCORE)
+      );
+      return {
+        deliverableName: "Business Strategy",
+        actions: result,
+      };
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
