@@ -60,25 +60,8 @@ class BusinessProfileService {
         key = data?.key,
         milestoneName = data?.milestoneName || null,
         ifLastGoalOfMilestone = data?.lastGoalOfMilestone,
-        ifLastGoalOfDay = data?.ifLastGoalOfDay;
-
-      if (ifLastGoalOfDay) {
-        await UserTable.updateOne(
-          {
-            _id: userIfExists._id,
-          },
-          {
-            $inc: {
-              quizCoins: 5,
-              "businessScore.current": 1,
-              "businessScore.operationsScore": 1,
-              "businessScore.productScore": 1,
-              "businessScore.growthScore": 1,
-            },
-          },
-          { upsert: true }
-        );
-      }
+        ifLastGoalOfDay = data?.ifLastGoalOfDay,
+        summaryDetails = null;
       let businessHistoryObj = [],
         userBusinessScore = null,
         businessSubScoreObj = {};
@@ -210,9 +193,16 @@ class BusinessProfileService {
             )
           : Promise.resolve(),
       ]);
-      const summaryDetails = ifLastGoalOfDay
-        ? await MilestoneDBServiceV10.getResultSummaryDetails(userIfExists, key)
-        : null;
+      if (ifLastGoalOfDay) {
+        summaryDetails = await MilestoneDBServiceV10.getResultSummaryDetails(
+          userIfExists,
+          key
+        );
+        await MilestoneDBServiceV10.updateAIActionReward(
+          userIfExists,
+          summaryDetails
+        );
+      }
       return [
         {
           ...obj,

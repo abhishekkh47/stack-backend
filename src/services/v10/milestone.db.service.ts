@@ -19,6 +19,7 @@ import {
   QUIZ_TYPE,
   LEVEL_COMPLETE_REWARD,
   DEFAULT_AI_ACTION_SCORE,
+  MILESTONE_RESULT_COPY,
 } from "@app/utility";
 import {
   EmployeeDBService,
@@ -922,6 +923,7 @@ class MilestoneDBService {
             milestoneId: 1,
             title: "$suggestionDetails.name",
             score: "$scores.score", // Extract score value
+            deliverableName: 1,
           },
         },
       ]);
@@ -933,6 +935,48 @@ class MilestoneDBService {
         deliverableName: "Business Strategy",
         actions: result,
       };
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * @description Update rewards after completing AI Actions
+   * @param userExists
+   * @param resultSummary
+   * @returns {*}
+   */
+  public async updateAIActionReward(userExists: any, resultSummary: any) {
+    try {
+      const { actions } = resultSummary;
+      const averageRatingPercentage =
+        actions.reduce((acc, val) => acc + val.score, 0) / actions.length / 100;
+      const rewardDetails = MILESTONE_RESULT_COPY.resultSummary;
+      const updatedUserCash = Math.ceil(
+        rewardDetails[0].title * averageRatingPercentage
+      );
+      const updatedUserTokens = Math.ceil(
+        rewardDetails[1].title * averageRatingPercentage
+      );
+      const updatedUserRating = Math.ceil(
+        rewardDetails[2].title * averageRatingPercentage
+      );
+
+      await UserTable.updateOne(
+        { _id: userExists._id },
+        {
+          $inc: {
+            cash: updatedUserCash,
+            quizCoins: updatedUserTokens,
+            "businessScore.current": updatedUserRating,
+            "businessScore.operationsScore": updatedUserRating,
+            "businessScore.productScore": updatedUserRating,
+            "businessScore.growthScore": updatedUserRating,
+          },
+        },
+        { upsert: true }
+      );
+      return true;
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
