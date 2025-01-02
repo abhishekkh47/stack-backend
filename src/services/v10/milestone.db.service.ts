@@ -20,6 +20,7 @@ import {
   LEVEL_COMPLETE_REWARD,
   DEFAULT_AI_ACTION_SCORE,
   MILESTONE_RESULT_COPY,
+  DEFAULT_DELIVERABLE_NAME,
 } from "@app/utility";
 import {
   EmployeeDBService,
@@ -931,8 +932,10 @@ class MilestoneDBService {
       result.forEach(
         (obj) => (obj["score"] = obj?.score ?? DEFAULT_AI_ACTION_SCORE)
       );
+      const deliverableName =
+        result[0]?.deliverableName || DEFAULT_DELIVERABLE_NAME;
       return {
-        deliverableName: "Business Strategy",
+        deliverableName,
         actions: result,
       };
     } catch (error) {
@@ -952,13 +955,13 @@ class MilestoneDBService {
       const averageRatingPercentage =
         actions.reduce((acc, val) => acc + val.score, 0) / actions.length / 100;
       const rewardDetails = MILESTONE_RESULT_COPY.resultSummary;
-      const updatedUserCash = Math.ceil(
+      const updatedUserCash = Math.floor(
         rewardDetails[0].title * averageRatingPercentage
       );
-      const updatedUserTokens = Math.ceil(
+      const updatedUserTokens = Math.floor(
         rewardDetails[1].title * averageRatingPercentage
       );
-      const updatedUserRating = Math.ceil(
+      const updatedUserRating = Math.floor(
         rewardDetails[2].title * averageRatingPercentage
       );
 
