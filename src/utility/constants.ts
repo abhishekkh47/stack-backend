@@ -1066,7 +1066,7 @@ export const IDEA_ANALYSIS = {
   },
 };
 export const LEARNING_CONTENT = {
-  learn: { icon: "goldCoin.webp", iconBGColor: "#B0A34E38" },
+  learn: { icon: "border_goldCoin.webp", iconBGColor: "#B0A34E38" },
   quest: { icon: "cal.webp", iconBGColor: "#4885FF29" },
 };
 
@@ -1175,8 +1175,8 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 25, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 50, type: "K", icon: "dollar_banknote.webp" },
+      { title: 25, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 50, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 2, type: " Rating", icon: "military_medal.webp" },
     ],
   },
@@ -1193,7 +1193,7 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 0, type: "K", icon: "dollar_banknote.webp" },
+      { title: 0, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 0, type: " Rating", icon: "military_medal.webp" },
     ],
   },
@@ -1204,8 +1204,8 @@ export const MILESTONE_RESULT_COPY = {
   passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
   passImage2: "passImage2.webp",
   resultSummary: [
-    { title: 100000, type: " Cash", icon: "dollar_banknote.webp" },
-    { title: 10, type: " Tokens", icon: "goldCoin.webp" },
+    { title: 100000, type: " Cash", icon: "border_dollar_banknote.webp" },
+    { title: 10, type: " Tokens", icon: "border_goldCoin.webp" },
     { title: 5, type: " Rating", icon: "military_medal.webp" },
   ],
 };
@@ -1231,8 +1231,8 @@ export const STAGE_COMPLETE = {
       },
     ],
     resultSummary: [
-      { title: 50, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 100, type: "K", icon: "dollar_banknote.webp" },
+      { title: 50, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 100, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 5, type: " Rating", icon: "military_medal.webp" },
     ],
     stageInfo: {
@@ -1261,8 +1261,8 @@ export const STAGE_COMPLETE = {
       },
     ],
     resultSummary: [
-      { title: 50, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 100, type: "K", icon: "dollar_banknote.webp" },
+      { title: 50, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 100, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 5, type: " Rating", icon: "military_medal.webp" },
     ],
     stageInfo: {
@@ -1291,8 +1291,8 @@ export const STAGE_COMPLETE = {
       },
     ],
     resultSummary: [
-      { title: 100, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 200, type: "K", icon: "dollar_banknote.webp" },
+      { title: 100, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 200, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 10, type: " Rating", icon: "military_medal.webp" },
     ],
     stageInfo: {
