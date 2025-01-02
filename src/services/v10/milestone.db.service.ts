@@ -797,27 +797,31 @@ class MilestoneDBService {
           currentActiveLevel = ifCurrentGoalObject
             ? currentLevel
             : currentActiveLevel;
-          maxLevel = levelNumber;
           const levelActionNumber = ifCurrentGoalObject
             ? currentActionNumber
             : ifLevelCompleted
             ? REWARD_CLAIMED
             : INACTIVE;
-          levelsData.push({
-            _id: currentLevel,
-            title: `${stageName} - Level ${currentLevel}`,
-            description: dayTitle,
-            image: levelImage,
-            level: currentLevel,
-            currentActionNumber: levelActionNumber,
-            currentActionInfo: ![INACTIVE, REWARD_CLAIMED].includes(
-              levelActionNumber
-            )
-              ? ifCurrentGoalObject
-                ? currentActionInfo || defaultCurrentActionInfo
-                : defaultCurrentActionInfo
-              : null,
-          });
+          if (
+            currentMilestoneId?.toString() == milestone.milestoneId?.toString()
+          ) {
+            maxLevel = levelNumber;
+            levelsData.push({
+              _id: currentLevel,
+              title: `${stageName} - Level ${currentLevel}`,
+              description: dayTitle,
+              image: levelImage,
+              level: currentLevel,
+              currentActionNumber: levelActionNumber,
+              currentActionInfo: ![INACTIVE, REWARD_CLAIMED].includes(
+                levelActionNumber
+              )
+                ? ifCurrentGoalObject
+                  ? currentActionInfo || defaultCurrentActionInfo
+                  : defaultCurrentActionInfo
+                : null,
+            });
+          }
         });
       });
       return { levelsData, maxLevel, currentActiveLevel };
