@@ -21,6 +21,8 @@ import {
   DEFAULT_AI_ACTION_SCORE,
   MILESTONE_RESULT_COPY,
   DEFAULT_DELIVERABLE_NAME,
+  hasGoalKey,
+  mapHasGoalKey,
 } from "@app/utility";
 import {
   EmployeeDBService,
@@ -218,6 +220,16 @@ class MilestoneDBService {
         response?.tasks[0]?.data.length > 0 &&
         response.tasks[0].title == GOALS_OF_THE_DAY.title
       ) {
+        currentGoal = response?.tasks[0]?.data[0];
+        currentDay = response?.tasks[0]?.data[0]?.day;
+        currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
+        const depActionDetails = await this.getDependencyActions(
+          businessProfile,
+          response
+        );
+        if (depActionDetails.length) {
+          response?.tasks[0].data.unshift(...depActionDetails);
+        }
         let goal = currentMilestoneGoals.find(
           (goal) => goal.key == response?.tasks[0]?.data[0]?.key
         );
@@ -235,8 +247,6 @@ class MilestoneDBService {
         response?.tasks[0]?.data[0] &&
         response.tasks[0].title == GOALS_OF_THE_DAY.title
       ) {
-        currentGoal = response?.tasks[0]?.data[0];
-        currentDay = response?.tasks[0]?.data[0]?.day;
         currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
         const [ifOtherMilestoneCompleted, quizLevelData] = await Promise.all([
           MilestoneResultTable.findOne({
@@ -928,7 +938,7 @@ class MilestoneDBService {
       ]);
 
       result.forEach(
-        (obj) => (obj["score"] = obj?.score ?? DEFAULT_AI_ACTION_SCORE)
+        (obj) => (obj["score"] = Number(obj?.score) ?? DEFAULT_AI_ACTION_SCORE)
       );
       const deliverableName =
         result[0]?.deliverableName || DEFAULT_DELIVERABLE_NAME;
@@ -978,6 +988,40 @@ class MilestoneDBService {
         { upsert: true }
       );
       return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * @description Get the dependency action details
+   * @param businessProfile
+   * @param response initial response with ai actions only
+   * @returns {*}
+   */
+  public async getDependencyActions(businessProfile: any, response: any) {
+    try {
+      const depActionsSet = new Set();
+      response?.tasks[0]?.data.forEach((action) => {
+        action?.dependency.forEach((key) => {
+          const hasGoalInProfile = hasGoalKey(businessProfile, key);
+          const hasGoalInCompletedActions = mapHasGoalKey(
+            businessProfile.completedActions,
+            key
+          );
+          if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
+            depActionsSet.add(key);
+          }
+        });
+      });
+      const depActions = Array.from(depActionsSet);
+      const currentMilestoneGoals = await MilestoneGoalsTable.find({
+        key: { $in: depActions },
+      }).lean();
+      const goalsData = await MilestoneDBServiceV9.suggestionScreenInfo(
+        currentMilestoneGoals
+      );
+      return goalsData;
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }

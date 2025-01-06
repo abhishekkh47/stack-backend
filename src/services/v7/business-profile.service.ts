@@ -166,9 +166,7 @@ class BusinessProfileService {
           ? MilestoneDBService.removeCompletedAction(userIfExists, key)
           : Promise.resolve(),
         BusinessProfileTable.findOneAndUpdate(
-          {
-            userId: userIfExists._id,
-          },
+          { userId: userIfExists._id },
           {
             $set: obj,
             $push: { businessHistory: businessHistoryObj },
