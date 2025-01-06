@@ -130,6 +130,17 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       required: true,
       default: null,
     },
+    scoringCriteriaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      default: null,
+      ref: "action_scoring_criteria",
+    },
+    deliverableName: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

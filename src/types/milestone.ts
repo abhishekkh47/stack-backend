@@ -28,6 +28,8 @@ export interface IMilestoneGoals {
   roadmapIcon: string;
   level: number;
   levelImage: string;
+  scoringCriteriaId: mongoose.Schema.Types.ObjectId;
+  deliverableName: string;
 }
 
 export enum EInputTemplate {

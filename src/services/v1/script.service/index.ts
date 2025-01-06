@@ -34,6 +34,7 @@ import {
   EmployeeTable,
   EmployeeLevelsTable,
   EmployeeProjectsTable,
+  ActionScoringCriteriaTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import json2csv from "json2csv";
@@ -2046,6 +2047,7 @@ class ScriptService {
       let dayTitle = null;
       let roadmapIcon = null;
       let resultCopyInfo = null;
+      let deliverableName = "";
       const defaultTopic = "6638c5f713b74c3154c67624";
       const [quizTopics, stages] = await Promise.all([
         QuizTopicTable.find({ type: 4 }).lean(),
@@ -2061,7 +2063,7 @@ class ScriptService {
               quizTopics.find((obj) => obj.topic == topic)?._id || defaultTopic,
             description: "7 Days - 15 min/day",
             order: Number(row["order"]?.trimEnd()),
-            locked: row["locked"]?.trimEnd() == "TRUE" ? true : false,
+            locked: row["locked"]?.trimEnd() == "TRUE",
             icon: row["milestoneIcon"]?.trimEnd() || null,
             iconBackgroundColor:
               row["milestoneIconBGColor"]?.trimEnd() || "#ffffff19",
@@ -2070,6 +2072,8 @@ class ScriptService {
         }
         return acc;
       }, []);
+
+      // create milestone data for 'milestone' collection
       milestonesArray.forEach((goal) => {
         let bulkWriteObject = {
           updateOne: {
@@ -2093,21 +2097,36 @@ class ScriptService {
         };
         milestoneContent.push(bulkWriteObject);
       });
-      await MilestoneTable.bulkWrite(milestoneContent);
-      const milestoneDetails = await MilestoneTable.find();
-      let milestoneIdMap = {};
-      milestoneDetails.forEach((obj) => {
-        milestoneIdMap[obj.milestone] = obj._id;
-      });
+
+      /**
+       * create milestone goals (milestone_goals collection)
+       * learning content data (quiz_levels collection)
+       * action scoring criteria (action_scoring_criteria collection)
+       */
+      const [_, __, milestoneDetails, scoringData] = await Promise.all([
+        MilestoneTable.bulkWrite(milestoneContent),
+        this.addActionScoringCriteriaToDB(rows),
+        MilestoneTable.find(),
+        ActionScoringCriteriaTable.find(),
+      ]);
+      const milestoneIdMap = milestoneDetails.reduce((acc, obj) => {
+        acc[obj.milestone] = obj._id;
+        return acc;
+      }, {});
+      const ScoringCriteriaMap = scoringData.reduce((acc, obj) => {
+        acc[obj.key] = obj._id;
+        return acc;
+      }, {});
       for (const row of rows) {
         if (row["milestone"] && row["milestone"] != currentMilestone) {
-          currentMilestone = row["milestone"].trimEnd();
+          currentMilestone = row["milestone"]?.trimEnd();
           currentMilestoneId = milestoneIdMap[currentMilestone];
         }
 
         if (row["day"] && row["day"] != currentDay) {
+          deliverableName = row["deliverableName"]?.trimEnd();
           currentDay = Number(row["day"]);
-          currentLevel = Number(row["level"].trimEnd());
+          currentLevel = Number(row["level"]?.trimEnd());
           dayTitle = row["title"]?.trimEnd() || null;
           roadmapIcon = row["roadmapIcon"]?.trimEnd() || null;
           order = 0;
@@ -2137,10 +2156,8 @@ class ScriptService {
         }
         const optionCount = Number(row["options"]?.trimEnd()) || null;
         const inputQuestion = row["userInputQuestion"]?.trimEnd();
-        if (
-          row["identifier"] &&
-          currentIdentifier != row["identifier"]?.trimEnd()
-        ) {
+        const key = row["identifier"]?.trimEnd();
+        if (row["identifier"] && currentIdentifier != key) {
           const inputTemplate = {
             optionsScreenInfo: optionCount
               ? {
@@ -2151,26 +2168,27 @@ class ScriptService {
             questionScreenInfo: inputQuestion ? { title: inputQuestion } : null,
           };
           currentIndex++;
-          if (row["template"]) {
+          if (key) {
             result.push({
               milestoneId: currentMilestoneId,
               day: currentDay,
               title: row["goalTitle"]?.trimEnd(),
-              key: row["identifier"]?.trimEnd(),
+              key,
               order: ++order,
               time: row["time"]?.trimEnd() || "AI-Assisted - 2 min",
               iconImage: row["icon"]?.trimEnd() || null,
               iconBackgroundColor:
                 row["iconBackgroundColor"]?.trimEnd() || null,
               dependency: row["dependency"]?.trimEnd().split(","),
-              template: Number(row["template"]?.trimEnd()),
+              template: 1,
               inputTemplate: inputTemplate,
-              isAiToolbox:
-                row["isAiToolbox"].trimEnd() == "TRUE" ? true : false,
+              isAiToolbox: row["isAiToolbox"]?.trimEnd() == "TRUE",
               dayTitle,
               roadmapIcon,
               level: currentLevel,
               levelImage: `journey-${currentLevel}.webp`,
+              scoringCriteriaId: ScoringCriteriaMap[key],
+              deliverableName,
             });
           }
         }
@@ -2223,6 +2241,8 @@ class ScriptService {
                 roadmapIcon: obj.roadmapIcon,
                 level: obj.level,
                 levelImage: obj.levelImage,
+                scoringCriteriaId: obj.scoringCriteriaId,
+                deliverableName: obj.deliverableName,
               },
             },
             upsert: true,
@@ -3236,6 +3256,43 @@ class ScriptService {
 
       await StageTable.bulkWrite(bulkWriteOperations);
       return stage;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description This function convert spreadsheet data to JSON by filtering with key referring the action to be performed
+   * @param rows
+   * @returns {*}
+   */
+  public async addActionScoringCriteriaToDB(rows: any[]) {
+    try {
+      const scoringData = rows.reduce((acc, row) => {
+        const key = row["identifier"]?.trimEnd();
+        if (key) {
+          acc.push({
+            key,
+            scoringCriteria: Array.from({ length: 5 }, (_, i) => ({
+              name: row[`scoringCriteria${i + 1}`]?.trimEnd() || "",
+              icon: row[`scoringIcon${i + 1}`]?.trimEnd() || "",
+              description: row[`scoringDescription${i + 1}`]?.trimEnd() || "",
+            })),
+          });
+        }
+        return acc;
+      }, []);
+
+      const bulkWriteOperations = scoringData.map((data) => ({
+        updateOne: {
+          filter: { key: data.key },
+          update: { $set: data },
+          upsert: true,
+        },
+      }));
+
+      await ActionScoringCriteriaTable.bulkWrite(bulkWriteOperations);
+      return scoringData;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }

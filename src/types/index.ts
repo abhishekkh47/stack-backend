@@ -47,3 +47,4 @@ export * from "@app/types/milestoneEvents";
 export * from "@app/types/employees";
 export * from "@app/types/userEmployees";
 export * from "@app/types/userProjects";
+export * from "@app/types/actionScoringCriteria";

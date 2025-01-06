@@ -1066,7 +1066,7 @@ export const IDEA_ANALYSIS = {
   },
 };
 export const LEARNING_CONTENT = {
-  learn: { icon: "goldCoin.webp", iconBGColor: "#B0A34E38" },
+  learn: { icon: "border_goldCoin.webp", iconBGColor: "#B0A34E38" },
   quest: { icon: "cal.webp", iconBGColor: "#4885FF29" },
 };
 
@@ -1077,6 +1077,22 @@ export const MILESTONE_LEARNING_FUEL = {
 };
 
 export const ACTIVE_MILESTONE = "activeMilestone";
+
+const LEVEL_REWARD_DETAILS = {
+  BASE_OBJ: {
+    title: "You've Unlocked",
+    key: "reward",
+  },
+  LEVEL_ONE: { reward: 15, icon: "open_pro_coin_crate.webp", type: "coins" },
+  NON_PRO_USER: {
+    COINS: { reward: 3, icon: "open_normal_coin_create.webp", type: "coins" },
+    CASH: { reward: 25, icon: "open_normal_cash_crate.webp", type: "cash" },
+  },
+  PRO_USER: {
+    COINS: { reward: 50, icon: "open_pro_coin_crate.webp", type: "coins" },
+    CASH: { reward: 125, icon: "open_pro_cash_crate.webp", type: "cash" },
+  },
+};
 
 export const MILESTONE_HOMEPAGE = {
   SHOW_PRO_BANNER: "showProBanneFooter",
@@ -1095,12 +1111,33 @@ export const MILESTONE_HOMEPAGE = {
   EMPLOYEE: "employee",
   AI_ACTIONS: "aiActions",
   LEVEL_REWARD: {
-    title: "Reward: You’ve earned +50 Tokens!",
-    key: "reward",
-    coins: 50,
+    LEVEL_ONE: [
+      { ...LEVEL_REWARD_DETAILS.BASE_OBJ, ...LEVEL_REWARD_DETAILS.LEVEL_ONE },
+    ],
+    NON_PRO_USER: [
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.NON_PRO_USER.COINS,
+      },
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.NON_PRO_USER.CASH,
+      },
+    ],
+    PRO_USER: [
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.PRO_USER.COINS,
+      },
+      {
+        ...LEVEL_REWARD_DETAILS.BASE_OBJ,
+        ...LEVEL_REWARD_DETAILS.PRO_USER.CASH,
+      },
+    ],
   },
   THEMES: { DARK: "dark", LIGHT: "light" },
   TOTAL_LEVELS: 150,
+  LEVEL_STATUS: { INACTIVE: 0, REWARD_PENDING: 6, REWARD_CLAIMED: 7 },
 };
 
 export const ALL_NULL_7_DAYS = [null, null, null, null, null, null, null];
@@ -1138,8 +1175,8 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 25, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 50, type: "K", icon: "dollar_banknote.webp" },
+      { title: 25, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 50, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 2, type: " Rating", icon: "military_medal.webp" },
     ],
   },
@@ -1156,7 +1193,7 @@ export const SIMULATION_RESULT_COPY = {
       },
     ],
     resultSummary: [
-      { title: 0, type: "K", icon: "dollar_banknote.webp" },
+      { title: 0, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 0, type: " Rating", icon: "military_medal.webp" },
     ],
   },
@@ -1167,8 +1204,9 @@ export const MILESTONE_RESULT_COPY = {
   passCopy2: `Reply: "Woah. This is dialed. We're seeing dollar signs..."`,
   passImage2: "passImage2.webp",
   resultSummary: [
-    { title: 15, type: " Tokens", icon: "goldCoin.webp" },
-    { title: 1, type: " Rating", icon: "military_medal.webp" },
+    { title: 100000, type: " Cash", icon: "border_dollar_banknote.webp" },
+    { title: 10, type: " Tokens", icon: "border_goldCoin.webp" },
+    { title: 5, type: " Rating", icon: "military_medal.webp" },
   ],
 };
 
@@ -1193,8 +1231,8 @@ export const STAGE_COMPLETE = {
       },
     ],
     resultSummary: [
-      { title: 50, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 100, type: "K", icon: "dollar_banknote.webp" },
+      { title: 50, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 100, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 5, type: " Rating", icon: "military_medal.webp" },
     ],
     stageInfo: {
@@ -1223,8 +1261,8 @@ export const STAGE_COMPLETE = {
       },
     ],
     resultSummary: [
-      { title: 50, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 100, type: "K", icon: "dollar_banknote.webp" },
+      { title: 50, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 100, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 5, type: " Rating", icon: "military_medal.webp" },
     ],
     stageInfo: {
@@ -1253,8 +1291,8 @@ export const STAGE_COMPLETE = {
       },
     ],
     resultSummary: [
-      { title: 100, type: " Tokens", icon: "goldCoin.webp" },
-      { title: 200, type: "K", icon: "dollar_banknote.webp" },
+      { title: 100, type: " Tokens", icon: "border_goldCoin.webp" },
+      { title: 200, type: "K", icon: "border_dollar_banknote.webp" },
       { title: 10, type: " Rating", icon: "military_medal.webp" },
     ],
     stageInfo: {
@@ -1321,3 +1359,6 @@ export const LEVEL_DETAILS = {
 };
 
 export const LEVEL_COMPLETE_REWARD = 50;
+export const OPENAI_MAX_TOKENS = 15000;
+export const DEFAULT_AI_ACTION_SCORE = 70;
+export const DEFAULT_DELIVERABLE_NAME = "Business Strategy";

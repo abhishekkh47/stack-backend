@@ -2,8 +2,6 @@ import {
   BusinessProfileTable,
   UserTable,
   AIToolsUsageStatusTable,
-  ProblemScoreTable,
-  MarketScoreTable,
   UnsavedLogoTable,
   AIToolDataSetTable,
   SuggestionScreenCopyTable,
@@ -18,7 +16,6 @@ import {
   BACKUP_LOGOS,
   awsLogger,
   BUSINESS_IDEA_IMAGES,
-  PRODUCT_TYPE,
   DEDUCT_RETRY_FUEL,
   TARGET_AUDIENCE_REQUIRED,
   COLORS_AND_AESTHETIC,
@@ -52,6 +49,7 @@ class BusinessProfileService {
     isRetry: string = IS_RETRY.FALSE
   ) {
     try {
+      let response = null;
       if (!idea) {
         throw new NetworkError(
           "Please provide a valid business description",
@@ -67,41 +65,81 @@ class BusinessProfileService {
       ) {
         throw new NetworkError("Not enough tokens available", 404);
       }
-      let aiToolUsageObj = {};
-      aiToolUsageObj[key] = true;
-      aiToolUsageObj = { [`usedAITools.${key}`]: true };
-      const [systemDataset, goalDetails, suggestionsScreenCopy, datasetTypes] =
-        await Promise.all([
+      if (
+        isRetry == IS_RETRY.FALSE &&
+        userBusinessProfile?.aiGeneratedSuggestions?.[key] != null
+      ) {
+        response = userBusinessProfile?.aiGeneratedSuggestions?.[key];
+      } else {
+        const [
+          systemDataset,
+          goalDetails,
+          suggestionsScreenCopy,
+          datasetTypes,
+        ] = await Promise.all([
           AIToolDataSetTable.findOne({ key }).lean(),
-          MilestoneGoalsTable.findOne({ key }).lean(),
+          MilestoneGoalsTable.aggregate([
+            {
+              $match: { key },
+            },
+            {
+              $lookup: {
+                from: "action_scoring_criterias",
+                localField: "key",
+                foreignField: "key",
+                as: "scoringCriteria",
+              },
+            },
+            {
+              $unwind: {
+                path: "$scoringCriteria",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                dependency: 1,
+                key: 1,
+                scoringCriteria: "$scoringCriteria.scoringCriteria",
+              },
+            },
+          ]).exec(),
           SuggestionScreenCopyTable.find().lean(),
           AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
-      const prompt = this.getUserPrompt(
-        userBusinessProfile,
-        idea,
-        goalDetails?.dependency,
-        suggestionsScreenCopy,
-        answerOfTheQuestion
-      );
-      let systemInput: any = systemDataset.data;
-      if (type && typeof systemInput == "object") {
-        systemInput = systemInput[datasetTypes.types[type]];
-      }
-      const response = await this.getFormattedSuggestions(
-        systemInput,
-        prompt,
-        key
-      );
-      if (response) {
-        await AIToolsUsageStatusTable.findOneAndUpdate(
-          { userId: userExists._id },
-          { $set: aiToolUsageObj },
-          { upsert: true }
+        const prompt = this.getUserPrompt(
+          userBusinessProfile,
+          idea,
+          suggestionsScreenCopy,
+          goalDetails[0]?.dependency,
+          answerOfTheQuestion
         );
-      }
-      if (response && !isPremiumUser && isRetry == IS_RETRY.TRUE) {
-        await this.updateAIToolsRetryStatus(userExists);
+        let systemInput: any = systemDataset.data;
+        if (type && typeof systemInput == "object") {
+          systemInput = systemInput[datasetTypes.types[type]];
+        }
+        response = await this.getFormattedSuggestions(systemInput, prompt, key);
+        const scoringCriteria = goalDetails[0]?.scoringCriteria;
+        response.forEach((obj) => {
+          let strengths = { title: "Strengths", data: [] };
+          let weaknesses = { title: "Weaknesses", data: [] };
+          obj.scores.forEach((score, idx) => {
+            score.icon = scoringCriteria[idx]?.icon;
+            score.explanation = scoringCriteria[idx]?.description || "";
+            score.score < 50
+              ? weaknesses.data.push(score)
+              : strengths.data.push(score);
+          });
+          obj.scores = [strengths, weaknesses];
+          obj.scores[0]?.data.sort((a, b) => a.score - b.score);
+          obj.scores[1]?.data.sort((a, b) => a.score - b.score);
+        });
+        if (response) {
+          this.saveAIActionResponse(userExists, key, response);
+          if (!isPremiumUser && isRetry == IS_RETRY.TRUE) {
+            await this.updateAIToolsRetryStatus(userExists);
+          }
+        }
       }
       return {
         suggestions: response,
@@ -775,24 +813,24 @@ class BusinessProfileService {
   getUserPrompt(
     businessProfile: any,
     idea: string,
-    dependency: string[] = [],
     screenCopy: any,
+    dependency: string[] = [],
     userAnswer: string = null
   ) {
     try {
       let prompt = ``;
-      for (let i = 0; i < dependency.length; i++) {
-        if (dependency[i] == "description") {
+      for (const dep of dependency) {
+        if (dep == "description") {
           prompt = `${prompt}\nBusiness Description: ${idea}`;
         } else {
-          const depDetails = screenCopy.find((obj) => obj.key == dependency[i]);
+          const depDetails = screenCopy.find((obj) => obj.key == dep);
           const hasGoalInCompletedActions = mapHasGoalKey(
             businessProfile?.completedActions,
-            dependency[i]
+            dep
           );
           if (depDetails?.name && hasGoalInCompletedActions) {
             prompt = `${prompt}\n${depDetails.name}: ${JSON.stringify(
-              businessProfile.completedActions[dependency[i]]
+              businessProfile.completedActions[dep]
             )}`;
           }
         }
@@ -950,6 +988,37 @@ class BusinessProfileService {
     response.splice(1, 0, ideaValidationTool);
 
     return response;
+  }
+
+  /**
+   * @description this method will store Ai suggestions generated in DB, to reuse if the user kill the app after generating suggestions and come again next time
+   * @param userExists
+   * @param key
+   * @param suggestions
+   */
+  async saveAIActionResponse(userExists: any, key: string, suggestions: any) {
+    try {
+      await BusinessProfileTable.findOneAndUpdate(
+        { userId: userExists._id },
+        [
+          {
+            $set: {
+              aiGeneratedSuggestions: {
+                $ifNull: ["$aiGeneratedSuggestions", {}], // Initialize if null
+              },
+            },
+          },
+          {
+            $set: {
+              [`aiGeneratedSuggestions.${key}`]: suggestions, // Add nested field
+            },
+          },
+        ],
+        { upsert: true, new: true }
+      );
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
   }
 }
 export default new BusinessProfileService();

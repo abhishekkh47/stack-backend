@@ -5,7 +5,6 @@ import {
   WeeklyJourneyResultTable,
   AIToolsUsageStatusTable,
   MilestoneResultTable,
-  MilestoneGoalsTable,
   UnsavedLogoTable,
 } from "@app/model";
 import { HttpMethod } from "@app/types";
@@ -42,12 +41,10 @@ class BusinessProfileController extends BaseController {
   public async storeBusinessProfile(ctx: any) {
     try {
       const { body, user } = ctx.request;
-      const [userIfExists, businessProfile, milestoneResult] =
-        await Promise.all([
-          UserTable.findOne({ _id: user._id }),
-          BusinessProfileTable.findOne({ userId: user._id }),
-          MilestoneResultTable.findOne({ userId: user._id }),
-        ]);
+      const [userIfExists, businessProfile] = await Promise.all([
+        UserTable.findOne({ _id: user._id }),
+        BusinessProfileTable.findOne({ userId: user._id }),
+      ]);
       if (!userIfExists) return this.BadRequest(ctx, "User not found");
       const updatedUser = await BusinessProfileService.addOrEditBusinessProfile(
         body,
@@ -62,7 +59,10 @@ class BusinessProfileController extends BaseController {
           true
         );
       })();
-      return this.Ok(ctx, { message: "Success" });
+      return this.Ok(ctx, {
+        message: "Success",
+        data: updatedUser[0]?.summaryDetails,
+      });
     } catch (error) {
       return this.BadRequest(ctx, error.message);
     }

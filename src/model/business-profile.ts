@@ -234,13 +234,11 @@ const schema = new mongoose.Schema<IBusinessProfileSchema>(
       required: false,
       default: null,
     },
-    aiGeneratedSuggestions: [
-      {
-        type: mongoose.Schema.Types.Mixed,
-        required: false,
-        default: null,
-      },
-    ],
+    aiGeneratedSuggestions: {
+      type: mongoose.Schema.Types.Mixed,
+      required: false,
+      default: {},
+    },
     isRetry: {
       type: mongoose.Schema.Types.Boolean,
       required: false,

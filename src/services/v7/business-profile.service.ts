@@ -32,12 +32,15 @@ import {
   mapHasGoalKey,
   hasGoalKey,
   DEFAULT_BUSINESS_SCORE,
+  OPENAI_MAX_TOKENS,
+  DEFAULT_AI_ACTION_SCORE,
 } from "@app/utility";
 import {
   AnalyticsService,
   UserDBService as UserDBServiceV4,
 } from "@app/services/v4";
 import { MilestoneDBService, UserService } from "@app/services/v9";
+import { MilestoneDBService as MilestoneDBServiceV10 } from "@app/services/v10";
 import moment from "moment";
 
 class BusinessProfileService {
@@ -57,25 +60,8 @@ class BusinessProfileService {
         key = data?.key,
         milestoneName = data?.milestoneName || null,
         ifLastGoalOfMilestone = data?.lastGoalOfMilestone,
-        ifLastGoalOfDay = data?.ifLastGoalOfDay;
-
-      if (ifLastGoalOfDay) {
-        await UserTable.updateOne(
-          {
-            _id: userIfExists._id,
-          },
-          {
-            $inc: {
-              quizCoins: 5,
-              "businessScore.current": 1,
-              "businessScore.operationsScore": 1,
-              "businessScore.productScore": 1,
-              "businessScore.growthScore": 1,
-            },
-          },
-          { upsert: true }
-        );
-      }
+        ifLastGoalOfDay = data?.ifLastGoalOfDay,
+        summaryDetails = null;
       let businessHistoryObj = [],
         userBusinessScore = null,
         businessSubScoreObj = {};
@@ -136,6 +122,7 @@ class BusinessProfileService {
         obj[`completedActions.${key}`] = {
           title: data.value,
           description: data.description,
+          score: data.score || DEFAULT_AI_ACTION_SCORE,
         };
         businessHistoryObj = [
           {
@@ -179,9 +166,7 @@ class BusinessProfileService {
           ? MilestoneDBService.removeCompletedAction(userIfExists, key)
           : Promise.resolve(),
         BusinessProfileTable.findOneAndUpdate(
-          {
-            userId: userIfExists._id,
-          },
+          { userId: userIfExists._id },
           {
             $set: obj,
             $push: { businessHistory: businessHistoryObj },
@@ -206,12 +191,23 @@ class BusinessProfileService {
             )
           : Promise.resolve(),
       ]);
+      if (ifLastGoalOfDay) {
+        summaryDetails = await MilestoneDBServiceV10.getResultSummaryDetails(
+          userIfExists,
+          key
+        );
+        await MilestoneDBServiceV10.updateAIActionReward(
+          userIfExists,
+          summaryDetails
+        );
+      }
       return [
         {
           ...obj,
           Business_Idea: obj["description"],
           Account_Name: userIfExists.firstName + " " + userIfExists.lastName,
           Email: userIfExists.email,
+          summaryDetails,
         },
       ];
     } catch (error) {
@@ -1030,7 +1026,7 @@ class BusinessProfileService {
           },
         ],
         temperature: 1,
-        max_tokens: 1024,
+        max_tokens: OPENAI_MAX_TOKENS,
         top_p: 1,
         frequency_penalty: 0,
         presence_penalty: 0,

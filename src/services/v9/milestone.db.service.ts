@@ -608,10 +608,7 @@ class MilestoneDBService {
 
       return response;
     } catch (error) {
-      throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
-        400
-      );
+      throw new NetworkError("Error occurred while formatting milestones", 400);
     }
   }
 
@@ -659,7 +656,7 @@ class MilestoneDBService {
       return this.formatMilestones(businessProfile, updatedGoals);
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while retrieving first milestone",
         400
       );
     }
@@ -741,8 +738,9 @@ class MilestoneDBService {
         true
       );
     } catch (error) {
+      console.log("Error: ", error);
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while retrieving next milestone",
         400
       );
     }
@@ -1180,7 +1178,7 @@ class MilestoneDBService {
       );
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while setting default milestone",
         400
       );
     }
@@ -1276,7 +1274,7 @@ class MilestoneDBService {
       };
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while retrieving milestone progress",
         400
       );
     }
@@ -1344,7 +1342,7 @@ class MilestoneDBService {
       return completedMilestone;
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while retrieving completed milestone",
         400
       );
     }
@@ -1453,7 +1451,7 @@ class MilestoneDBService {
       return { ...goals, ...currentDayGoals, retryRequired };
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while retrieving milestone goals",
         400
       );
     }
@@ -1530,7 +1528,7 @@ class MilestoneDBService {
       return { ...milestoneProgress, summaryData };
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while retrieving milestone summary",
         400
       );
     }
@@ -1739,7 +1737,7 @@ class MilestoneDBService {
       return roadMap;
     } catch (error) {
       throw new NetworkError(
-        "Error occurred while retrieving new Milestone",
+        "Error occurred while retrieving milestone roadmap",
         400
       );
     }

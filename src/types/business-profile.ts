@@ -43,7 +43,9 @@ export interface IBusinessProfile {
   aspiringSocialAccount: string;
   socialCampaignTheme: string;
   firstSocialCampaign: string;
-  aiGeneratedSuggestions: string[];
+  aiGeneratedSuggestions:
+    | string[]
+    | { [key: string]: AIGeneratedSuggestions[] };
   isRetry: boolean;
   hoursSaved: number;
   logoGenerationInfo: ILogoGenerationInfo;
@@ -101,6 +103,7 @@ interface IBusinessInfo {
   _id: string;
   title: string;
   description: string;
+  score: number;
 }
 
 interface ITargetAudience {
@@ -108,8 +111,9 @@ interface ITargetAudience {
   title: string;
   description: string;
 }
-interface ITargetAudienceDesc {
-  demographics: string;
-  psychographics: string;
-  population: string;
+interface AIGeneratedSuggestions {
+  title: string;
+  description: string;
+  score: any;
+  validation: string;
 }
