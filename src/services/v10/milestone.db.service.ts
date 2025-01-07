@@ -1001,15 +1001,20 @@ class MilestoneDBService {
    */
   public async getDependencyActions(businessProfile: any, response: any) {
     try {
+      const currentActions = [];
       const depActionsSet = new Set();
       response?.tasks[0]?.data.forEach((action) => {
-        action?.dependency.forEach((key) => {
+        currentActions.push(action?.key);
+        action?.dependency?.forEach((key) => {
           const hasGoalInProfile = hasGoalKey(businessProfile, key);
           const hasGoalInCompletedActions = mapHasGoalKey(
             businessProfile.completedActions,
             key
           );
-          if (!(hasGoalInProfile || hasGoalInCompletedActions)) {
+          if (
+            !(hasGoalInProfile || hasGoalInCompletedActions) &&
+            !currentActions.includes(key)
+          ) {
             depActionsSet.add(key);
           }
         });
