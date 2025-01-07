@@ -234,8 +234,9 @@ class MilestoneDBService {
           (goal) => goal.key == response?.tasks[0]?.data[0]?.key
         );
         response?.tasks[0]?.data.forEach((action) => {
-          action.inputTemplate.template = goal.template ?? 1;
+          action.inputTemplate["template"] = 1;
           action["deliverableName"] = goal?.deliverableName ?? action.key;
+          action["template"] = 1;
         });
         isLastDayOfMilestone =
           response?.tasks[0]?.data[0].day == currentMilestoneGoals[0].day;

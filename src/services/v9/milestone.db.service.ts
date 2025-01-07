@@ -888,6 +888,7 @@ class MilestoneDBService {
           goal.inputTemplate.suggestionScreenInfo = copyData;
           goal["iconImage"] = copyData.iconImage;
           goal["iconBackgroundColor"] = copyData.iconBackgroundColor;
+          goal["template"] = 1;
         });
 
         updatedGoals.forEach((goal) => {

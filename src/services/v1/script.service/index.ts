@@ -2181,7 +2181,7 @@ class ScriptService {
                 row["iconBackgroundColor"]?.trimEnd() || null,
               dependency: row["dependency"]?.trimEnd()?.length
                 ? row["dependency"]?.trimEnd().split(",")
-                : null,
+                : [],
               template: 1,
               inputTemplate: inputTemplate,
               isAiToolbox: row["isAiToolbox"]?.trimEnd() == "TRUE",
