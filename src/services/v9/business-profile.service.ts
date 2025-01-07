@@ -119,6 +119,7 @@ class BusinessProfileService {
           systemInput = systemInput[datasetTypes.types[type]];
         }
         response = await this.getFormattedSuggestions(systemInput, prompt, key);
+        response?.sort((a, b) => a?.title?.localeCompare(b?.title));
         const scoringCriteria = goalDetails[0]?.scoringCriteria;
         response.forEach((obj) => {
           let strengths = { title: "Strengths", data: [] };
