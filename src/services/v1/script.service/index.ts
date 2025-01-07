@@ -2179,7 +2179,9 @@ class ScriptService {
               iconImage: row["icon"]?.trimEnd() || null,
               iconBackgroundColor:
                 row["iconBackgroundColor"]?.trimEnd() || null,
-              dependency: row["dependency"]?.trimEnd().split(","),
+              dependency: row["dependency"]?.trimEnd()?.length
+                ? row["dependency"]?.trimEnd().split(",")
+                : [],
               template: 1,
               inputTemplate: inputTemplate,
               isAiToolbox: row["isAiToolbox"]?.trimEnd() == "TRUE",
