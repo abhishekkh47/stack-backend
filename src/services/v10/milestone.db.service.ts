@@ -759,6 +759,7 @@ class MilestoneDBService {
     isPremiumUser: boolean
   ) {
     try {
+      const { AI_ACTIONS } = QUIZ_TYPE;
       let ifLevelCompleted = true,
         currentLevel = 0,
         ifCurrentGoalObject = false,
@@ -804,6 +805,7 @@ class MilestoneDBService {
             currentActionInfo.title = `Action: ${dayTitle}`;
             currentActionInfo["actions"] = `${totalAIActions} Decisions`;
             currentActionInfo["time"] = "2 min";
+            currentActionInfo["type"] = AI_ACTIONS;
           }
           currentActiveLevel = ifCurrentGoalObject
             ? currentLevel

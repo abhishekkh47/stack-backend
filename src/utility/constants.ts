@@ -298,6 +298,7 @@ export const QUIZ_TYPE = {
   SIMULATION: 2,
   STORY: 3,
   EVENT: 4,
+  AI_ACTIONS: 5,
   REWARD: 6,
 };
 export const STORY_QUESTION_TYPE = {
