@@ -1,10 +1,6 @@
+import mongoose from "mongoose";
+
 export interface IActionScoringCriteria {
   key: string;
-  scoringCriteria: IScoringCriteria[];
-}
-
-interface IScoringCriteria {
-  name: string;
-  icon: string;
-  description: string;
+  scoringCriteria: mongoose.Schema.Types.Mixed;
 }

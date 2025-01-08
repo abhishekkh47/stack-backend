@@ -120,7 +120,7 @@ class BusinessProfileService {
         }
         response = await this.getFormattedSuggestions(systemInput, prompt, key);
         response?.sort((a, b) => a?.title?.localeCompare(b?.title));
-        const scoringCriteria = goalDetails[0]?.scoringCriteria;
+        const scoringCriteria = goalDetails[0]?.scoringCriteria[type];
         response.forEach((obj) => {
           let strengths = { title: "Strengths", data: [] };
           let weaknesses = { title: "Weaknesses", data: [] };
