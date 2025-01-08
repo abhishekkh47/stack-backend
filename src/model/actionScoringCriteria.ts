@@ -9,22 +9,11 @@ const schema = new mongoose.Schema<IActionScoringCriteriaSchema>({
     type: mongoose.Schema.Types.String,
     required: true,
   },
-  scoringCriteria: [
-    {
-      name: {
-        type: mongoose.Schema.Types.String,
-        required: true,
-      },
-      icon: {
-        type: mongoose.Schema.Types.String,
-        required: true,
-      },
-      description: {
-        type: mongoose.Schema.Types.String,
-        required: true,
-      },
-    },
-  ],
+  scoringCriteria: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    default: null,
+  },
 });
 
 export const ActionScoringCriteriaTable =

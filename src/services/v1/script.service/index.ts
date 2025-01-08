@@ -3270,31 +3270,51 @@ class ScriptService {
    */
   public async addActionScoringCriteriaToDB(rows: any[]) {
     try {
-      const scoringData = rows.reduce((acc, row) => {
+      const result = [];
+      const types = {};
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
         const key = row["identifier"]?.trimEnd();
-        if (key) {
-          acc.push({
-            key,
-            scoringCriteria: Array.from({ length: 5 }, (_, i) => ({
-              name: row[`scoringCriteria${i + 1}`]?.trimEnd() || "",
-              icon: row[`scoringIcon${i + 1}`]?.trimEnd() || "",
-              description: row[`scoringDescription${i + 1}`]?.trimEnd() || "",
-            })),
-          });
+        const objectSize = Number(row["options"]?.trimEnd()) ?? 0;
+
+        if (objectSize && objectSize > 0) {
+          const typeObj = {};
+          for (let j = 0; j < objectSize; j++) {
+            const currentRow = rows[i + j];
+            typeObj[j + 1] = Array.from({ length: 5 }, (_, i) => ({
+              name: currentRow[`scoringCriteria${i + 1}`]?.trimEnd() || "",
+              icon: currentRow[`scoringIcon${i + 1}`]?.trimEnd() || "",
+              description:
+                currentRow[`scoringDescription${i + 1}`]?.trimEnd() || "",
+            }));
+          }
+          types[key] = typeObj;
+          i += objectSize - 1;
+        } else {
+          const typeObj = {};
+          typeObj[1] = Array.from({ length: 5 }, (_, i) => ({
+            name: row[`scoringCriteria${i + 1}`]?.trimEnd() || "",
+            icon: row[`scoringIcon${i + 1}`]?.trimEnd() || "",
+            description: row[`scoringDescription${i + 1}`]?.trimEnd() || "",
+          }));
+          types[key] = typeObj;
         }
-        return acc;
-      }, []);
+      }
 
-      const bulkWriteOperations = scoringData.map((data) => ({
-        updateOne: {
-          filter: { key: data.key },
-          update: { $set: data },
-          upsert: true,
-        },
-      }));
-
-      await ActionScoringCriteriaTable.bulkWrite(bulkWriteOperations);
-      return scoringData;
+      for (const [key, scoringCriteria] of Object.entries(types)) {
+        let bulkWriteTypeObject = {
+          updateOne: {
+            filter: { key },
+            update: {
+              $set: { key, scoringCriteria },
+            },
+            upsert: true,
+          },
+        };
+        result.push(bulkWriteTypeObject);
+      }
+      await ActionScoringCriteriaTable.bulkWrite(result);
+      return result;
     } catch (error) {
       throw new NetworkError(error.message, 400);
     }
