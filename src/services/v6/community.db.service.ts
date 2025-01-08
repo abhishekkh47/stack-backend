@@ -179,7 +179,7 @@ class CommunityDBService {
       {
         $setWindowFields: {
           sortBy: {
-            xpPoints: -1,
+            "userData.businessScore.current": -1,
           },
           output: {
             rank: {
