@@ -269,4 +269,7 @@ export default {
   get STAGE_SHEET_GID() {
     return process.env.STAGE_SHEET_GID;
   },
+  get STREAK_REWARD_SHEET_GID() {
+    return process.env.STREAK_REWARD_SHEET_GID;
+  },
 };

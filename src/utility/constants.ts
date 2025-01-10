@@ -1363,3 +1363,11 @@ export const LEVEL_COMPLETE_REWARD = 50;
 export const OPENAI_MAX_TOKENS = 15000;
 export const DEFAULT_AI_ACTION_SCORE = 70;
 export const DEFAULT_DELIVERABLE_NAME = "Business Strategy";
+
+export const REWARD_TYPE = {
+  TOKEN: 1,
+  CASH: 2,
+  SCORE: 3,
+  EMPLOYEE: 4,
+  GIFT: 5,
+};

@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 
-import type { IDripshopItem, MongooseModel } from "@app/types";
+import type { IDripshopItem, MongooseModel, IStreakRewards } from "@app/types";
 
-export type IDripshopItemSchema = MongooseModel<any> & mongoose.Document;
+export type IDripshopItemSchema = MongooseModel<IStreakRewards> &
+  mongoose.Document;
 
 const schema = new mongoose.Schema<IDripshopItemSchema>(
   {
@@ -16,16 +17,42 @@ const schema = new mongoose.Schema<IDripshopItemSchema>(
     },
     fuel: {
       type: mongoose.Schema.Types.Number,
-      required: true,
+      required: false,
+      default: 0,
     },
     description: {
       type: mongoose.Schema.Types.String,
       required: true,
     },
-    sizes: {
-      type: mongoose.Schema.Types.Array,
-      default: [],
+    sizes: [
+      {
+        type: mongoose.Schema.Types.Array,
+        default: [],
+        required: true,
+      },
+    ],
+    day: {
+      type: mongoose.Schema.Types.Number,
       required: true,
+      default: 0,
+    },
+    rewardType: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 1,
+    },
+    reward: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+      default: null,
+    },
+    /**
+     * type = 1 is to identify streak rewards
+     */
+    type: {
+      type: mongoose.Schema.Types.Number,
+      required: true,
+      default: 1,
     },
   },
   { timestamps: true }
