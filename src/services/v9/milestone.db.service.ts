@@ -721,8 +721,8 @@ class MilestoneDBService {
       await DailyChallengeTable.updateOne(
         { userId: userIfExists._id },
         {
-          $push: {
-            dailyGoalStatus: { $each: updatedGoals },
+          $set: {
+            dailyGoalStatus: updatedGoals,
           },
         },
         { upsert: true }
@@ -738,7 +738,6 @@ class MilestoneDBService {
         true
       );
     } catch (error) {
-      console.log("Error: ", error);
       throw new NetworkError(
         "Error occurred while retrieving next milestone",
         400
