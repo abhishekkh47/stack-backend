@@ -129,12 +129,15 @@ class CommunityController extends BaseController {
 
       let [placeApiResponse, entrepreneurCommunities]: any = await Promise.all([
         searchSchools(query.input),
-        CommunityTable.find({ name: { $regex: query.input, $options: "i" } }),
+        CommunityTable.find({
+          name: { $regex: query.input, $options: "i" },
+          type: 1,
+        }),
       ]);
       const uniqueNames = new Set();
       const filteredData = [];
       placeApiResponse.data.predictions.forEach((item) => {
-        const schoolName = `${item.terms[item.terms.length - 2].value} (${
+        const schoolName = `${item.terms[0].value} (${
           item.terms[item.terms.length - 2].value
         })`;
         if (!uniqueNames.has(schoolName)) {
