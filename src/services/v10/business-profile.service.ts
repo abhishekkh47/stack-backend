@@ -1,6 +1,11 @@
-import { QuizLevelTable, QuizTable, MilestoneGoalsTable } from "@app/model";
+import { QuizLevelTable, MilestoneGoalsTable } from "@app/model";
 import { NetworkError } from "@app/middleware";
-import { IS_RETRY, SUGGESTIONS_NOT_FOUND_ERROR, QUIZ_TYPE } from "@app/utility";
+import {
+  IS_RETRY,
+  SUGGESTIONS_NOT_FOUND_ERROR,
+  QUIZ_TYPE,
+  PRELOAD,
+} from "@app/utility";
 import { BusinessProfileService as BusinessProfileServiceV9 } from "@app/services/v9";
 class BusinessProfileService {
   /**
@@ -27,18 +32,22 @@ class BusinessProfileService {
         const day = quizDetails?.day;
         if (milestoneId && day) {
           const goals = await MilestoneGoalsTable.find({ milestoneId, day });
-          const actions = goals?.map((goal) => goal.key);
-          actions.map(async (action) => {
-            if (!userBusinessProfile?.aiGeneratedSuggestions?.[action]) {
-              BusinessProfileServiceV9.generateAISuggestions(
-                userExists,
-                action,
-                userBusinessProfile,
-                userBusinessProfile.description,
-                "1",
-                null,
-                IS_RETRY.FALSE
-              );
+          goals.map(async (goal) => {
+            if (!userBusinessProfile?.aiGeneratedSuggestions?.[goal.key]) {
+              const options = goal?.inputTemplate?.optionsScreenInfo?.options;
+              if (options) {
+              } else {
+                BusinessProfileServiceV9.generateAISuggestions(
+                  userExists,
+                  goal.key,
+                  userBusinessProfile,
+                  userBusinessProfile.description,
+                  "1",
+                  null,
+                  IS_RETRY.FALSE,
+                  PRELOAD.TRUE
+                );
+              }
             }
           });
         }

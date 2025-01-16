@@ -46,7 +46,8 @@ class BusinessProfileService {
     idea: string = null,
     type: string = "1",
     answerOfTheQuestion: string = null,
-    isRetry: string = IS_RETRY.FALSE
+    isRetry: string = IS_RETRY.FALSE,
+    preload: boolean = false
   ) {
     try {
       let response = null;
@@ -112,8 +113,15 @@ class BusinessProfileService {
           idea,
           suggestionsScreenCopy,
           goalDetails[0]?.dependency,
-          answerOfTheQuestion
+          answerOfTheQuestion,
+          preload
         );
+        /**
+         * If any dependency is not resolved, then return
+         */
+        if (!prompt) {
+          return;
+        }
         let systemInput: any = systemDataset.data;
         if (type && typeof systemInput == "object") {
           systemInput = systemInput[datasetTypes.types[type]];
@@ -816,7 +824,8 @@ class BusinessProfileService {
     idea: string,
     screenCopy: any,
     dependency: string[] = [],
-    userAnswer: string = null
+    userAnswer: string = null,
+    preload: boolean = false
   ) {
     try {
       let prompt = ``;
@@ -829,6 +838,12 @@ class BusinessProfileService {
             businessProfile?.completedActions,
             dep
           );
+          /**
+           * if a preload is triggered for any action and any dependency is not triggered, then return
+           */
+          if (preload && !hasGoalInCompletedActions) {
+            return false;
+          }
           if (depDetails?.name && hasGoalInCompletedActions) {
             prompt = `${prompt}\n${depDetails.name}: ${JSON.stringify(
               businessProfile.completedActions[dep]
