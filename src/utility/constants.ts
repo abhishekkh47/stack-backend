@@ -1363,6 +1363,10 @@ export const LEVEL_COMPLETE_REWARD = 50;
 export const OPENAI_MAX_TOKENS = 15000;
 export const DEFAULT_AI_ACTION_SCORE = 70;
 export const DEFAULT_DELIVERABLE_NAME = "Business Strategy";
+export const PRELOAD = {
+  TRUE: true,
+  FALSE: false,
+};
 export const DEPRECATED_COMMUNITIES = [
   "University of Washington Rowing",
   "Stanford University Community Housing",
