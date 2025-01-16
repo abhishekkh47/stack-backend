@@ -7,6 +7,7 @@ import { HttpMethod } from "@app/types";
 import { Route, searchSchools } from "@app/utility";
 import {
   CHALLENGE_TYPE,
+  DEPRECATED_COMMUNITIES,
   RALLY_COMMUNITY_CHALLENGE_GOAL,
 } from "@app/utility/constants";
 import { validationsV4 } from "@app/validations/v4/apiValidation";
@@ -135,12 +136,26 @@ class CommunityController extends BaseController {
         }),
       ]);
       const uniqueNames = new Set();
+      const uniqueNamesWithCityPrefix = [];
       const filteredData = [];
       placeApiResponse.data.predictions.forEach((item) => {
         const schoolName = `${item.terms[0].value} (${
           item.terms[item.terms.length - 2].value
-        })`;
-        if (!uniqueNames.has(schoolName)) {
+        })`.toLowerCase();
+        let ifExists = -1;
+        const schoolNameWithCity = `${
+          item.terms[item.terms.length - 3].value
+        } ${item.terms[0].value}`?.toLowerCase();
+        uniqueNamesWithCityPrefix?.some((school) => {
+          ifExists = schoolNameWithCity?.indexOf(school);
+          return ifExists >= 0;
+        });
+        if (
+          !uniqueNames.has(schoolName) &&
+          !DEPRECATED_COMMUNITIES.includes(item.terms[0].value) &&
+          (ifExists == -1 || !uniqueNamesWithCityPrefix.length)
+        ) {
+          uniqueNamesWithCityPrefix.push(schoolNameWithCity);
           uniqueNames.add(schoolName);
           filteredData.push(item);
         }
