@@ -46,27 +46,21 @@ class BusinessProfileService {
               const options = goal?.inputTemplate?.optionsScreenInfo?.options;
               if (options) {
                 options.forEach((option) => {
-                  this.generateAISuggestions(
+                  this.retryGenerateAISuggestions(
                     userExists,
                     goal.key,
                     userBusinessProfile,
                     userBusinessProfile.description,
-                    `${option.type}`,
-                    null,
-                    IS_RETRY.FALSE,
-                    PRELOAD.TRUE
+                    `${option.type}`
                   );
                 });
               } else {
-                this.generateAISuggestions(
+                this.retryGenerateAISuggestions(
                   userExists,
                   goal.key,
                   userBusinessProfile,
                   userBusinessProfile.description,
-                  "1",
-                  null,
-                  IS_RETRY.FALSE,
-                  PRELOAD.TRUE
+                  "1"
                 );
               }
             }
@@ -231,6 +225,49 @@ class BusinessProfileService {
         throw new Error("Please add your target audience and try again!");
       }
       throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
+    }
+  }
+
+  private async retryGenerateAISuggestions(
+    userExists: any,
+    key: string,
+    userBusinessProfile: any,
+    description: string,
+    optionType: string,
+    retryCount: number = 0
+  ): Promise<void> {
+    try {
+      await this.generateAISuggestions(
+        userExists,
+        key,
+        userBusinessProfile,
+        description,
+        optionType,
+        null,
+        IS_RETRY.FALSE,
+        PRELOAD.TRUE
+      );
+    } catch (error) {
+      if (retryCount < 3) {
+        console.warn(
+          `Retrying generateAISuggestions for action: ${key}. Attempt ${
+            retryCount + 1
+          }`
+        );
+        await this.retryGenerateAISuggestions(
+          userExists,
+          key,
+          userBusinessProfile,
+          description,
+          optionType,
+          retryCount + 1
+        );
+      } else {
+        console.error(
+          `Failed to generate AI suggestions for action: ${key} after 3 attempts. Error: `,
+          error
+        );
+      }
     }
   }
 }
