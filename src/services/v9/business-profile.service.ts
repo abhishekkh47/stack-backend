@@ -108,7 +108,7 @@ class BusinessProfileService {
           SuggestionScreenCopyTable.find().lean(),
           AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
-        const prompt = this.getUserPrompt(
+        const prompt = await this.getUserPrompt(
           userBusinessProfile,
           idea,
           suggestionsScreenCopy,
@@ -817,15 +817,18 @@ class BusinessProfileService {
    * @param dependency
    * @param screenCopy
    * @param userAnswer
+   * @param preload
+   * @param key
    * @returns prompt
    */
-  getUserPrompt(
+  async getUserPrompt(
     businessProfile: any,
     idea: string,
     screenCopy: any,
     dependency: string[] = [],
     userAnswer: string = null,
-    preload: boolean = false
+    preload: boolean = false,
+    key: string = null
   ) {
     try {
       let prompt = ``;
@@ -841,8 +844,34 @@ class BusinessProfileService {
           /**
            * if a preload is triggered for any action and any dependency is not triggered, then return
            */
-          if (preload && !hasGoalInCompletedActions) {
-            return false;
+          if (preload && key) {
+            const milestoneDetails = await MilestoneGoalsTable.aggregate([
+              { $match: { key } },
+              {
+                $lookup: {
+                  localField: "milestoneId",
+                  foreignField: "_id",
+                  from: "milestones",
+                  as: "milestone",
+                },
+              },
+              {
+                $unwind: {
+                  path: "$milestone",
+                  preserveNullAndEmptyArrays: false,
+                },
+              },
+              {
+                $project: {
+                  key: 1,
+                  milestoneId: "$milestone._id",
+                  order: "$milestone.order",
+                },
+              },
+            ]);
+            if (milestoneDetails[0]?.order >= 3 && !hasGoalInCompletedActions) {
+              return false;
+            }
           }
           if (depDetails?.name && hasGoalInCompletedActions) {
             prompt = `${prompt}\n${depDetails.name}: ${JSON.stringify(
@@ -853,6 +882,9 @@ class BusinessProfileService {
       }
       if (userAnswer) {
         prompt = `${prompt}\nCommentary : ${userAnswer}}`;
+      }
+      if (!prompt.length) {
+        prompt = `Business Description: ${idea}`;
       }
       return prompt;
     } catch (error) {
@@ -1012,8 +1044,17 @@ class BusinessProfileService {
    * @param key
    * @param suggestions
    */
-  async saveAIActionResponse(userExists: any, key: string, suggestions: any) {
+  async saveAIActionResponse(
+    userExists: any,
+    key: string,
+    suggestions: any,
+    ifOptionsAvailable: boolean = false,
+    optionNumber: string = null
+  ) {
     try {
+      if (ifOptionsAvailable) {
+        key = `${key}_${optionNumber}`;
+      }
       await BusinessProfileTable.findOneAndUpdate(
         { userId: userExists._id },
         [
