@@ -1375,3 +1375,11 @@ export const DEPRECATED_COMMUNITIES = [
   "University of Michigan - Program in Biology",
   "The University of Michigan - North Campus",
 ];
+
+export const REWARD_TYPE = {
+  TOKEN: 1,
+  CASH: 2,
+  SCORE: 3,
+  EMPLOYEE: 4,
+  GIFT: 5,
+};
