@@ -61,7 +61,7 @@ class UserController extends BaseController {
       userAIToolStatus,
       _,
       showEmpNotification,
-      isDailyGiftPendingToClaim,
+      ifStreakGiftAvailable,
     ] = await Promise.all([
       ChecklistDBService.getQuizTopics(userExists),
       UserService.userAIToolUsageStatus(userExists),
@@ -91,7 +91,8 @@ class UserController extends BaseController {
       topicDetails,
       userAIToolStatus: userAIToolStatus || {},
       showEmpNotification,
-      isDailyGiftPendingToClaim,
+      isDailyGiftPendingToClaim: ifStreakGiftAvailable?.available,
+      isDailyGiftAvailableIn: ifStreakGiftAvailable?.streakRewardAvailableIn,
     };
 
     return this.Ok(ctx, data, true);
