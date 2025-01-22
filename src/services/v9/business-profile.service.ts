@@ -869,7 +869,7 @@ class BusinessProfileService {
                 },
               },
             ]);
-            if (milestoneDetails[0]?.order >= 3 && !hasGoalInCompletedActions) {
+            if (milestoneDetails[0]?.order > 3 && !hasGoalInCompletedActions) {
               return false;
             }
           }
