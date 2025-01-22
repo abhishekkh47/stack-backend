@@ -139,12 +139,12 @@ class CommunityController extends BaseController {
       const uniqueNamesWithCityPrefix = [];
       const filteredData = [];
       placeApiResponse.data.predictions.forEach((item) => {
-        const schoolName = `${item.terms[0].value} (${
-          item.terms[item.terms.length - 2].value
+        const schoolName = `${item.terms[0]?.value} (${
+          item.terms[item.terms.length - 2]?.value
         })`.toLowerCase();
         let ifExists = -1;
         const schoolNameWithCity = `${
-          item.terms[item.terms.length - 3].value
+          item.terms[item.terms.length - 3]?.value
         } ${item.terms[0].value}`?.toLowerCase();
         uniqueNamesWithCityPrefix?.some((school) => {
           ifExists = schoolNameWithCity?.indexOf(school);
@@ -152,7 +152,7 @@ class CommunityController extends BaseController {
         });
         if (
           !uniqueNames.has(schoolName) &&
-          !DEPRECATED_COMMUNITIES.includes(item.terms[0].value) &&
+          !DEPRECATED_COMMUNITIES.includes(item?.terms[0]?.value) &&
           (ifExists == -1 || !uniqueNamesWithCityPrefix.length)
         ) {
           uniqueNamesWithCityPrefix.push(schoolNameWithCity);
