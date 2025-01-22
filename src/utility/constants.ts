@@ -1383,3 +1383,11 @@ export const REWARD_TYPE = {
   EMPLOYEE: 4,
   GIFT: 5,
 };
+export const GIFTSTATUS = {
+  NOT_AVAILABLE: 0,
+  READY_TO_CLAIM: 1,
+  AVAILABLE_SOON: 2,
+  CLAIMED: 3,
+};
+
+export const SEC_IN_DAY = 24 * 60 * 60;
