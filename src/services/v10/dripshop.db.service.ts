@@ -71,7 +71,10 @@ class DripshopDBService {
         userId: userIfExists._id,
       });
       if (!rewardStatus) return true;
-      if (rewardStatus?.rewardsClaimedAt + SEC_IN_DAY < moment().unix())
+      if (
+        rewardStatus?.rewardsClaimedAt + SEC_IN_DAY < moment().unix() &&
+        rewardStatus?.rewardsClaimedAt > moment().unix() - SEC_IN_DAY * 2
+      )
         return true;
       else return false;
     } catch (error) {
