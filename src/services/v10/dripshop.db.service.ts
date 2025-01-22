@@ -6,7 +6,8 @@ import {
   StreakRewardStatusTable,
   EmployeeTable,
 } from "@app/model";
-import { EMP_STATUS, REWARD_TYPE } from "@app/utility";
+import { EMP_STATUS, REWARD_TYPE, GIFTSTATUS, SEC_IN_DAY } from "@app/utility";
+import moment from "moment";
 class DripshopDBService {
   /**
    * @description This is to update the DB if the user has visited employee page atleast once on current day
@@ -15,7 +16,8 @@ class DripshopDBService {
   public async getStreakRewardList(userIfExists: any) {
     try {
       let currentActiveDay = 0,
-        nextRewardAvailableAt = null;
+        nextRewardAvailableAt = null,
+        readyToClaim = false;
       const [rewards, rewardStatus] = await Promise.all([
         DripshopItemTable.find(
           { type: 1 },
@@ -26,15 +28,31 @@ class DripshopDBService {
         StreakRewardStatusTable.findOne({ userId: userIfExists._id }),
       ]);
       rewards.forEach((reward) => {
-        if (reward?.day <= rewardStatus?.rewardDayCaimed) {
-          reward["claimed"] = true;
+        if (reward?.day <= rewardStatus?.rewardDayClaimed) {
+          reward["status"] = GIFTSTATUS.CLAIMED;
         } else {
+          const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
           currentActiveDay =
             currentActiveDay == 0 ? reward.day : currentActiveDay;
           nextRewardAvailableAt = nextRewardAvailableAt
             ? nextRewardAvailableAt
             : rewardStatus?.rewardsClaimedAt;
-          reward["claimed"] = false;
+          if (reward.day == 1 && !rewardClaimedAt) {
+            reward["status"] = GIFTSTATUS.READY_TO_CLAIM;
+          } else if (
+            reward.day == rewardStatus?.rewardDayClaimed + 1 &&
+            !readyToClaim
+          ) {
+            if (rewardClaimedAt > moment().unix() - SEC_IN_DAY) {
+              reward["status"] = GIFTSTATUS.AVAILABLE_SOON;
+              reward["availableIn"] = (rewardClaimedAt + SEC_IN_DAY) * 1000;
+            } else {
+              reward["status"] = GIFTSTATUS.READY_TO_CLAIM;
+            }
+            readyToClaim = true;
+          } else {
+            reward["status"] = GIFTSTATUS.NOT_AVAILABLE;
+          }
         }
       });
       return { rewards, currentActiveDay, nextRewardAvailableAt };
@@ -49,11 +67,13 @@ class DripshopDBService {
    */
   public async ifStreakRewardAvailable(userIfExists: any) {
     try {
-      const rewardStatus = await Promise.all([
-        StreakRewardStatusTable.findOne({ userId: userIfExists._id }),
-      ]);
+      const rewardStatus = await StreakRewardStatusTable.findOne({
+        userId: userIfExists._id,
+      });
       if (!rewardStatus) return true;
-      return;
+      if (rewardStatus?.rewardsClaimedAt < moment().unix() * SEC_IN_DAY)
+        return true;
+      else return false;
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
@@ -66,7 +86,10 @@ class DripshopDBService {
   public async claimStreakReward(userIfExists: any, data: any) {
     try {
       const { TOKEN, CASH, SCORE, EMPLOYEE } = REWARD_TYPE;
-      const rewardDetails = await DripshopItemTable.findOne({ type: data.day });
+      const rewardDetails = await DripshopItemTable.findOne({
+        type: 1,
+        day: data.day,
+      });
       if (!rewardDetails) {
         throw new Error("Reward not found");
       }
@@ -140,8 +163,8 @@ class DripshopDBService {
         {
           $set: {
             userId: userIfExists._id,
-            rewardDayCaimed: data?.day,
-            rewardsClaimedAt: new Date(),
+            rewardDayClaimed: data?.day,
+            rewardsClaimedAt: moment().unix(),
           },
         },
         { upsert: true }

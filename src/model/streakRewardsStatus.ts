@@ -13,13 +13,14 @@ const schema = new mongoose.Schema<IStreakRewardStatusSchema>(
       default: null,
       ref: "users",
     },
-    rewardDayCaimed: {
+    rewardDayClaimed: {
       type: mongoose.Schema.Types.Number,
       required: true,
     },
     rewardsClaimedAt: {
-      type: mongoose.Schema.Types.Date,
+      type: mongoose.Schema.Types.Number,
       required: true,
+      default: 0,
     },
   },
   { timestamps: true }

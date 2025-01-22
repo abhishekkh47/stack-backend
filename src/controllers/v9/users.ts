@@ -17,7 +17,10 @@ import {
 } from "@app/model";
 import { ChecklistDBService } from "@app/services/v9";
 import { UserService } from "@app/services/v9";
-import { EmployeeDBService as EmployeeDBServiceV10 } from "@app/services/v10";
+import {
+  EmployeeDBService as EmployeeDBServiceV10,
+  DripshopDBService,
+} from "@app/services/v10";
 
 class UserController extends BaseController {
   /**
@@ -53,16 +56,22 @@ class UserController extends BaseController {
       });
       initialMessage = businessProfile.businessCoachInfo.initialMessage;
     }
-    const [topicDetails, userAIToolStatus, _, showEmpNotification] =
-      await Promise.all([
-        ChecklistDBService.getQuizTopics(userExists),
-        UserService.userAIToolUsageStatus(userExists),
-        UserDBService.resetCurrentDayRewards(userExists),
-        EmployeeDBServiceV10.ifEmployeeNotificationAvailable(
-          userExists,
-          businessProfile
-        ),
-      ]);
+    const [
+      topicDetails,
+      userAIToolStatus,
+      _,
+      showEmpNotification,
+      isDailyGiftPendingToClaim,
+    ] = await Promise.all([
+      ChecklistDBService.getQuizTopics(userExists),
+      UserService.userAIToolUsageStatus(userExists),
+      UserDBService.resetCurrentDayRewards(userExists),
+      EmployeeDBServiceV10.ifEmployeeNotificationAvailable(
+        userExists,
+        businessProfile
+      ),
+      DripshopDBService.ifStreakRewardAvailable(userExists),
+    ]);
     let currentLeague = leagues.find(
       (x) =>
         x.minPoint <= userExists.xpPoints && x.maxPoint >= userExists.xpPoints
@@ -82,6 +91,7 @@ class UserController extends BaseController {
       topicDetails,
       userAIToolStatus: userAIToolStatus || {},
       showEmpNotification,
+      isDailyGiftPendingToClaim,
     };
 
     return this.Ok(ctx, data, true);
