@@ -70,10 +70,24 @@ class DripshopDBService {
       const rewardStatus = await StreakRewardStatusTable.findOne({
         userId: userIfExists._id,
       });
-      if (!rewardStatus) return true;
-      if (rewardStatus?.rewardsClaimedAt + SEC_IN_DAY < moment().unix())
-        return true;
-      else return false;
+      if (!rewardStatus)
+        return {
+          streakRewardAvailableIn: null,
+          available: false,
+        };
+      const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
+      let streakRewardAvailableIn = (rewardClaimedAt + SEC_IN_DAY) * 1000;
+      if (rewardClaimedAt < moment().unix() - SEC_IN_DAY * 2) {
+        streakRewardAvailableIn = null;
+      }
+      if (
+        rewardClaimedAt + SEC_IN_DAY < moment().unix() &&
+        rewardClaimedAt > moment().unix() - SEC_IN_DAY * 2
+      ) {
+        return { streakRewardAvailableIn, available: true };
+      } else {
+        return { streakRewardAvailableIn, available: false };
+      }
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
