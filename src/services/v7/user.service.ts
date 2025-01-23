@@ -17,6 +17,7 @@ import {
   TutorialStatusTable,
   UserEmployeesTable,
   UserProjectsTable,
+  StreakRewardStatusTable,
 } from "@app/model";
 import {
   MAX_STREAK_FREEZE,
@@ -177,6 +178,7 @@ class UserService {
         TutorialStatusTable.deleteMany(otherRecordsQuery),
         UserEmployeesTable.deleteMany(otherRecordsQuery),
         UserProjectsTable.deleteMany(otherRecordsQuery),
+        StreakRewardStatusTable.deleteMany(otherRecordsQuery),
       ]);
       /**
        * Store Deleted Users in a separate document

@@ -144,6 +144,7 @@ class DripshopDBService {
       zipcode: dripShopDetails.zipCode,
       item: itemExists.name,
       selectedsize: dripShopDetails.selectedSize || "N/A",
+      subject: "Streak Reward Claimed",
     };
     const admin = await AdminTable.findOne({});
     await sendEmail(admin.email, CONSTANT.DripShopTemplateId, data);

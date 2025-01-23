@@ -5,6 +5,7 @@ import {
   UserTable,
   StreakRewardStatusTable,
   EmployeeTable,
+  DripshopTable,
 } from "@app/model";
 import {
   EMP_STATUS,
@@ -12,8 +13,11 @@ import {
   GIFTSTATUS,
   SEC_IN_DAY,
   CLAIMED_REWARD_IMAGES,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import moment from "moment";
+import { AnalyticsService, UserDBService } from "../v4";
+import { DripshopDBService as DripshopDBServiceV1 } from "@app/services/v1";
 class DripshopDBService {
   /**
    * @description This is to update the DB if the user has visited employee page atleast once on current day
@@ -92,7 +96,7 @@ class DripshopDBService {
       if (!rewardStatus)
         return {
           streakRewardAvailableIn: null,
-          available: false,
+          available: true,
         };
       const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
       let streakRewardAvailableIn = (rewardClaimedAt + SEC_IN_DAY) * 1000;
@@ -118,7 +122,7 @@ class DripshopDBService {
    */
   public async claimStreakReward(userIfExists: any, data: any) {
     try {
-      const { TOKEN, CASH, SCORE, EMPLOYEE } = REWARD_TYPE;
+      const { TOKEN, CASH, SCORE, EMPLOYEE, GIFT } = REWARD_TYPE;
       const rewardDetails = await DripshopItemTable.findOne({
         type: 1,
         day: data.day,
@@ -183,6 +187,9 @@ class DripshopDBService {
           case SCORE:
             rewardUpdate.score = reward;
             break;
+          case GIFT:
+            await this.redeemDripShop(userIfExists, rewardDetails, data);
+            break;
           default:
             throw new Error("Reward not found");
         }
@@ -206,6 +213,51 @@ class DripshopDBService {
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
+  }
+
+  /**
+   * @description This service is used claim 8th day reward and send email to admin
+   * @param userIfExists
+   * @param rewardDetails
+   * @param body
+   */
+  public async redeemDripShop(
+    userIfExists: any,
+    rewardDetails: any,
+    body: any
+  ) {
+    const createdDripshop = await DripshopTable.create({
+      firstName: body.firstName,
+      lastName: body.lastName,
+      redeemedFuels: 0,
+      userId: userIfExists._id,
+      itemId: rewardDetails._id,
+      address: body.address,
+      state: body.state,
+      city: body.city,
+      apartment: body.apartment || null,
+      zipCode: body.zipCode,
+      selectedSize: body.selectedSize || null,
+    });
+    /**
+     * Amplitude Track Dripshop Redeemed Event
+     */
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.DRIP_SHOP_REDEEMED,
+      {
+        "Item Name": rewardDetails.name,
+      },
+      {
+        user_id: userIfExists._id,
+      }
+    );
+    await DripshopDBServiceV1.sendEmailToAdmin(
+      createdDripshop,
+      userIfExists,
+      rewardDetails
+    );
+
+    return createdDripshop;
   }
 }
 
