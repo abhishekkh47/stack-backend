@@ -150,17 +150,15 @@ class DripshopDBService {
         await UserEmployeesTable.findOneAndUpdate(
           { userId: userIfExists._id, employeeId: employee[0]._id },
           {
-            update: {
-              $set: {
-                userId: userIfExists._id,
-                employeeId: employee[0]._id,
-                currentLevel: 1,
-                unlockedLevel: employee[0].level,
-                currentRatings: employee[0].ratingValues,
-                hiredAt: null,
-                status: EMP_STATUS.UNLOCKED,
-                isProEmployee: 1,
-              },
+            $set: {
+              userId: userIfExists._id,
+              employeeId: employee[0]._id,
+              currentLevel: 1,
+              unlockedLevel: employee[0].level,
+              currentRatings: employee[0].ratingValues,
+              hiredAt: null,
+              status: EMP_STATUS.UNLOCKED,
+              isProEmployee: 1,
             },
           },
           { upsert: true }
