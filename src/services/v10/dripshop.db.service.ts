@@ -18,6 +18,7 @@ import {
 import moment from "moment";
 import { AnalyticsService } from "../v4";
 import { DripshopDBService as DripshopDBServiceV1 } from "@app/services/v1";
+import { MilestoneDBService as MilestoneDBServiceV9 } from "../v9";
 class DripshopDBService {
   /**
    * @description This is to update the DB if the user has visited employee page atleast once on current day
@@ -85,7 +86,10 @@ class DripshopDBService {
         };
       const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
       let streakRewardAvailableIn = (rewardClaimedAt + SEC_IN_DAY) * 1000;
-      if (rewardClaimedAt < moment().unix() - SEC_IN_DAY * 2) {
+      if (
+        rewardClaimedAt < moment().unix() - SEC_IN_DAY * 2 ||
+        rewardStatus.rewardDayClaimed >= 8
+      ) {
         streakRewardAvailableIn = null;
       }
       if (
@@ -165,12 +169,15 @@ class DripshopDBService {
         switch (rewardType) {
           case TOKEN:
             rewardUpdate.quizCoins = reward;
+            rewardUpdate["currentDayRewards.quizCoins"] = reward;
             break;
           case CASH:
             rewardUpdate.cash = reward;
+            rewardUpdate["currentDayRewards.cash"] = reward;
             break;
           case SCORE:
-            rewardUpdate.score = reward;
+            rewardUpdate["businessScore.current"] = reward;
+            rewardUpdate["currentDayRewards.scoreProgress"] = reward;
             break;
           case GIFT:
             await this.redeemDripShop(userIfExists, rewardDetails, data);
@@ -178,10 +185,12 @@ class DripshopDBService {
           default:
             throw new Error("Reward not found");
         }
-        await UserTable.findOneAndUpdate(
-          { _id: userIfExists._id },
-          { $inc: rewardUpdate }
-        );
+        await Promise.all([
+          UserTable.findOneAndUpdate(
+            { _id: userIfExists._id },
+            { $inc: rewardUpdate }
+          ),
+        ]);
       }
       await StreakRewardStatusTable.findOneAndUpdate(
         { userId: userIfExists._id },
