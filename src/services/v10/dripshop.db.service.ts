@@ -6,7 +6,13 @@ import {
   StreakRewardStatusTable,
   EmployeeTable,
 } from "@app/model";
-import { EMP_STATUS, REWARD_TYPE, GIFTSTATUS, SEC_IN_DAY } from "@app/utility";
+import {
+  EMP_STATUS,
+  REWARD_TYPE,
+  GIFTSTATUS,
+  SEC_IN_DAY,
+  CLAIMED_REWARD_IMAGES,
+} from "@app/utility";
 import moment from "moment";
 class DripshopDBService {
   /**
@@ -30,6 +36,19 @@ class DripshopDBService {
       rewards.forEach((reward) => {
         if (reward?.day <= rewardStatus?.rewardDayClaimed) {
           reward["status"] = GIFTSTATUS.CLAIMED;
+          if (reward.rewardType == REWARD_TYPE.TOKEN) {
+            reward["image"] = CLAIMED_REWARD_IMAGES.TOKEN;
+          } else if (reward.rewardType == REWARD_TYPE.CASH) {
+            reward["image"] = CLAIMED_REWARD_IMAGES.CASH;
+          } else if (reward.rewardType == REWARD_TYPE.SCORE) {
+            if (reward.day == 3) {
+              reward["image"] = CLAIMED_REWARD_IMAGES.SCORE_5;
+            } else {
+              reward["image"] = CLAIMED_REWARD_IMAGES.SCORE_10;
+            }
+          } else if (reward.rewardType == REWARD_TYPE.EMPLOYEE) {
+            reward["image"] = CLAIMED_REWARD_IMAGES.EMPLOYEE;
+          }
         } else {
           const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
           currentActiveDay =
