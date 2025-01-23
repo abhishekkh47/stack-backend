@@ -1386,3 +1386,15 @@ export const CLAIMED_REWARD_IMAGES = {
   SCORE_10: "score_10_disabled.webp",
   EMPLOYEE: "Aria-Employee_disabled.webp",
 };
+export const PRELOAD = {
+  TRUE: true,
+  FALSE: false,
+};
+export const DEPRECATED_COMMUNITIES = [
+  "University of Washington Rowing",
+  "Stanford University Community Housing",
+  "Stanford University Hospital: Sarnquist Frank H MD",
+  "Washington University In St.Louis",
+  "University of Michigan - Program in Biology",
+  "The University of Michigan - North Campus",
+];

@@ -118,7 +118,6 @@ class BusinessProfileService {
         }
         obj[key] = { title: data.value, description: data.description };
         obj["isRetry"] = false;
-        obj["aiGeneratedSuggestions"] = null;
         obj[`completedActions.${key}`] = {
           title: data.value,
           description: data.description,
@@ -170,6 +169,7 @@ class BusinessProfileService {
           {
             $set: obj,
             $push: { businessHistory: businessHistoryObj },
+            $unset: { [`aiGeneratedSuggestions.${key}`]: 1 },
           },
           { upsert: true }
         ),

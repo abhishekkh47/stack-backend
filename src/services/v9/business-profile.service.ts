@@ -46,7 +46,8 @@ class BusinessProfileService {
     idea: string = null,
     type: string = "1",
     answerOfTheQuestion: string = null,
-    isRetry: string = IS_RETRY.FALSE
+    isRetry: string = IS_RETRY.FALSE,
+    preload: boolean = false
   ) {
     try {
       let response = null;
@@ -107,13 +108,20 @@ class BusinessProfileService {
           SuggestionScreenCopyTable.find().lean(),
           AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
-        const prompt = this.getUserPrompt(
+        const prompt = await this.getUserPrompt(
           userBusinessProfile,
           idea,
           suggestionsScreenCopy,
           goalDetails[0]?.dependency,
-          answerOfTheQuestion
+          answerOfTheQuestion,
+          preload
         );
+        /**
+         * If any dependency is not resolved, then return
+         */
+        if (!prompt) {
+          return;
+        }
         let systemInput: any = systemDataset.data;
         if (type && typeof systemInput == "object") {
           systemInput = systemInput[datasetTypes.types[type]];
@@ -809,14 +817,18 @@ class BusinessProfileService {
    * @param dependency
    * @param screenCopy
    * @param userAnswer
+   * @param preload
+   * @param key
    * @returns prompt
    */
-  getUserPrompt(
+  async getUserPrompt(
     businessProfile: any,
     idea: string,
     screenCopy: any,
     dependency: string[] = [],
-    userAnswer: string = null
+    userAnswer: string = null,
+    preload: boolean = false,
+    key: string = null
   ) {
     try {
       let prompt = ``;
@@ -829,6 +841,38 @@ class BusinessProfileService {
             businessProfile?.completedActions,
             dep
           );
+          /**
+           * if a preload is triggered for any action and any dependency is not triggered, then return
+           */
+          if (preload && key) {
+            const milestoneDetails = await MilestoneGoalsTable.aggregate([
+              { $match: { key } },
+              {
+                $lookup: {
+                  localField: "milestoneId",
+                  foreignField: "_id",
+                  from: "milestones",
+                  as: "milestone",
+                },
+              },
+              {
+                $unwind: {
+                  path: "$milestone",
+                  preserveNullAndEmptyArrays: false,
+                },
+              },
+              {
+                $project: {
+                  key: 1,
+                  milestoneId: "$milestone._id",
+                  order: "$milestone.order",
+                },
+              },
+            ]);
+            if (milestoneDetails[0]?.order > 3 && !hasGoalInCompletedActions) {
+              return false;
+            }
+          }
           if (depDetails?.name && hasGoalInCompletedActions) {
             prompt = `${prompt}\n${depDetails.name}: ${JSON.stringify(
               businessProfile.completedActions[dep]
@@ -838,6 +882,9 @@ class BusinessProfileService {
       }
       if (userAnswer) {
         prompt = `${prompt}\nCommentary : ${userAnswer}}`;
+      }
+      if (!prompt.length) {
+        prompt = `Business Description: ${idea}`;
       }
       return prompt;
     } catch (error) {
@@ -997,8 +1044,17 @@ class BusinessProfileService {
    * @param key
    * @param suggestions
    */
-  async saveAIActionResponse(userExists: any, key: string, suggestions: any) {
+  async saveAIActionResponse(
+    userExists: any,
+    key: string,
+    suggestions: any,
+    ifOptionsAvailable: boolean = false,
+    optionNumber: string = null
+  ) {
     try {
+      if (ifOptionsAvailable) {
+        key = `${key}_${optionNumber}`;
+      }
       await BusinessProfileTable.findOneAndUpdate(
         { userId: userExists._id },
         [
