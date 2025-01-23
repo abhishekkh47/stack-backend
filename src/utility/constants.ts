@@ -1396,5 +1396,5 @@ export const CLAIMED_REWARD_IMAGES = {
   CASH: "border_dollar_banknote_disabled.webp",
   SCORE_5: "score_5_disabled.webp",
   SCORE_10: "score_10_disabled.webp",
-  EMPLOYEE: "Aria-Employee_disabled.webp",
+  EMPLOYEE: "Aria_Emp_Reward_disabled.webp",
 };

@@ -28,10 +28,10 @@ import { UserDBService } from "@app/services/v6";
 import {
   BusinessProfileService as BusinessProfileServiceV9,
   UserService as UserServiceV9,
-  MilestoneDBService,
   UserService,
 } from "@app/services/v9";
 import { ChecklistDBService } from "@app/services/v9";
+import { DripshopDBService } from "@app/services/v10";
 
 class AuthController extends BaseController {
   /**
@@ -239,11 +239,13 @@ class AuthController extends BaseController {
               businessProfile,
               userAIToolStatus,
               topicDetails,
+              ifStreakGiftAvailable,
             ] = await Promise.all([
               UserDBService.getProfile(userExists._id),
               BusinessProfileServiceV9.getBusinessProfile(userExists._id),
               UserServiceV9.userAIToolUsageStatus(userExists),
               ChecklistDBService.getQuizTopics(userExists),
+              DripshopDBService.ifStreakRewardAvailable(userExists),
             ]);
             if (
               businessProfile &&
@@ -273,6 +275,9 @@ class AuthController extends BaseController {
               topicDetails,
               currentLeague,
               userAIToolStatus,
+              isDailyGiftPendingToClaim: ifStreakGiftAvailable?.available,
+              isDailyGiftAvailableIn:
+                ifStreakGiftAvailable?.streakRewardAvailableIn,
             };
 
             if (deviceToken) {
