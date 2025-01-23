@@ -16,7 +16,7 @@ import {
   ANALYTICS_EVENTS,
 } from "@app/utility";
 import moment from "moment";
-import { AnalyticsService, UserDBService } from "../v4";
+import { AnalyticsService } from "../v4";
 import { DripshopDBService as DripshopDBServiceV1 } from "@app/services/v1";
 class DripshopDBService {
   /**
@@ -39,27 +39,12 @@ class DripshopDBService {
       ]);
       rewards.forEach((reward) => {
         if (reward?.day <= rewardStatus?.rewardDayClaimed) {
-          reward["status"] = GIFTSTATUS.CLAIMED;
-          if (reward.rewardType == REWARD_TYPE.TOKEN) {
-            reward["image"] = CLAIMED_REWARD_IMAGES.TOKEN;
-          } else if (reward.rewardType == REWARD_TYPE.CASH) {
-            reward["image"] = CLAIMED_REWARD_IMAGES.CASH;
-          } else if (reward.rewardType == REWARD_TYPE.SCORE) {
-            if (reward.day == 3) {
-              reward["image"] = CLAIMED_REWARD_IMAGES.SCORE_5;
-            } else {
-              reward["image"] = CLAIMED_REWARD_IMAGES.SCORE_10;
-            }
-          } else if (reward.rewardType == REWARD_TYPE.EMPLOYEE) {
-            reward["image"] = CLAIMED_REWARD_IMAGES.EMPLOYEE;
-          }
+          this.updateClaimedReward(reward);
         } else {
           const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
-          currentActiveDay =
-            currentActiveDay == 0 ? reward.day : currentActiveDay;
-          nextRewardAvailableAt = nextRewardAvailableAt
-            ? nextRewardAvailableAt
-            : rewardStatus?.rewardsClaimedAt;
+          currentActiveDay = currentActiveDay || reward.day;
+          nextRewardAvailableAt = nextRewardAvailableAt || rewardClaimedAt;
+
           if (reward.day == 1 && !rewardClaimedAt) {
             reward["status"] = GIFTSTATUS.READY_TO_CLAIM;
           } else if (
@@ -258,6 +243,31 @@ class DripshopDBService {
     );
 
     return createdDripshop;
+  }
+
+  /**
+   * @description Update image and status for claimed rewards
+   * @param reward
+   */
+  private updateClaimedReward(reward: any) {
+    reward["status"] = GIFTSTATUS.CLAIMED;
+    switch (reward.rewardType) {
+      case REWARD_TYPE.TOKEN:
+        reward["image"] = CLAIMED_REWARD_IMAGES.TOKEN;
+        break;
+      case REWARD_TYPE.CASH:
+        reward["image"] = CLAIMED_REWARD_IMAGES.CASH;
+        break;
+      case REWARD_TYPE.SCORE:
+        reward["image"] =
+          reward.day === 3
+            ? CLAIMED_REWARD_IMAGES.SCORE_5
+            : CLAIMED_REWARD_IMAGES.SCORE_10;
+        break;
+      case REWARD_TYPE.EMPLOYEE:
+        reward["image"] = CLAIMED_REWARD_IMAGES.EMPLOYEE;
+        break;
+    }
   }
 }
 
