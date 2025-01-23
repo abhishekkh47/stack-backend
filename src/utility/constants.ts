@@ -1391,3 +1391,10 @@ export const GIFTSTATUS = {
 };
 
 export const SEC_IN_DAY = 24 * 60 * 60;
+export const CLAIMED_REWARD_IMAGES = {
+  TOKEN: "border_goldCoin_disabled.webp",
+  CASH: "border_dollar_banknote_disabled.webp",
+  SCORE_5: "score_5_disabled.webp",
+  SCORE_10: "score_10_disabled.webp",
+  EMPLOYEE: "Aria-Employee_disabled.webp",
+};

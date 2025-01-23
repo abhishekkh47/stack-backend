@@ -5,9 +5,19 @@ import {
   UserTable,
   StreakRewardStatusTable,
   EmployeeTable,
+  DripshopTable,
 } from "@app/model";
-import { EMP_STATUS, REWARD_TYPE, GIFTSTATUS, SEC_IN_DAY } from "@app/utility";
+import {
+  EMP_STATUS,
+  REWARD_TYPE,
+  GIFTSTATUS,
+  SEC_IN_DAY,
+  CLAIMED_REWARD_IMAGES,
+  ANALYTICS_EVENTS,
+} from "@app/utility";
 import moment from "moment";
+import { AnalyticsService } from "../v4";
+import { DripshopDBService as DripshopDBServiceV1 } from "@app/services/v1";
 class DripshopDBService {
   /**
    * @description This is to update the DB if the user has visited employee page atleast once on current day
@@ -29,14 +39,12 @@ class DripshopDBService {
       ]);
       rewards.forEach((reward) => {
         if (reward?.day <= rewardStatus?.rewardDayClaimed) {
-          reward["status"] = GIFTSTATUS.CLAIMED;
+          this.updateClaimedReward(reward);
         } else {
           const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
-          currentActiveDay =
-            currentActiveDay == 0 ? reward.day : currentActiveDay;
-          nextRewardAvailableAt = nextRewardAvailableAt
-            ? nextRewardAvailableAt
-            : rewardStatus?.rewardsClaimedAt;
+          currentActiveDay = currentActiveDay || reward.day;
+          nextRewardAvailableAt = nextRewardAvailableAt || rewardClaimedAt;
+
           if (reward.day == 1 && !rewardClaimedAt) {
             reward["status"] = GIFTSTATUS.READY_TO_CLAIM;
           } else if (
@@ -73,7 +81,7 @@ class DripshopDBService {
       if (!rewardStatus)
         return {
           streakRewardAvailableIn: null,
-          available: false,
+          available: true,
         };
       const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
       let streakRewardAvailableIn = (rewardClaimedAt + SEC_IN_DAY) * 1000;
@@ -99,7 +107,7 @@ class DripshopDBService {
    */
   public async claimStreakReward(userIfExists: any, data: any) {
     try {
-      const { TOKEN, CASH, SCORE, EMPLOYEE } = REWARD_TYPE;
+      const { TOKEN, CASH, SCORE, EMPLOYEE, GIFT } = REWARD_TYPE;
       const rewardDetails = await DripshopItemTable.findOne({
         type: 1,
         day: data.day,
@@ -164,6 +172,9 @@ class DripshopDBService {
           case SCORE:
             rewardUpdate.score = reward;
             break;
+          case GIFT:
+            await this.redeemDripShop(userIfExists, rewardDetails, data);
+            break;
           default:
             throw new Error("Reward not found");
         }
@@ -186,6 +197,76 @@ class DripshopDBService {
       return;
     } catch (error) {
       throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * @description This service is used claim 8th day reward and send email to admin
+   * @param userIfExists
+   * @param rewardDetails
+   * @param body
+   */
+  public async redeemDripShop(
+    userIfExists: any,
+    rewardDetails: any,
+    body: any
+  ) {
+    const createdDripshop = await DripshopTable.create({
+      firstName: body.firstName,
+      lastName: body.lastName,
+      redeemedFuels: 0,
+      userId: userIfExists._id,
+      itemId: rewardDetails._id,
+      address: body.address,
+      state: body.state,
+      city: body.city,
+      apartment: body.apartment || null,
+      zipCode: body.zipCode,
+      selectedSize: body.selectedSize || null,
+    });
+    /**
+     * Amplitude Track Dripshop Redeemed Event
+     */
+    AnalyticsService.sendEvent(
+      ANALYTICS_EVENTS.DRIP_SHOP_REDEEMED,
+      {
+        "Item Name": rewardDetails.name,
+      },
+      {
+        user_id: userIfExists._id,
+      }
+    );
+    await DripshopDBServiceV1.sendEmailToAdmin(
+      createdDripshop,
+      userIfExists,
+      rewardDetails
+    );
+
+    return createdDripshop;
+  }
+
+  /**
+   * @description Update image and status for claimed rewards
+   * @param reward
+   */
+  private updateClaimedReward(reward: any) {
+    reward["status"] = GIFTSTATUS.CLAIMED;
+    switch (reward.rewardType) {
+      case REWARD_TYPE.TOKEN:
+        reward["image"] = CLAIMED_REWARD_IMAGES.TOKEN;
+        break;
+      case REWARD_TYPE.CASH:
+        reward["image"] = CLAIMED_REWARD_IMAGES.CASH;
+        break;
+      case REWARD_TYPE.SCORE:
+        reward["image"] =
+          reward.day === 3
+            ? CLAIMED_REWARD_IMAGES.SCORE_5
+            : CLAIMED_REWARD_IMAGES.SCORE_10;
+        break;
+      case REWARD_TYPE.EMPLOYEE:
+        reward["image"] = CLAIMED_REWARD_IMAGES.EMPLOYEE;
+        break;
     }
   }
 }
