@@ -23,6 +23,7 @@ import {
   DEFAULT_DELIVERABLE_NAME,
   hasGoalKey,
   mapHasGoalKey,
+  ANALYTICS_EVENTS,
 } from "@app/utility";
 import {
   EmployeeDBService,
@@ -30,6 +31,7 @@ import {
   UserService,
 } from "@services/v9";
 import { UserDBService as UserDBServiceV6 } from "@app/services/v6";
+import { AnalyticsService } from "@app/services/v4";
 import { ObjectId } from "mongodb";
 const {
   GOALS_OF_THE_DAY,
@@ -535,10 +537,15 @@ class MilestoneDBService {
   /**
    * @description get event information
    * @param userExists
+   * @param businessProfile
    * @param data user request body
    * @returns {*}
    */
-  public async claimLevelReward(userExists: any, data: any) {
+  public async claimLevelReward(
+    userExists: any,
+    businessProfile: any,
+    data: any
+  ) {
     try {
       let businessProfileObj = {},
         userUpdateObj = {},
@@ -546,11 +553,24 @@ class MilestoneDBService {
         todayCash = 0,
         todayToken = 0,
         updatedQuizCoins = LEVEL_COMPLETE_REWARD,
-        businessScoreReward = 0;
+        businessScoreReward = 0,
+        milestoneDetails = null;
       const { isLastDayOfMilestone, stageUnlockedInfo } = data;
       if (isLastDayOfMilestone) {
-        businessProfileObj = await MilestoneDBServiceV9.moveToNextMilestone(
-          userExists
+        [businessProfileObj, milestoneDetails] = await Promise.all([
+          MilestoneDBServiceV9.moveToNextMilestone(userExists),
+          MilestoneTable.findOne({
+            _id: businessProfile?.currentMilestone?.milestoneId,
+          }),
+        ]);
+        AnalyticsService.sendEvent(
+          ANALYTICS_EVENTS.MILESTONE_COMPLETED,
+          {
+            "Milestone Name": milestoneDetails?.milestone,
+          },
+          {
+            user_id: userExists._id,
+          }
         );
       }
       if (stageUnlockedInfo) {

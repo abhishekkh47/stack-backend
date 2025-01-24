@@ -40,11 +40,18 @@ class MilestoneController extends BaseController {
   @Auth()
   public async claimLevelReward(ctx: any) {
     const { user, body } = ctx.request;
-    const userExists = await UserTable.findOne({ _id: user._id });
+    const [userExists, businessProfile] = await Promise.all([
+      UserTable.findOne({ _id: user._id }),
+      BusinessProfileTable.findOne({ userId: user._id }),
+    ]);
     if (!userExists) {
       return this.UnAuthorized(ctx, "User Not Found");
     }
-    await MilestoneDBService.claimLevelReward(userExists, body);
+    await MilestoneDBService.claimLevelReward(
+      userExists,
+      businessProfile,
+      body
+    );
     return this.Ok(ctx, { message: "success" });
   }
 }
