@@ -17,6 +17,7 @@ import {
   TutorialStatusTable,
   UserEmployeesTable,
   UserProjectsTable,
+  StreakRewardStatusTable,
   DailyChallengeTable,
 } from "@app/model";
 import {
@@ -178,6 +179,7 @@ class UserService {
         TutorialStatusTable.deleteMany(otherRecordsQuery),
         UserEmployeesTable.deleteMany(otherRecordsQuery),
         UserProjectsTable.deleteMany(otherRecordsQuery),
+        StreakRewardStatusTable.deleteMany(otherRecordsQuery),
         DailyChallengeTable.deleteMany(otherRecordsQuery),
       ]);
       /**

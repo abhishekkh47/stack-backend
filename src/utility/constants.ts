@@ -1363,6 +1363,29 @@ export const LEVEL_COMPLETE_REWARD = 50;
 export const OPENAI_MAX_TOKENS = 15000;
 export const DEFAULT_AI_ACTION_SCORE = 70;
 export const DEFAULT_DELIVERABLE_NAME = "Business Strategy";
+
+export const REWARD_TYPE = {
+  TOKEN: 1,
+  CASH: 2,
+  SCORE: 3,
+  EMPLOYEE: 4,
+  GIFT: 5,
+};
+export const GIFTSTATUS = {
+  NOT_AVAILABLE: 0,
+  READY_TO_CLAIM: 1,
+  AVAILABLE_SOON: 2,
+  CLAIMED: 3,
+};
+
+export const SEC_IN_DAY = 24 * 60 * 60;
+export const CLAIMED_REWARD_IMAGES = {
+  TOKEN: "border_goldCoin_disabled.webp",
+  CASH: "border_dollar_banknote_disabled.webp",
+  SCORE_5: "score_5_disabled.webp",
+  SCORE_10: "score_10_disabled.webp",
+  EMPLOYEE: "Aria_Emp_Reward_disabled.webp",
+};
 export const PRELOAD = {
   TRUE: true,
   FALSE: false,

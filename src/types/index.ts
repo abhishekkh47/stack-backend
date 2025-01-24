@@ -48,3 +48,4 @@ export * from "@app/types/employees";
 export * from "@app/types/userEmployees";
 export * from "@app/types/userProjects";
 export * from "@app/types/actionScoringCriteria";
+export * from "@app/types/streakRewardsStatus";

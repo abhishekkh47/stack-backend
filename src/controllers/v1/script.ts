@@ -1426,9 +1426,14 @@ class ScriptController extends BaseController {
   @InternalUserAuth()
   public async storeDripShopItems(ctx: any) {
     try {
-      const { items } = ctx.request.body;
-      if (items.length === 0) return this.BadRequest(ctx, "Product not found");
-      const createdProducts = await DripshopDBService.addItems(items);
+      const rows = await ScriptService.readSpreadSheet(
+        envData.STREAK_REWARD_SHEET_GID,
+        envData.SHEET_ID
+      );
+      if (rows.length === 0) {
+        return this.BadRequest(ctx, "Product not found");
+      }
+      const createdProducts = await DripshopDBService.addItems(rows);
       return this.Ok(ctx, { data: createdProducts, message: "Success" });
     } catch (error) {
       return this.BadRequest(ctx, error.message);

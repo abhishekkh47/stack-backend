@@ -1,6 +1,6 @@
 import { NetworkError } from "@app/middleware";
 import { AdminTable, DripshopItemTable, DripshopTable } from "@app/model";
-import { CONSTANT, sendEmail } from "@app/utility";
+import { CONSTANT, sendEmail, REWARD_TYPE } from "@app/utility";
 import { ObjectId } from "mongodb";
 
 class DripshopDBService {
@@ -84,15 +84,39 @@ class DripshopDBService {
    * @returns {*}
    */
   public async addItems(items: any[]) {
-    let allItems: any = await DripshopItemTable.find({});
-    allItems = allItems.filter((item) => {
-      return items.some((x) => x.name === item.name);
-    });
-    if (allItems.length > 0) {
-      throw new NetworkError("Same Items cannot be added", 400);
+    try {
+      const itemDetails = [];
+      let bulkWriteObj = {},
+        rewardType = 0;
+      for (let item of items) {
+        if (!item["day"]) break;
+        rewardType = REWARD_TYPE[item["rewardType"].trimEnd()];
+        const reward = item["rewardValue"].trimEnd();
+        bulkWriteObj = {
+          updateOne: {
+            filter: {
+              day: Number(item["day"].trimEnd()),
+            },
+            update: {
+              $set: {
+                day: Number(item["day"].trimEnd()),
+                name: item["name"].trimEnd(),
+                image: item["image"].trimEnd(),
+                rewardType,
+                reward: rewardType < 3 ? Number(reward) : reward,
+                type: 1,
+              },
+            },
+            upsert: true,
+          },
+        };
+        itemDetails.push(bulkWriteObj);
+      }
+      await DripshopItemTable.bulkWrite(itemDetails);
+      return true;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
     }
-    const newItem = await DripshopItemTable.insertMany(items);
-    return newItem;
   }
 
   /**
@@ -120,6 +144,7 @@ class DripshopDBService {
       zipcode: dripShopDetails.zipCode,
       item: itemExists.name,
       selectedsize: dripShopDetails.selectedSize || "N/A",
+      subject: "Streak Reward Claimed",
     };
     const admin = await AdminTable.findOne({});
     await sendEmail(admin.email, CONSTANT.DripShopTemplateId, data);
