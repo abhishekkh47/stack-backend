@@ -174,13 +174,6 @@ class BusinessProfileService {
           { upsert: true }
         ),
         data?.goalId || ifBusinessIdea
-          ? MilestoneDBService.updateTodaysRewards(
-              userIfExists,
-              { coins: 0, cash: 0 },
-              ifLastGoalOfDay
-            )
-          : Promise.resolve(),
-        data?.goalId || ifBusinessIdea
           ? UserDBServiceV4.addStreaks(userIfExists)
           : Promise.resolve(),
         ifBusinessIdea
@@ -196,10 +189,16 @@ class BusinessProfileService {
           userIfExists,
           key
         );
-        await MilestoneDBServiceV10.updateAIActionReward(
-          userIfExists,
-          summaryDetails
-        );
+        await Promise.all([
+          MilestoneDBServiceV10.updateAIActionReward(
+            userIfExists,
+            summaryDetails
+          ),
+          MilestoneDBServiceV10.updateTodaysRewardsForAIActions(
+            userIfExists,
+            summaryDetails
+          ),
+        ]);
       }
       return [
         {
