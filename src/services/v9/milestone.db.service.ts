@@ -1843,7 +1843,8 @@ class MilestoneDBService {
       const unlockedEmployees = data?.employees || [];
       updatedCash = currentCash + changeInCash;
       let todayCash = changeInCash,
-        todayToken = data.tokens;
+        todayToken = data.tokens,
+        todayRating = data?.businessScore || 0;
       let updatedBusinessScore =
         (userExists.businessScore?.current || DEFAULT_BUSINESS_SCORE) +
         data.businessScore;
@@ -1870,6 +1871,7 @@ class MilestoneDBService {
         userUpdateObj = { stage: newStageDetails._id };
         todayCash += resultSummary[1].title;
         todayToken += resultSummary[0].title;
+        todayRating += resultSummary[2].title;
       }
       userUpdateObj = {
         $set: {
@@ -1907,7 +1909,7 @@ class MilestoneDBService {
       ]);
       await this.updateTodaysRewards(
         userExists,
-        { coins: todayToken, cash: todayCash, rating: businessScoreReward },
+        { coins: todayToken, cash: todayCash, rating: todayRating },
         false,
         true
       );

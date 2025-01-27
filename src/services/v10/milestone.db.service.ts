@@ -551,7 +551,6 @@ class MilestoneDBService {
         userUpdateObj = {},
         userSetObj: any = { levelRewardClaimed: true },
         todayCash = 0,
-        todayToken = 0,
         updatedQuizCoins = LEVEL_COMPLETE_REWARD,
         businessScoreReward = 0,
         milestoneDetails = null;
@@ -589,7 +588,6 @@ class MilestoneDBService {
         };
         userSetObj = { ...userSetObj, stage: newStageDetails._id };
         todayCash += resultSummary[1].title;
-        todayToken += resultSummary[0].title;
       }
       await Promise.all([
         UserTable.findOneAndUpdate(
@@ -607,9 +605,13 @@ class MilestoneDBService {
         ),
         MilestoneDBServiceV9.updateTodaysRewards(
           userExists,
-          { coins: todayToken, cash: todayCash, rating: businessScoreReward },
+          {
+            coins: updatedQuizCoins,
+            cash: todayCash,
+            rating: businessScoreReward,
+          },
           false,
-          true
+          false
         ),
       ]);
 
@@ -982,20 +984,8 @@ class MilestoneDBService {
    */
   public async updateAIActionReward(userExists: any, resultSummary: any) {
     try {
-      const { actions } = resultSummary;
-      const averageRatingPercentage =
-        actions.reduce((acc, val) => acc + val.score, 0) / actions.length / 100;
-      const rewardDetails = MILESTONE_RESULT_COPY.resultSummary;
-      const updatedUserCash = Math.floor(
-        rewardDetails[0].title * averageRatingPercentage
-      );
-      const updatedUserTokens = Math.floor(
-        rewardDetails[1].title * averageRatingPercentage
-      );
-      const updatedUserRating = Math.floor(
-        rewardDetails[2].title * averageRatingPercentage
-      );
-
+      const { updatedUserCash, updatedUserTokens, updatedUserRating } =
+        this.updatedUserData(resultSummary);
       await UserTable.updateOne(
         { _id: userExists._id },
         {
@@ -1053,6 +1043,79 @@ class MilestoneDBService {
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }
+  }
+
+  /**
+   * @description Update rewards collected today
+   * @param userIfExists
+   * @param resultSummary contains data to be updated
+   * @returns {*}
+   */
+  public async updateTodaysRewardsForAIActions(
+    userIfExists: any,
+    resultSummary: any
+  ) {
+    try {
+      const { updatedUserCash, updatedUserTokens, updatedUserRating } =
+        this.updatedUserData(resultSummary);
+      const rewardsUpdatedOn = userIfExists?.currentDayRewards?.updatedAt;
+      const days = getDaysNum(userIfExists, rewardsUpdatedOn) || 0;
+      let updateObj = {};
+      if (days < 1) {
+        updateObj = {
+          $inc: {
+            "currentDayRewards.quizCoins": updatedUserTokens,
+            "currentDayRewards.cash": updatedUserCash,
+            "currentDayRewards.scoreProgress": updatedUserRating,
+          },
+          $set: {
+            "currentDayRewards.updatedAt": new Date(),
+          },
+        };
+      } else {
+        updateObj = {
+          $set: {
+            "currentDayRewards.quizCoins": updatedUserTokens,
+            "currentDayRewards.cash": updatedUserCash,
+            "currentDayRewards.scoreProgress": updatedUserRating,
+            "currentDayRewards.updatedAt": new Date(),
+          },
+          upsert: true,
+        };
+      }
+      await UserTable.updateOne(
+        {
+          _id: userIfExists._id,
+        },
+        updateObj,
+        { upsert: true }
+      );
+      return;
+    } catch (error) {
+      throw new NetworkError(error.message, 400);
+    }
+  }
+
+  /**
+   * @description Calculate the incremental reward of each type
+   * @param resultSummary contains data to be updated
+   * @returns {*}
+   */
+  updatedUserData(resultSummary: any) {
+    const { actions } = resultSummary;
+    const averageRatingPercentage =
+      actions.reduce((acc, val) => acc + val.score, 0) / actions.length / 100;
+    const rewardDetails = MILESTONE_RESULT_COPY.resultSummary;
+    const updatedUserCash = Math.floor(
+      rewardDetails[0].title * averageRatingPercentage
+    );
+    const updatedUserTokens = Math.floor(
+      rewardDetails[1].title * averageRatingPercentage
+    );
+    const updatedUserRating = Math.floor(
+      rewardDetails[2].title * averageRatingPercentage
+    );
+    return { updatedUserCash, updatedUserTokens, updatedUserRating };
   }
 }
 export default new MilestoneDBService();
