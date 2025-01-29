@@ -159,10 +159,17 @@ class EmployeeDBService {
         {
           $project: {
             _id: 1,
+            name: 1,
+            icon: 1,
+            price: 1,
+            userType: 1,
+            isLocked: 1,
+            image: 1,
             employeeId: "$_id",
             level,
             bio: 1,
-            ratingValues: "$employeeLevel.ratingValues",
+            workTime: 1,
+            ratings: "$employeeLevel.ratingValues",
             promotionCost: "$employeeLevel.promotionCost",
             promotionTrigger: "$employeeLevel.promotionTrigger",
             title: "$employeeLevel.title",
