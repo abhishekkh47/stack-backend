@@ -51,11 +51,18 @@ class MilestoneDBService {
   public async getUserMilestoneGoals(userExists: any, businessProfile: any) {
     try {
       let retryRequired = false;
-      const [{ response: goals, isFirstMilestone }, stageDetails] =
-        await Promise.all([
-          this.getCurrentMilestoneGoals(userExists, businessProfile),
-          UserDBServiceV6.getStageInfoUsingStageId(userExists),
-        ]);
+      const [
+        {
+          response: goals,
+          isFirstMilestone,
+          isMilestonePlayable = true,
+          defaultBackgroundImage = null,
+        },
+        stageDetails,
+      ] = await Promise.all([
+        this.getCurrentMilestoneGoals(userExists, businessProfile),
+        UserDBServiceV6.getStageInfoUsingStageId(userExists),
+      ]);
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
       const tasks = goals?.tasks;
       if (tasks && tasks[tasks?.length - 1]?.currentActionNumber == 7) {
@@ -69,6 +76,8 @@ class MilestoneDBService {
         stageName: stageDetails?.title,
         retryRequired,
         isFirstMilestone,
+        isMilestonePlayable,
+        defaultBackgroundImage,
       };
     } catch (error) {
       throw new NetworkError(
@@ -113,14 +122,27 @@ class MilestoneDBService {
         );
       }
       let currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
-      const [lastMilestoneCompleted, availableDailyChallenges, firstMilestone] =
-        await Promise.all([
-          MilestoneResultTable.findOne({ userId: userIfExists._id })
-            .sort({ createdAt: -1 })
-            .lean(),
-          DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
-          MilestoneTable.findOne({ order: 1 }),
-        ]);
+      const [
+        lastMilestoneCompleted,
+        availableDailyChallenges,
+        firstMilestone,
+        currentMilestone,
+      ] = await Promise.all([
+        MilestoneResultTable.findOne({ userId: userIfExists._id })
+          .sort({ createdAt: -1 })
+          .lean(),
+        DailyChallengeTable.findOne({ userId: userIfExists._id }).lean(),
+        MilestoneTable.findOne({ order: 1 }),
+        MilestoneTable.findOne({ _id: currentMilestoneId }),
+      ]);
+      if (currentMilestone.locked) {
+        return {
+          response: false,
+          isFirstMilestone: false,
+          isMilestonePlayable: false,
+          defaultBackgroundImage: "journey-35.webp",
+        };
+      }
       if (!currentMilestoneId) {
         initialMilestone = firstMilestone._id;
         currentIsFirstMilestone = true;
