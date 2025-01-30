@@ -135,7 +135,7 @@ class BusinessProfileService {
           obj.scores.forEach((score, idx) => {
             score.icon = scoringCriteria[idx]?.icon;
             score.explanation = scoringCriteria[idx]?.description || "";
-            score.score < 50
+            score.score <= 50
               ? weaknesses.data.push(score)
               : strengths.data.push(score);
           });
