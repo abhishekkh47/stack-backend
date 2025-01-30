@@ -140,6 +140,7 @@ class EmployeeDBService {
    */
   public async getEmployeeLevelInfo(employeeId: any, level: number = 1) {
     try {
+      const employeeStatus = EMP_STATUS.UNLOCKED;
       const employee = await EmployeeTable.aggregate([
         { $match: { _id: employeeId } },
         {
@@ -169,6 +170,7 @@ class EmployeeDBService {
             level,
             bio: 1,
             workTime: 1,
+            status: { $literal: employeeStatus },
             ratings: "$employeeLevel.ratingValues",
             promotionCost: "$employeeLevel.promotionCost",
             promotionTrigger: "$employeeLevel.promotionTrigger",
