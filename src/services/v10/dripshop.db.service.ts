@@ -84,17 +84,17 @@ class DripshopDBService {
           streakRewardAvailableIn: null,
           available: true,
         };
-      const rewardClaimedAt = rewardStatus?.rewardsClaimedAt;
-      let streakRewardAvailableIn = (rewardClaimedAt + SEC_IN_DAY) * 1000;
-      if (
-        rewardClaimedAt < moment().unix() - SEC_IN_DAY * 2 ||
-        rewardStatus.rewardDayClaimed >= 8
-      ) {
-        streakRewardAvailableIn = null;
+      const { rewardsClaimedAt: rewardClaimedAt = 0, rewardDayClaimed = 0 } =
+        rewardStatus;
+      const streakRewardAvailableIn = (rewardClaimedAt + SEC_IN_DAY) * 1000;
+      const nowUnix = moment().unix();
+      const twoDaysAgoUnix = nowUnix - SEC_IN_DAY * 2;
+      if (rewardClaimedAt < twoDaysAgoUnix || rewardDayClaimed >= 8) {
+        return { streakRewardAvailableIn: null, available: false };
       }
       if (
-        rewardClaimedAt + SEC_IN_DAY < moment().unix() &&
-        rewardClaimedAt > moment().unix() - SEC_IN_DAY * 2
+        rewardClaimedAt + SEC_IN_DAY < nowUnix &&
+        rewardClaimedAt > twoDaysAgoUnix
       ) {
         return { streakRewardAvailableIn, available: true };
       } else {
