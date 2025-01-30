@@ -1,5 +1,5 @@
 import { NetworkError } from "@app/middleware";
-import { UserEmployeesTable, UserTable } from "@app/model";
+import { EmployeeTable, UserEmployeesTable, UserTable } from "@app/model";
 import { EMP_STATUS, getDaysNum } from "@app/utility";
 import { EmployeeDBService as EmployeeDBServiceV9 } from "@app/services/v9";
 class EmployeeDBService {
@@ -128,6 +128,61 @@ class EmployeeDBService {
           { upsert: true }
         );
       }
+    } catch (error) {
+      throw new NetworkError(error.message, 404);
+    }
+  }
+
+  /**
+   * @description This is to get the specific employee details for the given level
+   * @param employeeId - employee id
+   * @param level - level of the employee
+   */
+  public async getEmployeeLevelInfo(employeeId: any, level: number = 1) {
+    try {
+      const employeeStatus = EMP_STATUS.UNLOCKED;
+      const employee = await EmployeeTable.aggregate([
+        { $match: { _id: employeeId } },
+        {
+          $lookup: {
+            from: "employee_levels",
+            foreignField: "employeeId",
+            localField: "_id",
+            as: "employeeLevel",
+          },
+        },
+        {
+          $unwind: {
+            path: "$employeeLevel",
+            preserveNullAndEmptyArrays: false,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            icon: 1,
+            price: 1,
+            userType: 1,
+            isLocked: 1,
+            image: 1,
+            employeeId: "$_id",
+            level,
+            bio: 1,
+            workTime: 1,
+            status: { $literal: employeeStatus },
+            ratings: "$employeeLevel.ratingValues",
+            promotionCost: "$employeeLevel.promotionCost",
+            promotionTrigger: "$employeeLevel.promotionTrigger",
+            title: "$employeeLevel.title",
+            unlockTrigger: "$employeeLevel.unlockTrigger",
+            unlockTriggerId: "$employeeLevel.unlockTriggerId",
+            unlockTriggerType: "$employeeLevel.unlockTriggerType",
+          },
+        },
+      ]).exec();
+
+      return employee[0];
     } catch (error) {
       throw new NetworkError(error.message, 404);
     }

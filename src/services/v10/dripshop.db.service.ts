@@ -18,7 +18,7 @@ import {
 import moment from "moment";
 import { AnalyticsService } from "../v4";
 import { DripshopDBService as DripshopDBServiceV1 } from "@app/services/v1";
-import { MilestoneDBService as MilestoneDBServiceV9 } from "../v9";
+import { EmployeeDBService } from "@app/services/v10";
 class DripshopDBService {
   /**
    * @description This is to update the DB if the user has visited employee page atleast once on current day
@@ -29,7 +29,7 @@ class DripshopDBService {
       let currentActiveDay = 0,
         nextRewardAvailableAt = null,
         readyToClaim = false;
-      const [rewards, rewardStatus] = await Promise.all([
+      const [rewards, rewardStatus, rewardEmployee] = await Promise.all([
         DripshopItemTable.find(
           { type: 1 },
           { _id: 1, day: 1, name: 1, image: 1, reward: 1, rewardType: 1 }
@@ -37,7 +37,11 @@ class DripshopDBService {
           .sort({ day: 1 })
           .lean(),
         StreakRewardStatusTable.findOne({ userId: userIfExists._id }),
+        EmployeeTable.findOne({ name: "Aria" }).lean(),
       ]);
+      const rewardDetails = await EmployeeDBService.getEmployeeLevelInfo(
+        rewardEmployee._id
+      );
       rewards.forEach((reward) => {
         if (reward?.day <= rewardStatus?.rewardDayClaimed) {
           this.updateClaimedReward(reward);
@@ -62,6 +66,9 @@ class DripshopDBService {
           } else {
             reward["status"] = GIFTSTATUS.NOT_AVAILABLE;
           }
+        }
+        if (reward.rewardType == REWARD_TYPE.EMPLOYEE && rewardDetails) {
+          reward["rewardDetails"] = rewardDetails;
         }
       });
       return { rewards, currentActiveDay, nextRewardAvailableAt };
