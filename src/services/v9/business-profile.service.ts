@@ -956,7 +956,7 @@ class BusinessProfileService {
           idea: idea,
           title: businessIdeaCopy.actionName,
           iconImage: action?.iconImage || "sparkles.webp",
-          iconBackgroundColor: action.iconBackgroundColor,
+          iconBackgroundColor: action?.iconBackgroundColor || "#FFFFFF29",
           inputTemplate: {
             ...action.inputTemplate,
             suggestionScreenInfo: businessIdeaCopy,
