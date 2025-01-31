@@ -94,22 +94,28 @@ class EmployeeDBService {
       const empId = new ObjectId(employeeId);
       let employeeDetails = {},
         promotionAvailable = false;
-      const [employeeLevels, userEmployees, userProject] = await Promise.all([
-        EmployeeLevelsTable.find({ employeeId: empId }).lean(),
-        UserEmployeesTable.findOne({
-          userId: userIfExists._id,
-          employeeId: empId,
-        }).lean(),
-        UserProjectsTable.findOne({ userId: userIfExists._id }),
-      ]);
+      const [employeeLevels, userEmployees, hiredEmployees] = await Promise.all(
+        [
+          EmployeeLevelsTable.find({ employeeId: empId }).lean(),
+          UserEmployeesTable.findOne({
+            userId: userIfExists._id,
+            employeeId: empId,
+          }).lean(),
+          this.listHiredEmployees(userIfExists),
+        ]
+      );
+      const hiredEmployeesMap = new Map(
+        hiredEmployees.map((hired) => [hired?.employeeId?.toString(), hired])
+      );
       let endTime = null,
         currentStatus = EMP_STATUS.LOCKED;
       if (userEmployees) {
-        currentStatus = userProject?.status || userEmployees?.status;
+        const hiredEmp = hiredEmployeesMap.get(employeeId.toString());
+        currentStatus = hiredEmp ? hiredEmp.status : userEmployees?.status;
         const projectInProgressOrCompleted =
           currentStatus == EMP_STATUS.WORKING ||
           currentStatus == EMP_STATUS.COMPLETED;
-        endTime = projectInProgressOrCompleted ? userProject?.endAt : null;
+        endTime = projectInProgressOrCompleted ? hiredEmp?.endAt : null;
         employeeDetails = employeeLevels.find(
           (emp) =>
             emp.level == userEmployees.currentLevel &&
