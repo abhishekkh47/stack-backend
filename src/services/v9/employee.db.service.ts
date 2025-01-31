@@ -94,14 +94,28 @@ class EmployeeDBService {
       const empId = new ObjectId(employeeId);
       let employeeDetails = {},
         promotionAvailable = false;
-      const [employeeLevels, userEmployees] = await Promise.all([
-        EmployeeLevelsTable.find({ employeeId: empId }).lean(),
-        UserEmployeesTable.findOne({
-          userId: userIfExists._id,
-          employeeId: empId,
-        }).lean(),
-      ]);
+      const [employeeLevels, userEmployees, hiredEmployees] = await Promise.all(
+        [
+          EmployeeLevelsTable.find({ employeeId: empId }).lean(),
+          UserEmployeesTable.findOne({
+            userId: userIfExists._id,
+            employeeId: empId,
+          }).lean(),
+          this.listHiredEmployees(userIfExists),
+        ]
+      );
+      const hiredEmployeesMap = new Map(
+        hiredEmployees.map((hired) => [hired?.employeeId?.toString(), hired])
+      );
+      let endTime = null,
+        currentStatus = EMP_STATUS.LOCKED;
       if (userEmployees) {
+        const hiredEmp = hiredEmployeesMap.get(employeeId.toString());
+        currentStatus = hiredEmp ? hiredEmp.status : userEmployees?.status;
+        const projectInProgressOrCompleted =
+          currentStatus == EMP_STATUS.WORKING ||
+          currentStatus == EMP_STATUS.COMPLETED;
+        endTime = projectInProgressOrCompleted ? hiredEmp?.endTime : null;
         employeeDetails = employeeLevels.find(
           (emp) =>
             emp.level == userEmployees.currentLevel &&
@@ -116,6 +130,7 @@ class EmployeeDBService {
             emp.level == 1 && emp.employeeId.toString() == empId.toString()
         );
       }
+      employeeDetails = { ...employeeDetails, endTime, status: currentStatus };
       return employeeDetails;
     } catch (error) {
       throw new NetworkError(
@@ -488,7 +503,7 @@ class EmployeeDBService {
       const rewards = resultCopyInfo?.resultSummary;
       if (rewards) {
         updatedObj = {
-          cash: rewards[1].title,
+          cash: rewards[1].title * 1000,
           "businessScore.current": rewards[0].title,
           "businessScore.operationsScore": rewards[0].title,
           "businessScore.growthScore": rewards[0].title,
