@@ -115,7 +115,7 @@ class EmployeeDBService {
         const projectInProgressOrCompleted =
           currentStatus == EMP_STATUS.WORKING ||
           currentStatus == EMP_STATUS.COMPLETED;
-        endTime = projectInProgressOrCompleted ? hiredEmp?.endAt : null;
+        endTime = projectInProgressOrCompleted ? hiredEmp?.endTime : null;
         employeeDetails = employeeLevels.find(
           (emp) =>
             emp.level == userEmployees.currentLevel &&
