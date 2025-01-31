@@ -503,7 +503,7 @@ class EmployeeDBService {
       const rewards = resultCopyInfo?.resultSummary;
       if (rewards) {
         updatedObj = {
-          cash: rewards[1].title,
+          cash: rewards[1].title * 1000,
           "businessScore.current": rewards[0].title,
           "businessScore.operationsScore": rewards[0].title,
           "businessScore.growthScore": rewards[0].title,
