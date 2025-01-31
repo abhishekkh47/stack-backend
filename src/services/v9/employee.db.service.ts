@@ -94,14 +94,21 @@ class EmployeeDBService {
       const empId = new ObjectId(employeeId);
       let employeeDetails = {},
         promotionAvailable = false;
-      const [employeeLevels, userEmployees] = await Promise.all([
+      const [employeeLevels, userEmployees, userProject] = await Promise.all([
         EmployeeLevelsTable.find({ employeeId: empId }).lean(),
         UserEmployeesTable.findOne({
           userId: userIfExists._id,
           employeeId: empId,
         }).lean(),
+        UserProjectsTable.findOne({ userId: userIfExists._id }),
       ]);
+      let endTime = null;
       if (userEmployees) {
+        const currentStatus = userProject?.status;
+        const projectInProgressOrCompleted =
+          currentStatus == EMP_STATUS.WORKING ||
+          currentStatus == EMP_STATUS.COMPLETED;
+        endTime = projectInProgressOrCompleted ? userProject?.endAt : null;
         employeeDetails = employeeLevels.find(
           (emp) =>
             emp.level == userEmployees.currentLevel &&
@@ -116,6 +123,7 @@ class EmployeeDBService {
             emp.level == 1 && emp.employeeId.toString() == empId.toString()
         );
       }
+      employeeDetails = { ...employeeDetails, endTime };
       return employeeDetails;
     } catch (error) {
       throw new NetworkError(
