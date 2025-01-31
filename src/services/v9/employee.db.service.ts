@@ -102,9 +102,10 @@ class EmployeeDBService {
         }).lean(),
         UserProjectsTable.findOne({ userId: userIfExists._id }),
       ]);
-      let endTime = null;
+      let endTime = null,
+        currentStatus = EMP_STATUS.LOCKED;
       if (userEmployees) {
-        const currentStatus = userProject?.status;
+        currentStatus = userProject?.status || userEmployees?.status;
         const projectInProgressOrCompleted =
           currentStatus == EMP_STATUS.WORKING ||
           currentStatus == EMP_STATUS.COMPLETED;
@@ -123,7 +124,7 @@ class EmployeeDBService {
             emp.level == 1 && emp.employeeId.toString() == empId.toString()
         );
       }
-      employeeDetails = { ...employeeDetails, endTime };
+      employeeDetails = { ...employeeDetails, endTime, status: currentStatus };
       return employeeDetails;
     } catch (error) {
       throw new NetworkError(
