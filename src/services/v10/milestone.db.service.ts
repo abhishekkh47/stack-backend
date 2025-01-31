@@ -135,7 +135,7 @@ class MilestoneDBService {
         MilestoneTable.findOne({ order: 1 }),
         MilestoneTable.findOne({ _id: currentMilestoneId }),
       ]);
-      if (currentMilestone.locked) {
+      if (currentMilestoneId && currentMilestone.locked) {
         return {
           response: false,
           isFirstMilestone: false,
