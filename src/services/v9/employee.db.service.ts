@@ -14,6 +14,7 @@ import {
   EMP_START_PROJECT_COST,
   HOUR_TO_MS,
 } from "@app/utility";
+import { MilestoneDBService } from "@services/v9";
 class EmployeeDBService {
   /**
    * @description get all employees
@@ -501,13 +502,15 @@ class EmployeeDBService {
       let updatedObj = {};
       const { employeeId, resultCopyInfo } = data;
       const rewards = resultCopyInfo?.resultSummary;
+      const ratingReward = rewards[0].title;
+      const cashReward = rewards[1].title * 1000;
       if (rewards) {
         updatedObj = {
-          cash: rewards[1].title * 1000,
-          "businessScore.current": rewards[0].title,
-          "businessScore.operationsScore": rewards[0].title,
-          "businessScore.growthScore": rewards[0].title,
-          "businessScore.productScore": rewards[0].title,
+          cash: cashReward,
+          "businessScore.current": ratingReward,
+          "businessScore.operationsScore": ratingReward,
+          "businessScore.growthScore": ratingReward,
+          "businessScore.productScore": ratingReward,
         };
       }
       await Promise.all([
@@ -524,10 +527,18 @@ class EmployeeDBService {
             $inc: updatedObj,
           }
         ),
+        MilestoneDBService.updateTodaysRewards(userIfExists, {
+          coins: 0,
+          cash: cashReward,
+          rating: ratingReward,
+        }),
       ]);
       return true;
     } catch (error) {
-      throw new NetworkError("Error occurred starting the project", 400);
+      throw new NetworkError(
+        "Error occurred while completing the project",
+        400
+      );
     }
   }
 
