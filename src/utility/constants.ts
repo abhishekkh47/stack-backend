@@ -1219,7 +1219,7 @@ export const MILESTONE_STAGE_REWARDS = {
   "PMF STAGE": { token: 300, order: 5 },
 };
 
-export const INITIAL_CASH = 50;
+export const INITIAL_CASH = 50000;
 
 export const STAGE_COMPLETE = {
   "IDEA STAGE": {
@@ -1341,7 +1341,7 @@ export const TRIGGER_TYPE = {
   STAGE: 2,
 };
 
-export const EMP_START_PROJECT_COST = -5;
+export const EMP_START_PROJECT_COST = -5000;
 export const DEFAULT_BUSINESS_NAME = "Jetson";
 export const HOUR_TO_MS = 60 * 60 * 1000;
 export const PURCHASE_TYPE = {
