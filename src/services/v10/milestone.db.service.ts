@@ -59,9 +59,11 @@ class MilestoneDBService {
           defaultBackgroundImage = null,
         },
         stageDetails,
+        milestoneNumber = 0,
       ] = await Promise.all([
         this.getCurrentMilestoneGoals(userExists, businessProfile),
         UserDBServiceV6.getStageInfoUsingStageId(userExists),
+        this.getMilestoneOrder(businessProfile?.currentMilestone?.milestoneId),
       ]);
       const currentDayGoals = MilestoneDBServiceV9.getGoalOfTheDay(userExists);
       const tasks = goals?.tasks;
@@ -78,6 +80,7 @@ class MilestoneDBService {
         isFirstMilestone,
         isMilestonePlayable,
         defaultBackgroundImage,
+        milestoneNumber,
       };
     } catch (error) {
       throw new NetworkError(
@@ -1138,6 +1141,20 @@ class MilestoneDBService {
       rewardDetails[2].title * averageRatingPercentage
     );
     return { updatedUserCash, updatedUserTokens, updatedUserRating };
+  }
+
+  /**
+   * @description Get the order of current milestone
+   * @param milestoneId
+   * @returns {*}
+   */
+  public async getMilestoneOrder(milestoneId: any) {
+    try {
+      const milestone = await MilestoneTable.findOne({ _id: milestoneId });
+      return milestone?.order;
+    } catch (error) {
+      throw new NetworkError((error as Error).message, 400);
+    }
   }
 }
 export default new MilestoneDBService();
