@@ -857,8 +857,7 @@ class MilestoneDBService {
       ]);
       if (
         goalsLength &&
-        (getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1 ||
-          override) &&
+        override &&
         currentMilestoneId?.toString() ==
           availableDailyChallenges?.dailyGoalStatus[
             goalsLength - 1
@@ -927,6 +926,8 @@ class MilestoneDBService {
             response.tasks.shift();
           }
         }
+        console.log("in handle avaialbel challenges");
+        console.log(response);
         return response;
       }
       return null;
