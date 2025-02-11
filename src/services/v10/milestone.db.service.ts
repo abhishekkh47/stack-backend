@@ -173,7 +173,6 @@ class MilestoneDBService {
         MilestoneTable.find(),
         StageTable.find(),
       ]);
-      // null
       const tasks = existingResponseWithPendingActions?.tasks;
       if (existingResponse) {
         response = existingResponse;
@@ -238,8 +237,6 @@ class MilestoneDBService {
           this.getLevelsInCurrentStage(userIfExists),
         ]
       );
-      console.log("response");
-      console.log(response);
       let currentGoal = {};
       if (
         response?.tasks[0]?.data.length > 0 &&
@@ -248,9 +245,6 @@ class MilestoneDBService {
         currentGoal = response?.tasks[0]?.data[0];
         currentDay = response?.tasks[0]?.data[0]?.day;
         currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
-        console.log("current goal");
-        console.log(currentDay);
-        console.log(currentGoal);
         const depActionDetails = await this.getDependencyActions(
           businessProfile,
           response
@@ -332,8 +326,6 @@ class MilestoneDBService {
         response,
         currentGoal
       );
-      console.log("populate tasks");
-      console.log(response);
       const currentMilestoneDetails = milestoneData.find(
         (obj) =>
           obj._id.toString() ==
