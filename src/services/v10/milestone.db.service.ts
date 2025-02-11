@@ -196,8 +196,7 @@ class MilestoneDBService {
           userIfExists
         );
       } else if (
-        getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) >= 1 ||
-        currentMilestoneId?.toString() !=
+       currentMilestoneId?.toString() !=
           lastMilestoneCompleted?.milestoneId?.toString()
       ) {
         response = await MilestoneDBServiceV9.getNextDayMilestoneGoals(
@@ -214,8 +213,7 @@ class MilestoneDBService {
       if (
         (isCurrentDaysGoalsAvailable || !response?.tasks?.length) &&
         isAdvanceNextDay &&
-        !response.isMilestoneHit &&
-        getDaysNum(userIfExists, availableDailyChallenges["updatedAt"]) < 1
+        !response.isMilestoneHit
       ) {
         response = await MilestoneDBServiceV9.getNextDayMilestoneGoals(
           userIfExists,
@@ -331,7 +329,6 @@ class MilestoneDBService {
         response,
         currentGoal
       );
-
       const currentMilestoneDetails = milestoneData.find(
         (obj) =>
           obj._id.toString() ==
