@@ -926,8 +926,6 @@ class MilestoneDBService {
             response.tasks.shift();
           }
         }
-        console.log("in handle avaialbel challenges");
-        console.log(response);
         return response;
       }
       return null;
