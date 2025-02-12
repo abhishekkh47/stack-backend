@@ -10,6 +10,9 @@ class EmployeeDBService {
    */
   public async getEmployeeList(userIfExists: any, businessProfile: any) {
     try {
+      /**
+       * get all employees list, the employeed unlocked by the users and also the employeed hired by the user
+       */
       let [employees, userEmployees, hiredEmployees] = await Promise.all([
         EmployeeDBServiceV9.getAllEmployees(),
         UserEmployeesTable.find({ userId: userIfExists._id }),
@@ -34,6 +37,10 @@ class EmployeeDBService {
         hiredEmployees.map((hired) => [hired?.employeeId?.toString(), hired])
       );
 
+      /**
+       * Add other required information for each of the employee
+       * like locked status, hired status and project status
+       */
       const updatedEmployees = employees.map((emp) => {
         const empIdStr = emp._id.toString();
         const userEmp = userEmployeesMap.get(empIdStr);
@@ -91,6 +98,10 @@ class EmployeeDBService {
             { upsert: true }
           ),
         ]);
+        /**
+         * Show the notification dot if there are unlcoked employees available
+         * but they are not working no any project
+         */
         employees?.forEach((emp) => {
           if (
             emp?.status !== EMP_STATUS.WORKING &&

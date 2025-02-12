@@ -678,6 +678,7 @@ class MilestoneDBService {
     try {
       const isMilestoneHit = existingResponseWithPendingActions?.isMilestoneHit;
       const { milestoneId } = businessProfile.currentMilestone;
+      // get number of days/levels in current milestone
       const daysInCurrentMilestone = (
         await MilestoneGoalsTable.find({
           milestoneId,
@@ -685,14 +686,18 @@ class MilestoneDBService {
           .sort({ day: -1 })
           .lean()
       )[0].day;
+      // get the day number of last completed AI Action
       let prevDayNum =
         lastMilestoneCompleted.milestoneId.toString() === milestoneId.toString()
           ? lastMilestoneCompleted.day
           : 0;
+      // if all days are completed in current milestone, return 
       if (prevDayNum + 1 > daysInCurrentMilestone && isMilestoneHit) {
         return existingResponseWithPendingActions;
       }
+      // get the next day number for the current milestone
       const dayToFetch = Math.min(prevDayNum + 1, daysInCurrentMilestone);
+      // get ai actions for the current day of current milestone
       const currentMilestoneGoals = await MilestoneGoalsTable.find({
         milestoneId,
         day: dayToFetch,
@@ -706,6 +711,11 @@ class MilestoneDBService {
           goal,
         ]) ?? []
       );
+      /**
+       * If existing actions are available, then 
+       * Format the existing AI Actions using the handleAvailableDailyChallenges function
+       * And return the updated response
+       */
       if (availableChallengesMap.has(currentMilestoneGoals[0]?.key)) {
         return await this.handleAvailableDailyChallenges(
           userIfExists,
@@ -716,6 +726,7 @@ class MilestoneDBService {
         );
       }
 
+      // get the new milestone ai actions and related info from suggestionScreenInfo function
       const goalsData = await this.suggestionScreenInfo(currentMilestoneGoals);
       const updatedGoals = this.setLockedGoals(goalsData, businessProfile);
       await DailyChallengeTable.updateOne(
@@ -730,6 +741,7 @@ class MilestoneDBService {
       const availableDailyChallenges = await DailyChallengeTable.findOne({
         userId: userIfExists._id,
       }).lean();
+      // format and return updated response for the new ai actions
       return await this.handleAvailableDailyChallenges(
         userIfExists,
         businessProfile,
@@ -855,6 +867,10 @@ class MilestoneDBService {
         ),
         SuggestionScreenCopyTable.find({}).lean(),
       ]);
+      /**
+       * Only get response when override=true
+       * This is done so that the user stays where they were on the next day also if they don't claim the level reward
+       */
       if (
         goalsLength &&
         override &&
@@ -863,10 +879,17 @@ class MilestoneDBService {
             goalsLength - 1
           ].milestoneId.toString()
       ) {
+        /**
+         * We have multiple AI Actions, where many of them are dependent on other AI actions
+         * We check if the dependency for each of the current AI Actions are completed or not
+         * And mark them locked until the dependent AI Actions are completed
+         */
         const updatedGoals = this.setLockedGoals(
           availableDailyChallenges.dailyGoalStatus,
           businessProfile
         );
+
+        // create a placeholder response object
         let response = {
           isMilestoneHit: false,
           tasks: [
@@ -879,6 +902,9 @@ class MilestoneDBService {
           ],
         };
 
+        /**
+         * add the icon, color and template for each of the current AI Action available
+         */
         updatedGoals.forEach((goal) => {
           const copyData = suggestionScreenCopy.find(
             (obj) => obj.key == goal.key
@@ -889,6 +915,10 @@ class MilestoneDBService {
           goal["template"] = 1;
         });
 
+        /**
+         * For the current AI Actions, we check if they have been completed already or not
+         * based on which we mark them completed
+         */
         updatedGoals.forEach((goal) => {
           if (goal.key == "ideaValidation" || goal.key == "description") {
             isIdeaValidationGoalAvailable = true;
@@ -916,6 +946,12 @@ class MilestoneDBService {
             response?.tasks[0]?.data.unshift(ideaValidationGoal[0]);
           }
         });
+
+        /**
+         * Check if all the AI Actions for current day are completed, and there are no more pending actions
+         * If not, we mark the milestone completed
+         * Also, we remove the 'Daily Quest' Object from the main response object as it is not required in the UI now
+         */
         if (!response?.tasks[0]?.data?.length) {
           isMilestoneHit = await this.checkIfMilestoneHit(
             lastMilestoneCompleted,

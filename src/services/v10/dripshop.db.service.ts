@@ -29,6 +29,8 @@ class DripshopDBService {
       let currentActiveDay = 0,
         nextRewardAvailableAt = null,
         readyToClaim = false;
+
+      // get reward list and status for each reward w.r.t. to the user
       const [rewards, rewardStatus, rewardEmployee] = await Promise.all([
         DripshopItemTable.find(
           { type: 1 },
@@ -42,6 +44,10 @@ class DripshopDBService {
       const rewardDetails = await EmployeeDBService.getEmployeeLevelInfo(
         rewardEmployee._id
       );
+      /**
+       * for each reward, update the claim status
+       * and also show the timer when the next reward will be available
+       */
       rewards.forEach((reward) => {
         if (reward?.day <= rewardStatus?.rewardDayClaimed) {
           this.updateClaimedReward(reward);
@@ -86,6 +92,11 @@ class DripshopDBService {
       const rewardStatus = await StreakRewardStatusTable.findOne({
         userId: userIfExists._id,
       });
+      /**
+       * if no streak reward is claimed yet, then return:
+       * streakRewardAvailableIn (contains countdown timer for when the next reward available)
+       * available (to show the streak reward screen)
+       */
       if (!rewardStatus)
         return {
           streakRewardAvailableIn: null,
@@ -130,6 +141,7 @@ class DripshopDBService {
       const rewardUpdate: Record<string, any> = {};
 
       if (rewardType == EMPLOYEE) {
+        // get the employee details and its level information
         let employee = await EmployeeTable.aggregate([
           { $match: { name: reward } },
           {
@@ -154,6 +166,7 @@ class DripshopDBService {
             },
           },
         ]).exec();
+        // unlock the employee for the user
         await UserEmployeesTable.findOneAndUpdate(
           { userId: userIfExists._id, employeeId: employee[0]._id },
           {
@@ -171,6 +184,7 @@ class DripshopDBService {
           { upsert: true }
         );
       } else {
+        // update the claimed rewards in the user collection
         switch (rewardType) {
           case TOKEN:
             rewardUpdate.quizCoins = reward;
@@ -197,6 +211,7 @@ class DripshopDBService {
           ),
         ]);
       }
+      // update streak reward claim status
       await StreakRewardStatusTable.findOneAndUpdate(
         { userId: userIfExists._id },
         {

@@ -396,6 +396,7 @@ class BusinessProfileService {
     userExists: any
   ) {
     try {
+      // get the required system dataset form the DB for idea generator
       const systemInputDataset = await AIToolDataSetTable.find({
         key: {
           $in: [
@@ -412,11 +413,17 @@ class BusinessProfileService {
       )?.data;
 
       const types = ["type1", "type2", "type3"];
+      /**
+       * For each type , generate the AI suggestions for idea generator
+       */
       const ideaPromises = types.map((type) =>
         this.getFormattedSuggestions(ideaGenerator[type], prompt)
       );
       const ideaResults = await Promise.all(ideaPromises);
 
+      /**
+       * Generate the problem, product and market info for each of the generated ideas
+       */
       const problemPromises = ideaResults.map((idea) =>
         this.getFormattedSuggestions(
           softwareTechnology[IDEA_GENERATOR_INFO.PROBLEM_RATING],
