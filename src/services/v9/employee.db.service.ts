@@ -220,6 +220,10 @@ class EmployeeDBService {
         throw new NetworkError("This employee do not exists", 400);
       }
 
+      /**
+       * Get each unlocked employee and its related levels
+       * and add the employe details to the userEmployees collection
+       */
       unlockedEmployees.forEach((emp) => {
         const initialLevel = employeeInitialLevel.find(
           (obj) => obj.employeeId.toString() == emp.employeeId.toString()
@@ -384,6 +388,10 @@ class EmployeeDBService {
         UserProjectsTable.find({ userId: userIfExists._id }),
         EmployeeProjectsTable.find({}),
       ]);
+      /**
+       * if the user has some hired employees and any of them working on any project
+       * then add the rewards to the employee object who is about to complete the project
+       */
       if (userProjects.length && hiredEmployees.length) {
         hiredEmployees.forEach(async (emp) => {
           const userProject = userProjects.find(

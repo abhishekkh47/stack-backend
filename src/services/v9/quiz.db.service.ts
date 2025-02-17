@@ -113,6 +113,9 @@ class QuizDBService {
         actionNum: reqParam.actionNum,
       });
     }
+    /**
+     * Calculate and update rewards to user collection
+     */
     let incrementObj: any = {
       quizCoins: pointsEarnedFromQuiz,
       cash: cashEarnedFromQuiz,
@@ -134,6 +137,10 @@ class QuizDBService {
     let usersCommunityIfExists: any = await UserCommunityTable.findOne({
       userId: userIfExists._id,
     }).populate("communityId");
+    /**
+     * If user is a part of community and if the community challenge is completed after completing the quiz
+     * update the community related challenges, rewards and other information
+     */
     if (usersCommunityIfExists) {
       const [_, isGoalAchieved] = await Promise.all([
         UserCommunityTable.findOneAndUpdate(

@@ -113,6 +113,10 @@ class MilestoneDBService {
         currentDay = 1,
         levelRewards = {},
         currentIsFirstMilestone = false;
+      /**
+       * based on if the user has completed the current level,
+       * check if we need to move to the next day
+       */
       if (
         (advanceNextDay && userIfExists.isPremiumUser) ||
         userIfExists?.levelRewardClaimed
@@ -124,6 +128,7 @@ class MilestoneDBService {
           400
         );
       }
+      // get the current milestone of user
       let currentMilestoneId = businessProfile?.currentMilestone?.milestoneId;
       const [
         lastMilestoneCompleted,
@@ -138,6 +143,11 @@ class MilestoneDBService {
         MilestoneTable.findOne({ order: 1 }),
         MilestoneTable.findOne({ _id: currentMilestoneId }),
       ]);
+
+      /**
+       * If the user has reached to the milestone which is currently locked,
+       * we return a standard response to UI to let the user know about upcoming content
+       */
       if (currentMilestoneId && currentMilestone.locked) {
         return {
           response: false,
@@ -146,6 +156,10 @@ class MilestoneDBService {
           defaultBackgroundImage: "journey-35.webp",
         };
       }
+      /**
+       * If the user have not completed any milestone or the current milestone info is not available
+       * we assign them the first milestone by default
+       */
       if (!currentMilestoneId) {
         initialMilestone = firstMilestone._id;
         currentIsFirstMilestone = true;
@@ -155,8 +169,8 @@ class MilestoneDBService {
         currentIsFirstMilestone = true;
       }
       const [
-        existingResponse,
-        existingResponseWithPendingActions,
+        existingResponse, // deprecated
+        existingResponseWithPendingActions, // response will be received when override=true
         milestoneData,
         stageData,
       ] = await Promise.all([
@@ -180,6 +194,12 @@ class MilestoneDBService {
       if (existingResponse) {
         response = existingResponse;
       } else if (tasks && tasks[0]?.data?.length > 0) {
+        /**
+         * If all the ai actions f a day/level not completed,
+         * then just to update the timestamp in the daily challenge collection,
+         * we do an empty update.
+         * This was done so that we can track the day, when the user completed the ai actions
+         */
         await DailyChallengeTable.findOneAndUpdate(
           {
             userId: userIfExists._id,
@@ -199,6 +219,10 @@ class MilestoneDBService {
         currentMilestoneId?.toString() !=
         lastMilestoneCompleted?.milestoneId?.toString()
       ) {
+        /**
+         * If the user has been moved to the new milestone,
+         * We get the next milestones content
+         */
         response = await MilestoneDBServiceV9.getNextDayMilestoneGoals(
           userIfExists,
           businessProfile,
@@ -210,6 +234,14 @@ class MilestoneDBService {
       const isCurrentDaysGoalsAvailable =
         response?.tasks[0]?.title == GOALS_OF_THE_DAY.title &&
         response?.tasks[0]?.data.length == 0;
+      /**
+       * If user is pro, who wants to move to next day (isAdvanceNextDay=true)
+       * Then we move them to next day and fetch next day challenges
+       *
+       * Note - This is currently deprecated since the users are now moved to next day
+       * when they complete and claim the level rewards. So the users do not have any option to
+       * explicitly move to next day
+       */
       if (
         (isCurrentDaysGoalsAvailable || !response?.tasks?.length) &&
         isAdvanceNextDay &&
@@ -230,6 +262,10 @@ class MilestoneDBService {
       if (currentMilestoneId?.toString() == firstMilestone?._id.toString()) {
         currentIsFirstMilestone = true;
       }
+      /**
+       * Get all the goals in the current milestone
+       * and all the level in current milestone
+       */
       const [currentMilestoneGoals, currentMilestoneLevels] = await Promise.all(
         [
           MilestoneGoalsTable.find({
@@ -241,6 +277,10 @@ class MilestoneDBService {
         ]
       );
       let currentGoal = {};
+      /**
+       * if we have ai actions available for current day,
+       * then we get the info for actions and update the response object
+       */
       if (
         response?.tasks[0]?.data.length > 0 &&
         response.tasks[0].title == GOALS_OF_THE_DAY.title
@@ -248,6 +288,9 @@ class MilestoneDBService {
         currentGoal = response?.tasks[0]?.data[0];
         currentDay = response?.tasks[0]?.data[0]?.day;
         currentMilestoneId = response?.tasks[0]?.data[0].milestoneId;
+        /**
+         * Get dependency actions if not completed and add them to the current ai actions array
+         */
         const depActionDetails = await this.getDependencyActions(
           businessProfile,
           response
@@ -269,6 +312,11 @@ class MilestoneDBService {
         isLastDayOfMilestone =
           lastMilestoneCompleted.day == currentMilestoneGoals[0].day;
       }
+
+      /**
+       * Add the reward details to the response object which need to shown on completion of all ai actions of current day
+       * Also add the flag for notifcation screen and last goal of milestone
+       */
       if (
         response?.tasks[0]?.data[0] &&
         response.tasks[0].title == GOALS_OF_THE_DAY.title
@@ -309,6 +357,9 @@ class MilestoneDBService {
         currentDay = lastMilestoneCompleted.day;
       }
 
+      /**
+       * If current day goals are not available, then check if the current milestone is completed
+       */
       if (
         (currentMilestoneId &&
           response?.tasks[0]?.title != GOALS_OF_THE_DAY.title) ||
@@ -324,6 +375,9 @@ class MilestoneDBService {
         response.isMilestoneHit = false;
       }
 
+      /**
+       * Add and format all the learning actions in the response object for current day
+       */
       response = await this.populateMilestoneTasks(
         userIfExists,
         response,
@@ -391,6 +445,9 @@ class MilestoneDBService {
           { upsert: true }
         );
       }
+      /**
+       * add required metadata to each level object required by FE
+       */
       const { levelsData, maxLevel, currentActiveLevel } = this.processLevels(
         currentMilestoneLevels,
         currentActionNumber,
@@ -577,6 +634,11 @@ class MilestoneDBService {
         businessScoreReward = 0,
         milestoneDetails = null;
       const { isLastDayOfMilestone, stageUnlockedInfo, employees = [] } = data;
+      /**
+       * If last day of current milestones,
+       * then move the user to next milestone
+       * and send an event for the completed milestone
+       */
       if (isLastDayOfMilestone) {
         [businessProfileObj, milestoneDetails] = await Promise.all([
           MilestoneDBServiceV9.moveToNextMilestone(userExists),
@@ -594,6 +656,11 @@ class MilestoneDBService {
           }
         );
       }
+      /**
+       * If the stage has also been updated,
+       * then update the rewards to the user claimed for the stage transition
+       * Also, move the user to the next stage
+       */
       if (stageUnlockedInfo) {
         const newStage = stageUnlockedInfo?.stageInfo?.name;
         const newStageDetails = await StageTable.findOne({ title: newStage });
@@ -625,6 +692,7 @@ class MilestoneDBService {
           { $set: businessProfileObj },
           { upsert: true }
         ),
+        // update the current day rewards
         MilestoneDBServiceV9.updateTodaysRewards(
           userExists,
           {
@@ -647,7 +715,7 @@ class MilestoneDBService {
   }
 
   /**
-   * @description get all ai actions for all milestones under the current stage
+   * @description add all learning actions to thr response object in correct order
    * @param userIfExists
    * @param response current response object
    * @param currentGoal current or last goal played
@@ -659,18 +727,25 @@ class MilestoneDBService {
   ) {
     try {
       const { NORMAL, SIMULATION, STORY, EVENT } = QUIZ_TYPE;
-      // order -> quiz, story, simulation
+      // order -> quiz, story, simulation, event
       const order = { [NORMAL]: 0, [STORY]: 1, [SIMULATION]: 2, [EVENT]: 3 };
+      // get the learning content for each day of current milestone where day <= currentday
       const learningContent = await MilestoneDBServiceV9.getLearningContent(
         userIfExists,
         currentGoal
       );
       const quizLevelId = learningContent?.quizLevelId || null;
       const milestoneId = learningContent?.milestoneId || null;
+      // sort the learning content in the required order to be displayed in UI
       learningContent?.all?.sort((a, b) => order[a?.type] - order[b?.type]);
+      // get the object id of all learning content in current day
       const currentDayIds = learningContent?.currentDayGoal?.map((obj) =>
         obj?.quizId?.toString()
       );
+      /**
+       * if the tasks array in main response object do not contain the 'Daily Quest' object
+       * then we add that to the tasks array to add learning content
+       */
       if (
         learningContent?.all &&
         response?.tasks[0]?.title != GOALS_OF_THE_DAY.title
@@ -681,6 +756,7 @@ class MilestoneDBService {
           key: GOALS_OF_THE_DAY.key,
         });
       }
+      // check if the learning content is already completed or not
       const quizIds = learningContent?.all?.map((obj) => obj?.quizId);
       const completedQuizzes = await QuizResult.find(
         {
@@ -689,6 +765,12 @@ class MilestoneDBService {
         },
         { quizId: 1 }
       );
+      /**
+       * Get all the learning content in a certain format
+       * we divide them in two parts:
+       * one contains simulations and event
+       * other one contains quizzes and case studies
+       */
       const { simsAndEvent, learningActions } = this.processIndividualAction(
         learningContent?.all,
         completedQuizzes,
@@ -700,6 +782,7 @@ class MilestoneDBService {
         simsAndEvent.sort((a, b) => order[a?.type] - order[b?.type]);
         response?.tasks.push(...simsAndEvent);
       }
+      // add learning content to the tasks array in the response object
       if (learningActions.length) {
         if (response?.tasks.length > 1) {
           response?.tasks.unshift(...learningActions);
@@ -736,11 +819,20 @@ class MilestoneDBService {
       const { NORMAL, SIMULATION, STORY, EVENT } = QUIZ_TYPE;
       allLearningContent?.forEach((learning) => {
         if (learning) {
+          // check if learning already completed or not
           const currentQuizId = learning?.quizId?.toString();
           const isQuizCompleted = completedQuizzes.some(
             (quiz) => quiz?.quizId?.toString() == currentQuizId
           );
+          /**
+           * If the learning is not completed, and it belongs to the current day
+           * then only we make is available to the users
+           */
           if (!isQuizCompleted && currentDayIds?.includes(currentQuizId)) {
+            /**
+             * update the response format for each type of learning content
+             * which is to be displayed in the pop-up in UI
+             */
             if (learning.type == SIMULATION || learning.type == EVENT) {
               actionDetails = {
                 actions:
@@ -815,7 +907,14 @@ class MilestoneDBService {
       const levelsData = [];
       let defaultCurrentActionInfo;
       const stageName = currentMilestoneLevels.stageName;
+      /**
+       * Each stage has multiple milestone
+       * Iterate through each milestone
+       */
       currentMilestoneLevels.milestones.forEach((milestone) => {
+        /**
+         * Each milestone contains multiple goals/actions
+         */
         milestone.milestoneGoals.forEach((level) => {
           const {
             day = 0,
@@ -823,11 +922,18 @@ class MilestoneDBService {
             levelImage = null,
             level: levelNumber,
           } = level;
+          // check if the current action comes under the current day of current milestone
           ifCurrentGoalObject =
             milestone?.milestoneId?.toString() ==
               currentMilestoneId?.toString() && day == currentDay;
           ifLevelCompleted = ifCurrentGoalObject ? false : ifLevelCompleted;
+          // increment the level for each iteration of each milestone
           ++currentLevel;
+
+          /**
+           * Add level rewards based on the level and the user type
+           * rewards are different for pro and non-pro users
+           */
           defaultCurrentActionInfo = {
             title: `Level ${currentLevel} Complete: Claim Your Rewards!`,
             rewards: isPremiumUser
@@ -837,9 +943,16 @@ class MilestoneDBService {
             isLastDayOfMilestone,
             key: "reward",
           };
+          /**
+           * For the first level, the rewards are same for all users
+           */
           if (currentLevel == REWARD_PENDING && currentIsFirstMilestone) {
             defaultCurrentActionInfo.rewards = LEVEL_REWARD.LEVEL_ONE;
           }
+          /**
+           * update the action info according to the reward pending status
+           * if other actions are remaining before reward claim, assign the content accordingly
+           */
           let currentActionInfo =
             currentActionNumber == REWARD_PENDING
               ? { ...defaultCurrentActionInfo, ...levelRewards }
@@ -1044,7 +1157,14 @@ class MilestoneDBService {
       response?.tasks[0]?.data.forEach((action) => {
         currentActions.push(action?.key);
         action?.dependency?.forEach((key) => {
+          /**
+           * check if the action info available in the main business profile object
+           * since earlier, the action response was directly being saved in the main object of the document
+           */
           const hasGoalInProfile = hasGoalKey(businessProfile, key);
+          /**
+           * also check if the action response available in the 'completedActions' object
+           */
           const hasGoalInCompletedActions = mapHasGoalKey(
             businessProfile.completedActions,
             key
@@ -1086,6 +1206,11 @@ class MilestoneDBService {
       const rewardsUpdatedOn = userIfExists?.currentDayRewards?.updatedAt;
       const days = getDaysNum(userIfExists, rewardsUpdatedOn) || 0;
       let updateObj = {};
+      /**
+       * if the rewards have been updated on the same day before,
+       * then increment the current values
+       * otherwise reset the values
+       */
       if (days < 1) {
         updateObj = {
           $inc: {

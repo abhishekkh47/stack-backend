@@ -30,19 +30,31 @@ class BusinessProfileService {
     quizId: any
   ) {
     try {
+      /**
+       * If the business description is not available,
+       * we cannot generate any ai suggestions
+       */
       if (!userBusinessProfile.description) {
         return;
       }
+      /**
+       * get the quiz info to check the quiz type
+       */
       const quizDetails = await QuizLevelTable.findOne({
         "actions.quizId": quizId,
       });
+      /**
+       * if the quiz type = story, then start generating the AI Suggestions
+       */
       if (quizDetails.actions[1].type == QUIZ_TYPE.STORY) {
         const milestoneId = quizDetails?.milestoneId;
         const day = quizDetails?.day;
         if (milestoneId && day) {
+          // get the ai actions for which suggestions need to be generated
           const goals = await MilestoneGoalsTable.find({ milestoneId, day });
           goals.map(async (goal) => {
             if (!userBusinessProfile?.aiGeneratedSuggestions?.[goal.key]) {
+              // check if the ai action has multiple options before generating the ai suggestions
               const options = goal?.inputTemplate?.optionsScreenInfo?.options;
               if (options) {
                 options.forEach((option) => {
@@ -112,10 +124,16 @@ class BusinessProfileService {
         isRetry == IS_RETRY.FALSE &&
         userBusinessProfile?.aiGeneratedSuggestions?.[key] != null
       ) {
+        // if ai suggestions already available, return response
         response = userBusinessProfile?.aiGeneratedSuggestions?.[key];
       } else if (
         userBusinessProfile?.aiGeneratedSuggestions?.[`${key}_${type}`] != null
       ) {
+        /**
+         * In case where ai actions have multiple options,
+         * the saved response is in format - key_type
+         * if existing suggestions available for selected type, return response
+         */
         response =
           userBusinessProfile?.aiGeneratedSuggestions?.[`${key}_${type}`];
       } else {
@@ -155,6 +173,7 @@ class BusinessProfileService {
           SuggestionScreenCopyTable.find().lean(),
           AIToolDataSetTypesTable.findOne({ key }).lean(),
         ]);
+        // generate user prompt for the selected ai action
         const prompt = await BusinessProfileServiceV9.getUserPrompt(
           userBusinessProfile,
           idea,
@@ -171,18 +190,31 @@ class BusinessProfileService {
           return;
         }
         let systemInput: any = systemDataset.data;
+        /**
+         * If the type of systemInput is object, it means that the ai action contains some options
+         * So we need to generate suggestions for the given type
+         */
         if (type && typeof systemInput == "object") {
           ifOptionsAvailable = true;
           systemInput = systemInput[datasetTypes.types[type]];
         }
+        /**
+         * generate suggestions using the OpenAi API
+         * and get the clean json format response
+         */
         response = await BusinessProfileServiceV9.getFormattedSuggestions(
           systemInput,
           prompt,
           key
         );
+        // sort the suggestions in the alphabetical order of their title
         response?.sort((a, b) => a?.title?.localeCompare(b?.title));
         const scoringCriteria = goalDetails[0]?.scoringCriteria[type];
         response.forEach((obj) => {
+          /**
+           * Each cirteria of each suggestion should be categorized under stregth and weakness
+           * which is done based on below conditions
+           */
           let strengths = { title: "Strengths", data: [] };
           let weaknesses = { title: "Weaknesses", data: [] };
           obj.scores.forEach((score, idx) => {
@@ -196,6 +228,10 @@ class BusinessProfileService {
           obj.scores[0]?.data.sort((a, b) => a.score - b.score);
           obj.scores[1]?.data.sort((a, b) => a.score - b.score);
         });
+        /**
+         * if the response is generated correctly ,
+         * save that to business profile collection to use afterwards
+         */
         if (response) {
           BusinessProfileServiceV9.saveAIActionResponse(
             userExists,
@@ -228,6 +264,16 @@ class BusinessProfileService {
     }
   }
 
+  /**
+   * @description this will generate business idea using OpenAI GPT
+   * @param userExists
+   * @param key ai action key
+   * @param userBusinessProfile
+   * @param description user input to generate business logo
+   * @param optionType option for which suggestion to be generated
+   * @param retryCount retry count
+   * @returns {*}
+   */
   private async retryGenerateAISuggestions(
     userExists: any,
     key: string,
@@ -248,6 +294,11 @@ class BusinessProfileService {
         PRELOAD.TRUE
       );
     } catch (error) {
+      /**
+       * if error occur while generating suggestions,
+       * recursively call the retryGenerateAISuggestions function with a retryCount param
+       * and stop when retryCount reach 3
+       */
       if (retryCount < 3) {
         console.warn(
           `Retrying generateAISuggestions for action: ${key}. Attempt ${

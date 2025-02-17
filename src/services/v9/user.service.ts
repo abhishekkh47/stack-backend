@@ -52,6 +52,7 @@ class UserService {
         buttonText = BUSINESS_SCORE_MESSAGE.LETS_GO,
         dayContinued = userDetails?.businessScore?.dayContinued || 0;
 
+      // get the day for which the user continuously logged in to the app
       if (dayContinued == 0) {
         const last7daysArr: any = userDetails?.businessScore?.last7days || [];
         let streak = 0;
@@ -62,6 +63,7 @@ class UserService {
         }
         dayContinued = streak;
       }
+      // convert the UTC timstamp to the users local timezone
       const currentDate = convertDateToTimeZone(
         new Date(),
         userDetails.timezone
@@ -73,6 +75,12 @@ class UserService {
       );
       const currentScore =
         userDetails?.businessScore?.current || DEFAULT_BUSINESS_SCORE;
+      /**
+       * if the last updated day = 0 (not available)
+       * or if the last update day was the previous day
+       * then increment the business score and streak(day continued) by 1
+       * else decrement the score by the numbe of days user didn't login
+       */
       if (day === 0 || diffDays === 1) {
         dayContinued += 1;
         if (userBusinessScore == 0) {
@@ -280,6 +288,11 @@ class UserService {
         dayBusinessScores = reset7daysBusinessScore;
         inactiveBusinessScoreCount = nullCount;
         const checkDiffDays = diffDays - nullCount;
+        /**
+         * if the user has not opened the app for less than 8 days,
+         * then we set the streak status as 0 for the days user didn't logged in
+         * else, set all the 7 days of week to 0
+         */
         if (checkDiffDays < 8) {
           inactiveBusinessScoreCount += checkDiffDays - 1;
           dayBusinessScores = dayBusinessScores.fill(0, 0, checkDiffDays - 1);
