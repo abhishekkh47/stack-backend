@@ -196,8 +196,8 @@ class MilestoneDBService {
           userIfExists
         );
       } else if (
-       currentMilestoneId?.toString() !=
-          lastMilestoneCompleted?.milestoneId?.toString()
+        currentMilestoneId?.toString() !=
+        lastMilestoneCompleted?.milestoneId?.toString()
       ) {
         response = await MilestoneDBServiceV9.getNextDayMilestoneGoals(
           userIfExists,
@@ -576,7 +576,7 @@ class MilestoneDBService {
         updatedQuizCoins = LEVEL_COMPLETE_REWARD,
         businessScoreReward = 0,
         milestoneDetails = null;
-      const { isLastDayOfMilestone, stageUnlockedInfo } = data;
+      const { isLastDayOfMilestone, stageUnlockedInfo, employees = [] } = data;
       if (isLastDayOfMilestone) {
         [businessProfileObj, milestoneDetails] = await Promise.all([
           MilestoneDBServiceV9.moveToNextMilestone(userExists),
@@ -635,6 +635,9 @@ class MilestoneDBService {
           false,
           false
         ),
+        employees.length
+          ? EmployeeDBService.unlockEmployee(userExists, employees)
+          : Promise.resolve(),
       ]);
 
       return true;
