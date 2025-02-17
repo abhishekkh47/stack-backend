@@ -633,7 +633,7 @@ class MilestoneDBService {
         updatedQuizCoins = LEVEL_COMPLETE_REWARD,
         businessScoreReward = 0,
         milestoneDetails = null;
-      const { isLastDayOfMilestone, stageUnlockedInfo } = data;
+      const { isLastDayOfMilestone, stageUnlockedInfo, employees = [] } = data;
       /**
        * If last day of current milestones,
        * then move the user to next milestone
@@ -703,6 +703,9 @@ class MilestoneDBService {
           false,
           false
         ),
+        employees.length
+          ? EmployeeDBService.unlockEmployee(userExists, employees)
+          : Promise.resolve(),
       ]);
 
       return true;
