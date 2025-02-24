@@ -2191,6 +2191,7 @@ class ScriptService {
               levelImage: `journey-${currentLevel}.webp`,
               scoringCriteriaId: ScoringCriteriaMap[key],
               deliverableName,
+              bestPractice: row["bestPractice"].trimEnd(),
             });
           }
         }
@@ -2245,6 +2246,7 @@ class ScriptService {
                 levelImage: obj.levelImage,
                 scoringCriteriaId: obj.scoringCriteriaId,
                 deliverableName: obj.deliverableName,
+                bestPractice: obj.bestPractice,
               },
             },
             upsert: true,

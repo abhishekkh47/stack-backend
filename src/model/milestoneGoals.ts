@@ -141,6 +141,11 @@ const schema = new mongoose.Schema<IMilestoneGoalsSchema>(
       required: true,
       default: null,
     },
+    bestPractice: {
+      type: mongoose.Schema.Types.String,
+      required: true,
+      default: null,
+    },
   },
   { timestamps: true }
 );

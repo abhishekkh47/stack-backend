@@ -30,6 +30,7 @@ export interface IMilestoneGoals {
   levelImage: string;
   scoringCriteriaId: mongoose.Schema.Types.ObjectId;
   deliverableName: string;
+  bestPractice: string;
 }
 
 export enum EInputTemplate {
