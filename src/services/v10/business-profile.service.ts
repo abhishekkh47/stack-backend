@@ -4,6 +4,7 @@ import {
   AIToolDataSetTable,
   SuggestionScreenCopyTable,
   AIToolDataSetTypesTable,
+  AIToolsUsageStatusTable,
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
@@ -99,12 +100,13 @@ class BusinessProfileService {
     idea: string = null,
     type: string = "1",
     answerOfTheQuestion: string = null,
-    isRetry: string = IS_RETRY.FALSE,
+    isRetry: boolean = false,
     preload: boolean = false
   ) {
     try {
       let response = null,
-        ifOptionsAvailable = false;
+        ifOptionsAvailable = false,
+        bestSuggestion = null;
       if (!idea) {
         throw new NetworkError(
           "Please provide a valid business description",
@@ -114,19 +116,21 @@ class BusinessProfileService {
       const availableTokens = userExists.preLoadedCoins + userExists.quizCoins;
       const isPremiumUser = userExists.isPremiumUser;
       if (
-        !isPremiumUser &&
-        isRetry == IS_RETRY.TRUE &&
+        isPremiumUser &&
+        isRetry == true &&
         availableTokens < DEDUCT_RETRY_FUEL
       ) {
         throw new NetworkError("Not enough tokens available", 404);
       }
       if (
-        isRetry == IS_RETRY.FALSE &&
+        !isRetry &&
         userBusinessProfile?.aiGeneratedSuggestions?.[key] != null
       ) {
         // if ai suggestions already available, return response
         response = userBusinessProfile?.aiGeneratedSuggestions?.[key];
+        bestSuggestion = await this.getBestSuggestion(response, key, false);
       } else if (
+        !isRetry &&
         userBusinessProfile?.aiGeneratedSuggestions?.[`${key}_${type}`] != null
       ) {
         /**
@@ -136,6 +140,7 @@ class BusinessProfileService {
          */
         response =
           userBusinessProfile?.aiGeneratedSuggestions?.[`${key}_${type}`];
+        bestSuggestion = await this.getBestSuggestion(response, key, false);
       } else {
         const [
           systemDataset,
@@ -166,6 +171,7 @@ class BusinessProfileService {
               $project: {
                 dependency: 1,
                 key: 1,
+                bestPractice: 1,
                 scoringCriteria: "$scoringCriteria.scoringCriteria",
               },
             },
@@ -208,15 +214,19 @@ class BusinessProfileService {
           key
         );
         // sort the suggestions in the alphabetical order of their title
-        response?.sort((a, b) => a?.title?.localeCompare(b?.title));
+        // response?.sort((a, b) => a?.title?.localeCompare(b?.title));
+        bestSuggestion = await this.getBestSuggestion(response, key, true);
         const scoringCriteria = goalDetails[0]?.scoringCriteria[type];
-        response.forEach((obj) => {
+        bestSuggestion.forEach((obj) => {
           /**
            * Each cirteria of each suggestion should be categorized under stregth and weakness
            * which is done based on below conditions
            */
           let strengths = { title: "Strengths", data: [] };
           let weaknesses = { title: "Weaknesses", data: [] };
+          obj[
+            "bestPractice"
+          ] = `Choose a business name that:\nRelates to your product/business\nIs easy to say and spell across cultures\nIs unique amongst competitors`;
           obj.scores.forEach((score, idx) => {
             score.icon = scoringCriteria[idx]?.icon;
             score.explanation = scoringCriteria[idx]?.description || "";
@@ -232,21 +242,22 @@ class BusinessProfileService {
          * if the response is generated correctly ,
          * save that to business profile collection to use afterwards
          */
-        if (response) {
+        if (bestSuggestion) {
           BusinessProfileServiceV9.saveAIActionResponse(
             userExists,
             key,
-            response,
+            bestSuggestion,
             ifOptionsAvailable,
             type
           );
-          if (!isPremiumUser && isRetry == IS_RETRY.TRUE) {
+          this.updateAIToolUsageStatus(userExists, key);
+          if (isPremiumUser && isRetry) {
             await BusinessProfileServiceV9.updateAIToolsRetryStatus(userExists);
           }
         }
       }
       return {
-        suggestions: response,
+        suggestions: bestSuggestion,
         finished: true,
         isRetry: true,
         companyName: REQUIRE_COMPANY_NAME.includes(key)
@@ -290,7 +301,7 @@ class BusinessProfileService {
         description,
         optionType,
         null,
-        IS_RETRY.FALSE,
+        false,
         PRELOAD.TRUE
       );
     } catch (error) {
@@ -320,6 +331,49 @@ class BusinessProfileService {
         );
       }
     }
+  }
+
+  /**
+   * @description this will get the highest rated suggestion
+   * @param response Array of suggestions from openAi
+   * @param key ai action key
+   * @param isNew boolean to check if the suggestion is newly generated
+   * @returns {*}
+   */
+  private async getBestSuggestion(
+    response: any,
+    key: string,
+    isNew: boolean = false
+  ) {
+    const bestSuggestion = response.reduce((max, current) => {
+      return current.overallScore > max.overallScore ? current : max;
+    });
+    /**
+     * if there are existing suggestions but the bestPractice field do not exists,
+     * then only get the bestPractice details for the given action
+     */
+    if (!isNew && !response[0]?.bestPractice) {
+      const bestPractice = await MilestoneGoalsTable.findOne({ key });
+      bestSuggestion[
+        "bestPractice"
+      ] = `Choose a business name that:\nRelates to your product/business\nIs easy to say and spell across cultures\nIs unique amongst competitors`;
+    }
+    return [bestSuggestion];
+  }
+
+  /**
+   * @description this will update AI tools usage status for the given key
+   * @param userExists
+   * @param key ai action key
+   * @returns {*}
+   */
+  async updateAIToolUsageStatus(userExists: any, key: string) {
+    const aiToolUsageObj = { [`usedAITools.${key}`]: true };
+    await AIToolsUsageStatusTable.findOneAndUpdate(
+      { userId: userExists._id },
+      { $set: aiToolUsageObj },
+      { upsert: true }
+    );
   }
 }
 export default new BusinessProfileService();

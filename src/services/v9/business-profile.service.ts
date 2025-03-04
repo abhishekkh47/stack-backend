@@ -808,7 +808,12 @@ class BusinessProfileService {
       if (availableTokens >= DEDUCT_RETRY_FUEL) {
         await UserTable.findOneAndUpdate(
           { _id: userExists._id },
-          { $inc: { quizCoins: DEDUCT_RETRY_FUEL } },
+          {
+            $inc: {
+              quizCoins: DEDUCT_RETRY_FUEL,
+              "currentDayRewards.quizCoins": DEDUCT_RETRY_FUEL,
+            },
+          },
           { upsert: true, new: true }
         );
       }

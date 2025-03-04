@@ -10,11 +10,11 @@ class BusinessProfileController extends BaseController {
    * @param ctx
    * @returns {*}
    */
-  @Route({ path: "/get-ai-suggestions", method: HttpMethod.GET })
+  @Route({ path: "/get-ai-suggestions", method: HttpMethod.POST })
   @Auth()
   public async getAISuggestion(ctx: any) {
-    const { user, query, headers } = ctx.request;
-    const { key, isRetry, idea, type, answerOfTheQuestion } = query;
+    const { user, body, headers } = ctx.request;
+    const { key, isRetry, idea, type, answerOfTheQuestion } = body;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
