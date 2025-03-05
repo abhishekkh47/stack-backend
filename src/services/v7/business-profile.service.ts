@@ -1009,7 +1009,7 @@ class BusinessProfileService {
   public async generateTextSuggestions(
     systemInput: any,
     prompt: string,
-    model: string = AI_MODELS.GPT_4o
+    model: string = "gpt-4o"
   ) {
     try {
       const openai = new OpenAI({

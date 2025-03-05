@@ -37,7 +37,7 @@ class BusinessProfileService {
        * If the business description is not available,
        * we cannot generate any ai suggestions
        */
-      if (!userBusinessProfile.description) {
+      if (!userBusinessProfile.description || !userExists.isPremiumUser) {
         return;
       }
       /**
@@ -109,7 +109,7 @@ class BusinessProfileService {
     try {
       let response = null,
         ifOptionsAvailable = false,
-        model = null;
+        model = undefined;
       if (!idea) {
         throw new NetworkError(
           "Please provide a valid business description",

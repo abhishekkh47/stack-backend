@@ -591,7 +591,7 @@ class BusinessProfileService {
     systemInput: string,
     prompt: string,
     key: string = null,
-    model: string = null,
+    model: string = undefined,
     getSuggestionsString: boolean = false
   ) {
     try {
