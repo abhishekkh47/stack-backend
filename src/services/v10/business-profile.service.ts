@@ -103,7 +103,8 @@ class BusinessProfileService {
     type: string = "1",
     answerOfTheQuestion: string = null,
     isRetry: boolean = false,
-    preload: boolean = false
+    preload: boolean = false,
+    userInput: string = null
   ) {
     try {
       let response = null,
@@ -126,12 +127,15 @@ class BusinessProfileService {
       }
       if (
         !isRetry &&
-        userBusinessProfile?.aiGeneratedSuggestions?.[key] != null
+        userBusinessProfile?.aiGeneratedSuggestions?.[key] != null &&
+        !userInput
       ) {
         // if ai suggestions already available, return response
         response = userBusinessProfile?.aiGeneratedSuggestions?.[key];
       } else if (
         !isRetry &&
+        !userInput &&
+        !LEVEL1_KEYS.includes(key) &&
         userBusinessProfile?.aiGeneratedSuggestions?.[`${key}_${type}`] != null
       ) {
         /**
@@ -187,7 +191,8 @@ class BusinessProfileService {
           goalDetails[0]?.dependency,
           answerOfTheQuestion,
           preload,
-          key
+          key,
+          userInput
         );
         /**
          * If any dependency is not resolved, then return

@@ -842,6 +842,7 @@ class BusinessProfileService {
    * @param userAnswer
    * @param preload
    * @param key
+   * @param actionInput user input for any ai action required to generate ratings
    * @returns prompt
    */
   async getUserPrompt(
@@ -851,12 +852,13 @@ class BusinessProfileService {
     dependency: string[] = [],
     userAnswer: string = null,
     preload: boolean = false,
-    key: string = null
+    key: string = null,
+    userInput: string = null
   ) {
     try {
       let prompt = ``;
       if (LEVEL1_KEYS.includes(key)) {
-        return businessProfile?.description || idea;
+        return userInput || businessProfile?.description || idea;
       }
       for (const dep of dependency) {
         if (dep == "description") {

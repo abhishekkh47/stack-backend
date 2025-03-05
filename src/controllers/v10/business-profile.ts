@@ -14,7 +14,7 @@ class BusinessProfileController extends BaseController {
   @Auth()
   public async getAISuggestion(ctx: any) {
     const { user, body, headers } = ctx.request;
-    const { key, isRetry, idea, type, answerOfTheQuestion } = body;
+    const { key, isRetry, userInput, idea, type, answerOfTheQuestion } = body;
     let response = null;
     const [userExists, userBusinessProfile] = await Promise.all([
       UserTable.findOne({ _id: user._id }),
@@ -44,7 +44,9 @@ class BusinessProfileController extends BaseController {
       idea || userBusinessProfile.description,
       type,
       answerOfTheQuestion,
-      isRetry
+      isRetry,
+      false,
+      userInput
     );
 
     return this.Ok(ctx, { message: "Success", data: response });
