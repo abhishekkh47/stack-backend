@@ -28,12 +28,12 @@ import {
   BACKUP_LOGOS,
   awsLogger,
   AI_TOOLS_ANALYTICS,
-  DEFAULT_BUSINESS_LOGO,
   mapHasGoalKey,
   hasGoalKey,
   DEFAULT_BUSINESS_SCORE,
   OPENAI_MAX_TOKENS,
   DEFAULT_AI_ACTION_SCORE,
+  AI_MODELS,
 } from "@app/utility";
 import {
   AnalyticsService,
@@ -1006,14 +1006,21 @@ class BusinessProfileService {
    * @param data
    * @returns {*}
    */
-  public async generateTextSuggestions(systemInput: any, prompt: string) {
+  public async generateTextSuggestions(
+    systemInput: any,
+    prompt: string,
+    model: string = AI_MODELS.GPT_4o
+  ) {
     try {
       const openai = new OpenAI({
-        apiKey: envData.OPENAI_API_KEY,
+        apiKey:
+          model === AI_MODELS.GPT_4o
+            ? envData.OPENAI_API_KEY
+            : envData.FINETUNE_OPENAI_API_KEY,
       });
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model,
         messages: [
           {
             role: SYSTEM,

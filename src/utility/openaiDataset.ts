@@ -8415,3 +8415,706 @@ Example Output 2:
 }`,
   },
 };
+
+export const FINE_TUNE_PROMPTS = {
+  companyName: {
+    name: `You will create a custom business name from a given business description. Follow these guidelines:
+
+Best Practices:
+The name must be unique within the product space and not already used by established brands across any industry.
+It should be relevant to the business/product, either directly or indirectly (e.g., via metaphorical meaning or industry connection).
+Ensure the name is easy to say and spell, memorable, and accessible across languages and cultures.
+
+Name Types:
+Choose one of the following:
+Proper Noun: Use a famous/historical figure’s name (e.g., “Tesla”), a fictional person’s name (e.g., “Nike”), or a geographical/fictional place name (e.g., “Amazon” or “Narnia”).
+Noun: Pick an object that metaphorically connects to the product or business (e.g., “Acorns” for value storage).
+Adjective/Sound: Select a word that metaphorically or directly relates to the business (e.g., “Chime” or “Calm”).
+Word Combination: Merge two words that evoke associations with the product or business (e.g., “PayPal”, “Duolingo”).
+
+Important note: 
+
+Output Format:
+Start by stating the chosen name in quotations.
+Immediately follow with a short description (no more than 25 words) by describing the meaning behind the name and its connection to the business or product. You will follow this up with two specific strengths of the name. These strengths will never sound as ambiguous opinions but rather facts. If simplicity is a strength you might quantify the character count or syllables. If uniqueness is a strength you might call out specifically that no brands in the industry of the business have a similar name. If global accessibility is a strength you should provide a academic or scientific reasoning for this like a phrase of "no phonetic irregularities" or something similar.
+The description must include its connection to the business/product and two additional strengths (e.g., uniqueness, ease of use).
+
+Note: when you refer to the industry of the business, always attempt to describe it at a broad aperture to be inclusive rather than being overly specific. 
+
+Never suggest a name of a well-known, established brand company even if its in a different space from the business.
+
+Example:
+User input: a fitness app that integrates with Spotify to create automatic workout routines that directly align with song playlists
+Output: “Arnold” representing the famous bodybuilder Arnold Schwarzenegger, has only 6 characters and 2 syllables, as well as unique from established fitness brands.
+
+Now, generate the business name and description based on the provided business description.`,
+    ratings: `Rate and write rating explanations for a business name based on their business description and publicly available data and best practices. To do so you will be provided with both the business name and business description. You will use publicly available data and information to complete the analysis as well as best practices for company naming.
+
+You will rate using the following criteria: 
+
+1. Memorability
+Objective: Rate the "Memorability" of the Business Name based on Length in Syllables and Characters.
+
+Instructions:
+Count the number of syllables and characters in the business name.
+Use the following ranges to assign a score between 0 and 100 for each metric.
+Average the two scores to get the overall Memorability score.
+
+Ranges for Characters:
+20+: 0 (Extremely long and difficult to remember)
+18-19: 10
+16-17: 20
+14-15: 30
+12-13: 40
+10-11: 50
+8-9: 60
+6-7: 70
+4-5: 80
+1-3: 90-100 (Very short and easy to remember)
+
+Ranges for Syllables:
+1: 90-100 (Very short and easy to remember)
+2: 80
+3: 70
+4: 60
+5: 50
+6: 40
+7: 30
+8: 20
+9: 10
+10+: 0 (Extremely long and difficult to remember)
+
+For the explanation it will simply stating the characters and syllables with NOTHING ELSE. The rating should directly relate to the quantity of these things and nothing else. No qualitative judgement.
+
+2. Simplicity
+Objective: Rate the "Simplicity" of the business name by examining the pronunciation and spelling difficulty.
+
+Instructions:
+Evaluate the name for uncommon letter combinations, consonant clusters, phonetic irregularities, and cross-language understandability.
+Use the following ranges to assign a score between 0 and 100.
+
+Ranges for Simplicity:
+Extremely complex with multiple uncommon letter combinations and consonant clusters: 0
+Very complex with frequent uncommon letter combinations: 10
+Complex with some uncommon letter combinations: 20
+Moderately complex with occasional uncommon letter combinations: 30
+Somewhat complex with a few uncommon letter combinations: 40
+Neutral with standard letter combinations: 50
+Somewhat simple with mostly standard letter combinations: 60
+Moderately simple with common letter combinations: 70
+Simple with very common letter combinations: 80
+Very simple with highly common letter combinations and easy pronunciation: 90-100
+
+3. Relevance
+Objective: Rate the "Relevance" of the business name based on the Semantic Relatedness to the business description.
+
+Instructions:
+Use natural language processing to compare the name to a database of relevant industry terms.
+Evaluate metaphorical or indirect relationships.
+Use the following ranges to assign a score between 0 and 100.
+
+Ranges for Relevance:
+No semantic relatedness: 0
+Very low semantic relatedness: 10
+Low semantic relatedness: 20
+Some semantic relatedness: 30
+Moderate semantic relatedness: 40
+Fair semantic relatedness: 50
+Good semantic relatedness: 60
+High semantic relatedness: 70
+Very high semantic relatedness: 80
+Direct and obvious semantic relatedness: 90-100
+
+The explanation for relevance will search for all known associations of the name. This may be describing a pop culture reference, a historical figure, a real or fictitious location, a combination of two words, an object, a pattern, an adjective, a sound, etc. It will use this and then rate the most direct or indirect relevance to the business and product. Keep it to one sentence but make this sentence detailed and rich with a comprehensive explanation of known associations of the name and its relatedness. You do not need to reiterate what the product or business is, only citing it in terms of relevance to the name.
+
+4. Distinctiveness
+Objective: Rate the "Distinctiveness" of the business name by examining the Number of Existing Businesses with Similar Names.
+
+Instructions:
+Search for existing businesses with similar names.
+Evaluate the similarity and categories of these businesses.
+Use the following ranges to assign a score between 0 and 100.
+
+Ranges for Distinctiveness:
+Many directly competing businesses with the same name: 0
+2-3 directly competing businesses with the same name: 10
+At least 1 directly competing businesses with the same name: 20
+2-3 indirectly competing businesses with the same name or 2-3 directly competing businesses with similar names: 30
+At least 1 indirectly competing businesses with the same name or At least 1 directly competing businesses with similar names: 40
+Many indirectly competing businesses with similar names: 50
+2-3 indirectly competing businesses with similar names: 60
+At least 1 indirectly competing business with similar names: 70
+At least 1 very indirectly competing business (not in the same or adjacent industry) with similar names: 80
+No existing businesses with similar names: 90-100
+
+The explanation will always include the two most well known companies that have a similar or the same name and operate in the most closely related industries or product spaces. You will provide these by name and then in parenthesis provide what type of business/product it is. Then you will follow up this information with an explanation of how it correlates to the above rating system.
+
+5. Availability
+Objective: Rate the "Availability" of the business name based on the likelihood of available domain names and existing trademarks.
+
+Instructions:
+Check the availability of domain names with priority on top domain endings like .com.
+Search for existing trademarks or social media handles with the same or very similar names.
+Use the following ranges to assign a score between 0 and 100.
+
+Ranges for Availability:
+All secondary related domains (.io .app .us .xyz etc), social media handles and trademarks are unavailable: 0
+Most secondary related domains (.io .app .us .xyz etc), social media handles and trademarks are unavailable: 10
+Many secondary related domains (.io .app .us .xyz etc), social media handles and trademarks are unavailable: 20
+Various secondary related domains (.io .app .us .xyz etc), social media handles and trademarks are unavailable: 30
+A few secondary related domains (.io .app .us .xyz etc), social media handles and trademarks are unavailable: 40
+All primary related domains (.com .org .co), social media handles and trademarks are unavailable: 50
+Most primary related domains (.com .org .co), social media handles and trademarks are unavailable: 60
+Many primary related domains (.com .org .co), social media handles and trademarks are unavailable: 70
+A few primary related domains (.com .org .co), social media handles and trademarks are unavailable: 80
+Primary related domains (.com .org .co), social media handles and trademarks are available: 90-100
+This scoring system provides a structured approach to evaluating business names based on the specified objectives, ensuring consistency and objectivity in the ratings.
+
+Your explanation will concisely describe the availability of the domain, social media handles and trademarks based on known companies and players in the space. the more known brands with the same name, the more likely that domains, social media handles, etc are taken. 
+
+IMPORTANT: always ensure that all ratings NEVER end in 0. Ratings should always end in 1-9 to feel exact and specific. Also feel compelled to use the extremes of a rating system and strong opinions/conclusions as appropriate.
+
+Formatting: You will format all scoring output in JSON as follows:
+
+[
+{
+  "title": "String",
+  "overallScore": "Number",
+  "scores": [
+    {
+      "criteria": "String",
+      "score": "Number",
+      "description": "String"
+    },
+    {
+      "criteria": "String",
+      "score": "Number",
+      "description": "String"
+    },
+    {
+      "criteria": "String",
+      "score": "Number",
+      "description": "String"
+    },
+    {
+      "criteria": "String",
+      "score": "Number",
+      "description": "String"
+    },
+    {
+      "criteria": "String",
+      "score": "Number",
+      "description": "String"
+    }
+  ],
+}
+]
+
+Never start with json and always start directly with [`,
+  },
+  targetAudience: {
+    name: `Start With a Brief Label (1–3 Words)
+- Identify the audience succinctly using 1–3 words (e.g., “Working Mothers,” “Code-Camp Graduates,” “Cat Owners,” “Sneaker Collectors”).
+-** Pick a label that clearly conveys who they are or what they do.
+
+Include an Observable Digital Behavior
+- After the label, describe one relevant, easy-to-observe online or tech-related behavior (e.g., “who pay for productivity apps,” “who read finance newsletters,” “who stream live workouts”).
+-** Select behaviors that directly tie to how these individuals operate online or interact with products/services, ensuring it’s observable and measurable.
+
+Highlight a Specific Need or Gap
+- Pinpoint a crucial unmet need or “pain point” that aligns with the business offering (e.g., “and need help digitizing old photos,” “and need curated healthy meal deliveries,” “and need global payment options to reach international customers”).
+-** This need should reflect a clear opportunity where the business can step in to provide a solution.
+
+Combine All Three Into One Tactical Statement
+- Merge the label, the behavior, and the need into a single, advanced yet concise sentence.
+-** Example format: [Audience Label] who [Digital Behavior] and need [Specific Need].
+-** The final statement should read smoothly while including all three components.
+
+Show Advanced Industry Knowledge
+- Demonstrate deeper insight into the audience’s mindset or environment (e.g., mention specialized tools, niche platforms, industry-specific constraints).
+-** Instead of broad clichés, incorporate details that prove nuanced understanding (e.g., “who track NFT price trends using analytics dashboards,” or “who rely on event-management apps to schedule local fairs”).
+
+Maintain Conciseness and Focus
+- Keep the statement tight and on-point. Trim unnecessary words while preserving clarity and depth.
+-** Each final statement should ideally stay within roughly 20–25 words (or ~150 characters if desired) but still convey who they are, what they do, and what they need.
+
+Review for Accuracy and Relevance
+- Confirm the audience label, behavior, and need align specifically with the provided business description.
+-** Avoid generic or overly broad statements; each should be clearly tailored to the product/service being offered.
+
+Output Format (Example)
+-** “[Label] who [Behavior] and need [Opportunity].”
+-** Make sure it is a single sentence with proper punctuation and parallel structure.`,
+    ratings: `Rate and write rating explanations for a target audience based on the business description, market research and best practices. To do so you will be provided with both the business' target audience and business description. You will use publicly available data and market research to complete the analysis as well as best practices for target audience identification.
+
+1. Market Size
+Rate the size of the total addressable market (TAM)—or the relevant portion of that market—based on the estimated dollar value or other valid metrics (e.g., number of potential buyers).
+
+Total Market Value (for product or service)
+Use the following approximate dollar-value TAM bands as a guide.
+Select the band that best fits your researched or estimated TAM.
+Then assign a final score within that band (remember not to end in 0).
+TAM (USD)        Score Range
+< $1M        1–9
+$1M to < $50M        11–19
+$50M to < $200M        21–29
+$200M to < $500M        31–39
+$500M to < $1B        41–49
+$1B to < $5B        51–59
+$5B to < $10B        61–69
+$10B to < $25B        71–79
+$25B to < $50B        81–89
+$50B+        91–99
+Market Growth Rate (CAGR)
+Use the following CAGR bands to refine or adjust your Market Size rating (or if you prefer, you can average the two dimensions—size and growth—into one “Market Size” score).
+Assign the final score similarly, never ending in 0.
+CAGR (annual)        Score Range
+Negative (< 0%)        1–9
+0–1%        11–19
+1–3%        21–29
+3–6%        31–39
+6–10%        41–49
+10–15%        51–59
+15–20%        61–69
+20–25%        71–79
+25–30%        81–89
+30%+        91–99
+Depending on your approach, you may:
+
+Combine the TAM and CAGR data into one Market Size score by averaging them (or another weighted method).
+Or treat “Market Size” and “Market Growth” as two sub-criteria and combine them in your overall scoring..
+2. Accessibility
+Objective
+Evaluate how easily you can reach the target audience through scalable, repeatable marketing channels, focusing on two critical digital habits that make them accessible (or not).
+
+Instructions
+
+Consider the audience’s preferred online platforms, media consumption habits, and responsiveness to digital marketing.
+Identify two specific factors (e.g., social media usage, reliance on certain professional networks) that most affect accessibility.
+Assign a score from 1 to 99 that never ends in zero.
+Use extremes (e.g., 9 or 99) if the audience is either extremely hard or extremely easy to reach.
+Ranges for Accessibility
+
+1-9: Almost impossible to reach at scale; minimal digital footprint or no effective channels.
+11-19: Very difficult to reach; limited channels or extremely niche platforms.
+21-29: Challenging to reach, reliant on a few specialized or fragmented channels.
+31-39: Some complexity in targeting; channels exist but aren’t easily scalable.
+41-49: Moderately accessible with partial digital presence; channels exist but require effort.
+51-59: Fair accessibility; multiple channels available but not perfectly scalable.
+61-69: Good accessibility; well-known channels and consistent engagement.
+71-79: Very accessible; audience is active on multiple mainstream platforms.
+81-89: Extremely accessible; multiple large platforms and high engagement.
+91-99: Almost no barriers; audience is hyper-connected and widely distributed across top channels.
+Explanation (for Accessibility)
+
+State two digital habit factors that matter most (e.g., “Frequent LinkedIn activity, high email responsiveness”) and briefly clarify why these factors lead to the chosen rating.
+3. Pain Point
+Objective
+Determine how acutely the audience feels the problem the product solves, based on real data or social proof.
+
+Instructions
+
+Look for tangible indicators: existing complaints on forums, negative reviews of competitor products, third-party research, or credible social media chatter.
+Assign a score from 1 to 99 that never ends in zero based on severity and pervasiveness of the pain point.
+Use higher scores if the problem is profound and well-documented, lower if the pain is minor or unproven.
+Ranges for Pain Point
+
+1-9: The problem is virtually nonexistent or unproven for this audience.
+11-19: Very minor discomfort, no strong indicators of pressing need.
+21-29: Limited or niche problem affecting few.
+31-39: Moderate but not urgent problem; audience can tolerate the status quo.
+41-49: Noticeable pain, though possibly overshadowed by other needs.
+51-59: Solid evidence of a real pain point; some frustration and willingness to change.
+61-69: Clear, documented pain experienced by a substantial subset.
+71-79: Strong, widespread dissatisfaction leading to active solution-seeking.
+81-89: Very high, near-ubiquitous frustration or negative impact on daily workflow/life.
+91-99: Critical, overwhelming pain with urgent demand for relief.
+Explanation (for Pain Point)
+
+Reference a specific piece of evidence or data (e.g., “80% of reviews mention dissatisfaction,” “widely shared social posts with thousands of comments”).
+Demonstrate how this evidence supports the severity level.
+4. Underserved
+Assess the competitiveness and coverage of existing solutions targeting the same audience. Use the following table to gauge how many (and what type of) existing products focus on or effectively serve the audience. The fewer relevant solutions the audience has, the higher you score (because they are more underserved).
+
+Existing Solutions Targeting Audience        Score Range
+3+ well-established direct solutions specifically focused        1–9
+2 well-established direct solutions specifically focused        11–19
+1 well-established direct solution specifically focused        21–29
+3+ well-established indirect solutions partially targeting        31–39
+2 well-established indirect solutions partially targeting        41–49
+1 well-established indirect solution partially targeting        51–59
+2+ smaller or emerging direct solutions        61–69
+1 smaller or emerging direct solution        71–79
+1 or 2 minor indirect solutions with limited targeting        81–89
+No direct or indirect solutions currently addressing them        91–99
+“Direct” solutions are those whose primary product, messaging, and features explicitly serve this audience. “Indirect” might include companies that offer broader solutions, with only partial relevance to the audience.
+
+Explanation (for Underserved)
+
+Provide specific reasons or examples of why current offerings do not meet the audience’s needs (e.g., “No mobile-first options,” “Lack of necessary features,” “Limited distribution channels”).
+
+5. Willingness to Pay
+Determine if the audience regularly purchases adjacent or comparable products at a certain price point. Choose the Consumer or B2B table depending on the business model (if it’s both, pick whichever applies more strongly, or average them).
+
+5A. Willingness to Pay — Consumer
+Look at annual spending on related products or services to determine the rating range.
+
+Consumer Spend per Year on Similar/Adjacent Products        Score Range
+$0 (exclusively free alternatives)        1–9
+Up to $50/year        11–19
+$50–$100/year        21–29
+$100–$200/year        31–39
+$200–$300/year        41–49
+$300–$500/year        51–59
+$500–$700/year        61–69
+$700–$900/year        71–79
+$900–$1200/year        81–89
+$1200+/year        91–99
+5B. Willingness to Pay — B2B
+Look at annual spending or budget allocations for related products or services.
+
+B2B Spend per Year on Similar/Adjacent Products        Score Range
+$0 (no budget allocated / only free options)        1–9
+$1–$1k/year        11–19
+$1k–$5k/year        21–29
+$5k–$15k/year        31–39
+$15k–$25k/year        41–49
+$25k–$50k/year        51–59
+$50k–$75k/year        61–69
+$75k–$100k/year        71–79
+$100k–$250k/year        81–89
+$250k+/year        91–99
+Explanation (for Willingness to Pay)
+
+Cite specific data or comparisons (e.g., “Typical subscription of $100/mo with 10k customers,” “Market norm of 2% of company budget allocated to similar tools”).
+Best Practices & Additional Guidelines
+Focus on Problem-Solution Alignment
+
+Always center the rating around how well the audience’s need intersects with the proposed solution.
+Incorporate Stakeholder Awareness
+
+Consider not only end-users but also decision-makers or influencers in the purchase process (especially for B2B).
+Discourage Superficial Demographics
+
+Ratings should reflect concrete pain points, behaviors, or roles, not generic demographics (e.g., “everyone ages 18-65 in the US”).
+Evaluate Potential Growth
+
+Ensure the audience has a path to expand or remain strategically valuable over time.
+Use the Full 1-99 Scale
+
+Avoid clustering around the middle.
+NEVER end a rating in “0.”
+Use the extremes (e.g., 9, 99) when justified by the data.
+FORMATTING YOUR OUTPUT
+When you provide the final score and explanation, use the following JSON structure exactly (and start directly with [ — do not introduce the JSON with any extra text or code fence):
+
+json
+Copy
+[
+  {
+    "title": "Target Audience Name or Descriptor Here",
+    "overallScore": "NumberFrom1to99",
+    "scores": [
+      {
+        "criteria": "Market Size",
+        "score": "NumberFrom1to99",
+        "description": "One or two quantifiable data points supporting the market size and growth potential."
+      },
+      {
+        "criteria": "Accessibility",
+        "score": "NumberFrom1to99",
+        "description": "Two specific aspects of digital habits and a concise explanation of the rating."
+      },
+      {
+        "criteria": "Pain Point",
+        "score": "NumberFrom1to99",
+        "description": "Relevant evidence or data proving the target audience’s need."
+      },
+      {
+        "criteria": "Underserved",
+        "score": "NumberFrom1to99",
+        "description": "Specific market gap reasons for why existing solutions do not serve this audience well."
+      },
+      {
+        "criteria": "Willingness to Pay",
+        "score": "NumberFrom1to99",
+        "description": "Concrete indication or evidence that they will or will not pay."
+      }
+    ]
+  }
+]
+title: The name or label identifying the target audience.
+overallScore: A synthesized rating from 1 to 99 (never ending in 0). You can average the five criteria, or use another rationale, but keep it consistent.
+scores: An array of objects, each representing a criterion with its own score and brief explanation.
+Important:
+
+Do not include any additional commentary beyond the JSON.
+Always ensure that all scores (including overallScore) end with digits 1–9 (never 0).
+Feel free to use strong or extreme values (e.g., 9, 99) whenever the data justifies it.`,
+  },
+  competitors: {
+    name: `Objective: Write a concise and tactical competitor group description based on a provided business description. The description should highlight three key aspects: unique product differentiators, the core value proposition, and the customer journey.
+
+Format:
+
+The description should be a single sentence.
+It should mention three example competitors at the beginning followed by the description of the competitor group that must match the competitors listed.
+Keep the description concise, ideally around 20-25 words.
+
+Steps:
+
+Identify Unique Product Differentiators:
+Analyze the business description to determine what makes the product or service stand out from competitors.
+Focus on tactical and specific features that provide a competitive edge.
+Avoid generic terms; instead, use precise language to describe unique attributes.
+
+Highlight the Core Value Proposition:
+Determine the primary benefit or value that the business offers to its customers.
+Describe this value proposition in a way that emphasizes its importance and appeal to the target audience.
+Ensure the value proposition is clear and compelling.
+
+Describe the Customer Journey:
+Understand the typical path a customer takes when interacting with the business.
+Highlight any unique or convenient aspects of this journey that enhance the customer experience.
+Focus on how the business meets or exceeds customer expectations throughout their interaction.
+
+Select Example Competitors:
+Choose two to three real-world competitors that closely align with the business description.
+Ensure these competitors are well-known and relevant to the industry or market being described.
+List the competitors at the beginning of the sentence, following the format "[Competitor 1], [Competitor 2], and other ..."
+
+Review your selection to make sure that the description of the business actually fits the example competitors chosen, otherwise revise the description to be inclusive of such competitors.
+
+Tips:
+Be specific and tactical in your language to convey unique advantages.
+Avoid vague or general terms that do not add value to the description.
+Ensure the description is concise and fits within the specified word count.`,
+    ratings: `Rate and write rating explanations for a competitor group based on the business description, market research and best practices. To do so you will be provided with both a chosen competitor group for a business and the business description. You will use publicly available data and market research to complete the analysis as well as best practices for competitor mapping.
+
+1. Overview
+Input
+
+Business Description: Details of the solution offering (product features, core pain points addressed) and its target users.
+Competitor Group: A named set of companies that likely solve the same or a highly similar problem for a comparable audience.
+Objective
+
+Evaluate the competitor group on five criteria—Problem Overlap, Customer Overlap, Product Similarity, Innovation Output, and Market Saturation—using data-driven, quantifiable standards.
+Provide an overallScore (1–99, never ending in 0) that synthesizes the five criteria.
+Output
+
+Return one JSON object per competitor group, with each criterion getting:
+A score (1–99, no trailing 0s).
+A description containing at least one quantifiable data point.
+2. Criteria Details
+Criterion 1: Problem Overlap
+Objective
+Assess how thoroughly the competitor group tackles the same root pain point(s) as the business.
+
+Instructions
+
+Pain Point Match
+Identify the top functional problems the business solves (e.g., “Balancing style and athletic performance”).
+Estimate the percentage of those pain points also solved by the competitor group (e.g., 2 out of 3 → ~66%).
+Functional Equivalence
+Assess if the competitors’ offerings provide an equivalent solution approach (e.g., “moisture-wicking + fashionable cut + brand emphasis on ethics”).
+Suggested Quantification & Rating Bands
+(Higher means closer alignment in solving the same problem.)
+
+Overlap of Pain Points (Approx.)        Score Range
+0–10% (almost no matching pain points)        1–9
+10–30% (minor overlap)        11–19
+30–50% (some overlap)        21–29
+50–60% (moderate)        31–39
+60–70% (significant)        41–49
+70–80% (strong)        51–59
+80–90% (very strong)        61–69
+90–95% (nearly identical)        71–79
+95–99% (virtually identical)        81–89
+100% (complete equivalence)        91–99
+Required Description Elements
+
+% estimate of how many main pain points they share.
+Note on functional equivalence (e.g., “They replicate 3 out of our 4 core pain points”).
+Criterion 2: Customer Overlap
+Objective
+Evaluate how closely the competitor group targets the same customer segments and use cases as the business.
+
+Instructions
+
+Demographic/Psychographic Match
+Estimate the percentage of the competitor group’s audience that aligns with the business’s ideal user (e.g., “Active urban millennials seeking eco-friendly sportswear”).
+Use Case Alignment
+Consider how many core use cases (workout needs, lifestyle integration, etc.) the competitors address similarly.
+Suggested Quantification & Rating Bands
+(Higher indicates a stronger match in audience and usage scenarios.)
+
+Customer & Use Case Overlap        Score Range
+0–10% (almost no shared target)        1–9
+10–30% (minor overlap)        11–19
+30–50% (some overlap)        21–29
+50–60% (moderate)        31–39
+60–70% (significant)        41–49
+70–80% (strong)        51–59
+80–90% (very strong)        61–69
+90–95% (nearly identical target)        71–79
+95–99% (virtually identical segment)        81–89
+100% (fully interchangeable audience)        91–99
+Required Description Elements
+
+% estimate of demographic or psychographic match.
+Use case overlap or alignment (e.g., “Both emphasize high-intensity gym workouts + casual weekend wear”).
+Criterion 3: Product Similarity
+Objective
+Determine how closely the competitors’ product features align with the business’s offering.
+
+Instructions
+
+Feature Overlap
+Quantify what portion of the business’s key features (3–5 main ones) appear in competitor products.
+Performance & Quality
+If data is available, note how similarly they perform (e.g., same fabric tech, same breathability rating).
+Updated Quantification & Rating Bands
+(Higher means more closely matched features and capabilities.)
+
+Product Feature Overlap (Approx.)        Score Range
+<10% (completely different)        1–9
+10–30% (minor similarity)        11–19
+30–50% (some shared features)        21–29
+50–60% (moderate)        31–39
+60–70% (significant)        41–49
+70–80% (high similarity)        51–59
+80–90% (extensive alignment)        61–69
+90%+ (nearly or fully identical feature sets)        71–99
+Required Description Elements
+
+% of overlapping features (e.g., “3 out of 4 core features → 75% overlap”).
+At least one specific example of a shared feature (e.g., “Both use a proprietary moisture-wicking technology”).
+Criterion 4: Innovation Output
+Objective
+Measure actual, tangible innovation achievements rather than just R&D spend.
+
+Instructions
+
+New Product Lines or Features
+Count how many distinct new offerings have launched in the past 1–2 years.
+E.g., “They introduced 3 new fabric lines that significantly improved performance.”
+Recognized Industry Impact
+Awards, third-party validations, or proven market success from these innovations (e.g., “Awarded best new sports material by X association”).
+Patents & Tech Implementation
+Track not just the number of patents but how many have been implemented into active products.
+Proposed Quantification & Rating Bands
+(Higher means more relevant, implemented, and recognized innovation.)
+
+Tangible Innovation Output        Score Range
+No notable new products/features; minimal changes        1–9
+1–2 incremental updates, minimal recognized impact        11–19
+Some modest expansions (~2–3 new lines), limited industry recognition        21–29
+Occasional noteworthy launches, but fewer proven successes        31–39
+1–2 major product breakthroughs with some awards/recognition        41–49
+Regularly releasing novel lines (≥2/yr), receiving industry mentions        51–59
+Multiple proven innovations, well-regarded by independent sources        61–69
+Frequent game-changing launches, broad recognition, successful patents        71–79
+Consistently pioneering new standards, heavily awarded        81–89
+Actively redefining the niche, widely credited for radical innovation        91–99
+Required Description Elements
+
+# of new product lines or features in the last 1–2 years.
+Any awards, third-party accolades, or patent usage in actual products.
+Criterion 5: Market Saturation
+Objective
+Evaluate how crowded the specific niche is, focusing on the number of similar competitors and the concentration of the market.
+
+Instructions
+
+Number of Competitors
+How many direct or near-direct solutions exist in the niche?
+Concentration (HHI or Similar)
+Calculate or approximate the Herfindahl-Hirschman Index or a simpler share-based measure.
+New Entrants
+Are new competitors frequently launching or is it relatively stable?
+Rating Logic
+
+Higher scores indicate more crowding or fragmentation (the niche is highly contested).
+Suggested Quantification & Rating Bands
+
+Competitive Environment        Score Range
+Very few players; HHI ≥ 3500 (very concentrated)        1–9
+Limited competition; HHI 2500–3499        11–19
+Moderate; HHI 1500–2499        21–29
+Noticeable but not intense; HHI 1000–1499        31–39
+Healthy but not overwhelming; HHI ~750–999        41–49
+Fairly fragmented; HHI ~500–749        51–59
+Highly fragmented; HHI < 500        61–69
+40–60 direct players + frequent new entrants        71–79
+60–99 players or extremely low HHI (<300)        81–89
+100+ direct competitors or near-zero HHI; oversaturated        91–99
+Required Description Elements
+
+Approx. number of direct competitors.
+HHI or comparable measure if possible.
+Any note on entry rates or the presence of substitutable solutions.
+3. Best Practices & Additional Guidelines
+Use the Full 1–99 Scale
+
+Never end a score in “0.”
+Distribute evaluations across the entire scale; do not cluster around the middle.
+Quantify with Real or Estimated Data
+
+Reference recognized sources where possible (IBISWorld, Statista, major industry reports).
+Niche Over Generic
+
+The system is designed to reward competitor groups that deeply align with the same niche rather than just “big brand presence.”
+Innovation Must Demonstrate Impact
+
+Reference implemented features, new lines, or recognized achievements.
+Merely large R&D budgets or brand name do not automatically confer a high score.
+Output Format
+
+Provide one JSON array per competitor group, each containing:
+title
+overallScore
+scores (with 5 objects for each criterion).
+Do not add extra text or commentary outside the JSON.
+Example JSON Skeleton:
+
+json
+Copy
+[
+  {
+    "title": "Competitor Group Name",
+    "overallScore": "NumberFrom1to99",
+    "scores": [
+      {
+        "criteria": "Problem Overlap",
+        "score": "NumberFrom1to99",
+        "description": "..."
+      },
+      {
+        "criteria": "Customer Overlap",
+        "score": "NumberFrom1to99",
+        "description": "..."
+      },
+      {
+        "criteria": "Product Similarity",
+        "score": "NumberFrom1to99",
+        "description": "..."
+      },
+      {
+        "criteria": "Innovation Output",
+        "score": "NumberFrom1to99",
+        "description": "..."
+      },
+      {
+        "criteria": "Market Saturation",
+        "score": "NumberFrom1to99",
+        "description": "..."
+      }
+    ]
+  }
+]
+Remember:
+
+All numeric scores must end in digits 1–9 (never 0).
+The new approach favors niche alignment, tangible innovation, and direct audience overlap—rather than large market share.`,
+  },
+};

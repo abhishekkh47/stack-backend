@@ -1398,3 +1398,21 @@ export const DEPRECATED_COMMUNITIES = [
   "University of Michigan - Program in Biology",
   "The University of Michigan - North Campus",
 ];
+
+export const AI_MODELS = {
+  GPT_4o: "gpt-4o",
+  companyName: {
+    name: "ft:gpt-4o-2024-08-06:jetson:company-naming:B2vuX8lH",
+    ratings: "ft:gpt-4o-2024-08-06:jetson:name-ratings:B4xdrQwV",
+  },
+  targetAudience: {
+    name: "ft:gpt-4o-2024-08-06:jetson:target-audience-descriptions:B3IhnTLB",
+    ratings: "ft:gpt-4o-2024-08-06:jetson:target-audience-ratings:B5EsUJEu",
+  },
+  competitors: {
+    name: "ft:gpt-4o-2024-08-06:jetson:competitor-description:B3d7uQOS",
+    ratings: "ft:gpt-4o-2024-08-06:jetson:competitor-ratings:B795VYsL",
+  },
+};
+
+export const LEVEL1_KEYS = ["companyName", "targetAudience", "competitors"];

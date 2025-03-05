@@ -272,4 +272,7 @@ export default {
   get STREAK_REWARD_SHEET_GID() {
     return process.env.STREAK_REWARD_SHEET_GID;
   },
+  get FINETUNE_OPENAI_API_KEY() {
+    return process.env.FINETUNE_OPENAI_API_KEY;
+  },
 };

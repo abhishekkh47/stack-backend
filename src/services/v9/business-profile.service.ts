@@ -24,6 +24,7 @@ import {
   IDEA_GENERATOR_INFO,
   IDEA_ANALYSIS,
   replacePlaceholders,
+  LEVEL1_KEYS,
 } from "@app/utility";
 import moment from "moment";
 import { BusinessProfileService as BusinessProfileServiceV7 } from "@app/services/v7";
@@ -589,33 +590,43 @@ class BusinessProfileService {
   public async getFormattedSuggestions(
     systemInput: string,
     prompt: string,
-    key: string = null
+    key: string = null,
+    model: string = null,
+    getSuggestionsString: boolean = false
   ) {
     try {
       const response = await BusinessProfileServiceV7.generateTextSuggestions(
         systemInput,
-        prompt
+        prompt,
+        model
       );
       const recommendations = JSON.parse(
         JSON.stringify(response.choices[0].message)
       );
-      const jsonResponse = JSON.parse(
-        recommendations.content.replace(/```json|```/g, "").trim()
-      );
-      if (key == COLORS_AND_AESTHETIC) {
+      const cleanedContent = recommendations.content
+        .replace(/```json|```/g, "")
+        .replace(/[“”]/g, '"')
+        .trim();
+      if (getSuggestionsString) {
+        const bestPractice = `Choose a business name that:\nRelates to your product/business\nIs easy to say and spell across cultures\nIs unique amongst competitors`;
+        return { description: cleanedContent, bestPractice };
+      } else {
+        const jsonResponse = JSON.parse(cleanedContent);
+        if (key == COLORS_AND_AESTHETIC) {
+          return jsonResponse;
+        }
+        if (
+          jsonResponse &&
+          Array.isArray(jsonResponse) &&
+          jsonResponse.length > 0 &&
+          (jsonResponse[0]?.title == "N/A" ||
+            jsonResponse[0]?.title == undefined ||
+            jsonResponse[0]?.title == "undefined")
+        ) {
+          throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
+        }
         return jsonResponse;
       }
-      if (
-        jsonResponse &&
-        Array.isArray(jsonResponse) &&
-        jsonResponse.length > 0 &&
-        (jsonResponse[0]?.title == "N/A" ||
-          jsonResponse[0]?.title == undefined ||
-          jsonResponse[0]?.title == "undefined")
-      ) {
-        throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
-      }
-      return jsonResponse;
     } catch (error) {
       throw new NetworkError(SUGGESTIONS_NOT_FOUND_ERROR, 400);
     }
@@ -844,6 +855,9 @@ class BusinessProfileService {
   ) {
     try {
       let prompt = ``;
+      if (LEVEL1_KEYS.includes(key)) {
+        return businessProfile?.description || idea;
+      }
       for (const dep of dependency) {
         if (dep == "description") {
           prompt = `${prompt}\nBusiness Description: ${idea}`;

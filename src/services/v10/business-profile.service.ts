@@ -8,13 +8,15 @@ import {
 } from "@app/model";
 import { NetworkError } from "@app/middleware";
 import {
-  IS_RETRY,
   SUGGESTIONS_NOT_FOUND_ERROR,
   QUIZ_TYPE,
   PRELOAD,
   DEDUCT_RETRY_FUEL,
   REQUIRE_COMPANY_NAME,
   TARGET_AUDIENCE_REQUIRED,
+  LEVEL1_KEYS,
+  AI_MODELS,
+  FINE_TUNE_PROMPTS,
 } from "@app/utility";
 import { BusinessProfileService as BusinessProfileServiceV9 } from "@app/services/v9";
 class BusinessProfileService {
@@ -106,7 +108,7 @@ class BusinessProfileService {
     try {
       let response = null,
         ifOptionsAvailable = false,
-        bestSuggestion = null;
+        model = null;
       if (!idea) {
         throw new NetworkError(
           "Please provide a valid business description",
@@ -128,7 +130,6 @@ class BusinessProfileService {
       ) {
         // if ai suggestions already available, return response
         response = userBusinessProfile?.aiGeneratedSuggestions?.[key];
-        bestSuggestion = await this.getBestSuggestion(response, key, false);
       } else if (
         !isRetry &&
         userBusinessProfile?.aiGeneratedSuggestions?.[`${key}_${type}`] != null
@@ -140,7 +141,6 @@ class BusinessProfileService {
          */
         response =
           userBusinessProfile?.aiGeneratedSuggestions?.[`${key}_${type}`];
-        bestSuggestion = await this.getBestSuggestion(response, key, false);
       } else {
         const [
           systemDataset,
@@ -200,33 +200,49 @@ class BusinessProfileService {
          * If the type of systemInput is object, it means that the ai action contains some options
          * So we need to generate suggestions for the given type
          */
-        if (type && typeof systemInput == "object") {
+        if (LEVEL1_KEYS.includes(key)) {
+          systemInput = FINE_TUNE_PROMPTS[key].name;
+          model = AI_MODELS[key].name;
+        } else if (type && typeof systemInput == "object") {
           ifOptionsAvailable = true;
           systemInput = systemInput[datasetTypes.types[type]];
         }
-        /**
-         * generate suggestions using the OpenAi API
-         * and get the clean json format response
-         */
-        response = await BusinessProfileServiceV9.getFormattedSuggestions(
-          systemInput,
-          prompt,
-          key
-        );
+
+        if (LEVEL1_KEYS.includes(key)) {
+          const { description, bestPractice } =
+            await BusinessProfileServiceV9.getFormattedSuggestions(
+              systemInput,
+              prompt,
+              key,
+              model,
+              true
+            );
+          // const description = JSON.stringify(response);
+          response = await this.getActionRatings(key, description, prompt);
+          response[0]["description"] = description;
+          response[0]["bestPractice"] = bestPractice;
+        } else {
+          /**
+           * generate suggestions using the OpenAi API
+           * and get the clean json format response
+           */
+          response = await BusinessProfileServiceV9.getFormattedSuggestions(
+            systemInput,
+            prompt,
+            key,
+            model
+          );
+        }
         // sort the suggestions in the alphabetical order of their title
-        // response?.sort((a, b) => a?.title?.localeCompare(b?.title));
-        bestSuggestion = await this.getBestSuggestion(response, key, true);
+        response?.sort((a, b) => a?.title?.localeCompare(b?.title));
         const scoringCriteria = goalDetails[0]?.scoringCriteria[type];
-        bestSuggestion.forEach((obj) => {
+        response.forEach((obj) => {
           /**
            * Each cirteria of each suggestion should be categorized under stregth and weakness
            * which is done based on below conditions
            */
           let strengths = { title: "Strengths", data: [] };
           let weaknesses = { title: "Weaknesses", data: [] };
-          obj[
-            "bestPractice"
-          ] = `Choose a business name that:\nRelates to your product/business\nIs easy to say and spell across cultures\nIs unique amongst competitors`;
           obj.scores.forEach((score, idx) => {
             score.icon = scoringCriteria[idx]?.icon;
             score.explanation = scoringCriteria[idx]?.description || "";
@@ -242,11 +258,11 @@ class BusinessProfileService {
          * if the response is generated correctly ,
          * save that to business profile collection to use afterwards
          */
-        if (bestSuggestion) {
+        if (response) {
           BusinessProfileServiceV9.saveAIActionResponse(
             userExists,
             key,
-            bestSuggestion,
+            response,
             ifOptionsAvailable,
             type
           );
@@ -257,7 +273,7 @@ class BusinessProfileService {
         }
       }
       return {
-        suggestions: bestSuggestion,
+        suggestions: response,
         finished: true,
         isRetry: true,
         companyName: REQUIRE_COMPANY_NAME.includes(key)
@@ -374,6 +390,26 @@ class BusinessProfileService {
       { $set: aiToolUsageObj },
       { upsert: true }
     );
+  }
+
+  /**
+   * @description this is to get ratings for the generated fine tuned suggestion
+   * @param key ai action key
+   * @param suggestion
+   * @param prompt
+   * @returns {*}
+   */
+  async getActionRatings(key: string, suggestion: string, prompt: string) {
+    const systemInput = FINE_TUNE_PROMPTS[key].ratings;
+    const model = AI_MODELS[key].ratings;
+    prompt = `${suggestion} - ${prompt}`;
+    const ratings = await BusinessProfileServiceV9.getFormattedSuggestions(
+      systemInput,
+      prompt,
+      key,
+      model
+    );
+    return ratings;
   }
 }
 export default new BusinessProfileService();
